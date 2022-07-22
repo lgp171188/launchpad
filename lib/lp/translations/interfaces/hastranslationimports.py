@@ -4,8 +4,8 @@
 """The `IHasTranslationImports` interface."""
 
 __all__ = [
-    'IHasTranslationImports',
-    ]
+    "IHasTranslationImports",
+]
 
 from lazr.restful.declarations import (
     export_read_operation,
@@ -13,12 +13,9 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
-    )
+)
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    TextLine,
-    )
+from zope.schema import Choice, TextLine
 
 from lp import _
 from lp.translations.enums import RosettaImportStatus
@@ -27,7 +24,8 @@ from lp.translations.enums import RosettaImportStatus
 @exported_as_webservice_entry(
     singular_name="object_with_translation_imports",
     plural_name="objects_with_translation_imports",
-    as_of="beta")
+    as_of="beta",
+)
 class IHasTranslationImports(Interface):
     """An entity that has a translation import queue.
 
@@ -43,18 +41,22 @@ class IHasTranslationImports(Interface):
             title=_("Status"),
             description=_("Show only entries with this status"),
             vocabulary=RosettaImportStatus,
-            required=False),
+            required=False,
+        ),
         file_extension=TextLine(
             title=_("Filename extension"),
             description=_("Show only entries with this filename suffix"),
-            required=False))
+            required=False,
+        ),
+    )
     # Really ITranslationImportQueueEntry, patched in
     # lp.translations.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
-    @operation_for_version('beta')
-    def getTranslationImportQueueEntries(import_status=None,
-                                         file_extension=None):
+    @operation_for_version("beta")
+    def getTranslationImportQueueEntries(
+        import_status=None, file_extension=None
+    ):
         """Return entries in the translation import queue for this entity.
 
         :arg import_status: RosettaImportStatus DB Schema entry.

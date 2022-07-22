@@ -7,8 +7,8 @@ Dispatches translation template build jobs to build-farm workers.
 """
 
 __all__ = [
-    'TranslationTemplatesBuildBehaviour',
-    ]
+    "TranslationTemplatesBuildBehaviour",
+]
 
 import os
 import re
@@ -23,15 +23,15 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.model.approver import TranslationBuildApprover
 
 
@@ -42,16 +42,17 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
     builder_type = "translation-templates"
 
     # Filename for the tarball of templates that the worker builds.
-    templates_tarball_path = 'translation-templates.tar.gz'
+    templates_tarball_path = "translation-templates.tar.gz"
 
-    unsafe_chars = '[^a-zA-Z0-9_+-]'
+    unsafe_chars = "[^a-zA-Z0-9_+-]"
 
     ALLOWED_STATUS_NOTIFICATIONS = []
 
     def getLogFileName(self):
         """See `IBuildFarmJob`."""
         safe_name = re.sub(
-            self.unsafe_chars, '_', self.build.branch.unique_name)
+            self.unsafe_chars, "_", self.build.branch.unique_name
+        )
         return "translationtemplates_%s_%d.txt" % (safe_name, self.build.id)
 
     @property
@@ -92,12 +93,17 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
         """Upload tarball to productseries that want it."""
         queue = getUtility(ITranslationImportQueue)
         productseriesset = getUtility(IProductSeriesSet)
-        related_series = (
-            productseriesset.findByTranslationsImportBranch(branch))
+        related_series = productseriesset.findByTranslationsImportBranch(
+            branch
+        )
         for series in related_series:
             queue.addOrUpdateEntriesFromTarball(
-                tarball, False, branch.owner, productseries=series,
-                approver_factory=TranslationBuildApprover)
+                tarball,
+                False,
+                branch.owner,
+                productseries=series,
+                approver_factory=TranslationBuildApprover,
+            )
 
     @defer.inlineCallbacks
     def handleSuccess(self, worker_status, logger):
@@ -110,13 +116,14 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
         retry it.
         """
         self.build.updateStatus(
-            BuildStatus.UPLOADING,
-            builder=self.build.buildqueue_record.builder)
+            BuildStatus.UPLOADING, builder=self.build.buildqueue_record.builder
+        )
         transaction.commit()
         logger.debug("Processing successful templates build.")
-        filemap = worker_status.get('filemap')
+        filemap = worker_status.get("filemap")
         filename = yield self._readTarball(
-            self.build.buildqueue_record, filemap, logger)
+            self.build.buildqueue_record, filemap, logger
+        )
 
         if filename is None:
             logger.error("Build produced no tarball.")
@@ -126,7 +133,9 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
                 logger.debug("Uploading translation templates tarball.")
                 self._uploadTarball(
                     self.build.buildqueue_record.specific_build.branch,
-                    tarball_file, logger)
+                    tarball_file,
+                    logger,
+                )
                 transaction.commit()
                 logger.debug("Upload complete.")
             finally:

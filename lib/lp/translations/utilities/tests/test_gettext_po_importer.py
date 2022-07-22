@@ -3,8 +3,8 @@
 
 """Gettext PO importer tests."""
 
-from io import BytesIO
 import unittest
+from io import BytesIO
 
 import transaction
 from zope.component import getUtility
@@ -15,17 +15,16 @@ from lp.registry.interfaces.product import IProductSet
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     ITranslationFormatImporter,
-    )
+)
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 
-
-test_template = br'''
+test_template = rb"""
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -34,9 +33,9 @@ msgstr ""
 
 msgid "foo"
 msgstr ""
-'''
+"""
 
-test_translation_file = br'''
+test_translation_file = rb"""
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -45,50 +44,62 @@ msgstr ""
 
 msgid "foo"
 msgstr "blah"
-'''
+"""
 
 
 class GettextPOImporterTestCase(unittest.TestCase):
     """Class test for gettext's .po file imports"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         # Add a new entry for testing purposes. It's a template one.
         self.translation_import_queue = getUtility(ITranslationImportQueue)
-        template_path = 'po/testing.pot'
+        template_path = "po/testing.pot"
         by_maintainer = True
         personset = getUtility(IPersonSet)
-        importer = personset.getByName('carlos')
+        importer = personset.getByName("carlos")
         productset = getUtility(IProductSet)
-        firefox = productset.getByName('firefox')
-        productseries = firefox.getSeries('trunk')
+        firefox = productset.getByName("firefox")
+        productseries = firefox.getSeries("trunk")
         template_entry = self.translation_import_queue.addOrUpdateEntry(
-            template_path, test_template, by_maintainer, importer,
-            productseries=productseries)
+            template_path,
+            test_template,
+            by_maintainer,
+            importer,
+            productseries=productseries,
+        )
 
         # Add another one, a translation file.
-        pofile_path = 'po/es.po'
+        pofile_path = "po/es.po"
         translation_entry = self.translation_import_queue.addOrUpdateEntry(
-            pofile_path, test_translation_file, by_maintainer, importer,
-            productseries=productseries)
+            pofile_path,
+            test_translation_file,
+            by_maintainer,
+            importer,
+            productseries=productseries,
+        )
 
         transaction.commit()
         self.template_importer = GettextPOImporter()
         self.template_file = self.template_importer.parse(template_entry)
         self.translation_importer = GettextPOImporter()
         self.translation_file = self.translation_importer.parse(
-            translation_entry)
+            translation_entry
+        )
 
     def testInterface(self):
         """Check whether the object follows the interface."""
         self.assertTrue(
             verifyObject(ITranslationFormatImporter, self.template_importer),
             "GettextPOImporter doesn't conform to ITranslationFormatImporter"
-                "interface.")
+            "interface.",
+        )
 
     def testFormat(self):
         # GettextPOImporter reports that it handles the PO file format.
         format = self.template_importer.getFormat(BytesIO(test_template))
         self.assertTrue(
             format == TranslationFileFormat.PO,
-            'GettextPOImporter format expected PO but got %s' % format.name)
+            "GettextPOImporter format expected PO but got %s" % format.name,
+        )

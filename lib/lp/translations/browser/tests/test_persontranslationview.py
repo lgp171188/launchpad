@@ -8,15 +8,8 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import ServiceUsage
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    BrowserTestCase,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing import BrowserTestCase, TestCaseWithFactory, person_logged_in
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.translations.browser.person import PersonTranslationView
 from lp.translations.model.translator import TranslatorSet
 
@@ -39,8 +32,10 @@ class TestPersonTranslationView(TestCaseWithFactory):
         owner = self.factory.makePerson()
         self.translationgroup = self.factory.makeTranslationGroup(owner=owner)
         TranslatorSet().new(
-            translationgroup=self.translationgroup, language=self.language,
-            translator=self.view.context)
+            translationgroup=self.translationgroup,
+            language=self.language,
+            translator=self.view.context,
+        )
 
     def _makePOFiles(self, count, previously_worked_on, languages=None):
         """Create `count` `POFile`s that the view's person can review.
@@ -61,7 +56,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
                 pofile = self.factory.makePOFile(language=self.language)
             else:
                 pofile = self.factory.makePOFile(
-                    potemplate=potemplate, language=languages[counter])
+                    potemplate=potemplate, language=languages[counter]
+                )
 
             if self.translationgroup:
                 product = pofile.potemplate.productseries.product
@@ -73,10 +69,13 @@ class TestPersonTranslationView(TestCaseWithFactory):
                 else:
                     sequence = 1
                 potmsgset = self.factory.makePOTMsgSet(
-                    potemplate=pofile.potemplate, sequence=sequence)
+                    potemplate=pofile.potemplate, sequence=sequence
+                )
                 self.factory.makeCurrentTranslationMessage(
-                    potmsgset=potmsgset, pofile=pofile,
-                    translator=self.view.context)
+                    potmsgset=potmsgset,
+                    pofile=pofile,
+                    translator=self.view.context,
+                )
 
             removeSecurityProxy(pofile).unreviewed_count = 1
             pofiles.append(pofile)
@@ -92,8 +91,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         # translation_groups lists the translation groups a person is
         # in.
         self._makeReviewer()
-        self.assertEqual(
-            [self.translationgroup], self.view.translation_groups)
+        self.assertEqual([self.translationgroup], self.view.translation_groups)
 
     def test_person_is_reviewer_false(self):
         # A regular person is not a reviewer.
@@ -123,7 +121,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         descriptions = self.view.all_projects_and_packages_to_review
 
         self.assertEqual(1, len(descriptions))
-        self.assertEqual(product, descriptions[0]['target'])
+        self.assertEqual(product, descriptions[0]["target"])
 
     def test_all_projects_and_packages_to_review_none(self):
         # all_projects_and_packages_to_review works even if there is
@@ -143,8 +141,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
 
         description = self.view.all_projects_and_packages_to_review[0]
 
-        self.assertEqual(1, description['count'])
-        self.assertEqual("1 string", description['count_wording'])
+        self.assertEqual(1, description["count"])
+        self.assertEqual("1 string", description["count_wording"])
 
     def test_all_projects_and_packages_to_review_string_plural(self):
         # For multiple strings, count_wording uses the plural.
@@ -154,8 +152,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
 
         description = self.view.all_projects_and_packages_to_review[0]
 
-        self.assertEqual(2, description['count'])
-        self.assertEqual("2 strings", description['count_wording'])
+        self.assertEqual(2, description["count"])
+        self.assertEqual("2 strings", description["count_wording"])
 
     def test_num_projects_and_packages_to_review_zero(self):
         # num_projects_and_packages does not count new suggestions.
@@ -172,10 +170,11 @@ class TestPersonTranslationView(TestCaseWithFactory):
         pofile_worked_on = self._makePOFiles(1, previously_worked_on=True)[0]
         targets = self.view.top_projects_and_packages_to_review
 
-        pofile_suffix = '/+translate?show=new_suggestions'
+        pofile_suffix = "/+translate?show=new_suggestions"
         expected_links = [canonical_url(pofile_worked_on) + pofile_suffix]
         self.assertEqual(
-            set(expected_links), {item['link'] for item in targets})
+            set(expected_links), {item["link"] for item in targets}
+        )
 
     def test_recent_translation_activity(self):
         # the recent_activity property lists the most recent translation
@@ -198,16 +197,21 @@ class TestPersonTranslationView(TestCaseWithFactory):
         pofiles_worked_on = self._makePOFiles(11, previously_worked_on=True)
 
         # the expected results
-        person_name = urlencode({'person': self.view.context.name})
+        person_name = urlencode({"person": self.view.context.name})
         expected_links = [
-            (pofile.potemplate.translationtarget.title,
-            canonical_url(pofile, view_name="+filter") + "?%s" % person_name)
-            for pofile in pofiles_worked_on[:10]]
+            (
+                pofile.potemplate.translationtarget.title,
+                canonical_url(pofile, view_name="+filter")
+                + "?%s" % person_name,
+            )
+            for pofile in pofiles_worked_on[:10]
+        ]
 
         recent_activity = self.view.recent_activity
         self.assertContentEqual(
             expected_links,
-            ((item.title, item.url) for item in recent_activity))
+            ((item.title, item.url) for item in recent_activity),
+        )
 
     def test_top_p_n_p_to_review_caps_existing_involvement(self):
         # top_projects_and_packages will return at most 9 POFiles that
@@ -218,7 +222,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         targets = self.view.top_projects_and_packages_to_review
 
         self.assertEqual(9, len(targets))
-        self.assertEqual(9, len({item['link'] for item in targets}))
+        self.assertEqual(9, len({item["link"] for item in targets}))
 
     def test_top_p_n_p_to_review_caps_total(self):
         # top_projects_and_packages will show at most 9 POFiles
@@ -229,7 +233,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         targets = self.view.top_projects_and_packages_to_review
 
         self.assertEqual(9, len(targets))
-        self.assertEqual(9, len({item['link'] for item in targets}))
+        self.assertEqual(9, len({item["link"] for item in targets}))
 
     def test_person_is_translator_false(self):
         # By default, a user is not a translator.
@@ -258,10 +262,9 @@ class TestPersonTranslationView(TestCaseWithFactory):
 
         self.assertEqual(1, len(descriptions))
         description = descriptions[0]
-        self.assertEqual(product, description['target'])
-        self.assertTrue(description['link'].startswith(canonical_url(pofile)))
-        self.assertEqual(
-            pofile.language.englishname, description['languages'])
+        self.assertEqual(product, description["target"])
+        self.assertTrue(description["link"].startswith(canonical_url(pofile)))
+        self.assertEqual(pofile.language.englishname, description["languages"])
 
     def test_getTargetsForTranslation_multiple_languages(self):
         # Translations in different languages are aggregated to one target
@@ -269,17 +272,20 @@ class TestPersonTranslationView(TestCaseWithFactory):
         other_language = self.factory.makeLanguage()
         self.view.context.addLanguage(other_language)
         pofiles = self._makePOFiles(
-            2, previously_worked_on=True,
-            languages=[self.language, other_language])
+            2,
+            previously_worked_on=True,
+            languages=[self.language, other_language],
+        )
         for pofile in pofiles:
             self._addUntranslatedMessages(pofile, 1)
 
         descriptions = self.view._getTargetsForTranslation()
         self.assertEqual(1, len(descriptions))
         description = descriptions[0]
-        expected_languages = ', '.join(sorted([
-            self.language.englishname, other_language.englishname]))
-        self.assertContentEqual(expected_languages, description['languages'])
+        expected_languages = ", ".join(
+            sorted([self.language.englishname, other_language.englishname])
+        )
+        self.assertContentEqual(expected_languages, description["languages"])
 
     def test_getTargetsForTranslation_max_fetch(self):
         # The max_fetch parameter limits how many POFiles are considered
@@ -297,7 +303,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
         self.assertEqual(1, len(descriptions))
         self.assertEqual(
             urgent_pofile.potemplate.productseries.product,
-            descriptions[0]['target'])
+            descriptions[0]["target"],
+        )
 
         # Passing a negative max_fetch makes _getTargetsForTranslation
         # pick translations with the fewest untranslated messages.
@@ -305,7 +312,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
         self.assertEqual(1, len(descriptions))
         self.assertEqual(
             nonurgent_pofile.potemplate.productseries.product,
-            descriptions[0]['target'])
+            descriptions[0]["target"],
+        )
 
     def test_top_projects_and_packages_to_translate(self):
         # top_projects_and_packages_to_translate lists targets that the
@@ -320,7 +328,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
         self.assertEqual(1, len(descriptions))
         self.assertEqual(
             worked_on.potemplate.productseries.product,
-            descriptions[0]['target'])
+            descriptions[0]["target"],
+        )
 
     def test_top_p_n_p_to_translate_caps_existing_involvement(self):
         # top_projects_and_packages_to_translate shows up to ten
@@ -343,12 +352,13 @@ class TestPersonTranslationView(TestCaseWithFactory):
         for number, pofile in enumerate(pofiles):
             self._addUntranslatedMessages(pofile, number + 1)
         products = [
-            pofile.potemplate.productseries.product for pofile in pofiles]
+            pofile.potemplate.productseries.product for pofile in pofiles
+        ]
 
         descriptions = self.view.top_projects_and_packages_to_translate
 
         self.assertEqual(10, len(descriptions))
-        targets = [item['target'] for item in descriptions]
+        targets = [item["target"] for item in descriptions]
 
         # We happen to know that no more than 25 POFiles are fetched for
         # each of the two categories, so the top 5 targets must be taken
@@ -364,7 +374,8 @@ class TestPersonTranslationView(TestCaseWithFactory):
         # The list never shows more than 10 entries.
         for previously_worked_on in (True, False):
             pofiles = self._makePOFiles(
-                11, previously_worked_on=previously_worked_on)
+                11, previously_worked_on=previously_worked_on
+            )
             for pofile in pofiles:
                 self._addUntranslatedMessages(pofile, 1)
 
@@ -397,12 +408,15 @@ class TestPersonTranslationViewPermissions(BrowserTestCase):
         owner = self.factory.makePerson()
         self.translationgroup = self.factory.makeTranslationGroup(owner=owner)
         TranslatorSet().new(
-            translationgroup=self.translationgroup, language=self.language,
-            translator=self.context)
+            translationgroup=self.translationgroup,
+            language=self.language,
+            translator=self.context,
+        )
 
     def test_links_anon(self):
         browser = self.getViewBrowser(
-            self.context, "+translations", no_login=True)
+            self.context, "+translations", no_login=True
+        )
         self.assertFalse("+editmylanguages" in browser.contents)
         self.assertFalse("+edit" in browser.contents)
 
@@ -415,6 +429,7 @@ class TestPersonTranslationViewPermissions(BrowserTestCase):
     def test_links_authorized(self):
         self.factory.makeTranslationGroup()
         browser = self.getViewBrowser(
-            self.context, "+translations", user=self.context)
+            self.context, "+translations", user=self.context
+        )
         self.assertTrue("+editmylanguages" in browser.contents)
         self.assertTrue("+edit" in browser.contents)

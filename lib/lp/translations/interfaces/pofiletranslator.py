@@ -2,17 +2,13 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IPOFileTranslator',
-    'IPOFileTranslatorSet',
-    ]
+    "IPOFileTranslator",
+    "IPOFileTranslatorSet",
+]
 
 
 from zope.interface import Interface
-from zope.schema import (
-    Datetime,
-    Int,
-    Object,
-    )
+from zope.schema import Datetime, Int, Object
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -26,15 +22,23 @@ class IPOFileTranslator(Interface):
 
     person = Object(
         title=_("The `Person` whose contribution this record represents."),
-        required=True, readonly=True, schema=IPerson)
+        required=True,
+        readonly=True,
+        schema=IPerson,
+    )
 
     pofile = Object(
-        title=_("The `POFile` modified by the translator."), required=True,
-        readonly=True, schema=IPOFile)
+        title=_("The `POFile` modified by the translator."),
+        required=True,
+        readonly=True,
+        schema=IPOFile,
+    )
 
     date_last_touched = Datetime(
         title=_("When the latest translation message was added."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
 
 class IPOFileTranslatorSet(Interface):

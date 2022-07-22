@@ -4,14 +4,14 @@
 """Interface for objects that translation templates can belong to."""
 
 __all__ = [
-    'IHasTranslationTemplates',
-    ]
+    "IHasTranslationTemplates",
+]
 
 from lazr.restful.declarations import (
     export_read_operation,
     operation_for_version,
     operation_returns_collection_of,
-    )
+)
 from zope.interface import Interface
 from zope.schema import Bool
 
@@ -26,23 +26,27 @@ class IHasTranslationTemplates(Interface):
 
     has_translation_templates = Bool(
         title=_("Does this object have any translation templates?"),
-        readonly=True)
+        readonly=True,
+    )
 
     has_current_translation_templates = Bool(
         title=_("Does this object have current translation templates?"),
-        readonly=True)
+        readonly=True,
+    )
 
     has_obsolete_translation_templates = Bool(
         title=_("Does this object have obsolete translation templates?"),
-        readonly=True)
+        readonly=True,
+    )
 
     has_sharing_translation_templates = Bool(
         title=_("Does this object have sharing translation templates?"),
-        readonly=True)
+        readonly=True,
+    )
 
     has_translation_files = Bool(
-        title=_("Does this object have translation files?"),
-        readonly=True)
+        title=_("Does this object have translation files?"), readonly=True
+    )
 
     def getTemplatesCollection():
         """Return templates as a `TranslationTemplatesCollection`.
@@ -86,7 +90,7 @@ class IHasTranslationTemplates(Interface):
     @export_read_operation()
     # Really IPOTemplate, patched in lp.translations.interfaces.webservice.
     @operation_returns_collection_of(Interface)
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def getTranslationTemplates():
         """Return an iterator over all its translation templates.
 
@@ -99,5 +103,4 @@ class IHasTranslationTemplates(Interface):
         """Return the template with the given name or None."""
 
     def getTranslationTemplateFormats():
-        """A list of native formats for all current translation templates.
-        """
+        """A list of native formats for all current translation templates."""

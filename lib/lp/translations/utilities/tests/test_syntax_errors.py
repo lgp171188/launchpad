@@ -1,17 +1,12 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from unittest import (
-    TestCase,
-    TestLoader,
-    TestSuite,
-    TextTestRunner,
-    )
+from unittest import TestCase, TestLoader, TestSuite, TextTestRunner
 
 from lp.translations.interfaces.translationimporter import (
     TranslationFormatInvalidInputError,
     TranslationFormatSyntaxError,
-    )
+)
 
 
 class TranslationFormatInvalidInputErrorTest(TestCase):
@@ -29,22 +24,26 @@ class TranslationFormatInvalidInputErrorTest(TestCase):
         self.assertEqual(str(exception), "Line 9: Invalid input")
 
         exception = TranslationFormatInvalidInputError(
-            filename="foo", line_number=9)
+            filename="foo", line_number=9
+        )
         self.assertEqual(str(exception), "foo, line 9: Invalid input")
 
         exception = TranslationFormatInvalidInputError(message="message")
         self.assertEqual(str(exception), "message")
 
         exception = TranslationFormatInvalidInputError(
-            filename="foo", message="message")
+            filename="foo", message="message"
+        )
         self.assertEqual(str(exception), "foo: message")
 
         exception = TranslationFormatInvalidInputError(
-            line_number=9, message="message")
+            line_number=9, message="message"
+        )
         self.assertEqual(str(exception), "Line 9: message")
 
         exception = TranslationFormatInvalidInputError(
-            filename="foo", line_number=9, message="message")
+            filename="foo", line_number=9, message="message"
+        )
         self.assertEqual(str(exception), "foo, line 9: message")
 
     def testNonAsciiInvalidInputError(self):
@@ -52,13 +51,15 @@ class TranslationFormatInvalidInputErrorTest(TestCase):
 
         # Here's one with a Thai "r" character in its message.
         exception = TranslationFormatInvalidInputError(
-            filename="ror-rua", line_number=2, message="r\u0e23")
+            filename="ror-rua", line_number=2, message="r\u0e23"
+        )
         representation = str(exception)
         self.assertEqual(representation, "ror-rua, line 2: r\\u0e23")
 
         # And here's one with the Khmer equivalent in its filename.
         exception = TranslationFormatInvalidInputError(
-            filename="ro-\u179a", message="hok baay heuy?")
+            filename="ro-\u179a", message="hok baay heuy?"
+        )
         representation = str(exception)
         self.assertEqual(representation, "ro-\\u179a: hok baay heuy?")
 
@@ -78,21 +79,27 @@ class TranslationFormatSyntaxErrorTest(TestCase):
 
     def testNonAsciiSyntaxError(self):
         # Test against non-ascii characters.
-        exception = TranslationFormatSyntaxError(filename="khor-khai-\u0e01",
-            line_number=4, message="khor-khai-\u0e02")
-        self.assertEqual(str(exception),
-            "khor-khai-\\u0e01, line 4: khor-khai-\\u0e02")
+        exception = TranslationFormatSyntaxError(
+            filename="khor-khai-\u0e01",
+            line_number=4,
+            message="khor-khai-\u0e02",
+        )
+        self.assertEqual(
+            str(exception), "khor-khai-\\u0e01, line 4: khor-khai-\\u0e02"
+        )
 
 
 def test_suite():
     suite = TestSuite()
     loader = TestLoader()
-    suite.addTest(loader.loadTestsFromTestCase(
-        TranslationFormatInvalidInputErrorTest))
-    suite.addTest(loader.loadTestsFromTestCase(
-        TranslationFormatSyntaxErrorTest))
+    suite.addTest(
+        loader.loadTestsFromTestCase(TranslationFormatInvalidInputErrorTest)
+    )
+    suite.addTest(
+        loader.loadTestsFromTestCase(TranslationFormatSyntaxErrorTest)
+    )
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     TextTestRunner().run(test_suite())

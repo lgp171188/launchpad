@@ -4,29 +4,28 @@
 """Functions to help with translation templates."""
 
 __all__ = [
-    'make_domain',
-    'make_name',
-    'make_name_from_path',
-    ]
+    "make_domain",
+    "make_name",
+    "make_name_from_path",
+]
 
 
 import os
 
 from lp.app.validators.name import sanitize_name
 
-
 GENERIC_TEMPLATE_NAMES = [
-    'en-US.xpi',
-    'messages.pot',
-    'untitled.pot',
-    'template.pot',
-    ]
+    "en-US.xpi",
+    "messages.pot",
+    "untitled.pot",
+    "template.pot",
+]
 GENERIC_TEMPLATE_DIRS = [
-    'po',
-    ]
+    "po",
+]
 
 
-def make_domain(path, default=''):
+def make_domain(path, default=""):
     """Generate the translation domain name from the path of the template
     file.
 
@@ -47,9 +46,9 @@ def make_domain(path, default=''):
 
 def make_name(domain):
     """Make a template name from a translation domain."""
-    return sanitize_name(domain.replace('_', '-').lower())
+    return sanitize_name(domain.replace("_", "-").lower())
 
 
-def make_name_from_path(path, default=''):
+def make_name_from_path(path, default=""):
     """Make a template name from a file path."""
     return make_name(make_domain(path, default=default))

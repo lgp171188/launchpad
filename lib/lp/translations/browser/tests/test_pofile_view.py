@@ -9,16 +9,13 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     BrowserTestCase,
+    TestCaseWithFactory,
     login,
     login_person,
     person_logged_in,
     record_two_runs,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_initialized_view
 from lp.translations.browser.pofile import POFileTranslateView
@@ -39,10 +36,13 @@ class TestQueryCount(TestCaseWithFactory):
         product.translationpermission = TranslationPermission.OPEN
         pofile = self.factory.makePOFile(
             potemplate=self.factory.makePOTemplate(
-                productseries=product.series[0]))
+                productseries=product.series[0]
+            )
+        )
         pofile.potemplate.productseries.product
         potmsgsets = [
-            self.factory.makePOTMsgSet(pofile.potemplate) for i in range(10)]
+            self.factory.makePOTMsgSet(pofile.potemplate) for i in range(10)
+        ]
 
         # Preload a few transaction-crossing caches that would give
         # extra queries to the first request.
@@ -56,16 +56,17 @@ class TestQueryCount(TestCaseWithFactory):
                 pot = self.factory.makePOTemplate()
                 self.factory.makeCurrentTranslationMessage(
                     potmsgset=self.factory.makePOTMsgSet(
-                        singular=potmsgset.msgid_singular.msgid,
-                        potemplate=pot),
+                        singular=potmsgset.msgid_singular.msgid, potemplate=pot
+                    ),
                     language=pofile.language,
-                    translations=[self.factory.getUniqueUnicode()])
+                    translations=[self.factory.getUniqueUnicode()],
+                )
                 # A suggestion only shows up if it's actually in a
                 # POFile.
                 self.factory.makePOFile(
-                    potemplate=pot, language=pofile.language)
-                self.factory.makeSuggestion(
-                    pofile=pofile, potmsgset=potmsgset)
+                    potemplate=pot, language=pofile.language
+                )
+                self.factory.makeSuggestion(pofile=pofile, potmsgset=potmsgset)
 
             # Ensure that these are valid suggestions.
             templateset = getUtility(IPOTemplateSet)
@@ -75,8 +76,11 @@ class TestQueryCount(TestCaseWithFactory):
         nb_objects = 2
         recorder1, recorder2 = record_two_runs(
             lambda: create_initialized_view(
-                pofile, '+translate', principal=person)(),
-            create_suggestions, nb_objects)
+                pofile, "+translate", principal=person
+            )(),
+            create_suggestions,
+            nb_objects,
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
@@ -88,29 +92,30 @@ class TestPOFileTranslateViewInvalidFiltering(TestCaseWithFactory):
     raising UnexpectedFormData which is communicated to the user instead of
     being recorded as an OOPS.
     """
+
     layer = ZopelessDatabaseLayer
     view_class = POFileTranslateView
 
     def setUp(self):
         super().setUp()
-        self.pofile = self.factory.makePOFile('eo')
+        self.pofile = self.factory.makePOFile("eo")
 
     def _test_parameter_list(self, parameter_name):
         # When a parameter is entered multiple times in an URL, it will be
         # converted to a list. This view has no such parameters but it must
         # not throw a TypeError when it gets a list.
-        form = {parameter_name: ['foo', 'bar']}
+        form = {parameter_name: ["foo", "bar"]}
         view = self.view_class(self.pofile, LaunchpadTestRequest(form=form))
         self.assertRaises(UnexpectedFormData, view.initialize)
 
     def test_parameter_list_old_show(self):
-        self._test_parameter_list('old_show')
+        self._test_parameter_list("old_show")
 
     def test_parameter_list_search(self):
-        self._test_parameter_list('search')
+        self._test_parameter_list("search")
 
     def test_parameter_list_show(self):
-        self._test_parameter_list('show')
+        self._test_parameter_list("show")
 
 
 class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
@@ -119,7 +124,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
 
     def _makeLoggedInUser(self):
         """Create a user, and log in as that user."""
-        email = self.factory.getUniqueString() + '@example.com'
+        email = self.factory.getUniqueString() + "@example.com"
         user = self.factory.makePerson(email=email)
         login(email)
         return user
@@ -139,7 +144,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
             given, one will be created.
         """
         if pofile is None:
-            pofile = self.factory.makePOFile('cy')
+            pofile = self.factory.makePOFile("cy")
         if request is None:
             request = LaunchpadTestRequest()
         return self.view_class(pofile, request)
@@ -200,7 +205,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
 
     def test_translation_group_guide_noguide(self):
         # The translation group may not have a translation guide.
-        pofile = self.factory.makePOFile('ca')
+        pofile = self.factory.makePOFile("ca")
         self._makeTranslationGroup(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -209,7 +214,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_translation_group_guide(self):
         # translation_group_guide returns the translation group's style
         # guide URL if there is one.
-        pofile = self.factory.makePOFile('ce')
+        pofile = self.factory.makePOFile("ce")
         url = self._setGroupGuide(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -223,7 +228,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_translation_team_guide_noteam(self):
         # If there is no translation team for this language, there is on
         # translation team style guide.
-        pofile = self.factory.makePOFile('ch')
+        pofile = self.factory.makePOFile("ch")
         self._makeTranslationGroup(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -231,7 +236,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
 
     def test_translation_team_guide_noguide(self):
         # A translation team may not have a translation style guide.
-        pofile = self.factory.makePOFile('co')
+        pofile = self.factory.makePOFile("co")
         self._makeTranslationTeam(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -240,7 +245,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_translation_team_guide(self):
         # translation_team_guide returns the translation team's
         # style guide, if there is one.
-        pofile = self.factory.makePOFile('cy')
+        pofile = self.factory.makePOFile("cy")
         url = self._setTeamGuide(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -250,11 +255,11 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
         # If the user is not a new translator and neither a translation
         # group nor a team style guide applies, the documentation bubble
         # is empty.
-        pofile = self.factory.makePOFile('da')
+        pofile = self.factory.makePOFile("da")
         self._useNonnewTranslator()
 
         view = self._makeView(pofile=pofile)
-        self.assertEqual('', view.documentation_link_bubble)
+        self.assertEqual("", view.documentation_link_bubble)
         self.assertFalse(self._showsIntro(view.documentation_link_bubble))
         self.assertFalse(self._showsGuides(view.documentation_link_bubble))
 
@@ -269,7 +274,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_documentation_link_bubble_group_guide(self):
         # A translation group's guide shows up in the documentation
         # bubble.
-        pofile = self.factory.makePOFile('de')
+        pofile = self.factory.makePOFile("de")
         self._setGroupGuide(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -279,7 +284,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_documentation_link_bubble_team_guide(self):
         # A translation team's style guide shows up in the documentation
         # bubble.
-        pofile = self.factory.makePOFile('de')
+        pofile = self.factory.makePOFile("de")
         self._setTeamGuide(pofile)
 
         view = self._makeView(pofile=pofile)
@@ -289,7 +294,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_documentation_link_bubble_both_guides(self):
         # The documentation bubble can show both a translation group's
         # guidelines and a translation team's style guide.
-        pofile = self.factory.makePOFile('dv')
+        pofile = self.factory.makePOFile("dv")
         self._setGroupGuide(pofile)
         self._setTeamGuide(pofile)
 
@@ -301,7 +306,7 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
     def test_documentation_link_bubble_shows_all(self):
         # So in all, the bubble can show 3 different documentation
         # links.
-        pofile = self.factory.makePOFile('dz')
+        pofile = self.factory.makePOFile("dz")
         self._makeLoggedInUser()
         self._setGroupGuide(pofile)
         self._setTeamGuide(pofile)
@@ -313,41 +318,46 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
 
     def test_documentation_link_bubble_escapes_group_title(self):
         # Translation group titles in the bubble are HTML-escaped.
-        pofile = self.factory.makePOFile('eo')
+        pofile = self.factory.makePOFile("eo")
         group = self._makeTranslationGroup(pofile)
         self._setGroupGuide(pofile)
         group.title = "<blink>X</blink>"
 
         view = self._makeView(pofile=pofile)
         self.assertIn(
-            "&lt;blink&gt;X&lt;/blink&gt;", view.documentation_link_bubble)
+            "&lt;blink&gt;X&lt;/blink&gt;", view.documentation_link_bubble
+        )
         self.assertNotIn(group.title, view.documentation_link_bubble)
 
     def test_documentation_link_bubble_escapes_team_name(self):
         # Translation team names in the bubble are HTML-escaped.
-        pofile = self.factory.makePOFile('ie')
+        pofile = self.factory.makePOFile("ie")
         translator_entry = self._makeTranslationTeam(pofile)
         self._setTeamGuide(pofile, team=translator_entry)
         translator_entry.translator.display_name = "<blink>Y</blink>"
 
         view = self._makeView(pofile=pofile)
         self.assertIn(
-            "&lt;blink&gt;Y&lt;/blink&gt;", view.documentation_link_bubble)
+            "&lt;blink&gt;Y&lt;/blink&gt;", view.documentation_link_bubble
+        )
         self.assertNotIn(
             translator_entry.translator.displayname,
-            view.documentation_link_bubble)
+            view.documentation_link_bubble,
+        )
 
     def test_documentation_link_bubble_escapes_language_name(self):
         # Language names in the bubble are HTML-escaped.
         language = self.factory.makeLanguage(
-            language_code='wtf', name="<blink>Z</blink>")
-        pofile = self.factory.makePOFile('wtf')
+            language_code="wtf", name="<blink>Z</blink>"
+        )
+        pofile = self.factory.makePOFile("wtf")
         self._setGroupGuide(pofile)
         self._setTeamGuide(pofile)
 
         view = self._makeView(pofile=pofile)
         self.assertIn(
-            "&lt;blink&gt;Z&lt;/blink&gt;", view.documentation_link_bubble)
+            "&lt;blink&gt;Z&lt;/blink&gt;", view.documentation_link_bubble
+        )
         self.assertNotIn(language.englishname, view.documentation_link_bubble)
 
 
@@ -366,18 +376,22 @@ class TestBrowser(BrowserTestCase):
             product.translationpermission = TranslationPermission.CLOSED
         # Add credits so that they show in the UI
         self.factory.makePOTMsgSet(
-            potemplate=pofile.potemplate, singular='translator-credits')
+            potemplate=pofile.potemplate, singular="translator-credits"
+        )
         browser = self.getViewBrowser(pofile)
-        self.assertNotIn('This is a dummy translation', browser.contents)
-        self.assertIn('(no translation yet)', browser.contents)
+        self.assertNotIn("This is a dummy translation", browser.contents)
+        self.assertIn("(no translation yet)", browser.contents)
 
     def test_anonymous_translation_credits(self):
         """Credits should be hidden for non-logged-in users."""
         pofile = self.factory.makePOFile()
         # Add credits so that they show in the UI
         self.factory.makePOTMsgSet(
-            potemplate=pofile.potemplate, singular='translator-credits')
+            potemplate=pofile.potemplate, singular="translator-credits"
+        )
         browser = self.getViewBrowser(pofile, no_login=True)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            'To prevent privacy issues, this translation is not available to'
-            ' anonymous users', browser.contents)
+            "To prevent privacy issues, this translation is not available to"
+            " anonymous users",
+            browser.contents,
+        )

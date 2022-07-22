@@ -5,10 +5,10 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.utilities.translation_common_format import (
     TranslationMessageData,
-    )
+)
 from lp.translations.utilities.translation_import import (
     ExistingPOFileInDatabase,
-    )
+)
 
 
 class TestSuperFastImports(TestCaseWithFactory):
@@ -45,7 +45,8 @@ class TestSuperFastImports(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         potemplate = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         return self.factory.makePOFile(potemplate=potemplate)
 
     def test_caches_current_upstream_message(self):
@@ -53,7 +54,8 @@ class TestSuperFastImports(TestCaseWithFactory):
         # ExistingPOFileInDatabase.
         pofile = self._makeUpstreamPOFile()
         current_message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile)
+            pofile=pofile
+        )
         cached_file = ExistingPOFileInDatabase(pofile)
         message_data = self.getTranslationMessageData(current_message)
         self.assertTrue(cached_file.isAlreadyTranslatedTheSame(message_data))
@@ -61,7 +63,8 @@ class TestSuperFastImports(TestCaseWithFactory):
     def test_caches_current_ubuntu_message(self):
         pofile = self._makeUbuntuPOFile()
         current_message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile)
+            pofile=pofile
+        )
         cached_file = ExistingPOFileInDatabase(pofile)
         message_data = self.getTranslationMessageData(current_message)
         self.assertTrue(cached_file.isAlreadyTranslatedTheSame(message_data))
@@ -100,7 +103,8 @@ class TestSuperFastImports(TestCaseWithFactory):
 
         # Add a message that would otherwise be cached (see other tests).
         current_message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile)
+            pofile=pofile
+        )
         message_data = self.getTranslationMessageData(current_message)
         cached_file = ExistingPOFileInDatabase(pofile, simulate_timeout=True)
         self.assertFalse(cached_file.isAlreadyTranslatedTheSame(message_data))

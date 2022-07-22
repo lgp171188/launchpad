@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TranslationLinksAggregator',
-    ]
+    "TranslationLinksAggregator",
+]
 
 from lp.services.webapp import canonical_url
 from lp.translations.interfaces.pofile import IPOFile
@@ -18,7 +18,7 @@ class TranslationLinksAggregator:
     """
 
     # Suffix to append to URL when linking to a POFile.
-    pofile_link_suffix = ''
+    pofile_link_suffix = ""
 
     def describe(self, target, link, covered_sheets):
         """Overridable: return description of given translations link.
@@ -109,25 +109,29 @@ class TranslationLinksAggregator:
         productseries = {
             template.productseries
             for template in templates
-            if template.productseries}
+            if template.productseries
+        }
 
         products = {series.product for series in productseries}
 
         sourcepackagenames = {
             template.sourcepackagename
             for template in templates
-            if template.sourcepackagename}
+            if template.sourcepackagename
+        }
 
         distroseries = {
             template.distroseries
             for template in templates
-            if template.sourcepackagename}
+            if template.sourcepackagename
+        }
 
         assert len(products) <= 1, "Got more than one product."
         assert len(sourcepackagenames) <= 1, "Got more than one package."
         assert len(distroseries) <= 1, "Got more than one distroseries."
-        assert len(products) + len(sourcepackagenames) == 1, (
-            "Didn't get exactly one product or one package.")
+        assert (
+            len(products) + len(sourcepackagenames) == 1
+        ), "Didn't get exactly one product or one package."
 
         first_template = self._getTemplate(first_sheet)
 
@@ -152,7 +156,8 @@ class TranslationLinksAggregator:
                 # though still for different templates.  Link to
                 # ProductSeriesLanguage.
                 productserieslanguage = ProductSeriesLanguage(
-                    series, first_sheet.language)
+                    series, first_sheet.language
+                )
                 return {canonical_url(productserieslanguage): sheets}
             else:
                 # Multiple templates and languages in the same product
@@ -163,8 +168,7 @@ class TranslationLinksAggregator:
         # Different release series of the same product.  Break down into
         # individual sheets.  We could try recursing here to get a better
         # set of aggregated links, but may not be worth the trouble.
-        return {
-            self._composeLink(sheet): [sheet] for sheet in sheets}
+        return {self._composeLink(sheet): [sheet] for sheet in sheets}
 
     def aggregate(self, sheets):
         """Aggregate `sheets` into a list of translation target descriptions.

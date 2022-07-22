@@ -19,14 +19,14 @@ from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuild,
     ITranslationTemplatesBuildSource,
-    )
+)
 from lp.translations.model.translationtemplatesbuild import (
     TranslationTemplatesBuild,
-    )
+)
 
 
 class FakeTranslationTemplatesSource(TranslationTemplatesBuild):
@@ -40,6 +40,7 @@ class FakeTranslationTemplatesSource(TranslationTemplatesBuild):
     behaviour by setting an attribute of the class (not an object!) at
     the beginning of every test.
     """
+
     # Fake _hasPotteryCompatibleSetup, and if so, make it give what
     # answer?
     fake_pottery_compatibility = None
@@ -48,8 +49,7 @@ class FakeTranslationTemplatesSource(TranslationTemplatesBuild):
     def _hasPotteryCompatibleSetup(cls, branch):
         if cls.fake_pottery_compatibility is None:
             # No fake compatibility setting call the real method.
-            return TranslationTemplatesBuild._hasPotteryCompatibleSetup(
-                branch)
+            return TranslationTemplatesBuild._hasPotteryCompatibleSetup(branch)
         else:
             # Fake pottery compatibility.
             return cls.fake_pottery_compatibility
@@ -76,10 +76,11 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         else:
             branch = self.factory.makeAnyBranch()
         product = removeSecurityProxy(branch.product)
-        trunk = product.getSeries('trunk')
+        trunk = product.getSeries("trunk")
         trunk.branch = branch
         trunk.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TEMPLATES)
+            TranslationsBranchImportMode.IMPORT_TEMPLATES
+        )
 
         self._fakePotteryCompatibleSetup(fake_pottery_compatible)
 
@@ -118,10 +119,12 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         bq = build.queueBuild()
         self.assertEqual(build, bq.specific_build)
         self.assertEqual(
-            build.build_farm_job, removeSecurityProxy(bq)._build_farm_job)
+            build.build_farm_job, removeSecurityProxy(bq)._build_farm_job
+        )
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.assertEqual(
-            ubuntu.currentseries.nominatedarchindep.processor, bq.processor)
+            ubuntu.currentseries.nominatedarchindep.processor, bq.processor
+        )
 
     def test_score(self):
         # For now, these jobs always score themselves at 2515.  In the
@@ -132,7 +135,8 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
     def test_build_cookie(self):
         build = self.factory.makeTranslationTemplatesBuild()
         self.assertEqual(
-            'TRANSLATIONTEMPLATESBUILD-%d' % build.id, build.build_cookie)
+            "TRANSLATIONTEMPLATESBUILD-%d" % build.id, build.build_cookie
+        )
 
     def test_generatesTemplates(self):
         # A branch "generates templates" if it is a translation branch
@@ -152,7 +156,7 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         # We don't generate templates branches not attached to series.
         branch = self._makeTranslationBranch(fake_pottery_compatible=True)
 
-        trunk = branch.product.getSeries('trunk')
+        trunk = branch.product.getSeries("trunk")
         removeSecurityProxy(trunk).branch = None
 
         self.assertFalse(self.jobsource.generatesTemplates(branch))
@@ -161,30 +165,31 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         # We don't generate templates when imports are disabled.
         branch = self._makeTranslationBranch(fake_pottery_compatible=True)
 
-        trunk = branch.product.getSeries('trunk')
-        removeSecurityProxy(trunk).translations_autoimport_mode = (
-            TranslationsBranchImportMode.NO_IMPORT)
+        trunk = branch.product.getSeries("trunk")
+        removeSecurityProxy(
+            trunk
+        ).translations_autoimport_mode = TranslationsBranchImportMode.NO_IMPORT
 
         self.assertFalse(self.jobsource.generatesTemplates(branch))
 
     def test_private_branch(self):
         # We don't generate templates for private branches.
         branch = self._makeTranslationBranch(fake_pottery_compatible=True)
-        removeSecurityProxy(branch).information_type = (
-            InformationType.USERDATA)
+        removeSecurityProxy(branch).information_type = InformationType.USERDATA
         self.assertFalse(self.jobsource.generatesTemplates(branch))
 
     def test_scheduleTranslationTemplatesBuild_subscribed(self):
         # If the feature is enabled, a TipChanged event for a branch that
         # generates templates will schedule a templates build.
         branch = self._makeTranslationBranch()
-        removeSecurityProxy(branch).last_scanned_id = 'null:'
+        removeSecurityProxy(branch).last_scanned_id = "null:"
         commit = DirectBranchCommit(branch)
-        commit.writeFile('POTFILES.in', b'foo')
-        commit.commit('message')
+        commit.writeFile("POTFILES.in", b"foo")
+        commit.commit("message")
         notify(events.TipChanged(branch, commit.bzrbranch, False))
         self.assertEqual(
-            1, TranslationTemplatesBuild.findByBranch(branch).count())
+            1, TranslationTemplatesBuild.findByBranch(branch).count()
+        )
 
     def test_scheduleTranslationTemplatesBuild(self):
         # If the feature is enabled, scheduleTranslationTemplatesBuild
@@ -193,7 +198,8 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         branch = self._makeTranslationBranch(fake_pottery_compatible=True)
         self.jobsource.scheduleTranslationTemplatesBuild(branch)
         self.assertEqual(
-            1, TranslationTemplatesBuild.findByBranch(branch).count())
+            1, TranslationTemplatesBuild.findByBranch(branch).count()
+        )
 
     def test_findByBranch(self):
         source = getUtility(ITranslationTemplatesBuildSource)
@@ -238,8 +244,8 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
             build_farm_jobs.append(build.build_farm_job)
 
         self.assertContentEqual(
-            builds,
-            source.getByBuildFarmJobs(build_farm_jobs))
+            builds, source.getByBuildFarmJobs(build_farm_jobs)
+        )
 
     def test_getByBuildFarmJob_returns_none_if_not_found(self):
         source = getUtility(ITranslationTemplatesBuildSource)
@@ -247,6 +253,4 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         source.create(branch)
 
         another_job = self.factory.makeBinaryPackageBuild().build_farm_job
-        self.assertIs(
-            None,
-            source.getByBuildFarmJob(another_job))
+        self.assertIs(None, source.getByBuildFarmJob(another_job))

@@ -11,7 +11,7 @@ from lp.translations.model.pofile import POFile
 from lp.translations.model.potemplate import (
     POTemplate,
     TranslationTemplatesCollection,
-    )
+)
 
 
 class TestSomething(TestCaseWithFactory):
@@ -26,14 +26,14 @@ class TestSomething(TestCaseWithFactory):
         self.assertIn(template, collection.select())
 
     def test_none_found(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
 
         self.assertContentEqual([], by_series.select())
 
     def test_restrictProductSeries(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         template = self.factory.makePOTemplate(productseries=trunk)
 
         collection = TranslationTemplatesCollection()
@@ -45,16 +45,18 @@ class TestSomething(TestCaseWithFactory):
         # restrictProductSeries makes the collection ignore templates
         # from other productseries and source packages.
         product = self.factory.makeProduct()
-        trunk = product.getSeries('trunk')
+        trunk = product.getSeries("trunk")
 
         nontrunk = removeSecurityProxy(product).newSeries(
-            product.owner, 'nontrunk', 'foo')
+            product.owner, "nontrunk", "foo"
+        )
         sourcepackage = self.factory.makeSourcePackage()
 
         self.factory.makePOTemplate(productseries=nontrunk)
         self.factory.makePOTemplate(
             distroseries=sourcepackage.distroseries,
-            sourcepackagename=sourcepackage.sourcepackagename)
+            sourcepackagename=sourcepackage.sourcepackagename,
+        )
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -65,7 +67,8 @@ class TestSomething(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictDistroSeries(package.distroseries)
@@ -77,13 +80,13 @@ class TestSomething(TestCaseWithFactory):
         # from other productseries and distroseries.
         distribution = self.factory.makeDistribution()
         series = self.factory.makeDistroSeries(distribution=distribution)
-        other_series = self.factory.makeDistroSeries(
-            distribution=distribution)
+        other_series = self.factory.makeDistroSeries(distribution=distribution)
         productseries = self.factory.makeProductSeries()
         package = self.factory.makeSourcePackageName()
 
         self.factory.makePOTemplate(
-            distroseries=other_series, sourcepackagename=package)
+            distroseries=other_series, sourcepackagename=package
+        )
         self.factory.makePOTemplate(productseries=productseries)
 
         collection = TranslationTemplatesCollection()
@@ -95,12 +98,14 @@ class TestSomething(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
 
         assert package.sourcepackagename
         collection = TranslationTemplatesCollection()
         by_packagename = collection.restrictSourcePackageName(
-            package.sourcepackagename)
+            package.sourcepackagename
+        )
 
         self.assertContentEqual([template], by_packagename.select())
 
@@ -110,17 +115,20 @@ class TestSomething(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         distroseries = package.distroseries
         other_package = self.factory.makeSourcePackage(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         productseries = self.factory.makeProductSeries()
 
         self.factory.makePOTemplate(
             distroseries=distroseries,
-            sourcepackagename=other_package.sourcepackagename)
+            sourcepackagename=other_package.sourcepackagename,
+        )
         self.factory.makePOTemplate(productseries=productseries)
 
         collection = TranslationTemplatesCollection()
         by_packagename = collection.restrictSourcePackageName(
-            package.sourcepackagename)
+            package.sourcepackagename
+        )
 
         self.assertContentEqual([], by_packagename.select())
 
@@ -130,17 +138,19 @@ class TestSomething(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictDistroSeries(package.distroseries)
         by_package = by_series.restrictSourcePackageName(
-            package.sourcepackagename)
+            package.sourcepackagename
+        )
 
         self.assertContentEqual([template], by_package.select())
 
     def test_restrictCurrent_current(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         template = self.factory.makePOTemplate(productseries=trunk)
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -148,14 +158,13 @@ class TestSomething(TestCaseWithFactory):
         current_templates = by_series.restrictCurrent(True)
 
         removeSecurityProxy(template).iscurrent = True
-        self.assertContentEqual(
-            [template], current_templates.select())
+        self.assertContentEqual([template], current_templates.select())
 
         removeSecurityProxy(template).iscurrent = False
         self.assertContentEqual([], current_templates.select())
 
     def test_restrictCurrent_obsolete(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         template = self.factory.makePOTemplate(productseries=trunk)
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -166,11 +175,10 @@ class TestSomething(TestCaseWithFactory):
         self.assertContentEqual([], obsolete_templates.select())
 
         removeSecurityProxy(template).iscurrent = False
-        self.assertContentEqual(
-            [template], obsolete_templates.select())
+        self.assertContentEqual([template], obsolete_templates.select())
 
     def test_restrictName(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         template = self.factory.makePOTemplate(productseries=trunk)
         template_name = template.name
         # Other template that will not be returned.
@@ -179,15 +187,14 @@ class TestSomething(TestCaseWithFactory):
         by_series = collection.restrictProductSeries(trunk)
 
         same_name_templates = by_series.restrictName(template_name)
-        self.assertContentEqual(
-            [template], same_name_templates.select())
+        self.assertContentEqual([template], same_name_templates.select())
 
     def test_joinPOFile(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         translated_template = self.factory.makePOTemplate(productseries=trunk)
         self.factory.makePOTemplate(productseries=trunk)
-        nl = translated_template.newPOFile('nl')
-        de = translated_template.newPOFile('de')
+        nl = translated_template.newPOFile("nl")
+        de = translated_template.newPOFile("de")
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -195,15 +202,17 @@ class TestSomething(TestCaseWithFactory):
 
         self.assertContentEqual(
             [(translated_template, nl), (translated_template, de)],
-            joined.select(POTemplate, POFile))
+            joined.select(POTemplate, POFile),
+        )
 
     def test_joinOuterPOFile(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         translated_template = self.factory.makePOTemplate(productseries=trunk)
         untranslated_template = self.factory.makePOTemplate(
-            productseries=trunk)
-        nl = translated_template.newPOFile('nl')
-        de = translated_template.newPOFile('de')
+            productseries=trunk
+        )
+        nl = translated_template.newPOFile("nl")
+        de = translated_template.newPOFile("de")
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -213,17 +222,19 @@ class TestSomething(TestCaseWithFactory):
             (translated_template, nl),
             (translated_template, de),
             (untranslated_template, None),
-            ]
+        ]
         self.assertContentEqual(
-            expected_outcome, joined.select(POTemplate, POFile))
+            expected_outcome, joined.select(POTemplate, POFile)
+        )
 
     def test_joinOuterPOFile_language(self):
-        trunk = self.factory.makeProduct().getSeries('trunk')
+        trunk = self.factory.makeProduct().getSeries("trunk")
         translated_template = self.factory.makePOTemplate(productseries=trunk)
         untranslated_template = self.factory.makePOTemplate(
-            productseries=trunk)
-        nl = translated_template.newPOFile('nl')
-        translated_template.newPOFile('de')
+            productseries=trunk
+        )
+        nl = translated_template.newPOFile("nl")
+        translated_template.newPOFile("de")
 
         collection = TranslationTemplatesCollection()
         by_series = collection.restrictProductSeries(trunk)
@@ -232,6 +243,7 @@ class TestSomething(TestCaseWithFactory):
         expected_outcome = [
             (translated_template, nl),
             (untranslated_template, None),
-            ]
+        ]
         self.assertContentEqual(
-            expected_outcome, joined.select(POTemplate, POFile))
+            expected_outcome, joined.select(POTemplate, POFile)
+        )

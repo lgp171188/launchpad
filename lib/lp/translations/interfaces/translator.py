@@ -2,24 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IAdminTranslator',
-    'IEditTranslator',
-    'ITranslator',
-    'ITranslatorSet',
-    ]
+    "IAdminTranslator",
+    "IEditTranslator",
+    "ITranslator",
+    "ITranslatorSet",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    )
+from zope.schema import Choice, Datetime, Int
 
 from lp import _
-from lp.services.fields import (
-    PublicPersonChoice,
-    URIField,
-    )
+from lp.services.fields import PublicPersonChoice, URIField
 
 
 class IEditTranslator(Interface):
@@ -31,13 +24,16 @@ class IEditTranslator(Interface):
     """
 
     style_guide_url = URIField(
-        title=_('Translation guidelines'), required=False,
-        allowed_schemes=['http', 'https', 'ftp'],
+        title=_("Translation guidelines"),
+        required=False,
+        allowed_schemes=["http", "https", "ftp"],
         allow_userinfo=False,
-        description=_("The URL of the translation team guidelines "
-                      "to be followed by this particular translation team. "
-                      "Can be any of the http://, https://, or ftp:// links.")
-        )
+        description=_(
+            "The URL of the translation team guidelines "
+            "to be followed by this particular translation team. "
+            "Can be any of the http://, https://, or ftp:// links."
+        ),
+    )
 
 
 class IAdminTranslator(Interface):
@@ -50,23 +46,42 @@ class IAdminTranslator(Interface):
     """
 
     id = Int(
-            title=_('Translator ID'), required=True, readonly=True,
-            )
+        title=_("Translator ID"),
+        required=True,
+        readonly=True,
+    )
     datecreated = Datetime(
-            title=_('Date Appointed'), required=True, readonly=True,
-            )
-    translationgroup = Choice(title=_('Translation Group'), required=True,
-        vocabulary='TranslationGroup', description=_("The translation group "
-        "in which the translation team (individual supervisor) is being "
-        "appointed."))
-    language = Choice(title=_('Language'), required=True,
-        vocabulary='Language', description=_("The language that this "
-        "team or person will be responsible for."))
+        title=_("Date Appointed"),
+        required=True,
+        readonly=True,
+    )
+    translationgroup = Choice(
+        title=_("Translation Group"),
+        required=True,
+        vocabulary="TranslationGroup",
+        description=_(
+            "The translation group "
+            "in which the translation team (individual supervisor) is being "
+            "appointed."
+        ),
+    )
+    language = Choice(
+        title=_("Language"),
+        required=True,
+        vocabulary="Language",
+        description=_(
+            "The language that this " "team or person will be responsible for."
+        ),
+    )
     translator = PublicPersonChoice(
-        title=_('Translator'), required=True,
-        vocabulary='ValidPersonOrTeam',
-        description=_("The translation team (or individual supervisor) to "
-            "be responsible for the language in this group."))
+        title=_("Translator"),
+        required=True,
+        vocabulary="ValidPersonOrTeam",
+        description=_(
+            "The translation team (or individual supervisor) to "
+            "be responsible for the language in this group."
+        ),
+    )
 
 
 class ITranslator(IEditTranslator, IAdminTranslator):

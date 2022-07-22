@@ -4,26 +4,20 @@
 """Tests for the POTemplate recipe view classes and templates."""
 
 from lp.app.enums import ServiceUsage
-from lp.testing import (
-    BrowserTestCase,
-    celebrity_logged_in,
-    )
+from lp.testing import BrowserTestCase, celebrity_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.pages import (
-    extract_text,
-    find_tag_by_id,
-    )
+from lp.testing.pages import extract_text, find_tag_by_id
 from lp.translations.interfaces.side import TranslationSide
 
 
 def set_translations_usage(obj):
     """Set the translations_usage to LAUNCHPAD."""
-    with celebrity_logged_in('admin'):
+    with celebrity_logged_in("admin"):
         obj.translations_usage = ServiceUsage.LAUNCHPAD
 
 
 def enable_translations_on_distroseries(distroseries):
-    with celebrity_logged_in('admin'):
+    with celebrity_logged_in("admin"):
         distroseries.hide_all_translations = False
 
 
@@ -37,11 +31,13 @@ class TestSharingInfoMixin:
         """
         upstream_template = self.factory.makePOTemplate()
         packaging = self.factory.makePackagingLink(
-            productseries=upstream_template.productseries, in_ubuntu=True)
+            productseries=upstream_template.productseries, in_ubuntu=True
+        )
         ubuntu_template = self.factory.makePOTemplate(
             distroseries=packaging.distroseries,
             sourcepackagename=packaging.sourcepackagename,
-            name=upstream_template.name)
+            name=upstream_template.name,
+        )
         if side == TranslationSide.UPSTREAM:
             return upstream_template
         else:
@@ -71,20 +67,20 @@ class TestSharingInfoMixin:
         """
         logged_in_user = self.factory.makePerson()
         if productseries is not None:
-            with celebrity_logged_in('admin'):
+            with celebrity_logged_in("admin"):
                 productseries.product.owner = logged_in_user
         return logged_in_user
 
-    def _test_sharing_information(self, obj,
-                                  id_under_test, expected_text,
-                                  authorized=False):
+    def _test_sharing_information(
+        self, obj, id_under_test, expected_text, authorized=False
+    ):
         if authorized:
             user = self.getAuthorizedUser(obj)
         else:
             user = None
         browser = self.getViewBrowser(
-                obj, user=user, no_login=(not authorized),
-                rootsite="translations")
+            obj, user=user, no_login=(not authorized), rootsite="translations"
+        )
 
         sharing_info = find_tag_by_id(browser.contents, id_under_test)
         if expected_text is None:
@@ -92,17 +88,20 @@ class TestSharingInfoMixin:
         else:
             self.assertIsNot(None, sharing_info)
             self.assertTextMatchesExpressionIgnoreWhitespace(
-                expected_text, extract_text(sharing_info))
+                expected_text, extract_text(sharing_info)
+            )
 
     def test_not_sharing_info(self):
         self._test_sharing_information(
             self.makeNotSharingObject(),
-            'sharing-information', self.NOT_SHARING_TEXT)
+            "sharing-information",
+            self.NOT_SHARING_TEXT,
+        )
 
     def test_sharing_info(self):
         self._test_sharing_information(
-            self.makeSharingObject(),
-            'sharing-information', self.SHARING_TEXT)
+            self.makeSharingObject(), "sharing-information", self.SHARING_TEXT
+        )
 
 
 class TestSharingDetailsLinkMixin:
@@ -120,28 +119,34 @@ class TestSharingDetailsLinkMixin:
         # informational.
         self._test_sharing_information(
             self.makeSharingObject(),
-            'sharing-details', self.SHARING_DETAILS_INFO)
+            "sharing-details",
+            self.SHARING_DETAILS_INFO,
+        )
 
     def test_sharing_details_setup(self):
         # For authorized users of not sharing objects, the link to the
         # sharing details page encourages action.
         self._test_sharing_information(
             self.makeNotSharingObject(),
-            'sharing-details', self.SHARING_DETAILS_SETUP,
-            authorized=True)
+            "sharing-details",
+            self.SHARING_DETAILS_SETUP,
+            authorized=True,
+        )
 
     def test_sharing_details_edit(self):
         # For authorized users, the link to the sharing details page is for
         # editing
         self._test_sharing_information(
             self.makeSharingObject(),
-            'sharing-details', self.SHARING_DETAILS_EDIT,
-            authorized=True)
+            "sharing-details",
+            self.SHARING_DETAILS_EDIT,
+            authorized=True,
+        )
 
 
-class TestUpstreamPOTemplateSharingInfo(BrowserTestCase,
-                                        TestSharingInfoMixin,
-                                        TestSharingDetailsLinkMixin):
+class TestUpstreamPOTemplateSharingInfo(
+    BrowserTestCase, TestSharingInfoMixin, TestSharingDetailsLinkMixin
+):
     """Test display of template sharing info."""
 
     layer = DatabaseFunctionalLayer
@@ -181,7 +186,8 @@ class TestPOFileSharingInfo(BrowserTestCase, TestSharingInfoMixin):
         template = self._makePackagingAndTemplates(TranslationSide.UPSTREAM)
         # This will also create a copy of pofile in the sharing template.
         pofile = self.factory.makePOFile(
-            potemplate=template, create_sharing=True)
+            potemplate=template, create_sharing=True
+        )
         return pofile
 
     SHARING_TEXT = """
@@ -211,9 +217,9 @@ class TestPlaceholderPOFileSharingInfo(BrowserTestCase, TestSharingInfoMixin):
         These translations are shared with .*"""
 
 
-class TestUpstreamSharingInfo(BrowserTestCase,
-                              TestSharingInfoMixin,
-                              TestSharingDetailsLinkMixin):
+class TestUpstreamSharingInfo(
+    BrowserTestCase, TestSharingInfoMixin, TestSharingDetailsLinkMixin
+):
     """Test display of product series sharing info."""
 
     layer = DatabaseFunctionalLayer
@@ -241,9 +247,9 @@ class TestUpstreamSharingInfo(BrowserTestCase,
         return self.getAuthorizedUserForProductseries(productseries)
 
 
-class TestUbuntuPOTemplateSharingInfo(BrowserTestCase,
-                                      TestSharingInfoMixin,
-                                      TestSharingDetailsLinkMixin):
+class TestUbuntuPOTemplateSharingInfo(
+    BrowserTestCase, TestSharingInfoMixin, TestSharingDetailsLinkMixin
+):
     """Test display of template sharing info in an Ubuntu source package."""
 
     layer = DatabaseFunctionalLayer
@@ -270,16 +276,17 @@ class TestUbuntuPOTemplateSharingInfo(BrowserTestCase,
         return self.getAuthorizedUserForProductseries(productseries)
 
 
-class TestUbuntuSharingInfo(BrowserTestCase,
-                            TestSharingInfoMixin,
-                            TestSharingDetailsLinkMixin):
+class TestUbuntuSharingInfo(
+    BrowserTestCase, TestSharingInfoMixin, TestSharingDetailsLinkMixin
+):
     """Test display of source package sharing info."""
 
     layer = DatabaseFunctionalLayer
 
     def makeNotSharingObject(self):
         sourcepackage = self.factory.makeSourcePackage(
-            distroseries=self.factory.makeUbuntuDistroSeries())
+            distroseries=self.factory.makeUbuntuDistroSeries()
+        )
         enable_translations_on_distroseries(sourcepackage.distroseries)
         return sourcepackage
 

@@ -3,7 +3,7 @@
 
 """View class for requesting translation exports."""
 
-__all__ = ['BaseExportView']
+__all__ = ["BaseExportView"]
 
 
 from datetime import timedelta
@@ -13,20 +13,15 @@ from zope.component import getUtility
 from lp import _
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.translations.interfaces.hastranslationtemplates import (
     IHasTranslationTemplates,
-    )
+)
 from lp.translations.interfaces.poexportrequest import IPOExportRequestSet
-from lp.translations.interfaces.translationexporter import (
-    ITranslationExporter,
-    )
+from lp.translations.interfaces.translationexporter import ITranslationExporter
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 
 
 class BaseExportView(LaunchpadView):
@@ -55,8 +50,8 @@ class BaseExportView(LaunchpadView):
             return "There is 1 file request on the export queue."
         else:
             return (
-                "There are %d file requests on the export queue."
-                % queue_size)
+                "There are %d file requests on the export queue." % queue_size
+            )
 
     def describeBacklog(self, estimated_backlog):
         """Return string describing the current export backlog."""
@@ -72,9 +67,10 @@ class BaseExportView(LaunchpadView):
         """Overridable: return default file format to use for the export."""
         if not IHasTranslationTemplates.providedBy(self.context):
             raise NotImplementedError(
-                'Subclass not implementing `IHasTranslationsTemplates` '
-                'interface.  Either override getDefaultFormat implementation '
-                'or implement `IHasTranslationsTemplates`.')
+                "Subclass not implementing `IHasTranslationsTemplates` "
+                "interface.  Either override getDefaultFormat implementation "
+                "or implement `IHasTranslationsTemplates`."
+            )
 
         templates = self.context.getCurrentTranslationTemplates()
         if not bool(templates.any()):
@@ -85,7 +81,8 @@ class BaseExportView(LaunchpadView):
             self.request.response.addInfoNotification(
                 "This package has templates with different native "
                 "file formats.  If you proceed, all translations will be "
-                "exported in the single format you specify.")
+                "exported in the single format you specify."
+            )
         return format
 
     def processForm(self):
@@ -99,12 +96,14 @@ class BaseExportView(LaunchpadView):
         """
         if not IHasTranslationTemplates.providedBy(self.context):
             raise NotImplementedError(
-                'Subclass not implementing `IHasTranslationsTemplates` '
-                'interface.  Either override getDefaultFormat implementation '
-                'or implement `IHasTranslationsTemplates`.')
+                "Subclass not implementing `IHasTranslationsTemplates` "
+                "interface.  Either override getDefaultFormat implementation "
+                "or implement `IHasTranslationsTemplates`."
+            )
 
         translation_templates_ids = (
-            self.context.getCurrentTranslationTemplates(just_ids=True))
+            self.context.getCurrentTranslationTemplates(just_ids=True)
+        )
         pofiles_ids = self.context.getCurrentTranslationFiles(just_ids=True)
         if not bool(pofiles_ids.any()):
             pofiles_ids = None
@@ -143,23 +142,27 @@ class BaseExportView(LaunchpadView):
         templates, pofiles = requested_files
         if not templates and not pofiles:
             self.request.response.addErrorNotification(
-                "Please select at least one translation or template.")
+                "Please select at least one translation or template."
+            )
         else:
             self.request_set.addRequest(self.user, templates, pofiles, format)
             self.nextURL()
 
     def nextURL(self):
-        self.request.response.addInfoNotification(_(
-            "Your request has been received. Expect to receive an email "
-            "shortly."))
+        self.request.response.addInfoNotification(
+            _(
+                "Your request has been received. Expect to receive an email "
+                "shortly."
+            )
+        )
         self.request.response.redirect(
-            canonical_url(self.context, rootsite='translations'))
+            canonical_url(self.context, rootsite="translations")
+        )
 
     def formats(self):
         """Return a list of formats available for translation exports."""
 
         class BrowserFormat:
-
             def __init__(self, title, value, is_default=False):
                 self.title = title
                 self.value = value
@@ -167,7 +170,8 @@ class BaseExportView(LaunchpadView):
 
         translation_exporter = getUtility(ITranslationExporter)
         exporters = translation_exporter.getExportersForSupportedFileFormat(
-            self.default_format)
+            self.default_format
+        )
         for exporter in exporters:
             format = exporter.format
             if format == self.default_format:

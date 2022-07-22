@@ -20,8 +20,7 @@ class TestVerifyPOFileStats(TestCaseWithFactory):
     def test_database_permissions(self):
         # The script has sufficient database privileges to do its job.
         sides = [TranslationSide.UPSTREAM, TranslationSide.UBUNTU]
-        pofiles = [
-            self._makeNonemptyPOFile(side) for side in sides]
-        with dbuser('pofilestats'):
+        pofiles = [self._makeNonemptyPOFile(side) for side in sides]
+        with dbuser("pofilestats"):
             for pofile in pofiles:
                 pofile.updateStatistics()

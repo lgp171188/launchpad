@@ -4,21 +4,16 @@
 """Database class for `ICustomLanguageCode`."""
 
 __all__ = [
-    'CustomLanguageCode',
-    'HasCustomLanguageCodesMixin',
-    ]
+    "CustomLanguageCode",
+    "HasCustomLanguageCodesMixin",
+]
 
-from storm.locals import (
-    And,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import And, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.product import IProduct
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -29,24 +24,25 @@ from lp.translations.interfaces.customlanguagecode import ICustomLanguageCode
 class CustomLanguageCode(StormBase):
     """See `ICustomLanguageCode`."""
 
-    __storm_table__ = 'CustomLanguageCode'
+    __storm_table__ = "CustomLanguageCode"
 
     id = Int(primary=True)
 
-    product_id = Int(name='product', allow_none=True, default=None)
-    product = Reference(product_id, 'Product.id')
+    product_id = Int(name="product", allow_none=True, default=None)
+    product = Reference(product_id, "Product.id")
 
-    distribution_id = Int(name='distribution', allow_none=True, default=None)
-    distribution = Reference(distribution_id, 'Distribution.id')
+    distribution_id = Int(name="distribution", allow_none=True, default=None)
+    distribution = Reference(distribution_id, "Distribution.id")
 
     sourcepackagename_id = Int(
-        name='sourcepackagename', allow_none=True, default=None)
-    sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
+        name="sourcepackagename", allow_none=True, default=None
+    )
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
 
-    language_code = Unicode(name='language_code', allow_none=False)
+    language_code = Unicode(name="language_code", allow_none=False)
 
-    language_id = Int(name='language', allow_none=True, default=None)
-    language = Reference(language_id, 'Language.id')
+    language_id = Int(name="language", allow_none=True, default=None)
+    language = Reference(language_id, "Language.id")
 
     def __init__(self, translation_target, language_code, language=None):
         super().__init__()
@@ -60,8 +56,9 @@ class CustomLanguageCode(StormBase):
             self.sourcepackagename = translation_target.sourcepackagename
         else:
             raise ValueError(
-                "Expected IProduct or IDistributionSourcePackage, got %r" %
-                translation_target)
+                "Expected IProduct or IDistributionSourcePackage, got %r"
+                % translation_target
+            )
         self.language_code = language_code
         self.language = language
 
@@ -71,12 +68,14 @@ class CustomLanguageCode(StormBase):
         # Avoid circular imports
         from lp.registry.model.distributionsourcepackage import (
             DistributionSourcePackage,
-            )
+        )
+
         if self.product:
             return self.product
         else:
             return DistributionSourcePackage(
-                self.distribution, self.sourcepackagename)
+                self.distribution, self.sourcepackagename
+            )
 
 
 class HasCustomLanguageCodesMixin:
@@ -94,7 +93,9 @@ class HasCustomLanguageCodesMixin:
         """See `IHasCustomLanguageCodes`."""
         return CustomLanguageCode(
             translation_target=self,
-            language_code=language_code, language=language)
+            language_code=language_code,
+            language=language,
+        )
 
     def _queryCustomLanguageCodes(self, language_code=None):
         """Query `CustomLanguageCodes` belonging to `self`.
@@ -107,7 +108,8 @@ class HasCustomLanguageCodesMixin:
         store = IStore(CustomLanguageCode)
         if language_code is not None:
             match = And(
-                match, CustomLanguageCode.language_code == language_code)
+                match, CustomLanguageCode.language_code == language_code
+            )
         return store.find(CustomLanguageCode, match)
 
     @property
@@ -118,7 +120,7 @@ class HasCustomLanguageCodesMixin:
     @property
     def custom_language_codes(self):
         """See `IHasCustomLanguageCodes`."""
-        return self._queryCustomLanguageCodes().order_by('language_code')
+        return self._queryCustomLanguageCodes().order_by("language_code")
 
     def getCustomLanguageCode(self, language_code):
         """See `IHasCustomLanguageCodes`."""

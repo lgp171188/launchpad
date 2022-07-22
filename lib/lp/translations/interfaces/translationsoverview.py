@@ -4,9 +4,9 @@
 """Interfaces related to bugs."""
 
 __all__ = [
-    'ITranslationsOverview',
-    'MalformedKarmaCacheData',
-    ]
+    "ITranslationsOverview",
+    "MalformedKarmaCacheData",
+]
 
 from zope.interface import Interface
 from zope.schema import Int
@@ -22,12 +22,16 @@ class ITranslationsOverview(Interface):
     """Overview of Launchpad Translations component."""
 
     MINIMUM_SIZE = Int(
-        title=_('Minimum relative weight for a product'),
-        required=True, readonly=False)
+        title=_("Minimum relative weight for a product"),
+        required=True,
+        readonly=False,
+    )
 
     MAXIMUM_SIZE = Int(
-        title=_('Maximum relative weight for a product'),
-        required=True, readonly=False)
+        title=_("Maximum relative weight for a product"),
+        required=True,
+        readonly=False,
+    )
 
     def getMostTranslatedPillars(limit=50):
         """Get a list of products and distributions with most translations.

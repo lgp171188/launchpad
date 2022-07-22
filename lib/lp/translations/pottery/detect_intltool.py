@@ -6,10 +6,9 @@ package in the current directory."""
 
 from contextlib import contextmanager
 
-
 __all__ = [
-    'is_intltool_structure',
-    ]
+    "is_intltool_structure",
+]
 
 
 @contextmanager
@@ -32,7 +31,7 @@ def is_intltool_structure(tree):
         for thedir, files in tree.walkdirs():
             for afile in files:
                 file_path, file_name, file_type = afile[:3]
-                if file_type != 'file':
+                if file_type != "file":
                     continue
                 if file_name == "POTFILES.in":
                     return True

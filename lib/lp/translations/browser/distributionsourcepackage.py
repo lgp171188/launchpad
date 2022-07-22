@@ -4,8 +4,8 @@
 """Translations browser views for DistributionSourcePackages."""
 
 __all__ = [
-    'DistributionSourcePackageView',
-    ]
+    "DistributionSourcePackageView",
+]
 
 import operator
 
@@ -25,7 +25,8 @@ class DistributionSourcePackageView(LaunchpadView):
         """
         series = (
             self.context.distribution.translation_focus
-            or self.context.distribution.currentseries)
+            or self.context.distribution.currentseries
+        )
         if series is not None:
             return series.getSourcePackage(self.context.sourcepackagename)
 
@@ -37,9 +38,17 @@ class DistributionSourcePackageView(LaunchpadView):
         series = [
             series.getSourcePackage(self.context.sourcepackagename)
             for series in self.context.distribution.series
-            if (series.status != SeriesStatus.OBSOLETE
-                and (self.translation_focus is None or
-                     self.translation_focus.distroseries != series))]
+            if (
+                series.status != SeriesStatus.OBSOLETE
+                and (
+                    self.translation_focus is None
+                    or self.translation_focus.distroseries != series
+                )
+            )
+        ]
 
-        return sorted(series, key=operator.attrgetter('distroseries.version'),
-                      reverse=True)
+        return sorted(
+            series,
+            key=operator.attrgetter("distroseries.version"),
+            reverse=True,
+        )

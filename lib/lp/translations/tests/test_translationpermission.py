@@ -10,22 +10,22 @@ from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.translationgroup import TranslationPermission
 from lp.translations.interfaces.translator import ITranslatorSet
 
-
 # A user can be translating either a translation that's not covered by a
 # translation team ("untended"), or one that is ("tended"), or one whose
 # translation team the user is a member of ("member").
 team_coverage = [
-    'untended',
-    'tended',
-    'member',
-    ]
+    "untended",
+    "tended",
+    "member",
+]
 
 
 class PrivilegeLevel:
     """What is a given user allowed to do with a given translation?"""
-    NOTHING = 'Nothing'
-    SUGGEST = 'Suggest only'
-    EDIT = 'Edit'
+
+    NOTHING = "Nothing"
+    SUGGEST = "Suggest only"
+    EDIT = "Edit"
 
     _level_mapping = {
         (False, False): NOTHING,
@@ -42,18 +42,18 @@ class PrivilegeLevel:
 
 
 permissions_model = {
-    (TranslationPermission.OPEN, 'untended'): PrivilegeLevel.EDIT,
-    (TranslationPermission.OPEN, 'tended'): PrivilegeLevel.EDIT,
-    (TranslationPermission.OPEN, 'member'): PrivilegeLevel.EDIT,
-    (TranslationPermission.STRUCTURED, 'untended'): PrivilegeLevel.EDIT,
-    (TranslationPermission.STRUCTURED, 'tended'): PrivilegeLevel.SUGGEST,
-    (TranslationPermission.STRUCTURED, 'member'): PrivilegeLevel.EDIT,
-    (TranslationPermission.RESTRICTED, 'untended'): PrivilegeLevel.NOTHING,
-    (TranslationPermission.RESTRICTED, 'tended'): PrivilegeLevel.SUGGEST,
-    (TranslationPermission.RESTRICTED, 'member'): PrivilegeLevel.EDIT,
-    (TranslationPermission.CLOSED, 'untended'): PrivilegeLevel.NOTHING,
-    (TranslationPermission.CLOSED, 'tended'): PrivilegeLevel.NOTHING,
-    (TranslationPermission.CLOSED, 'member'): PrivilegeLevel.EDIT,
+    (TranslationPermission.OPEN, "untended"): PrivilegeLevel.EDIT,
+    (TranslationPermission.OPEN, "tended"): PrivilegeLevel.EDIT,
+    (TranslationPermission.OPEN, "member"): PrivilegeLevel.EDIT,
+    (TranslationPermission.STRUCTURED, "untended"): PrivilegeLevel.EDIT,
+    (TranslationPermission.STRUCTURED, "tended"): PrivilegeLevel.SUGGEST,
+    (TranslationPermission.STRUCTURED, "member"): PrivilegeLevel.EDIT,
+    (TranslationPermission.RESTRICTED, "untended"): PrivilegeLevel.NOTHING,
+    (TranslationPermission.RESTRICTED, "tended"): PrivilegeLevel.SUGGEST,
+    (TranslationPermission.RESTRICTED, "member"): PrivilegeLevel.EDIT,
+    (TranslationPermission.CLOSED, "untended"): PrivilegeLevel.NOTHING,
+    (TranslationPermission.CLOSED, "tended"): PrivilegeLevel.NOTHING,
+    (TranslationPermission.CLOSED, "member"): PrivilegeLevel.EDIT,
 }
 
 
@@ -65,7 +65,8 @@ def combine_permissions(product):
     """
     return max(
         product.projectgroup.translationpermission,
-        product.translationpermission)
+        product.translationpermission,
+    )
 
 
 class TestTranslationPermission(TestCaseWithFactory):
@@ -89,17 +90,20 @@ class TestTranslationPermission(TestCaseWithFactory):
         product.translationpermission = TranslationPermission.CLOSED
         if product.projectgroup is not None:
             product.projectgroup.translationpermission = (
-                TranslationPermission.CLOSED)
+                TranslationPermission.CLOSED
+            )
 
     def makePOTemplateForProduct(self, product):
         """Create a `POTemplate` for a given `Product`."""
         return self.factory.makePOTemplate(
-            productseries=self.factory.makeProductSeries(product=product))
+            productseries=self.factory.makeProductSeries(product=product)
+        )
 
     def makePOFileForProduct(self, product):
         """Create a `POFile` for a given `Product`."""
         return self.factory.makePOFile(
-            potemplate=self.makePOTemplateForProduct(product))
+            potemplate=self.makePOTemplateForProduct(product)
+        )
 
     def makeTranslationTeam(self, group, language, members=None):
         """Create a translation team containing `person`.
@@ -131,10 +135,12 @@ class TestTranslationPermission(TestCaseWithFactory):
         potemplate.productseries.product.translationgroup = group
         pofiles = {
             coverage: self.factory.makePOFile(potemplate=potemplate)
-            for coverage in team_coverage}
-        self.makeTranslationTeam(group, pofiles['tended'].language)
+            for coverage in team_coverage
+        }
+        self.makeTranslationTeam(group, pofiles["tended"].language)
         self.makeTranslationTeam(
-            group, pofiles['member'].language, members=[user])
+            group, pofiles["member"].language, members=[user]
+        )
         return pofiles
 
     def assertPrivilege(self, permission, coverage, privilege_level):
@@ -142,8 +148,9 @@ class TestTranslationPermission(TestCaseWithFactory):
         self.assertEqual(
             permissions_model[permission, coverage],
             privilege_level,
-            "Wrong privileges for %s with translation team coverage '%s'." % (
-                permission.name, coverage))
+            "Wrong privileges for %s with translation team coverage '%s'."
+            % (permission.name, coverage),
+        )
 
     def test_translationgroup_models(self):
         # Test that a translation group bestows the expected privilege
@@ -170,7 +177,7 @@ class TestTranslationPermission(TestCaseWithFactory):
         for permission in TranslationPermission.items:
             product.translationpermission = permission
             privilege_level = PrivilegeLevel.check(pofile, user)
-            self.assertPrivilege(permission, 'untended', privilege_level)
+            self.assertPrivilege(permission, "untended", privilege_level)
 
     def test_projectgroup_stands_in_for_product(self):
         # If a Product has no translation group but its project group
@@ -196,13 +203,17 @@ class TestTranslationPermission(TestCaseWithFactory):
         product_translator = self.factory.makePerson()
         projectgroup_translator = self.factory.makePerson()
         product.projectgroup.translationgroup = (
-            self.factory.makeTranslationGroup())
+            self.factory.makeTranslationGroup()
+        )
         product.translationgroup = self.factory.makeTranslationGroup()
         self.makeTranslationTeam(
-            product.projectgroup.translationgroup, pofile.language,
-            [projectgroup_translator])
+            product.projectgroup.translationgroup,
+            pofile.language,
+            [projectgroup_translator],
+        )
         self.makeTranslationTeam(
-            product.translationgroup, pofile.language, [product_translator])
+            product.translationgroup, pofile.language, [product_translator]
+        )
 
         # Both the translator from the project group's translation team
         # and the one from the product's translation team have edit
@@ -219,7 +230,8 @@ class TestTranslationPermission(TestCaseWithFactory):
         pofiles = self.makePOFilesForCoverageLevels(product, user)
         for projectgroup_permission in TranslationPermission.items:
             product.projectgroup.translationpermission = (
-                projectgroup_permission)
+                projectgroup_permission
+            )
             for product_permission in TranslationPermission.items:
                 product.translationpermission = product_permission
                 effective_permission = combine_permissions(product)
@@ -228,7 +240,8 @@ class TestTranslationPermission(TestCaseWithFactory):
                     pofile = pofiles[coverage]
                     privilege_level = PrivilegeLevel.check(pofile, user)
                     self.assertPrivilege(
-                        effective_permission, coverage, privilege_level)
+                        effective_permission, coverage, privilege_level
+                    )
 
     def test_combine_permissions_yields_strictest(self):
         # Combining the translation permissions of a product and its
@@ -240,34 +253,38 @@ class TestTranslationPermission(TestCaseWithFactory):
         combinations = {
             TranslationPermission.OPEN: {
                 TranslationPermission.OPEN: TranslationPermission.OPEN,
-                TranslationPermission.STRUCTURED:
-                    TranslationPermission.STRUCTURED,
-                TranslationPermission.RESTRICTED:
-                    TranslationPermission.RESTRICTED,
+                TranslationPermission.STRUCTURED: (
+                    TranslationPermission.STRUCTURED
+                ),
+                TranslationPermission.RESTRICTED: (
+                    TranslationPermission.RESTRICTED
+                ),
                 TranslationPermission.CLOSED: TranslationPermission.CLOSED,
             },
             TranslationPermission.STRUCTURED: {
                 TranslationPermission.OPEN: TranslationPermission.STRUCTURED,
-                TranslationPermission.STRUCTURED:
-                    TranslationPermission.STRUCTURED,
-                TranslationPermission.RESTRICTED:
-                    TranslationPermission.RESTRICTED,
+                TranslationPermission.STRUCTURED: (
+                    TranslationPermission.STRUCTURED
+                ),
+                TranslationPermission.RESTRICTED: (
+                    TranslationPermission.RESTRICTED
+                ),
                 TranslationPermission.CLOSED: TranslationPermission.CLOSED,
             },
             TranslationPermission.RESTRICTED: {
                 TranslationPermission.OPEN: TranslationPermission.RESTRICTED,
-                TranslationPermission.STRUCTURED:
-                    TranslationPermission.RESTRICTED,
-                TranslationPermission.RESTRICTED:
-                    TranslationPermission.RESTRICTED,
+                TranslationPermission.STRUCTURED: (
+                    TranslationPermission.RESTRICTED
+                ),
+                TranslationPermission.RESTRICTED: (
+                    TranslationPermission.RESTRICTED
+                ),
                 TranslationPermission.CLOSED: TranslationPermission.CLOSED,
             },
             TranslationPermission.CLOSED: {
                 TranslationPermission.OPEN: TranslationPermission.CLOSED,
-                TranslationPermission.STRUCTURED:
-                    TranslationPermission.CLOSED,
-                TranslationPermission.RESTRICTED:
-                    TranslationPermission.CLOSED,
+                TranslationPermission.STRUCTURED: TranslationPermission.CLOSED,
+                TranslationPermission.RESTRICTED: TranslationPermission.CLOSED,
                 TranslationPermission.CLOSED: TranslationPermission.CLOSED,
             },
         }
@@ -276,10 +293,13 @@ class TestTranslationPermission(TestCaseWithFactory):
         # something else.
         for projectgroup_permission in TranslationPermission.items:
             product.projectgroup.translationpermission = (
-                projectgroup_permission)
+                projectgroup_permission
+            )
             for product_permission in TranslationPermission.items:
                 product.translationpermission = product_permission
-                expected_permission = (
-                    combinations[projectgroup_permission][product_permission])
+                expected_permission = combinations[projectgroup_permission][
+                    product_permission
+                ]
                 self.assertEqual(
-                    expected_permission, combine_permissions(product))
+                    expected_permission, combine_permissions(product)
+                )

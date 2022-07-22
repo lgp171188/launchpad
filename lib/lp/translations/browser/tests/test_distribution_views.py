@@ -7,10 +7,7 @@ from fixtures import FakeLogger
 from zope.security.interfaces import Unauthorized
 
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -25,14 +22,17 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         # in the distribution translation settings form view.
         distribution = self.factory.makeDistribution()
         view = create_initialized_view(
-            distribution, '+configure-translations', rootsite='translations')
+            distribution, "+configure-translations", rootsite="translations"
+        )
         self.assertContentEqual(
-            ["translations_usage",
-             "translation_focus",
-             "translationgroup",
-             "translationpermission",
-             ],
-            view.field_names)
+            [
+                "translations_usage",
+                "translation_focus",
+                "translationgroup",
+                "translationpermission",
+            ],
+            view.field_names,
+        )
 
     def test_unprivileged_users(self):
         # Unprivileged users cannot access distribution translation settings
@@ -40,8 +40,11 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         self.useFixture(FakeLogger())
         unprivileged = self.factory.makePerson()
         distribution = self.factory.makeDistribution()
-        url = canonical_url(distribution, view_name='+configure-translations',
-                            rootsite='translations')
+        url = canonical_url(
+            distribution,
+            view_name="+configure-translations",
+            rootsite="translations",
+        )
         browser = self.getUserBrowser(user=unprivileged)
         self.assertRaises(Unauthorized, browser.open, url)
 
@@ -53,8 +56,11 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         with person_logged_in(distribution.owner):
             distribution.translationgroup = group
-        url = canonical_url(distribution, view_name='+configure-translations',
-                            rootsite='translations')
+        url = canonical_url(
+            distribution,
+            view_name="+configure-translations",
+            rootsite="translations",
+        )
         browser = self.getUserBrowser(user=group.owner)
         # No "Unauthorized" exception is thrown.
         browser.open(url)
@@ -64,8 +70,11 @@ class TestDistributionSettingsView(TestCaseWithFactory):
         # launchpad.TranslationsAdmin privileges on it, meaning they
         # can access Distribution:+configure-translations page.
         distribution = self.factory.makeDistribution()
-        url = canonical_url(distribution, view_name='+configure-translations',
-                            rootsite='translations')
+        url = canonical_url(
+            distribution,
+            view_name="+configure-translations",
+            rootsite="translations",
+        )
         browser = self.getUserBrowser(user=distribution.owner)
         # No "Unauthorized" exception is thrown.
         browser.open(url)

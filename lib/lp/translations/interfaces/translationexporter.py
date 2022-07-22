@@ -4,27 +4,22 @@
 """Interfaces to handle translation files exports."""
 
 __all__ = [
-    'IExportedTranslationFile',
-    'ITranslationExporter',
-    'ITranslationFormatExporter',
-    'UnknownTranslationExporterError',
-    ]
+    "IExportedTranslationFile",
+    "ITranslationExporter",
+    "ITranslationFormatExporter",
+    "UnknownTranslationExporterError",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Choice, Int, List, TextLine
 
 from lp import _
 from lp.translations.interfaces.translationcommonformat import (
     TranslationImportExportBaseException,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 
 
 class UnknownTranslationExporterError(TranslationImportExportBaseException):
@@ -54,8 +49,12 @@ class ITranslationExporter(Interface):
             it.
         """
 
-    def exportTranslationFiles(translation_files, target_format=None,
-                               ignore_obsolete=False, force_utf8=False):
+    def exportTranslationFiles(
+        translation_files,
+        target_format=None,
+        ignore_obsolete=False,
+        force_utf8=False,
+    ):
         """Return an `IExportedTranslationFile` representing the export.
 
         :param translation_files: A sequence of `ITranslationFileData` objects
@@ -75,17 +74,23 @@ class ITranslationFormatExporter(Interface):
     """Translation file format exporter."""
 
     format = Choice(
-        title=_('The file format that the translation will be exported to.'),
+        title=_("The file format that the translation will be exported to."),
         vocabulary=TranslationFileFormat,
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     supported_source_formats = List(
-        title=_('TranslationFileFormat entries supported'),
-        description=_('''
+        title=_("TranslationFileFormat entries supported"),
+        description=_(
+            """
             TranslationFileFormat entries supported that this exporter is able
             to convert from.
-            '''),
-        required=True, readonly=True)
+            """
+        ),
+        required=True,
+        readonly=True,
+    )
 
     mime_type = TextLine(title=_("MIME type for this file format."))
 
@@ -96,8 +101,12 @@ class ITranslationFormatExporter(Interface):
         :return: Unicode string representing given `ITranslationMessageData`.
         """
 
-    def exportTranslationFile(translation_files, export_storage,
-                              ignore_obsolete=False, force_utf8=False):
+    def exportTranslationFile(
+        translation_files,
+        export_storage,
+        ignore_obsolete=False,
+        force_utf8=False,
+    ):
         """Return an `IExportedTranslationFile` representing the export.
 
         :param translation_file: An `ITranslationFileData` object to
@@ -116,18 +125,24 @@ class IExportedTranslationFile(Interface):
     """Exported translation file data."""
 
     content_type = TextLine(
-        title=_('Content type string for this file format.'),
-        required=True, readonly=True)
+        title=_("Content type string for this file format."),
+        required=True,
+        readonly=True,
+    )
 
     path = TextLine(
-        title=_('Relative file path for this exported file.'),
-        required=True, readonly=True)
+        title=_("Relative file path for this exported file."),
+        required=True,
+        readonly=True,
+    )
 
     file_extension = TextLine(
-        title=_('File extension for this exported translation file.'),
-        required=True, readonly=True)
+        title=_("File extension for this exported translation file."),
+        required=True,
+        readonly=True,
+    )
 
-    size = Int(title=_('Size of the file.'), required=True, readonly=True)
+    size = Int(title=_("Size of the file."), required=True, readonly=True)
 
     def read(size=None):
         """Read at most size bytes from the file.

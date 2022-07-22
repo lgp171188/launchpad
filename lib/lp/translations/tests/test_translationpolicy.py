@@ -32,6 +32,7 @@ class TestTranslationPolicy(TestCaseWithFactory):
 
     :ivar policy: A `TranslationPolicyImplementation` for testing.
     """
+
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -59,14 +60,16 @@ class TestTranslationPolicy(TestCaseWithFactory):
             for_policy.translationgroup = self.factory.makeTranslationGroup()
         person = self.factory.makePerson()
         getUtility(ITranslatorSet).new(
-            for_policy.translationgroup, language, person, None)
+            for_policy.translationgroup, language, person, None
+        )
         return person
 
     def _setPermissions(self, child_permission, parent_permission):
         """Set `TranslationPermission`s for `self.policy` and its parent."""
         self.policy.translationpermission = child_permission
         self.policy.getInheritedTranslationPolicy().translationpermission = (
-            parent_permission)
+            parent_permission
+        )
 
     def test_hasSpecialTranslationPrivileges_for_regular_joe(self):
         # A logged-in user has no special translationprivileges by
@@ -108,8 +111,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.assertEqual([], self.policy.getTranslationGroups())
         self.policy.translationgroup = self.factory.makeTranslationGroup()
         self.assertEqual(
-            [self.policy.translationgroup],
-            self.policy.getTranslationGroups())
+            [self.policy.translationgroup], self.policy.getTranslationGroups()
+        )
 
     def test_getTranslationGroups_enumerates_groups_inherited_first(self):
         parent = self._makeParentPolicy()
@@ -140,7 +143,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationgroup = self.factory.makeTranslationGroup()
         self.assertEqual(
             [(self.policy.translationgroup, None, None)],
-            self.policy.getTranslators(self.factory.makeLanguage()))
+            self.policy.getTranslators(self.factory.makeLanguage()),
+        )
 
     def test_getTranslators_returns_translator(self):
         language = self.factory.makeLanguage()
@@ -150,7 +154,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         group, translator, person = translators[0]
         self.assertEqual(self.policy.translationgroup, group)
         self.assertEqual(
-            self.policy.translationgroup, translator.translationgroup)
+            self.policy.translationgroup, translator.translationgroup
+        )
         self.assertEqual(person, translator.translator)
         self.assertEqual(language, translator.language)
         self.assertEqual(language_translator, person)
@@ -161,7 +166,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationpermission = TranslationPermission.CLOSED
         self.assertEqual(
             self.policy.translationpermission,
-            self.policy.getEffectiveTranslationPermission())
+            self.policy.getEffectiveTranslationPermission(),
+        )
 
     def test_getEffectiveTranslationPermission_returns_maximum(self):
         # When combining permissions, getEffectiveTranslationPermission
@@ -172,19 +178,29 @@ class TestTranslationPolicy(TestCaseWithFactory):
                 self._setPermissions(child_permission, parent_permission)
                 stricter = max(child_permission, parent_permission)
                 self.assertEqual(
-                    stricter, self.policy.getEffectiveTranslationPermission())
+                    stricter, self.policy.getEffectiveTranslationPermission()
+                )
 
     def test_maximum_permission_is_strictest(self):
         # The TranslationPermissions are ordered from loosest to
         # strictest, so the maximum is always the strictest.
-        self.assertEqual(TranslationPermission.STRUCTURED, max(
-            TranslationPermission.OPEN, TranslationPermission.STRUCTURED))
-        self.assertEqual(TranslationPermission.RESTRICTED, max(
+        self.assertEqual(
             TranslationPermission.STRUCTURED,
-            TranslationPermission.RESTRICTED))
-        self.assertEqual(TranslationPermission.CLOSED, max(
+            max(TranslationPermission.OPEN, TranslationPermission.STRUCTURED),
+        )
+        self.assertEqual(
             TranslationPermission.RESTRICTED,
-            TranslationPermission.CLOSED))
+            max(
+                TranslationPermission.STRUCTURED,
+                TranslationPermission.RESTRICTED,
+            ),
+        )
+        self.assertEqual(
+            TranslationPermission.CLOSED,
+            max(
+                TranslationPermission.RESTRICTED, TranslationPermission.CLOSED
+            ),
+        )
 
     def test_nobodies_stay_out(self):
         # We neither allow nor invite suggestions or edits by anonymous
@@ -192,10 +208,12 @@ class TestTranslationPolicy(TestCaseWithFactory):
         language = self.factory.makeLanguage()
         self.assertFalse(self.policy.invitesTranslationEdits(None, language))
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(None, language))
+            self.policy.invitesTranslationSuggestions(None, language)
+        )
         self.assertFalse(self.policy.allowsTranslationEdits(None, language))
         self.assertFalse(
-            self.policy.allowsTranslationSuggestions(None, language))
+            self.policy.allowsTranslationSuggestions(None, language)
+        )
 
     def test_privileged_users_allowed_but_not_invited(self):
         # Specially privileged users such as administrators and
@@ -207,10 +225,12 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.isTranslationsOwner = FakeMethod(result=True)
         self.assertFalse(self.policy.invitesTranslationEdits(owner, language))
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(owner, language))
+            self.policy.invitesTranslationSuggestions(owner, language)
+        )
         self.assertTrue(self.policy.allowsTranslationEdits(owner, language))
         self.assertTrue(
-            self.policy.allowsTranslationSuggestions(owner, language))
+            self.policy.allowsTranslationSuggestions(owner, language)
+        )
 
     def test_open_invites_anyone(self):
         # The OPEN model invites anyone to enter suggestions or even
@@ -220,7 +240,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationpermission = TranslationPermission.OPEN
         self.assertTrue(self.policy.invitesTranslationEdits(joe, language))
         self.assertTrue(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_translation_team_members_are_invited(self):
         # Members of a translation team are invited (and thus allowed)
@@ -231,10 +252,11 @@ class TestTranslationPolicy(TestCaseWithFactory):
         for permission in TranslationPermission.items:
             self.policy.translationpermission = permission
             self.assertTrue(
-                self.policy.invitesTranslationEdits(translator, language))
+                self.policy.invitesTranslationEdits(translator, language)
+            )
             self.assertTrue(
-                self.policy.invitesTranslationSuggestions(
-                    translator, language))
+                self.policy.invitesTranslationSuggestions(translator, language)
+            )
 
     def test_structured_is_open_for_untended_translations(self):
         # Without a translation team, STRUCTURED is like OPEN.
@@ -243,7 +265,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationpermission = TranslationPermission.STRUCTURED
         self.assertTrue(self.policy.invitesTranslationEdits(joe, language))
         self.assertTrue(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_restricted_is_closed_for_untended_translations(self):
         # Without a translation team, RESTRICTED is like CLOSED.
@@ -252,7 +275,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationpermission = TranslationPermission.RESTRICTED
         self.assertFalse(self.policy.invitesTranslationEdits(joe, language))
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_structured_and_restricted_for_tended_translations(self):
         # If there's a translation team, STRUCTURED and RESTRICTED both
@@ -263,13 +287,15 @@ class TestTranslationPolicy(TestCaseWithFactory):
         intermediate_permissions = [
             TranslationPermission.STRUCTURED,
             TranslationPermission.RESTRICTED,
-            ]
+        ]
         for permission in intermediate_permissions:
             self.policy.translationpermission = permission
             self.assertFalse(
-                self.policy.invitesTranslationEdits(joe, language))
+                self.policy.invitesTranslationEdits(joe, language)
+            )
             self.assertTrue(
-                self.policy.invitesTranslationSuggestions(joe, language))
+                self.policy.invitesTranslationSuggestions(joe, language)
+            )
 
     def test_closed_invites_nobody_for_untended_translations(self):
         # The CLOSED model does not invite anyone for untended
@@ -280,7 +306,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
 
         self.assertFalse(self.policy.invitesTranslationEdits(joe, language))
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_closed_does_not_invite_nonmembers_for_tended_translations(self):
         # The CLOSED model invites nobody outside the translation team.
@@ -291,7 +318,8 @@ class TestTranslationPolicy(TestCaseWithFactory):
 
         self.assertFalse(self.policy.invitesTranslationEdits(joe, language))
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_untended_translation_means_no_team(self):
         # A translation is "untended" if there is no translation team,
@@ -301,10 +329,12 @@ class TestTranslationPolicy(TestCaseWithFactory):
         self.policy.translationpermission = TranslationPermission.RESTRICTED
 
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
         self.policy.translationgroup = self.factory.makeTranslationGroup()
         self.assertFalse(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
     def test_translation_can_be_tended_by_empty_team(self):
         # A translation that has an empty translation team is tended.
@@ -312,12 +342,16 @@ class TestTranslationPolicy(TestCaseWithFactory):
         language = self.factory.makeLanguage()
         self.policy.translationgroup = self.factory.makeTranslationGroup()
         getUtility(ITranslatorSet).new(
-            self.policy.translationgroup, language, self.factory.makeTeam(),
-            None)
+            self.policy.translationgroup,
+            language,
+            self.factory.makeTeam(),
+            None,
+        )
         self.policy.translationpermission = TranslationPermission.RESTRICTED
 
         self.assertTrue(
-            self.policy.invitesTranslationSuggestions(joe, language))
+            self.policy.invitesTranslationSuggestions(joe, language)
+        )
 
 
 class TestTranslationsOwners(TestCaseWithFactory):
@@ -325,6 +359,7 @@ class TestTranslationsOwners(TestCaseWithFactory):
 
     :ivar owner: A `Person` to be used as an owner of various things.
     """
+
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -369,6 +404,7 @@ class TestTranslationsOwners(TestCaseWithFactory):
 
 class TestSharingPolicy(TestCaseWithFactory):
     """Test `ITranslationPolicy`'s sharing between Ubuntu and upstream."""
+
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -380,19 +416,24 @@ class TestSharingPolicy(TestCaseWithFactory):
         """Does this `SourcePackage` share with upstream?"""
         distro = sourcepackage.distroseries.distribution
         return distro.sharesTranslationsWithOtherSide(
-            self.user, self.language, sourcepackage=sourcepackage,
-            purportedly_upstream=by_maintainer)
+            self.user,
+            self.language,
+            sourcepackage=sourcepackage,
+            purportedly_upstream=by_maintainer,
+        )
 
     def test_product_always_shares(self):
         product = self.factory.makeProduct()
         self.assertTrue(
-            product.sharesTranslationsWithOtherSide(self.user, self.language))
+            product.sharesTranslationsWithOtherSide(self.user, self.language)
+        )
 
     def _makePackageAndProductSeries(self):
         package = self.factory.makeSourcePackage()
         self.factory.makePackagingLink(
             sourcepackagename=package.sourcepackagename,
-            distroseries=package.distroseries)
+            distroseries=package.distroseries,
+        )
         return (package, package.productseries)
 
     def test_distribution_shares_only_if_invited_with_template(self):
@@ -435,4 +476,5 @@ class TestSharingPolicy(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         for by_maintainer in [False, True]:
             self.assertEqual(
-                by_maintainer, self._doesPackageShare(package, by_maintainer))
+                by_maintainer, self._doesPackageShare(package, by_maintainer)
+            )

@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GettextValidationError',
-    'validate_translation',
-    ]
+    "GettextValidationError",
+    "validate_translation",
+]
 
 import gettextpo
 
@@ -13,8 +13,9 @@ class GettextValidationError(ValueError):
     """Gettext validation failed."""
 
 
-def validate_translation(original_singular, original_plural,
-                         translations, flags):
+def validate_translation(
+    original_singular, original_plural, translations, flags
+):
     """Check with gettext if a translation is correct or not.
 
     If the translation has a problem, raise `GettextValidationError`.

@@ -1,16 +1,12 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import timedelta
 import http.client
+from datetime import timedelta
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import DBEnumeratedType, DBItem, EnumeratedType, Item
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     error_status,
@@ -23,23 +19,11 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Field,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Field, Int, Text, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -50,29 +34,29 @@ from lp.services.fields import PersonChoice
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
-    )
+)
 from lp.translations.interfaces.translationcommonformat import (
     TranslationImportExportBaseException,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
-
+)
 
 __all__ = [
-    'TranslationImportQueueConflictError',
-    'ITranslationImportQueueEntry',
-    'ITranslationImportQueue',
-    'IEditTranslationImportQueueEntry',
-    'SpecialTranslationImportTargetFilter',
-    'TranslationFileType',
-    'translation_import_queue_entry_age',
-    'UserCannotSetTranslationImportStatus',
-    ]
+    "TranslationImportQueueConflictError",
+    "ITranslationImportQueueEntry",
+    "ITranslationImportQueue",
+    "IEditTranslationImportQueueEntry",
+    "SpecialTranslationImportTargetFilter",
+    "TranslationFileType",
+    "translation_import_queue_entry_age",
+    "UserCannotSetTranslationImportStatus",
+]
 
 
 class TranslationImportQueueConflictError(
-                                    TranslationImportExportBaseException):
+    TranslationImportExportBaseException
+):
     """A new entry cannot be inserted into the queue because it
     conflicts with existing entries."""
 
@@ -106,138 +90,176 @@ translation_import_queue_entry_age = {
 class SpecialTranslationImportTargetFilter(DBEnumeratedType):
     """Special "meta-targets" to filter the queue view by."""
 
-    PRODUCT = DBItem(1, """
+    PRODUCT = DBItem(
+        1,
+        """
         Any project
 
         Any project registered in Launchpad.
-        """)
+        """,
+    )
 
-    DISTRIBUTION = DBItem(2, """
+    DISTRIBUTION = DBItem(
+        2,
+        """
         Any distribution
 
         Any distribution registered in Launchpad.
-        """)
+        """,
+    )
 
 
 @exported_as_webservice_entry(
     singular_name="translation_import_queue_entry",
     plural_name="translation_import_queue_entries",
-    as_of="beta")
+    as_of="beta",
+)
 class ITranslationImportQueueEntry(Interface):
     """An entry of the Translation Import Queue."""
 
-    id = exported(Int(title=_('The entry ID'), required=True, readonly=True))
+    id = exported(Int(title=_("The entry ID"), required=True, readonly=True))
 
     path = exported(
         TextLine(
             title=_("Path"),
             description=_(
                 "The path to this file inside the source tree. Includes the"
-                " filename."),
-            required=True))
+                " filename."
+            ),
+            required=True,
+        )
+    )
 
     importer = exported(
         PersonChoice(
             title=_("Uploader"),
             required=True,
             readonly=True,
-            description=_(
-                "The person that uploaded this file to Launchpad."),
-            vocabulary="ValidOwner"),
-        exported_as="uploader")
+            description=_("The person that uploaded this file to Launchpad."),
+            vocabulary="ValidOwner",
+        ),
+        exported_as="uploader",
+    )
 
     dateimported = exported(
         Datetime(
             title=_("The timestamp when this queue entry was created."),
             required=True,
-            readonly=True),
-        exported_as="date_created")
+            readonly=True,
+        ),
+        exported_as="date_created",
+    )
 
     productseries = exported(
         Reference(
             title=_("Series"),
             required=False,
             readonly=True,
-            schema=IProductSeries))
+            schema=IProductSeries,
+        )
+    )
 
     distroseries = exported(
         Reference(
             title=_("Series"),
             required=False,
             readonly=True,
-            schema=IDistroSeries))
+            schema=IDistroSeries,
+        )
+    )
 
     sourcepackagename = Choice(
         title=_("Source Package Name"),
-        description=_(
-            "The source package from where this entry comes."),
+        description=_("The source package from where this entry comes."),
         required=False,
-        vocabulary="SourcePackageName")
+        vocabulary="SourcePackageName",
+    )
 
     by_maintainer = Bool(
         title=_(
             "This upload was done by the maintainer "
-            "of the project or package."),
+            "of the project or package."
+        ),
         description=_(
             "If checked, the translations in this import will be marked "
-            "as is_current_upstream."),
+            "as is_current_upstream."
+        ),
         required=True,
-        default=False)
+        default=False,
+    )
 
     content = Attribute(
         "An ILibraryFileAlias reference with the file content. Must not be"
-        " None.")
+        " None."
+    )
 
     format = exported(
         Choice(
-            title=_('The file format of the import.'),
+            title=_("The file format of the import."),
             vocabulary=TranslationFileFormat,
             required=True,
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     status = exported(
         Choice(
             title=_("The status of the import."),
             vocabulary=RosettaImportStatus,
             required=True,
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     date_status_changed = exported(
         Datetime(
             title=_("The timestamp when the status was changed."),
-            required=True))
+            required=True,
+        )
+    )
 
     sourcepackage = exported(
         Reference(
             schema=ISourcePackage,
             title=_("The sourcepackage associated with this entry."),
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     guessed_potemplate = Attribute(
         "The IPOTemplate that we can guess this entry could be imported into."
-        " None if we cannot guess it.")
+        " None if we cannot guess it."
+    )
 
-    import_into = Attribute("The Object where this entry will be imported. Is"
-        " None if we don't know where to import it.")
+    import_into = Attribute(
+        "The Object where this entry will be imported. Is"
+        " None if we don't know where to import it."
+    )
 
     pofile = Field(
         title=_("The IPOfile where this entry should be imported."),
-        required=False)
+        required=False,
+    )
 
     potemplate = Field(
         title=_("The IPOTemplate associated with this entry."),
-        description=_("The IPOTemplate associated with this entry. If path"
-        " notes a .pot file, it should be used as the place where this entry"
-        " will be imported, if it's a .po file, it indicates the template"
-        " associated with tha translation."),
-        required=False)
+        description=_(
+            "The IPOTemplate associated with this entry. If path"
+            " notes a .pot file, it should be used as the place where this"
+            " entry will be imported, if it's a .po file, it indicates the"
+            " template associated with tha translation."
+        ),
+        required=False,
+    )
 
     error_output = exported(
         Text(
             title=_("Error output"),
             description=_("Output from most recent import attempt."),
             required=False,
-            readonly=True))
+            readonly=True,
+        )
+    )
 
     def canAdmin(roles):
         """Check if the user can administer this entry."""
@@ -305,9 +327,18 @@ class ITranslationImportQueue(Interface):
     def countEntries():
         """Return the number of `TranslationImportQueueEntry` records."""
 
-    def addOrUpdateEntry(path, content, by_maintainer, importer,
-        sourcepackagename=None, distroseries=None, productseries=None,
-        potemplate=None, pofile=None, format=None):
+    def addOrUpdateEntry(
+        path,
+        content,
+        by_maintainer,
+        importer,
+        sourcepackagename=None,
+        distroseries=None,
+        productseries=None,
+        potemplate=None,
+        pofile=None,
+        format=None,
+    ):
         """Return a new or updated entry of the import queue.
 
         :arg path: is the path, with the filename, of the uploaded file.
@@ -329,10 +360,18 @@ class ITranslationImportQueue(Interface):
         only one of them can be specified.
         """
 
-    def addOrUpdateEntriesFromTarball(content, by_maintainer, importer,
-        sourcepackagename=None, distroseries=None, productseries=None,
-        potemplate=None, filename_filter=None, approver_factory=None,
-        only_templates=False):
+    def addOrUpdateEntriesFromTarball(
+        content,
+        by_maintainer,
+        importer,
+        sourcepackagename=None,
+        distroseries=None,
+        productseries=None,
+        potemplate=None,
+        filename_filter=None,
+        approver_factory=None,
+        only_templates=False,
+    ):
         """Add all .po or .pot files from the tarball at :content:.
 
         :arg content: is the tarball content, or a seekable file object open
@@ -358,12 +397,12 @@ class ITranslationImportQueue(Interface):
         """
 
     def get(id):
-        """Return the ITranslationImportQueueEntry with the given id or None.
-        """
+        """Return the ITranslationImportQueueEntry with this id, or None."""
 
     @collection_default_content()
     @operation_parameters(
-        import_status=copy_field(ITranslationImportQueueEntry['status']))
+        import_status=copy_field(ITranslationImportQueueEntry["status"])
+    )
     @operation_returns_collection_of(ITranslationImportQueueEntry)
     @export_read_operation()
     @operation_for_version("beta")
@@ -395,11 +434,12 @@ class ITranslationImportQueue(Interface):
 
     @export_read_operation()
     @operation_parameters(
-        status=copy_field(ITranslationImportQueueEntry['status']))
+        status=copy_field(ITranslationImportQueueEntry["status"])
+    )
     @operation_returns_collection_of(IHasTranslationImports)
     @call_with(user=REQUEST_USER)
     @operation_for_version("beta")
-    def getRequestTargets(user,  status=None):
+    def getRequestTargets(user, status=None):
         """List `Product`s and `DistroSeries` with pending imports.
 
         :arg status: Filter by `RosettaImportStatus`.
@@ -447,23 +487,29 @@ class ITranslationImportQueue(Interface):
 class TranslationFileType(EnumeratedType):
     """The different types of translation files that can be imported."""
 
-    UNSPEC = Item("""
+    UNSPEC = Item(
+        """
         <Please specify>
 
         Not yet specified.
-        """)
+        """
+    )
 
-    POT = Item("""
+    POT = Item(
+        """
         Template
 
         A translation template file.
-        """)
+        """
+    )
 
-    PO = Item("""
+    PO = Item(
+        """
         Translations
 
         A translation data file.
-        """)
+        """
+    )
 
 
 class IEditTranslationImportQueueEntry(Interface):
@@ -471,23 +517,23 @@ class IEditTranslationImportQueueEntry(Interface):
 
     file_type = Choice(
         title=_("File Type"),
-        description=_(
-            "The type of the file being imported."),
+        description=_("The type of the file being imported."),
         required=True,
-        vocabulary=TranslationFileType)
+        vocabulary=TranslationFileType,
+    )
 
     path = TextLine(
         title=_("Path"),
-        description=_(
-            "The path to this file inside the source tree."),
-        required=True)
+        description=_("The path to this file inside the source tree."),
+        required=True,
+    )
 
     sourcepackagename = Choice(
         title=_("Source Package Name"),
-        description=_(
-            "The source package where this entry will be imported."),
+        description=_("The source package where this entry will be imported."),
         required=True,
-        vocabulary="SourcePackageName")
+        vocabulary="SourcePackageName",
+    )
 
     name = TextLine(
         title=_("Name"),
@@ -495,8 +541,10 @@ class IEditTranslationImportQueueEntry(Interface):
             "For templates only: "
             "The name of this PO template, for example "
             "'evolution-2.2'. Each translation template has a "
-            "unique name in its package."),
-        required=False)
+            "unique name in its package."
+        ),
+        required=False,
+    )
 
     translation_domain = TextLine(
         title=_("Translation domain"),
@@ -504,39 +552,49 @@ class IEditTranslationImportQueueEntry(Interface):
             "For templates only: "
             "The translation domain for a translation template. "
             "Used with PO file format when generating MO files for inclusion "
-            "in language pack or MO tarball exports."),
-        required=False)
+            "in language pack or MO tarball exports."
+        ),
+        required=False,
+    )
 
     languagepack = Bool(
         title=_("Include translations for this template in language packs?"),
         description=_(
             "For templates only: "
             "Check this box if this template is part of a language pack so "
-            "its translations should be exported that way."),
+            "its translations should be exported that way."
+        ),
         required=True,
-        default=False)
+        default=False,
+    )
 
     potemplate = Choice(
         title=_("Template"),
         description=_(
             "For translations only: "
             "The template that this translation is based on. "
-            "The template has to be uploaded first."),
+            "The template has to be uploaded first."
+        ),
         required=False,
-        vocabulary="TranslationTemplate")
+        vocabulary="TranslationTemplate",
+    )
 
     potemplate_name = TextLine(
         title=_("Template name"),
         description=_(
             "For translations only: "
             "Enter the template name if it does not appear "
-            "in the list above."),
-        required=False)
+            "in the list above."
+        ),
+        required=False,
+    )
 
     language = Choice(
         title=_("Language"),
         required=True,
         description=_(
             "For translations only: "
-            "The language this PO file translates to."),
-        vocabulary="Language")
+            "The language this PO file translates to."
+        ),
+        vocabulary="Language",
+    )

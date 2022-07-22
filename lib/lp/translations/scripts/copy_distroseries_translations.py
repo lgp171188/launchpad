@@ -3,7 +3,7 @@
 
 """Copy `DistroSeries` translations from its parent series."""
 
-__all__ = ['copy_distroseries_translations']
+__all__ = ["copy_distroseries_translations"]
 
 from zope.component import getUtility
 
@@ -14,7 +14,7 @@ from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.translations.model.distroseries_translations_copy import (
     copy_active_translations,
-    )
+)
 
 
 class SeriesTranslationFlagsModified(Warning):
@@ -57,8 +57,9 @@ class SeriesStateKeeper:
         series = getUtility(IDistroSeriesSet).get(self.series_id)
 
         flags_modified = (
-            not series.hide_all_translations or
-            not series.defer_translation_imports)
+            not series.hide_all_translations
+            or not series.defer_translation_imports
+        )
 
         if flags_modified:
             # The flags have been changed while we were working.  Play safe
@@ -69,18 +70,24 @@ class SeriesStateKeeper:
                 "Please check the hide_all_translations and "
                 "defer_translation_imports flags for %s, since they may "
                 "affect users' ability to work on this series' translations."
-                    % (series.name, series.name))
+                % (series.name, series.name)
+            )
 
         # Restore flags.
         series.hide_all_translations = self.hide_all_translations
         series.defer_translation_imports = self.defer_translation_imports
 
 
-def copy_distroseries_translations(source, target, txn, logger,
-                                   published_sources_only=False,
-                                   check_archive=None,
-                                   check_distroseries=None,
-                                   skip_duplicates=False):
+def copy_distroseries_translations(
+    source,
+    target,
+    txn,
+    logger,
+    published_sources_only=False,
+    check_archive=None,
+    check_distroseries=None,
+    skip_duplicates=False,
+):
     """Copy translations into a new `DistroSeries`.
 
     Wraps around `copy_active_translations`, but also ensures that the
@@ -104,11 +111,13 @@ def copy_distroseries_translations(source, target, txn, logger,
         assert target.defer_translation_imports, (
             "defer_translation_imports not set!"
             " That would corrupt translation data mixing new imports"
-            " with the information being copied.")
+            " with the information being copied."
+        )
         assert target.hide_all_translations, (
             "hide_all_translations not set!"
             " That would allow users to see and modify incomplete"
-            " translation state.")
+            " translation state."
+        )
 
         if published_sources_only:
             if check_archive is None:
@@ -118,18 +127,23 @@ def copy_distroseries_translations(source, target, txn, logger,
             spns = bulk.load(
                 SourcePackageName,
                 check_archive.getPublishedSources(
-                        distroseries=check_distroseries,
-                        status=active_publishing_status)
-                    .config(distinct=True)
-                    .order_by(
-                        SourcePackagePublishingHistory.sourcepackagenameID)
-                    .values(
-                        SourcePackagePublishingHistory.sourcepackagenameID))
+                    distroseries=check_distroseries,
+                    status=active_publishing_status,
+                )
+                .config(distinct=True)
+                .order_by(SourcePackagePublishingHistory.sourcepackagenameID)
+                .values(SourcePackagePublishingHistory.sourcepackagenameID),
+            )
         else:
             spns = None
         copy_active_translations(
-            source, target, txn, logger, sourcepackagenames=spns,
-            skip_duplicates=skip_duplicates)
+            source,
+            target,
+            txn,
+            logger,
+            sourcepackagenames=spns,
+            skip_duplicates=skip_duplicates,
+        )
     except BaseException:
         copy_failed = True
         # Give us a fresh transaction for proper cleanup.
@@ -145,7 +159,8 @@ def copy_distroseries_translations(source, target, txn, logger,
             logger.warning(
                 "Failed to restore hide_all_translations and "
                 "defer_translation_imports flags on %s after translations "
-                "copy failed.  Please check them manually." % name)
+                "copy failed.  Please check them manually." % name
+            )
             # If the original copying etc. in the main try block failed, that
             # is the error most worth propagating.  Propagate a failure in
             # restoring the translations flags only if everything else went

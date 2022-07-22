@@ -4,8 +4,8 @@
 """Functions for fixing mismatched plural form translations."""
 
 __all__ = [
-    'fix_plurals_in_all_pofiles',
-    ]
+    "fix_plurals_in_all_pofiles",
+]
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor
@@ -30,8 +30,9 @@ def get_mapping_for_pofile_plurals(pofile):
     if expected_plural_formula == used_plural_formula:
         return None
     else:
-        forms_map = plural_form_mapper(expected_plural_formula,
-                                       used_plural_formula)
+        forms_map = plural_form_mapper(
+            expected_plural_formula, used_plural_formula
+        )
         for key in forms_map:
             if forms_map[key] != key:
                 return forms_map
@@ -49,18 +50,22 @@ def fix_pofile_plurals(pofile, logger, ztm):
             TranslationMessage,
             TranslationMessage.potmsgset == POTMsgSet.id,
             POTMsgSet.msgid_plural != None,
-            TranslationMessage.pofile == pofile)
+            TranslationMessage.pofile == pofile,
+        )
         for message in pluralmessages:
-            logger.debug("\tFixing translations for '%s'" % (
-                message.potmsgset.singular_text))
+            logger.debug(
+                "\tFixing translations for '%s'"
+                % (message.potmsgset.singular_text)
+            )
 
             for form in range(TranslationConstants.MAX_PLURAL_FORMS):
                 new_form = plural_forms_mapping[form]
                 assert new_form < TranslationConstants.MAX_PLURAL_FORMS, (
-                    "Translation with plural form %d in plurals mapping." %
-                    new_form)
-                translation = getattr(message, 'msgstr%d' % new_form)
-                setattr(message, 'msgstr%d' % form, translation)
+                    "Translation with plural form %d in plurals mapping."
+                    % new_form
+                )
+                translation = getattr(message, "msgstr%d" % new_form)
+                setattr(message, "msgstr%d" % form, translation)
 
         # We also need to update the header so we don't try to re-do the
         # migration in the future.

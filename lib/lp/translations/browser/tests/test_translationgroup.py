@@ -8,14 +8,8 @@ from zope.component import getUtility
 
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    BrowserTestCase,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing import BrowserTestCase, TestCaseWithFactory
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.translations.browser.translationgroup import TranslationGroupView
 
 
@@ -38,30 +32,33 @@ class TestTranslationGroupView(TestCaseWithFactory):
     def test_translator_list(self):
         # translator_list composes dicts using _makeTranslatorDict.
         group = self.factory.makeTranslationGroup()
-        tr_translator = self.factory.makeTranslator('tr', group)
+        tr_translator = self.factory.makeTranslator("tr", group)
         transaction.commit()
         view = self._makeView(group)
         translator_dict = view._makeTranslatorDict(
-            tr_translator, tr_translator.language, tr_translator.translator)
+            tr_translator, tr_translator.language, tr_translator.translator
+        )
         self.assertEqual([translator_dict], list(view.translator_list))
 
     def test_makeTranslatorDict(self):
         # _makeTranslatorDict describes a Translator entry to the UI.
         group = self.factory.makeTranslationGroup()
-        xhosa = self.factory.makeTranslator('xh', group)
-        xhosa.style_guide_url = 'http://xh.example.com/'
+        xhosa = self.factory.makeTranslator("xh", group)
+        xhosa.style_guide_url = "http://xh.example.com/"
         view = self._makeView(group)
         output = view._makeTranslatorDict(
-            xhosa, xhosa.language, xhosa.translator)
+            xhosa, xhosa.language, xhosa.translator
+        )
 
-        self.assertEqual(xhosa.translator, output['person'])
-        self.assertEqual('xh', output['code'])
+        self.assertEqual(xhosa.translator, output["person"])
+        self.assertEqual("xh", output["code"])
         self.assertEqual(
-            getUtility(ILanguageSet).getLanguageByCode('xh'),
-            output['language'])
-        self.assertEqual(xhosa.datecreated, output['datecreated'])
-        self.assertEqual(xhosa.style_guide_url, output['style_guide_url'])
-        self.assertEqual(xhosa, output['context'])
+            getUtility(ILanguageSet).getLanguageByCode("xh"),
+            output["language"],
+        )
+        self.assertEqual(xhosa.datecreated, output["datecreated"])
+        self.assertEqual(xhosa.style_guide_url, output["style_guide_url"])
+        self.assertEqual(xhosa, output["context"])
 
 
 class TestTranslationGroupViewPermissions(BrowserTestCase):
@@ -69,7 +66,7 @@ class TestTranslationGroupViewPermissions(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     def _assertLinksFound(self, contents, links_found):
-        for link in ['+edit', '+appoint']:
+        for link in ["+edit", "+appoint"]:
             if links_found:
                 self.assertTrue(link in contents)
             else:

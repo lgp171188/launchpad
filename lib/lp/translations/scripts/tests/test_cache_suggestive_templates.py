@@ -28,7 +28,8 @@ class TestSuggestivePOTemplatesCache(TestCaseWithFactory):
     def _readCache(self):
         """Read cache contents, in deterministic order."""
         result = IStore(POFile).execute(
-            "SELECT * FROM SuggestivePOTemplate ORDER BY potemplate")
+            "SELECT * FROM SuggestivePOTemplate ORDER BY potemplate"
+        )
         return [id for id, in result.get_all()]
 
     def test_contents_stay_consistent(self):
@@ -60,7 +61,8 @@ class TestSuggestivePOTemplatesCache(TestCaseWithFactory):
         self.assertTrue(was_in_cache)
         self.assertNotEqual(cache_with_template, cache_without_template)
         self.assertContentEqual(
-            cache_with_template, cache_without_template + [pot.id])
+            cache_with_template, cache_without_template + [pot.id]
+        )
 
     def test_removeFromSuggestivePOTemplatesCache_not_in_cache(self):
         # Removing a not-cached template from the cache does nothing.
@@ -106,29 +108,34 @@ class TestSuggestivePOTemplatesCache(TestCaseWithFactory):
         cache_without_template = self._readCache()
         self.assertNotEqual(cache_with_template, cache_without_template)
         self.assertContentEqual(
-            cache_with_template, cache_without_template + [pot.id])
+            cache_with_template, cache_without_template + [pot.id]
+        )
 
     def test_distro_translations_usage_affects_caching(self):
         # Templates from distributions are included in the cache only
         # where the distribution uses Launchpad Translations.
         package = self.factory.makeSourcePackage()
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         pot = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         self._refreshCache()
 
         cache_with_template = self._readCache()
 
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.UNKNOWN)
+            ServiceUsage.UNKNOWN
+        )
         self._refreshCache()
 
         cache_without_template = self._readCache()
         self.assertNotEqual(cache_with_template, cache_without_template)
         self.assertContentEqual(
-            cache_with_template, cache_without_template + [pot.id])
+            cache_with_template, cache_without_template + [pot.id]
+        )
 
     def test_disabled_template_does_not_appear(self):
         # A template that is not current is excluded from the cache.
@@ -152,4 +159,5 @@ class TestSuggestivePOTemplatesCache(TestCaseWithFactory):
 
         self.assertNotEqual(cache_with_template, cache_without_template)
         self.assertContentEqual(
-            cache_with_template, cache_without_template + [pot.id])
+            cache_with_template, cache_without_template + [pot.id]
+        )

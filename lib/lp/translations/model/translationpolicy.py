@@ -4,13 +4,10 @@
 """Translation access and sharing policy."""
 
 __all__ = [
-    'TranslationPolicyMixin',
-    ]
+    "TranslationPolicyMixin",
+]
 
-from storm.expr import (
-    And,
-    LeftJoin,
-    )
+from storm.expr import And, LeftJoin
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -61,9 +58,10 @@ class TranslationPolicyMixin:
         """Does this person have special translation editing rights here?"""
         celebs = getUtility(ILaunchpadCelebrities)
         return (
-            person.inTeam(celebs.admin) or
-            person.inTeam(celebs.rosetta_experts) or
-            self.isTranslationsOwner(person))
+            person.inTeam(celebs.admin)
+            or person.inTeam(celebs.rosetta_experts)
+            or self.isTranslationsOwner(person)
+        )
 
     def _canTranslate(self, person):
         """Is `person` in a position to translate?
@@ -90,16 +88,20 @@ class TranslationPolicyMixin:
 
     def _getTranslator(self, translationgroup, language, store):
         """Retrieve one (TranslationGroup, Translator, Person) tuple."""
-        translator_join = LeftJoin(Translator, And(
-            Translator.translationgroup_id == TranslationGroup.id,
-            Translator.language_id == language.id))
-        person_join = LeftJoin(
-            Person, Person.id == Translator.translator_id)
+        translator_join = LeftJoin(
+            Translator,
+            And(
+                Translator.translationgroup_id == TranslationGroup.id,
+                Translator.language_id == language.id,
+            ),
+        )
+        person_join = LeftJoin(Person, Person.id == Translator.translator_id)
 
         source = store.using(TranslationGroup, translator_join, person_join)
         return source.find(
             (TranslationGroup, Translator, Person),
-            TranslationGroup.id == translationgroup.id).one()
+            TranslationGroup.id == translationgroup.id,
+        ).one()
 
     def getTranslators(self, language, store=None):
         """See `ITranslationPolicy`."""
@@ -107,7 +109,8 @@ class TranslationPolicyMixin:
             store = IStore(TranslationGroup)
         return [
             self._getTranslator(group, language, store)
-            for group in self.getTranslationGroups()]
+            for group in self.getTranslationGroups()
+        ]
 
     def getEffectiveTranslationPermission(self):
         """See `ITranslationPolicy`."""
@@ -115,9 +118,12 @@ class TranslationPolicyMixin:
         if inherited is None:
             return self.translationpermission
         else:
-            return max([
-                self.translationpermission,
-                inherited.getEffectiveTranslationPermission()])
+            return max(
+                [
+                    self.translationpermission,
+                    inherited.getEffectiveTranslationPermission(),
+                ]
+            )
 
     def invitesTranslationEdits(self, person, language):
         """See `ITranslationPolicy`."""
@@ -150,7 +156,7 @@ class TranslationPolicyMixin:
         welcoming_models = [
             TranslationPermission.OPEN,
             TranslationPermission.STRUCTURED,
-            ]
+        ]
         if model in welcoming_models:
             return True
 
@@ -170,9 +176,9 @@ class TranslationPolicyMixin:
             return False
         if self._hasSpecialTranslationPrivileges(person):
             return True
-        return (
-            self._canTranslate(person) and
-            self.invitesTranslationEdits(person, language))
+        return self._canTranslate(person) and self.invitesTranslationEdits(
+            person, language
+        )
 
     def allowsTranslationSuggestions(self, person, language):
         """See `ITranslationPolicy`."""
@@ -180,6 +186,6 @@ class TranslationPolicyMixin:
             return False
         if self._hasSpecialTranslationPrivileges(person):
             return True
-        return (
-            self._canTranslate(person) and
-            self.invitesTranslationSuggestions(person, language))
+        return self._canTranslate(
+            person
+        ) and self.invitesTranslationSuggestions(person, language)

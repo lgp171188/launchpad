@@ -2,13 +2,13 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'UnknownFileType',
-    'ValidateTranslationsFile',
-    ]
+    "UnknownFileType",
+    "ValidateTranslationsFile",
+]
 
 import logging
-from optparse import OptionParser
 import os.path
+from optparse import OptionParser
 
 from lp.services import scripts
 from lp.translations.utilities.gettext_po_parser import POParser
@@ -31,12 +31,12 @@ def validate_po(filename, content):
 class ValidateTranslationsFile:
     """Parse translations files to see if they are well-formed."""
 
-    name = 'validate-translations-file'
+    name = "validate-translations-file"
 
     validators = {
-        'po': validate_po,
-        'pot': validate_po,
-        }
+        "po": validate_po,
+        "pot": validate_po,
+    }
 
     def __init__(self, test_args=None):
         """Set up basic facilities, similar to `LaunchpadScript`."""
@@ -72,7 +72,7 @@ class ValidateTranslationsFile:
     def _pickValidator(self, filename):
         """Select the appropriate validator for a file."""
         base, ext = os.path.splitext(filename)
-        if ext is not None and ext.startswith('.'):
+        if ext is not None and ext.startswith("."):
             ext = ext[1:]
         return self.validators.get(ext, validate_unknown_file_type)
 

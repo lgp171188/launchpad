@@ -4,15 +4,12 @@
 """Person-related translations view classes."""
 
 __all__ = [
-    'PersonTranslationView',
-    'PersonTranslationRelicensingView',
-    'TranslationActivityView',
+    "PersonTranslationView",
+    "PersonTranslationRelicensingView",
+    "TranslationActivityView",
 ]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from itertools import islice
 from urllib.parse import urlencode
 
@@ -21,24 +18,15 @@ from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.enums import ServiceUsage
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    Link,
-    )
+from lp.services.webapp import Link, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.interfaces import ILaunchBag
@@ -46,12 +34,12 @@ from lp.services.webapp.menu import NavigationMenu
 from lp.services.webapp.publisher import LaunchpadView
 from lp.translations.browser.translationlinksaggregator import (
     TranslationLinksAggregator,
-    )
+)
 from lp.translations.interfaces.pofiletranslator import IPOFileTranslatorSet
 from lp.translations.interfaces.translationrelicensingagreement import (
     ITranslationRelicensingAgreementEdit,
     TranslationRelicensingAgreementOptions,
-    )
+)
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
 
@@ -68,9 +56,9 @@ class WorkListLinksAggregator(TranslationLinksAggregator):
     def describe(self, target, link, covered_files):
         """See `TranslationLinksAggregator.describe`."""
         strings_count = sum(
-            self.countStrings(pofile) for pofile in covered_files)
-        languages = {
-            pofile.language.englishname for pofile in covered_files}
+            self.countStrings(pofile) for pofile in covered_files
+        )
+        languages = {pofile.language.englishname for pofile in covered_files}
         languages_list = ", ".join(sorted(languages))
 
         if strings_count == 1:
@@ -79,19 +67,20 @@ class WorkListLinksAggregator(TranslationLinksAggregator):
             strings_wording = "%d strings"
 
         return {
-            'target': target,
-            'count': strings_count,
-            'count_wording': strings_wording % strings_count,
-            'is_product': not ISourcePackage.providedBy(target),
-            'link': link,
-            'languages': languages_list,
+            "target": target,
+            "count": strings_count,
+            "count_wording": strings_wording % strings_count,
+            "is_product": not ISourcePackage.providedBy(target),
+            "link": link,
+            "languages": languages_list,
         }
 
 
 class ReviewLinksAggregator(WorkListLinksAggregator):
     """A `TranslationLinksAggregator` for translations to review."""
+
     # Link to unreviewed suggestions.
-    pofile_link_suffix = '/+translate?show=new_suggestions'
+    pofile_link_suffix = "/+translate?show=new_suggestions"
 
     # Strings that need work are ones with unreviewed suggestions.
     def countStrings(self, pofile):
@@ -101,8 +90,9 @@ class ReviewLinksAggregator(WorkListLinksAggregator):
 
 class TranslateLinksAggregator(WorkListLinksAggregator):
     """A `TranslationLinksAggregator` for translations to complete."""
+
     # Link to untranslated strings.
-    pofile_link_suffix = '/+translate?show=untranslated'
+    pofile_link_suffix = "/+translate?show=untranslated"
 
     # Strings that need work are untranslated ones.
     def countStrings(self, pofile):
@@ -112,7 +102,7 @@ class TranslateLinksAggregator(WorkListLinksAggregator):
 
 def compose_pofile_filter_url(pofile, person):
     """Compose URL for `Person`'s contributions to `POFile`."""
-    person_name = urlencode({'person': person.name})
+    person_name = urlencode({"person": person.name})
     return canonical_url(pofile) + "/+filter?%s" % person_name
 
 
@@ -132,8 +122,9 @@ class ActivityDescriptor:
         """
         assert person == pofiletranslator.person, (
             "Got POFileTranslator record for user %s "
-            "while listing activity for %s." % (
-                person.name, pofiletranslator.person.name))
+            "while listing activity for %s."
+            % (person.name, pofiletranslator.person.name)
+        )
 
         self._person = person
         self._pofiletranslator = pofiletranslator
@@ -168,33 +159,42 @@ class IPersonTranslationsMenu(Interface):
 class PersonTranslationsMenu(NavigationMenu):
 
     usedfor = IPersonTranslationsMenu
-    facet = 'translations'
-    links = ('overview', 'licensing', 'imports', 'translations_to_review')
+    facet = "translations"
+    links = ("overview", "licensing", "imports", "translations_to_review")
 
     @property
     def person(self):
         return self.context.context
 
     def overview(self):
-        text = 'Overview'
-        return Link('', text, icon='info', site='translations')
+        text = "Overview"
+        return Link("", text, icon="info", site="translations")
 
     def imports(self):
-        text = 'Import queue'
-        return Link('+imports', text, icon='info', site='translations')
+        text = "Import queue"
+        return Link("+imports", text, icon="info", site="translations")
 
     def licensing(self):
-        text = 'Translations licensing'
-        enabled = (self.person == self.user)
-        return Link('+licensing', text, enabled=enabled, icon='info',
-                    site='translations')
+        text = "Translations licensing"
+        enabled = self.person == self.user
+        return Link(
+            "+licensing",
+            text,
+            enabled=enabled,
+            icon="info",
+            site="translations",
+        )
 
     def translations_to_review(self):
-        text = 'Translations to review'
+        text = "Translations to review"
         enabled = person_is_reviewer(self.person)
         return Link(
-            '+translations-to-review', text, enabled=enabled, icon='info',
-            site='translations')
+            "+translations-to-review",
+            text,
+            enabled=enabled,
+            icon="info",
+            site="translations",
+        )
 
 
 @implementer(IPersonTranslationsMenu)
@@ -205,12 +205,12 @@ class PersonTranslationView(LaunchpadView):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        now = datetime.now(pytz.timezone('UTC'))
+        now = datetime.now(pytz.timezone("UTC"))
         # Down-to-the-second detail isn't important so the hope is that this
         # will result in faster queries (cache effects).
         today = now.replace(minute=0, second=0, microsecond=0)
         self.history_horizon = today - timedelta(90, 0, 0)
-        self.user_can_edit = check_permission('launchpad.Edit', self.context)
+        self.user_can_edit = check_permission("launchpad.Edit", self.context)
 
     @property
     def page_title(self):
@@ -230,15 +230,17 @@ class PersonTranslationView(LaunchpadView):
             if potemplate is None:
                 return True
             product = potemplate.product
-            product_is_active = (
-                product is None or (
-                product.active and
-                product.translations_usage == ServiceUsage.LAUNCHPAD))
+            product_is_active = product is None or (
+                product.active
+                and product.translations_usage == ServiceUsage.LAUNCHPAD
+            )
             return product_is_active
 
         active_entries = (entry for entry in all_entries if is_active(entry))
-        return [ActivityDescriptor(self.context, entry)
-            for entry in islice(active_entries, 10)]
+        return [
+            ActivityDescriptor(self.context, entry)
+            for entry in islice(active_entries, 10)
+        ]
 
     @cachedproperty
     def latest_activity(self):
@@ -301,7 +303,8 @@ class PersonTranslationView(LaunchpadView):
         if self.user:
             return True
         return not (
-            translationmessage.potmsgset.hide_translations_from_anonymous)
+            translationmessage.potmsgset.hide_translations_from_anonymous
+        )
 
     @cachedproperty
     def _review_targets(self):
@@ -312,7 +315,8 @@ class PersonTranslationView(LaunchpadView):
         """
         person = ITranslationsPerson(self.context)
         pofiles = person.getReviewableTranslationFiles(
-            no_older_than=self.history_horizon)
+            no_older_than=self.history_horizon
+        )
 
         return ReviewLinksAggregator().aggregate(pofiles)
 
@@ -322,12 +326,13 @@ class PersonTranslationView(LaunchpadView):
         Results are ordered from most to fewest untranslated messages.
         """
         person = ITranslationsPerson(self.context)
-        urgent_first = (max_fetch is not None and max_fetch >= 0)
+        urgent_first = max_fetch is not None and max_fetch >= 0
         pofiles = person.getTranslatableFiles(
-            no_older_than=self.history_horizon, urgent_first=urgent_first)
+            no_older_than=self.history_horizon, urgent_first=urgent_first
+        )
 
         if max_fetch is not None:
-            pofiles = pofiles[:abs(max_fetch)]
+            pofiles = pofiles[: abs(max_fetch)]
 
         return TranslateLinksAggregator().aggregate(pofiles)
 
@@ -336,8 +341,9 @@ class PersonTranslationView(LaunchpadView):
         """Top projects and packages for this person to review."""
         return self._review_targets
 
-    def _addToTargetsList(self, existing_targets, new_targets, max_items,
-                          max_overall):
+    def _addToTargetsList(
+        self, existing_targets, new_targets, max_items, max_overall
+    ):
         """Add `new_targets` to `existing_targets` list.
 
         This is for use in showing top-10 ists of translations a user
@@ -361,12 +367,10 @@ class PersonTranslationView(LaunchpadView):
         if remaining_slots <= 0:
             return existing_targets
 
-        known_targets = {item['target'] for item in existing_targets}
+        known_targets = {item["target"] for item in existing_targets}
         really_new = [
-            item
-            for item in new_targets
-            if item['target'] not in known_targets
-            ]
+            item for item in new_targets if item["target"] not in known_targets
+        ]
 
         return existing_targets + really_new[:maximum_addition]
 
@@ -383,7 +387,8 @@ class PersonTranslationView(LaunchpadView):
         # worked on.
         recent = self._review_targets
         return self._addToTargetsList(
-            [], recent, max_known_targets, list_length)
+            [], recent, max_known_targets, list_length
+        )
 
     @cachedproperty
     def num_projects_and_packages_to_review(self):
@@ -405,24 +410,27 @@ class PersonTranslationView(LaunchpadView):
         fetch = 5 * max_urgent_targets
         urgent = self._getTargetsForTranslation(fetch)
         overall = self._addToTargetsList(
-            [], urgent, max_urgent_targets, list_length)
+            [], urgent, max_urgent_targets, list_length
+        )
 
         fetch = 5 * max_almost_complete_targets
         almost_complete = self._getTargetsForTranslation(-fetch)
         overall = self._addToTargetsList(
-            overall, almost_complete, max_almost_complete_targets,
-            list_length)
+            overall, almost_complete, max_almost_complete_targets, list_length
+        )
 
         return overall
 
     to_complete_template = ViewPageTemplateFile(
-        '../templates/person-translations-to-complete-table.pt')
+        "../templates/person-translations-to-complete-table.pt"
+    )
 
     def translations_to_complete_table(self):
         return self.to_complete_template(dict(view=self))
 
     to_review_template = ViewPageTemplateFile(
-        '../templates/person-translations-to-review-table.pt')
+        "../templates/person-translations-to-review-table.pt"
+    )
 
     def translations_to_review_table(self):
         return self.to_review_template(dict(view=self))
@@ -439,10 +447,12 @@ class PersonTranslationReviewView(PersonTranslationView):
 
 class PersonTranslationRelicensingView(LaunchpadFormView):
     """View for Person's translation relicensing page."""
+
     schema = ITranslationRelicensingAgreementEdit
-    field_names = ['allow_relicensing', 'back_to']
+    field_names = ["allow_relicensing", "back_to"]
     custom_widget_allow_relicensing = CustomWidgetFactory(
-        LaunchpadRadioWidget, orientation='vertical')
+        LaunchpadRadioWidget, orientation="vertical"
+    )
     custom_widget_back_to = CustomWidgetFactory(TextWidget, visible=False)
 
     page_title = "Licensing"
@@ -463,26 +473,27 @@ class PersonTranslationRelicensingView(LaunchpadFormView):
             default = TranslationRelicensingAgreementOptions.BSD
         return {
             "allow_relicensing": default,
-            "back_to": self.request.get('back_to'),
-            }
+            "back_to": self.request.get("back_to"),
+        }
 
     @property
     def relicensing_url(self):
         """Return an URL for this view."""
-        return canonical_url(self.context, view_name='+licensing',
-                             rootsite='translations')
+        return canonical_url(
+            self.context, view_name="+licensing", rootsite="translations"
+        )
 
     @property
     def cancel_url(self):
         """Escape to the person's main Translations page."""
-        return canonical_url(self.context, rootsite='translations')
+        return canonical_url(self.context, rootsite="translations")
 
     def getSafeRedirectURL(self, url):
         """Successful form submission should send to this URL."""
         if url and url.startswith(self.request.getApplicationURL()):
             return url
         else:
-            return canonical_url(self.context, rootsite='translations')
+            return canonical_url(self.context, rootsite="translations")
 
     @action(_("Confirm"), name="submit")
     def submit_action(self, action, data):
@@ -493,21 +504,27 @@ class PersonTranslationRelicensingView(LaunchpadFormView):
         which is backed by the TranslationRelicensingAgreement table.
         """
         translations_person = ITranslationsPerson(self.context)
-        allow_relicensing = data['allow_relicensing']
+        allow_relicensing = data["allow_relicensing"]
         if allow_relicensing == TranslationRelicensingAgreementOptions.BSD:
             translations_person.translations_relicensing_agreement = True
-            self.request.response.addInfoNotification(_(
-                "Thank you for BSD-licensing your translations."))
-        elif (allow_relicensing ==
-            TranslationRelicensingAgreementOptions.REMOVE):
+            self.request.response.addInfoNotification(
+                _("Thank you for BSD-licensing your translations.")
+            )
+        elif (
+            allow_relicensing == TranslationRelicensingAgreementOptions.REMOVE
+        ):
             translations_person.translations_relicensing_agreement = False
-            self.request.response.addInfoNotification(_(
-                "We respect your choice. "
-                "Thanks for trying out Launchpad Translations."))
+            self.request.response.addInfoNotification(
+                _(
+                    "We respect your choice. "
+                    "Thanks for trying out Launchpad Translations."
+                )
+            )
         else:
             raise AssertionError(
-                "Unknown allow_relicensing value: %r" % allow_relicensing)
-        self.next_url = self.getSafeRedirectURL(data['back_to'])
+                "Unknown allow_relicensing value: %r" % allow_relicensing
+            )
+        self.next_url = self.getSafeRedirectURL(data["back_to"])
 
 
 class TranslationActivityView(LaunchpadView):
@@ -526,12 +543,14 @@ class TranslationActivityView(LaunchpadView):
         """Iterate over person's translation_history."""
         translations_person = ITranslationsPerson(self.context)
         batchnav = BatchNavigator(
-            translations_person.translation_history, self.request)
+            translations_person.translation_history, self.request
+        )
 
         pofiletranslatorset = getUtility(IPOFileTranslatorSet)
         batch = batchnav.currentBatch()
         self._pofiletranslator_cache = (
-            pofiletranslatorset.prefetchPOFileTranslatorRelations(batch))
+            pofiletranslatorset.prefetchPOFileTranslatorRelations(batch)
+        )
 
         return batchnav
 

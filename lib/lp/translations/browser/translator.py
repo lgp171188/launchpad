@@ -2,29 +2,26 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TranslatorAdminView',
-    'TranslatorEditView',
-    'TranslatorRemoveView',
-    ]
+    "TranslatorAdminView",
+    "TranslatorEditView",
+    "TranslatorRemoveView",
+]
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import structured
-from lp.translations.interfaces.translator import (
-    IEditTranslator,
-    ITranslator,
-    )
+from lp.translations.interfaces.translator import IEditTranslator, ITranslator
 
 
 class TranslatorAdminView(LaunchpadEditFormView):
     """View class to administer ITranslator objects"""
 
     schema = ITranslator
-    field_names = ['language', 'translator', 'style_guide_url']
+    field_names = ["language", "translator", "style_guide_url"]
 
     @action("Change")
     def change_action(self, action, data):
@@ -33,26 +30,32 @@ class TranslatorAdminView(LaunchpadEditFormView):
 
     def validate(self, data):
         """Don't allow to change the language if it's already in the group."""
-        language = data.get('language')
+        language = data.get("language")
         translation_group = self.context.translationgroup
         existing_translator = translation_group.query_translator(language)
-        if (self.context.language != language and
-            existing_translator is not None):
+        if (
+            self.context.language != language
+            and existing_translator is not None
+        ):
             # The language changed but it already exists so we cannot accept
             # this edit.
-            self.setFieldError('language',
+            self.setFieldError(
+                "language",
                 structured(
                     '<a href="%s">%s</a> '
-                    'is already a translator for this language',
+                    "is already a translator for this language",
                     canonical_url(existing_translator.translator),
-                    existing_translator.translator.displayname))
+                    existing_translator.translator.displayname,
+                ),
+            )
 
     @property
     def label(self):
         """Return form label describing the action one is doing."""
         return "Edit %s translation team in %s" % (
             self.context.language.englishname,
-            self.context.translationgroup.title)
+            self.context.translationgroup.title,
+        )
 
     @property
     def page_title(self):
@@ -61,8 +64,9 @@ class TranslatorAdminView(LaunchpadEditFormView):
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context.translationgroup,
-                             rootsite='translations')
+        return canonical_url(
+            self.context.translationgroup, rootsite="translations"
+        )
 
     @property
     def next_url(self):
@@ -84,7 +88,8 @@ class TranslatorEditView(LaunchpadEditFormView):
         """Return form label describing the action one is doing."""
         return "Set %s guidelines for %s" % (
             self.context.language.englishname,
-            self.context.translationgroup.title)
+            self.context.translationgroup.title,
+        )
 
     @property
     def page_title(self):
@@ -93,7 +98,7 @@ class TranslatorEditView(LaunchpadEditFormView):
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context.translator, rootsite='translations')
+        return canonical_url(self.context.translator, rootsite="translations")
 
     @property
     def next_url(self):
@@ -107,10 +112,11 @@ class TranslatorRemoveView(LaunchpadFormView):
     @action("Remove")
     def remove(self, action, data):
         """Remove the ITranslator from the associated ITranslationGroup."""
-        message = 'Removed %s as the %s translator for %s.' % (
+        message = "Removed %s as the %s translator for %s." % (
             self.context.translator.displayname,
             self.context.language.englishname,
-            self.context.translationgroup.title)
+            self.context.translationgroup.title,
+        )
         self.context.translationgroup.remove_translator(self.context)
         self.request.response.addInfoNotification(message)
 
@@ -120,7 +126,8 @@ class TranslatorRemoveView(LaunchpadFormView):
         return "Unset '%s' as the %s translator in %s" % (
             self.context.translator.displayname,
             self.context.language.englishname,
-            self.context.translationgroup.title)
+            self.context.translationgroup.title,
+        )
 
     @property
     def page_title(self):
@@ -129,8 +136,9 @@ class TranslatorRemoveView(LaunchpadFormView):
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context.translationgroup,
-                             rootsite='translations')
+        return canonical_url(
+            self.context.translationgroup, rootsite="translations"
+        )
 
     @property
     def next_url(self):

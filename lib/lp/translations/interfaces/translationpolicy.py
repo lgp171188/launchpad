@@ -4,8 +4,8 @@
 """Translation access and sharing policy."""
 
 __all__ = [
-    'ITranslationPolicy',
-    ]
+    "ITranslationPolicy",
+]
 
 from lazr.restful.declarations import exported
 from lazr.restful.fields import ReferenceChoice
@@ -34,21 +34,33 @@ class ITranslationPolicy(Interface):
     user: translation team and translation policy.
     """
 
-    translationgroup = exported(ReferenceChoice(
-        title=_("Translation group"),
-        description=_("The translation group that helps review "
-            " translations for this project or distribution. The group's "
-            " role depends on the permissions policy selected below."),
-        required=False,
-        vocabulary='TranslationGroup',
-        schema=ITranslationGroup), as_of="devel")
+    translationgroup = exported(
+        ReferenceChoice(
+            title=_("Translation group"),
+            description=_(
+                "The translation group that helps review "
+                " translations for this project or distribution. The group's "
+                " role depends on the permissions policy selected below."
+            ),
+            required=False,
+            vocabulary="TranslationGroup",
+            schema=ITranslationGroup,
+        ),
+        as_of="devel",
+    )
 
-    translationpermission = exported(Choice(
-        title=_("Translation permissions policy"),
-        description=_("The policy this project or distribution uses to "
-            " balance openness and control for their translations."),
-        required=True,
-        vocabulary=TranslationPermission), as_of="devel")
+    translationpermission = exported(
+        Choice(
+            title=_("Translation permissions policy"),
+            description=_(
+                "The policy this project or distribution uses to "
+                " balance openness and control for their translations."
+            ),
+            required=True,
+            vocabulary=TranslationPermission,
+        ),
+        as_of="devel",
+    )
 
     def getTranslationGroups():
         """List all applicable translation groups.
@@ -133,9 +145,9 @@ class ITranslationPolicy(Interface):
         are always allowed even if they are not invited.
         """
 
-    def sharesTranslationsWithOtherSide(person, language,
-                                        sourcepackage=None,
-                                        purportedly_upstream=False):
+    def sharesTranslationsWithOtherSide(
+        person, language, sourcepackage=None, purportedly_upstream=False
+    ):
         """Should translations be shared across `TranslationSide`s?
 
         Should translations to this object, as reviewed by `person`,

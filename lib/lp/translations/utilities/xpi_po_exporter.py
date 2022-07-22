@@ -4,17 +4,17 @@
 """Export module for XPI files using .po file format."""
 
 __all__ = [
-    'XPIPOExporter',
-    ]
+    "XPIPOExporter",
+]
 
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.utilities.gettext_po_exporter import GettextPOExporter
 
 
@@ -41,8 +41,10 @@ class XPIPOExporter(GettextPOExporter):
         # msgid_singular and msgid_plural.
         if translation_message.singular_text is not None:
             translation_message.msgid_singular = (
-                translation_message.singular_text)
+                translation_message.singular_text
+            )
         if translation_message.plural_text is not None:
             translation_message.msgid_plural = translation_message.plural_text
         return GettextPOExporter.exportTranslationMessageData(
-            self, translation_message)
+            self, translation_message
+        )

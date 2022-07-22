@@ -4,8 +4,8 @@
 """Translation Exporter tests."""
 
 import io
-from operator import attrgetter
 import unittest
+from operator import attrgetter
 
 from zope.interface.verify import verifyObject
 
@@ -13,18 +13,19 @@ from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translationexporter import (
     IExportedTranslationFile,
     ITranslationExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.utilities.translation_export import (
     ExportedTranslationFile,
     TranslationExporter,
-    )
+)
 
 
 class TranslationExporterTestCase(unittest.TestCase):
     """Class test for translation importer component"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -34,31 +35,39 @@ class TranslationExporterTestCase(unittest.TestCase):
         """Check whether the object follows the interface."""
         self.assertTrue(
             verifyObject(ITranslationExporter, self.translation_exporter),
-            "TranslationExporter doesn't follow the interface")
+            "TranslationExporter doesn't follow the interface",
+        )
         self.assertTrue(
             verifyObject(
-                IExportedTranslationFile,
-                ExportedTranslationFile(io.BytesIO())),
-            "ExportedTranslationFile doesn't follow the interface")
+                IExportedTranslationFile, ExportedTranslationFile(io.BytesIO())
+            ),
+            "ExportedTranslationFile doesn't follow the interface",
+        )
 
     def testGetTranslationFormatExporterByFileFormat(self):
         """Check whether we get the right exporter from the file format."""
         translation_exporter = self.translation_exporter
         po_format_exporter = (
             translation_exporter.getExporterProducingTargetFileFormat(
-                TranslationFileFormat.PO))
+                TranslationFileFormat.PO
+            )
+        )
 
         self.assertIsNotNone(
             po_format_exporter,
-            'Expected PO file format exporter was not found')
+            "Expected PO file format exporter was not found",
+        )
 
         mo_format_exporter = (
             translation_exporter.getExporterProducingTargetFileFormat(
-                TranslationFileFormat.MO))
+                TranslationFileFormat.MO
+            )
+        )
 
         self.assertIsNotNone(
             mo_format_exporter,
-            'Expected MO file format exporter was not found')
+            "Expected MO file format exporter was not found",
+        )
 
     def testGetTranslationFormatExportersForFileFormat(self):
         """Test the list of exporters handling a given file format."""
@@ -66,25 +75,32 @@ class TranslationExporterTestCase(unittest.TestCase):
         exporter_formats = []
         exporters_available = (
             translation_exporter.getExportersForSupportedFileFormat(
-                TranslationFileFormat.PO))
+                TranslationFileFormat.PO
+            )
+        )
         for exporter in exporters_available:
             exporter_formats.append(exporter.format)
 
         self.assertEqual(
-            sorted(exporter_formats, key=attrgetter('name')),
-            [TranslationFileFormat.MO,
-             TranslationFileFormat.PO,
-             ],
-            'PO source file should be exported as '
-            'PO and MO formats')
+            sorted(exporter_formats, key=attrgetter("name")),
+            [
+                TranslationFileFormat.MO,
+                TranslationFileFormat.PO,
+            ],
+            "PO source file should be exported as " "PO and MO formats",
+        )
 
         exporter_formats = []
         exporters_available = (
             translation_exporter.getExportersForSupportedFileFormat(
-                TranslationFileFormat.XPI))
+                TranslationFileFormat.XPI
+            )
+        )
         for exporter in exporters_available:
             exporter_formats.append(exporter.format)
 
         self.assertEqual(
-            exporter_formats, [TranslationFileFormat.XPIPO],
-            'XPI source file should be exported as PO format')
+            exporter_formats,
+            [TranslationFileFormat.XPIPO],
+            "XPI source file should be exported as PO format",
+        )

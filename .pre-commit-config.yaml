@@ -61,6 +61,7 @@ repos:
             |testing
             |testopenid
             |tests
+            |translations
           )/
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
@@ -98,6 +99,7 @@ repos:
             |testing
             |testopenid
             |tests
+            |translations
           )/
     -   id: isort
         alias: isort-black
@@ -125,6 +127,7 @@ repos:
             |testing
             |testopenid
             |tests
+            |translations
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

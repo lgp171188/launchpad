@@ -5,20 +5,13 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    login_person,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing import TestCaseWithFactory, login_person, person_logged_in
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.translations.browser.productseries import ProductSeriesView
 from lp.translations.browser.serieslanguage import ProductSeriesLanguageView
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 
 
 class TestProductSeriesView(TestCaseWithFactory):
@@ -59,7 +52,8 @@ class TestProductSeriesView(TestCaseWithFactory):
         # Adding a translation group with no documentation keeps
         # `has_translation_documentation` at False.
         self.product.translationgroup = self.factory.makeTranslationGroup(
-            self.productseries.product.owner, url=None)
+            self.productseries.product.owner, url=None
+        )
         view = self._createView()
         self.assertFalse(view.has_translation_documentation)
 
@@ -67,7 +61,8 @@ class TestProductSeriesView(TestCaseWithFactory):
         # After adding a translation group with a documentation URL lets
         # `has_translation_documentation` be True.
         self.product.translationgroup = self.factory.makeTranslationGroup(
-            self.productseries.product.owner, url='http://something')
+            self.productseries.product.owner, url="http://something"
+        )
         view = self._createView()
         self.assertTrue(view.has_translation_documentation)
 
@@ -90,11 +85,13 @@ class TestProductSeriesView(TestCaseWithFactory):
         # The `productserieslanguages` properperty has a list of the
         # languages of the po files for the templates in this seris.
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
         pofile = self.factory.makePOFile(potemplate=potemplate)
         view = self._createView()
         self.assertEqual(
-            [pofile.language], self._getProductserieslanguages(view))
+            [pofile.language], self._getProductserieslanguages(view)
+        )
 
     def _makePersonWithLanguage(self):
         user = self.factory.makePerson()
@@ -105,8 +102,7 @@ class TestProductSeriesView(TestCaseWithFactory):
     def test_productserieslanguages_preferred_language_without_pofile(self):
         # If the user has a preferred language, that language always in
         # the list.
-        self.factory.makePOTemplate(
-            productseries=self.productseries)
+        self.factory.makePOTemplate(productseries=self.productseries)
         user, language = self._makePersonWithLanguage()
         login_person(user)
         view = self._createView()
@@ -116,35 +112,41 @@ class TestProductSeriesView(TestCaseWithFactory):
         # If the user has a preferred language, that language always in
         # the list.
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
         pofile = self.factory.makePOFile(potemplate=potemplate)
         user, language = self._makePersonWithLanguage()
         login_person(user)
         view = self._createView()
         self.assertContentEqual(
-            [pofile.language, language],
-            self._getProductserieslanguages(view))
+            [pofile.language, language], self._getProductserieslanguages(view)
+        )
 
     def test_productserieslanguages_ordered_by_englishname(self):
         # Returned languages are ordered by their name in English.
         language1 = self.factory.makeLanguage(
-            language_code='lang-aa', name='Zz')
+            language_code="lang-aa", name="Zz"
+        )
         language2 = self.factory.makeLanguage(
-            language_code='lang-zz', name='Aa')
+            language_code="lang-zz", name="Aa"
+        )
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
         self.factory.makePOFile(language=language1, potemplate=potemplate)
         self.factory.makePOFile(language=language2, potemplate=potemplate)
         view = self._createView()
         self.assertEqual(
-            [language2, language1], self._getProductserieslanguages(view))
+            [language2, language1], self._getProductserieslanguages(view)
+        )
 
     def test_productserieslanguages_english(self):
         # English is not listed among translated languages, even if there's
         # an English POFile
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
-        self.factory.makePOFile('en', potemplate)
+            productseries=self.productseries
+        )
+        self.factory.makePOFile("en", potemplate)
         view = self._createView()
         self.assertEqual([], self._getProductserieslanguages(view))
 
@@ -169,7 +171,8 @@ class TestProductSeriesViewBzrUsage(TestCaseWithFactory):
     def _createView(self):
         # The view operates on the secured product series!
         view = ProductSeriesView(
-            self.secured_productseries, LaunchpadTestRequest())
+            self.secured_productseries, LaunchpadTestRequest()
+        )
         view.initialize()
         return view
 
@@ -184,21 +187,24 @@ class TestProductSeriesViewBzrUsage(TestCaseWithFactory):
     def test_has_imports_enabled_with_branch_imports_disabled(self):
         self.productseries.branch = self.factory.makeBranch()
         self.productseries.translations_autoimport_mode = (
-                TranslationsBranchImportMode.NO_IMPORT)
+            TranslationsBranchImportMode.NO_IMPORT
+        )
         view = self._createView()
         self.assertFalse(view.has_imports_enabled)
 
     def test_has_imports_enabled_with_branch_template_imports_enabled(self):
         self.productseries.branch = self.factory.makeBranch()
         self.productseries.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TEMPLATES)
+            TranslationsBranchImportMode.IMPORT_TEMPLATES
+        )
         view = self._createView()
         self.assertTrue(view.has_imports_enabled)
 
     def test_has_imports_enabled_with_branch_trans_imports_enabled(self):
         self.productseries.branch = self.factory.makeBranch()
         self.productseries.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TRANSLATIONS)
+            TranslationsBranchImportMode.IMPORT_TRANSLATIONS
+        )
         view = self._createView()
         self.assertTrue(view.has_imports_enabled)
 
@@ -206,18 +212,22 @@ class TestProductSeriesViewBzrUsage(TestCaseWithFactory):
         # Private branches are hidden from non-privileged users. The view
         # pretends that it is not used for imports.
         self.productseries.branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         self.productseries.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TRANSLATIONS)
+            TranslationsBranchImportMode.IMPORT_TRANSLATIONS
+        )
         view = self._createView()
         self.assertFalse(view.has_imports_enabled)
 
     def test_has_imports_enabled_private_branch_privileged(self):
         # Private branches are visible for privileged users.
         self.productseries.branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         self.productseries.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TRANSLATIONS)
+            TranslationsBranchImportMode.IMPORT_TRANSLATIONS
+        )
         with person_logged_in(self.productseries.branch.owner):
             view = self._createView()
             self.assertTrue(view.has_imports_enabled)
@@ -231,14 +241,16 @@ class TestProductSeriesViewBzrUsage(TestCaseWithFactory):
         # Private branches are hidden from non-privileged users. The view
         # pretends that it is not used for exports.
         self.productseries.translations_branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         view = self._createView()
         self.assertFalse(view.has_exports_enabled)
 
     def test_has_exports_enabled_private_branch_privileged(self):
         # Private branches are visible for privileged users.
         self.productseries.translations_branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         with person_logged_in(self.productseries.translations_branch.owner):
             view = self._createView()
             self.assertTrue(view.has_exports_enabled)
@@ -255,7 +267,8 @@ class TestProductSeriesLanguageView(TestCaseWithFactory):
         self.productseries = self.factory.makeProductSeries()
         self.language = self.factory.makeLanguage()
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
         self.factory.makePOFile(language=self.language, potemplate=potemplate)
         self.psl = self.productseries.productserieslanguages[0]
 
@@ -274,7 +287,8 @@ class TestProductSeriesLanguageView(TestCaseWithFactory):
 
     def _makeTranslationGroup(self):
         group = self.factory.makeTranslationGroup(
-            self.productseries.product.owner, url=None)
+            self.productseries.product.owner, url=None
+        )
         self.productseries.product.translationgroup = group
         return group
 
@@ -295,6 +309,7 @@ class TestProductSeriesLanguageView(TestCaseWithFactory):
         # appear as the translation_team.
         group = self._makeTranslationGroup()
         translator = self.factory.makeTranslator(
-            group=group, language=self.language)
+            group=group, language=self.language
+        )
         view = self._createView()
         self.assertEqual(translator, view.translation_team)

@@ -3,31 +3,23 @@
 
 """Set 'is_imported' flag from 'is_current' for upstream projects."""
 
-__all__ = ['MigrateCurrentFlagProcess']
+__all__ = ["MigrateCurrentFlagProcess"]
 
 import logging
 
-from storm.expr import (
-    And,
-    Count,
-    Or,
-    Select,
-    )
+from storm.expr import And, Count, Or, Select
 from storm.info import ClassAlias
 from zope.interface import implementer
 
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database.interfaces import IMasterStore
-from lp.services.looptuner import (
-    DBLoopTuner,
-    ITunableLoop,
-    )
+from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.translations.model.potemplate import POTemplate
 from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.model.translationtemplateitem import (
     TranslationTemplateItem,
-    )
+)
 
 
 @implementer(ITunableLoop)
@@ -42,7 +34,8 @@ class TranslationMessageImportedFlagUpdater:
         self.tm_ids = list(tm_ids)
         self.total = len(self.tm_ids)
         self.logger.info(
-            "Fixing up a total of %d TranslationMessages." % (self.total))
+            "Fixing up a total of %d TranslationMessages." % (self.total)
+        )
         self.store = IMasterStore(Product)
 
     def isDone(self):
@@ -55,36 +48,48 @@ class TranslationMessageImportedFlagUpdater:
         """Return a batch of objects to work with."""
         end_at = self.start_at + int(chunk_size)
         self.logger.debug(
-            "Getting translations[%d:%d]..." % (self.start_at, end_at))
-        return self.tm_ids[self.start_at: end_at]
+            "Getting translations[%d:%d]..." % (self.start_at, end_at)
+        )
+        return self.tm_ids[self.start_at : end_at]
 
     def _updateTranslationMessages(self, tm_ids):
         # Unset imported messages that might be in the way.
-        PreviousImported = ClassAlias(
-            TranslationMessage, 'PreviousImported')
+        PreviousImported = ClassAlias(TranslationMessage, "PreviousImported")
         CurrentTranslation = ClassAlias(
-            TranslationMessage, 'CurrentTranslation')
+            TranslationMessage, "CurrentTranslation"
+        )
         previous_imported_select = Select(
             PreviousImported.id,
             tables=[PreviousImported, CurrentTranslation],
             where=And(
                 PreviousImported.is_current_upstream == True,
-                (PreviousImported.potmsgsetID ==
-                 CurrentTranslation.potmsgsetID),
-                Or(And(PreviousImported.potemplateID == None,
-                       CurrentTranslation.potemplateID == None),
-                   (PreviousImported.potemplateID ==
-                    CurrentTranslation.potemplateID)),
+                (
+                    PreviousImported.potmsgsetID
+                    == CurrentTranslation.potmsgsetID
+                ),
+                Or(
+                    And(
+                        PreviousImported.potemplateID == None,
+                        CurrentTranslation.potemplateID == None,
+                    ),
+                    (
+                        PreviousImported.potemplateID
+                        == CurrentTranslation.potemplateID
+                    ),
+                ),
                 PreviousImported.languageID == CurrentTranslation.languageID,
-                CurrentTranslation.id.is_in(tm_ids)))
+                CurrentTranslation.id.is_in(tm_ids),
+            ),
+        )
 
         previous_imported = self.store.find(
             TranslationMessage,
-            TranslationMessage.id.is_in(previous_imported_select))
+            TranslationMessage.id.is_in(previous_imported_select),
+        )
         previous_imported.set(is_current_upstream=False)
         translations = self.store.find(
-            TranslationMessage,
-            TranslationMessage.id.is_in(tm_ids))
+            TranslationMessage, TranslationMessage.id.is_in(tm_ids)
+        )
         translations.set(is_current_upstream=True)
 
     def __call__(self, chunk_size):
@@ -103,8 +108,10 @@ class TranslationMessageImportedFlagUpdater:
             self.transaction.begin()
 
             self.start_at += len(tm_ids)
-            self.logger.info("Processed %d/%d TranslationMessages." % (
-                self.start_at, self.total))
+            self.logger.info(
+                "Processed %d/%d TranslationMessages."
+                % (self.start_at, self.total)
+            )
 
 
 class MigrateCurrentFlagProcess:
@@ -123,11 +130,15 @@ class MigrateCurrentFlagProcess:
 
     def getProductsWithTemplates(self):
         """Get Product.ids for projects with any translations templates."""
-        return self.store.find(
-            Product,
-            POTemplate.productseriesID == ProductSeries.id,
-            ProductSeries.productID == Product.id,
-            ).group_by(Product).having(Count(POTemplate.id) > 0)
+        return (
+            self.store.find(
+                Product,
+                POTemplate.productseriesID == ProductSeries.id,
+                ProductSeries.productID == Product.id,
+            )
+            .group_by(Product)
+            .having(Count(POTemplate.id) > 0)
+        )
 
     def getCurrentNonimportedTranslations(self, product):
         """Get TranslationMessage.ids that need migration for a `product`."""
@@ -135,11 +146,14 @@ class MigrateCurrentFlagProcess:
             TranslationMessage.id,
             TranslationMessage.is_current_ubuntu == True,
             TranslationMessage.is_current_upstream == False,
-            (TranslationMessage.potmsgsetID ==
-             TranslationTemplateItem.potmsgsetID),
+            (
+                TranslationMessage.potmsgsetID
+                == TranslationTemplateItem.potmsgsetID
+            ),
             TranslationTemplateItem.potemplateID == POTemplate.id,
             POTemplate.productseriesID == ProductSeries.id,
-            ProductSeries.productID == product.id).config(distinct=True)
+            ProductSeries.productID == product.id,
+        ).config(distinct=True)
 
     def run(self):
         products_with_templates = list(self.getProductsWithTemplates())
@@ -150,12 +164,14 @@ class MigrateCurrentFlagProcess:
         for product in products_with_templates:
             current_product += 1
             self.logger.info(
-                "Migrating %s translations (%d of %d)..." % (
-                    product.name, current_product, total_products))
+                "Migrating %s translations (%d of %d)..."
+                % (product.name, current_product, total_products)
+            )
 
             tm_ids = self.getCurrentNonimportedTranslations(product)
             tm_loop = TranslationMessageImportedFlagUpdater(
-                self.transaction, self.logger, tm_ids)
+                self.transaction, self.logger, tm_ids
+            )
             DBLoopTuner(tm_loop, 5, minimum_chunk_size=100).run()
 
         self.logger.info("Done.")
