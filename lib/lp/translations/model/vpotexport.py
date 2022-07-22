@@ -4,8 +4,8 @@
 """Database class to handle translation template export view."""
 
 __all__ = [
-    'VPOTExport',
-    ]
+    "VPOTExport",
+]
 
 from zope.interface import implementer
 

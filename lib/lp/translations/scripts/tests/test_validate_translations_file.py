@@ -10,16 +10,15 @@ import os.path
 from textwrap import dedent
 from unittest import TestCase
 
-from lp.testing.script import run_script
 import lp.translations
+from lp.testing.script import run_script
 from lp.translations.scripts.validate_translations_file import (
     UnknownFileType,
     ValidateTranslationsFile,
-    )
+)
 
 
 class TestValidateTranslationsFile(TestCase):
-
     def _makeValidator(self):
         """Produce a ValidateTranslationsFile."""
         validator = ValidateTranslationsFile(test_args=[])
@@ -34,17 +33,22 @@ class TestValidateTranslationsFile(TestCase):
         """Return base path to this test's test data."""
         return os.path.join(
             os.path.dirname(lp.translations.__file__),
-            'scripts/tests/test-data')
+            "scripts/tests/test-data",
+        )
 
     def test_validate_unknown(self):
         # Unknown filename extensions result in UnknownFileType.
         validator = self._makeValidator()
         self.assertRaises(
-            UnknownFileType, validator._validateContent, 'foo.bar', b'content')
+            UnknownFileType, validator._validateContent, "foo.bar", b"content"
+        )
 
     def test_validate_po_good(self):
         validator = self._makeValidator()
-        result = validator._validateContent('nl.po', self._strip(r"""
+        result = validator._validateContent(
+            "nl.po",
+            self._strip(
+                r"""
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\n"
@@ -53,20 +57,30 @@ class TestValidateTranslationsFile(TestCase):
 
             msgid "foo"
             msgstr "bar"
-            """).encode("UTF-8"))
+            """
+            ).encode("UTF-8"),
+        )
         self.assertTrue(result)
 
     def test_validate_po_bad(self):
         validator = self._makeValidator()
-        result = validator._validateContent('nl.po', self._strip("""
+        result = validator._validateContent(
+            "nl.po",
+            self._strip(
+                """
             msgid "no header here"
             msgstr "hier geen kopje"
-            """).encode("UTF-8"))
+            """
+            ).encode("UTF-8"),
+        )
         self.assertFalse(result)
 
     def test_validate_pot_good(self):
         validator = self._makeValidator()
-        result = validator._validateContent('test.pot', self._strip(r"""
+        result = validator._validateContent(
+            "test.pot",
+            self._strip(
+                r"""
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\n"
@@ -75,16 +89,18 @@ class TestValidateTranslationsFile(TestCase):
 
             msgid "foo"
             msgstr ""
-            """).encode("UTF-8"))
+            """
+            ).encode("UTF-8"),
+        )
         self.assertTrue(result)
 
     def test_validate_pot_bad(self):
         validator = self._makeValidator()
-        result = validator._validateContent('test.pot', b'garble')
+        result = validator._validateContent("test.pot", b"garble")
         self.assertFalse(result)
 
     def test_script(self):
-        test_input = os.path.join(self._findTestData(), 'minimal.pot')
-        script = 'scripts/rosetta/validate-translations-file.py'
+        test_input = os.path.join(self._findTestData(), "minimal.pot")
+        script = "scripts/rosetta/validate-translations-file.py"
         result, out, err = run_script(script, [test_input])
         self.assertEqual(0, result)

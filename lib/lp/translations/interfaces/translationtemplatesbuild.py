@@ -4,9 +4,9 @@
 """Interface and utility for `TranslationTemplatesBuild`."""
 
 __all__ = [
-    'ITranslationTemplatesBuild',
-    'ITranslationTemplatesBuildSource',
-    ]
+    "ITranslationTemplatesBuild",
+    "ITranslationTemplatesBuildSource",
+]
 
 from lazr.restful.fields import Reference
 
@@ -14,7 +14,7 @@ from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJob,
     ISpecificBuildFarmJobSource,
-    )
+)
 from lp.code.interfaces.branch import IBranch
 
 
@@ -23,7 +23,10 @@ class ITranslationTemplatesBuild(IBuildFarmJob):
 
     branch = Reference(
         title=_("The branch that this build operates on."),
-        required=True, readonly=True, schema=IBranch)
+        required=True,
+        readonly=True,
+        schema=IBranch,
+    )
 
 
 class ITranslationTemplatesBuildSource(ISpecificBuildFarmJobSource):

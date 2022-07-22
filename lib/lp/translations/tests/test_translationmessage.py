@@ -3,10 +3,7 @@
 
 """Unit tests for `TranslationMessage`."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from pytz import UTC
 from storm.locals import Store
@@ -14,29 +11,23 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.translations.interfaces.side import (
     ITranslationSideTraitsSet,
     TranslationSide,
-    )
+)
 from lp.translations.interfaces.translationmessage import (
     ITranslationMessage,
     ITranslationMessageSet,
     TranslationConflict,
-    )
+)
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.potranslation import POTranslation
 from lp.translations.model.translationmessage import (
     PlaceholderTranslationMessage,
     TranslationMessage,
-    )
+)
 
 
 class TestTranslationMessage(TestCaseWithFactory):
@@ -53,7 +44,7 @@ class TestTranslationMessage(TestCaseWithFactory):
         verifyObject(ITranslationMessage, message)
 
     def test_placeholder_translationmessage(self):
-        pofile = self.factory.makePOFile('nl')
+        pofile = self.factory.makePOFile("nl")
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         placeholder = PlaceholderTranslationMessage(pofile, potmsgset)
         verifyObject(ITranslationMessage, placeholder)
@@ -80,13 +71,13 @@ class TestTranslationMessage(TestCaseWithFactory):
         self.assertEqual(tomorrow, message.date_reviewed)
 
     def test_getOnePOFile(self):
-        language = self.factory.makeLanguage('sr@test')
+        language = self.factory.makeLanguage("sr@test")
         pofile = self.factory.makePOFile(language.code)
         tm = self.factory.makeCurrentTranslationMessage(pofile=pofile)
         self.assertEqual(pofile, tm.getOnePOFile())
 
     def test_getOnePOFile_shared(self):
-        language = self.factory.makeLanguage('sr@test')
+        language = self.factory.makeLanguage("sr@test")
         pofile1 = self.factory.makePOFile(language.code)
         pofile2 = self.factory.makePOFile(language.code)
         tm = self.factory.makeCurrentTranslationMessage(pofile=pofile1)
@@ -97,7 +88,7 @@ class TestTranslationMessage(TestCaseWithFactory):
     def test_getOnePOFile_no_pofile(self):
         # When POTMsgSet is obsolete (sequence=0), no matching POFile
         # is returned.
-        language = self.factory.makeLanguage('sr@test')
+        language = self.factory.makeLanguage("sr@test")
         pofile = self.factory.makePOFile(language.code)
         tm = self.factory.makeCurrentTranslationMessage(pofile=pofile)
         tm.potmsgset.setSequence(pofile.potemplate, 0)
@@ -108,7 +99,9 @@ class TestTranslationMessage(TestCaseWithFactory):
         translations = [self.factory.getUniqueString() for x in range(6)]
         tm = self.factory.makeCurrentTranslationMessage(
             date_created=self.factory.getUniqueDate(),
-            translations=translations, current_other=True)
+            translations=translations,
+            current_other=True,
+        )
         tm.comment = self.factory.getUniqueString()
         tm.was_obsolete_in_last_import = True
         potmsgset = self.factory.makePOTMsgSet()
@@ -133,7 +126,8 @@ class TestTranslationMessage(TestCaseWithFactory):
         self.assertEqual(tm.is_current_ubuntu, clone.is_current_ubuntu)
         self.assertEqual(tm.is_current_upstream, clone.is_current_upstream)
         self.assertEqual(
-            tm.was_obsolete_in_last_import, clone.was_obsolete_in_last_import)
+            tm.was_obsolete_in_last_import, clone.was_obsolete_in_last_import
+        )
 
 
 class TestApprove(TestCaseWithFactory):
@@ -145,7 +139,7 @@ class TestApprove(TestCaseWithFactory):
         # Simple, basic, suggestion approval: a message is untranslated.
         # There is a suggestion for it.  The suggestion gets approved,
         # and thereby becomes the message's current translation.
-        pofile = self.factory.makePOFile('br')
+        pofile = self.factory.makePOFile("br")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         reviewer = self.factory.makePerson()
         self.assertFalse(suggestion.is_current_upstream)
@@ -161,11 +155,13 @@ class TestApprove(TestCaseWithFactory):
     def test_approve_disables_incumbent_message(self):
         # If there was already a current translation, it is disabled
         # when a suggestion is approved.
-        pofile, potmsgset = self.factory.makePOFileAndPOTMsgSet('te')
+        pofile, potmsgset = self.factory.makePOFileAndPOTMsgSet("te")
         suggestion = self.factory.makeSuggestion(
-            pofile=pofile, potmsgset=potmsgset)
+            pofile=pofile, potmsgset=potmsgset
+        )
         incumbent_message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=potmsgset)
+            pofile=pofile, potmsgset=potmsgset
+        )
 
         self.assertTrue(incumbent_message.is_current_upstream)
         self.assertFalse(suggestion.is_current_upstream)
@@ -177,9 +173,8 @@ class TestApprove(TestCaseWithFactory):
 
     def test_approve_ignores_current_message(self):
         # Approving a message that's already current does nothing.
-        pofile = self.factory.makePOFile('eu')
-        translation = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile)
+        pofile = self.factory.makePOFile("eu")
+        translation = self.factory.makeCurrentTranslationMessage(pofile=pofile)
         submitter = translation.submitter
         original_reviewer = translation.reviewer
         new_reviewer = self.factory.makePerson()
@@ -198,36 +193,46 @@ class TestApprove(TestCaseWithFactory):
         # If a diverged message is masking a shared one, approving the
         # shared one disables the diverged message and so "converges"
         # with the shared translation.
-        pofile = self.factory.makePOFile('he')
+        pofile = self.factory.makePOFile("he")
         translations = [self.factory.getUniqueString()]
         reviewer = self.factory.makePerson()
         traits = getUtility(ITranslationSideTraitsSet).getTraits(
-            pofile.potemplate.translation_side)
+            pofile.potemplate.translation_side
+        )
 
         diverged = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, diverged=True)
+            pofile=pofile, diverged=True
+        )
         potmsgset = diverged.potmsgset
         shared = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=potmsgset, translations=translations)
+            pofile=pofile, potmsgset=potmsgset, translations=translations
+        )
 
         shared.approve(pofile, reviewer)
 
         self.assertFalse(diverged.is_current_upstream)
-        self.assertEqual(shared, traits.getCurrentMessage(
-            potmsgset, pofile.potemplate, pofile.language))
+        self.assertEqual(
+            shared,
+            traits.getCurrentMessage(
+                potmsgset, pofile.potemplate, pofile.language
+            ),
+        )
 
     def test_approve_can_track_other_side(self):
         # Approving the translation message that's already current on
         # the other side converges the upstream and Ubuntu translations.
-        upstream_pofile = self.factory.makePOFile('ar')
+        upstream_pofile = self.factory.makePOFile("ar")
         package = self.factory.makeSourcePackage()
         ubuntu_template = self.factory.makePOTemplate(
             sourcepackagename=package.sourcepackagename,
-            distroseries=package.distroseries)
+            distroseries=package.distroseries,
+        )
         ubuntu_pofile = self.factory.makePOFile(
-            'ar', potemplate=ubuntu_template)
+            "ar", potemplate=ubuntu_template
+        )
         other_side_message = self.factory.makeCurrentTranslationMessage(
-            pofile=upstream_pofile)
+            pofile=upstream_pofile
+        )
         self.assertTrue(other_side_message.is_current_upstream)
         self.assertFalse(other_side_message.is_current_ubuntu)
 
@@ -240,7 +245,7 @@ class TestApprove(TestCaseWithFactory):
         # In some situations (see POTMsgSet.setCurrentTranslation for
         # details) the approval can be made to propagate to the other
         # side, subject to the share_with_other_side parameter.
-        pofile = self.factory.makePOFile('ki')
+        pofile = self.factory.makePOFile("ki")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         reviewer = self.factory.makePerson()
 
@@ -254,7 +259,7 @@ class TestApprove(TestCaseWithFactory):
 
     def test_approve_marks_reviewed(self):
         # Approving a suggestion updates its review fields.
-        pofile = self.factory.makePOFile('ko')
+        pofile = self.factory.makePOFile("ko")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         reviewer = self.factory.makePerson()
 
@@ -270,9 +275,10 @@ class TestApprove(TestCaseWithFactory):
         # Approving an already current message generates no karma.
         translator = self.factory.makePerson()
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('ku')
+        pofile = self.factory.makePOFile("ku")
         existing_translation = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, translator=translator)
+            pofile=pofile, translator=translator
+        )
 
         karmarecorder = self.installKarmaRecorder()
         existing_translation.approve(pofile, reviewer)
@@ -282,7 +288,7 @@ class TestApprove(TestCaseWithFactory):
     def test_approve_awards_review_karma(self):
         # A reviewer receives karma for approving suggestions.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('be')
+        pofile = self.factory.makePOFile("be")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
 
         karmarecorder = self.installKarmaRecorder(person=reviewer)
@@ -290,30 +296,34 @@ class TestApprove(TestCaseWithFactory):
 
         self.assertEqual(1, len(karmarecorder.karma_events))
         self.assertEqual(
-            'translationreview', karmarecorder.karma_events[0].action.name)
+            "translationreview", karmarecorder.karma_events[0].action.name
+        )
 
     def test_approve_awards_suggestion_karma(self):
         # A translator receives karma for suggestions that are approved.
         translator = self.factory.makePerson()
-        pofile = self.factory.makePOFile('ba')
+        pofile = self.factory.makePOFile("ba")
         suggestion = self.factory.makeSuggestion(
-            pofile=pofile, translator=translator)
+            pofile=pofile, translator=translator
+        )
 
         karmarecorder = self.installKarmaRecorder(person=translator)
         suggestion.approve(pofile, self.factory.makePerson())
 
         self.assertEqual(1, len(karmarecorder.karma_events))
         self.assertEqual(
-            'translationsuggestionapproved',
-            karmarecorder.karma_events[0].action.name)
+            "translationsuggestionapproved",
+            karmarecorder.karma_events[0].action.name,
+        )
 
     def test_approve_awards_no_karma_for_self_approval(self):
         # A reviewer receives no karma for approving their own
         # suggestion.
         translator = self.factory.makePerson()
-        pofile = self.factory.makePOFile('bi')
+        pofile = self.factory.makePOFile("bi")
         suggestion = self.factory.makeSuggestion(
-            pofile=pofile, translator=translator)
+            pofile=pofile, translator=translator
+        )
 
         karmarecorder = self.installKarmaRecorder(person=translator)
         suggestion.approve(pofile, translator)
@@ -321,37 +331,46 @@ class TestApprove(TestCaseWithFactory):
         self.assertEqual([], karmarecorder.karma_events)
 
     def test_approve_detects_conflict(self):
-        pofile = self.factory.makePOFile('bo')
+        pofile = self.factory.makePOFile("bo")
         current = self.factory.makeCurrentTranslationMessage(pofile=pofile)
         potmsgset = current.potmsgset
         suggestion = self.factory.makeSuggestion(
-            pofile=pofile, potmsgset=potmsgset)
+            pofile=pofile, potmsgset=potmsgset
+        )
         old = datetime.now(UTC) - timedelta(days=1)
 
         self.assertRaises(
             TranslationConflict,
             suggestion.approve,
-            pofile, self.factory.makePerson(), lock_timestamp=old)
+            pofile,
+            self.factory.makePerson(),
+            lock_timestamp=old,
+        )
 
     def test_approve_clones_message_from_other_side_to_diverge(self):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         potmsgset = self.factory.makePOTMsgSet(potemplate=template)
-        upstream_pofile = self.factory.makePOFile('nl')
-        ubuntu_pofile = self.factory.makePOFile('nl', potemplate=template)
+        upstream_pofile = self.factory.makePOFile("nl")
+        ubuntu_pofile = self.factory.makePOFile("nl", potemplate=template)
         self.factory.makeDivergedTranslationMessage(
-            pofile=upstream_pofile, potmsgset=potmsgset)
+            pofile=upstream_pofile, potmsgset=potmsgset
+        )
         ubuntu_tm = self.factory.makeSuggestion(
-            pofile=ubuntu_pofile, potmsgset=potmsgset)
+            pofile=ubuntu_pofile, potmsgset=potmsgset
+        )
         ubuntu_tm.is_current_ubuntu = True
 
         ubuntu_tm.approve(upstream_pofile, self.factory.makePerson())
 
         upstream_tm = potmsgset.getCurrentTranslation(
-            upstream_pofile.potemplate, upstream_pofile.language,
-            TranslationSide.UPSTREAM)
+            upstream_pofile.potemplate,
+            upstream_pofile.language,
+            TranslationSide.UPSTREAM,
+        )
         self.assertEqual(ubuntu_tm.all_msgstrs, upstream_tm.all_msgstrs)
         self.assertNotEqual(ubuntu_tm, upstream_tm)
 
@@ -412,7 +431,8 @@ class TestAcceptFromImport(TestCaseWithFactory):
         translator = self.factory.makePerson()
         pofile = self.factory.makePOFile()
         suggestion = self.factory.makeSuggestion(
-            pofile=pofile, translator=translator)
+            pofile=pofile, translator=translator
+        )
 
         karmarecorder = self.installKarmaRecorder(person=translator)
         suggestion.acceptFromImport(pofile)
@@ -433,7 +453,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
         """Every test needs a `POFile` and a `POTMsgSet`."""
         super().setUp()
         self.pofile, self.potmsgset = self.factory.makePOFileAndPOTMsgSet(
-            side=TranslationSide.UBUNTU)
+            side=TranslationSide.UBUNTU
+        )
 
     def _getStates(self, *messages):
         """Get is_current_* states for messages.
@@ -445,7 +466,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
         """
         return [
             (message.is_current_ubuntu, message.is_current_upstream)
-            for message in messages]
+            for message in messages
+        ]
 
     def _makeSuggestion(self, identical_to=None):
         if identical_to is not None:
@@ -453,8 +475,10 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
         else:
             translations = None
         return self.factory.makeSuggestion(
-            pofile=self.pofile, potmsgset=self.potmsgset,
-            translations=translations)
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            translations=translations,
+        )
 
     def _makeUbuntuMessage(self, identical_to=None):
         if identical_to is not None:
@@ -462,12 +486,13 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
             return identical_to
         else:
             return self.factory.makeCurrentTranslationMessage(
-                potmsgset=self.potmsgset, pofile=self.pofile)
+                potmsgset=self.potmsgset, pofile=self.pofile
+            )
 
     def _makeUpstreamMessage(self):
         message = self.factory.makeCurrentTranslationMessage(
-                potmsgset=self.potmsgset, pofile=self.pofile,
-                current_other=True)
+            potmsgset=self.potmsgset, pofile=self.pofile, current_other=True
+        )
         message.is_current_ubuntu = False
         return message
 
@@ -490,7 +515,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(True, True), (False, False)],
-            self._getStates(suggestion, ubuntu_message))
+            self._getStates(suggestion, ubuntu_message),
+        )
 
     def test_accept_upstream_no_ubuntu(self):
         # If there was already an upstream translation, but no ubuntu
@@ -502,7 +528,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(True, True), (False, False)],
-            self._getStates(suggestion, upstream_message))
+            self._getStates(suggestion, upstream_message),
+        )
 
     def test_accept_previously_imported(self):
         # If there was already an ubuntu translation, and an upstream
@@ -516,21 +543,22 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
         # The suggestion is accepted as the upstream translation.
         self.assertEqual(
             [(False, True), (True, False), (False, False)],
-            self._getStates(suggestion, ubuntu_message, upstream_message))
+            self._getStates(suggestion, ubuntu_message, upstream_message),
+        )
 
     def test_accept_previously_imported_tracking(self):
         # If there was already an ubuntu translation, and an identical
         # upstream one, the new suggestion replaces both.
         upstream_message = self._makeUpstreamMessage()
-        ubuntu_message = self._makeUbuntuMessage(
-            identical_to=upstream_message)
+        ubuntu_message = self._makeUbuntuMessage(identical_to=upstream_message)
         suggestion = self._makeSuggestion()
 
         suggestion.acceptFromUpstreamImportOnPackage(self.pofile)
 
         self.assertEqual(
             [(True, True), (False, False), (False, False)],
-            self._getStates(suggestion, ubuntu_message, upstream_message))
+            self._getStates(suggestion, ubuntu_message, upstream_message),
+        )
 
     def test_accept_different_upstream(self):
         # If there was already an identcal ubuntu translation, and a
@@ -543,7 +571,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(True, True), (True, True), (False, False)],
-            self._getStates(suggestion, ubuntu_message, upstream_message))
+            self._getStates(suggestion, ubuntu_message, upstream_message),
+        )
 
     def test_accept_different_ubuntu(self):
         # If there was already an identcal upstream translation, and a
@@ -556,7 +585,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(False, True), (True, False), (False, True)],
-            self._getStates(suggestion, ubuntu_message, upstream_message))
+            self._getStates(suggestion, ubuntu_message, upstream_message),
+        )
 
     def test_accept_ubuntu_message(self):
         # Accepting a message that's identical to the ubuntu message makes
@@ -568,7 +598,8 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(True, True), (True, True)],
-            self._getStates(suggestion, ubuntu_message))
+            self._getStates(suggestion, ubuntu_message),
+        )
 
     def test_accept_upstream_message(self):
         # Accepting a message that's identical to the upstream message makes
@@ -580,21 +611,22 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
 
         self.assertEqual(
             [(True, True), (True, True)],
-            self._getStates(suggestion, upstream_message))
+            self._getStates(suggestion, upstream_message),
+        )
 
     def test_accept_ubuntu_and_upstream_message(self):
         # Accepting a message that's already current and was also imported
         # does nothing.
         upstream_message = self._makeUpstreamMessage()
-        ubuntu_message = self._makeUbuntuMessage(
-            identical_to=upstream_message)
+        ubuntu_message = self._makeUbuntuMessage(identical_to=upstream_message)
         suggestion = self._makeSuggestion(identical_to=upstream_message)
 
         suggestion.acceptFromUpstreamImportOnPackage(self.pofile)
 
         self.assertEqual(
             [(True, True), (True, True), (True, True)],
-            self._getStates(suggestion, ubuntu_message, upstream_message))
+            self._getStates(suggestion, ubuntu_message, upstream_message),
+        )
 
     def test_accept_detects_conflict(self):
         self._makeUbuntuMessage()
@@ -604,7 +636,9 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
         self.assertRaises(
             TranslationConflict,
             suggestion.acceptFromUpstreamImportOnPackage,
-            self.pofile, lock_timestamp=old)
+            self.pofile,
+            lock_timestamp=old,
+        )
 
 
 class TestApproveAsDiverged(TestCaseWithFactory):
@@ -619,25 +653,29 @@ class TestApproveAsDiverged(TestCaseWithFactory):
             "upstream" translation side.
         """
         assert pofile.potemplate.productseries is not None, (
-            "This test needs a product template; got a package template.""")
+            "This test needs a product template; got a package template." ""
+        )
         other_template = self.factory.makePOTemplate(
             distroseries=self.factory.makeDistroSeries(),
-            sourcepackagename=self.factory.makeSourcePackageName())
+            sourcepackagename=self.factory.makeSourcePackageName(),
+        )
 
         return self.factory.makePOFile(
-            pofile.language.code, potemplate=other_template)
+            pofile.language.code, potemplate=other_template
+        )
 
     def test_makeCounterpartPOFile(self):
         # self.factory.makePOFile makes POFiles on the upstream side by
         # default.  self._makeCounterpartPOFile makes POFiles on the
         # Ubuntu side.
-        pofile = self.factory.makePOFile('es')
+        pofile = self.factory.makePOFile("es")
         other_pofile = self._makeCounterpartPOFile(pofile)
 
         self.assertEqual(pofile.language, other_pofile.language)
         self.assertNotEqual(
             pofile.potemplate.translation_side,
-            other_pofile.potemplate.translation_side)
+            other_pofile.potemplate.translation_side,
+        )
 
     def test_no_change(self):
         # Approving and diverging a message that's already active and
@@ -646,9 +684,10 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         translator = self.factory.makePerson()
         original_reviewer = self.factory.makePerson()
         later_reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_AR')
+        pofile = self.factory.makePOFile("es_AR")
         message = self.factory.makeDivergedTranslationMessage(
-            pofile=pofile, translator=translator, reviewer=original_reviewer)
+            pofile=pofile, translator=translator, reviewer=original_reviewer
+        )
 
         resulting_message = message.approveAsDiverged(pofile, later_reviewer)
 
@@ -659,11 +698,12 @@ class TestApproveAsDiverged(TestCaseWithFactory):
 
     def test_activates_and_diverges(self):
         # Approving a simple suggestion activates and diverges it.
-        pofile = self.factory.makePOFile('es_BO')
+        pofile = self.factory.makePOFile("es_BO")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
 
         resulting_message = suggestion.approveAsDiverged(
-            pofile, self.factory.makePerson())
+            pofile, self.factory.makePerson()
+        )
 
         self.assertEqual(suggestion, resulting_message)
         self.assertTrue(suggestion.is_current_upstream)
@@ -672,7 +712,7 @@ class TestApproveAsDiverged(TestCaseWithFactory):
 
     def test_activating_reviews(self):
         # Activating a message marks it as reviewed.
-        pofile = self.factory.makePOFile('es_BO')
+        pofile = self.factory.makePOFile("es_BO")
         reviewer = self.factory.makePerson()
         suggestion = self.factory.makeSuggestion(pofile=pofile)
 
@@ -685,9 +725,10 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         # leaves it untouched.
         original_reviewer = self.factory.makePerson()
         later_reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_CL')
+        pofile = self.factory.makePOFile("es_CL")
         message = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, reviewer=original_reviewer)
+            pofile=pofile, reviewer=original_reviewer
+        )
 
         resulting_message = message.approveAsDiverged(pofile, later_reviewer)
 
@@ -698,11 +739,12 @@ class TestApproveAsDiverged(TestCaseWithFactory):
     def test_diverge_current_shared_message_unmasks_it(self):
         # Calling approveAsDiverged on the current shared translation
         # deactivates any diverged message that may be masking it.
-        pofile = self.factory.makePOFile('es_CO')
+        pofile = self.factory.makePOFile("es_CO")
         reviewer = self.factory.makePerson()
         shared = self.factory.makeCurrentTranslationMessage(pofile=pofile)
         diverged = self.factory.makeDivergedTranslationMessage(
-            pofile=pofile, potmsgset=shared.potmsgset)
+            pofile=pofile, potmsgset=shared.potmsgset
+        )
 
         self.assertTrue(shared.is_current_upstream)
         self.assertTrue(diverged.is_current_upstream)
@@ -720,13 +762,15 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         # it, so that the other side remains unaffected by this local
         # change.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_CR')
+        pofile = self.factory.makePOFile("es_CR")
         other_pofile = self._makeCounterpartPOFile(pofile)
         suggestion = self.factory.makeCurrentTranslationMessage(
-            pofile=other_pofile)
+            pofile=other_pofile
+        )
         self.assertEqual(
             (False, True),
-            (suggestion.is_current_upstream, suggestion.is_current_ubuntu))
+            (suggestion.is_current_upstream, suggestion.is_current_ubuntu),
+        )
 
         resulting_message = suggestion.approveAsDiverged(pofile, reviewer)
 
@@ -736,18 +780,20 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         self.assertTrue(resulting_message.is_current_upstream)
         self.assertEqual(
             (False, True),
-            (suggestion.is_current_upstream, suggestion.is_current_ubuntu))
+            (suggestion.is_current_upstream, suggestion.is_current_ubuntu),
+        )
 
     def test_does_not_affect_diverged_elsewhere(self):
         # Approving a message that's current and diverged to another
         # template clones it, so that the other template remains
         # unaffected by this local change.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_DO')
-        elsewhere = self.factory.makePOFile('es_DO')
+        pofile = self.factory.makePOFile("es_DO")
+        elsewhere = self.factory.makePOFile("es_DO")
 
         suggestion = self.factory.makeDivergedTranslationMessage(
-            pofile=elsewhere)
+            pofile=elsewhere
+        )
 
         resulting_message = suggestion.approveAsDiverged(pofile, reviewer)
 
@@ -761,25 +807,30 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         # Trying to approve and diverge a message based on outdated
         # information raises TranslationConflict.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_EC')
+        pofile = self.factory.makePOFile("es_EC")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         current = self.factory.makeDivergedTranslationMessage(
-            pofile=pofile, potmsgset=suggestion.potmsgset)
+            pofile=pofile, potmsgset=suggestion.potmsgset
+        )
         earlier = current.date_reviewed - timedelta(1)
 
         self.assertRaises(
             TranslationConflict,
             suggestion.approveAsDiverged,
-            pofile, reviewer, lock_timestamp=earlier)
+            pofile,
+            reviewer,
+            lock_timestamp=earlier,
+        )
 
     def test_passes_conflict_check_if_no_conflict(self):
         # Trying to approve and diverge a message based on up-to-date
         # works without raising a conflict.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_GT')
+        pofile = self.factory.makePOFile("es_GT")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         current = self.factory.makeDivergedTranslationMessage(
-            pofile=pofile, potmsgset=suggestion.potmsgset)
+            pofile=pofile, potmsgset=suggestion.potmsgset
+        )
         later = current.date_reviewed + timedelta(1)
 
         suggestion.approveAsDiverged(pofile, reviewer, lock_timestamp=later)
@@ -791,7 +842,7 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         # information works just fine if in the meantime the suggestion
         # has become the diverged current translation.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_HN')
+        pofile = self.factory.makePOFile("es_HN")
         current = self.factory.makeDivergedTranslationMessage(pofile=pofile)
         earlier = current.date_reviewed - timedelta(1)
 
@@ -803,7 +854,7 @@ class TestApproveAsDiverged(TestCaseWithFactory):
         # Approving a message as a diverged translation marks the POFile
         # as updated.
         reviewer = self.factory.makePerson()
-        pofile = self.factory.makePOFile('es_MX')
+        pofile = self.factory.makePOFile("es_MX")
         suggestion = self.factory.makeSuggestion(pofile=pofile)
         earlier = pofile.date_changed - timedelta(1)
         pofile.markChanged(timestamp=earlier)
@@ -831,32 +882,43 @@ class TestTranslationMessageFindIdenticalMessage(TestCaseWithFactory):
         """
         super().setUp()
         self.product = self.factory.makeProduct()
-        self.trunk = self.product.getSeries('trunk')
+        self.trunk = self.product.getSeries("trunk")
         self.template = self.factory.makePOTemplate(
-            productseries=self.trunk, name="shared")
+            productseries=self.trunk, name="shared"
+        )
         self.other_template = self.factory.makePOTemplate(
-            productseries=self.trunk, name="other")
+            productseries=self.trunk, name="other"
+        )
         self.potmsgset = self.factory.makePOTMsgSet(
-            potemplate=self.template, singular='foo', plural='foos')
+            potemplate=self.template, singular="foo", plural="foos"
+        )
         self.other_potmsgset = self.factory.makePOTMsgSet(
-            potemplate=self.other_template, singular='bar', plural='bars')
+            potemplate=self.other_template, singular="bar", plural="bars"
+        )
         self.pofile = self.factory.makePOFile(
-            potemplate=self.template, language_code='nl')
+            potemplate=self.template, language_code="nl"
+        )
         self.other_pofile = self.factory.makePOFile(
-            potemplate=self.other_template, language_code='nl')
+            potemplate=self.other_template, language_code="nl"
+        )
 
         self.translation_strings = [
-            'foe%d' % form
-            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
+            "foe%d" % form
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)
+        ]
 
         self.message = self.factory.makeCurrentTranslationMessage(
-            pofile=self.pofile, potmsgset=self.potmsgset,
-            translations=self.translation_strings)
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            translations=self.translation_strings,
+        )
         self.message.potemplate = self.template
 
         self.other_message = self.factory.makeCurrentTranslationMessage(
-            pofile=self.other_pofile, potmsgset=self.other_potmsgset,
-            translations=self.translation_strings)
+            pofile=self.other_pofile,
+            potmsgset=self.other_potmsgset,
+            translations=self.translation_strings,
+        )
         self.other_message.potemplate = self.other_template
 
     def _getLanguage(self, code):
@@ -923,21 +985,21 @@ class TestTranslationMessageFindIdenticalMessage(TestCaseWithFactory):
     def test_findIdenticalMessageChecksLanguage(self):
         # If another message has a different POTemplate than the one
         # we're looking for, it is not considered identical.
-        self.other_message.language = self._getLanguage('el')
+        self.other_message.language = self._getLanguage("el")
         nonclone = self._find(self.other_potmsgset, self.other_template)
         self.assertEqual(nonclone, None)
 
     def test_findIdenticalMessageChecksFirstForm(self):
         # Messages with different translations are not identical.
-        self.other_message.msgstr0 = self._getPOTranslation('xyz')
+        self.other_message.msgstr0 = self._getPOTranslation("xyz")
         nonclone = self._find(self.other_potmsgset, self.other_template)
         self.assertEqual(nonclone, None)
 
     def test_findIdenticalMessageChecksLastForm(self):
         # All plural forms of the messages' translations are compared,
         # up to and including the highest form supported.
-        last_form = 'msgstr%d' % (TranslationConstants.MAX_PLURAL_FORMS - 1)
-        translation = self._getPOTranslation('zyx')
+        last_form = "msgstr%d" % (TranslationConstants.MAX_PLURAL_FORMS - 1)
+        translation = self._getPOTranslation("zyx")
         setattr(self.other_message, last_form, translation)
         nonclone = self._find(self.other_potmsgset, self.other_template)
         self.assertEqual(nonclone, None)
@@ -947,17 +1009,25 @@ class TestShareIfPossible(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
 
-    def makeUnsharedTranslation(self, converged=False,
-            different_language=False, different_translations=False,
-            different_potmsgsets=False, is_current_ubuntu=False,
-            clashing_ubuntu=False, is_current_upstream=False,
-            clashing_upstream=False, existing_shared=True):
+    def makeUnsharedTranslation(
+        self,
+        converged=False,
+        different_language=False,
+        different_translations=False,
+        different_potmsgsets=False,
+        is_current_ubuntu=False,
+        clashing_ubuntu=False,
+        is_current_upstream=False,
+        clashing_upstream=False,
+        existing_shared=True,
+    ):
         if different_language:
             language = None
         else:
             language = self.factory.makeLanguage()
         translation = self.factory.makeCurrentTranslationMessage(
-            diverged=not converged, language=language)
+            diverged=not converged, language=language
+        )
         translation.is_current_ubuntu = is_current_ubuntu
         translation.is_current_upstream = is_current_upstream
         if different_translations:
@@ -970,25 +1040,31 @@ class TestShareIfPossible(TestCaseWithFactory):
             potmsgset = translation.potmsgset
         if existing_shared:
             other_translation = self.factory.makeCurrentTranslationMessage(
-                potmsgset=potmsgset, language=language,
-                translations=translations)
+                potmsgset=potmsgset,
+                language=language,
+                translations=translations,
+            )
             other_translation.is_current_upstream = False
         else:
             other_translation = None
         if clashing_upstream:
             self.factory.makeCurrentTranslationMessage(
-                potmsgset=potmsgset, language=language)
+                potmsgset=potmsgset, language=language
+            )
         if clashing_ubuntu:
             self.factory.makeCurrentTranslationMessage(
-                potmsgset=potmsgset, language=language,
-                side=TranslationSide.UBUNTU)
+                potmsgset=potmsgset,
+                language=language,
+                side=TranslationSide.UBUNTU,
+            )
         return translation, other_translation
 
     @staticmethod
     def shareIfPossibleDeletes(translation):
         translation.shareIfPossible()
         result = Store.of(translation).find(
-            TranslationMessage, TranslationMessage.id == translation.id)
+            TranslationMessage, TranslationMessage.id == translation.id
+        )
         return result.is_empty()
 
     def test_share_success(self):
@@ -1003,26 +1079,28 @@ class TestShareIfPossible(TestCaseWithFactory):
 
     def test_different_language(self):
         """Translations in different languages are not shared."""
-        translation = self.makeUnsharedTranslation(
-            different_language=True)[0]
+        translation = self.makeUnsharedTranslation(different_language=True)[0]
         self.assertFalse(self.shareIfPossibleDeletes(translation))
 
     def test_different_translations(self):
         """Translations with different translations are not shared."""
         translation = self.makeUnsharedTranslation(
-            different_translations=True)[0]
+            different_translations=True
+        )[0]
         self.assertFalse(self.shareIfPossibleDeletes(translation))
 
     def test_different_potmsgset(self):
         """Translations with different potmsgsets are not shared."""
-        translation = self.makeUnsharedTranslation(
-            different_potmsgsets=True)[0]
+        translation = self.makeUnsharedTranslation(different_potmsgsets=True)[
+            0
+        ]
         self.assertFalse(self.shareIfPossibleDeletes(translation))
 
     def test_current_ubuntu_no_clash(self):
         """If translation is current-Ubuntu, and there's no clash, delete."""
         translation, other_translation = self.makeUnsharedTranslation(
-            is_current_ubuntu=True, clashing_ubuntu=False)
+            is_current_ubuntu=True, clashing_ubuntu=False
+        )
         self.assertFalse(other_translation.is_current_ubuntu)
         self.assertTrue(self.shareIfPossibleDeletes(translation))
         self.assertTrue(other_translation.is_current_ubuntu)
@@ -1030,14 +1108,16 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_current_ubuntu_clash(self):
         """Keep if translation is current-Ubuntu, but clashes."""
         translation, other_translation = self.makeUnsharedTranslation(
-            is_current_ubuntu=True, clashing_ubuntu=True)
+            is_current_ubuntu=True, clashing_ubuntu=True
+        )
         self.assertFalse(self.shareIfPossibleDeletes(translation))
         self.assertFalse(other_translation.is_current_ubuntu)
 
     def test_current_upstream_no_clash(self):
         """If tranlation is current-upstream, and there's no clash, delete."""
         translation, other_translation = self.makeUnsharedTranslation(
-            is_current_upstream=True, clashing_upstream=False)
+            is_current_upstream=True, clashing_upstream=False
+        )
         self.assertFalse(other_translation.is_current_upstream)
         self.assertTrue(self.shareIfPossibleDeletes(translation))
         self.assertTrue(other_translation.is_current_upstream)
@@ -1045,7 +1125,8 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_current_upstream_clash(self):
         """Keep if translation is current-upstream, but clashes."""
         translation, other_translation = self.makeUnsharedTranslation(
-            is_current_upstream=True, clashing_upstream=True)
+            is_current_upstream=True, clashing_upstream=True
+        )
         self.assertFalse(self.shareIfPossibleDeletes(translation))
         self.assertFalse(other_translation.is_current_upstream)
 
@@ -1054,8 +1135,8 @@ class TestShareIfPossible(TestCaseWithFactory):
 
         Existing current translations are not considered clashes."""
         translation = self.makeUnsharedTranslation(
-            existing_shared=False, clashing_upstream=True,
-            clashing_ubuntu=True)[0]
+            existing_shared=False, clashing_upstream=True, clashing_ubuntu=True
+        )[0]
         self.assertTrue(translation.is_diverged)
         translation.shareIfPossible()
         self.assertFalse(translation.is_diverged)
@@ -1063,8 +1144,10 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_no_shared_current_upstream_no_clash(self):
         """Converges if current_upstream with no clash."""
         translation = self.makeUnsharedTranslation(
-            existing_shared=False, is_current_upstream=True,
-            clashing_upstream=False)[0]
+            existing_shared=False,
+            is_current_upstream=True,
+            clashing_upstream=False,
+        )[0]
         self.assertTrue(translation.is_diverged)
         translation.shareIfPossible()
         self.assertFalse(translation.is_diverged)
@@ -1072,8 +1155,10 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_no_shared_current_upstream_clash(self):
         """Unchanged if current_upstream clashes."""
         translation = self.makeUnsharedTranslation(
-            existing_shared=False, is_current_upstream=True,
-            clashing_upstream=True)[0]
+            existing_shared=False,
+            is_current_upstream=True,
+            clashing_upstream=True,
+        )[0]
         self.assertTrue(translation.is_diverged)
         translation.shareIfPossible()
         self.assertTrue(translation.is_diverged)
@@ -1081,8 +1166,10 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_no_shared_current_ubuntu_no_clash(self):
         """Converges if current_ubuntu with no clash."""
         translation = self.makeUnsharedTranslation(
-            existing_shared=False, is_current_ubuntu=True,
-            clashing_ubuntu=False)[0]
+            existing_shared=False,
+            is_current_ubuntu=True,
+            clashing_ubuntu=False,
+        )[0]
         self.assertTrue(translation.is_diverged)
         translation.shareIfPossible()
         self.assertFalse(translation.is_diverged)
@@ -1090,8 +1177,8 @@ class TestShareIfPossible(TestCaseWithFactory):
     def test_no_shared_current_ubuntu_clash(self):
         """Unchanged if current_ubuntu clashes."""
         translation = self.makeUnsharedTranslation(
-            existing_shared=False, is_current_ubuntu=True,
-            clashing_ubuntu=True)[0]
+            existing_shared=False, is_current_ubuntu=True, clashing_ubuntu=True
+        )[0]
         self.assertTrue(translation.is_diverged)
         translation.shareIfPossible()
         self.assertTrue(translation.is_diverged)
@@ -1116,9 +1203,14 @@ class TestPreloading(TestCaseWithFactory):
         removeSecurityProxy(tm1_pofile).language = self.factory.makeLanguage()
 
         getUtility(ITranslationMessageSet).preloadDetails(
-            [tm1, tm2], need_pofile=True, need_potemplate=True,
-            need_potemplate_context=True, need_potranslation=True,
-            need_potmsgset=True, need_people=True)
+            [tm1, tm2],
+            need_pofile=True,
+            need_potemplate=True,
+            need_potemplate_context=True,
+            need_potranslation=True,
+            need_potmsgset=True,
+            need_people=True,
+        )
 
         self.assertIs(None, tm1.browser_pofile)
         self.assertEqual(tm2_pofile, tm2.browser_pofile)

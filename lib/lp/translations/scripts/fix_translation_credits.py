@@ -4,8 +4,8 @@
 """Mark translation credits messages as translated."""
 
 __all__ = [
-    'FixTranslationCreditsProcess',
-    ]
+    "FixTranslationCreditsProcess",
+]
 
 
 import logging
@@ -13,10 +13,7 @@ import logging
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.services.looptuner import (
-    DBLoopTuner,
-    ITunableLoop,
-    )
+from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.translations.interfaces.pofile import IPOFileSet
 
 
@@ -31,12 +28,15 @@ class CreditsFixer:
 
         pofileset = getUtility(IPOFileSet)
         self.pofiles = pofileset.getPOFilesWithTranslationCredits(
-            untranslated=True)
+            untranslated=True
+        )
         self.logger.info(
-            "Figuring out POFiles that need fixing: this may take a while...")
+            "Figuring out POFiles that need fixing: this may take a while..."
+        )
         self.total = self.pofiles.count()
         self.logger.info(
-            "Marking up a total of %d credits as translated." % self.total)
+            "Marking up a total of %d credits as translated." % self.total
+        )
 
     def isDone(self):
         """See `ITunableLoop`."""
@@ -48,9 +48,10 @@ class CreditsFixer:
     def getPOFilesBatch(self, chunk_size):
         """Return a batch of POFiles to work with."""
         self.logger.debug(
-            "Getting POFiles[%d:%d]..." % (self.start_at,
-                                           self.start_at + int(chunk_size)))
-        pofiles = self.pofiles[self.start_at: self.start_at + int(chunk_size)]
+            "Getting POFiles[%d:%d]..."
+            % (self.start_at, self.start_at + int(chunk_size))
+        )
+        pofiles = self.pofiles[self.start_at : self.start_at + int(chunk_size)]
         return pofiles
 
     def __call__(self, chunk_size):
@@ -65,8 +66,9 @@ class CreditsFixer:
         for pofile, potmsgset in pofiles:
             done += 1
             self.logger.debug(
-                "Processing %d (out of %d)" % (
-                    self.start_at + done, self.total))
+                "Processing %d (out of %d)"
+                % (self.start_at + done, self.total)
+            )
             potmsgset.setTranslationCreditsToTranslated(pofile)
             self.transaction.commit()
             self.transaction.begin()
@@ -75,8 +77,9 @@ class CreditsFixer:
             self.start_at = None
         else:
             self.start_at += done
-            self.logger.info("Processed %d/%d of messages." % (
-                self.start_at, self.total))
+            self.logger.info(
+                "Processed %d/%d of messages." % (self.start_at, self.total)
+            )
 
 
 class FixTranslationCreditsProcess:

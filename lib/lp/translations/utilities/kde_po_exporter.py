@@ -12,17 +12,17 @@ You can read more about this file format from:
 """
 
 __all__ = [
-    'KdePOExporter',
-    ]
+    "KdePOExporter",
+]
 
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.utilities.gettext_po_exporter import GettextPOExporter
 
 
@@ -50,19 +50,22 @@ class KdePOExporter(GettextPOExporter):
             # Let's turn context messages into legacy KDE context.
             translation_message.msgid_singular = "_: %s\n%s" % (
                 translation_message.context,
-                translation_message.msgid_singular)
+                translation_message.msgid_singular,
+            )
             translation_message.context = None
         elif translation_message.msgid_plural is not None:
             # Also, let's handle legacy KDE plural forms.
             translations = translation_message.translations
             for pluralform_index in range(len(translations)):
                 if translations[pluralform_index] is None:
-                    translations[pluralform_index] = ''
+                    translations[pluralform_index] = ""
             translation_message._translations = ["\n".join(translations)]
             translation_message.msgid_singular = "_n: %s\n%s" % (
                 translation_message.msgid_singular,
-                translation_message.msgid_plural)
+                translation_message.msgid_plural,
+            )
             translation_message.msgid_plural = None
 
         return GettextPOExporter.exportTranslationMessageData(
-            self, translation_message)
+            self, translation_message
+        )

@@ -4,8 +4,8 @@
 """Verify (and refresh) `POFile`s' cached statistics."""
 
 __all__ = [
-    'VerifyPOFileStatsProcess',
-    ]
+    "VerifyPOFileStatsProcess",
+]
 
 
 import logging
@@ -14,10 +14,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.looptuner import (
-    DBLoopTuner,
-    ITunableLoop,
-    )
+from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.sendmail import simple_sendmail
@@ -74,7 +71,8 @@ class Verifier:
                 self.total_exceptions += 1
                 self.logger.warning(
                     "Error %s while recomputing stats for POFile %d: %s"
-                    % (type(error), pofile.id, error))
+                    % (type(error), pofile.id, error)
+                )
 
         self.transaction.commit()
         self.transaction.begin()
@@ -92,7 +90,8 @@ class Verifier:
             self.total_incorrect += 1
             self.logger.info(
                 "POFile %d: cached stats were %s, recomputed as %s"
-                % (pofile.id, str(old_stats), str(new_stats)))
+                % (pofile.id, str(old_stats), str(new_stats))
+            )
 
 
 class VerifyPOFileStatsProcess:
@@ -106,8 +105,9 @@ class VerifyPOFileStatsProcess:
             self.logger = logging.getLogger("pofile-stats")
 
     def run(self):
-        self.logger.info("Starting verification of POFile stats at id %d"
-            % self.start_at_id)
+        self.logger.info(
+            "Starting verification of POFile stats at id %d" % self.start_at_id
+        )
         loop = Verifier(self.transaction, self.logger, self.start_at_id)
 
         # Since the script can run for a long time, our deployment
@@ -115,8 +115,7 @@ class VerifyPOFileStatsProcess:
         # from, thus the script failing to find the email template
         # if it was attempted after DBLoopTuner run is completed.
         # See bug #811447 for OOPS we used to get then.
-        template = get_email_template(
-            'pofile-stats.txt', 'translations')
+        template = get_email_template("pofile-stats.txt", "translations")
 
         # Each iteration of our loop collects all statistics first, before
         # modifying any rows in the database.  With any locks on the database
@@ -124,21 +123,24 @@ class VerifyPOFileStatsProcess:
         # make relatively long, low-overhead iterations without disrupting
         # application response times.
         iteration_duration = (
-            config.rosetta_pofile_stats.looptuner_iteration_duration)
+            config.rosetta_pofile_stats.looptuner_iteration_duration
+        )
         DBLoopTuner(loop, iteration_duration).run()
 
         if loop.total_incorrect > 0 or loop.total_exceptions > 0:
             # Not all statistics were correct, or there were failures while
             # checking them.  Email the admins.
             message = template % {
-                'exceptions': loop.total_exceptions,
-                'errors': loop.total_incorrect,
-                'total': loop.total_checked}
+                "exceptions": loop.total_exceptions,
+                "errors": loop.total_incorrect,
+                "total": loop.total_checked,
+            }
             simple_sendmail(
                 from_addr=config.canonical.noreply_from_address,
                 to_addrs=[config.launchpad.errors_address],
                 subject="POFile statistics errors",
-                body=MailWrapper().format(message))
+                body=MailWrapper().format(message),
+            )
             self.transaction.commit()
 
         self.logger.info("Done.")

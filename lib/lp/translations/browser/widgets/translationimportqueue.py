@@ -5,13 +5,14 @@
 
 __all__ = [
     "TranslationImportQueueEntrySourcePackageNameWidget",
-    ]
+]
 
 from lp.app.widgets.popup import SourcePackageNameWidgetBase
 
 
 class TranslationImportQueueEntrySourcePackageNameWidget(
-    SourcePackageNameWidgetBase):
+    SourcePackageNameWidgetBase
+):
     """A widget for associating a TranslationImportQueueEntry with an SPN."""
 
     @property
@@ -20,7 +21,7 @@ class TranslationImportQueueEntrySourcePackageNameWidget(
         if distribution is not None:
             return distribution.name
         else:
-            return ''
+            return ""
 
     def getDistribution(self):
         """See `SourcePackageNameWidgetBase`."""

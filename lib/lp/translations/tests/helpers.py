@@ -2,10 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'summarize_current_translations',
-    'make_translationmessage',
-    'make_translationmessage_for_context',
-    ]
+    "summarize_current_translations",
+    "make_translationmessage",
+    "make_translationmessage_for_context",
+]
 
 from storm.expr import Or
 from storm.store import Store
@@ -16,13 +16,19 @@ from lp.translations.interfaces.side import ITranslationSideTraitsSet
 from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
     TranslationValidationStatus,
-    )
+)
 from lp.translations.model.translationmessage import TranslationMessage
 
 
-def make_translationmessage_for_context(factory, pofile, potmsgset=None,
-                                        current=True, other=False,
-                                        diverged=False, translations=None):
+def make_translationmessage_for_context(
+    factory,
+    pofile,
+    potmsgset=None,
+    current=True,
+    other=False,
+    diverged=False,
+    translations=None,
+):
     """A low-level way of constructing TMs appropriate to `pofile` context."""
     assert pofile is not None, "You must pass in an existing POFile."
 
@@ -32,12 +38,19 @@ def make_translationmessage_for_context(factory, pofile, potmsgset=None,
     else:
         ubuntu, upstream = other, current
     return make_translationmessage(
-        factory, pofile, potmsgset, ubuntu, upstream, diverged, translations)
+        factory, pofile, potmsgset, ubuntu, upstream, diverged, translations
+    )
 
 
-def make_translationmessage(factory, pofile=None, potmsgset=None,
-                            ubuntu=True, upstream=True,
-                            diverged=False, translations=None):
+def make_translationmessage(
+    factory,
+    pofile=None,
+    potmsgset=None,
+    ubuntu=True,
+    upstream=True,
+    diverged=False,
+    translations=None,
+):
     """Creates a TranslationMessage directly and sets relevant parameters.
 
     This is very low level function used to test core Rosetta
@@ -45,10 +58,9 @@ def make_translationmessage(factory, pofile=None, potmsgset=None,
     correctly, it will trigger unique constraints.
     """
     if pofile is None:
-        pofile = factory.makePOFile('sr')
+        pofile = factory.makePOFile("sr")
     if potmsgset is None:
-        potmsgset = factory.makePOTMsgSet(
-            potemplate=pofile.potemplate)
+        potmsgset = factory.makePOTMsgSet(potemplate=pofile.potemplate)
     if translations is None:
         translations = [factory.getUniqueUnicode()]
     if diverged:
@@ -64,8 +76,9 @@ def make_translationmessage(factory, pofile=None, potmsgset=None,
 
     translations = dict(enumerate(translations))
 
-    potranslations = removeSecurityProxy(
-        potmsgset)._findPOTranslations(translations)
+    potranslations = removeSecurityProxy(potmsgset)._findPOTranslations(
+        translations
+    )
     new_message = TranslationMessage(
         potmsgset=potmsgset,
         potemplate=potemplate,
@@ -81,7 +94,8 @@ def make_translationmessage(factory, pofile=None, potmsgset=None,
         msgstr5=potranslations[5],
         validation_status=validation_status,
         is_current_ubuntu=ubuntu,
-        is_current_upstream=upstream)
+        is_current_upstream=upstream,
+    )
     return new_message
 
 
@@ -95,10 +109,12 @@ def get_all_translations_diverged_anywhere(pofile, potmsgset):
         TranslationMessage.potmsgset == potmsgset,
         Or(
             TranslationMessage.is_current_ubuntu == True,
-            TranslationMessage.is_current_upstream == True),
+            TranslationMessage.is_current_upstream == True,
+        ),
         TranslationMessage.potemplate != None,
         TranslationMessage.potemplate != pofile.potemplate,
-        TranslationMessage.language == pofile.language)
+        TranslationMessage.language == pofile.language,
+    )
     return result.order_by(-TranslationMessage.potemplateID)
 
 
@@ -118,7 +134,8 @@ def summarize_current_translations(pofile, potmsgset):
 
     current_shared = potmsgset.getCurrentTranslation(None, language, side)
     current_diverged = potmsgset.getCurrentTranslation(
-        template, language, side)
+        template, language, side
+    )
     if current_diverged is not None and not current_diverged.is_diverged:
         current_diverged = None
 
@@ -127,12 +144,12 @@ def summarize_current_translations(pofile, potmsgset):
 
     other_shared = potmsgset.getCurrentTranslation(None, language, other_side)
     other_diverged = potmsgset.getCurrentTranslation(
-        template, language, other_side)
+        template, language, other_side
+    )
     assert other_diverged is None or other_diverged.potemplate is None, (
         "There is a diverged 'other' translation for "
-        "this same template, which should be impossible.")
+        "this same template, which should be impossible."
+    )
 
     diverged = list(get_all_translations_diverged_anywhere(pofile, potmsgset))
-    return (
-        current_shared, current_diverged,
-        other_shared, diverged)
+    return (current_shared, current_diverged, other_shared, diverged)

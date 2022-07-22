@@ -4,38 +4,26 @@
 """`TranslationTemplatesBuild` class."""
 
 __all__ = [
-    'HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE',
-    'TranslationTemplatesBuild',
-    ]
+    "HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE",
+    "TranslationTemplatesBuild",
+]
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 import pytz
-from storm.locals import (
-    Bool,
-    DateTime,
-    Int,
-    Reference,
-    Storm,
-    )
+from storm.locals import Bool, DateTime, Int, Reference, Storm
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import (
-    BuildFarmJobType,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import (
     BuildFarmJobMixin,
     SpecificBuildFarmJobSourceMixin,
-    )
+)
 from lp.code.interfaces.branchjob import IRosettaUploadJobSource
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
@@ -47,54 +35,55 @@ from lp.services.database.interfaces import IStore
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuild,
     ITranslationTemplatesBuildSource,
-    )
+)
 from lp.translations.pottery.detect_intltool import is_intltool_structure
-
 
 HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE = 2515
 
 
 @implementer(ITranslationTemplatesBuild)
 @provider(ITranslationTemplatesBuildSource)
-class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
-                                BuildFarmJobMixin, Storm):
+class TranslationTemplatesBuild(
+    SpecificBuildFarmJobSourceMixin, BuildFarmJobMixin, Storm
+):
     """A `BuildFarmJob` extension for translation templates builds."""
 
-    __storm_table__ = 'TranslationTemplatesBuild'
+    __storm_table__ = "TranslationTemplatesBuild"
 
     job_type = BuildFarmJobType.TRANSLATIONTEMPLATESBUILD
 
-    id = Int(name='id', primary=True)
-    build_farm_job_id = Int(name='build_farm_job', allow_none=False)
-    build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
-    branch_id = Int(name='branch', allow_none=False)
-    branch = Reference(branch_id, 'Branch.id')
+    id = Int(name="id", primary=True)
+    build_farm_job_id = Int(name="build_farm_job", allow_none=False)
+    build_farm_job = Reference(build_farm_job_id, "BuildFarmJob.id")
+    branch_id = Int(name="branch", allow_none=False)
+    branch = Reference(branch_id, "Branch.id")
 
-    processor_id = Int(name='processor')
-    processor = Reference(processor_id, 'Processor.id')
-    virtualized = Bool(name='virtualized')
+    processor_id = Int(name="processor")
+    processor = Reference(processor_id, "Processor.id")
+    virtualized = Bool(name="virtualized")
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False)
-    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
-    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
+    date_started = DateTime(name="date_started", tzinfo=pytz.UTC)
+    date_finished = DateTime(name="date_finished", tzinfo=pytz.UTC)
     date_first_dispatched = DateTime(
-        name='date_first_dispatched', tzinfo=pytz.UTC)
+        name="date_first_dispatched", tzinfo=pytz.UTC
+    )
 
-    builder_id = Int(name='builder')
-    builder = Reference(builder_id, 'Builder.id')
+    builder_id = Int(name="builder")
+    builder = Reference(builder_id, "Builder.id")
 
-    status = DBEnum(name='status', enum=BuildStatus, allow_none=False)
+    status = DBEnum(name="status", enum=BuildStatus, allow_none=False)
 
-    log_id = Int(name='log')
-    log = Reference(log_id, 'LibraryFileAlias.id')
+    log_id = Int(name="log")
+    log = Reference(log_id, "LibraryFileAlias.id")
 
-    failure_count = Int(name='failure_count', allow_none=False)
+    failure_count = Int(name="failure_count", allow_none=False)
 
     @property
     def title(self):
-        return 'Translation template build for %s' % (
-            self.branch.displayname)
+        return "Translation template build for %s" % (self.branch.displayname)
 
     def __init__(self, build_farm_job, branch, processor):
         super().__init__()
@@ -137,7 +126,7 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
     @classmethod
     def generatesTemplates(cls, branch):
         """See `ITranslationTemplatesBuildSource`."""
-        logger = logging.getLogger('translation-templates-build')
+        logger = logging.getLogger("translation-templates-build")
         if branch.private:
             # We don't support generating template from private branches
             # at the moment.
@@ -148,14 +137,15 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         if not utility.providesTranslationFiles(branch):
             # Nobody asked for templates generated from this branch.
             logger.debug(
-                    "No templates requested for branch %s.",
-                    branch.unique_name)
+                "No templates requested for branch %s.", branch.unique_name
+            )
             return False
 
         if not cls._hasPotteryCompatibleSetup(branch):
             # Nothing we could do with this branch if we wanted to.
             logger.debug(
-                "Branch %s is not pottery-compatible.", branch.unique_name)
+                "Branch %s is not pottery-compatible.", branch.unique_name
+            )
             return False
 
         # Yay!  We made it.
@@ -166,7 +156,8 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         """See `ITranslationTemplatesBuildSource`."""
         processor = cls._getBuildArch()
         build_farm_job = getUtility(IBuildFarmJobSource).new(
-            BuildFarmJobType.TRANSLATIONTEMPLATESBUILD)
+            BuildFarmJobType.TRANSLATIONTEMPLATESBUILD
+        )
         build = TranslationTemplatesBuild(build_farm_job, branch, processor)
         store = cls._getStore()
         store.add(build)
@@ -176,7 +167,7 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
     @classmethod
     def scheduleTranslationTemplatesBuild(cls, branch):
         """See `ITranslationTemplatesBuildSource`."""
-        logger = logging.getLogger('translation-templates-build')
+        logger = logging.getLogger("translation-templates-build")
         if not config.rosetta.generate_templates:
             # This feature is disabled by default.
             logging.debug("Templates generation is disabled.")
@@ -187,7 +178,8 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
                 # This branch is used for generating templates.
                 logger.info(
                     "Requesting templates build for branch %s.",
-                    branch.unique_name)
+                    branch.unique_name,
+                )
                 cls.create(branch).queueBuild()
         except Exception as e:
             logger.error(e)
@@ -204,7 +196,8 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         """See `ITranslationTemplatesBuildSource`."""
         store = cls._getStore(store)
         match = store.find(
-            TranslationTemplatesBuild, build_farm_job_id=buildfarmjob.id)
+            TranslationTemplatesBuild, build_farm_job_id=buildfarmjob.id
+        )
         return match.one()
 
     @classmethod
@@ -214,7 +207,9 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         rows = store.find(
             TranslationTemplatesBuild,
             TranslationTemplatesBuild.build_farm_job_id.is_in(
-                bfj.id for bfj in buildfarmjobs))
+                bfj.id for bfj in buildfarmjobs
+            ),
+        )
         return DecoratedResultSet(rows, pre_iter_hook=cls.preloadBuildsData)
 
     @classmethod
@@ -223,12 +218,11 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         from lp.services.librarian.model import LibraryFileAlias
 
         # Load the related branches.
-        branches = load_related(
-            Branch, builds, ['branch_id'])
+        branches = load_related(Branch, builds, ["branch_id"])
         # Preload branches' cached associated targets, product series, and
         # suite source packages for all the related branches.
         GenericBranchCollection.preloadDataForBranches(branches)
-        load_related(LibraryFileAlias, builds, ['log_id'])
+        load_related(LibraryFileAlias, builds, ["log_id"])
 
     @classmethod
     def findByBranch(cls, branch, store=None):
@@ -236,7 +230,8 @@ class TranslationTemplatesBuild(SpecificBuildFarmJobSourceMixin,
         store = cls._getStore(store)
         return store.find(
             TranslationTemplatesBuild,
-            TranslationTemplatesBuild.branch == branch)
+            TranslationTemplatesBuild.branch == branch,
+        )
 
     @property
     def log_url(self):

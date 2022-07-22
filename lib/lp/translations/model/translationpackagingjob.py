@@ -5,43 +5,40 @@
 
 
 __all__ = [
-    'TranslationMergeJob',
-    'TranslationSplitJob',
-    'TranslationTemplateChangeJob',
-    ]
+    "TranslationMergeJob",
+    "TranslationSplitJob",
+    "TranslationTemplateChangeJob",
+]
 
 import logging
 
+import transaction
 from lazr.lifecycle.interfaces import (
     IObjectCreatedEvent,
     IObjectDeletedEvent,
     IObjectModifiedEvent,
-    )
-import transaction
-from zope.interface import (
-    implementer,
-    provider,
-    )
+)
+from zope.interface import implementer, provider
 
 from lp.services.config import config
 from lp.services.job.interfaces.job import IRunnableJob
 from lp.services.job.runner import BaseRunnableJob
 from lp.translations.interfaces.translationpackagingjob import (
     ITranslationPackagingJobSource,
-    )
+)
 from lp.translations.model.translationsharingjob import (
     TranslationSharingJob,
     TranslationSharingJobDerived,
     TranslationSharingJobType,
-    )
+)
 from lp.translations.utilities.translationmerger import (
     TransactionManager,
     TranslationMerger,
-    )
+)
 from lp.translations.utilities.translationsplitter import (
     TranslationSplitter,
     TranslationTemplateSplitter,
-    )
+)
 
 
 @provider(ITranslationPackagingJobSource)
@@ -53,7 +50,7 @@ class TranslationPackagingJob(TranslationSharingJobDerived, BaseRunnableJob):
     @staticmethod
     def _register_subclass(cls):
         TranslationSharingJobDerived._register_subclass(cls)
-        job_type = getattr(cls, 'class_job_type', None)
+        job_type = getattr(cls, "class_job_type", None)
         if job_type is not None:
             cls._translation_packaging_job_types.append(job_type)
 
@@ -65,14 +62,17 @@ class TranslationPackagingJob(TranslationSharingJobDerived, BaseRunnableJob):
         :return: A `TranslationMergeJob`.
         """
         return cls.create(
-            packaging.productseries, packaging.distroseries,
-            packaging.sourcepackagename)
+            packaging.productseries,
+            packaging.distroseries,
+            packaging.sourcepackagename,
+        )
 
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
         clause = TranslationSharingJob.job_type.is_in(
-            cls._translation_packaging_job_types)
+            cls._translation_packaging_job_types
+        )
         return super().iterReady([clause])
 
 
@@ -91,15 +91,19 @@ class TranslationMergeJob(TranslationPackagingJob):
         logger = logging.getLogger()
         if not self.distroseries.distribution.official_packages:
             logger.info(
-                'Skipping merge for unsupported distroseries "%s".' %
-                self.distroseries.displayname)
+                'Skipping merge for unsupported distroseries "%s".'
+                % self.distroseries.displayname
+            )
             return
         logger.info(
-            'Merging %s and %s', self.productseries.displayname,
-            self.sourcepackage.displayname)
+            "Merging %s and %s",
+            self.productseries.displayname,
+            self.sourcepackage.displayname,
+        )
         tm = TransactionManager(transaction.manager, False)
         TranslationMerger.mergePackagingTemplates(
-            self.productseries, self.sourcepackagename, self.distroseries, tm)
+            self.productseries, self.sourcepackagename, self.distroseries, tm
+        )
 
 
 @implementer(IRunnableJob)
@@ -116,8 +120,10 @@ class TranslationSplitJob(TranslationPackagingJob):
         """See `IRunnableJob`."""
         logger = logging.getLogger()
         logger.info(
-            'Splitting %s and %s', self.productseries.displayname,
-            self.sourcepackage.displayname)
+            "Splitting %s and %s",
+            self.productseries.displayname,
+            self.sourcepackage.displayname,
+        )
         TranslationSplitter(self.productseries, self.sourcepackage).split()
 
 
@@ -143,8 +149,9 @@ class TranslationTemplateChangeJob(TranslationPackagingJob):
     def run(self):
         """See `IRunnableJob`."""
         logger = logging.getLogger()
-        logger.info("Sanitizing translations for '%s'" % (
-                self.potemplate.displayname))
+        logger.info(
+            "Sanitizing translations for '%s'" % (self.potemplate.displayname)
+        )
         TranslationTemplateSplitter(self.potemplate).split()
         tm = TransactionManager(transaction.manager, False)
         TranslationMerger.mergeModifiedTemplates(self.potemplate, tm)

@@ -2,18 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'credits_message_str',
-    'POTMsgSet',
-    ]
+    "credits_message_str",
+    "POTMsgSet",
+]
 
-from collections import (
-    defaultdict,
-    namedtuple,
-    )
 import logging
 import re
+from collections import defaultdict, namedtuple
 
 from storm.expr import (
+    SQL,
     And,
     Coalesce,
     Column,
@@ -22,18 +20,11 @@ from storm.expr import (
     Not,
     Or,
     Select,
-    SQL,
     Table,
     With,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    )
-from storm.store import (
-    EmptyResultSet,
-    Store,
-    )
+)
+from storm.locals import Int, Reference
+from storm.store import EmptyResultSet, Store
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -43,73 +34,65 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import StringCol
-from lp.services.database.stormexpr import (
-    IsTrue,
-    NullsFirst,
-    NullsLast,
-    )
+from lp.services.database.stormexpr import IsTrue, NullsFirst, NullsLast
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
 from lp.translations.interfaces.potmsgset import (
     IPOTMsgSet,
     POTMsgSetInIncompatibleTemplatesError,
     TranslationCreditsType,
-    )
+)
 from lp.translations.interfaces.side import (
     ITranslationSideTraitsSet,
     TranslationSide,
-    )
-from lp.translations.interfaces.translationimporter import (
-    ITranslationImporter,
-    )
+)
+from lp.translations.interfaces.translationimporter import ITranslationImporter
 from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
     TranslationConflict,
     TranslationValidationStatus,
-    )
+)
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.pomsgid import POMsgID
 from lp.translations.model.potranslation import POTranslation
 from lp.translations.model.translationmessage import (
-    make_plurals_sql_fragment,
     PlaceholderTranslationMessage,
     TranslationMessage,
-    )
+    make_plurals_sql_fragment,
+)
 from lp.translations.model.translationtemplateitem import (
     TranslationTemplateItem,
-    )
+)
 from lp.translations.utilities.validate import validate_translation
-
 
 # Msgids that indicate translation credit messages, and their
 # contexts and type.
 credits_message_info = {
     # Regular gettext credits messages.
-    'translation-credits': (None, TranslationCreditsType.GNOME),
-    'translator-credits': (None, TranslationCreditsType.GNOME),
-    'translator_credits': (None, TranslationCreditsType.GNOME),
-
+    "translation-credits": (None, TranslationCreditsType.GNOME),
+    "translator-credits": (None, TranslationCreditsType.GNOME),
+    "translator_credits": (None, TranslationCreditsType.GNOME),
     # KDE credits messages.
-    'Your emails':
-        ('EMAIL OF TRANSLATORS', TranslationCreditsType.KDE_EMAILS),
-    'Your names':
-        ('NAME OF TRANSLATORS', TranslationCreditsType.KDE_NAMES),
-
+    "Your emails": ("EMAIL OF TRANSLATORS", TranslationCreditsType.KDE_EMAILS),
+    "Your names": ("NAME OF TRANSLATORS", TranslationCreditsType.KDE_NAMES),
     # Old KDE credits messages.
-    '_: EMAIL OF TRANSLATORS\nYour emails':
-        (None, TranslationCreditsType.KDE_EMAILS),
-    '_: NAME OF TRANSLATORS\nYour names':
-        (None, TranslationCreditsType.KDE_NAMES),
-    }
+    "_: EMAIL OF TRANSLATORS\nYour emails": (
+        None,
+        TranslationCreditsType.KDE_EMAILS,
+    ),
+    "_: NAME OF TRANSLATORS\nYour names": (
+        None,
+        TranslationCreditsType.KDE_NAMES,
+    ),
+}
 
 # String to be used as msgstr for translation credits messages.
-credits_message_str = ('This is a dummy translation so that the '
-                       'credits are counted as translated.')
+credits_message_str = (
+    "This is a dummy translation so that the "
+    "credits are counted as translated."
+)
 
 
 def dictify_translations(translations):
@@ -127,24 +110,26 @@ def dictify_translations(translations):
     return {
         form: translation
         for form, translation in translations.items()
-        if translation is not None}
+        if translation is not None
+    }
 
 
 @implementer(IPOTMsgSet)
 class POTMsgSet(SQLBase):
 
-    _table = 'POTMsgSet'
+    _table = "POTMsgSet"
 
-    context = StringCol(dbName='context', notNull=False)
-    msgid_singular_id = Int(name='msgid_singular', allow_none=False)
-    msgid_singular = Reference(msgid_singular_id, 'POMsgID.id')
+    context = StringCol(dbName="context", notNull=False)
+    msgid_singular_id = Int(name="msgid_singular", allow_none=False)
+    msgid_singular = Reference(msgid_singular_id, "POMsgID.id")
     msgid_plural_id = Int(
-        name='msgid_plural', allow_none=True, default=DEFAULT)
-    msgid_plural = Reference(msgid_plural_id, 'POMsgID.id')
-    commenttext = StringCol(dbName='commenttext', notNull=False)
-    filereferences = StringCol(dbName='filereferences', notNull=False)
-    sourcecomment = StringCol(dbName='sourcecomment', notNull=False)
-    flagscomment = StringCol(dbName='flagscomment', notNull=False)
+        name="msgid_plural", allow_none=True, default=DEFAULT
+    )
+    msgid_plural = Reference(msgid_plural_id, "POMsgID.id")
+    commenttext = StringCol(dbName="commenttext", notNull=False)
+    filereferences = StringCol(dbName="filereferences", notNull=False)
+    sourcecomment = StringCol(dbName="sourcecomment", notNull=False)
+    flagscomment = StringCol(dbName="flagscomment", notNull=False)
 
     credits_message_ids = credits_message_info.keys()
 
@@ -174,7 +159,8 @@ class POTMsgSet(SQLBase):
 
         if source_file_format is not None:
             format = translation_importer.getTranslationFormatImporter(
-                source_file_format)
+                source_file_format
+            )
             uses_english_msgids = not format.uses_source_string_msgids
         else:
             uses_english_msgids = None
@@ -184,15 +170,22 @@ class POTMsgSet(SQLBase):
         origin = [
             TranslationTemplateItem,
             Join(
-                POTemplate,
-                TranslationTemplateItem.potemplate == POTemplate.id),
-            ]
-        source_file_formats = IStore(POTemplate).using(*origin).find(
-            POTemplate.source_file_format,
-            TranslationTemplateItem.potmsgset == self).config(distinct=True)
+                POTemplate, TranslationTemplateItem.potemplate == POTemplate.id
+            ),
+        ]
+        source_file_formats = (
+            IStore(POTemplate)
+            .using(*origin)
+            .find(
+                POTemplate.source_file_format,
+                TranslationTemplateItem.potmsgset == self,
+            )
+            .config(distinct=True)
+        )
         for source_file_format in source_file_formats:
             format = translation_importer.getTranslationFormatImporter(
-                source_file_format)
+                source_file_format
+            )
             format_uses_english_msgids = not format.uses_source_string_msgids
 
             if uses_english_msgids is None:
@@ -216,13 +209,16 @@ class POTMsgSet(SQLBase):
         if "uses_english_msgids" in cache:
             return cache.uses_english_msgids
 
-        conflicts, uses_english_msgids = (
-            self._conflictsExistingSourceFileFormats())
+        (
+            conflicts,
+            uses_english_msgids,
+        ) = self._conflictsExistingSourceFileFormats()
 
         if conflicts:
             raise POTMsgSetInIncompatibleTemplatesError(
                 "This POTMsgSet participates in two POTemplates which "
-                "have conflicting values for uses_english_msgids.")
+                "have conflicting values for uses_english_msgids."
+            )
         else:
             if uses_english_msgids is None:
                 # Default is to use English in msgids, as opposed
@@ -239,7 +235,7 @@ class POTMsgSet(SQLBase):
         """See `IPOTMsgSet`."""
         # Make explicit use of the property cache.
         cache = get_property_cache(self)
-        if "singular_text"in cache:
+        if "singular_text" in cache:
             return cache.singular_text
 
         if self.uses_english_msgids:
@@ -249,12 +245,16 @@ class POTMsgSet(SQLBase):
         # Singular text is stored as an "English translation." Search on
         # both sides but prefer upstream translations.
         translation_message = self.getCurrentTranslation(
-            None, getUtility(ILaunchpadCelebrities).english,
-            TranslationSide.UPSTREAM)
+            None,
+            getUtility(ILaunchpadCelebrities).english,
+            TranslationSide.UPSTREAM,
+        )
         if translation_message is None:
             translation_message = self.getCurrentTranslation(
-                None, getUtility(ILaunchpadCelebrities).english,
-                TranslationSide.UBUNTU)
+                None,
+                getUtility(ILaunchpadCelebrities).english,
+                TranslationSide.UBUNTU,
+            )
         if translation_message is not None:
             msgstr0 = translation_message.msgstr0
             if msgstr0 is not None:
@@ -278,7 +278,8 @@ class POTMsgSet(SQLBase):
         """See `IPOTMsgSet`."""
         template = pofile.potemplate
         current = self.getCurrentTranslation(
-            template, pofile.language, template.translation_side)
+            template, pofile.language, template.translation_side
+        )
         if current is None:
             placeholder = PlaceholderTranslationMessage(pofile, self)
             side = pofile.potemplate.translation_side
@@ -291,15 +292,14 @@ class POTMsgSet(SQLBase):
 
     def getOtherTranslation(self, language, side):
         """See `IPOTMsgSet`."""
-        traits = getUtility(
-            ITranslationSideTraitsSet).getTraits(side)
+        traits = getUtility(ITranslationSideTraitsSet).getTraits(side)
         return self.getCurrentTranslation(
-            None, language, traits.other_side_traits.side)
+            None, language, traits.other_side_traits.side
+        )
 
     def getSharedTranslation(self, language, side):
         """See `IPOTMsgSet`."""
-        return self.getCurrentTranslation(
-            None, language, side)
+        return self.getCurrentTranslation(None, language, side)
 
     def getCurrentTranslation(self, potemplate, language, side):
         """See `IPOTMsgSet`."""
@@ -310,26 +310,36 @@ class POTMsgSet(SQLBase):
             flag == True,
             TranslationMessage.potmsgsetID == self.id,
             TranslationMessage.languageID == language.id,
-            ]
+        ]
 
         if potemplate is None:
             # Look only for a shared translation.
             clauses.append(TranslationMessage.potemplate == None)
         else:
-            clauses.append(Or(
-                TranslationMessage.potemplate == None,
-                TranslationMessage.potemplateID == potemplate.id))
+            clauses.append(
+                Or(
+                    TranslationMessage.potemplate == None,
+                    TranslationMessage.potemplateID == potemplate.id,
+                )
+            )
 
         # Return a diverged translation if it exists, and fall back
         # to the shared one otherwise.
-        result = Store.of(self).find(
-            TranslationMessage, *clauses).order_by(
-              Desc(Coalesce(TranslationMessage.potemplateID, -1))).first()
+        result = (
+            Store.of(self)
+            .find(TranslationMessage, *clauses)
+            .order_by(Desc(Coalesce(TranslationMessage.potemplateID, -1)))
+            .first()
+        )
         return result
 
-    def getLocalTranslationMessages(self, potemplate, language,
-                                    include_dismissed=False,
-                                    include_unreviewed=True):
+    def getLocalTranslationMessages(
+        self,
+        potemplate,
+        language,
+        include_dismissed=False,
+        include_unreviewed=True,
+    ):
         """See `IPOTMsgSet`."""
         clauses = [
             Not(IsTrue(TranslationMessage.is_current_ubuntu)),
@@ -337,10 +347,11 @@ class POTMsgSet(SQLBase):
             TranslationMessage.potmsgset == self,
             TranslationMessage.language == language,
             SQL(make_plurals_sql_fragment("msgstr%(form)d IS NOT NULL", "OR")),
-            ]
+        ]
         if include_dismissed != include_unreviewed:
             current = self.getCurrentTranslation(
-                potemplate, language, potemplate.translation_side)
+                potemplate, language, potemplate.translation_side
+            )
             if current is not None:
                 if current.date_reviewed is None:
                     comparing_date = current.date_created
@@ -360,8 +371,9 @@ class POTMsgSet(SQLBase):
 
         return IStore(TranslationMessage).find(TranslationMessage, *clauses)
 
-    def _getExternalTranslationMessages(self, suggested_languages=(),
-        used_languages=()):
+    def _getExternalTranslationMessages(
+        self, suggested_languages=(), used_languages=()
+    ):
         """Return external suggestions for this message.
 
         External suggestions are all TranslationMessages for the
@@ -390,7 +402,8 @@ class POTMsgSet(SQLBase):
         # Also note that there is a NOT(in_use_clause) index.
         in_use_clause = Or(
             IsTrue(TranslationMessage.is_current_ubuntu),
-            IsTrue(TranslationMessage.is_current_upstream))
+            IsTrue(TranslationMessage.is_current_upstream),
+        )
         # Present a list of language + usage constraints to sql. A language
         # can either be unconstrained, used, or suggested depending on which
         # of suggested_languages, used_languages it appears in.
@@ -402,32 +415,47 @@ class POTMsgSet(SQLBase):
         lang_used = []
         if both_languages:
             lang_used.append(
-                TranslationMessage.languageID.is_in(both_languages))
+                TranslationMessage.languageID.is_in(both_languages)
+            )
         if used_languages:
-            lang_used.append(And(
-                TranslationMessage.languageID.is_in(used_languages),
-                in_use_clause))
+            lang_used.append(
+                And(
+                    TranslationMessage.languageID.is_in(used_languages),
+                    in_use_clause,
+                )
+            )
         if suggested_languages:
-            lang_used.append(And(
-                TranslationMessage.languageID.is_in(suggested_languages),
-                Not(in_use_clause)))
+            lang_used.append(
+                And(
+                    TranslationMessage.languageID.is_in(suggested_languages),
+                    Not(in_use_clause),
+                )
+            )
 
-        SuggestivePOTemplate = Table('SuggestivePOTemplate')
-        msgsets = With('msgsets', Select(
-            POTMsgSet.id,
-            tables=(
-                POTMsgSet,
-                Join(
-                    TranslationTemplateItem,
-                    TranslationTemplateItem.potmsgset == POTMsgSet.id),
-                Join(
-                    SuggestivePOTemplate,
-                    TranslationTemplateItem.potemplate ==
-                        Column('potemplate', SuggestivePOTemplate))),
-            where=And(
-                POTMsgSet.msgid_singular == self.msgid_singular,
-                POTMsgSet.id != self.id)))
-        msgsets_table = Table('msgsets')
+        SuggestivePOTemplate = Table("SuggestivePOTemplate")
+        msgsets = With(
+            "msgsets",
+            Select(
+                POTMsgSet.id,
+                tables=(
+                    POTMsgSet,
+                    Join(
+                        TranslationTemplateItem,
+                        TranslationTemplateItem.potmsgset == POTMsgSet.id,
+                    ),
+                    Join(
+                        SuggestivePOTemplate,
+                        TranslationTemplateItem.potemplate
+                        == Column("potemplate", SuggestivePOTemplate),
+                    ),
+                ),
+                where=And(
+                    POTMsgSet.msgid_singular == self.msgid_singular,
+                    POTMsgSet.id != self.id,
+                ),
+            ),
+        )
+        msgsets_table = Table("msgsets")
 
         # Subquery to find the ids of TranslationMessages that are
         # matching suggestions.
@@ -437,22 +465,35 @@ class POTMsgSet(SQLBase):
         # all translated forms.  The Python code can later sort out the
         # distinct translations per form.
         msgstrs = [
-            Coalesce(getattr(TranslationMessage, 'msgstr%d_id' % form), -1)
-            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
+            Coalesce(getattr(TranslationMessage, "msgstr%d_id" % form), -1)
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)
+        ]
 
-        result = IStore(TranslationMessage).with_(msgsets).find(
-            TranslationMessage,
-            TranslationMessage.id.is_in(Select(
-                TranslationMessage.id,
-                tables=(
-                    TranslationMessage,
-                    Join(
-                        msgsets_table,
-                        TranslationMessage.potmsgset ==
-                            Column('id', msgsets_table))),
-                where=Or(*lang_used),
-                order_by=(msgstrs + [Desc(TranslationMessage.date_created)]),
-                distinct=msgstrs)))
+        result = (
+            IStore(TranslationMessage)
+            .with_(msgsets)
+            .find(
+                TranslationMessage,
+                TranslationMessage.id.is_in(
+                    Select(
+                        TranslationMessage.id,
+                        tables=(
+                            TranslationMessage,
+                            Join(
+                                msgsets_table,
+                                TranslationMessage.potmsgset
+                                == Column("id", msgsets_table),
+                            ),
+                        ),
+                        where=Or(*lang_used),
+                        order_by=(
+                            msgstrs + [Desc(TranslationMessage.date_created)]
+                        ),
+                        distinct=msgstrs,
+                    )
+                ),
+            )
+        )
 
         return shortlist(result, longest_expected=100, hardlimit=2000)
 
@@ -463,21 +504,24 @@ class POTMsgSet(SQLBase):
     def getExternallySuggestedTranslationMessages(self, language):
         """See `IPOTMsgSet`."""
         return self._getExternalTranslationMessages(
-            suggested_languages=[language])
+            suggested_languages=[language]
+        )
 
-    def getExternallySuggestedOrUsedTranslationMessages(self,
-            suggested_languages=(), used_languages=()):
+    def getExternallySuggestedOrUsedTranslationMessages(
+        self, suggested_languages=(), used_languages=()
+    ):
         """See `IPOTMsgSet`."""
         # This method exists because suggestions + used == all external
         # messages : its better not to do the work twice. We could use a
         # temp table and query twice, but as the list length is capped at
         # 2000, doing a single pass in python should be insignificantly
         # slower.
-        result_type = namedtuple('SuggestedOrUsed', 'suggested used')
+        result_type = namedtuple("SuggestedOrUsed", "suggested used")
         result = defaultdict(lambda: result_type([], []))
         for message in self._getExternalTranslationMessages(
             suggested_languages=suggested_languages,
-            used_languages=used_languages):
+            used_languages=used_languages,
+        ):
             in_use = message.is_current_ubuntu or message.is_current_upstream
             language_result = result[message.language]
             if in_use:
@@ -491,18 +535,24 @@ class POTMsgSet(SQLBase):
         if self.flagscomment is None:
             return []
         else:
-            return [flag
-                    for flag in self.flagscomment.replace(' ', '').split(',')
-                    if flag != '']
+            return [
+                flag
+                for flag in self.flagscomment.replace(" ", "").split(",")
+                if flag != ""
+            ]
 
     def hasTranslationChangedInLaunchpad(self, potemplate, language):
         """See `IPOTMsgSet`."""
         other_translation = self.getOtherTranslation(
-            language, potemplate.translation_side)
+            language, potemplate.translation_side
+        )
         current_translation = self.getCurrentTranslation(
-            potemplate, language, potemplate.translation_side)
-        return (other_translation is not None and
-                other_translation != current_translation)
+            potemplate, language, potemplate.translation_side
+        )
+        return (
+            other_translation is not None
+            and other_translation != current_translation
+        )
 
     def isTranslationNewerThan(self, pofile, timestamp):
         """See `IPOTMsgSet`."""
@@ -510,19 +560,23 @@ class POTMsgSet(SQLBase):
             return False
         template = pofile.potemplate
         current = self.getCurrentTranslation(
-            template, pofile.language, template.translation_side)
+            template, pofile.language, template.translation_side
+        )
         if current is None:
             return False
         date_updated = current.date_created
-        if (current.date_reviewed is not None and
-            current.date_reviewed > date_updated):
+        if (
+            current.date_reviewed is not None
+            and current.date_reviewed > date_updated
+        ):
             date_updated = current.date_reviewed
-        return (date_updated is not None and date_updated > timestamp)
+        return date_updated is not None and date_updated > timestamp
 
     def validateTranslations(self, translations):
         """See `IPOTMsgSet`."""
         validate_translation(
-            self.singular_text, self.plural_text, translations, self.flags)
+            self.singular_text, self.plural_text, translations, self.flags
+        )
 
     def _findPOTranslations(self, translations):
         """Find all POTranslation records for passed `translations`."""
@@ -532,14 +586,16 @@ class POTMsgSet(SQLBase):
             translation = translations.get(pluralform)
             if translation is not None:
                 # Find or create a POTranslation for the specified text
-                potranslations[pluralform] = (
-                    POTranslation.getOrCreateTranslation(translation))
+                potranslations[
+                    pluralform
+                ] = POTranslation.getOrCreateTranslation(translation)
             else:
                 potranslations[pluralform] = None
         return potranslations
 
-    def findTranslationMessage(self, pofile, translations=None,
-                               prefer_shared=False):
+    def findTranslationMessage(
+        self, pofile, translations=None, prefer_shared=False
+    ):
         """Find the best matching message in this `pofile`.
 
         The returned message matches exactly the given `translations`
@@ -553,10 +609,12 @@ class POTMsgSet(SQLBase):
         """
         potranslations = self._findPOTranslations(translations)
         return self._findMatchingTranslationMessage(
-            pofile, potranslations, prefer_shared=prefer_shared)
+            pofile, potranslations, prefer_shared=prefer_shared
+        )
 
-    def _findMatchingTranslationMessage(self, pofile, potranslations,
-                                        prefer_shared=False):
+    def _findMatchingTranslationMessage(
+        self, pofile, potranslations, prefer_shared=False
+    ):
         """Find the best matching message in this `pofile`.
 
         :param pofile: The `POFile` to look in.
@@ -570,16 +628,19 @@ class POTMsgSet(SQLBase):
             TranslationMessage.language == pofile.language,
             Or(
                 TranslationMessage.potemplate == None,
-                TranslationMessage.potemplate == pofile.potemplate),
-            ]
+                TranslationMessage.potemplate == pofile.potemplate,
+            ),
+        ]
 
         for pluralform in range(pofile.plural_forms):
             clauses.append(
-                getattr(TranslationMessage, 'msgstr%d' % pluralform) ==
-                    potranslations[pluralform])
+                getattr(TranslationMessage, "msgstr%d" % pluralform)
+                == potranslations[pluralform]
+            )
 
-        remaining_plural_forms = list(range(
-            pofile.plural_forms, TranslationConstants.MAX_PLURAL_FORMS))
+        remaining_plural_forms = list(
+            range(pofile.plural_forms, TranslationConstants.MAX_PLURAL_FORMS)
+        )
 
         # Prefer either shared or diverged messages, depending on
         # arguments.
@@ -591,24 +652,32 @@ class POTMsgSet(SQLBase):
         # Normally at most one message should match.  But if there is
         # more than one, prefer the one that adds the fewest extraneous
         # plural forms.
-        order.extend([
-            NullsFirst(getattr(TranslationMessage, 'msgstr%d_id' % form))
-            for form in remaining_plural_forms])
-        matches = list(IStore(TranslationMessage).find(
-            TranslationMessage, *clauses).order_by(*order))
+        order.extend(
+            [
+                NullsFirst(getattr(TranslationMessage, "msgstr%d_id" % form))
+                for form in remaining_plural_forms
+            ]
+        )
+        matches = list(
+            IStore(TranslationMessage)
+            .find(TranslationMessage, *clauses)
+            .order_by(*order)
+        )
 
         if len(matches) > 0:
             if len(matches) > 1:
                 logging.info(
                     "Translation for POTMsgSet %s into %s "
-                    "matches %s existing translations." % sqlvalues(
-                        self, pofile.language.code, len(matches)))
+                    "matches %s existing translations."
+                    % sqlvalues(self, pofile.language.code, len(matches))
+                )
             return matches[0]
         else:
             return None
 
-    def submitSuggestion(self, pofile, submitter, new_translations,
-                         from_import=False):
+    def submitSuggestion(
+        self, pofile, submitter, new_translations, from_import=False
+    ):
         """See `IPOTMsgSet`."""
         if self.is_translation_credit:
             # We don't support suggestions on credits messages.
@@ -616,28 +685,35 @@ class POTMsgSet(SQLBase):
         potranslations = self._findPOTranslations(new_translations)
 
         existing_message = self._findMatchingTranslationMessage(
-            pofile, potranslations, prefer_shared=True)
+            pofile, potranslations, prefer_shared=True
+        )
         if existing_message is not None:
             return existing_message
 
         forms = {
-            'msgstr%d' % form: potranslation
-            for form, potranslation in potranslations.items()}
+            "msgstr%d" % form: potranslation
+            for form, potranslation in potranslations.items()
+        }
 
         if from_import:
             origin = RosettaTranslationOrigin.SCM
         else:
             origin = RosettaTranslationOrigin.ROSETTAWEB
             pofile.potemplate.awardKarma(
-                submitter, 'translationsuggestionadded')
+                submitter, "translationsuggestionadded"
+            )
 
         return TranslationMessage(
-            potmsgset=self, language=pofile.language,
-            origin=origin, submitter=submitter,
-            **forms)
+            potmsgset=self,
+            language=pofile.language,
+            origin=origin,
+            submitter=submitter,
+            **forms,
+        )
 
-    def _checkForConflict(self, current_message, lock_timestamp,
-                          potranslations=None):
+    def _checkForConflict(
+        self, current_message, lock_timestamp, potranslations=None
+    ):
         """Check `message` for conflicting changes since `lock_timestamp`.
 
         Call this before changing this message's translations, to ensure
@@ -674,7 +750,8 @@ class POTMsgSet(SQLBase):
             return
         try:
             self._maybeRaiseTranslationConflict(
-                current_message, lock_timestamp)
+                current_message, lock_timestamp
+            )
         except TranslationConflict:
             if potranslations is None:
                 # We don't know what translations are going to be set;
@@ -701,10 +778,11 @@ class POTMsgSet(SQLBase):
             use_date = message.date_created
         if use_date >= lock_timestamp:
             raise TranslationConflict(
-                'While you were reviewing these suggestions, somebody '
-                'else changed the actual translation. This is not an '
-                'error but you might want to re-review the strings '
-                'concerned.')
+                "While you were reviewing these suggestions, somebody "
+                "else changed the actual translation. This is not an "
+                "error but you might want to re-review the strings "
+                "concerned."
+            )
         else:
             return
 
@@ -720,8 +798,12 @@ class POTMsgSet(SQLBase):
         if current is None:
             # Create or activate an empty translation message.
             current = self.setCurrentTranslation(
-                pofile, reviewer, {}, RosettaTranslationOrigin.ROSETTAWEB,
-                lock_timestamp=lock_timestamp)
+                pofile,
+                reviewer,
+                {},
+                RosettaTranslationOrigin.ROSETTAWEB,
+                lock_timestamp=lock_timestamp,
+            )
         else:
             # Check for translation conflicts and update review fields.
             self._maybeRaiseTranslationConflict(current, lock_timestamp)
@@ -735,16 +817,17 @@ class POTMsgSet(SQLBase):
         `setCurrentTranslation`.
         """
         if message is None:
-            return 'none'
+            return "none"
         elif message.is_diverged:
-            return 'diverged'
+            return "diverged"
         elif translation_side_traits.other_side_traits.getFlag(message):
-            return 'other_shared'
+            return "other_shared"
         else:
-            return 'shared'
+            return "shared"
 
-    def _makeTranslationMessage(self, pofile, submitter, translations, origin,
-                                diverged=False):
+    def _makeTranslationMessage(
+        self, pofile, submitter, translations, origin, diverged=False
+    ):
         """Create a new `TranslationMessage`.
 
         The message will not be made current on either side (Ubuntu or
@@ -758,8 +841,9 @@ class POTMsgSet(SQLBase):
             potemplate = None
 
         translation_args = {
-            'msgstr%d' % form: translation
-            for form, translation in translations.items()}
+            "msgstr%d" % form: translation
+            for form, translation in translations.items()
+        }
 
         return TranslationMessage(
             potmsgset=self,
@@ -769,10 +853,17 @@ class POTMsgSet(SQLBase):
             origin=origin,
             submitter=submitter,
             validation_status=TranslationValidationStatus.OK,
-            **translation_args)
+            **translation_args,
+        )
 
-    def approveSuggestion(self, pofile, suggestion, reviewer,
-                          share_with_other_side=False, lock_timestamp=None):
+    def approveSuggestion(
+        self,
+        pofile,
+        suggestion,
+        reviewer,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """Approve a suggestion.
 
         :param pofile: The `POFile` that the suggestion is being approved for.
@@ -786,7 +877,8 @@ class POTMsgSet(SQLBase):
         """
         template = pofile.potemplate
         current = self.getCurrentTranslation(
-            template, pofile.language, template.translation_side)
+            template, pofile.language, template.translation_side
+        )
         if current == suggestion:
             # Message is already current.
             return
@@ -794,17 +886,27 @@ class POTMsgSet(SQLBase):
         translator = suggestion.submitter
         potranslations = dictify_translations(suggestion.all_msgstrs)
         activated_message = self._setTranslation(
-            pofile, translator, suggestion.origin, potranslations,
+            pofile,
+            translator,
+            suggestion.origin,
+            potranslations,
             share_with_other_side=share_with_other_side,
-            identical_message=suggestion, lock_timestamp=lock_timestamp)
+            identical_message=suggestion,
+            lock_timestamp=lock_timestamp,
+        )
 
         activated_message.markReviewed(reviewer)
         if reviewer != translator:
-            template.awardKarma(translator, 'translationsuggestionapproved')
-            template.awardKarma(reviewer, 'translationreview')
+            template.awardKarma(translator, "translationsuggestionapproved")
+            template.awardKarma(reviewer, "translationreview")
 
-    def acceptFromImport(self, pofile, suggestion,
-                       share_with_other_side=False, lock_timestamp=None):
+    def acceptFromImport(
+        self,
+        pofile,
+        suggestion,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """Accept a suggestion coming from a translation import.
 
         When importing translations, these are first added as a suggestion
@@ -821,7 +923,8 @@ class POTMsgSet(SQLBase):
         """
         template = pofile.potemplate
         traits = getUtility(ITranslationSideTraitsSet).getTraits(
-            template.translation_side)
+            template.translation_side
+        )
         if traits.getFlag(suggestion):
             # Message is already current.
             return
@@ -829,12 +932,18 @@ class POTMsgSet(SQLBase):
         translator = suggestion.submitter
         potranslations = dictify_translations(suggestion.all_msgstrs)
         self._setTranslation(
-            pofile, translator, suggestion.origin, potranslations,
+            pofile,
+            translator,
+            suggestion.origin,
+            potranslations,
             share_with_other_side=share_with_other_side,
-            identical_message=suggestion, lock_timestamp=lock_timestamp)
+            identical_message=suggestion,
+            lock_timestamp=lock_timestamp,
+        )
 
-    def acceptFromUpstreamImportOnPackage(self, pofile, suggestion,
-                                        lock_timestamp=None):
+    def acceptFromUpstreamImportOnPackage(
+        self, pofile, suggestion, lock_timestamp=None
+    ):
         """Accept a suggestion coming from a translation import.
 
         This method allow to store translation as upstream translation
@@ -849,17 +958,20 @@ class POTMsgSet(SQLBase):
             that this change is based on.
         """
         template = pofile.potemplate
-        assert template.translation_side == TranslationSide.UBUNTU, (
-            "Do not use this method for an upstream project.")
+        assert (
+            template.translation_side == TranslationSide.UBUNTU
+        ), "Do not use this method for an upstream project."
 
         if suggestion.is_current_ubuntu and suggestion.is_current_upstream:
             # Message is already current.
             return
 
         current = self.getCurrentTranslation(
-            template, pofile.language, template.translation_side)
+            template, pofile.language, template.translation_side
+        )
         other = self.getOtherTranslation(
-            pofile.language, template.translation_side)
+            pofile.language, template.translation_side
+        )
         if current is None or other is None or current == other:
             translator = suggestion.submitter
             potranslations = dictify_translations(suggestion.all_msgstrs)
@@ -867,10 +979,14 @@ class POTMsgSet(SQLBase):
                 # Steal flag beforehand.
                 other.is_current_upstream = False
             self._setTranslation(
-                pofile, translator, suggestion.origin, potranslations,
+                pofile,
+                translator,
+                suggestion.origin,
+                potranslations,
                 share_with_other_side=True,
                 identical_message=suggestion,
-                lock_timestamp=lock_timestamp)
+                lock_timestamp=lock_timestamp,
+            )
         else:
             # Make it only current in upstream.
             if suggestion != other:
@@ -885,18 +1001,25 @@ class POTMsgSet(SQLBase):
         to keep the message in a consistent state.
         """
         potranslations = self._findPOTranslations(
-            dict(enumerate(original_message.translations)))
+            dict(enumerate(original_message.translations))
+        )
         message = self._makeTranslationMessage(
-            pofile, original_message.submitter, potranslations,
-            original_message.origin, diverged=True)
+            pofile,
+            original_message.submitter,
+            potranslations,
+            original_message.origin,
+            diverged=True,
+        )
         return message
 
-    def approveAsDiverged(self, pofile, suggestion, reviewer,
-                          lock_timestamp=None):
+    def approveAsDiverged(
+        self, pofile, suggestion, reviewer, lock_timestamp=None
+    ):
         """Approve a suggestion to become a diverged translation."""
         template = pofile.potemplate
         traits = getUtility(ITranslationSideTraitsSet).getTraits(
-            template.translation_side)
+            template.translation_side
+        )
 
         diverged = suggestion.is_diverged
         used_here = traits.getFlag(suggestion)
@@ -942,22 +1065,40 @@ class POTMsgSet(SQLBase):
         pofile.markChanged()
         return message
 
-    def setCurrentTranslation(self, pofile, submitter, translations, origin,
-                              share_with_other_side=False,
-                              lock_timestamp=None):
+    def setCurrentTranslation(
+        self,
+        pofile,
+        submitter,
+        translations,
+        origin,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """See `IPOTMsgSet`."""
         potranslations = self._findPOTranslations(translations)
         identical_message = self._findMatchingTranslationMessage(
-            pofile, potranslations, prefer_shared=False)
+            pofile, potranslations, prefer_shared=False
+        )
         return self._setTranslation(
-            pofile, submitter, origin, potranslations,
+            pofile,
+            submitter,
+            origin,
+            potranslations,
             share_with_other_side=share_with_other_side,
             identical_message=identical_message,
-            lock_timestamp=lock_timestamp)
+            lock_timestamp=lock_timestamp,
+        )
 
-    def _setTranslation(self, pofile, submitter, origin, potranslations,
-                        identical_message=None, share_with_other_side=False,
-                        lock_timestamp=None):
+    def _setTranslation(
+        self,
+        pofile,
+        submitter,
+        origin,
+        potranslations,
+        identical_message=None,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """Set the current translation.
 
         https://dev.launchpad.net/Translations/Specs/setCurrentTranslation
@@ -980,14 +1121,17 @@ class POTMsgSet(SQLBase):
         twin = identical_message
 
         traits = getUtility(ITranslationSideTraitsSet).getTraits(
-            pofile.potemplate.translation_side)
+            pofile.potemplate.translation_side
+        )
 
         # The current message on this translation side, if any.
         incumbent_message = traits.getCurrentMessage(
-            self, pofile.potemplate, pofile.language)
+            self, pofile.potemplate, pofile.language
+        )
 
         self._checkForConflict(
-            incumbent_message, lock_timestamp, potranslations=potranslations)
+            incumbent_message, lock_timestamp, potranslations=potranslations
+        )
 
         # Summary of the matrix:
         #  * If the incumbent message is diverged and we're setting a
@@ -1004,65 +1148,70 @@ class POTMsgSet(SQLBase):
         #  * If there is a twin that's shared on the other side,
 
         decision_matrix = {
-            'incumbent_none': {
-                'twin_none': 'Z1*',
-                'twin_shared': 'Z4*',
-                'twin_diverged': 'Z7*',
-                'twin_other_shared': 'Z4',
+            "incumbent_none": {
+                "twin_none": "Z1*",
+                "twin_shared": "Z4*",
+                "twin_diverged": "Z7*",
+                "twin_other_shared": "Z4",
             },
-            'incumbent_shared': {
-                'twin_none': 'B1*',
-                'twin_shared': 'B4*',
-                'twin_diverged': 'B7*',
-                'twin_other_shared': 'B4',
+            "incumbent_shared": {
+                "twin_none": "B1*",
+                "twin_shared": "B4*",
+                "twin_diverged": "B7*",
+                "twin_other_shared": "B4",
             },
-            'incumbent_diverged': {
-                'twin_none': 'A2',
-                'twin_shared': 'A5',
-                'twin_diverged': 'A4',
-                'twin_other_shared': 'A6',
+            "incumbent_diverged": {
+                "twin_none": "A2",
+                "twin_shared": "A5",
+                "twin_diverged": "A4",
+                "twin_other_shared": "A6",
             },
-            'incumbent_other_shared': {
-                'twin_none': 'B1+',
-                'twin_shared': 'B4+',
-                'twin_diverged': 'B7+',
-                'twin_other_shared': '',
+            "incumbent_other_shared": {
+                "twin_none": "B1+",
+                "twin_shared": "B4+",
+                "twin_diverged": "B7+",
+                "twin_other_shared": "",
             },
         }
 
         incumbent_state = "incumbent_%s" % self._nameMessageStatus(
-            incumbent_message, traits)
+            incumbent_message, traits
+        )
         twin_state = "twin_%s" % self._nameMessageStatus(twin, traits)
 
         decisions = decision_matrix[incumbent_state][twin_state]
-        assert re.match('[ABZ]?[124567]?[+*]?$', decisions), (
-            "Bad decision string.")
+        assert re.match(
+            "[ABZ]?[124567]?[+*]?$", decisions
+        ), "Bad decision string."
 
         for character in decisions:
-            if character == 'A':
+            if character == "A":
                 # Deactivate & converge.
                 # There may be an identical shared message.
                 traits.setFlag(incumbent_message, False)
                 incumbent_message.shareIfPossible()
-            elif character == 'B':
+            elif character == "B":
                 # Deactivate.
                 traits.setFlag(incumbent_message, False)
-            elif character == 'Z':
+            elif character == "Z":
                 # There is no incumbent message, so do nothing to it.
-                assert incumbent_message is None, (
-                    "Incorrect Z in decision matrix.")
-            elif character == '1':
+                assert (
+                    incumbent_message is None
+                ), "Incorrect Z in decision matrix."
+            elif character == "1":
                 # Create & activate.
                 message = self._makeTranslationMessage(
-                    pofile, submitter, potranslations, origin)
-            elif character == '2':
+                    pofile, submitter, potranslations, origin
+                )
+            elif character == "2":
                 # Create, diverge, activate.
                 message = self._makeTranslationMessage(
-                    pofile, submitter, potranslations, origin, diverged=True)
-            elif character == '4':
+                    pofile, submitter, potranslations, origin, diverged=True
+                )
+            elif character == "4":
                 # Activate.
                 message = twin
-            elif character == '5':
+            elif character == "5":
                 # If other is a suggestion, diverge and activate.
                 # (If not, it's already active and has been unmasked by
                 # our deactivating the incumbent).
@@ -1070,9 +1219,10 @@ class POTMsgSet(SQLBase):
                 if not traits.getFlag(twin):
                     assert not traits.other_side_traits.getFlag(twin), (
                         "Trying to diverge a message that is current on the "
-                        "other side.")
+                        "other side."
+                    )
                     message.potemplate = pofile.potemplate
-            elif character == '6':
+            elif character == "6":
                 # If other is not active, fork a diverged message.
                 if traits.getFlag(twin):
                     message = twin
@@ -1081,23 +1231,31 @@ class POTMsgSet(SQLBase):
                     # just reuse it for our diverged message.  Create a
                     # new one.
                     message = self._makeTranslationMessage(
-                        pofile, submitter, potranslations, origin,
-                        diverged=True)
-            elif character == '7':
+                        pofile,
+                        submitter,
+                        potranslations,
+                        origin,
+                        diverged=True,
+                    )
+            elif character == "7":
                 # Converge & activate.
                 message = twin
                 message.shareIfPossible()
-            elif character == '*':
+            elif character == "*":
                 if share_with_other_side:
                     other_incumbent = (
                         traits.other_side_traits.getCurrentMessage(
-                            self, pofile.potemplate, pofile.language))
+                            self, pofile.potemplate, pofile.language
+                        )
+                    )
                     if other_incumbent is None:
                         # Untranslated on the other side; use the new
                         # translation there as well.
                         traits.other_side_traits.setFlag(message, True)
-                    elif (incumbent_message is None and
-                          traits.side == TranslationSide.UPSTREAM):
+                    elif (
+                        incumbent_message is None
+                        and traits.side == TranslationSide.UPSTREAM
+                    ):
                         # Translating upstream, and the message was
                         # previously untranslated.  Any translation in
                         # Ubuntu is probably different, but only because
@@ -1105,19 +1263,22 @@ class POTMsgSet(SQLBase):
                         # this special case the upstream translation
                         # overrides the Ubuntu translation.
                         traits.other_side_traits.setFlag(
-                            other_incumbent, False)
+                            other_incumbent, False
+                        )
                         Store.of(message).add_flush_order(
-                            other_incumbent, message)
+                            other_incumbent, message
+                        )
                         traits.other_side_traits.setFlag(message, True)
-            elif character == '+':
+            elif character == "+":
                 if share_with_other_side:
                     traits.other_side_traits.setFlag(incumbent_message, False)
                     traits.other_side_traits.setFlag(message, True)
             else:
                 raise AssertionError(
-                    "Bad character in decision string: %s" % character)
+                    "Bad character in decision string: %s" % character
+                )
 
-        if decisions == '':
+        if decisions == "":
             message = twin
 
         if not traits.getFlag(message):
@@ -1128,13 +1289,16 @@ class POTMsgSet(SQLBase):
 
         return message
 
-    def resetCurrentTranslation(self, pofile, lock_timestamp=None,
-                                share_with_other_side=False):
+    def resetCurrentTranslation(
+        self, pofile, lock_timestamp=None, share_with_other_side=False
+    ):
         """See `IPOTMsgSet`."""
         traits = getUtility(ITranslationSideTraitsSet).getTraits(
-            pofile.potemplate.translation_side)
+            pofile.potemplate.translation_side
+        )
         current_message = traits.getCurrentMessage(
-            self, pofile.potemplate, pofile.language)
+            self, pofile.potemplate, pofile.language
+        )
 
         if current_message is None:
             # Nothing to do here.
@@ -1147,14 +1311,23 @@ class POTMsgSet(SQLBase):
         current_message.shareIfPossible()
         pofile.markChanged()
 
-    def clearCurrentTranslation(self, pofile, submitter, origin,
-                                share_with_other_side=False,
-                                lock_timestamp=None):
+    def clearCurrentTranslation(
+        self,
+        pofile,
+        submitter,
+        origin,
+        share_with_other_side=False,
+        lock_timestamp=None,
+    ):
         """See `IPOTMsgSet`."""
         message = self.setCurrentTranslation(
-            pofile, submitter, {}, origin,
+            pofile,
+            submitter,
+            {},
+            origin,
             share_with_other_side=share_with_other_side,
-            lock_timestamp=lock_timestamp)
+            lock_timestamp=lock_timestamp,
+        )
         message.markReviewed(submitter)
 
     @property
@@ -1176,18 +1349,19 @@ class POTMsgSet(SQLBase):
         if self.msgid_singular.msgid not in credits_message_info:
             return TranslationCreditsType.NOT_CREDITS
 
-        expected_context, credits_type = (
-            credits_message_info[self.msgid_singular.msgid])
+        expected_context, credits_type = credits_message_info[
+            self.msgid_singular.msgid
+        ]
         if expected_context is None or (self.context == expected_context):
             return credits_type
         return TranslationCreditsType.NOT_CREDITS
 
     def makeHTMLID(self, suffix=None):
         """See `IPOTMsgSet`."""
-        elements = ['msgset', str(self.id)]
+        elements = ["msgset", str(self.id)]
         if suffix is not None:
             elements.append(suffix)
-        return '_'.join(elements)
+        return "_".join(elements)
 
     def updatePluralForm(self, plural_form_text):
         """See `IPOTMsgSet`."""
@@ -1208,7 +1382,8 @@ class POTMsgSet(SQLBase):
             return
 
         shared_upstream_translation = self.getSharedTranslation(
-            pofile.language, TranslationSide.UPSTREAM)
+            pofile.language, TranslationSide.UPSTREAM
+        )
 
         if shared_upstream_translation is not None:
             return
@@ -1217,16 +1392,23 @@ class POTMsgSet(SQLBase):
         translator = getUtility(ILaunchpadCelebrities).rosetta_experts
 
         generated_translation = self.setCurrentTranslation(
-            pofile, translator, {0: credits_message_str},
+            pofile,
+            translator,
+            {0: credits_message_str},
             RosettaTranslationOrigin.LAUNCHPAD_GENERATED,
-            share_with_other_side=True)
+            share_with_other_side=True,
+        )
         generated_translation.shareIfPossible()
 
     def setSequence(self, potemplate, sequence):
         """See `IPOTMsgSet`."""
-        translation_template_item = IStore(TranslationTemplateItem).find(
-            TranslationTemplateItem,
-            potmsgset=self, potemplate=potemplate).one()
+        translation_template_item = (
+            IStore(TranslationTemplateItem)
+            .find(
+                TranslationTemplateItem, potmsgset=self, potemplate=potemplate
+            )
+            .one()
+        )
         if translation_template_item is not None:
             # Update the sequence for the translation template item.
             translation_template_item.sequence = sequence
@@ -1234,21 +1416,24 @@ class POTMsgSet(SQLBase):
         elif sequence >= 0:
             # Introduce this new entry into the TranslationTemplateItem for
             # later usage.
-            conflicts, uses_english_msgids = (
-                self._conflictsExistingSourceFileFormats(
-                    potemplate.source_file_format))
+            (
+                conflicts,
+                uses_english_msgids,
+            ) = self._conflictsExistingSourceFileFormats(
+                potemplate.source_file_format
+            )
             if conflicts:
                 # We are not allowing POTMsgSets to participate
                 # in incompatible POTemplates.  Call-sites should
                 # not try to introduce them, or they'll get an exception.
                 raise POTMsgSetInIncompatibleTemplatesError(
                     "Attempt to add a POTMsgSet into a POTemplate which "
-                    "has a conflicting value for uses_english_msgids.")
+                    "has a conflicting value for uses_english_msgids."
+                )
 
             return TranslationTemplateItem(
-                potemplate=potemplate,
-                sequence=sequence,
-                potmsgset=self)
+                potemplate=potemplate, sequence=sequence, potmsgset=self
+            )
         else:
             # There is no entry for this potmsgset in TranslationTemplateItem
             # table, neither we need to create one, given that the sequence is
@@ -1257,9 +1442,13 @@ class POTMsgSet(SQLBase):
 
     def getSequence(self, potemplate):
         """See `IPOTMsgSet`."""
-        translation_template_item = IStore(TranslationTemplateItem).find(
-            TranslationTemplateItem,
-            potmsgset=self, potemplate=potemplate).one()
+        translation_template_item = (
+            IStore(TranslationTemplateItem)
+            .find(
+                TranslationTemplateItem, potmsgset=self, potemplate=potemplate
+            )
+            .one()
+        )
         if translation_template_item is not None:
             return translation_template_item.sequence
         else:
@@ -1268,9 +1457,13 @@ class POTMsgSet(SQLBase):
     def getAllTranslationMessages(self):
         """See `IPOTMsgSet`."""
         return Store.of(self).find(
-            TranslationMessage, TranslationMessage.potmsgset == self)
+            TranslationMessage, TranslationMessage.potmsgset == self
+        )
 
     def getAllTranslationTemplateItems(self):
         """See `IPOTMsgSet`."""
-        return IStore(TranslationTemplateItem).find(
-            TranslationTemplateItem, potmsgset=self).order_by('id')
+        return (
+            IStore(TranslationTemplateItem)
+            .find(TranslationTemplateItem, potmsgset=self)
+            .order_by("id")
+        )

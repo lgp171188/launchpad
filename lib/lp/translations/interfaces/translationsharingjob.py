@@ -11,15 +11,18 @@ from lp.services.job.interfaces.job import IJob
 class ITranslationSharingJob(IJob):
 
     job = Reference(
-        title=_("The common Job attributes."), schema=IJob,
-        required=True, readonly=True)
+        title=_("The common Job attributes."),
+        schema=IJob,
+        required=True,
+        readonly=True,
+    )
 
     productseries = Attribute(_("The productseries of the Packaging."))
 
     distroseries = Attribute(_("The distroseries of the Packaging."))
 
-    sourcepackagename = Attribute(
-        _("The sourcepackagename of the Packaging."))
+    sourcepackagename = Attribute(_("The sourcepackagename of the Packaging."))
 
     potemplate = Attribute(
-        _("The POTemplate to pass around as the relevant template."))
+        _("The POTemplate to pass around as the relevant template.")
+    )

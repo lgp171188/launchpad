@@ -16,18 +16,17 @@ from lp.testing.systemdocs import (
     setGlobs,
     setUp,
     tearDown,
-    )
-
+)
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 # Files that have special needs can construct their own suite
 special = {
-    'gettext_po_parser.rst': LayeredDocFileSuite(
-        '../doc/gettext_po_parser.rst',
-        setUp=setGlobs, stdout_logging=False)
-    }
+    "gettext_po_parser.rst": LayeredDocFileSuite(
+        "../doc/gettext_po_parser.rst", setUp=setGlobs, stdout_logging=False
+    )
+}
 
 
 def test_suite():
@@ -39,8 +38,8 @@ def test_suite():
         suite.addTest(special_suite)
 
     testsdir = os.path.abspath(
-            os.path.normpath(os.path.join(here, '..', 'doc'))
-            )
+        os.path.normpath(os.path.join(here, "..", "doc"))
+    )
 
     # Add tests using default setup/teardown
     # Sort the list to give a predictable order.  We do this because when
@@ -52,22 +51,24 @@ def test_suite():
     filenames = sorted(
         filename
         for filename in os.listdir(testsdir)
-            if (os.path.splitext(filename)[1] == '.rst' and
-                filename not in special)
+        if (
+            os.path.splitext(filename)[1] == ".rst" and filename not in special
         )
+    )
 
     for filename in filenames:
-        path = os.path.join('../doc/', filename)
+        path = os.path.join("../doc/", filename)
         one_test = LayeredDocFileSuite(
             path,
-            setUp=setUp, tearDown=tearDown,
+            setUp=setUp,
+            tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
-            stdout_logging_level=logging.WARNING
-            )
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(one_test)
 
     return suite
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(test_suite())

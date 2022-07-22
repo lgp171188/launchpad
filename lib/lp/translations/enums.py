@@ -4,29 +4,32 @@
 """Enumerations used in the lp/translations modules."""
 
 __all__ = [
-    'LanguagePackType',
-    'RosettaImportStatus',
-    'TranslationPermission',
-    ]
+    "LanguagePackType",
+    "RosettaImportStatus",
+    "TranslationPermission",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 
 
 class LanguagePackType(DBEnumeratedType):
     """Type of language packs."""
 
-    FULL = DBItem(1, """
+    FULL = DBItem(
+        1,
+        """
         Full
 
-        Full translations export.""")
+        Full translations export.""",
+    )
 
-    DELTA = DBItem(2, """
+    DELTA = DBItem(
+        2,
+        """
         Delta
 
-        Delta translation export based on a previous full export.""")
+        Delta translation export based on a previous full export.""",
+    )
 
 
 class RosettaImportStatus(DBEnumeratedType):
@@ -37,49 +40,70 @@ class RosettaImportStatus(DBEnumeratedType):
     or blocked.
     """
 
-    APPROVED = DBItem(1, """
+    APPROVED = DBItem(
+        1,
+        """
         Approved
 
         The entry has been approved by a Rosetta Expert or was able to be
         approved by our automatic system and is waiting to be imported.
-        """)
+        """,
+    )
 
-    IMPORTED = DBItem(2, """
+    IMPORTED = DBItem(
+        2,
+        """
         Imported
 
         The entry has been imported.
-        """)
+        """,
+    )
 
-    DELETED = DBItem(3, """
+    DELETED = DBItem(
+        3,
+        """
         Deleted
 
         The entry has been removed before being imported.
-        """)
+        """,
+    )
 
-    FAILED = DBItem(4, """
+    FAILED = DBItem(
+        4,
+        """
         Failed
 
         The entry import failed.
-        """)
+        """,
+    )
 
-    NEEDS_REVIEW = DBItem(5, """
+    NEEDS_REVIEW = DBItem(
+        5,
+        """
         Needs Review
 
         A Rosetta Expert needs to review this entry to decide whether it will
         be imported and where it should be imported.
-        """)
+        """,
+    )
 
-    BLOCKED = DBItem(6, """
+    BLOCKED = DBItem(
+        6,
+        """
         Blocked
 
         The entry has been blocked to be imported by a Rosetta Expert.
-        """)
+        """,
+    )
 
-    NEEDS_INFORMATION = DBItem(7, """
+    NEEDS_INFORMATION = DBItem(
+        7,
+        """
         Needs Information
 
         The reviewer needs more information before this entry can be approved.
-        """)
+        """,
+    )
 
 
 class TranslationPermission(DBEnumeratedType):
@@ -93,23 +117,31 @@ class TranslationPermission(DBEnumeratedType):
     add or edit its translation files. This schema enumerates the options.
     """
 
-    OPEN = DBItem(1, """
+    OPEN = DBItem(
+        1,
+        """
         Open
 
         This group allows totally open access to its translations. Any
         logged-in user can add or edit translations in any language, without
-        any review.""")
+        any review.""",
+    )
 
-    STRUCTURED = DBItem(20, """
+    STRUCTURED = DBItem(
+        20,
+        """
         Structured
 
         This group has designated translators for certain languages. In
         those languages, people who are not designated translators can only
         make suggestions. However, in languages which do not yet have a
         designated translator, anybody can edit the translations directly,
-        with no further review.""")
+        with no further review.""",
+    )
 
-    RESTRICTED = DBItem(100, """
+    RESTRICTED = DBItem(
+        100,
+        """
         Restricted
 
         This group allows only designated translators to edit the
@@ -118,9 +150,12 @@ class TranslationPermission(DBEnumeratedType):
         project, or by getting permission to start a new team for a new
         language. People who are not designated translators can still make
         suggestions for new translations, but those suggestions need to be
-        reviewed before being accepted by the designated translator.""")
+        reviewed before being accepted by the designated translator.""",
+    )
 
-    CLOSED = DBItem(200, """
+    CLOSED = DBItem(
+        200,
+        """
         Closed
 
         This group allows only designated translators to edit or add
@@ -128,4 +163,5 @@ class TranslationPermission(DBEnumeratedType):
         joining an existing language translation team for this
         project, or by getting permission to start a new team for a new
         language. People who are not designated translators will not be able
-        to add suggestions.""")
+        to add suggestions.""",
+    )

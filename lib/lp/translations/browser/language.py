@@ -4,14 +4,14 @@
 """Browser code for Language table."""
 
 __all__ = [
-    'LanguageAddView',
-    'LanguageAdminView',
-    'LanguageSetBreadcrumb',
-    'LanguageSetContextMenu',
-    'LanguageSetNavigation',
-    'LanguageSetView',
-    'LanguageView',
-    ]
+    "LanguageAddView",
+    "LanguageAdminView",
+    "LanguageSetBreadcrumb",
+    "LanguageSetContextMenu",
+    "LanguageSetNavigation",
+    "LanguageSetView",
+    "LanguageView",
+]
 
 from zope.component import getUtility
 from zope.event import notify
@@ -22,34 +22,31 @@ from zope.lifecycleevent import ObjectCreatedEvent
 from zope.schema import TextLine
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.browser.tales import LanguageFormatterAPI
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     GetitemNavigation,
     LaunchpadView,
     Link,
     NavigationMenu,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
-    )
+from lp.services.worlddata.interfaces.language import ILanguage, ILanguageSet
 from lp.translations.browser.translations import TranslationsMixin
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
 from lp.translations.utilities.pluralforms import (
     BadPluralExpression,
     make_friendly_plural_forms,
-    )
+)
 
 
 def describe_language(language):
@@ -75,28 +72,29 @@ class LanguageSetNavigation(GetitemNavigation):
 
 class LanguageSetBreadcrumb(Breadcrumb):
     """`Breadcrumb` for `ILanguageSet`."""
+
     text = "Languages"
 
 
 class LanguageSetContextMenu(ContextMenu):
     usedfor = ILanguageSet
-    links = ['add']
+    links = ["add"]
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def add(self):
-        text = 'Add Language'
-        return Link('+add', text, icon='add')
+        text = "Add Language"
+        return Link("+add", text, icon="add")
 
 
 class LanguageNavigationMenu(NavigationMenu):
     usedfor = ILanguage
-    facet = 'translations'
-    links = ['administer']
+    facet = "translations"
+    links = ["administer"]
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def administer(self):
-        text = 'Administer'
-        return Link('+admin', text, icon='edit')
+        text = "Administer"
+        return Link("+admin", text, icon="edit")
 
 
 def _format_language(language):
@@ -108,19 +106,21 @@ class ILanguageSetSearch(Interface):
     """The collection of languages."""
 
     search_lang = TextLine(
-        title='Name of the language to search for.',
-        required=True)
+        title="Name of the language to search for.", required=True
+    )
 
 
 class LanguageSetView(LaunchpadFormView):
     """View class to render main ILanguageSet page."""
+
     label = "Languages in Launchpad"
     page_title = "Languages"
 
     schema = ILanguageSetSearch
 
     custom_widget_search_lang = CustomWidgetFactory(
-        TextWidget, displayWidth=30)
+        TextWidget, displayWidth=30
+    )
 
     def initialize(self):
         """See `LaunchpadFormView`."""
@@ -128,9 +128,11 @@ class LanguageSetView(LaunchpadFormView):
 
         self.language_search = None
 
-        search_lang_widget = self.widgets.get('search_lang')
-        if (search_lang_widget is not None and
-            search_lang_widget.hasValidInput()):
+        search_lang_widget = self.widgets.get("search_lang")
+        if (
+            search_lang_widget is not None
+            and search_lang_widget.hasValidInput()
+        ):
             self.language_search = search_lang_widget.getInputValue()
         self.search_requested = self.language_search is not None
 
@@ -157,28 +159,36 @@ class LanguageSetView(LaunchpadFormView):
 class LanguageAddView(LaunchpadFormView):
     """View to handle ILanguage creation form."""
 
-    rootsite = 'translations'
+    rootsite = "translations"
 
     schema = ILanguage
-    field_names = ['code', 'englishname', 'nativename', 'pluralforms',
-                   'pluralexpression', 'visible', 'direction']
+    field_names = [
+        "code",
+        "englishname",
+        "nativename",
+        "pluralforms",
+        "pluralexpression",
+        "visible",
+        "direction",
+    ]
     invariant_context = None
     language = None
 
     page_title = "Register a language"
     label = "Register a language in Launchpad"
 
-    @action('Add', name='add')
+    @action("Add", name="add")
     def add_action(self, action, data):
         """Create the new Language from the form details."""
         self.language = getUtility(ILanguageSet).createLanguage(
-            code=data['code'],
-            englishname=data['englishname'],
-            nativename=data['nativename'],
-            pluralforms=data['pluralforms'],
-            pluralexpression=data['pluralexpression'],
-            visible=data['visible'],
-            direction=data['direction'])
+            code=data["code"],
+            englishname=data["englishname"],
+            nativename=data["nativename"],
+            pluralforms=data["pluralforms"],
+            pluralexpression=data["pluralexpression"],
+            visible=data["visible"],
+            direction=data["direction"],
+        )
         notify(ObjectCreatedEvent(self.language))
 
     @property
@@ -188,17 +198,18 @@ class LanguageAddView(LaunchpadFormView):
 
     @property
     def next_url(self):
-        assert self.language is not None, 'No language has been created'
+        assert self.language is not None, "No language has been created"
         return canonical_url(self.language, rootsite=self.rootsite)
 
     def validate(self, data):
         # XXX CarlosPerelloMarin 2007-04-04 bug=102898:
         # Pluralform expression should be validated.
-        new_code = data.get('code')
+        new_code = data.get("code")
         language_set = getUtility(ILanguageSet)
         if language_set.getLanguageByCode(new_code) is not None:
             self.setFieldError(
-                'code', 'There is already a language with that code.')
+                "code", "There is already a language with that code."
+            )
 
 
 class LanguageView(TranslationsMixin, LaunchpadView):
@@ -221,11 +232,14 @@ class LanguageView(TranslationsMixin, LaunchpadView):
         translation_teams = []
         for translation_team in self.context.translation_teams:
             # translation_team would be either a person or a team.
-            translation_teams.append({
-                'expert': translation_team,
-                'groups': ITranslationsPerson(
-                    translation_team).translation_groups,
-                })
+            translation_teams.append(
+                {
+                    "expert": translation_team,
+                    "groups": ITranslationsPerson(
+                        translation_team
+                    ).translation_groups,
+                }
+            )
         return translation_teams
 
     @property
@@ -239,7 +253,7 @@ class LanguageView(TranslationsMixin, LaunchpadView):
         top_translators = []
         for translator in self.context.translators[:30]:
             # Get only the top 20 contributors
-            if (len(top_translators) >= 20):
+            if len(top_translators) >= 20:
                 break
 
             # For merged account add the target account
@@ -263,15 +277,16 @@ class LanguageView(TranslationsMixin, LaunchpadView):
         comma separated list to be displayed.
         """
         pluralforms_list = make_friendly_plural_forms(
-                self.context.pluralexpression, self.context.pluralforms)
+            self.context.pluralexpression, self.context.pluralforms
+        )
 
         for item in pluralforms_list:
-            examples = ", ".join(map(str, item['examples']))
-            if len(item['examples']) != 1:
+            examples = ", ".join(map(str, item["examples"]))
+            if len(item["examples"]) != 1:
                 examples += "..."
             else:
                 examples += "."
-            item['examples'] = examples
+            item["examples"] = examples
 
         return pluralforms_list
 
@@ -279,23 +294,31 @@ class LanguageView(TranslationsMixin, LaunchpadView):
     def add_question_url(self):
         launchpad = getUtility(ILaunchpadCelebrities).launchpad
         return canonical_url(
-            launchpad,
-            view_name='+addquestion',
-            rootsite='answers')
+            launchpad, view_name="+addquestion", rootsite="answers"
+        )
 
 
 class LanguageAdminView(LaunchpadEditFormView):
     """Handle an admin form submission."""
 
-    rootsite = 'translations'
+    rootsite = "translations"
 
     schema = ILanguage
 
     custom_widget_countries = CustomWidgetFactory(
-        LabeledMultiCheckBoxWidget, orientation='vertical')
+        LabeledMultiCheckBoxWidget, orientation="vertical"
+    )
 
-    field_names = ['code', 'englishname', 'nativename', 'pluralforms',
-                   'pluralexpression', 'visible', 'direction', 'countries']
+    field_names = [
+        "code",
+        "englishname",
+        "nativename",
+        "pluralforms",
+        "pluralexpression",
+        "visible",
+        "direction",
+        "countries",
+    ]
 
     page_title = "Change details"
 
@@ -322,21 +345,22 @@ class LanguageAdminView(LaunchpadEditFormView):
         language_set = getUtility(ILanguageSet)
         if language_set.getLanguageByCode(new_code) is not None:
             self.setFieldError(
-                'code', 'There is already a language with that code.')
+                "code", "There is already a language with that code."
+            )
 
     def _validatePluralData(self, pluralforms, pluralexpression):
         """Validate plural expression and number of plural forms."""
         try:
             make_friendly_plural_forms(pluralexpression, pluralforms)
         except BadPluralExpression as e:
-            self.setFieldError('pluralexpression', str(e))
+            self.setFieldError("pluralexpression", str(e))
 
     def validate(self, data):
-        new_code = data.get('code')
+        new_code = data.get("code")
         if new_code != self.context.code:
             self._validateCode(new_code)
 
-        pluralexpression = data.get('pluralexpression')
-        pluralforms = data.get('pluralforms')
+        pluralexpression = data.get("pluralexpression")
+        pluralforms = data.get("pluralforms")
         if pluralexpression is not None:
             self._validatePluralData(pluralforms, pluralexpression)

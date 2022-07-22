@@ -16,11 +16,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
-from lp.buildmaster.tests.mock_workers import (
-    WaitingWorker,
-    WorkerTestHelpers,
-    )
+)
+from lp.buildmaster.tests.mock_workers import WaitingWorker, WorkerTestHelpers
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
@@ -32,10 +29,10 @@ from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 
 
 class FakeBuildQueue:
@@ -67,21 +64,23 @@ class MakeBehaviourMixin:
         behaviour.setBuilder(self.factory.makeBuilder(), worker)
         if use_fake_chroot:
             behaviour.distro_arch_series.addOrUpdateChroot(
-                self.factory.makeLibraryFileAlias(db_only=True))
+                self.factory.makeLibraryFileAlias(db_only=True)
+            )
         return behaviour
 
     def makeProductSeriesWithBranchForTranslation(self):
         productseries = self.factory.makeProductSeries()
-        branch = self.factory.makeProductBranch(
-            productseries.product)
+        branch = self.factory.makeProductBranch(productseries.product)
         productseries.branch = branch
         productseries.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TEMPLATES)
+            TranslationsBranchImportMode.IMPORT_TEMPLATES
+        )
         return productseries
 
 
 class TestTranslationTemplatesBuildBehaviour(
-    TestCaseWithFactory, MakeBehaviourMixin):
+    TestCaseWithFactory, MakeBehaviourMixin
+):
     """Test `TranslationTemplatesBuildBehaviour`."""
 
     layer = LaunchpadZopelessLayer
@@ -104,16 +103,22 @@ class TestTranslationTemplatesBuildBehaviour(
         build_request = yield behaviour.composeBuildRequest(None)
         das = behaviour.distro_arch_series
         self.assertEqual(
-            ('translation-templates', das, PackagePublishingPocket.RELEASE, {},
-             {
-                'arch_tag': das.architecturetag,
-                'archive_private': False,
-                'branch_url': behaviour.build.branch.composePublicURL(),
-                'build_url': canonical_url(behaviour.build),
-                'fast_cleanup': True,
-                'series': das.distroseries.name,
-                }),
-            build_request)
+            (
+                "translation-templates",
+                das,
+                PackagePublishingPocket.RELEASE,
+                {},
+                {
+                    "arch_tag": das.architecturetag,
+                    "archive_private": False,
+                    "branch_url": behaviour.build.branch.composePublicURL(),
+                    "build_url": canonical_url(behaviour.build),
+                    "fast_cleanup": True,
+                    "series": das.distroseries.name,
+                },
+            ),
+            build_request,
+        )
 
     def test_archive(self):
         # TranslationTemplatesBuildBehaviour.archive is the main Ubuntu
@@ -129,20 +134,20 @@ class TestTranslationTemplatesBuildBehaviour(
         behaviour = self.makeBehaviour()
         self.assertEqual(
             ubuntu.currentseries.nominatedarchindep,
-            behaviour.distro_arch_series)
+            behaviour.distro_arch_series,
+        )
 
     def test_readTarball(self):
         behaviour = self.makeBehaviour()
         buildqueue = FakeBuildQueue(behaviour)
         path = behaviour.templates_tarball_path
         # Poke the file we're expecting into the mock worker.
-        behaviour._worker.valid_files[path] = ''
+        behaviour._worker.valid_files[path] = ""
 
         def got_tarball(filename):
             tarball = open(filename)
             try:
-                self.assertEqual(
-                    "This is a %s" % path, tarball.read())
+                self.assertEqual("This is a %s" % path, tarball.read())
             finally:
                 tarball.close()
                 os.remove(filename)
@@ -153,7 +158,8 @@ class TestTranslationTemplatesBuildBehaviour(
     def test_handleStatus_OK(self):
         # Hopefully, a build will succeed and produce a tarball.
         behaviour = self.makeBehaviour(
-            filemap={'translation-templates.tar.gz': 'foo'})
+            filemap={"translation-templates.tar.gz": "foo"}
+        )
         behaviour._uploadTarball = FakeMethod()
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
@@ -177,7 +183,7 @@ class TestTranslationTemplatesBuildBehaviour(
 
     def test_handleStatus_failed(self):
         # Builds may also fail (and produce no tarball).
-        behaviour = self.makeBehaviour(state='BuildStatus.PACKAGEFAIL')
+        behaviour = self.makeBehaviour(state="BuildStatus.PACKAGEFAIL")
         behaviour._uploadTarball = FakeMethod()
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
@@ -186,8 +192,8 @@ class TestTranslationTemplatesBuildBehaviour(
         d = worker.status()
 
         def got_status(status):
-            del status['filemap']
-            return behaviour.handleStatus(queue_item, status),
+            del status["filemap"]
+            return (behaviour.handleStatus(queue_item, status),)
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FAILEDTOBUILD, behaviour.build.status)
@@ -212,8 +218,8 @@ class TestTranslationTemplatesBuildBehaviour(
         d = worker.status()
 
         def got_status(status):
-            del status['filemap']
-            return behaviour.handleStatus(queue_item, status),
+            del status["filemap"]
+            return (behaviour.handleStatus(queue_item, status),)
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)
@@ -228,16 +234,18 @@ class TestTranslationTemplatesBuildBehaviour(
         productseries = self.makeProductSeriesWithBranchForTranslation()
         branch = productseries.branch
         behaviour = self.makeBehaviour(
-            branch=branch, filemap={'translation-templates.tar.gz': 'foo'})
+            branch=branch, filemap={"translation-templates.tar.gz": "foo"}
+        )
         queue_item = behaviour.build.queueBuild()
         queue_item.markAsBuilding(self.factory.makeBuilder())
         worker = behaviour._worker
 
         def fake_getFile(sum, path):
             dummy_tar = os.path.join(
-                os.path.dirname(__file__), 'dummy_templates.tar.gz')
-            tar_file = open(dummy_tar, 'rb')
-            with open(path, 'wb') as f:
+                os.path.dirname(__file__), "dummy_templates.tar.gz"
+            )
+            tar_file = open(dummy_tar, "rb")
+            with open(path, "wb") as f:
                 copy_and_close(tar_file, f)
             return defer.succeed(None)
 
@@ -245,17 +253,18 @@ class TestTranslationTemplatesBuildBehaviour(
         d = worker.status()
 
         def got_status(status):
-            return behaviour.handleStatus(queue_item, status),
+            return (behaviour.handleStatus(queue_item, status),)
 
         def build_updated(ignored):
             self.assertEqual(BuildStatus.FULLYBUILT, behaviour.build.status)
-            entries = getUtility(
-                ITranslationImportQueue).getAllEntries(target=productseries)
+            entries = getUtility(ITranslationImportQueue).getAllEntries(
+                target=productseries
+            )
             expected_templates = [
-                'po/domain.pot',
-                'po-other/other.pot',
-                'po-thethird/templ3.pot',
-                ]
+                "po/domain.pot",
+                "po-other/other.pot",
+                "po-thethird/templ3.pot",
+            ]
             list1 = sorted(expected_templates)
             list2 = sorted(entry.path for entry in entries)
             self.assertEqual(list1, list2)
@@ -266,7 +275,8 @@ class TestTranslationTemplatesBuildBehaviour(
 
 
 class TestTTBuildBehaviourTranslationsQueue(
-        TestCaseWithFactory, MakeBehaviourMixin):
+    TestCaseWithFactory, MakeBehaviourMixin
+):
     """Test uploads to the import queue."""
 
     layer = LaunchpadZopelessLayer
@@ -276,22 +286,23 @@ class TestTTBuildBehaviourTranslationsQueue(
 
         self.queue = getUtility(ITranslationImportQueue)
         self.dummy_tar = os.path.join(
-            os.path.dirname(__file__), 'dummy_templates.tar.gz')
+            os.path.dirname(__file__), "dummy_templates.tar.gz"
+        )
         self.productseries = self.makeProductSeriesWithBranchForTranslation()
         self.branch = self.productseries.branch
 
     def test_uploadTarball(self):
         # Files from the tarball end up in the import queue.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar, 'rb') as f:
+        with open(self.dummy_tar, "rb") as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         expected_templates = [
-            'po/domain.pot',
-            'po-other/other.pot',
-            'po-thethird/templ3.pot',
-            ]
+            "po/domain.pot",
+            "po-other/other.pot",
+            "po-thethird/templ3.pot",
+        ]
 
         paths = [entry.path for entry in entries]
         self.assertContentEqual(expected_templates, paths)
@@ -299,18 +310,17 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_approved(self):
         # Uploaded template files are automatically approved.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar, 'rb') as f:
+        with open(self.dummy_tar, "rb") as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         statuses = [entry.status for entry in entries]
-        self.assertEqual(
-            [RosettaImportStatus.APPROVED] * 3, statuses)
+        self.assertEqual([RosettaImportStatus.APPROVED] * 3, statuses)
 
     def test_uploadTarball_importer(self):
         # Files from the tarball are owned by the branch owner.
         behaviour = self.makeBehaviour()
-        with open(self.dummy_tar, 'rb') as f:
+        with open(self.dummy_tar, "rb") as f:
             behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)

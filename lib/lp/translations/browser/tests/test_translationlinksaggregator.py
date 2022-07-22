@@ -9,7 +9,7 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.browser.translationlinksaggregator import (
     TranslationLinksAggregator,
-    )
+)
 from lp.translations.model.productserieslanguage import ProductSeriesLanguage
 
 
@@ -54,7 +54,7 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
     def test_circumscribe_single_pofile(self):
         # If passed a single POFile, _circumscribe returns a list of
         # just that POFile.
-        pofile = self.factory.makePOFile(language_code='lua')
+        pofile = self.factory.makePOFile(language_code="lua")
 
         links = self.aggregator._circumscribe([pofile])
 
@@ -63,12 +63,13 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
     def test_circumscribe_product_wild_mix(self):
         # A combination of wildly different POFiles in the same product
         # yields links to the individual POFiles.
-        pofile1 = self.factory.makePOFile(language_code='sux')
+        pofile1 = self.factory.makePOFile(language_code="sux")
         product = pofile1.potemplate.productseries.product
         series2 = self.factory.makeProductSeries(product)
         template2 = self.factory.makePOTemplate(productseries=series2)
         pofile2 = self.factory.makePOFile(
-            potemplate=template2, language_code='la')
+            potemplate=template2, language_code="la"
+        )
 
         links = self.aggregator._circumscribe([pofile1, pofile2])
 
@@ -80,11 +81,12 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
         # A combination of POFiles in the same language but different
         # templates of the same productseries is represented as a link
         # to the ProductSeriesLanguage.
-        pofile1 = self.factory.makePOFile(language_code='nl')
+        pofile1 = self.factory.makePOFile(language_code="nl")
         series = pofile1.potemplate.productseries
         template2 = self.factory.makePOTemplate(productseries=series)
         pofile2 = self.factory.makePOFile(
-            potemplate=template2, language_code='nl')
+            potemplate=template2, language_code="nl"
+        )
 
         links = self.aggregator._circumscribe([pofile1, pofile2])
 
@@ -94,10 +96,11 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
     def test_circumscribe_different_languages(self):
         # If the POFiles differ only in language, we get a link to the
         # overview for the template.
-        pofile1 = self.factory.makePOFile(language_code='nl')
+        pofile1 = self.factory.makePOFile(language_code="nl")
         template = pofile1.potemplate
         pofile2 = self.factory.makePOFile(
-            potemplate=template, language_code='lo')
+            potemplate=template, language_code="lo"
+        )
 
         pofiles = [pofile1, pofile2]
         links = self.aggregator._circumscribe(pofiles)
@@ -108,14 +111,16 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
         # In a Product, two POFiles may share their translations.  For
         # now, we link to each individually.  We may want to make this
         # more clever in the future.
-        pofile1 = self.factory.makePOFile(language_code='nl')
+        pofile1 = self.factory.makePOFile(language_code="nl")
         template1 = pofile1.potemplate
         series1 = template1.productseries
         series2 = self.factory.makeProductSeries(product=series1.product)
         template2 = self.factory.makePOTemplate(
-            productseries=series2, name=template1.name,
-            translation_domain=template1.translation_domain)
-        pofile2 = template2.getPOFileByLang('nl')
+            productseries=series2,
+            name=template1.name,
+            translation_domain=template1.translation_domain,
+        )
+        pofile2 = template2.getPOFileByLang("nl")
 
         pofiles = [pofile1, pofile2]
         links = self.aggregator._circumscribe(pofiles)
@@ -129,14 +134,18 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
         # languages, we link to the template.
         package = self.factory.makeSourcePackage()
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         pofile1 = self.factory.makePOFile(
-            potemplate=template, language_code='nl')
+            potemplate=template, language_code="nl"
+        )
         pofile2 = self.factory.makePOFile(
-            potemplate=template, language_code='ka')
+            potemplate=template, language_code="ka"
+        )
 
         pofiles = [pofile1, pofile2]
         links = self.aggregator._circumscribe(pofiles)
@@ -148,17 +157,22 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
         # language" page.
         package = self.factory.makeSourcePackage()
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         template1 = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         template2 = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         pofile1 = self.factory.makePOFile(
-            potemplate=template1, language_code='nl')
+            potemplate=template1, language_code="nl"
+        )
         pofile2 = self.factory.makePOFile(
-            potemplate=template2, language_code='nl')
+            potemplate=template2, language_code="nl"
+        )
 
         pofiles = [pofile1, pofile2]
         links = self.aggregator._circumscribe(pofiles)
@@ -168,7 +182,7 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
     def test_circumscribe_pofile_plus_template(self):
         # A template circumscribes both itself and any of its
         # translations.
-        pofile = self.factory.makePOFile(language_code='uga')
+        pofile = self.factory.makePOFile(language_code="uga")
         template = pofile.potemplate
 
         sheets = [pofile, template]
@@ -184,7 +198,7 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
         self.assertEqual([], self.aggregator.aggregate([]))
 
         # Basic case: one POFile yields its product or package.
-        pofile = self.factory.makePOFile(language_code='ca')
+        pofile = self.factory.makePOFile(language_code="ca")
         product = pofile.potemplate.productseries.product
 
         descriptions = self.aggregator.aggregate([pofile])
@@ -204,61 +218,72 @@ class TestTranslationLinksAggregator(TestCaseWithFactory):
 
     def test_aggregate_product_and_package(self):
         # The aggregator keeps a product and a package separate.
-        product_pofile = self.factory.makePOFile(language_code='th')
+        product_pofile = self.factory.makePOFile(language_code="th")
         product = product_pofile.potemplate.productseries.product
         removeSecurityProxy(product_pofile).unreviewed_count = 1
 
         package = self.factory.makeSourcePackage()
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         package_template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         package_pofile = self.factory.makePOFile(
-            potemplate=package_template, language_code='th')
+            potemplate=package_template, language_code="th"
+        )
         removeSecurityProxy(package_pofile).unreviewed_count = 2
 
         descriptions = self.aggregator.aggregate(
-            [product_pofile, package_pofile])
+            [product_pofile, package_pofile]
+        )
 
         expected = [
             (product, canonical_url(product_pofile), [product_pofile]),
             (package, canonical_url(package_pofile), [package_pofile]),
-            ]
+        ]
         self.assertContentEqual(expected, descriptions)
 
     def test_aggregate_bundles_productseries(self):
         # _aggregateTranslationTargets describes POFiles for the same
         # ProductSeries together.
-        pofile1 = self.factory.makePOFile(language_code='es')
+        pofile1 = self.factory.makePOFile(language_code="es")
         series = pofile1.potemplate.productseries
         template2 = self.factory.makePOTemplate(productseries=series)
         pofile2 = self.factory.makePOFile(
-            language_code='br', potemplate=template2)
+            language_code="br", potemplate=template2
+        )
 
         pofiles = [pofile1, pofile2]
         descriptions = self.aggregator.aggregate(pofiles)
 
         self.assertEqual(1, len(descriptions))
         self.assertEqual(
-            [(series.product, canonical_url(series), pofiles)], descriptions)
+            [(series.product, canonical_url(series), pofiles)], descriptions
+        )
 
     def test_aggregate_bundles_package(self):
         # _aggregateTranslationTargets describes POFiles for the same
         # ProductSeries together.
         package = self.factory.makeSourcePackage()
         package.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         template1 = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         pofile1 = self.factory.makePOFile(
-            language_code='es', potemplate=template1)
+            language_code="es", potemplate=template1
+        )
         template2 = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         pofile2 = self.factory.makePOFile(
-            language_code='br', potemplate=template2)
+            language_code="br", potemplate=template2
+        )
 
         pofiles = [pofile1, pofile2]
         descriptions = self.aggregator.aggregate(pofiles)

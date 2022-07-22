@@ -6,7 +6,7 @@
 __all__ = [
     "POTemplateAdminSourcePackageNameWidget",
     "POTemplateEditSourcePackageNameWidget",
-    ]
+]
 
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.popup import SourcePackageNameWidgetBase
@@ -26,7 +26,7 @@ class POTemplateEditSourcePackageNameWidget(SourcePackageNameWidgetBase):
         if distribution is not None:
             return distribution.name
         else:
-            return ''
+            return ""
 
     def getDistribution(self):
         """See `SourcePackageNameWidgetBase`."""
@@ -42,11 +42,11 @@ class POTemplateAdminSourcePackageNameWidget(SourcePackageNameWidgetBase):
 
     @property
     def distroseries_id(self):
-        return self._prefix + 'distroseries'
+        return self._prefix + "distroseries"
 
     def getDistribution(self):
         """See `SourcePackageNameWidgetBase`."""
-        distroseries_token = self.request.form.get('field.distroseries')
+        distroseries_token = self.request.form.get("field.distroseries")
         if distroseries_token is None:
             # Fall back to the POTemplate's current distribution.
             return self.context.context.distribution
@@ -55,5 +55,6 @@ class POTemplateAdminSourcePackageNameWidget(SourcePackageNameWidgetBase):
             term = distroseries_vocab.getTermByToken(distroseries_token)
         except LookupError:
             raise UnexpectedFormData(
-                "No such distribution series: %s" % distroseries_token)
+                "No such distribution series: %s" % distroseries_token
+            )
         return term.value.distribution

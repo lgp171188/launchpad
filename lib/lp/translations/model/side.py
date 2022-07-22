@@ -4,9 +4,9 @@
 """`TranslationSideTraits` implementations."""
 
 __all__ = [
-    'TranslationSideTraits',
-    'TranslationSideTraitsSet',
-    ]
+    "TranslationSideTraits",
+    "TranslationSideTraitsSet",
+]
 
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -15,7 +15,7 @@ from lp.translations.interfaces.side import (
     ITranslationSideTraits,
     ITranslationSideTraitsSet,
     TranslationSide,
-    )
+)
 
 
 @implementer(ITranslationSideTraits)
@@ -34,8 +34,7 @@ class TranslationSideTraits:
 
     def getCurrentMessage(self, potmsgset, potemplate, language):
         """See `ITranslationSideTraits`."""
-        return potmsgset.getCurrentTranslation(
-            potemplate, language, self.side)
+        return potmsgset.getCurrentTranslation(potemplate, language, self.side)
 
     def setFlag(self, translationmessage, value):
         """See `ITranslationSideTraits`."""
@@ -49,14 +48,14 @@ class TranslationSideTraitsSet:
 
     def __init__(self):
         upstream = TranslationSideTraits(
-            TranslationSide.UPSTREAM, 'is_current_upstream', "upstream")
+            TranslationSide.UPSTREAM, "is_current_upstream", "upstream"
+        )
         ubuntu = TranslationSideTraits(
-            TranslationSide.UBUNTU, 'is_current_ubuntu', "Ubuntu")
+            TranslationSide.UBUNTU, "is_current_ubuntu", "Ubuntu"
+        )
         ubuntu.other_side_traits = upstream
         upstream.other_side_traits = ubuntu
-        self.traits = {
-            traits.side: traits
-            for traits in [ubuntu, upstream]}
+        self.traits = {traits.side: traits for traits in [ubuntu, upstream]}
 
     def getTraits(self, side):
         """See `ITranslationSideTraitsSet`."""

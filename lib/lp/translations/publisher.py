@@ -4,24 +4,24 @@
 """Translations's custom publication."""
 
 __all__ = [
-    'TranslationsBrowserRequest',
-    'TranslationsLayer',
-    'translations_request_publication_factory',
-    ]
+    "TranslationsBrowserRequest",
+    "TranslationsLayer",
+    "translations_request_publication_factory",
+]
 
 
 from zope.interface import implementer
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
     IDefaultBrowserLayer,
-    )
+)
 
 from lp.services.webapp.interfaces import IFacet
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     VHostWebServiceRequestPublicationFactory,
-    )
+)
 
 
 @implementer(IFacet)
@@ -45,10 +45,11 @@ class TranslationsBrowserRequest(LaunchpadBrowserRequest):
         super().__init__(body_instream, environ, response)
         # Many of the responses from Translations vary based on language.
         self.response.setHeader(
-            'Vary', 'Cookie, Authorization, Accept-Language')
+            "Vary", "Cookie, Authorization, Accept-Language"
+        )
 
 
 def translations_request_publication_factory():
     return VHostWebServiceRequestPublicationFactory(
-        'translations', TranslationsBrowserRequest,
-        LaunchpadBrowserPublication)
+        "translations", TranslationsBrowserRequest, LaunchpadBrowserPublication
+    )

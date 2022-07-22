@@ -2,21 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IPOFileSet',
-    'IPOFile',
-    'IPOFileAlternativeLanguage',
-    ]
+    "IPOFileSet",
+    "IPOFile",
+    "IPOFileAlternativeLanguage",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from zope.interface import Attribute, Interface, implementer
 from zope.schema import (
     Bool,
     Choice,
@@ -27,13 +20,13 @@ from zope.schema import (
     Object,
     Text,
     TextLine,
-    )
+)
 from zope.schema.interfaces import IContextSourceBinder
 from zope.schema.vocabulary import (
-    getVocabularyRegistry,
     SimpleTerm,
     SimpleVocabulary,
-    )
+    getVocabularyRegistry,
+)
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -47,107 +40,145 @@ from lp.translations.interfaces.translationsperson import ITranslationsPerson
 @exported_as_webservice_entry(
     singular_name="translation_file",
     plural_name="translation_files",
-    as_of="beta")
+    as_of="beta",
+)
 class IPOFile(IRosettaStats):
     """A translation file."""
 
-    id = exported(Int(
-        title=_('The translation file id.'), required=True, readonly=True))
+    id = exported(
+        Int(title=_("The translation file id."), required=True, readonly=True)
+    )
 
     potemplate = Object(
-        title=_('The translation file template.'),
-        required=True, readonly=True, schema=IPOTemplate)
+        title=_("The translation file template."),
+        required=True,
+        readonly=True,
+        schema=IPOTemplate,
+    )
 
     language = Choice(
-        title=_('Language of this PO file.'),
-        vocabulary='Language', required=True)
+        title=_("Language of this PO file."),
+        vocabulary="Language",
+        required=True,
+    )
 
     title = TextLine(
-        title=_('The translation file title.'), required=True, readonly=True)
+        title=_("The translation file title."), required=True, readonly=True
+    )
 
     description = Text(
-        title=_('The translation file description.'), required=True)
+        title=_("The translation file description."), required=True
+    )
 
     topcomment = Text(
-        title=_('A comment about this translation file.'), required=True)
+        title=_("A comment about this translation file."), required=True
+    )
 
     header = Text(
-        title=_('Header'),
-        description=_(
-            'The standard translation header in its native format.'),
-        required=False)
+        title=_("Header"),
+        description=_("The standard translation header in its native format."),
+        required=False,
+    )
 
     fuzzyheader = Bool(
-        title=_('A flag indicating whether the header is fuzzy.'),
-        required=True)
+        title=_("A flag indicating whether the header is fuzzy."),
+        required=True,
+    )
 
     lasttranslator = Object(
-        title=_('Last person that translated a message.'), schema=IPerson)
+        title=_("Last person that translated a message."), schema=IPerson
+    )
 
     date_changed = Datetime(
-        title=_('When this file was last changed.'), readonly=False,
-        required=True)
+        title=_("When this file was last changed."),
+        readonly=False,
+        required=True,
+    )
 
-    lastparsed = Datetime(title=_('Last time this pofile was parsed.'))
+    lastparsed = Datetime(title=_("Last time this pofile was parsed."))
 
     owner = Choice(
-        title=_('Translation file owner'),
+        title=_("Translation file owner"),
         required=True,
-        description=_('''
+        description=_(
+            """
             The owner of the translation file in Launchpad can edit its
             translations and upload new versions.
-            '''),
-        vocabulary="ValidOwner")
+            """
+        ),
+        vocabulary="ValidOwner",
+    )
 
     path = TextLine(
-        title=_('The path to the file that was imported'),
-        required=True)
+        title=_("The path to the file that was imported"), required=True
+    )
 
     datecreated = Datetime(
-        title=_('When this translation file was created.'), required=True)
+        title=_("When this translation file was created."), required=True
+    )
 
     translators = List(
-        title=_('Translators that have edit permissions.'),
-        description=_('''
+        title=_("Translators that have edit permissions."),
+        description=_(
+            """
             Translators designated as having permission to edit these files
             in this language.
-            '''), required=True, readonly=True)
+            """
+        ),
+        required=True,
+        readonly=True,
+    )
 
     contributors = List(
-        title=_('Translators who have made any contribution to this file.'),
-        required=True, readonly=True)
+        title=_("Translators who have made any contribution to this file."),
+        required=True,
+        readonly=True,
+    )
 
     translationpermission = Choice(
-        title=_('Translation permission'),
+        title=_("Translation permission"),
         required=True,
-        description=_('''
+        description=_(
+            """
             The permission system which is used for this translation file.
             This is inherited from the product, project and/or distro in which
             the pofile is found.
-            '''),
-        vocabulary=TranslationPermission)
+            """
+        ),
+        vocabulary=TranslationPermission,
+    )
 
     from_sourcepackagename = Field(
-        title=_('The source package this pofile comes from.'),
-        description=_('''
+        title=_("The source package this pofile comes from."),
+        description=_(
+            """
             The source package this pofile comes from (set it only if it\'s
             different from IPOFile.potemplate.sourcepackagename).
-            '''),
-        required=False)
+            """
+        ),
+        required=False,
+    )
 
-    translation_messages = Attribute(_(
-        "All `ITranslationMessage` objects related to this "
-        "translation file."))
+    translation_messages = Attribute(
+        _(
+            "All `ITranslationMessage` objects related to this "
+            "translation file."
+        )
+    )
 
     plural_forms = Int(
-        title=_('Number of plural forms for the language of this PO file.'),
-        description=_('''
+        title=_("Number of plural forms for the language of this PO file."),
+        description=_(
+            """
             Number of plural forms is a number of translations provided for
             each plural form message.  If `IPOFile.language` does not specify
             plural forms, it defaults to 2, which is the most common number
             of plural forms.
-            '''),
-        required=True, readonly=True)
+            """
+        ),
+        required=True,
+        readonly=True,
+    )
 
     def getOtherSidePOFile():
         """Get the POFile for the same language on the other side.
@@ -185,12 +216,10 @@ class IPOFile(IRosettaStats):
         """Get pot message sets that are untranslated for this file."""
 
     def getPOTMsgSetWithNewSuggestions():
-        """Get pot message sets with suggestions submitted after last review.
-        """
+        """Get POTMsgSets with suggestions submitted after last review."""
 
     def getPOTMsgSetDifferentTranslations():
-        """Get pot message sets with different translations on both sides.
-        """
+        """Get pot message sets with different translations on both sides."""
 
     def getTranslationsFilteredBy(person):
         """Get TranslationMessages in this `IPOFile` contributed by `person`.
@@ -321,6 +350,7 @@ class AlternativeLanguageVocabularyFactory:
     visitor is not logged in), this will fall back to a vocabulary containing
     all known translatable languages.
     """
+
     # XXX: JeroenVermeulen 2007-09-03: It doesn't seem right to define this
     # class in an interface, but it's needed from inside another interface
     # definition.  A factory is definitely the right approach though, since
@@ -336,7 +366,8 @@ class AlternativeLanguageVocabularyFactory:
             translations_user = ITranslationsPerson(user)
             terms = [
                 SimpleTerm(language, language.code, language.displayname)
-                for language in translations_user.translatable_languages]
+                for language in translations_user.translatable_languages
+            ]
             if terms:
                 return SimpleVocabulary(terms)
         return getVocabularyRegistry().get(None, "TranslatableLanguage")
@@ -346,11 +377,14 @@ class IPOFileAlternativeLanguage(Interface):
     """A PO File's alternative language."""
 
     alternative_language = Choice(
-        title='Alternative language',
-        description=('Language from where we could get alternative'
-                     ' translations for this PO file.'),
+        title="Alternative language",
+        description=(
+            "Language from where we could get alternative"
+            " translations for this PO file."
+        ),
         source=AlternativeLanguageVocabularyFactory(),
-        required=False)
+        required=False,
+    )
 
 
 class IPOFileSet(Interface):
@@ -359,8 +393,9 @@ class IPOFileSet(Interface):
     def getPlaceholder(potemplate, language):
         """Return a placeholder pofile for the given template and language."""
 
-    def getPOFilesByPathAndOrigin(path, productseries=None,
-        distroseries=None, sourcepackagename=None):
+    def getPOFilesByPathAndOrigin(
+        path, productseries=None, distroseries=None, sourcepackagename=None
+    ):
         """Find `IPOFile`s with 'path' in productseries or source package.
 
         We filter the `IPOFile` objects to check only the ones related to the

@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'XpiHeader',
-    ]
+    "XpiHeader",
+]
 
-from email.utils import parseaddr
 import io
+from email.utils import parseaddr
 
 import defusedxml.cElementTree as cElementTree
 import six
@@ -14,16 +14,15 @@ from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
     ITranslationHeaderData,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     TranslationFormatInvalidInputError,
     TranslationFormatSyntaxError,
-    )
+)
 
 
 @implementer(ITranslationHeaderData)
 class XpiHeader:
-
     def __init__(self, header_content):
         self._raw_content = header_content
         self.is_fuzzy = False
@@ -33,7 +32,7 @@ class XpiHeader:
         self.has_plural_forms = False
         self.number_plural_forms = 0
         self.plural_form_expression = None
-        self.charset = 'UTF-8'
+        self.charset = "UTF-8"
         self.launchpad_export_date = None
         self.comment = None
 
@@ -42,10 +41,12 @@ class XpiHeader:
                 self._text = header_content.decode(self.charset)
             except UnicodeDecodeError:
                 raise TranslationFormatInvalidInputError(
-                    "XPI header is not encoded in %s." % self.charset)
+                    "XPI header is not encoded in %s." % self.charset
+                )
         else:
-            assert isinstance(header_content, str), (
-                "XPI header text is neither bytes nor unicode.")
+            assert isinstance(
+                header_content, str
+            ), "XPI header text is neither bytes nor unicode."
             self._text = header_content
 
     def getRawContent(self):
@@ -66,19 +67,22 @@ class XpiHeader:
         try:
             parse = cElementTree.iterparse(
                 io.BytesIO(six.ensure_binary(self._raw_content)),
-                forbid_dtd=True)
+                forbid_dtd=True,
+            )
             for event, elem in parse:
                 if elem.tag == contributor_tag:
                     # An XPI header can list multiple contributors, but
                     # here we care only about the latest one listed as a
                     # well-formed name and email address.
                     name, email = parseaddr(elem.text)
-                    if name != '' and '@' in email:
+                    if name != "" and "@" in email:
                         last_name, last_email = name, email
         except SyntaxError as exception:
             raise TranslationFormatSyntaxError(
-                filename='install.rdf', line_number=exception.lineno,
-                message=exception.msg)
+                filename="install.rdf",
+                line_number=exception.lineno,
+                message=exception.msg,
+            )
 
         return last_name, last_email
 

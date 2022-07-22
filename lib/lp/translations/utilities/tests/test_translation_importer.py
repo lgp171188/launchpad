@@ -15,20 +15,18 @@ from lp.testing.matchers import Provides
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
-from lp.translations.interfaces.translationimporter import (
-    ITranslationImporter,
-    )
+)
+from lp.translations.interfaces.translationimporter import ITranslationImporter
 from lp.translations.utilities.translation_common_format import (
     TranslationMessageData,
-    )
+)
 from lp.translations.utilities.translation_import import (
-    importers,
-    is_identical_translation,
     POFileImporter,
     POTFileImporter,
     TranslationImporter,
-    )
+    importers,
+    is_identical_translation,
+)
 
 
 class FakeImportQueueEntry:
@@ -55,6 +53,7 @@ class FakeParser:
 
 class TranslationImporterTestCase(TestCaseWithFactory):
     """Class test for translation importer component"""
+
     layer = LaunchpadZopelessLayer
 
     def testInterface(self):
@@ -66,11 +65,12 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         importer = TranslationImporter()
         self.assertIsNot(
             None,
-            importer.getTranslationFormatImporter(TranslationFileFormat.PO))
+            importer.getTranslationFormatImporter(TranslationFileFormat.PO),
+        )
         self.assertIsNot(
             None,
-            importer.getTranslationFormatImporter(
-                TranslationFileFormat.KDEPO))
+            importer.getTranslationFormatImporter(TranslationFileFormat.KDEPO),
+        )
 
     def testGetTranslationFileFormatByFileExtension(self):
         """Checked whether file format precedence works correctly."""
@@ -82,13 +82,17 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         self.assertEqual(
             TranslationFileFormat.PO,
             importer.getTranslationFileFormat(
-                ".po", BytesIO(b'msgid "message"\nmsgstr ""')))
+                ".po", BytesIO(b'msgid "message"\nmsgstr ""')
+            ),
+        )
 
         # And PO file with KDE-style messages is recognised as KDEPO file.
         self.assertEqual(
             TranslationFileFormat.KDEPO,
             importer.getTranslationFileFormat(
-                ".po", BytesIO(b'msgid "_: kde context\nmessage"\nmsgstr ""')))
+                ".po", BytesIO(b'msgid "_: kde context\nmessage"\nmsgstr ""')
+            ),
+        )
 
     def testNoConflictingPriorities(self):
         """Check that no two importers for the same file extension have
@@ -103,22 +107,24 @@ class TranslationImporterTestCase(TestCaseWithFactory):
     def testFileExtensionsWithImporters(self):
         """Check whether we get the right list of file extensions handled."""
         self.assertEqual(
-            ['.po', '.pot'],
-            TranslationImporter().supported_file_extensions)
+            [".po", ".pot"], TranslationImporter().supported_file_extensions
+        )
 
     def testTemplateSuffixes(self):
         """Check for changes in filename suffixes that identify templates."""
-        self.assertEqual(['.pot'], TranslationImporter().template_suffixes)
+        self.assertEqual([".pot"], TranslationImporter().template_suffixes)
 
     def _assertIsNotTemplate(self, path):
         self.assertFalse(
             TranslationImporter().isTemplateName(path),
-            'Mistook "%s" for a template name.' % path)
+            'Mistook "%s" for a template name.' % path,
+        )
 
     def _assertIsTemplate(self, path):
         self.assertTrue(
             TranslationImporter().isTemplateName(path),
-            'Failed to recognize "%s" as a template name.' % path)
+            'Failed to recognize "%s" as a template name.' % path,
+        )
 
     def testTemplateNameRecognition(self):
         """Test that we can recognize templates by name."""
@@ -140,32 +146,36 @@ class TranslationImporterTestCase(TestCaseWithFactory):
             "po/.hidden/foo.pot",
             "po/.hidden.pot",
             "bla/.hidden/foo/bar.pot",
-            ]
+        ]
         visible_files = [
             "not.hidden.pot",
             "not.hidden/foo.pot",
             "po/not.hidden/foo.pot",
             "po/not.hidden.pot",
             "bla/not.hidden/foo/bar.pot",
-            ]
+        ]
         for path in hidden_files:
             self.assertTrue(
                 importer.isHidden(path),
-                'Failed to recognized "%s" as a hidden file.' % path)
+                'Failed to recognized "%s" as a hidden file.' % path,
+            )
         for path in visible_files:
             self.assertFalse(
                 importer.isHidden(path),
-                'Failed to recognized "%s" as a visible file.' % path)
+                'Failed to recognized "%s" as a visible file.' % path,
+            )
 
     def _assertIsTranslation(self, path):
         self.assertTrue(
             TranslationImporter().isTranslationName(path),
-            'Failed to recognize "%s" as a translation file name.' % path)
+            'Failed to recognize "%s" as a translation file name.' % path,
+        )
 
     def _assertIsNotTranslation(self, path):
         self.assertFalse(
             TranslationImporter().isTranslationName(path),
-            'Mistook "%s for a translation file name.' % path)
+            'Mistook "%s for a translation file name.' % path,
+        )
 
     def testTranslationNameRecognition(self):
         """Test that we can recognize translation files by name."""
@@ -187,39 +197,59 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         msg1.msgid_singular = "foo"
         msg2.msgid_singular = "foo"
 
-        self.assertTrue(is_identical_translation(msg1, msg2),
-            "Two blank translation messages do not evaluate as identical.")
+        self.assertTrue(
+            is_identical_translation(msg1, msg2),
+            "Two blank translation messages do not evaluate as identical.",
+        )
 
         msg1.msgid_plural = "foos"
-        self.assertFalse(is_identical_translation(msg1, msg2),
-            "Message with fewer plural forms is accepted as identical.")
+        self.assertFalse(
+            is_identical_translation(msg1, msg2),
+            "Message with fewer plural forms is accepted as identical.",
+        )
         msg2.msgid_plural = "splat"
-        self.assertFalse(is_identical_translation(msg1, msg2),
-            "Messages with different plurals accepted as identical.")
+        self.assertFalse(
+            is_identical_translation(msg1, msg2),
+            "Messages with different plurals accepted as identical.",
+        )
         msg2.msgid_plural = "foos"
-        self.assertTrue(is_identical_translation(msg1, msg2),
-            "Messages with identical plural forms not accepted as identical.")
+        self.assertTrue(
+            is_identical_translation(msg1, msg2),
+            "Messages with identical plural forms not accepted as identical.",
+        )
 
         msg1._translations = ["le foo"]
-        self.assertFalse(is_identical_translation(msg1, msg2),
-            "Failed to distinguish translated message from untranslated one.")
+        self.assertFalse(
+            is_identical_translation(msg1, msg2),
+            "Failed to distinguish translated message from untranslated one.",
+        )
         msg2._translations = ["le foo"]
-        self.assertTrue(is_identical_translation(msg1, msg2),
-            "Identical translations not accepted as identical.")
+        self.assertTrue(
+            is_identical_translation(msg1, msg2),
+            "Identical translations not accepted as identical.",
+        )
 
         msg1._translations = ["le foo", "les foos"]
-        self.assertFalse(is_identical_translation(msg1, msg2),
-            "Failed to distinguish message with missing plural translation.")
+        self.assertFalse(
+            is_identical_translation(msg1, msg2),
+            "Failed to distinguish message with missing plural translation.",
+        )
         msg2._translations = ["le foo", "les foos"]
-        self.assertTrue(is_identical_translation(msg1, msg2),
-            "Identical plural translations not accepted as equal.")
+        self.assertTrue(
+            is_identical_translation(msg1, msg2),
+            "Identical plural translations not accepted as equal.",
+        )
 
         msg1._translations = ["le foo", "les foos", "beaucoup des foos"]
-        self.assertFalse(is_identical_translation(msg1, msg2),
-            "Failed to distinguish message with extra plural translations.")
+        self.assertFalse(
+            is_identical_translation(msg1, msg2),
+            "Failed to distinguish message with extra plural translations.",
+        )
         msg2._translations = ["le foo", "les foos", "beaucoup des foos", None]
-        self.assertTrue(is_identical_translation(msg1, msg2),
-            "Identical multi-form messages not accepted as identical.")
+        self.assertTrue(
+            is_identical_translation(msg1, msg2),
+            "Identical multi-form messages not accepted as identical.",
+        )
 
     def test_unseen_messages_stay_intact(self):
         # If an import does not mention a particular msgid, that msgid
@@ -229,9 +259,11 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         potmsgset1 = self.factory.makePOTMsgSet(template, sequence=1)
         potmsgset2 = self.factory.makePOTMsgSet(template, sequence=2)
         existing_translation = self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=potmsgset1)
+            pofile=pofile, potmsgset=potmsgset1
+        )
 
-        text = six.ensure_binary("""
+        text = six.ensure_binary(
+            """
             msgid ""
             msgstr ""
             "MIME-Version: 1.0\\n"
@@ -241,11 +273,17 @@ class TranslationImporterTestCase(TestCaseWithFactory):
 
             msgid "%s"
             msgstr "A translation."
-        """ % potmsgset2.msgid_singular.msgid)
+        """
+            % potmsgset2.msgid_singular.msgid
+        )
 
         entry = self.factory.makeTranslationImportQueueEntry(
-            'foo.po', potemplate=template, pofile=pofile,
-            status=RosettaImportStatus.APPROVED, content=text)
+            "foo.po",
+            potemplate=template,
+            pofile=pofile,
+            status=RosettaImportStatus.APPROVED,
+            content=text,
+        )
         transaction.commit()
 
         self.assertTrue(existing_translation.is_current_upstream)

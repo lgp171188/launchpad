@@ -14,29 +14,29 @@ from lp.translations.model.pofile import PlaceholderPOFile
 class TestPOTemplateNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def _makeNavigation(self, potemplate, method='GET'):
+    def _makeNavigation(self, potemplate, method="GET"):
         """Create a `POTemplateNavigation` for `potemplate`."""
         request = LaunchpadTestRequest()
         request.method = method
         return POTemplateNavigation(potemplate, request)
 
     def test_traverse_to_existing_pofile(self):
-        pofile = self.factory.makePOFile('nl')
+        pofile = self.factory.makePOFile("nl")
         nav = self._makeNavigation(pofile.potemplate)
-        destination = nav.traverse('nl')
+        destination = nav.traverse("nl")
         self.assertEqual(pofile, destination)
 
     def test_traverse_to_placeholder_pofile(self):
         nav = self._makeNavigation(self.factory.makePOTemplate())
-        destination = nav.traverse('de')
+        destination = nav.traverse("de")
         self.assertIsInstance(destination, PlaceholderPOFile)
-        self.assertEqual('de', destination.language.code)
+        self.assertEqual("de", destination.language.code)
 
     def test_traverse_nonexistent_language(self):
         nav = self._makeNavigation(self.factory.makePOTemplate())
-        self.assertRaises(NotFoundError, nav.traverse, 'bzyzzyx_GRQ@UTF-13')
+        self.assertRaises(NotFoundError, nav.traverse, "bzyzzyx_GRQ@UTF-13")
 
     def test_unsupported_method(self):
-        pofile = self.factory.makePOFile('sr')
-        nav = self._makeNavigation(pofile.potemplate, method='PUT')
-        self.assertRaises(AssertionError, nav.traverse, 'sr')
+        pofile = self.factory.makePOFile("sr")
+        nav = self._makeNavigation(pofile.potemplate, method="PUT")
+        self.assertRaises(AssertionError, nav.traverse, "sr")

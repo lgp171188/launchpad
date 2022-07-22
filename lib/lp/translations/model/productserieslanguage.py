@@ -4,16 +4,16 @@
 """Implementation for `IProductSeriesLanguage`."""
 
 __all__ = [
-    'ProductSeriesLanguage',
-    'ProductSeriesLanguageSet',
-    ]
+    "ProductSeriesLanguage",
+    "ProductSeriesLanguageSet",
+]
 
 from zope.interface import implementer
 
 from lp.translations.interfaces.productserieslanguage import (
     IProductSeriesLanguage,
     IProductSeriesLanguageSet,
-    )
+)
 from lp.translations.model.translatedlanguage import TranslatedLanguageMixin
 from lp.translations.utilities.rosettastats import RosettaStats
 
@@ -23,8 +23,7 @@ class ProductSeriesLanguage(RosettaStats, TranslatedLanguageMixin):
     """See `IProductSeriesLanguage`."""
 
     def __init__(self, productseries, language, pofile=None):
-        assert 'en' != language.code, (
-            'English is not a translatable language.')
+        assert "en" != language.code, "English is not a translatable language."
         RosettaStats.__init__(self)
         TranslatedLanguageMixin.__init__(self)
         self.productseries = productseries
@@ -37,35 +36,36 @@ class ProductSeriesLanguage(RosettaStats, TranslatedLanguageMixin):
     @property
     def title(self):
         """See `IProductSeriesLanguage`."""
-        return '%s translations for %s %s' % (
+        return "%s translations for %s %s" % (
             self.language.englishname,
             self.productseries.product.displayname,
-            self.productseries.displayname)
+            self.productseries.displayname,
+        )
 
     def messageCount(self):
         """See `IRosettaStats`."""
-        return self._translation_statistics['total_count']
+        return self._translation_statistics["total_count"]
 
     def currentCount(self, language=None):
         """See `IRosettaStats`."""
-        translated = self._translation_statistics['translated_count']
+        translated = self._translation_statistics["translated_count"]
         current = translated - self.rosettaCount(language)
         return current
 
     def updatesCount(self, language=None):
         """See `IRosettaStats`."""
-        return self._translation_statistics['changed_count']
+        return self._translation_statistics["changed_count"]
 
     def rosettaCount(self, language=None):
         """See `IRosettaStats`."""
-        new = self._translation_statistics['new_count']
-        changed = self._translation_statistics['changed_count']
+        new = self._translation_statistics["new_count"]
+        changed = self._translation_statistics["changed_count"]
         rosetta = new + changed
         return rosetta
 
     def unreviewedCount(self):
         """See `IRosettaStats`."""
-        return self._translation_statistics['unreviewed_count']
+        return self._translation_statistics["unreviewed_count"]
 
 
 @implementer(IProductSeriesLanguageSet)

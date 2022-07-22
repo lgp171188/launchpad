@@ -7,14 +7,11 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.productserieslanguage import (
     IProductSeriesLanguageSet,
-    )
+)
 from lp.translations.interfaces.translatedlanguage import ITranslatedLanguage
 from lp.translations.model.pofile import PlaceholderPOFile
 
@@ -28,20 +25,22 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         # Create a productseries that uses translations.
         TestCaseWithFactory.setUp(self)
         product = self.factory.makeProduct(
-            translations_usage=ServiceUsage.LAUNCHPAD)
-        self.productseries = self.factory.makeProductSeries(
-            product=product)
+            translations_usage=ServiceUsage.LAUNCHPAD
+        )
+        self.productseries = self.factory.makeProductSeries(product=product)
         self.parent = self.productseries
         self.psl_set = getUtility(IProductSeriesLanguageSet)
-        self.language = self.factory.makeLanguage('sr@test')
+        self.language = self.factory.makeLanguage("sr@test")
 
     def getTranslatedLanguage(self, language):
-        return self.psl_set.getProductSeriesLanguage(self.productseries,
-                                                     language)
+        return self.psl_set.getProductSeriesLanguage(
+            self.productseries, language
+        )
 
     def addPOTemplate(self, number_of_potmsgsets=0, priority=0):
         potemplate = self.factory.makePOTemplate(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
         for sequence in range(number_of_potmsgsets):
             self.factory.makePOTMsgSet(potemplate, sequence=sequence + 1)
         removeSecurityProxy(potemplate).messagecount = number_of_potmsgsets
@@ -63,18 +62,15 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
     def test_interface(self):
         translated_language = self.getTranslatedLanguage(self.language)
-        self.assertTrue(verifyObject(ITranslatedLanguage,
-                                     translated_language))
+        self.assertTrue(verifyObject(ITranslatedLanguage, translated_language))
 
     def test_language(self):
         translated_language = self.getTranslatedLanguage(self.language)
-        self.assertEqual(self.language,
-                         translated_language.language)
+        self.assertEqual(self.language, translated_language.language)
 
     def test_parent(self):
         translated_language = self.getTranslatedLanguage(self.language)
-        self.assertEqual(self.parent,
-                         translated_language.parent)
+        self.assertEqual(self.parent, translated_language.parent)
 
     def test_pofiles_notemplates(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -119,8 +115,7 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         pofile1 = self.addPOFile(potemplate1)
         potemplate2 = self.addPOTemplate(priority=1)
         pofile2 = self.addPOFile(potemplate2)
-        self.assertEqual([pofile1, pofile2],
-                         list(translated_language.pofiles))
+        self.assertEqual([pofile1, pofile2], list(translated_language.pofiles))
 
         # Two queries get executed when listifying
         # TranslatedLanguageMixin.pofiles: a len() does a count, and
@@ -166,7 +161,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
             get_slice = lambda of, start, end: list(of[start:end])
             self.assertStatementCount(
-                1, get_slice, translated_language.pofiles, 1, 3)
+                1, get_slice, translated_language.pofiles, 1, 3
+            )
 
     def test_pofiles_slicing_placeholders(self):
         # Slicing includes PlaceholderPOFiles.
@@ -186,15 +182,14 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         translated_language = self.getTranslatedLanguage(self.language)
 
         expected = {
-            'total_count': 0,
-            'translated_count': 0,
-            'new_count': 0,
-            'changed_count': 0,
-            'unreviewed_count': 0,
-            'untranslated_count': 0,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": 0,
+            "translated_count": 0,
+            "new_count": 0,
+            "changed_count": 0,
+            "unreviewed_count": 0,
+            "untranslated_count": 0,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)
 
     def test_setCounts_statistics(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -207,18 +202,18 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         untranslated = total - translated
 
         translated_language.setCounts(
-            total, translated, new, changed, unreviewed)
+            total, translated, new, changed, unreviewed
+        )
 
         expected = {
-            'total_count': total,
-            'translated_count': translated,
-            'new_count': new,
-            'changed_count': changed,
-            'unreviewed_count': unreviewed,
-            'untranslated_count': untranslated,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": total,
+            "translated_count": translated,
+            "new_count": new,
+            "changed_count": changed,
+            "unreviewed_count": unreviewed,
+            "untranslated_count": untranslated,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)
 
     def test_recalculateCounts_empty(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -226,15 +221,14 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         translated_language.recalculateCounts()
 
         expected = {
-            'total_count': 0,
-            'translated_count': 0,
-            'new_count': 0,
-            'changed_count': 0,
-            'unreviewed_count': 0,
-            'untranslated_count': 0,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": 0,
+            "translated_count": 0,
+            "new_count": 0,
+            "changed_count": 0,
+            "unreviewed_count": 0,
+            "untranslated_count": 0,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)
 
     def test_recalculateCounts_total_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -243,7 +237,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            5, translated_language.translation_statistics['total_count'])
+            5, translated_language.translation_statistics["total_count"]
+        )
 
     def test_recalculateCounts_total_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -254,7 +249,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            5 + 3, translated_language.translation_statistics['total_count'])
+            5 + 3, translated_language.translation_statistics["total_count"]
+        )
 
     def test_recalculateCounts_translated_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -267,7 +263,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            4, translated_language.translation_statistics['translated_count'])
+            4, translated_language.translation_statistics["translated_count"]
+        )
 
     def test_recalculateCounts_translated_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -287,7 +284,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            6, translated_language.translation_statistics['translated_count'])
+            6, translated_language.translation_statistics["translated_count"]
+        )
 
     def test_recalculateCounts_changed_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -299,7 +297,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            3, translated_language.translation_statistics['changed_count'])
+            3, translated_language.translation_statistics["changed_count"]
+        )
 
     def test_recalculateCounts_changed_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -315,7 +314,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            4, translated_language.translation_statistics['changed_count'])
+            4, translated_language.translation_statistics["changed_count"]
+        )
 
     def test_recalculateCounts_new_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -328,7 +328,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            2, translated_language.translation_statistics['new_count'])
+            2, translated_language.translation_statistics["new_count"]
+        )
 
     def test_recalculateCounts_new_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -348,7 +349,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            3, translated_language.translation_statistics['new_count'])
+            3, translated_language.translation_statistics["new_count"]
+        )
 
     def test_recalculateCounts_unreviewed_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -360,7 +362,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            3, translated_language.translation_statistics['unreviewed_count'])
+            3, translated_language.translation_statistics["unreviewed_count"]
+        )
 
     def test_recalculateCounts_unreviewed_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -376,7 +379,8 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
 
         translated_language.recalculateCounts()
         self.assertEqual(
-            4, translated_language.translation_statistics['unreviewed_count'])
+            4, translated_language.translation_statistics["unreviewed_count"]
+        )
 
     def test_recalculateCounts_one_pofile(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -394,15 +398,14 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         translated_language.recalculateCounts()
 
         expected = {
-            'total_count': 5,
-            'translated_count': 4,
-            'new_count': 0,
-            'changed_count': 1,
-            'unreviewed_count': 3,
-            'untranslated_count': 1,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": 5,
+            "translated_count": 4,
+            "new_count": 0,
+            "changed_count": 1,
+            "unreviewed_count": 3,
+            "untranslated_count": 1,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)
 
     def test_recalculateCounts_two_pofiles(self):
         translated_language = self.getTranslatedLanguage(self.language)
@@ -436,15 +439,14 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         translated_language.recalculateCounts()
 
         expected = {
-            'total_count': 8,
-            'translated_count': 7,
-            'new_count': 2,
-            'changed_count': 2,
-            'unreviewed_count': 4,
-            'untranslated_count': 1,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": 8,
+            "translated_count": 7,
+            "new_count": 2,
+            "changed_count": 2,
+            "unreviewed_count": 4,
+            "untranslated_count": 1,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)
 
     def test_recalculateCounts_two_templates_one_translation(self):
         # Make sure recalculateCounts works even if a POFile is missing
@@ -470,12 +472,11 @@ class TestTranslatedLanguageMixin(TestCaseWithFactory):
         translated_language.recalculateCounts()
 
         expected = {
-            'total_count': 8,
-            'translated_count': 4,
-            'new_count': 1,
-            'changed_count': 1,
-            'unreviewed_count': 3,
-            'untranslated_count': 4,
-            }
-        self.assertEqual(expected,
-                         translated_language.translation_statistics)
+            "total_count": 8,
+            "translated_count": 4,
+            "new_count": 1,
+            "changed_count": 1,
+            "unreviewed_count": 3,
+            "untranslated_count": 4,
+        }
+        self.assertEqual(expected, translated_language.translation_statistics)

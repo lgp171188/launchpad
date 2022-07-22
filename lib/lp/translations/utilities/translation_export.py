@@ -4,10 +4,10 @@
 """Components for exporting translation files."""
 
 __all__ = [
-    'ExportedTranslationFile',
-    'ExportFileStorage',
-    'TranslationExporter',
-    ]
+    "ExportedTranslationFile",
+    "ExportFileStorage",
+    "TranslationExporter",
+]
 
 import io
 import tempfile
@@ -20,10 +20,10 @@ from lp.translations.interfaces.translationexporter import (
     IExportedTranslationFile,
     ITranslationExporter,
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 
 
 @implementer(IExportedTranslationFile)
@@ -44,8 +44,8 @@ class ExportedTranslationFile:
 
     def read(self, *args, **kwargs):
         """See `IExportedTranslationFile`."""
-        if 'size' in kwargs:
-            return self._content_file.read(kwargs['size'])
+        if "size" in kwargs:
+            return self._content_file.read(kwargs["size"])
         else:
             return self._content_file.read()
 
@@ -70,16 +70,22 @@ class TranslationExporter:
     def getExporterProducingTargetFileFormat(self, file_format):
         """See `ITranslationExporter`."""
         for exporter in subscribers([self], ITranslationFormatExporter):
-            if (exporter.format == file_format or
-                (file_format == TranslationFileFormat.XPI and
-                 exporter.format == TranslationFileFormat.XPIPO)):
+            if exporter.format == file_format or (
+                file_format == TranslationFileFormat.XPI
+                and exporter.format == TranslationFileFormat.XPIPO
+            ):
                 # XPIPO is a special case for XPI exports.
                 return exporter
 
         return None
 
-    def exportTranslationFiles(self, translation_files, target_format=None,
-                               ignore_obsolete=False, force_utf8=False):
+    def exportTranslationFiles(
+        self,
+        translation_files,
+        target_format=None,
+        ignore_obsolete=False,
+        force_utf8=False,
+    ):
         """See `ITranslationExporter`."""
         storage = ExportFileStorage()
         for translation_file in translation_files:
@@ -88,10 +94,14 @@ class TranslationExporter:
             else:
                 output_format = target_format
             format_exporter = self.getExporterProducingTargetFileFormat(
-                output_format)
+                output_format
+            )
             format_exporter.exportTranslationFile(
-                translation_file, storage, ignore_obsolete=ignore_obsolete,
-                force_utf8=force_utf8)
+                translation_file,
+                storage,
+                ignore_obsolete=ignore_obsolete,
+                force_utf8=force_utf8,
+            )
 
         return storage.export()
 
@@ -173,7 +183,8 @@ class TarballFileStorageStrategy(StorageStrategy):
     as soon as it is added.  There is no need to keep the full contents of the
     tarball in memory at any single time.
     """
-    mime_type = 'application/x-gtar'
+
+    mime_type = "application/x-gtar"
 
     empty = False
 
@@ -183,8 +194,11 @@ class TarballFileStorageStrategy(StorageStrategy):
         self.tar_writer = LaunchpadWriteTarFile(self.buffer)
         if single_file_storage is not None:
             self.addFile(
-                single_file_storage.path, single_file_storage.extension,
-                single_file_storage.content, single_file_storage.mime_type)
+                single_file_storage.path,
+                single_file_storage.extension,
+                single_file_storage.content,
+                single_file_storage.mime_type,
+            )
 
     def addFile(self, path, extension, content, mime_type):
         """See `StorageStrategy`."""
@@ -215,7 +229,7 @@ class TarballFileStorageStrategy(StorageStrategy):
         # You can see more info on
         #   http://en.wikipedia.org/wiki/List_of_archive_formats
         output.content_type = self.mime_type
-        output.file_extension = 'tar.gz'
+        output.file_extension = "tar.gz"
         return output
 
 

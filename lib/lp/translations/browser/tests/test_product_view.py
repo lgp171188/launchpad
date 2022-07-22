@@ -1,34 +1,25 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from soupmatchers import (
-    HTMLContains,
-    Tag,
-    )
+from soupmatchers import HTMLContains, Tag
 from testtools.matchers import Not
 
 from lp.app.enums import (
-    InformationType,
     PILLAR_INFORMATION_TYPES,
+    InformationType,
     ServiceUsage,
-    )
+)
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
-from lp.testing.views import (
-    create_initialized_view,
-    create_view,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.views import create_initialized_view, create_view
 from lp.translations.browser.product import ProductView
 
 
@@ -51,10 +42,12 @@ class TestProduct(TestCaseWithFactory):
         sourcepackage = self.factory.makeSourcePackage()
         sourcepackage.setPackaging(series, None)
         sourcepackage.distroseries.distribution.translations_usage = (
-            ServiceUsage.LAUNCHPAD)
+            ServiceUsage.LAUNCHPAD
+        )
         self.factory.makePOTemplate(
             distroseries=sourcepackage.distroseries,
-            sourcepackagename=sourcepackage.sourcepackagename)
+            sourcepackagename=sourcepackage.sourcepackagename,
+        )
         self.assertIsNone(view.primary_translatable)
 
     def test_untranslatable_series(self):
@@ -65,44 +58,55 @@ class TestProduct(TestCaseWithFactory):
 
         # New series are added, one for each type of status
         series_experimental = self.factory.makeProductSeries(
-            product=product, name='evo-experimental')
+            product=product, name="evo-experimental"
+        )
         series_experimental.status = SeriesStatus.EXPERIMENTAL
 
         series_development = self.factory.makeProductSeries(
-            product=product, name='evo-development')
+            product=product, name="evo-development"
+        )
         series_development.status = SeriesStatus.DEVELOPMENT
 
         series_frozen = self.factory.makeProductSeries(
-            product=product, name='evo-frozen')
+            product=product, name="evo-frozen"
+        )
         series_frozen.status = SeriesStatus.FROZEN
 
         series_current = self.factory.makeProductSeries(
-            product=product, name='evo-current')
+            product=product, name="evo-current"
+        )
         series_current.status = SeriesStatus.CURRENT
 
         series_supported = self.factory.makeProductSeries(
-            product=product, name='evo-supported')
+            product=product, name="evo-supported"
+        )
         series_supported.status = SeriesStatus.SUPPORTED
 
         series_obsolete = self.factory.makeProductSeries(
-            product=product, name='evo-obsolete')
+            product=product, name="evo-obsolete"
+        )
         series_obsolete.status = SeriesStatus.OBSOLETE
 
         series_future = self.factory.makeProductSeries(
-            product=product, name='evo-future')
+            product=product, name="evo-future"
+        )
         series_future.status = SeriesStatus.FUTURE
 
         # The series are returned in alphabetical order and do not
         # include obsolete series.
         series_names = [series.name for series in view.untranslatable_series]
-        self.assertEqual([
-            'evo-current',
-            'evo-development',
-            'evo-experimental',
-            'evo-frozen',
-            'evo-future',
-            'evo-supported',
-            'trunk'], series_names)
+        self.assertEqual(
+            [
+                "evo-current",
+                "evo-development",
+                "evo-experimental",
+                "evo-frozen",
+                "evo-future",
+                "evo-supported",
+                "trunk",
+            ],
+            series_names,
+        )
 
 
 class TestCanConfigureTranslations(TestCaseWithFactory):
@@ -111,19 +115,19 @@ class TestCanConfigureTranslations(TestCaseWithFactory):
 
     def test_cannot_configure_translations_product_no_edit_permission(self):
         product = self.factory.makeProduct()
-        view = create_view(product, '+translations')
+        view = create_view(product, "+translations")
         self.assertEqual(False, view.can_configure_translations())
 
     def test_can_configure_translations_product_with_edit_permission(self):
         product = self.factory.makeProduct()
         login_person(product.owner)
-        view = create_view(product, '+translations')
+        view = create_view(product, "+translations")
         self.assertEqual(True, view.can_configure_translations())
 
     def test_rosetta_expert_can_configure_translations(self):
         product = self.factory.makeProduct()
-        with celebrity_logged_in('rosetta_experts'):
-            view = create_view(product, '+translations')
+        with celebrity_logged_in("rosetta_experts"):
+            view = create_view(product, "+translations")
             self.assertEqual(True, view.can_configure_translations())
 
     def test_launchpad_not_listed_for_proprietary(self):
@@ -132,15 +136,18 @@ class TestCanConfigureTranslations(TestCaseWithFactory):
             for info_type in PILLAR_INFORMATION_TYPES:
                 product.information_type = info_type
                 view = create_initialized_view(
-                    product, '+configure-translations')
+                    product, "+configure-translations"
+                )
                 if product.private:
                     self.assertNotIn(
                         ServiceUsage.LAUNCHPAD,
-                        view.widgets['translations_usage'].vocabulary)
+                        view.widgets["translations_usage"].vocabulary,
+                    )
                 else:
                     self.assertIn(
                         ServiceUsage.LAUNCHPAD,
-                        view.widgets['translations_usage'].vocabulary)
+                        view.widgets["translations_usage"].vocabulary,
+                    )
 
     @staticmethod
     def getViewContent(view):
@@ -149,12 +156,13 @@ class TestCanConfigureTranslations(TestCaseWithFactory):
 
     @staticmethod
     def hasLink(url):
-        return HTMLContains(Tag('link', 'a', attrs={'href': url}))
+        return HTMLContains(Tag("link", "a", attrs={"href": url}))
 
     @classmethod
     def getTranslationsContent(cls, product):
         view = create_initialized_view(
-            product, '+translations', principal=product.owner)
+            product, "+translations", principal=product.owner
+        )
         return cls.getViewContent(view)
 
     def test_no_sync_links_for_proprietary(self):
@@ -163,14 +171,20 @@ class TestCanConfigureTranslations(TestCaseWithFactory):
         product = self.factory.makeProduct()
         content = self.getTranslationsContent(product)
         series_url = canonical_url(
-            product.development_focus, view_name='+translations',
-            rootsite='translations')
+            product.development_focus,
+            view_name="+translations",
+            rootsite="translations",
+        )
         manual_url = canonical_url(
-            product.development_focus, view_name='+translations-upload',
-            rootsite='translations')
+            product.development_focus,
+            view_name="+translations-upload",
+            rootsite="translations",
+        )
         automatic_url = canonical_url(
-            product.development_focus, view_name='+translations-settings',
-            rootsite='translations')
+            product.development_focus,
+            view_name="+translations-settings",
+            rootsite="translations",
+        )
         self.assertThat(content, self.hasLink(series_url))
         self.assertThat(content, self.hasLink(manual_url))
         self.assertThat(content, self.hasLink(automatic_url))

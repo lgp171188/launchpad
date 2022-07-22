@@ -17,15 +17,13 @@ from lp.services.librarian.model import LibraryFileAliasSet
 from lp.services.scripts.tests import run_script
 from lp.soyuz.model.packagetranslationsuploadjob import (
     _filter_ubuntu_translation_file,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.translations.model.translationimportqueue import (
-    TranslationImportQueue,
-    )
+from lp.translations.model.translationimportqueue import TranslationImportQueue
 from lp.translations.scripts.reupload_translations import (
     ReuploadPackageTranslations,
-    )
+)
 
 
 class UploadInjector:
@@ -43,8 +41,9 @@ class UploadInjector:
 
     def __call__(self, name):
         package = self.original_findPackage(name)
-        removeSecurityProxy(package).getLatestTranslationsUploads = (
-            self._fakeTranslationsUpload)
+        removeSecurityProxy(
+            package
+        ).getLatestTranslationsUploads = self._fakeTranslationsUpload
         return package
 
     def _fakeTranslationsUpload(self):
@@ -58,7 +57,7 @@ def upload_tarball(translation_files):
     :return: A `LibraryFileAlias`.
     """
     buf = io.BytesIO()
-    tarball = tarfile.open('', 'w:gz', buf)
+    tarball = tarfile.open("", "w:gz", buf)
     for name, contents in translation_files.items():
         pseudofile = io.BytesIO(contents)
         tarinfo = tarfile.TarInfo()
@@ -73,7 +72,8 @@ def upload_tarball(translation_files):
     buf.seek(0)
 
     return LibraryFileAliasSet().create(
-        'uploads.tar.gz', tarsize, buf, 'application/x-gtar')
+        "uploads.tar.gz", tarsize, buf, "application/x-gtar"
+    )
 
 
 def summarize_translations_queue(sourcepackage):
@@ -101,6 +101,7 @@ def filter_paths(files_dict):
 
 class TestReuploadPackageTranslations(TestCaseWithFactory):
     """Test `ReuploadPackageTranslations`."""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -108,11 +109,18 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
         sourcepackagename = self.factory.makeSourcePackageName()
         distroseries = self.factory.makeDistroSeries()
         self.sourcepackage = SourcePackage(sourcepackagename, distroseries)
-        self.script = ReuploadPackageTranslations('reupload', test_args=[
-            '-d', distroseries.distribution.name,
-            '-s', distroseries.name,
-            '-p', sourcepackagename.name,
-            '-qqq'])
+        self.script = ReuploadPackageTranslations(
+            "reupload",
+            test_args=[
+                "-d",
+                distroseries.distribution.name,
+                "-s",
+                distroseries.name,
+                "-p",
+                sourcepackagename.name,
+                "-qqq",
+            ],
+        )
 
     def _uploadAndProcess(self, files_dict):
         """Fake an upload and cause _processPackage to be run on it.
@@ -139,22 +147,22 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
         # _findPackage finds a SourcePackage by name.
         self.script._setDistroDetails()
         found_package = self.script._findPackage(
-            self.sourcepackage.sourcepackagename.name)
+            self.sourcepackage.sourcepackagename.name
+        )
         self.assertEqual(self.sourcepackage, found_package)
 
     def test_processPackage_nothing(self):
         # A package need not have a translations upload.  The script
         # notices this but does nothing about it.
         self.script.main()
-        self.assertEqual(
-            [self.sourcepackage], self.script.uploadless_packages)
+        self.assertEqual([self.sourcepackage], self.script.uploadless_packages)
 
     def test_processPackage(self):
         # _processPackage will fetch the package's latest translations
         # upload from the Librarian and re-import it.
         translation_files = {
-            'source/po/messages.pot': b'# pot',
-            'source/po/nl.po': b'# nl',
+            "source/po/messages.pot": b"# pot",
+            "source/po/nl.po": b"# nl",
         }
         queue_summary = self._uploadAndProcess(translation_files)
         self.assertEqual(filter_paths(translation_files), queue_summary)
@@ -162,15 +170,16 @@ class TestReuploadPackageTranslations(TestCaseWithFactory):
     def test_processPackage_filters_paths(self):
         # Uploads are filtered just like other Ubuntu tarballs.
         translation_files = {
-            'source/foo.pot': b'# foo',
-            'elsewhere/bar.pot': b'# bar',
+            "source/foo.pot": b"# foo",
+            "elsewhere/bar.pot": b"# bar",
         }
         queue_summary = self._uploadAndProcess(translation_files)
-        self.assertEqual({'foo.pot': b'# foo'}, queue_summary)
+        self.assertEqual({"foo.pot": b"# foo"}, queue_summary)
 
 
 class TestReuploadScript(TestCaseWithFactory):
     """Test reupload-translations script."""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -183,17 +192,23 @@ class TestReuploadScript(TestCaseWithFactory):
     def test_reupload_translations(self):
         """Test a run of the script."""
         retcode, stdout, stderr = run_script(
-            'scripts/rosetta/reupload-translations.py', [
-                '-d', self.distroseries.distribution.name,
-                '-s', self.distroseries.name,
-                '-p', self.sourcepackagename1.name,
-                '-p', self.sourcepackagename2.name,
-                '-v',
-                '--dry-run',
-            ])
+            "scripts/rosetta/reupload-translations.py",
+            [
+                "-d",
+                self.distroseries.distribution.name,
+                "-s",
+                self.distroseries.name,
+                "-p",
+                self.sourcepackagename1.name,
+                "-p",
+                self.sourcepackagename2.name,
+                "-v",
+                "--dry-run",
+            ],
+        )
 
         self.assertEqual(0, retcode)
-        self.assertEqual('', stdout)
+        self.assertEqual("", stdout)
 
         expected_output = (
             r"INFO\s*Dry run.  Not really uploading anything.\n"
@@ -201,7 +216,9 @@ class TestReuploadScript(TestCaseWithFactory):
             r"WARNING\s*Found no translations upload for .*\n"
             r"INFO\s*Processing [^\s]+ in .*\n"
             r"WARNING\s*Found no translations upload for .*\n"
-            r"INFO\s*Done.\n")
+            r"INFO\s*Done.\n"
+        )
         self.assertTrue(
             re.match(expected_output, stderr),
-            'expected %s, got %s' % (expected_output, stderr))
+            "expected %s, got %s" % (expected_output, stderr),
+        )

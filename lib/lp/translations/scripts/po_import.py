@@ -4,14 +4,11 @@
 """Functions used with the Rosetta PO import script."""
 
 __all__ = [
-    'TranslationsImport',
-    ]
+    "TranslationsImport",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import sys
+from datetime import datetime, timedelta
 
 import pytz
 import six
@@ -27,11 +24,12 @@ from lp.services.webapp import errorlog
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 
 
 class TranslationsImport(LaunchpadCronScript):
     """Import .po and .pot files attached to Rosetta."""
+
     # Time goal for one run.  It is not exact.  The script can run for
     # longer than this, but will know to stop taking on new work.
     # Since the script is run every 9 or 10 minutes, we set the goal
@@ -54,32 +52,40 @@ class TranslationsImport(LaunchpadCronScript):
 
         if entry.sourcepackagename:
             return "'%s' (id %d) in %s %s package %s" % (
-                entry.path, entry.id,
+                entry.path,
+                entry.id,
                 entry.distroseries.distribution.name,
                 entry.distroseries.displayname,
-                entry.sourcepackagename.name)
+                entry.sourcepackagename.name,
+            )
         else:
             return "'%s' (id %d) in %s" % (
-                entry.path, entry.id, entry.productseries.title)
+                entry.path,
+                entry.id,
+                entry.productseries.title,
+            )
 
     def _reportOops(self, reason, entries, exc_info=None):
         """Register an oops."""
         if exc_info is None:
             exc_info = sys.exc_info()
         description = [
-            ('Reason', reason),
-            ('Entries', str(entries)),
-            ]
+            ("Reason", reason),
+            ("Entries", str(entries)),
+        ]
         errorlog.globalErrorUtility.raising(
-            exc_info, errorlog.ScriptRequest(description))
+            exc_info, errorlog.ScriptRequest(description)
+        )
 
     def _registerFailure(self, entry, reason, traceback=False, abort=False):
         """Note that a queue entry is unusable in some way."""
         reason_text = (
-            six.ensure_text(reason) if reason is bytes
-            else str(reason))
-        entry.setStatus(RosettaImportStatus.FAILED,
-                        getUtility(ILaunchpadCelebrities).rosetta_experts)
+            six.ensure_text(reason) if reason is bytes else str(reason)
+        )
+        entry.setStatus(
+            RosettaImportStatus.FAILED,
+            getUtility(ILaunchpadCelebrities).rosetta_experts,
+        )
         entry.setErrorOutput(reason_text)
 
         if abort:
@@ -103,18 +109,21 @@ class TranslationsImport(LaunchpadCronScript):
         """Sanity-check `entry` before importing."""
         if entry.import_into is None:
             self._registerFailure(
-                entry, "Entry is approved but has no place to import to.")
+                entry, "Entry is approved but has no place to import to."
+            )
             return False
 
         template = entry.potemplate
         if template:
             if template.distroseries != entry.distroseries:
                 self._registerFailure(
-                    entry, "Entry was approved for the wrong distroseries.")
+                    entry, "Entry was approved for the wrong distroseries."
+                )
                 return False
             if template.productseries != entry.productseries:
                 self._registerFailure(
-                    entry, "Entry was approved for the wrong productseries.")
+                    entry, "Entry was approved for the wrong productseries."
+                )
                 return False
 
         return True
@@ -130,7 +139,7 @@ class TranslationsImport(LaunchpadCronScript):
     def _importEntry(self, entry):
         """Perform the import of one entry, and notify the uploader."""
         target = entry.import_into
-        self.logger.info('Importing: %s' % target.title)
+        self.logger.info("Importing: %s" % target.title)
         (mail_subject, mail_body) = target.importFromQueue(entry, self.logger)
 
         if mail_subject is not None and self._shouldNotify(entry.importer):
@@ -146,7 +155,7 @@ class TranslationsImport(LaunchpadCronScript):
                 simple_sendmail(from_email, to_email, mail_subject, text)
 
     def run(self, *args, **kwargs):
-        errorlog.globalErrorUtility.configure('poimport')
+        errorlog.globalErrorUtility.configure("poimport")
         LaunchpadCronScript.run(self, *args, **kwargs)
 
     def main(self):
@@ -160,7 +169,8 @@ class TranslationsImport(LaunchpadCronScript):
         # We'll serve these queues in turn, one request each, until either the
         # queue is drained or our time is up.
         importqueues = translation_import_queue.getRequestTargets(
-            user=None, status=RosettaImportStatus.APPROVED)
+            user=None, status=RosettaImportStatus.APPROVED
+        )
 
         if not importqueues:
             self.logger.info("No requests pending.")

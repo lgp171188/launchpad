@@ -3,12 +3,9 @@
 
 from textwrap import dedent
 
-from fixtures import MonkeyPatch
 import transaction
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from fixtures import MonkeyPatch
+from zope.component import getAdapter, getUtility
 from zope.interface import implementer
 from zope.interface.verify import verifyObject
 from zope.security.proxy import removeSecurityProxy
@@ -23,34 +20,34 @@ from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.interfaces.translationcommonformat import (
     ITranslationFileData,
-    )
+)
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     ITranslationFormatImporter,
     ITranslationImporter,
-    )
+)
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.utilities.translation_common_format import (
     TranslationFileData,
     TranslationMessageData,
-    )
+)
 from lp.translations.utilities.translation_export import ExportFileStorage
 from lp.translations.utilities.xpi_header import XpiHeader
 from lp.translations.utilities.xpi_po_exporter import XPIPOExporter
 
-
 # Hardcoded representations of what used to be found in
 # lib/lp/translations/utilities/tests/firefox-data/.  We no longer have real
 # XPI import code, so we pre-parse the messages.
-test_xpi_header = dedent('''\
+test_xpi_header = dedent(
+    """\
     <?xml version="1.0"?>
     <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
          xmlns:em="http://www.mozilla.org/2004/em-rdf#">
@@ -72,14 +69,23 @@ test_xpi_header = dedent('''\
         </em:targetApplication>
       </Description>
     </RDF>
-''')  # noqa: E501
+"""  # noqa: E501
+)
 test_xpi_messages = [
-    ('foozilla.menu.title', 'main/subdir/test2.dtd',
-     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'MENU',
-     ' This is a DTD file inside a subdirectory\n'),
-    ('foozilla.menu.accesskey', 'main/subdir/test2.dtd',
-     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'M',
-     dedent('''\
+    (
+        "foozilla.menu.title",
+        "main/subdir/test2.dtd",
+        "jar:chrome/en-US.jar!/subdir/test2.dtd",
+        "MENU",
+        " This is a DTD file inside a subdirectory\n",
+    ),
+    (
+        "foozilla.menu.accesskey",
+        "main/subdir/test2.dtd",
+        "jar:chrome/en-US.jar!/subdir/test2.dtd",
+        "M",
+        dedent(
+            """\
         Select the access key that you want to use. These have
         to be translated in a way that the selected character is
         present in the translated string of the label being
@@ -88,46 +94,88 @@ test_xpi_messages = [
         change it if you are not sure about it. Please find the
         context of the key from the end of the 'Located in' text
         below.
-        ''')),
-    ('foozilla.menu.commandkey', 'main/subdir/test2.dtd',
-     'jar:chrome/en-US.jar!/subdir/test2.dtd', 'm',
-     dedent('''\
+        """
+        ),
+    ),
+    (
+        "foozilla.menu.commandkey",
+        "main/subdir/test2.dtd",
+        "jar:chrome/en-US.jar!/subdir/test2.dtd",
+        "m",
+        dedent(
+            """\
         Select the shortcut key that you want to use. It
         should be translated, but often shortcut keys (for
         example Ctrl + KEY) are not changed from the original. If
         a translation already exists, please don't change it if
         you are not sure about it. Please find the context of
         the key from the end of the 'Located in' text below.
-        ''')),
-    ('foozilla_something', 'main/subdir/test2.properties',
-     'jar:chrome/en-US.jar!/subdir/test2.properties:6', 'SomeZilla',
-     dedent('''\
+        """
+        ),
+    ),
+    (
+        "foozilla_something",
+        "main/subdir/test2.properties",
+        "jar:chrome/en-US.jar!/subdir/test2.properties:6",
+        "SomeZilla",
+        dedent(
+            """\
         Translators, what you are seeing now is a lovely,
         awesome, multiline comment aimed at you directly
         from the streets of a .properties file
-        ''')),
-    ('foozilla.name', 'main/test1.dtd',
-     'jar:chrome/en-US.jar!/test1.dtd', 'FooZilla!', None),
-    ('foozilla.play.fire', 'main/test1.dtd',
-     'jar:chrome/en-US.jar!/test1.dtd', 'Do you want to play with fire?',
-     " Translators, don't play with fire!\n"),
-    ('foozilla.play.ice', 'main/test1.dtd',
-     'jar:chrome/en-US.jar!/test1.dtd', 'Play with ice?',
-     ' This is just a comment, not a comment for translators\n'),
-    ('foozilla.title', 'main/test1.properties',
-     'jar:chrome/en-US.jar!/test1.properties:1', 'FooZilla Zilla Thingy',
-     None),
-    ('foozilla.happytitle', 'main/test1.properties',
-     'jar:chrome/en-US.jar!/test1.properties:3',
-     'http://foozillingy.happy.net/',
-     "Translators, if you're older than six, don't translate this\n"),
-    ('foozilla.nocomment', 'main/test1.properties',
-     'jar:chrome/en-US.jar!/test1.properties:4', 'No Comment',
-     '(Except this one)\n'),
-    ('foozilla.utf8', 'main/test1.properties',
-     'jar:chrome/en-US.jar!/test1.properties:5', '\u0414\u0430\u043d=Day',
-     None),
-    ]
+        """
+        ),
+    ),
+    (
+        "foozilla.name",
+        "main/test1.dtd",
+        "jar:chrome/en-US.jar!/test1.dtd",
+        "FooZilla!",
+        None,
+    ),
+    (
+        "foozilla.play.fire",
+        "main/test1.dtd",
+        "jar:chrome/en-US.jar!/test1.dtd",
+        "Do you want to play with fire?",
+        " Translators, don't play with fire!\n",
+    ),
+    (
+        "foozilla.play.ice",
+        "main/test1.dtd",
+        "jar:chrome/en-US.jar!/test1.dtd",
+        "Play with ice?",
+        " This is just a comment, not a comment for translators\n",
+    ),
+    (
+        "foozilla.title",
+        "main/test1.properties",
+        "jar:chrome/en-US.jar!/test1.properties:1",
+        "FooZilla Zilla Thingy",
+        None,
+    ),
+    (
+        "foozilla.happytitle",
+        "main/test1.properties",
+        "jar:chrome/en-US.jar!/test1.properties:3",
+        "http://foozillingy.happy.net/",
+        "Translators, if you're older than six, don't translate this\n",
+    ),
+    (
+        "foozilla.nocomment",
+        "main/test1.properties",
+        "jar:chrome/en-US.jar!/test1.properties:4",
+        "No Comment",
+        "(Except this one)\n",
+    ),
+    (
+        "foozilla.utf8",
+        "main/test1.properties",
+        "jar:chrome/en-US.jar!/test1.properties:5",
+        "\u0414\u0430\u043d=Day",
+        None,
+    ),
+]
 
 
 class FakeXPIMessage(TranslationMessageData):
@@ -137,7 +185,7 @@ class FakeXPIMessage(TranslationMessageData):
         super().__init__()
         self.msgid_singular = key
         self.context = chrome_path
-        self.file_references = '%s(%s)' % (file_and_line, key)
+        self.file_references = "%s(%s)" % (file_and_line, key)
         value = value.strip()
         self.addTranslation(TranslationConstants.SINGULAR_FORM, value)
         self.singular_text = value
@@ -153,9 +201,9 @@ class FakeXPIImporter:
         return TranslationFileFormat.XPI
 
     priority = 0
-    content_type = 'application/zip'
-    file_extensions = ['.xpi']
-    template_suffix = 'en-US.xpi'
+    content_type = "application/zip"
+    file_extensions = [".xpi"]
+    template_suffix = "en-US.xpi"
     uses_source_string_msgids = True
 
     def parse(self, translation_import_queue_entry):
@@ -167,7 +215,8 @@ class FakeXPIImporter:
         translation_file = TranslationFileData()
         translation_file.header = XpiHeader(test_xpi_header)
         translation_file.messages = [
-            FakeXPIMessage(*message) for message in test_xpi_messages]
+            FakeXPIMessage(*message) for message in test_xpi_messages
+        ]
         return translation_file
 
     def getHeaderFromString(self, header_string):
@@ -181,6 +230,7 @@ class FakeXPIImporter:
 
 class XPIPOExporterTestCase(TestCase):
     """Class test for gettext's .po file exports"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -189,18 +239,20 @@ class XPIPOExporterTestCase(TestCase):
         self.translation_exporter = XPIPOExporter()
 
         # Get the importer.
-        self.importer = getUtility(IPersonSet).getByName('mark')
+        self.importer = getUtility(IPersonSet).getByName("mark")
 
         # Get the Firefox template.
-        firefox_product = getUtility(IProductSet).getByName('firefox')
-        firefox_productseries = firefox_product.getSeries('trunk')
+        firefox_product = getUtility(IProductSet).getByName("firefox")
+        firefox_productseries = firefox_product.getSeries("trunk")
         firefox_potemplate_subset = getUtility(IPOTemplateSet).getSubset(
-            productseries=firefox_productseries)
+            productseries=firefox_productseries
+        )
         self.firefox_template = firefox_potemplate_subset.new(
-            name='firefox',
-            translation_domain='firefox',
-            path='en-US.xpi',
-            owner=self.importer)
+            name="firefox",
+            translation_domain="firefox",
+            path="en-US.xpi",
+            owner=self.importer,
+        )
 
     def _compareExpectedAndExported(self, expected_file, exported_file):
         """Compare an export with a previous export that is correct.
@@ -208,13 +260,17 @@ class XPIPOExporterTestCase(TestCase):
         :param expected_file: buffer with the expected file content.
         :param export_file: buffer with the output file content.
         """
-        expected_lines = [line.strip() for line in expected_file.split('\n')]
+        expected_lines = [line.strip() for line in expected_file.split("\n")]
         # Remove time bombs in tests.
         exported_lines = [
-            line.strip() for line in exported_file.split('\n')
-            if (not line.startswith('"X-Launchpad-Export-Date:') and
-                not line.startswith('"POT-Creation-Date:') and
-                not line.startswith('"X-Generator: Launchpad'))]
+            line.strip()
+            for line in exported_file.split("\n")
+            if (
+                not line.startswith('"X-Launchpad-Export-Date:')
+                and not line.startswith('"POT-Creation-Date:')
+                and not line.startswith('"X-Generator: Launchpad')
+            )
+        ]
 
         for number, expected_line in enumerate(expected_lines):
             self.assertEqual(expected_line, exported_lines[number])
@@ -224,27 +280,39 @@ class XPIPOExporterTestCase(TestCase):
         # Install a fake XPI importer, since we no longer have real XPI
         # import code.
         fake_xpi_importer = FakeXPIImporter()
-        self.useFixture(MonkeyPatch(
-            'lp.translations.utilities.translation_import.importers',
-            {TranslationFileFormat.XPI: fake_xpi_importer}))
+        self.useFixture(
+            MonkeyPatch(
+                "lp.translations.utilities.translation_import.importers",
+                {TranslationFileFormat.XPI: fake_xpi_importer},
+            )
+        )
         # Temporarily reinstall the translation importer without a security
         # proxy.  This avoids problems getting attributes of
         # FakeXPIImporter, which has no Zope permissions defined.
-        self.useFixture(ZopeUtilityFixture(
-            removeSecurityProxy(getUtility(ITranslationImporter)),
-            ITranslationImporter))
+        self.useFixture(
+            ZopeUtilityFixture(
+                removeSecurityProxy(getUtility(ITranslationImporter)),
+                ITranslationImporter,
+            )
+        )
 
         # Attach it to the import queue.
         translation_import_queue = getUtility(ITranslationImportQueue)
         by_maintainer = True
         entry = translation_import_queue.addOrUpdateEntry(
-            self.firefox_template.path, b'dummy', by_maintainer,
-            self.importer, productseries=self.firefox_template.productseries,
-            potemplate=self.firefox_template)
+            self.firefox_template.path,
+            b"dummy",
+            by_maintainer,
+            self.importer,
+            productseries=self.firefox_template.productseries,
+            potemplate=self.firefox_template,
+        )
 
         # We must approve the entry to be able to import it.
-        entry.setStatus(RosettaImportStatus.APPROVED,
-                        getUtility(ILaunchpadCelebrities).rosetta_experts)
+        entry.setStatus(
+            RosettaImportStatus.APPROVED,
+            getUtility(ILaunchpadCelebrities).rosetta_experts,
+        )
         # The file data is stored in the Librarian, so we have to commit the
         # transaction to make sure it's stored properly.
         transaction.commit()
@@ -259,8 +327,10 @@ class XPIPOExporterTestCase(TestCase):
         """Check whether the object follows the interface."""
         self.assertTrue(
             verifyObject(
-                ITranslationFormatExporter, self.translation_exporter),
-            "XPIPOExporter doesn't follow the interface")
+                ITranslationFormatExporter, self.translation_exporter
+            ),
+            "XPIPOExporter doesn't follow the interface",
+        )
 
     def test_XPITemplateExport(self):
         """Check a standard export from an XPI file."""
@@ -268,12 +338,15 @@ class XPIPOExporterTestCase(TestCase):
         self.setUpTranslationImportQueueForTemplate()
 
         translation_file_data = getAdapter(
-            self.firefox_template, ITranslationFileData, 'all_messages')
+            self.firefox_template, ITranslationFileData, "all_messages"
+        )
         storage = ExportFileStorage()
         self.translation_exporter.exportTranslationFile(
-            translation_file_data, storage)
+            translation_file_data, storage
+        )
 
-        expected_template = dedent('''
+        expected_template = dedent(
+            """
             #, fuzzy
             msgid ""
             msgstr ""
@@ -377,7 +450,8 @@ class XPIPOExporterTestCase(TestCase):
             msgctxt "main/test1.properties"
             msgid "Дан=Day"
             msgstr ""
-            ''').strip()  # noqa: E501
+            """  # noqa: E501
+        ).strip()
 
         output = storage.export().read().decode("utf-8")
         self._compareExpectedAndExported(expected_template, output)

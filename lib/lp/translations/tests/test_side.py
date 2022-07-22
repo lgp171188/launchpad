@@ -12,7 +12,7 @@ from lp.translations.interfaces.side import (
     ITranslationSideTraits,
     ITranslationSideTraitsSet,
     TranslationSide,
-    )
+)
 
 
 class TestTranslationSideTraitsSet(TestCaseWithFactory):
@@ -50,7 +50,8 @@ class TestTranslationSideTraitsSet(TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
         traits = utility.getForTemplate(template)
         self.assertEqual(TranslationSide.UBUNTU, traits.side)
 
@@ -60,7 +61,8 @@ class TestTranslationSideTraitsSet(TestCaseWithFactory):
 
         self.assertContentEqual(
             [TranslationSide.UPSTREAM, TranslationSide.UBUNTU],
-            traits_dict.keys())
+            traits_dict.keys(),
+        )
 
         for side, traits in traits_dict.items():
             self.assertEqual(side, traits.side)
@@ -82,11 +84,13 @@ class TraitsScenario:
         The TranslationMessage will not be current.
         """
         template = self._makeTemplate()
-        pofile = self.factory.makePOFile('nl', template)
+        pofile = self.factory.makePOFile("nl", template)
         potmsgset = self.factory.makePOTMsgSet(template)
         translationmessage = potmsgset.submitSuggestion(
-            pofile, self.factory.makePerson(),
-            {0: self.factory.getUniqueString()})
+            pofile,
+            self.factory.makePerson(),
+            {0: self.factory.getUniqueString()},
+        )
         return template, translationmessage
 
     def _getTraits(self, template):
@@ -102,13 +106,15 @@ class TraitsScenario:
 
         self.assertEqual(
             (True, False),
-            (traits.getFlag(message), other_side_traits.getFlag(message)))
+            (traits.getFlag(message), other_side_traits.getFlag(message)),
+        )
 
         traits.setFlag(message, False)
 
         self.assertEqual(
             (False, False),
-            (traits.getFlag(message), other_side_traits.getFlag(message)))
+            (traits.getFlag(message), other_side_traits.getFlag(message)),
+        )
 
     def test_getCurrentMessage(self):
         template, message = self._makeTemplateAndTranslationMessage()
@@ -117,13 +123,15 @@ class TraitsScenario:
         traits.setFlag(message, True)
 
         current_message = traits.getCurrentMessage(
-            message.potmsgset, template, message.language)
+            message.potmsgset, template, message.language
+        )
         self.assertEqual(message, current_message)
 
         traits.setFlag(message, False)
 
         current_message = traits.getCurrentMessage(
-            message.potmsgset, template, message.language)
+            message.potmsgset, template, message.language
+        )
         self.assertIs(None, current_message)
 
     def test_getCurrentMessage_ignores_other_flag(self):
@@ -134,24 +142,28 @@ class TraitsScenario:
         other_side_traits.setFlag(message, True)
 
         current_message = traits.getCurrentMessage(
-            message.potmsgset, template, message.language)
+            message.potmsgset, template, message.language
+        )
         self.assertIs(None, current_message)
 
         other_side_traits.setFlag(message, False)
 
         current_message = traits.getCurrentMessage(
-            message.potmsgset, template, message.language)
+            message.potmsgset, template, message.language
+        )
         self.assertIs(None, current_message)
 
 
 class UpstreamTranslationSideTraitsTest(TraitsScenario, TestCaseWithFactory):
     """Run the TraitsScenario tests on the upstream side."""
+
     layer = DatabaseFunctionalLayer
 
     def _makeTemplate(self):
         """See `TraitsScenario`."""
         return self.factory.makePOTemplate(
-            productseries=self.factory.makeProductSeries())
+            productseries=self.factory.makeProductSeries()
+        )
 
     def test_getFlag_reads_upstream_flag(self):
         # This test case looks on the upstream side.  We're really
@@ -165,6 +177,7 @@ class UpstreamTranslationSideTraitsTest(TraitsScenario, TestCaseWithFactory):
 
 class UbuntuTranslationSideTraitsTest(TraitsScenario, TestCaseWithFactory):
     """Run the TraitsScenario tests on the Ubuntu side."""
+
     layer = DatabaseFunctionalLayer
 
     def _makeTemplate(self):
@@ -172,7 +185,8 @@ class UbuntuTranslationSideTraitsTest(TraitsScenario, TestCaseWithFactory):
         package = self.factory.makeSourcePackage()
         return self.factory.makePOTemplate(
             distroseries=package.distroseries,
-            sourcepackagename=package.sourcepackagename)
+            sourcepackagename=package.sourcepackagename,
+        )
 
     def test_getFlag_reads_ubuntu_flag(self):
         # This test case looks on the Ubuntu side.  We're really

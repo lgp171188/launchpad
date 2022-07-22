@@ -5,21 +5,14 @@
 
 
 __all__ = [
-    'POFileStatsJob',
-    ]
+    "POFileStatsJob",
+]
 
 import logging
 
-from storm.locals import (
-    And,
-    Int,
-    Reference,
-    )
+from storm.locals import And, Int, Reference
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
@@ -42,16 +35,16 @@ from lp.translations.model.pofile import POFile
 class POFileStatsJob(StormBase, BaseRunnableJob):
     """The details for a POFile status update job."""
 
-    __storm_table__ = 'POFileStatsJob'
+    __storm_table__ = "POFileStatsJob"
 
     config = config.IPOFileStatsJobSource
 
     # The Job table contains core job details.
-    job_id = Int('job', primary=True)
+    job_id = Int("job", primary=True)
     job = Reference(job_id, Job.id)
 
     # This is the POFile which needs its statistics updated.
-    pofile_id = Int('pofile')
+    pofile_id = Int("pofile")
     pofile = Reference(pofile_id, POFile.id)
 
     def __init__(self, pofile):
@@ -61,12 +54,12 @@ class POFileStatsJob(StormBase, BaseRunnableJob):
 
     def getOperationDescription(self):
         """See `IRunnableJob`."""
-        return 'updating POFile statistics'
+        return "updating POFile statistics"
 
     def run(self):
         """See `IRunnableJob`."""
         logger = logging.getLogger()
-        logger.info('Updating statistics for %s' % self.pofile.title)
+        logger.info("Updating statistics for %s" % self.pofile.title)
         self.pofile.updateStatistics()
 
         # Next we have to find any POFiles that share translations with the
@@ -75,9 +68,11 @@ class POFileStatsJob(StormBase, BaseRunnableJob):
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             product=self.pofile.potemplate.product,
             distribution=self.pofile.potemplate.distribution,
-            sourcepackagename=self.pofile.potemplate.sourcepackagename)
+            sourcepackagename=self.pofile.potemplate.sourcepackagename,
+        )
         shared_templates = subset.getSharingPOTemplates(
-            self.pofile.potemplate.name)
+            self.pofile.potemplate.name
+        )
         # Now we have to find any POFiles that translate the shared templates
         # into the same language as the POFile this job is about.
         for template in shared_templates:
@@ -89,9 +84,10 @@ class POFileStatsJob(StormBase, BaseRunnableJob):
     @staticmethod
     def iterReady():
         """See `IJobSource`."""
-        return IStore(POFileStatsJob).find((POFileStatsJob),
-            And(POFileStatsJob.job == Job.id,
-                Job.id.is_in(Job.ready_jobs)))
+        return IStore(POFileStatsJob).find(
+            (POFileStatsJob),
+            And(POFileStatsJob.job == Job.id, Job.id.is_in(Job.ready_jobs)),
+        )
 
     def makeDerived(self):
         """Support UniversalJobSource.

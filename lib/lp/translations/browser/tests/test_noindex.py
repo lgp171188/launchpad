@@ -7,10 +7,7 @@ from lp.app.enums import ServiceUsage
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    BrowserTestCase,
-    login_person,
-    )
+from lp.testing import BrowserTestCase, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,7 +29,7 @@ class TestRobotsMixin:
 
     @cachedproperty
     def url(self):
-        return canonical_url(self.target, rootsite='translations')
+        return canonical_url(self.target, rootsite="translations")
 
     @cachedproperty
     def user_browser(self):
@@ -54,24 +51,27 @@ class TestRobotsMixin:
     def getRobotsDirective(self):
         contents = self.getRenderedContents()
         soup = BeautifulSoup(contents)
-        return soup.find('meta', attrs={'name': 'robots'})
+        return soup.find("meta", attrs={"name": "robots"})
 
     def verifyRobotsAreBlocked(self, usage):
         self.setUsage(usage)
         robots = self.getRobotsDirective()
-        self.assertIsNot(None, robots,
-                         "Robot blocking meta information not present.")
-        self.assertEqual('noindex,nofollow', robots['content'])
-        expected = ('noindex', 'nofollow')
-        actual = robots['content'].split(',')
+        self.assertIsNot(
+            None, robots, "Robot blocking meta information not present."
+        )
+        self.assertEqual("noindex,nofollow", robots["content"])
+        expected = ("noindex", "nofollow")
+        actual = robots["content"].split(",")
         self.assertContentEqual(expected, actual)
 
     def verifyRobotsNotBlocked(self, usage):
         self.setUsage(usage)
         robots = self.getRobotsDirective()
         self.assertIs(
-            None, robots,
-            "Robot blocking metadata present when it should not be.")
+            None,
+            robots,
+            "Robot blocking metadata present when it should not be.",
+        )
 
     def test_robots(self):
         # Robots are blocked for usage that is not Launchpad.
@@ -89,7 +89,8 @@ class TestRobotsProduct(BrowserTestCase, TestRobotsMixin):
         super().setUp()
         self.target = self.factory.makeProduct()
         self.factory.makePOTemplate(
-            productseries=self.target.development_focus)
+            productseries=self.target.development_focus
+        )
         self.naked_translatable = removeSecurityProxy(self.target)
 
 
@@ -101,7 +102,8 @@ class TestRobotsProjectGroup(BrowserTestCase, TestRobotsMixin):
         self.target = self.factory.makeProject()
         self.product = self.factory.makeProduct()
         self.factory.makePOTemplate(
-            productseries=self.product.development_focus)
+            productseries=self.product.development_focus
+        )
         self.naked_translatable = removeSecurityProxy(self.product)
         self.naked_translatable.projectgroup = self.target
 
@@ -113,8 +115,7 @@ class TestRobotsProductSeries(BrowserTestCase, TestRobotsMixin):
         super().setUp()
         self.product = self.factory.makeProduct()
         self.target = self.product.development_focus
-        self.factory.makePOTemplate(
-            productseries=self.target)
+        self.factory.makePOTemplate(productseries=self.target)
         self.naked_translatable = removeSecurityProxy(self.product)
 
 
@@ -125,14 +126,16 @@ class TestRobotsDistroSeries(BrowserTestCase, TestRobotsMixin):
         super().setUp()
         login_person(self.user)
         self.distro = self.factory.makeDistribution(
-            name="whobuntu", owner=self.user)
+            name="whobuntu", owner=self.user
+        )
         self.target = self.factory.makeDistroSeries(
-            name="zephyr", distribution=self.distro)
+            name="zephyr", distribution=self.distro
+        )
         self.target.hide_all_translations = False
         new_sourcepackagename = self.factory.makeSourcePackageName()
         self.factory.makePOTemplate(
-            distroseries=self.target,
-            sourcepackagename=new_sourcepackagename)
+            distroseries=self.target, sourcepackagename=new_sourcepackagename
+        )
         self.naked_translatable = removeSecurityProxy(self.distro)
 
 
@@ -143,12 +146,15 @@ class TestRobotsDistro(BrowserTestCase, TestRobotsMixin):
         super().setUp()
         login_person(self.user)
         self.target = self.factory.makeDistribution(
-            name="whobuntu", owner=self.user)
+            name="whobuntu", owner=self.user
+        )
         self.distroseries = self.factory.makeDistroSeries(
-            name="zephyr", distribution=self.target)
+            name="zephyr", distribution=self.target
+        )
         self.distroseries.hide_all_translations = False
         new_sourcepackagename = self.factory.makeSourcePackageName()
         self.factory.makePOTemplate(
             distroseries=self.distroseries,
-            sourcepackagename=new_sourcepackagename)
+            sourcepackagename=new_sourcepackagename,
+        )
         self.naked_translatable = removeSecurityProxy(self.target)

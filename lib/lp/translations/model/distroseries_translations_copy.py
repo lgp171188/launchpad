@@ -4,33 +4,31 @@
 """Functions to copy translations from one distroseries to another."""
 
 __all__ = [
-    'copy_active_translations',
-    ]
+    "copy_active_translations",
+]
 
 from lp.services.database.multitablecopy import MultiTableCopy
-from lp.services.database.sqlbase import (
-    cursor,
-    quote,
-    )
+from lp.services.database.sqlbase import cursor, quote
 
 
-def omit_redundant_pofiles(from_table, to_table, batch_size, begin_id,
-                           end_id):
+def omit_redundant_pofiles(from_table, to_table, batch_size, begin_id, end_id):
     """Batch-pouring callback: skip POFiles that have become redundant.
 
     This is needed to deal with a concurrency problem where POFiles may
     get created (through message sharing) while translations are still
     being copied.
     """
-    assert to_table.lower() == "pofile", (
-        "This callback is meant for pouring the POFile table only.")
+    assert (
+        to_table.lower() == "pofile"
+    ), "This callback is meant for pouring the POFile table only."
 
     params = {
-        'from_table': from_table,
-        'begin_id': begin_id,
-        'end_id': end_id,
+        "from_table": from_table,
+        "begin_id": begin_id,
+        "end_id": end_id,
     }
-    cursor().execute("""
+    cursor().execute(
+        """
         DELETE FROM %(from_table)s
         WHERE
             id >= %(begin_id)s AND
@@ -42,11 +40,19 @@ def omit_redundant_pofiles(from_table, to_table, batch_size, begin_id,
                     POFile.potemplate = %(from_table)s.potemplate AND
                     POFile.language = %(from_table)s.language
             )
-        """ % params)
+        """
+        % params
+    )
 
 
-def copy_active_translations(source, target, transaction, logger,
-                             sourcepackagenames=None, skip_duplicates=False):
+def copy_active_translations(
+    source,
+    target,
+    transaction,
+    logger,
+    sourcepackagenames=None,
+    skip_duplicates=False,
+):
     """Populate target `DistroSeries` with source series' translations.
 
     The target must not already have any translations.
@@ -69,7 +75,7 @@ def copy_active_translations(source, target, transaction, logger,
     process of being poured back into its source table.  In that case the
     sensible thing to do is probably to continue pouring it.
     """
-    translation_tables = ['potemplate', 'translationtemplateitem', 'pofile']
+    translation_tables = ["potemplate", "translationtemplateitem", "pofile"]
 
     full_name = "%s_%s" % (target.distribution.name, target.name)
     copier = MultiTableCopy(full_name, translation_tables, logger=logger)
@@ -80,13 +86,19 @@ def copy_active_translations(source, target, transaction, logger,
     # target, but it is useful when digging ourselves out of situations
     # where a few templates already exist in the target.
     if not skip_duplicates:
-        assert not target.has_translation_templates, (
-            "The target series must not yet have any translation templates.")
+        assert (
+            not target.has_translation_templates
+        ), "The target series must not yet have any translation templates."
 
     logger.info(
-        "Populating blank distroseries %s %s with translations from %s %s." %
-        (target.distribution.name, target.name, source.distribution.name,
-         source.name))
+        "Populating blank distroseries %s %s with translations from %s %s."
+        % (
+            target.distribution.name,
+            target.name,
+            source.distribution.name,
+            source.name,
+        )
+    )
 
     # 1. Extraction phase--for every table involved (called a "source table"
     # in MultiTableCopy parlance), we create a "holding table."  We fill that
@@ -111,21 +123,23 @@ def copy_active_translations(source, target, transaction, logger,
 
     # Copy relevant POTemplates from existing series into a holding table,
     # complete with their original id fields.
-    where = 'distroseries = %s AND iscurrent' % quote(source)
+    where = "distroseries = %s AND iscurrent" % quote(source)
     if sourcepackagenames is not None:
         if not sourcepackagenames:
             where += " AND false"
         else:
-            where += (
-                ' AND sourcepackagename IN %s'
-                % quote([spn.id for spn in sourcepackagenames]))
+            where += " AND sourcepackagename IN %s" % quote(
+                [spn.id for spn in sourcepackagenames]
+            )
     if skip_duplicates:
-        where += ('''
+        where += """
             AND sourcepackagename NOT IN (
                 SELECT sourcepackagename FROM potemplate
                 WHERE distroseries = %s)
-            ''' % quote(target))
-    copier.extract('potemplate', [], where)
+            """ % quote(
+            target
+        )
+    copier.extract("potemplate", [], where)
 
     # Now that we have the data "in private," where nobody else can see it,
     # we're free to play with it.  No risk of locking other processes out of
@@ -133,24 +147,27 @@ def copy_active_translations(source, target, transaction, logger,
     # Change series identifiers in the holding table to point to the new
     # series (right now they all bear the previous series's id) and set
     # creation dates to the current transaction time.
-    cursor().execute('''
+    cursor().execute(
+        """
         UPDATE %s
         SET
             distroseries = %s,
             datecreated =
                 timezone('UTC'::text,
                     ('now'::text)::timestamp(6) with time zone)
-    ''' % (copier.getHoldingTableName('potemplate'), quote(target)))
+    """
+        % (copier.getHoldingTableName("potemplate"), quote(target))
+    )
 
     # Copy each TranslationTemplateItem whose template we copied, and let
     # MultiTableCopy replace each potemplate reference with a reference to
     # our copy of the original POTMsgSet's potemplate.
-    copier.extract('translationtemplateitem', ['potemplate'], 'sequence > 0')
+    copier.extract("translationtemplateitem", ["potemplate"], "sequence > 0")
 
     # Copy POFiles, making them refer to the target's copied POTemplates.
     copier.extract(
-        'pofile', ['potemplate'],
-        batch_pouring_callback=omit_redundant_pofiles)
+        "pofile", ["potemplate"], batch_pouring_callback=omit_redundant_pofiles
+    )
 
     # Finally, pour the holding tables back into the originals.
     copier.pour(transaction)

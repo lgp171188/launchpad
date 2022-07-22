@@ -15,13 +15,13 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.translations.browser.translationtemplatesbuild import (
     TranslationTemplatesBuildView,
-    )
+)
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuildSource,
-    )
+)
 
 
 def now():
@@ -52,8 +52,11 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         """Create a `ProductSeries` that imports templates from `branch`."""
         productseries = self.factory.makeProductSeries()
         removeSecurityProxy(productseries).branch = branch
-        removeSecurityProxy(productseries).translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TEMPLATES)
+        removeSecurityProxy(
+            productseries
+        ).translations_autoimport_mode = (
+            TranslationsBranchImportMode.IMPORT_TEMPLATES
+        )
         return productseries
 
     def test_getTargets_finds_target(self):

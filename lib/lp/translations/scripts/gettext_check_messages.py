@@ -1,12 +1,9 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['GettextCheckMessages']
+__all__ = ["GettextCheckMessages"]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from storm.locals import SQL
 from zope.security.proxy import removeSecurityProxy
@@ -17,7 +14,7 @@ from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.utilities.validate import (
     GettextValidationError,
     validate_translation,
-    )
+)
 
 
 class GettextCheckMessages(LaunchpadScript):
@@ -46,21 +43,35 @@ class GettextCheckMessages(LaunchpadScript):
 
     def add_my_options(self):
         self.parser.add_option(
-            '-d', '--dry-run', action="store_true", dest='dry_run',
-            default=False, help="Don't really make any database changes.")
+            "-d",
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Don't really make any database changes.",
+        )
         self.parser.add_option(
-            '-o', '--order-by', dest='order_by', default=None,
-            help="""SQL "order by" clause for messages to check.""")
+            "-o",
+            "--order-by",
+            dest="order_by",
+            default=None,
+            help="""SQL "order by" clause for messages to check.""",
+        )
         self.parser.add_option(
-            '-w', '--where', dest="where", default=None,
-            help="""SQL "where" clause specifying which messages to check.""")
+            "-w",
+            "--where",
+            dest="where",
+            default=None,
+            help="""SQL "where" clause specifying which messages to check.""",
+        )
 
     def main(self):
         if self.options.dry_run:
             self.logger.info("Dry run.  Not making any changes.")
 
         self.logger.debug(
-            "Checking messages matching: %s" % self.options.where)
+            "Checking messages matching: %s" % self.options.where
+        )
 
         messages = IStore(TranslationMessage).find(TranslationMessage)
         if self.options.where is not None:
@@ -79,12 +90,12 @@ class GettextCheckMessages(LaunchpadScript):
         """Report gettext validation error for active message."""
         currency_markers = []
         if bad_message.is_current_ubuntu:
-            currency_markers.append('ubuntu')
+            currency_markers.append("ubuntu")
         if bad_message.is_current_upstream:
-            currency_markers.append('upstream')
+            currency_markers.append("upstream")
         if currency_markers == []:
-            currency_markers.append('unused')
-        currency = ', '.join(currency_markers)
+            currency_markers.append("unused")
+        currency = ", ".join(currency_markers)
         self.logger.info("%d (%s): %s" % (bad_message.id, currency, error))
 
     def _check_message_for_error(self, translationmessage):
@@ -98,8 +109,11 @@ class GettextCheckMessages(LaunchpadScript):
 
         try:
             validate_translation(
-                potmsgset.singular_text, potmsgset.plural_text,
-                msgstrs, potmsgset.flags)
+                potmsgset.singular_text,
+                potmsgset.plural_text,
+                msgstrs,
+                potmsgset.flags,
+            )
         except GettextValidationError as error:
             self._error_count += 1
             return str(error)
@@ -117,8 +131,9 @@ class GettextCheckMessages(LaunchpadScript):
 
         self._log_bad_message(translationmessage, error)
         is_current_anywhere = (
-            translationmessage.is_current_ubuntu or
-            translationmessage.is_current_upstream)
+            translationmessage.is_current_ubuntu
+            or translationmessage.is_current_upstream
+        )
         if is_current_anywhere:
             translationmessage.is_current_ubuntu = False
             translationmessage.is_current_upstream = False

@@ -8,12 +8,11 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
-    )
+)
 from lp.translations.tests.helpers import (
     make_translationmessage_for_context,
     summarize_current_translations,
-    )
-
+)
 
 # This test is based on the matrix described on:
 #  https://dev.launchpad.net/Translations/Specs
@@ -29,37 +28,67 @@ class SetCurrentTranslationTestMixin:
     from the perspective of translating an upstream template.
     """
 
-    def constructTranslationMessage(self, pofile=None, potmsgset=None,
-                                    current=True, other=False, diverged=False,
-                                    translations=None):
+    def constructTranslationMessage(
+        self,
+        pofile=None,
+        potmsgset=None,
+        current=True,
+        other=False,
+        diverged=False,
+        translations=None,
+    ):
         """Creates a TranslationMessage directly for `pofile` context."""
         if pofile is None:
             pofile = self.pofile
         if potmsgset is None:
             potmsgset = self.potmsgset
         return make_translationmessage_for_context(
-            self.factory, pofile, potmsgset,
-            current, other, diverged, translations)
+            self.factory,
+            pofile,
+            potmsgset,
+            current,
+            other,
+            diverged,
+            translations,
+        )
 
-    def constructOtherTranslationMessage(self, potmsgset=None, current=True,
-                                         other=False, diverged=False,
-                                         translations=None):
+    def constructOtherTranslationMessage(
+        self,
+        potmsgset=None,
+        current=True,
+        other=False,
+        diverged=False,
+        translations=None,
+    ):
         """Creates a TranslationMessage for self.other_pofile context."""
         return self.constructTranslationMessage(
-            self.other_pofile, potmsgset, current, other, diverged,
-            translations)
+            self.other_pofile,
+            potmsgset,
+            current,
+            other,
+            diverged,
+            translations,
+        )
 
-    def constructDivergingTranslationMessage(self, potmsgset=None,
-                                             current=True, other=False,
-                                             diverged=False,
-                                             translations=None):
+    def constructDivergingTranslationMessage(
+        self,
+        potmsgset=None,
+        current=True,
+        other=False,
+        diverged=False,
+        translations=None,
+    ):
         """Creates a TranslationMessage for self.diverging_pofile context."""
         return self.constructTranslationMessage(
-            self.diverging_pofile, potmsgset, current, other, diverged,
-            translations)
+            self.diverging_pofile,
+            potmsgset,
+            current,
+            other,
+            diverged,
+            translations,
+        )
 
-    def setCurrentTranslation(self, translations,
-                              share_with_other_side=False):
+    def setCurrentTranslation(self, translations, share_with_other_side=False):
         """Helper method to call 'setCurrentTranslation' method.
 
         It passes all the same parameters we use throughout the tests,
@@ -67,12 +96,16 @@ class SetCurrentTranslationTestMixin:
         """
         translations = dict(enumerate(translations))
         return self.potmsgset.setCurrentTranslation(
-            self.pofile, self.pofile.owner, translations,
+            self.pofile,
+            self.pofile.owner,
+            translations,
             origin=RosettaTranslationOrigin.ROSETTAWEB,
-            share_with_other_side=share_with_other_side)
+            share_with_other_side=share_with_other_side,
+        )
 
     def assert_Current_Diverged_Other_DivergencesElsewhere_are(
-        self, current, diverged, other_shared, divergences_elsewhere):
+        self, current, diverged, other_shared, divergences_elsewhere
+    ):
         """Assert that 'important' translations match passed-in values.
 
         Takes four parameters:
@@ -82,8 +115,12 @@ class SetCurrentTranslationTestMixin:
          * divergences_elsewhere: a list of other divergences in both
             contexts.
         """
-        new_current, new_diverged, new_other, new_divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+        (
+            new_current,
+            new_diverged,
+            new_other,
+            new_divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
 
         if new_current is None:
             self.assertIs(new_current, current)
@@ -117,7 +154,8 @@ class SetCurrentTranslationTestMixin:
         # existing TM matching new translations.
         # There is neither 'other' current translation.
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [])
+            None, None, None, []
+        )
 
         new_translations = [self.factory.getUniqueString()]
         tm = self.setCurrentTranslation(new_translations)
@@ -125,7 +163,8 @@ class SetCurrentTranslationTestMixin:
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
     def test_c_None__n_None__o_None__follows(self):
         # Current translation is None, and we have found no
@@ -133,17 +172,20 @@ class SetCurrentTranslationTestMixin:
         # There is neither 'other' current translation.
 
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [])
+            None, None, None, []
+        )
 
         new_translations = [self.factory.getUniqueString()]
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # We end up with a shared current translation,
         # activated in other context as well.
         self.assertTrue(tm is not None)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
     def selectUpstreamTranslation(self, tm, tm_other):
         # Return the upstream translation.
@@ -156,13 +198,16 @@ class SetCurrentTranslationTestMixin:
         # existing TM matching new translations.
         # There is a current translation in "other" context.
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, tm_other, [])
+            None, None, tm_other, []
+        )
 
         new_translations = [self.factory.getUniqueString()]
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # We end up with a shared current translation.
         # Current for other context one stays the same, if the
@@ -175,7 +220,8 @@ class SetCurrentTranslationTestMixin:
         else:
             expected_other = tm_other
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, expected_other, [])
+            tm, None, expected_other, []
+        )
 
     def test_c_None__n_None__o_shared__follows(self):
         # There is no current translation, though there is a shared one
@@ -189,9 +235,11 @@ class SetCurrentTranslationTestMixin:
         # existing TM matching new translations.
         # There is a current but diverged translation in "other" context.
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [tm_other])
+            None, None, None, [tm_other]
+        )
 
         new_translations = [self.factory.getUniqueString()]
         tm = self.setCurrentTranslation(new_translations)
@@ -199,14 +247,17 @@ class SetCurrentTranslationTestMixin:
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [tm_other])
+            tm, None, None, [tm_other]
+        )
 
         # Previously current is still diverged and current
         # in exactly one context.
         self.assertFalse(
-            tm_other.is_current_upstream and tm_other.is_current_ubuntu)
+            tm_other.is_current_upstream and tm_other.is_current_ubuntu
+        )
         self.assertTrue(
-            tm_other.is_current_upstream or tm_other.is_current_ubuntu)
+            tm_other.is_current_upstream or tm_other.is_current_ubuntu
+        )
         self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_None__o_diverged__follows(self):
@@ -214,25 +265,31 @@ class SetCurrentTranslationTestMixin:
         # existing TM matching new translations.
         # There is a current but diverged translation in "other" context.
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [tm_other])
+            None, None, None, [tm_other]
+        )
 
         new_translations = [self.factory.getUniqueString()]
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [tm_other])
+            tm, None, tm, [tm_other]
+        )
 
         # Previously current is still diverged and current
         # in exactly one context.
-        self.assertFalse(tm_other.is_current_upstream and
-                         tm_other.is_current_ubuntu)
-        self.assertTrue(tm_other.is_current_upstream or
-                         tm_other.is_current_ubuntu)
+        self.assertFalse(
+            tm_other.is_current_upstream and tm_other.is_current_ubuntu
+        )
+        self.assertTrue(
+            tm_other.is_current_upstream or tm_other.is_current_ubuntu
+        )
         self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_shared__o_None(self):
@@ -241,11 +298,15 @@ class SetCurrentTranslationTestMixin:
         # There is neither 'other' current translation.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
 
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [])
+            None, None, None, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -253,7 +314,8 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
     def test_c_None__n_shared__o_None__follows(self):
         # Current translation is None, and we have found a
@@ -261,20 +323,26 @@ class SetCurrentTranslationTestMixin:
         # There is neither 'other' current translation.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
 
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [])
+            None, None, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # We end up with tm_suggestion being activated in both contexts.
         self.assertTrue(tm is not None)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
     def test_c_None__n_shared__o_shared(self):
         # Current translation is None, and we have found a
@@ -282,12 +350,17 @@ class SetCurrentTranslationTestMixin:
         # There is a current translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, tm_other, [])
+            None, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -296,7 +369,8 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm_other, [])
+            tm, None, tm_other, []
+        )
 
     def test_c_None__n_shared__o_shared__follows(self):
         # Current translation is None, and we have found a
@@ -304,15 +378,21 @@ class SetCurrentTranslationTestMixin:
         # There is a current translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, tm_other, [])
+            None, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # tm_suggestion becomes current.
         self.assertTrue(tm is not None)
@@ -323,7 +403,8 @@ class SetCurrentTranslationTestMixin:
         # not affect the upstream translation.
         expected_other = self.selectUpstreamTranslation(tm, tm_other)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, expected_other, [])
+            tm, None, expected_other, []
+        )
 
     def test_c_None__n_shared__o_shared__identical(self, follows=False):
         # Current translation is None, and we have found a
@@ -331,20 +412,26 @@ class SetCurrentTranslationTestMixin:
         # also a current translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, tm_other, [])
+            None, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # tm_other becomes current in this context as well,
         # and remains current for the other context.
         self.assertTrue(tm is not None)
         self.assertEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
     def test_c_None__n_shared__o_shared__identical__follows(self):
         # As above, and 'share_with_other_side' is a no-op in this case.
@@ -356,12 +443,17 @@ class SetCurrentTranslationTestMixin:
         # There is a current but diverged translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [tm_other])
+            None, None, None, [tm_other]
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -369,14 +461,17 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [tm_other])
+            tm, None, None, [tm_other]
+        )
 
         # Previously current is still diverged and current
         # in exactly one context.
-        self.assertFalse(tm_other.is_current_upstream and
-                         tm_other.is_current_ubuntu)
-        self.assertTrue(tm_other.is_current_upstream or
-                         tm_other.is_current_ubuntu)
+        self.assertFalse(
+            tm_other.is_current_upstream and tm_other.is_current_ubuntu
+        )
+        self.assertTrue(
+            tm_other.is_current_upstream or tm_other.is_current_ubuntu
+        )
         self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_shared__o_diverged__follows(self):
@@ -385,28 +480,37 @@ class SetCurrentTranslationTestMixin:
         # There is a current but diverged translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, None, None, [tm_other])
+            None, None, None, [tm_other]
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [tm_other])
+            tm, None, tm, [tm_other]
+        )
 
         # Previously current is still diverged and current
         # in exactly one context.
         self.assertFalse(
-            tm_other.is_current_upstream and tm_other.is_current_ubuntu)
+            tm_other.is_current_upstream and tm_other.is_current_ubuntu
+        )
         self.assertTrue(
-            tm_other.is_current_upstream or tm_other.is_current_ubuntu)
+            tm_other.is_current_upstream or tm_other.is_current_ubuntu
+        )
         self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_shared__n_None__o_None(self):
@@ -415,9 +519,11 @@ class SetCurrentTranslationTestMixin:
         # There is neither a translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -426,11 +532,13 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertNotEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_None__o_None__follows(self):
         # Current translation is 'shared', and we have found
@@ -438,23 +546,28 @@ class SetCurrentTranslationTestMixin:
         # There is neither a translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # New translation message is shared and current for both
         # active and "other" context.
         self.assertTrue(tm is not None)
         self.assertNotEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_None__o_shared(self, follows=False):
         # Current translation is 'shared', and we have found
@@ -462,14 +575,18 @@ class SetCurrentTranslationTestMixin:
         # There is a shared translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, tm_other, [])
+            tm_shared, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message is shared and current only for
         # the active context.  Current for "other" context is left
@@ -478,11 +595,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm_other, [])
+            tm, None, tm_other, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_None__o_shared__follows(self):
         # The choice of sharing policy has no effect when the Ubuntu
@@ -495,12 +614,17 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -510,11 +634,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_shared__o_None__follows(self):
         # Current translation is 'shared', and we have found
@@ -522,15 +648,21 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # New translation message is shared and current only for
         # the active context.
@@ -538,11 +670,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_shared__o_None__identical(self):
         # Current translation is 'shared', and we are trying
@@ -550,10 +684,14 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -562,7 +700,8 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
     def test_c_shared__n_shared__o_None__identical__follows(self):
         # Current translation is 'shared', and we are trying
@@ -570,19 +709,25 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [])
+            tm_shared, None, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # New translation message is shared and current for both contexts.
         self.assertTrue(tm is not None)
         self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
     def test_c_shared__n_shared__o_shared(self, follows=False):
         # Current translation is 'shared', and we have found
@@ -590,17 +735,24 @@ class SetCurrentTranslationTestMixin:
         # There is a shared translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, tm_other, [])
+            tm_shared, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message is shared and current only for
         # the active context. Translation for other context is untouched.
@@ -608,11 +760,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm_other, [])
+            tm, None, tm_other, []
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_shared__o_shared__follows(self):
         # The choice of sharing policy has no effect when the Ubuntu
@@ -625,26 +779,34 @@ class SetCurrentTranslationTestMixin:
         # also current for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, tm_other, [])
+            tm_shared, None, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message is shared for both contexts.
         self.assertTrue(tm is not None)
         self.assertNotEqual(tm_shared, tm)
         self.assertEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm, [])
+            tm, None, tm, []
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_shared__o_shared_identical_follows(self):
         # Since we are converging to the 'other' context anyway, it behaves
@@ -658,12 +820,17 @@ class SetCurrentTranslationTestMixin:
         # exactly the same as the new translation.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other_diverged = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [tm_other_diverged])
+            tm_shared, None, None, [tm_other_diverged]
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -673,11 +840,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [tm_other_diverged])
+            tm, None, None, [tm_other_diverged]
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_diverged__o_diverged_shared(self):
         # Current translation is 'shared', and we have found
@@ -685,14 +854,20 @@ class SetCurrentTranslationTestMixin:
         # There is also a shared translation for the "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other_diverged = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, tm_other, [tm_other_diverged])
+            tm_shared, None, tm_other, [tm_other_diverged]
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -703,11 +878,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_other, tm)
         self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm_other, [tm_other_diverged])
+            tm, None, tm_other, [tm_other_diverged]
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_shared__n_diverged__o_diverged__identical(self):
         # Current translation is 'shared', and we have found
@@ -715,12 +892,17 @@ class SetCurrentTranslationTestMixin:
         # for the "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         tm_other_diverged = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, None, None, [tm_other_diverged])
+            tm_shared, None, None, [tm_other_diverged]
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -730,11 +912,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_shared, tm)
         self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [tm_other_diverged])
+            tm, None, None, [tm_other_diverged]
+        )
 
         # Previous shared translation is now a suggestion.
         self.assertFalse(
-            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream)
+            tm_shared.is_current_ubuntu or tm_shared.is_current_upstream
+        )
 
     def test_c_diverged__n_None__o_None(self, follows=False):
         # Current translation is 'diverged' (no shared), and we have found
@@ -742,12 +926,15 @@ class SetCurrentTranslationTestMixin:
         # There is neither a translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, None, [])
+            None, tm_diverged, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.
@@ -757,11 +944,13 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         self.assertNotEqual(tm_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, None, [])
+            None, tm, None, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_None__o_None__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -774,14 +963,18 @@ class SetCurrentTranslationTestMixin:
         # There is neither a translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, tm_other, [])
+            None, tm_diverged, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.
@@ -789,11 +982,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, tm_other, [])
+            None, tm, tm_other, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_None__o_shared__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -806,15 +1001,21 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, None, [])
+            None, tm_diverged, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.
@@ -825,11 +1026,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, None, [])
+            None, tm, None, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_None__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -842,12 +1045,17 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, tm_diverged, None, [])
+            tm_shared, tm_diverged, None, []
+        )
 
         tm = self.setCurrentTranslation(new_translations)
 
@@ -856,11 +1064,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_None_identical_follows(self):
         # Current translation is 'diverged', and we have found an existing
@@ -868,15 +1078,21 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, tm_diverged, None, [])
+            tm_shared, tm_diverged, None, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=True)
+            new_translations, share_with_other_side=True
+        )
 
         # New translation message converges for the active context.
         # The other side is not set because we're working on a diverged
@@ -885,11 +1101,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, None, [])
+            tm, None, None, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_shared(self, follows=False):
         # Current translation is 'diverged' (no shared), and we have found
@@ -897,17 +1115,24 @@ class SetCurrentTranslationTestMixin:
         # There is a shared translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_suggestion = self.constructTranslationMessage(
-            current=False, other=False, diverged=False,
-            translations=new_translations)
+            current=False,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, tm_other, [])
+            None, tm_diverged, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.
@@ -918,33 +1143,42 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, tm_other, [])
+            None, tm, tm_other, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_shared__follows(self):
         # The choice of sharing policy has no effect when starting from
         # a diverged translation.
         self.test_c_diverged__n_shared__o_shared(follows=True)
 
-    def test_c_diverged__n_shared__o_shared__identical_other(self,
-                                                             follows=False):
+    def test_c_diverged__n_shared__o_shared__identical_other(
+        self, follows=False
+    ):
         # Current translation is 'diverged' (no shared), and we have found
         # a shared TM matching new translations, that is also
         # current in "other" context.  (Converging to 'other')
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, tm_other, [])
+            None, tm_diverged, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message is diverged and current only for
         # the active context.
@@ -955,37 +1189,46 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, tm_other, [])
+            None, tm, tm_other, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_shared__identical_o__follows(self):
         # The choice of sharing policy has no effect when starting from
         # a diverged translation.
-        self.test_c_diverged__n_shared__o_shared__identical_other(
-            follows=True)
+        self.test_c_diverged__n_shared__o_shared__identical_other(follows=True)
 
-    def test_c_diverged__n_shared__o_shared__identical_shared(self,
-                                                              follows=False):
+    def test_c_diverged__n_shared__o_shared__identical_shared(
+        self, follows=False
+    ):
         # Current translation is 'diverged' (no shared), and we have found
         # a shared TM matching new translations, that is also
         # currently shared in "this" context.  (Converging to 'shared')
         # There is a shared translation in "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_shared = self.constructTranslationMessage(
-            current=True, other=False, diverged=False,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=False,
+            translations=new_translations,
+        )
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm_shared, tm_diverged, tm_other, [])
+            tm_shared, tm_diverged, tm_other, []
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message is shared for current context.
         self.assertTrue(tm is not None)
@@ -993,17 +1236,20 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_other, tm)
         self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            tm, None, tm_other, [])
+            tm, None, tm_other, []
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_shared__o_shared__identical_shared__follows(self):
         # The choice of sharing policy has no effect when starting from
         # a diverged translation.
         self.test_c_diverged__n_shared__o_shared__identical_shared(
-            follows=True)
+            follows=True
+        )
 
     def test_c_diverged__n_diverged__o_None(self, follows=False):
         # Current translation is 'diverged' (no shared), and we have found
@@ -1011,15 +1257,21 @@ class SetCurrentTranslationTestMixin:
         # There is no translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_diverged_elsewhere = self.constructDivergingTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, None, [tm_diverged_elsewhere])
+            None, tm_diverged, None, [tm_diverged_elsewhere]
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.  Existing divergence elsewhere is untouched.
@@ -1030,11 +1282,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertNotEqual(tm_diverged_elsewhere, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, None, [tm_diverged_elsewhere])
+            None, tm, None, [tm_diverged_elsewhere]
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_diverged__o_None__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -1047,17 +1301,24 @@ class SetCurrentTranslationTestMixin:
         # There is a shared translation for "other" context.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_diverged_elsewhere = self.constructDivergingTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         tm_other = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=False)
+            current=True, other=False, diverged=False
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, tm_other, [tm_diverged_elsewhere])
+            None, tm_diverged, tm_other, [tm_diverged_elsewhere]
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.  Existing divergence elsewhere is untouched.
@@ -1068,11 +1329,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertNotEqual(tm_diverged_elsewhere, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, tm_other, [tm_diverged_elsewhere])
+            None, tm, tm_other, [tm_diverged_elsewhere]
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_diverged__o_shared__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -1084,15 +1347,21 @@ class SetCurrentTranslationTestMixin:
         # an existing diverged in other context TM matching new translations.
         new_translations = [self.factory.getUniqueString()]
         tm_diverged = self.constructTranslationMessage(
-            current=True, other=False, diverged=True)
+            current=True, other=False, diverged=True
+        )
         tm_other_diverged = self.constructOtherTranslationMessage(
-            current=True, other=False, diverged=True,
-            translations=new_translations)
+            current=True,
+            other=False,
+            diverged=True,
+            translations=new_translations,
+        )
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm_diverged, None, [tm_other_diverged])
+            None, tm_diverged, None, [tm_other_diverged]
+        )
 
         tm = self.setCurrentTranslation(
-            new_translations, share_with_other_side=follows)
+            new_translations, share_with_other_side=follows
+        )
 
         # New translation message stays diverged and current only for
         # the active context.  Existing divergence elsewhere is untouched.
@@ -1103,11 +1372,13 @@ class SetCurrentTranslationTestMixin:
         self.assertNotEqual(tm_diverged, tm)
         self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
-            None, tm, None, [tm_other_diverged])
+            None, tm, None, [tm_other_diverged]
+        )
 
         # Previously current is not current anymore.
         self.assertFalse(
-            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream)
+            tm_diverged.is_current_ubuntu or tm_diverged.is_current_upstream
+        )
 
     def test_c_diverged__n_diverged__o_diverged__follows(self):
         # The choice of sharing policy has no effect when starting from
@@ -1115,8 +1386,9 @@ class SetCurrentTranslationTestMixin:
         self.test_c_diverged__n_diverged__o_diverged(follows=True)
 
 
-class TestSetCurrentTranslation_Ubuntu(SetCurrentTranslationTestMixin,
-                                       TestCaseWithFactory):
+class TestSetCurrentTranslation_Ubuntu(
+    SetCurrentTranslationTestMixin, TestCaseWithFactory
+):
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -1125,53 +1397,60 @@ class TestSetCurrentTranslation_Ubuntu(SetCurrentTranslationTestMixin,
         sourcepackagename = self.factory.makeSourcePackageName()
         potemplate = self.factory.makePOTemplate(
             distroseries=ubuntu.currentseries,
-            sourcepackagename=sourcepackagename)
+            sourcepackagename=sourcepackagename,
+        )
         sharing_series = self.factory.makeDistroSeries(distribution=ubuntu)
         sharing_potemplate = self.factory.makePOTemplate(
             distroseries=sharing_series,
             sourcepackagename=sourcepackagename,
-            name=potemplate.name)
+            name=potemplate.name,
+        )
         self.pofile = self.factory.makePOFile(
-            'sr', potemplate=potemplate, create_sharing=True)
+            "sr", potemplate=potemplate, create_sharing=True
+        )
 
         # A POFile in the same context as self.pofile, used for diverged
         # translations.
         self.diverging_pofile = sharing_potemplate.getPOFileByLang(
-            self.pofile.language.code)
+            self.pofile.language.code
+        )
 
         # A POFile in a different context from self.pofile and
         # self.diverging_pofile.
         self.other_pofile = self.factory.makePOFile(
-            language_code=self.pofile.language.code)
+            language_code=self.pofile.language.code
+        )
 
-        self.potmsgset = self.factory.makePOTMsgSet(
-            potemplate=potemplate)
+        self.potmsgset = self.factory.makePOTMsgSet(potemplate=potemplate)
 
     def selectUpstreamTranslation(self, tm, tm_other):
         # See `SetCurrentTranslationTestMixin`
         return tm_other
 
 
-class TestSetCurrentTranslation_Upstream(SetCurrentTranslationTestMixin,
-                                         TestCaseWithFactory):
+class TestSetCurrentTranslation_Upstream(
+    SetCurrentTranslationTestMixin, TestCaseWithFactory
+):
 
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super().setUp()
         series = self.factory.makeProductSeries()
-        sharing_series = self.factory.makeProductSeries(
-            product=series.product)
+        sharing_series = self.factory.makeProductSeries(product=series.product)
         potemplate = self.factory.makePOTemplate(productseries=series)
         sharing_potemplate = self.factory.makePOTemplate(
-            productseries=sharing_series, name=potemplate.name)
+            productseries=sharing_series, name=potemplate.name
+        )
         self.pofile = self.factory.makePOFile(
-            'sr', potemplate=potemplate, create_sharing=True)
+            "sr", potemplate=potemplate, create_sharing=True
+        )
 
         # A POFile in the same context as self.pofile, used for diverged
         # translations.
         self.diverging_pofile = sharing_potemplate.getPOFileByLang(
-            self.pofile.language.code)
+            self.pofile.language.code
+        )
 
         # A POFile in a different context from self.pofile and
         # self.diverging_pofile.
@@ -1179,13 +1458,13 @@ class TestSetCurrentTranslation_Upstream(SetCurrentTranslationTestMixin,
         sourcepackagename = self.factory.makeSourcePackageName()
         ubuntu_template = self.factory.makePOTemplate(
             distroseries=ubuntu.currentseries,
-            sourcepackagename=sourcepackagename)
+            sourcepackagename=sourcepackagename,
+        )
         self.other_pofile = self.factory.makePOFile(
-            potemplate=ubuntu_template,
-            language_code=self.pofile.language.code)
+            potemplate=ubuntu_template, language_code=self.pofile.language.code
+        )
 
-        self.potmsgset = self.factory.makePOTMsgSet(
-            potemplate=potemplate)
+        self.potmsgset = self.factory.makePOTMsgSet(potemplate=potemplate)
 
     def selectUpstreamTranslation(self, tm, tm_other):
         # See `SetCurrentTranslationTestMixin`

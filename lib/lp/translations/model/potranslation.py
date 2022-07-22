@@ -1,14 +1,11 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['POTranslation']
+__all__ = ["POTranslation"]
 
 import six
 from storm.expr import Func
-from storm.locals import (
-    Int,
-    Unicode,
-    )
+from storm.locals import Int, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -20,10 +17,10 @@ from lp.translations.interfaces.potranslation import IPOTranslation
 @implementer(IPOTranslation)
 class POTranslation(StormBase):
 
-    __storm_table__ = 'POTranslation'
+    __storm_table__ = "POTranslation"
 
     id = Int(primary=True)
-    translation = Unicode(name='translation', allow_none=False)
+    translation = Unicode(name="translation", allow_none=False)
 
     def __init__(self, translation):
         super().__init__()
@@ -43,10 +40,15 @@ class POTranslation(StormBase):
         # We can't search directly on msgid, because this database column
         # contains values too large to index. Instead we search on its
         # hash, which *is* indexed
-        r = IStore(POTranslation).find(
-            POTranslation,
-            Func('sha1', POTranslation.translation) ==
-                Func('sha1', six.ensure_text(key))).one()
+        r = (
+            IStore(POTranslation)
+            .find(
+                POTranslation,
+                Func("sha1", POTranslation.translation)
+                == Func("sha1", six.ensure_text(key)),
+            )
+            .one()
+        )
 
         if r is not None:
             return r
