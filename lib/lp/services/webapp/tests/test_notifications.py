@@ -5,10 +5,7 @@
 
 from datetime import datetime
 
-from testtools.matchers import (
-    MatchesListwise,
-    MatchesStructure,
-    )
+from testtools.matchers import MatchesListwise, MatchesStructure
 from zope.i18n import Message
 from zope.interface import implementer
 from zope.publisher.browser import TestRequest
@@ -25,14 +22,14 @@ from lp.services.webapp.interfaces import (
     ISession,
     ISessionData,
     IStructuredString,
-    )
+)
 from lp.services.webapp.notifications import (
+    SESSION_KEY,
     Notification,
     NotificationList,
     NotificationRequest,
     NotificationResponse,
-    SESSION_KEY,
-    )
+)
 from lp.testing import TestCase
 from lp.testing.fixture import ZopeAdapterFixture
 from lp.testing.layers import FunctionalLayer
@@ -40,7 +37,6 @@ from lp.testing.layers import FunctionalLayer
 
 @implementer(ISession)
 class MockSession(dict):
-
     def __getitem__(self, key):
         try:
             return super().__getitem__(key)
@@ -51,14 +47,12 @@ class MockSession(dict):
 
 @implementer(ISessionData)
 class MockSessionData(dict):
-
     def __call__(self, whatever):
         return self
 
 
 @implementer(IHTTPApplicationResponse)
 class MockHTTPApplicationResponse:
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.redirect_log = []
@@ -71,7 +65,8 @@ class MockHTTPApplicationResponse:
 
 
 class MyNotificationResponse(
-        NotificationResponse, MockHTTPApplicationResponse):
+    NotificationResponse, MockHTTPApplicationResponse
+):
     pass
 
 
@@ -86,23 +81,36 @@ def adaptNotificationRequestToResponse(request):
 
 
 class TestNotificationsBase:
-
     def setUp(self):
         super().setUp()
 
         mock_session = MockSession()
-        self.useFixture(ZopeAdapterFixture(
-            lambda x: mock_session, (INotificationRequest,), ISession))
-        self.useFixture(ZopeAdapterFixture(
-            lambda x: mock_session, (INotificationResponse,), ISession))
-        self.useFixture(ZopeAdapterFixture(
-            adaptNotificationRequestToResponse,
-            (INotificationRequest,), INotificationResponse))
+        self.useFixture(
+            ZopeAdapterFixture(
+                lambda x: mock_session, (INotificationRequest,), ISession
+            )
+        )
+        self.useFixture(
+            ZopeAdapterFixture(
+                lambda x: mock_session, (INotificationResponse,), ISession
+            )
+        )
+        self.useFixture(
+            ZopeAdapterFixture(
+                adaptNotificationRequestToResponse,
+                (INotificationRequest,),
+                INotificationResponse,
+            )
+        )
 
         mock_browser_request = TestRequest()
-        self.useFixture(ZopeAdapterFixture(
-            lambda x: mock_browser_request, (INotificationRequest,),
-            IBrowserRequest))
+        self.useFixture(
+            ZopeAdapterFixture(
+                lambda x: mock_browser_request,
+                (INotificationRequest,),
+                IBrowserRequest,
+            )
+        )
 
 
 class TestNotificationRequest(TestNotificationsBase, TestCase):
@@ -126,7 +134,8 @@ class TestNotificationRequest(TestNotificationsBase, TestCase):
         notifications.append(Notification(0, "Fnord"))
         self.assertThat(
             request.notifications,
-            MatchesListwise([MatchesStructure.byEquality(message="Fnord")]))
+            MatchesListwise([MatchesStructure.byEquality(message="Fnord")]),
+        )
 
     def test_multiple_notifications(self):
         # NotificationRequest.notifications also returns any notifications
@@ -142,10 +151,13 @@ class TestNotificationRequest(TestNotificationsBase, TestCase):
         response.addNotification("Aargh")
         self.assertThat(
             request.notifications,
-            MatchesListwise([
-                MatchesStructure.byEquality(message="Fnord"),
-                MatchesStructure.byEquality(message="Aargh"),
-                ]))
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(message="Fnord"),
+                    MatchesStructure.byEquality(message="Aargh"),
+                ]
+            ),
+        )
 
 
 class TestNotificationResponse(TestNotificationsBase, TestCase):
@@ -194,18 +206,25 @@ class TestNotificationResponse(TestNotificationsBase, TestCase):
         # And an odd one to test
         # https://bugs.launchpad.net/launchpad/+bug/54987
         response.addErrorNotification(
-            _("Error${value}", mapping={"value": ""}))
+            _("Error${value}", mapping={"value": ""})
+        )
 
         self.assertTrue(INotificationList.providedBy(response.notifications))
-        self.assertThat(response.notifications, MatchesListwise([
-            MatchesStructure.byEquality(
-                level=20, message="<b>&lt;Fnord&gt;</b>"),
-            MatchesStructure.byEquality(level=10, message="Whatever"),
-            MatchesStructure.byEquality(level=10, message="Debug"),
-            MatchesStructure.byEquality(level=20, message="Info"),
-            MatchesStructure.byEquality(level=30, message="Warning"),
-            MatchesStructure.byEquality(level=40, message="Error"),
-            ]))
+        self.assertThat(
+            response.notifications,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        level=20, message="<b>&lt;Fnord&gt;</b>"
+                    ),
+                    MatchesStructure.byEquality(level=10, message="Whatever"),
+                    MatchesStructure.byEquality(level=10, message="Debug"),
+                    MatchesStructure.byEquality(level=20, message="Info"),
+                    MatchesStructure.byEquality(level=30, message="Warning"),
+                    MatchesStructure.byEquality(level=40, message="Error"),
+                ]
+            ),
+        )
 
     def test_no_notifications_session_untouched(self):
         # If there are no notifications, the session is not touched.  This
@@ -247,7 +266,8 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
         response.addNotification("clean")
         self.assertThat(
             response.notifications,
-            MatchesListwise([MatchesStructure.byEquality(message="clean")]))
+            MatchesListwise([MatchesStructure.byEquality(message="clean")]),
+        )
 
     def test_addNotification_html(self):
         # HTML is escaped.
@@ -255,9 +275,12 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
         response.addNotification("<br/>dirty")
         self.assertThat(
             response.notifications,
-            MatchesListwise([
-                MatchesStructure.byEquality(message="&lt;br/&gt;dirty"),
-                ]))
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(message="&lt;br/&gt;dirty"),
+                ]
+            ),
+        )
 
     def test_addNotification_structured_string(self):
         # If the object passed to `addNotification` publishes the
@@ -270,9 +293,14 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
         response.addNotification(structured_text)
         self.assertThat(
             response.notifications,
-            MatchesListwise([
-                MatchesStructure.byEquality(message="<b>&lt;br/&gt;foo</b>"),
-                ]))
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        message="<b>&lt;br/&gt;foo</b>"
+                    ),
+                ]
+            ),
+        )
 
     def test_addNotification_i18n_message(self):
         # An instance of `zope.i18n.Message` is escaped in the same manner
@@ -281,9 +309,12 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
         response.addNotification(Message("<br/>foo"))
         self.assertThat(
             response.notifications,
-            MatchesListwise([
-                MatchesStructure.byEquality(message="&lt;br/&gt;foo"),
-                ]))
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(message="&lt;br/&gt;foo"),
+                ]
+            ),
+        )
 
     def test_addNotification_structured_internationalized(self):
         # To pass internationalized text that contains markup, one may call
@@ -296,9 +327,14 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
         response.addNotification(structured_text)
         self.assertThat(
             response.notifications,
-            MatchesListwise([
-                MatchesStructure.byEquality(message="<good/>&lt;evil/&gt;"),
-                ]))
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        message="<good/>&lt;evil/&gt;"
+                    ),
+                ]
+            ),
+        )
 
 
 class TestNotificationList(TestNotificationsBase, TestCase):
@@ -313,13 +349,20 @@ class TestNotificationList(TestNotificationsBase, TestCase):
     def test_iterate(self):
         notifications = NotificationList()
         notifications.append(
-            Notification(BrowserNotificationLevel.ERROR, "An error"))
+            Notification(BrowserNotificationLevel.ERROR, "An error")
+        )
         notifications.append(
-            Notification(BrowserNotificationLevel.DEBUG, "A debug message"))
-        self.assertThat(notifications, MatchesListwise([
-            MatchesStructure.byEquality(message="An error"),
-            MatchesStructure.byEquality(message="A debug message"),
-            ]))
+            Notification(BrowserNotificationLevel.DEBUG, "A debug message")
+        )
+        self.assertThat(
+            notifications,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(message="An error"),
+                    MatchesStructure.byEquality(message="A debug message"),
+                ]
+            ),
+        )
 
     def test___getitem__(self):
         # The __getitem__ method is also overloaded to allow TALES
@@ -327,9 +370,16 @@ class TestNotificationList(TestNotificationsBase, TestCase):
         # particular notification level.
         notifications = NotificationList()
         notifications.append(
-            Notification(BrowserNotificationLevel.ERROR, "An error"))
+            Notification(BrowserNotificationLevel.ERROR, "An error")
+        )
         notifications.append(
-            Notification(BrowserNotificationLevel.DEBUG, "A debug message"))
-        self.assertThat(notifications["debug"], MatchesListwise([
-            MatchesStructure.byEquality(message="A debug message"),
-            ]))
+            Notification(BrowserNotificationLevel.DEBUG, "A debug message")
+        )
+        self.assertThat(
+            notifications["debug"],
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(message="A debug message"),
+                ]
+            ),
+        )

@@ -5,25 +5,22 @@
 
 __all__ = []
 
-from lp.app.security import (
-    AuthorizationBase,
-    DelegatedAuthorization,
-    )
+from lp.app.security import AuthorizationBase, DelegatedAuthorization
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.messages.interfaces.messagerevision import IMessageRevision
 
 
 class SetMessageVisibility(AuthorizationBase):
-    permission = 'launchpad.Admin'
+    permission = "launchpad.Admin"
     usedfor = IMessage
 
     def checkAuthenticated(self, user):
         """Admins and registry admins can set bug comment visibility."""
-        return (user.in_admin or user.in_registry_experts)
+        return user.in_admin or user.in_registry_experts
 
 
 class EditMessage(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IMessage
 
     def checkAuthenticated(self, user):
@@ -32,8 +29,8 @@ class EditMessage(AuthorizationBase):
 
 
 class EditMessageRevision(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IMessageRevision
 
     def __init__(self, obj):
-        super().__init__(obj, obj.message, 'launchpad.Edit')
+        super().__init__(obj, obj.message, "launchpad.Edit")

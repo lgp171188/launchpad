@@ -4,10 +4,7 @@
 
 from functools import partial
 
-from twisted.internet.defer import (
-    Deferred,
-    succeed,
-    )
+from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import Clock
 from zope.interface import implementer
 
@@ -18,7 +15,7 @@ from lp.services.twistedsupport.task import (
     NotRunningError,
     ParallelLimitedTaskConsumer,
     PollingTaskSource,
-    )
+)
 from lp.testing import TestCase
 
 
@@ -59,10 +56,10 @@ class LoggingSource:
             self.stop_deferred = stop_deferred
 
     def start(self, consumer):
-        self._log.append(('start', consumer))
+        self._log.append(("start", consumer))
 
     def stop(self):
-        self._log.append('stop')
+        self._log.append("stop")
         return self.stop_deferred
 
 
@@ -190,15 +187,19 @@ class TestPollingTaskSource(TestCase):
     def test_starting_again_changes_consumer(self):
         # Starting a task source again changes the task consumer.
         tasks = [
-            self.factory.getUniqueString(), self.factory.getUniqueString()]
+            self.factory.getUniqueString(),
+            self.factory.getUniqueString(),
+        ]
         consumer1_tasks = []
         consumer2_tasks = []
         task_source = self.makeTaskSource(
-            task_producer=partial(next, iter(tasks)))
+            task_producer=partial(next, iter(tasks))
+        )
         task_source.start(AppendingTaskConsumer(consumer1_tasks))
         task_source.start(AppendingTaskConsumer(consumer2_tasks))
         self.assertEqual(
-            ([tasks[0]], [tasks[1]]), (consumer1_tasks, consumer2_tasks))
+            ([tasks[0]], [tasks[1]]), (consumer1_tasks, consumer2_tasks)
+        )
 
     def test_task_consumer_not_called_when_factory_doesnt_produce(self):
         # The task_consumer passed to start is *not* called when the factory
@@ -230,8 +231,8 @@ class TestPollingTaskSource(TestCase):
         task_source = self.makeTaskSource(task_producer=lambda: deferred)
         task_source.start(AppendingTaskConsumer(tasks_called))
         self.assertEqual([], tasks_called)
-        deferred.callback('foo')
-        self.assertEqual(['foo'], tasks_called)
+        deferred.callback("foo")
+        self.assertEqual(["foo"], tasks_called)
 
     def test_only_one_producer_call_at_once(self):
         # If the task producer returns a Deferred, it will not be called again
@@ -248,7 +249,8 @@ class TestPollingTaskSource(TestCase):
         clock = Clock()
         interval = self.factory.getUniqueInteger()
         task_source = self.makeTaskSource(
-            task_producer=producer, interval=interval, clock=clock)
+            task_producer=producer, interval=interval, clock=clock
+        )
         task_source.start(AppendingTaskConsumer(tasks_called))
         # The call to start calls producer.  It returns a deferred which has
         # not been fired.
@@ -358,7 +360,8 @@ class TestPollingTaskSource(TestCase):
             return value
 
         task_source = self.makeTaskSource(
-            task_producer=producer, interval=interval, clock=clock)
+            task_producer=producer, interval=interval, clock=clock
+        )
         consumer = DeferredStartingConsumer()
         task_source.start(consumer)
         # The call to start polls once and taskStarted is called.
@@ -407,7 +410,8 @@ class TestPollingTaskSource(TestCase):
             raise exc
 
         task_source = self.makeTaskSource(
-            task_producer=producer, interval=interval, clock=clock)
+            task_producer=producer, interval=interval, clock=clock
+        )
         consumer = DeferredFailingConsumer()
         task_source.start(consumer)
         # The call to start polls once and taskProductionFailed is called.
@@ -451,7 +455,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         log = []
         source = LoggingSource(log)
         consumer.consume(source)
-        self.assertEqual([('start', consumer)], log)
+        self.assertEqual([("start", consumer)], log)
 
     def test_consume_twice_raises_error(self):
         # Calling `consume` twice always raises an error.
@@ -528,7 +532,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         consumer.consume(LoggingSource(log))
         consumer.taskStarted(self._neverEndingTask)
         consumer.noTasksFound()
-        self.assertEqual(0, log.count('stop'))
+        self.assertEqual(0, log.count("stop"))
 
     def test_source_started_when_all_tasks_done(self):
         # When no more tasks are running, we start the task source so it has
@@ -539,8 +543,8 @@ class TestParallelLimitedTaskConsumer(TestCase):
         del log[:]
         # Finishes immediately, all tasks are done.
         consumer.taskStarted(lambda: None)
-        self.assertEqual(2, log.count(('start', consumer)))
-        self.assertEqual(0, log.count('stop'))
+        self.assertEqual(2, log.count(("start", consumer)))
+        self.assertEqual(0, log.count("stop"))
 
     def test_taskStarted_before_consume_raises_error(self):
         # taskStarted can only be called after we have started consuming. This
@@ -554,16 +558,15 @@ class TestParallelLimitedTaskConsumer(TestCase):
         # consuming. This is because taskProductionFailed might need to stop
         # task production to handle errors properly.
         consumer = self.makeConsumer()
-        self.assertRaises(
-            NotRunningError, consumer.taskProductionFailed, None)
+        self.assertRaises(NotRunningError, consumer.taskProductionFailed, None)
 
     def test_taskStarted_runs_task(self):
         # Calling taskStarted with a task runs that task.
         log = []
         consumer = self.makeConsumer()
         consumer.consume(LoggingSource([]))
-        consumer.taskStarted(lambda: log.append('task'))
-        self.assertEqual(['task'], log)
+        consumer.taskStarted(lambda: log.append("task"))
+        self.assertEqual(["task"], log)
 
     def test_taskStarted_restarts_source(self):
         # If, after the task passed to taskStarted has been started, the
@@ -575,7 +578,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         consumer.consume(LoggingSource(log))
         del log[:]
         consumer.taskStarted(self._neverEndingTask)
-        self.assertEqual([('start', consumer)], log)
+        self.assertEqual([("start", consumer)], log)
 
     def test_reaching_working_limit_stops_source(self):
         # Each time taskStarted is called, we start a worker. When we reach
@@ -587,10 +590,10 @@ class TestParallelLimitedTaskConsumer(TestCase):
         consumer.consume(source)
         del log[:]
         consumer.taskStarted(self._neverEndingTask)
-        self.assertEqual(0, log.count('stop'))
+        self.assertEqual(0, log.count("stop"))
         for i in range(worker_limit - 1):
             consumer.taskStarted(self._neverEndingTask)
-        self.assertEqual(1, log.count('stop'))
+        self.assertEqual(1, log.count("stop"))
 
     def test_passing_working_limit_stops_source(self):
         # If we have already reached the worker limit, and taskStarted is
@@ -604,11 +607,11 @@ class TestParallelLimitedTaskConsumer(TestCase):
         del log[:]
         consumer.taskStarted(self._neverEndingTask)
         # Reached the limit.
-        self.assertEqual(['stop'], log)
+        self.assertEqual(["stop"], log)
         del log[:]
         # Passed the limit.
         consumer.taskStarted(self._neverEndingTask)
-        self.assertEqual(['stop'], log)
+        self.assertEqual(["stop"], log)
 
     def test_run_task_even_though_passed_limit(self):
         # If the source sends us work to do even though we've passed our
@@ -622,9 +625,9 @@ class TestParallelLimitedTaskConsumer(TestCase):
 
         consumer = self.makeConsumer(worker_limit=1)
         consumer.consume(LoggingSource([]))
-        consumer.taskStarted(lambda: log_append('task1'))
-        consumer.taskStarted(lambda: log_append('task2'))
-        self.assertEqual(['task1', 'task2'], log)
+        consumer.taskStarted(lambda: log_append("task1"))
+        consumer.taskStarted(lambda: log_append("task2"))
+        self.assertEqual(["task1", "task2"], log)
 
     def test_restart_source_when_worker_available(self):
         # When we reach the worker limit, we tell the source to stop. Once we
@@ -642,7 +645,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         del log[:]
         # One of the tasks is finished
         d.callback(None)
-        self.assertEqual([('start', consumer)], log)
+        self.assertEqual([("start", consumer)], log)
 
     def test_production_failed_stops_source(self):
         # If `taskProductionFailed` is called after we've started consuming
@@ -653,7 +656,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         consumer.consume(source)
         del log[:]
         consumer.taskProductionFailed(None)
-        self.assertEqual(['stop'], log)
+        self.assertEqual(["stop"], log)
 
     def test_failure_before_any_tasks_stops_consumer(self):
         # If `taskProductionFailed` is called after we've started consuming
@@ -681,4 +684,4 @@ class TestParallelLimitedTaskConsumer(TestCase):
         del source_log[:]
         d.callback(None)
         self.assertEqual([], task_log)
-        self.assertEqual([('start', consumer)], source_log)
+        self.assertEqual([("start", consumer)], source_log)

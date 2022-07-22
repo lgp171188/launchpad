@@ -60,34 +60,34 @@ class FileUploadProtocol(basic.LineReceiver):
     were just established to start a new upload.
     """
 
-    delimiter = b'\r\n'  # same as HTTP
-    state = 'command'
+    delimiter = b"\r\n"  # same as HTTP
+    state = "command"
 
     def lineReceived(self, line):
         try:
             try:
-                line = line.decode('UTF-8')
+                line = line.decode("UTF-8")
             except UnicodeDecodeError:
-                raise ProtocolViolation('Non-data lines must be in UTF-8')
-            getattr(self, 'line_' + self.state, self.badLine)(line)
+                raise ProtocolViolation("Non-data lines must be in UTF-8")
+            getattr(self, "line_" + self.state, self.badLine)(line)
         except ProtocolViolation as e:
             self.sendError(e.msg)
         except Exception:
             self.unknownError()
 
-    def sendError(self, msg, code='400'):
+    def sendError(self, msg, code="400"):
         """Sends a correctly formatted error to the client, and closes the
         connection."""
-        self.sendLine((code + ' ' + msg).encode('UTF-8'))
+        self.sendLine((code + " " + msg).encode("UTF-8"))
         self.transport.loseConnection()
 
     def unknownError(self, failure=None):
-        log.msg('Uncaught exception in FileUploadProtocol:')
+        log.msg("Uncaught exception in FileUploadProtocol:")
         if failure is not None:
             log.err(failure)
         else:
             log.err()
-        self.sendError('Internal server error', '500')
+        self.sendError("Internal server error", "500")
 
     def translateErrors(self, failure):
         """Errback to translate storage errors to protocol errors."""
@@ -95,64 +95,66 @@ class FileUploadProtocol(basic.LineReceiver):
         exc = failure.value
         raise ProtocolViolation(
             "Wrong database '%s', should be '%s'"
-            % (exc.clientDatabaseName, exc.serverDatabaseName))
+            % (exc.clientDatabaseName, exc.serverDatabaseName)
+        )
 
     def protocolErrors(self, failure):
         failure.trap(ProtocolViolation)
         self.sendError(failure.value.msg)
 
     def badLine(self, line):
-        raise ProtocolViolation('Unexpected message from client: ' + line)
+        raise ProtocolViolation("Unexpected message from client: " + line)
 
     def line_command(self, line):
         try:
             command, args = line.split(None, 1)
         except ValueError:
-            raise ProtocolViolation('Bad command: ' + line)
+            raise ProtocolViolation("Bad command: " + line)
 
         bad = lambda args: self.badCommand(line)
-        getattr(self, 'command_' + command.upper(), bad)(args)
+        getattr(self, "command_" + command.upper(), bad)(args)
 
     def line_header(self, line):
         # Blank line signals the end of the headers
-        if line == '':
+        if line == "":
             # If File-Content-ID was specified, File-Alias-ID must be too, and
             # vice-versa.
             contentID = self.newFile.contentID
             aliasID = self.newFile.aliasID
-            if ((contentID is not None and aliasID is None) or
-                (aliasID is not None and contentID is None)):
+            if (contentID is not None and aliasID is None) or (
+                aliasID is not None and contentID is None
+            ):
                 raise ProtocolViolation(
                     "File-Content-ID and File-Alias-ID must both be specified"
-                    )
+                )
 
             # The Database-Name header is always required.
             if self.newFile.databaseName is None:
                 raise ProtocolViolation("Database-Name header is required")
 
             # If that's ok, we're ready to receive the file.
-            self.state = 'file'
+            self.state = "file"
             self.setRawMode()
 
             # Make sure rawDataReceived is *always* called, so that zero-byte
             # uploads don't hang.  It's harmless the rest of the time.
-            self.rawDataReceived(b'')
+            self.rawDataReceived(b"")
 
             return
 
         # Simple RFC 822-ish header parsing
         try:
-            name, value = line.split(':', 2)
+            name, value = line.split(":", 2)
         except ValueError:
-            raise ProtocolViolation('Invalid header: ' + line)
+            raise ProtocolViolation("Invalid header: " + line)
 
         ignore = lambda value: None
         value = value.strip()
-        name = name.lower().replace('-', '_')
-        getattr(self, 'header_' + name, ignore)(value)
+        name = name.lower().replace("-", "_")
+        getattr(self, "header_" + name, ignore)(value)
 
     def badCommand(self, line):
-        raise ProtocolViolation('Unknown command: ' + line)
+        raise ProtocolViolation("Unknown command: " + line)
 
     def command_STORE(self, args):
         try:
@@ -160,11 +162,12 @@ class FileUploadProtocol(basic.LineReceiver):
             size = int(size)
         except ValueError:
             raise ProtocolViolation(
-                    "STORE command expects a size and file name")
+                "STORE command expects a size and file name"
+            )
         fileLibrary = self.factory.fileLibrary
         self.newFile = fileLibrary.startAddFile(name, size)
         self.bytesLeft = size
-        self.state = 'header'
+        self.state = "header"
 
     def header_content_type(self, value):
         self.newFile.mimetype = value
@@ -190,8 +193,9 @@ class FileUploadProtocol(basic.LineReceiver):
         except ValueError:
             raise ProtocolViolation("Invalid File-Expires: " + value)
 
-        self.newFile.expires = datetime.fromtimestamp(
-                epoch).replace(tzinfo=utc)
+        self.newFile.expires = datetime.fromtimestamp(epoch).replace(
+            tzinfo=utc
+        )
 
     def header_database_name(self, value):
         self.newFile.databaseName = value
@@ -200,7 +204,7 @@ class FileUploadProtocol(basic.LineReceiver):
         self.newFile.debugID = value
 
     def rawDataReceived(self, data):
-        realdata, rest = data[:self.bytesLeft], data[self.bytesLeft:]
+        realdata, rest = data[: self.bytesLeft], data[self.bytesLeft :]
         self.bytesLeft -= len(realdata)
         self.newFile.append(realdata)
 
@@ -214,9 +218,11 @@ class FileUploadProtocol(basic.LineReceiver):
                 if self.newFile.contentID is None:
                     # Respond with deprecated server-generated IDs.
                     self.sendLine(
-                        ('200 %s/%s' % (fileID, aliasID)).encode('UTF-8'))
+                        ("200 %s/%s" % (fileID, aliasID)).encode("UTF-8")
+                    )
                 else:
-                    self.sendLine(b'200')
+                    self.sendLine(b"200")
+
             deferred.addBoth(self.logDebugging)
             deferred.addCallback(_sendID)
             deferred.addErrback(self.translateErrors)
@@ -224,13 +230,13 @@ class FileUploadProtocol(basic.LineReceiver):
             deferred.addErrback(self.unknownError)
 
             # Treat remaining bytes (if any) as a new command.
-            self.state = 'command'
+            self.state = "command"
             self.setLineMode(rest)
 
     def logDebugging(self, result_or_failure):
         if self.newFile.debugID is not None:
             for msg in self.newFile.debugLog:
-                log.msg('Debug %s: %s' % (self.newFile.debugID, msg))
+                log.msg("Debug %s: %s" % (self.newFile.debugID, msg))
         return result_or_failure
 
     def _storeFile(self):

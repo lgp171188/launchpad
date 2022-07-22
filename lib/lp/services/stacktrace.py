@@ -7,17 +7,16 @@ These honor traceback supplements as defined in zope.exceptions.
 """
 
 __all__ = [
-    'extract_stack',
-    'extract_tb',
-    'format_list',
-    'print_list',
-    'print_stack',
-    ]
+    "extract_stack",
+    "extract_tb",
+    "format_list",
+    "print_list",
+    "print_stack",
+]
 
 import linecache
 import sys
 import traceback
-
 
 DEBUG_EXCEPTION_FORMATTER = False
 EXPLOSIVE_ERRORS = (SystemExit, MemoryError, KeyboardInterrupt)
@@ -46,7 +45,7 @@ def _get_frame(f):
 
 def _fmt(string):
     "Return the string as deemed suitable for the extra information."
-    return '   - %s' % string
+    return "   - %s" % string
 
 
 def print_list(extracted_list, file=None):
@@ -71,30 +70,30 @@ def format_list(extracted_list):
     list = []
     for filename, lineno, name, line, modname, supp, info in extracted_list:
         item = []
-        item.append(
-               '  File "%s", line %d, in %s' % (filename, lineno, name))
+        item.append('  File "%s", line %d, in %s' % (filename, lineno, name))
         if line:
-            item.append('    %s' % line.strip())
+            item.append("    %s" % line.strip())
         # The "supp" and "info" bits are adapted from zope.exceptions.
         try:
             if supp:
-                if supp['source_url']:
-                    item.append(_fmt(supp['source_url']))
-                if supp['line']:
-                    if supp['column']:
+                if supp["source_url"]:
+                    item.append(_fmt(supp["source_url"]))
+                if supp["line"]:
+                    if supp["column"]:
                         item.append(
-                            _fmt('Line %(line)s, Column %(column)s' % supp))
+                            _fmt("Line %(line)s, Column %(column)s" % supp)
+                        )
                     else:
-                        item.append(_fmt('Line %(line)s' % supp))
-                elif supp['column']:
-                    item.append(_fmt('Column %(column)s' % supp))
-                if supp['expression']:
-                    item.append(_fmt('Expression: %(expression)s' % supp))
-                if supp['warnings']:
-                    for warning in supp['warnings']:
-                        item.append(_fmt('Warning: %s' % warning))
-                if supp['extra']:
-                    item.append(supp['extra'])  # We do not include a prefix.
+                        item.append(_fmt("Line %(line)s" % supp))
+                elif supp["column"]:
+                    item.append(_fmt("Column %(column)s" % supp))
+                if supp["expression"]:
+                    item.append(_fmt("Expression: %(expression)s" % supp))
+                if supp["warnings"]:
+                    for warning in supp["warnings"]:
+                        item.append(_fmt("Warning: %s" % warning))
+                if supp["extra"]:
+                    item.append(supp["extra"])  # We do not include a prefix.
             if info:
                 item.append(_fmt(info))
         except EXPLOSIVE_ERRORS:
@@ -105,8 +104,8 @@ def format_list(extracted_list):
             if DEBUG_EXCEPTION_FORMATTER:
                 traceback.print_exc(file=sys.stderr)
             # else just swallow the exception.
-        item.append('')  # This gives us a trailing newline.
-        list.append('\n'.join(item))
+        item.append("")  # This gives us a trailing newline.
+        list.append("\n".join(item))
     return list
 
 
@@ -124,7 +123,7 @@ def _get_limit(limit):
     "Return the limit or the globally-set limit, if any."
     if limit is None:
         # stdlib uses hasattr here.
-        if hasattr(sys, 'tracebacklimit'):
+        if hasattr(sys, "tracebacklimit"):
             limit = sys.tracebacklimit
     return limit
 
@@ -133,15 +132,15 @@ def _get_frame_data(f, lineno):
     "Given a frame and a lineno, return data for each item of extract_*."
     # Adapted from zope.exceptions.
     try_except = _try_except  # This is a micro-optimization.
-    modname = f.f_globals.get('__name__')
+    modname = f.f_globals.get("__name__")
     # Output a traceback supplement, if any.
     supplement_dict = info = None
-    if '__traceback_supplement__' in f.f_locals:
+    if "__traceback_supplement__" in f.f_locals:
         # Use the supplement defined in the function.
-        tbs = f.f_locals['__traceback_supplement__']
-    elif '__traceback_supplement__' in f.f_globals:
+        tbs = f.f_locals["__traceback_supplement__"]
+    elif "__traceback_supplement__" in f.f_globals:
         # Use the supplement defined in the module.
-        tbs = f.f_globals['__traceback_supplement__']
+        tbs = f.f_globals["__traceback_supplement__"]
     else:
         tbs = None
     if tbs is not None:
@@ -155,14 +154,14 @@ def _get_frame_data(f, lineno):
             # have "getInfo" pre-processed and so that we are not holding on
             # to anything from the frame.
             extra = None
-            getInfo = getattr(supplement, 'getInfo', None)
+            getInfo = getattr(supplement, "getInfo", None)
             if getInfo is not None:
                 extra = try_except(getInfo)
                 extra = try_except(str, extra) if extra is not None else None
             warnings = []
             # The outer try-except is for the iteration.
             try:
-                for warning in getattr(supplement, 'warnings', ()):
+                for warning in getattr(supplement, "warnings", ()):
                     if warning is not None:
                         warning = try_except(str, warning)
                     if warning is not None:
@@ -173,12 +172,12 @@ def _get_frame_data(f, lineno):
                 if DEBUG_EXCEPTION_FORMATTER:
                     traceback.print_exc(file=sys.stderr)
             supplement_dict = dict(warnings=warnings, extra=extra)
-            for key in ('source_url', 'line', 'column', 'expression'):
+            for key in ("source_url", "line", "column", "expression"):
                 value = getattr(supplement, key, None)
                 if value is not None:
                     value = try_except(str, value)
                 supplement_dict[key] = value
-    info = f.f_locals.get('__traceback_info__', None)
+    info = f.f_locals.get("__traceback_info__", None)
     info = try_except(str, info) if info is not None else None
     # End part adapted from zope.exceptions.
     co = f.f_code

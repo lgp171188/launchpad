@@ -16,25 +16,22 @@ from lp.registry.enums import SpecificationSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyGrantSource,
     IAccessPolicySource,
-    )
+)
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.model.milestonetag import ProjectGroupMilestoneTag
 from lp.services.webapp import canonical_url
 from lp.testing import (
     BrowserTestCase,
+    RequestTimelineCollector,
+    StormStatementRecorder,
+    TestCaseWithFactory,
     login_person,
     login_team,
     logout,
     person_logged_in,
-    RequestTimelineCollector,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.matchers import (
-    BrowsesWithQueryLimit,
-    HasQueryCount,
-    )
+from lp.testing.matchers import BrowsesWithQueryLimit, HasQueryCount
 from lp.testing.views import create_initialized_view
 
 
@@ -50,18 +47,20 @@ class TestMilestoneViews(BrowserTestCase):
         distribution = distro_series.distribution
         milestone = self.factory.makeMilestone(distroseries=distro_series)
         specification = self.factory.makeSpecification(
-            distribution=distribution)
+            distribution=distribution
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=specification, milestone=milestone)
-        view = create_initialized_view(milestone, '+index')
-        self.assertIn('some work for this milestone', view.render())
+            specification=specification, milestone=milestone
+        )
+        view = create_initialized_view(milestone, "+index")
+        self.assertIn("some work for this milestone", view.render())
 
     def test_information_type_public(self):
         # A milestone's view should include its information_type,
         # which defaults to Public for new projects.
         milestone = self.factory.makeMilestone()
-        view = create_initialized_view(milestone, '+index')
-        self.assertEqual('Public', view.information_type)
+        view = create_initialized_view(milestone, "+index")
+        self.assertEqual("Public", view.information_type)
 
     def test_information_type_proprietary(self):
         # A milestone's view should get its information_type
@@ -70,12 +69,14 @@ class TestMilestoneViews(BrowserTestCase):
         owner = self.factory.makePerson()
         information_type = InformationType.PROPRIETARY
         product = self.factory.makeProduct(
-            owner=owner, information_type=information_type)
+            owner=owner, information_type=information_type
+        )
         milestone = self.factory.makeMilestone(product=product)
         with person_logged_in(owner):
             view = create_initialized_view(
-                milestone, '+index', principal=owner)
-            self.assertEqual('Proprietary', view.information_type)
+                milestone, "+index", principal=owner
+            )
+            self.assertEqual("Proprietary", view.information_type)
 
     def test_privacy_portlet(self):
         # A milestone's page should include a privacy portlet that
@@ -83,39 +84,48 @@ class TestMilestoneViews(BrowserTestCase):
         owner = self.factory.makePerson()
         information_type = InformationType.PROPRIETARY
         product = self.factory.makeProduct(
-            owner=owner, information_type=information_type)
+            owner=owner, information_type=information_type
+        )
         milestone = self.factory.makeMilestone(product=product)
         privacy_portlet = soupmatchers.Tag(
-            'info-type-portlet', 'span',
-            attrs={'id': 'information-type-summary'})
+            "info-type-portlet",
+            "span",
+            attrs={"id": "information-type-summary"},
+        )
         privacy_portlet_proprietary = soupmatchers.Tag(
-            'info-type-text', 'strong', attrs={'id': 'information-type'},
-            text='Proprietary')
-        browser = self.getViewBrowser(milestone, '+index', user=owner)
+            "info-type-text",
+            "strong",
+            attrs={"id": "information-type"},
+            text="Proprietary",
+        )
+        browser = self.getViewBrowser(milestone, "+index", user=owner)
         # First, assert that the portlet exists.
         self.assertThat(
-            browser.contents, soupmatchers.HTMLContains(privacy_portlet))
+            browser.contents, soupmatchers.HTMLContains(privacy_portlet)
+        )
         # Then, assert that the text displayed matches the information_type.
         self.assertThat(
-            browser.contents, soupmatchers.HTMLContains(
-            privacy_portlet_proprietary))
+            browser.contents,
+            soupmatchers.HTMLContains(privacy_portlet_proprietary),
+        )
 
     def test_private_specifications(self):
         # Only specifications visible to the browser user are listed.
         owner = self.factory.makePerson()
         enum = SpecificationSharingPolicy
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=enum.PROPRIETARY)
+            owner=owner, specification_sharing_policy=enum.PROPRIETARY
+        )
         milestone = self.factory.makeMilestone(product=product)
         specification = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY,
-            milestone=milestone)
+            information_type=InformationType.PROPRIETARY, milestone=milestone
+        )
         with person_logged_in(None):
-            browser = self.getViewBrowser(milestone, '+index', user=owner)
+            browser = self.getViewBrowser(milestone, "+index", user=owner)
         with person_logged_in(owner):
             self.assertIn(specification.name, browser.contents)
         with person_logged_in(None):
-            browser = self.getViewBrowser(milestone, '+index')
+            browser = self.getViewBrowser(milestone, "+index")
 
     def test_downloads_listed(self):
         # When a release exists a list of download files and a link to
@@ -125,30 +135,34 @@ class TestMilestoneViews(BrowserTestCase):
         release = self.factory.makeProductRelease(product=product)
         with person_logged_in(owner):
             owner_browser = self.getViewBrowser(
-                release.milestone, '+index', user=owner)
+                release.milestone, "+index", user=owner
+            )
             html = owner_browser.contents
-            self.assertIn('Download files for this release', html)
-            self.assertIn('Add download file', html)
+            self.assertIn("Download files for this release", html)
+            self.assertIn("Add download file", html)
         with person_logged_in(None):
-            owner_browser = self.getViewBrowser(release.milestone, '+index')
+            owner_browser = self.getViewBrowser(release.milestone, "+index")
             html = owner_browser.contents
-            self.assertIn('Download files for this release', html)
-            self.assertNotIn('Add download file', html)
+            self.assertIn("Download files for this release", html)
+            self.assertNotIn("Add download file", html)
 
     def test_downloads_section_hidden_for_proprietary_product(self):
         # Only public projects can have download files, so the downloads
         # section is replaced with a message indicating this.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, information_type=InformationType.PROPRIETARY)
+            owner=owner, information_type=InformationType.PROPRIETARY
+        )
         with person_logged_in(owner):
             release = self.factory.makeProductRelease(product=product)
             owner_browser = self.getViewBrowser(
-                release.milestone, '+index', user=owner)
+                release.milestone, "+index", user=owner
+            )
             html = owner_browser.contents
             self.assertIn(
-                'Only public projects can have download files.', html)
-            self.assertNotIn('Add download file', html)
+                "Only public projects can have download files.", html
+            )
+            self.assertNotIn("Add download file", html)
 
 
 class TestAddMilestoneViews(TestCaseWithFactory):
@@ -164,56 +178,57 @@ class TestAddMilestoneViews(TestCaseWithFactory):
 
     def test_add_milestone(self):
         form = {
-            'field.name': '1.1',
-            'field.actions.register': 'Register Milestone',
-            }
-        view = create_initialized_view(self.series, '+addmilestone', form=form)
+            "field.name": "1.1",
+            "field.actions.register": "Register Milestone",
+        }
+        view = create_initialized_view(self.series, "+addmilestone", form=form)
         self.assertEqual([], view.errors)
 
     def test_add_milestone_with_good_date(self):
         form = {
-            'field.name': '1.1',
-            'field.dateexpected': '2010-10-10',
-            'field.actions.register': 'Register Milestone',
-            }
-        view = create_initialized_view(self.series, '+addmilestone', form=form)
+            "field.name": "1.1",
+            "field.dateexpected": "2010-10-10",
+            "field.actions.register": "Register Milestone",
+        }
+        view = create_initialized_view(self.series, "+addmilestone", form=form)
         # It's important to make sure no errors occured,
         # but also confirm that the milestone was created.
         self.assertEqual([], view.errors)
-        self.assertEqual('1.1', self.product.milestones[0].name)
+        self.assertEqual("1.1", self.product.milestones[0].name)
 
     def test_add_milestone_with_bad_date(self):
         form = {
-            'field.name': '1.1',
-            'field.dateexpected': '1010-10-10',
-            'field.actions.register': 'Register Milestone',
-            }
-        view = create_initialized_view(self.series, '+addmilestone', form=form)
+            "field.name": "1.1",
+            "field.dateexpected": "1010-10-10",
+            "field.actions.register": "Register Milestone",
+        }
+        view = create_initialized_view(self.series, "+addmilestone", form=form)
         error_msg = view.errors[0].errors.args[0]
         expected_msg = (
             "Date could not be formatted. Provide a date formatted "
-            "like YYYY-MM-DD format. The year must be after 1900.")
+            "like YYYY-MM-DD format. The year must be after 1900."
+        )
         self.assertEqual(expected_msg, error_msg)
 
     def test_add_milestone_with_tags(self):
-        tags = 'zed alpha'
+        tags = "zed alpha"
         form = {
-            'field.name': '1.1',
-            'field.tags': tags,
-            'field.actions.register': 'Register Milestone',
-            }
-        view = create_initialized_view(self.series, '+addmilestone', form=form)
+            "field.name": "1.1",
+            "field.tags": tags,
+            "field.actions.register": "Register Milestone",
+        }
+        view = create_initialized_view(self.series, "+addmilestone", form=form)
         self.assertEqual([], view.errors)
         expected = sorted(tags.split())
         self.assertEqual(expected, self.product.milestones[0].getTags())
 
     def test_add_milestone_with_invalid_tags(self):
         form = {
-            'field.name': '1.1',
-            'field.tags': '&%&%*',
-            'field.actions.register': 'Register Milestone',
-            }
-        view = create_initialized_view(self.series, '+addmilestone', form=form)
+            "field.name": "1.1",
+            "field.tags": "&%&%*",
+            "field.actions.register": "Register Milestone",
+        }
+        view = create_initialized_view(self.series, "+addmilestone", form=form)
         self.assertEqual(1, len(view.errors))
 
 
@@ -225,42 +240,42 @@ class TestMilestoneEditView(TestCaseWithFactory):
         super().setUp()
         self.product = self.factory.makeProduct()
         self.milestone = self.factory.makeMilestone(
-            name='orig-name', product=self.product)
+            name="orig-name", product=self.product
+        )
         self.owner = self.product.owner
         login_person(self.owner)
 
     def test_edit_milestone_with_tags(self):
-        orig_tags = 'ba ac'
+        orig_tags = "ba ac"
         self.milestone.setTags(orig_tags.split(), self.owner)
-        new_tags = 'za ab'
+        new_tags = "za ab"
         form = {
-            'field.name': 'new-name',
-            'field.tags': new_tags,
-            'field.actions.update': 'Update',
-            }
-        view = create_initialized_view(self.milestone, '+edit', form=form)
+            "field.name": "new-name",
+            "field.tags": new_tags,
+            "field.actions.update": "Update",
+        }
+        view = create_initialized_view(self.milestone, "+edit", form=form)
         self.assertEqual([], view.errors)
-        self.assertEqual('new-name', self.milestone.name)
+        self.assertEqual("new-name", self.milestone.name)
         expected = sorted(new_tags.lower().split())
         self.assertEqual(expected, self.milestone.getTags())
 
     def test_edit_milestone_clear_tags(self):
-        orig_tags = 'ba ac'
+        orig_tags = "ba ac"
         self.milestone.setTags(orig_tags.split(), self.owner)
         form = {
-            'field.name': 'new-name',
-            'field.tags': '',
-            'field.actions.update': 'Update',
-            }
-        view = create_initialized_view(self.milestone, '+edit', form=form)
+            "field.name": "new-name",
+            "field.tags": "",
+            "field.actions.update": "Update",
+        }
+        view = create_initialized_view(self.milestone, "+edit", form=form)
         self.assertEqual([], view.errors)
-        self.assertEqual('new-name', self.milestone.name)
+        self.assertEqual("new-name", self.milestone.name)
         self.assertEqual([], self.milestone.getTags())
 
     def test_edit_milestone_with_invalid_tags(self):
-        form = {'field.tags': '&%$^', 'field.actions.update': 'Update'}
-        view = create_initialized_view(
-            self.milestone, '+edit', form=form)
+        form = {"field.tags": "&%$^", "field.actions.update": "Update"}
+        view = create_initialized_view(self.milestone, "+edit", form=form)
         self.assertEqual(1, len(view.errors))
 
 
@@ -273,19 +288,22 @@ class TestMilestoneDeleteView(TestCaseWithFactory):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
         master_bugtask = getUtility(IBugTaskSet).createTask(
-            bug, product.owner, product.development_focus)
+            bug, product.owner, product.development_focus
+        )
         milestone = self.factory.makeMilestone(
-            productseries=product.development_focus)
+            productseries=product.development_focus
+        )
         login_person(product.owner)
         master_bugtask.transitionToMilestone(milestone, product.owner)
         form = {
-            'field.actions.delete': 'Delete Milestone',
-            }
-        view = create_initialized_view(milestone, '+delete', form=form)
+            "field.actions.delete": "Delete Milestone",
+        }
+        view = create_initialized_view(milestone, "+delete", form=form)
         self.assertEqual([], view.errors)
         self.assertEqual([], list(product.all_milestones))
         tasks = product.development_focus.searchTasks(
-            BugTaskSearchParams(user=None))
+            BugTaskSearchParams(user=None)
+        )
         self.assertEqual(0, tasks.count())
 
     def test_delete_all_bugtasks(self):
@@ -293,48 +311,57 @@ class TestMilestoneDeleteView(TestCaseWithFactory):
         milestone = self.factory.makeMilestone()
         self.factory.makeBug(milestone=milestone)
         self.factory.makeBug(
-            milestone=milestone, information_type=InformationType.USERDATA)
+            milestone=milestone, information_type=InformationType.USERDATA
+        )
         # Remove the APG the product owner has so they can't see the private
         # bug.
-        ap = getUtility(IAccessPolicySource).find(
-            [(milestone.product, InformationType.USERDATA)]).one()
+        ap = (
+            getUtility(IAccessPolicySource)
+            .find([(milestone.product, InformationType.USERDATA)])
+            .one()
+        )
         getUtility(IAccessPolicyGrantSource).revoke(
-            [(ap, milestone.product.owner)])
+            [(ap, milestone.product.owner)]
+        )
         form = {
-            'field.actions.delete': 'Delete Milestone',
-            }
+            "field.actions.delete": "Delete Milestone",
+        }
         with person_logged_in(milestone.product.owner):
-            view = create_initialized_view(milestone, '+delete', form=form)
+            view = create_initialized_view(milestone, "+delete", form=form)
         self.assertEqual([], view.errors)
         tasks = milestone.product.development_focus.searchTasks(
-            BugTaskSearchParams(user=None))
+            BugTaskSearchParams(user=None)
+        )
         self.assertEqual(0, tasks.count())
 
     def test_delete_milestone_with_deleted_workitems(self):
         milestone = self.factory.makeMilestone()
         specification = self.factory.makeSpecification(
-            product=milestone.product)
+            product=milestone.product
+        )
         workitem = self.factory.makeSpecificationWorkItem(
-            specification=specification, milestone=milestone, deleted=True)
-        form = {'field.actions.delete': 'Delete Milestone'}
+            specification=specification, milestone=milestone, deleted=True
+        )
+        form = {"field.actions.delete": "Delete Milestone"}
         owner = milestone.product.owner
         with person_logged_in(owner):
-            view = create_initialized_view(milestone, '+delete', form=form)
+            view = create_initialized_view(milestone, "+delete", form=form)
         Store.of(workitem).flush()
         self.assertEqual([], view.errors)
         self.assertIs(None, workitem.milestone)
 
     def test_delete_milestone_with_private_specification(self):
         policy = SpecificationSharingPolicy.PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
         milestone = self.factory.makeMilestone(product=product)
         specification = self.factory.makeSpecification(
-            product=product, milestone=milestone,
-            information_type=InformationType.PROPRIETARY)
-        form = {'field.actions.delete': 'Delete Milestone'}
+            product=product,
+            milestone=milestone,
+            information_type=InformationType.PROPRIETARY,
+        )
+        form = {"field.actions.delete": "Delete Milestone"}
         with person_logged_in(product.owner):
-            view = create_initialized_view(milestone, '+delete', form=form)
+            view = create_initialized_view(milestone, "+delete", form=form)
         self.assertEqual([], view.errors)
         Store.of(specification).flush()
         with person_logged_in(product.owner):
@@ -342,13 +369,13 @@ class TestMilestoneDeleteView(TestCaseWithFactory):
 
 
 class TestQueryCountBase(TestCaseWithFactory):
-
-    def assert_bugtasks_query_count(self, milestone, bugtask_count,
-                                    query_limit):
+    def assert_bugtasks_query_count(
+        self, milestone, bugtask_count, query_limit
+    ):
         # Assert that the number of queries run by view.bugtasks is low.
         self.add_bug(bugtask_count)
         login_person(self.owner)
-        view = create_initialized_view(milestone, '+index')
+        view = create_initialized_view(milestone, "+index")
         # Eliminate permission check for the admin team from the
         # recorded queries by loading it now. If the test ever breaks,
         # the person fixing it won't waste time trying to track this
@@ -366,22 +393,23 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
 
     def setUp(self):
         super().setUp()
-        self.owner = self.factory.makePerson(name='product-owner')
+        self.owner = self.factory.makePerson(name="product-owner")
         self.product = self.factory.makeProduct(owner=self.owner)
         self.product_owner = self.product.owner
         login_person(self.product.owner)
         self.milestone = self.factory.makeMilestone(
-            productseries=self.product.development_focus)
+            productseries=self.product.development_focus
+        )
 
     def add_bug(self, count):
         login_person(self.product_owner)
         for i in range(count):
             bug = self.factory.makeBug(target=self.product)
             bug.bugtasks[0].transitionToMilestone(
-                self.milestone, self.product.owner)
+                self.milestone, self.product.owner
+            )
             # This is necessary to test precaching of assignees.
-            bug.bugtasks[0].transitionToAssignee(
-                self.factory.makePerson())
+            bug.bugtasks[0].transitionToAssignee(self.factory.makePerson())
         logout()
 
     def test_bugtasks_queries(self):
@@ -398,7 +426,8 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         #  10. All related people
         bugtask_count = 10
         self.assert_bugtasks_query_count(
-            self.milestone, bugtask_count, query_limit=11)
+            self.milestone, bugtask_count, query_limit=11
+        )
 
     def test_milestone_eager_loading(self):
         # Verify that the number of queries does not increase with more
@@ -422,16 +451,20 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         product_owner = product.owner
         login_person(product.owner)
         milestone = self.factory.makeMilestone(
-            productseries=product.development_focus)
+            productseries=product.development_focus
+        )
         bug1 = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA,
-            owner=product.owner)
+            target=product,
+            information_type=InformationType.USERDATA,
+            owner=product.owner,
+        )
         bug1.bugtasks[0].transitionToMilestone(milestone, product.owner)
         # We look at the page as someone who is a member of a team and the
         # team is subscribed to the bugs, so that we don't get trivial
         # shortcuts avoiding queries : test the worst case.
         subscribed_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
         viewer = self.factory.makePerson()
         with person_logged_in(subscribed_team.teamowner):
             subscribed_team.addMember(viewer, subscribed_team.teamowner)
@@ -450,18 +483,24 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         self.assertTrue(bug1_url in browser.contents)
         self.assertThat(collector, HasQueryCount(LessThan(page_query_limit)))
         with_1_private_bug = collector.count
-        with_1_queries = ["%s: %s" % (pos, stmt[3]) for (pos, stmt) in
-            enumerate(collector.queries)]
+        with_1_queries = [
+            "%s: %s" % (pos, stmt[3])
+            for (pos, stmt) in enumerate(collector.queries)
+        ]
         login_person(product_owner)
         bug2 = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA,
-            owner=product.owner)
+            target=product,
+            information_type=InformationType.USERDATA,
+            owner=product.owner,
+        )
         bug2.bugtasks[0].transitionToMilestone(milestone, product.owner)
         bug2.subscribe(subscribed_team, product.owner)
         bug2_url = canonical_url(bug2)
         bug3 = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA,
-            owner=product.owner)
+            target=product,
+            information_type=InformationType.USERDATA,
+            owner=product.owner,
+        )
         bug3.bugtasks[0].transitionToMilestone(milestone, product.owner)
         bug3.subscribe(subscribed_team, product.owner)
         logout()
@@ -469,11 +508,16 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         self.assertTrue(bug2_url in browser.contents)
         self.assertThat(collector, HasQueryCount(LessThan(page_query_limit)))
         with_3_private_bugs = collector.count
-        with_3_queries = ["%s: %s" % (pos, stmt[3]) for (pos, stmt) in
-            enumerate(collector.queries)]
-        self.assertEqual(with_1_private_bug, with_3_private_bugs,
-            "different query count: \n%s\n******************\n%s\n" % (
-            '\n'.join(with_1_queries), '\n'.join(with_3_queries)))
+        with_3_queries = [
+            "%s: %s" % (pos, stmt[3])
+            for (pos, stmt) in enumerate(collector.queries)
+        ]
+        self.assertEqual(
+            with_1_private_bug,
+            with_3_private_bugs,
+            "different query count: \n%s\n******************\n%s\n"
+            % ("\n".join(with_1_queries), "\n".join(with_3_queries)),
+        )
 
 
 class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
@@ -482,29 +526,29 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
 
     def setUp(self):
         super().setUp()
-        self.owner = self.factory.makePerson(name='product-owner')
+        self.owner = self.factory.makePerson(name="product-owner")
         self.project_group = self.factory.makeProject(owner=self.owner)
         login_person(self.owner)
-        self.milestone_name = 'foo'
+        self.milestone_name = "foo"
         # A ProjectGroup milestone doesn't exist unless one of its
         # Projects has a milestone of that name.
         product = self.factory.makeProduct(
-            owner=self.owner, projectgroup=self.project_group)
+            owner=self.owner, projectgroup=self.project_group
+        )
         self.product_milestone = self.factory.makeMilestone(
-            productseries=product.development_focus,
-            name=self.milestone_name)
-        self.milestone = self.project_group.getMilestone(
-            self.milestone_name)
+            productseries=product.development_focus, name=self.milestone_name
+        )
+        self.milestone = self.project_group.getMilestone(self.milestone_name)
 
     def add_bug(self, count):
         login_person(self.owner)
         for i in range(count):
             bug = self.factory.makeBug(target=self.product_milestone.product)
             bug.bugtasks[0].transitionToMilestone(
-                self.product_milestone, self.owner)
+                self.product_milestone, self.owner
+            )
             # This is necessary to test precaching of assignees.
-            bug.bugtasks[0].transitionToAssignee(
-                self.factory.makePerson())
+            bug.bugtasks[0].transitionToAssignee(self.factory.makePerson())
         logout()
 
     def test_bugtasks_queries(self):
@@ -521,7 +565,8 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
         #  10. All related people.
         bugtask_count = 10
         self.assert_bugtasks_query_count(
-            self.milestone, bugtask_count, query_limit=11)
+            self.milestone, bugtask_count, query_limit=11
+        )
 
     def test_milestone_eager_loading(self):
         # Verify that the number of queries does not increase with more
@@ -541,30 +586,30 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
     def setUp(self):
         super().setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        self.owner = self.factory.makePerson(name='test-owner')
+        self.owner = self.factory.makePerson(name="test-owner")
         login_team(self.ubuntu.owner)
         self.ubuntu.owner = self.owner
         self.sourcepackagename = self.factory.makeSourcePackageName(
-            'foo-package')
+            "foo-package"
+        )
         login_person(self.owner)
-        self.milestone = self.factory.makeMilestone(
-            distribution=self.ubuntu)
+        self.milestone = self.factory.makeMilestone(distribution=self.ubuntu)
 
     def add_bug(self, count):
         login_person(self.owner)
         for i in range(count):
             bug = self.factory.makeBug(target=self.ubuntu)
             distrosourcepackage = self.factory.makeDistributionSourcePackage(
-                distribution=self.ubuntu)
+                distribution=self.ubuntu
+            )
             self.factory.makeSourcePackagePublishingHistory(
                 distroseries=self.ubuntu.currentseries,
-                sourcepackagename=distrosourcepackage.sourcepackagename)
+                sourcepackagename=distrosourcepackage.sourcepackagename,
+            )
             bug.bugtasks[0].transitionToTarget(distrosourcepackage, self.owner)
-            bug.bugtasks[0].transitionToMilestone(
-                self.milestone, self.owner)
+            bug.bugtasks[0].transitionToMilestone(self.milestone, self.owner)
             # This is necessary to test precaching of assignees.
-            bug.bugtasks[0].transitionToAssignee(
-                self.factory.makePerson())
+            bug.bugtasks[0].transitionToAssignee(self.factory.makePerson())
         logout()
 
     def test_bugtasks_queries(self):
@@ -580,7 +625,8 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
         #  9. Load links to milestones.
         bugtask_count = 10
         self.assert_bugtasks_query_count(
-            self.milestone, bugtask_count, query_limit=12)
+            self.milestone, bugtask_count, query_limit=12
+        )
 
     def test_milestone_eager_loading(self):
         # Verify that the number of queries does not increase with more
@@ -598,65 +644,70 @@ class TestMilestoneTagView(TestQueryCountBase):
 
     def setUp(self):
         super().setUp()
-        self.tags = ['tag1']
+        self.tags = ["tag1"]
         self.owner = self.factory.makePerson()
         self.project_group = self.factory.makeProject(owner=self.owner)
         self.product = self.factory.makeProduct(
-            name="product1",
-            owner=self.owner,
-            projectgroup=self.project_group)
+            name="product1", owner=self.owner, projectgroup=self.project_group
+        )
         self.milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags(self.tags, self.owner)
         self.milestonetag = ProjectGroupMilestoneTag(
-            target=self.project_group, tags=self.tags)
+            target=self.project_group, tags=self.tags
+        )
 
     def add_bug(self, count):
         with person_logged_in(self.owner):
             for n in range(count):
                 self.factory.makeBug(
-                    target=self.product, owner=self.owner,
-                    milestone=self.milestone)
+                    target=self.product,
+                    owner=self.owner,
+                    milestone=self.milestone,
+                )
 
     def _make_form(self, tags):
         return {
-            'field.actions.search': 'Search',
-            'field.tags': ' '.join(tags),
-            }
+            "field.actions.search": "Search",
+            "field.tags": " ".join(tags),
+        }
 
-    def _url_tail(self, url, separator='/'):
-        return url.rsplit(separator, 1)[1],
+    def _url_tail(self, url, separator="/"):
+        return (url.rsplit(separator, 1)[1],)
 
     def test_view_properties(self):
         # Ensure that the view is correctly initialized.
-        view = create_initialized_view(self.milestonetag, '+index')
+        view = create_initialized_view(self.milestonetag, "+index")
         self.assertEqual(self.milestonetag, view.context)
         self.assertEqual(self.milestonetag.title, view.page_title)
         self.assertContentEqual(self.tags, view.context.tags)
 
     def test_view_form_redirect(self):
         # Ensure a correct redirection is performed when tags are searched.
-        tags = ['tag1', 'tag2']
+        tags = ["tag1", "tag2"]
         form = self._make_form(tags)
-        view = create_initialized_view(self.milestonetag, '+index', form=form)
+        view = create_initialized_view(self.milestonetag, "+index", form=form)
         self.assertEqual(302, view.request.response.getStatus())
         new_milestonetag = ProjectGroupMilestoneTag(
-            target=self.project_group, tags=tags)
+            target=self.project_group, tags=tags
+        )
         self.assertEqual(
             self._url_tail(canonical_url(new_milestonetag)),
-            self._url_tail(view.request.response.getHeader('Location')))
+            self._url_tail(view.request.response.getHeader("Location")),
+        )
 
     def test_view_form_error(self):
         # Ensure the form correctly handles invalid submissions.
-        tags = ['tag1', 't']  # One char tag is not valid.
+        tags = ["tag1", "t"]  # One char tag is not valid.
         form = self._make_form(tags)
-        view = create_initialized_view(self.milestonetag, '+index', form=form)
+        view = create_initialized_view(self.milestonetag, "+index", form=form)
         self.assertEqual(1, len(view.errors))
-        self.assertEqual('tags', view.errors[0].field_name)
+        self.assertEqual("tags", view.errors[0].field_name)
 
     def test_bugtask_query_count(self):
         # Ensure that a correct number of queries is executed for
         # bugtasks retrieval.
         bugtask_count = 10
         self.assert_bugtasks_query_count(
-            self.milestonetag, bugtask_count, query_limit=11)
+            self.milestonetag, bugtask_count, query_limit=11
+        )

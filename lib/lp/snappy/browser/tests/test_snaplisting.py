@@ -3,26 +3,16 @@
 
 """Test snap package listings."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from functools import partial
 
 import pytz
 import soupmatchers
-from testtools.matchers import (
-    MatchesAll,
-    Not,
-    )
+from testtools.matchers import MatchesAll, Not
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.tests.helpers import GitHostingFixture
-from lp.services.database.constants import (
-    ONE_DAY_AGO,
-    SEVEN_DAYS_AGO,
-    UTC_NOW,
-    )
+from lp.services.database.constants import ONE_DAY_AGO, SEVEN_DAYS_AGO, UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
@@ -32,7 +22,7 @@ from lp.testing import (
     login,
     person_logged_in,
     record_two_runs,
-    )
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_initialized_view
@@ -42,16 +32,21 @@ class TestSnapListing(BrowserTestCase):
 
     layer = LaunchpadFunctionalLayer
 
-    def assertSnapsLink(self, context, link_text, link_has_context=False,
-                        **kwargs):
+    def assertSnapsLink(
+        self, context, link_text, link_has_context=False, **kwargs
+    ):
         if link_has_context:
             expected_href = canonical_url(context, view_name="+snaps")
         else:
             expected_href = "+snaps"
         matcher = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                "View snap packages link", "a", text=link_text,
-                attrs={"href": expected_href}))
+                "View snap packages link",
+                "a",
+                text=link_text,
+                attrs={"href": expected_href},
+            )
+        )
         self.assertThat(self.getViewBrowser(context).contents, Not(matcher))
         login(ANONYMOUS)
         self.factory.makeSnap(**kwargs)
@@ -75,24 +70,32 @@ class TestSnapListing(BrowserTestCase):
     def test_person_links_to_snaps(self):
         person = self.factory.makePerson()
         self.assertSnapsLink(
-            person, "View snap packages", link_has_context=True,
-            registrant=person, owner=person)
+            person,
+            "View snap packages",
+            link_has_context=True,
+            registrant=person,
+            owner=person,
+        )
 
     def test_project_links_to_snaps(self):
         project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs(target=project)
         self.assertSnapsLink(
-            project, "View snap packages", link_has_context=True, git_ref=ref)
+            project, "View snap packages", link_has_context=True, git_ref=ref
+        )
 
     def test_branch_snap_listing(self):
         # We can see snap packages for a Bazaar branch.
         branch = self.factory.makeAnyBranch()
         self.factory.makeSnap(branch=branch)
         text = self.getMainText(branch, "+snaps")
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
             Snap packages for lp:.*
             Name            Owner           Registered
-            snap-name.*     Team Name.*     .*""", text)
+            snap-name.*     Team Name.*     .*""",
+            text,
+        )
 
     def test_git_repository_snap_listing(self):
         # We can see snap packages for a Git repository.
@@ -100,57 +103,79 @@ class TestSnapListing(BrowserTestCase):
         [ref] = self.factory.makeGitRefs(repository=repository)
         self.factory.makeSnap(git_ref=ref)
         text = self.getMainText(repository, "+snaps")
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
             Snap packages for lp:~.*
             Name            Owner           Registered
-            snap-name.*     Team Name.*     .*""", text)
+            snap-name.*     Team Name.*     .*""",
+            text,
+        )
 
     def test_git_ref_snap_listing(self):
         # We can see snap packages for a Git reference.
         [ref] = self.factory.makeGitRefs()
         self.factory.makeSnap(git_ref=ref)
         text = self.getMainText(ref, "+snaps")
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
             Snap packages for ~.*:.*
             Name            Owner           Registered
-            snap-name.*     Team Name.*     .*""", text)
+            snap-name.*     Team Name.*     .*""",
+            text,
+        )
 
     def test_person_snap_listing(self):
         # We can see snap packages for a person.
         owner = self.factory.makePerson(displayname="Snap Owner")
         self.factory.makeSnap(
-            registrant=owner, owner=owner, branch=self.factory.makeAnyBranch(),
-            date_created=SEVEN_DAYS_AGO)
+            registrant=owner,
+            owner=owner,
+            branch=self.factory.makeAnyBranch(),
+            date_created=SEVEN_DAYS_AGO,
+        )
         [ref] = self.factory.makeGitRefs()
         self.factory.makeSnap(
-            registrant=owner, owner=owner, git_ref=ref,
-            date_created=ONE_DAY_AGO)
+            registrant=owner,
+            owner=owner,
+            git_ref=ref,
+            date_created=ONE_DAY_AGO,
+        )
         remote_ref = self.factory.makeGitRefRemote()
         self.factory.makeSnap(
-            registrant=owner, owner=owner, git_ref=remote_ref,
-            date_created=UTC_NOW)
+            registrant=owner,
+            owner=owner,
+            git_ref=remote_ref,
+            date_created=UTC_NOW,
+        )
         text = self.getMainText(owner, "+snaps")
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
             Snap packages for Snap Owner
             Name            Source                  Registered
             snap-name.*     http://.* path-.*       .*
             snap-name.*     ~.*:.*                  .*
-            snap-name.*     lp:.*                   .*""", text)
+            snap-name.*     lp:.*                   .*""",
+            text,
+        )
 
     def test_project_snap_listing(self):
         # We can see snap packages for a project.
         project = self.factory.makeProduct(displayname="Snappable")
         self.factory.makeSnap(
             branch=self.factory.makeProductBranch(product=project),
-            date_created=ONE_DAY_AGO)
+            date_created=ONE_DAY_AGO,
+        )
         [ref] = self.factory.makeGitRefs(target=project)
         self.factory.makeSnap(git_ref=ref, date_created=UTC_NOW)
         text = self.getMainText(project, "+snaps")
-        self.assertTextMatchesExpressionIgnoreWhitespace("""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """
             Snap packages for Snappable
             Name            Owner           Source          Registered
             snap-name.*     Team Name.*     ~.*:.*          .*
-            snap-name.*     Team Name.*     lp:.*           .*""", text)
+            snap-name.*     Team Name.*     lp:.*           .*""",
+            text,
+        )
 
     def test_project_private_snap_listing(self):
         # Only users with permission can see private snap packages in the list
@@ -162,9 +187,12 @@ class TestSnapListing(BrowserTestCase):
         someone_else = self.factory.makePerson()
         private_snap = self.factory.makeSnap(
             name="private-snap",
-            private=True, registrant=private_owner, owner=private_owner,
+            private=True,
+            registrant=private_owner,
+            owner=private_owner,
             branch=self.factory.makeProductBranch(product=project),
-            date_created=ONE_DAY_AGO)
+            date_created=ONE_DAY_AGO,
+        )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
         [ref] = self.factory.makeGitRefs(target=project)
@@ -183,18 +211,21 @@ class TestSnapListing(BrowserTestCase):
 
         # private_owner: full_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(project, "+snaps", user=private_owner))
+            full_list, self.getMainText(project, "+snaps", user=private_owner)
+        )
         # user_with_permission: full_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
             full_list,
-            self.getMainText(project, "+snaps", user=user_with_permission))
+            self.getMainText(project, "+snaps", user=user_with_permission),
+        )
         # someone_else: public_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list,
-            self.getMainText(project, "+snaps", user=someone_else))
+            public_list, self.getMainText(project, "+snaps", user=someone_else)
+        )
         # Not logged in: public_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(project, "+snaps", user=None))
+            public_list, self.getMainText(project, "+snaps", user=None)
+        )
 
     def test_person_private_snap_listing(self):
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
@@ -203,14 +234,21 @@ class TestSnapListing(BrowserTestCase):
         someone_else = self.factory.makePerson()
         private_snap = self.factory.makeSnap(
             name="private-snap",
-            private=True, registrant=private_owner, owner=private_owner,
-            date_created=ONE_DAY_AGO)
+            private=True,
+            registrant=private_owner,
+            owner=private_owner,
+            date_created=ONE_DAY_AGO,
+        )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
         [ref] = self.factory.makeGitRefs()
         self.factory.makeSnap(
-            private=False, registrant=private_owner, owner=private_owner,
-            git_ref=ref, date_created=UTC_NOW)
+            private=False,
+            registrant=private_owner,
+            owner=private_owner,
+            git_ref=ref,
+            date_created=UTC_NOW,
+        )
 
         full_list = """
             Snap packages for Random-user
@@ -225,19 +263,25 @@ class TestSnapListing(BrowserTestCase):
 
         # private_owner: full_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(private_owner, "+snaps",
-                                        user=private_owner))
+            full_list,
+            self.getMainText(private_owner, "+snaps", user=private_owner),
+        )
         # user_with_permission: full_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(private_owner, "+snaps",
-                                        user=user_with_permission))
+            full_list,
+            self.getMainText(
+                private_owner, "+snaps", user=user_with_permission
+            ),
+        )
         # someone_else: public_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(private_owner, "+snaps",
-                                          user=someone_else))
+            public_list,
+            self.getMainText(private_owner, "+snaps", user=someone_else),
+        )
         # Not logged in: public_list.
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(private_owner, "+snaps", user=None))
+            public_list, self.getMainText(private_owner, "+snaps", user=None)
+        )
 
     def test_branch_private_snap_listing(self):
         # Only certain users can see private snaps on branch listing.
@@ -247,13 +291,20 @@ class TestSnapListing(BrowserTestCase):
         someone_else = self.factory.makePerson()
         branch = self.factory.makeAnyBranch()
         private_snap = self.factory.makeSnap(
-            private=True, name="private-snap",
-            owner=private_owner, registrant=private_owner, branch=branch)
+            private=True,
+            name="private-snap",
+            owner=private_owner,
+            registrant=private_owner,
+            branch=branch,
+        )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
         self.factory.makeSnap(
-            private=False, owner=private_owner, registrant=private_owner,
-            branch=branch)
+            private=False,
+            owner=private_owner,
+            registrant=private_owner,
+            branch=branch,
+        )
         full_list = """
             Snap packages for lp:.*
             Name            Owner           Registered
@@ -265,14 +316,18 @@ class TestSnapListing(BrowserTestCase):
             snap-name.*     Random-user.*     .*"""
 
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(branch, "+snaps", user=private_owner))
+            full_list, self.getMainText(branch, "+snaps", user=private_owner)
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(branch, "+snaps",
-                                        user=user_with_permission))
+            full_list,
+            self.getMainText(branch, "+snaps", user=user_with_permission),
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(branch, "+snaps", user=someone_else))
+            public_list, self.getMainText(branch, "+snaps", user=someone_else)
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(branch, "+snaps", user=None))
+            public_list, self.getMainText(branch, "+snaps", user=None)
+        )
 
     def test_git_repository_private_snap_listing(self):
         # Only certain users can see private snaps on git repo listing.
@@ -283,13 +338,20 @@ class TestSnapListing(BrowserTestCase):
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         private_snap = self.factory.makeSnap(
-            private=True, name="private-snap",
-            owner=private_owner, registrant=private_owner, git_ref=ref)
+            private=True,
+            name="private-snap",
+            owner=private_owner,
+            registrant=private_owner,
+            git_ref=ref,
+        )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
         self.factory.makeSnap(
-            private=False, owner=private_owner, registrant=private_owner,
-            git_ref=ref)
+            private=False,
+            owner=private_owner,
+            registrant=private_owner,
+            git_ref=ref,
+        )
 
         full_list = """
             Snap packages for lp:~.*
@@ -303,15 +365,19 @@ class TestSnapListing(BrowserTestCase):
 
         self.assertTextMatchesExpressionIgnoreWhitespace(
             full_list,
-            self.getMainText(repository, "+snaps", user=private_owner))
+            self.getMainText(repository, "+snaps", user=private_owner),
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             full_list,
-            self.getMainText(repository, "+snaps", user=user_with_permission))
+            self.getMainText(repository, "+snaps", user=user_with_permission),
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             public_list,
-            self.getMainText(repository, "+snaps", user=someone_else))
+            self.getMainText(repository, "+snaps", user=someone_else),
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(repository, "+snaps", user=None))
+            public_list, self.getMainText(repository, "+snaps", user=None)
+        )
 
     def test_git_ref_private_snap_listing(self):
         # Only certain users can see private snaps on git ref listing.
@@ -322,13 +388,20 @@ class TestSnapListing(BrowserTestCase):
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         private_snap = self.factory.makeSnap(
-            private=True, name="private-snap",
-            owner=private_owner, registrant=private_owner, git_ref=ref)
+            private=True,
+            name="private-snap",
+            owner=private_owner,
+            registrant=private_owner,
+            git_ref=ref,
+        )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
         self.factory.makeSnap(
-            private=False, owner=private_owner, registrant=private_owner,
-            git_ref=ref)
+            private=False,
+            owner=private_owner,
+            registrant=private_owner,
+            git_ref=ref,
+        )
 
         full_list = """
                     Snap packages for ~.*:.*
@@ -341,19 +414,24 @@ class TestSnapListing(BrowserTestCase):
                     snap-name.*     Random-user.*     .*"""
 
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            full_list, self.getMainText(ref, "+snaps", user=private_owner))
+            full_list, self.getMainText(ref, "+snaps", user=private_owner)
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             full_list,
-            self.getMainText(ref, "+snaps", user=user_with_permission))
+            self.getMainText(ref, "+snaps", user=user_with_permission),
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(ref, "+snaps", user=someone_else))
+            public_list, self.getMainText(ref, "+snaps", user=someone_else)
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            public_list, self.getMainText(ref, "+snaps", user=None))
+            public_list, self.getMainText(ref, "+snaps", user=None)
+        )
 
     def assertSnapsQueryCount(self, context, item_creator):
         self.pushConfig("launchpad", default_batch_size=10)
         recorder1, recorder2 = record_two_runs(
-            lambda: self.getMainText(context, "+snaps"), item_creator, 5)
+            lambda: self.getMainText(context, "+snaps"), item_creator, 5
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_branch_query_count(self):
@@ -408,11 +486,13 @@ class TestSnapListing(BrowserTestCase):
                 project = self.factory.makeProduct()
                 if (i % 2) == 0:
                     branch = self.factory.makeProductBranch(
-                        owner=person, product=project)
+                        owner=person, product=project
+                    )
                     self.factory.makeSnap(branch=branch)
                 else:
                     [ref] = self.factory.makeGitRefs(
-                        owner=person, target=project)
+                        owner=person, target=project
+                    )
                     self.factory.makeSnap(git_ref=ref)
 
         self.assertSnapsQueryCount(person, create_snap)
@@ -439,33 +519,46 @@ class TestSnapListing(BrowserTestCase):
     def makeSnapsAndMatchers(self, create_snap, count, start_time):
         snaps = [create_snap() for i in range(count)]
         for i, snap in enumerate(snaps):
-            removeSecurityProxy(snap).date_last_modified = (
-                start_time - timedelta(seconds=i))
+            removeSecurityProxy(
+                snap
+            ).date_last_modified = start_time - timedelta(seconds=i)
         return [
             soupmatchers.Tag(
-                "snap link", "a", text=snap.name,
+                "snap link",
+                "a",
+                text=snap.name,
                 attrs={
-                    "href": canonical_url(snap, path_only_if_possible=True)})
-            for snap in snaps]
+                    "href": canonical_url(snap, path_only_if_possible=True)
+                },
+            )
+            for snap in snaps
+        ]
 
     def assertBatches(self, context, link_matchers, batched, start, size):
         view = create_initialized_view(context, "+snaps")
         listing_tag = soupmatchers.Tag(
-            "snap listing", "table", attrs={"class": "listing sortable"})
+            "snap listing", "table", attrs={"class": "listing sortable"}
+        )
         batch_nav_tag = soupmatchers.Tag(
-            "batch nav links", "td",
-            attrs={"class": "batch-navigation-links"})
+            "batch nav links", "td", attrs={"class": "batch-navigation-links"}
+        )
         present_links = ([batch_nav_tag] if batched else []) + [
-            matcher for i, matcher in enumerate(link_matchers)
-            if i in range(start, start + size)]
+            matcher
+            for i, matcher in enumerate(link_matchers)
+            if i in range(start, start + size)
+        ]
         absent_links = ([] if batched else [batch_nav_tag]) + [
-            matcher for i, matcher in enumerate(link_matchers)
-            if i not in range(start, start + size)]
+            matcher
+            for i, matcher in enumerate(link_matchers)
+            if i not in range(start, start + size)
+        ]
         self.assertThat(
             view.render(),
             MatchesAll(
                 soupmatchers.HTMLContains(listing_tag, *present_links),
-                Not(soupmatchers.HTMLContains(*absent_links))))
+                Not(soupmatchers.HTMLContains(*absent_links)),
+            ),
+        )
 
     def test_branch_batches_snaps(self):
         branch = self.factory.makeAnyBranch()
@@ -473,8 +566,11 @@ class TestSnapListing(BrowserTestCase):
         now = datetime.now(pytz.UTC)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(branch, link_matchers, False, 0, 3)
-        link_matchers.extend(self.makeSnapsAndMatchers(
-            create_snap, 7, now - timedelta(seconds=3)))
+        link_matchers.extend(
+            self.makeSnapsAndMatchers(
+                create_snap, 7, now - timedelta(seconds=3)
+            )
+        )
         self.assertBatches(branch, link_matchers, True, 0, 5)
 
     def test_git_repository_batches_snaps(self):
@@ -484,8 +580,11 @@ class TestSnapListing(BrowserTestCase):
         now = datetime.now(pytz.UTC)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(repository, link_matchers, False, 0, 3)
-        link_matchers.extend(self.makeSnapsAndMatchers(
-            create_snap, 7, now - timedelta(seconds=3)))
+        link_matchers.extend(
+            self.makeSnapsAndMatchers(
+                create_snap, 7, now - timedelta(seconds=3)
+            )
+        )
         self.assertBatches(repository, link_matchers, True, 0, 5)
 
     def test_git_ref_batches_snaps(self):
@@ -494,19 +593,26 @@ class TestSnapListing(BrowserTestCase):
         now = datetime.now(pytz.UTC)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(ref, link_matchers, False, 0, 3)
-        link_matchers.extend(self.makeSnapsAndMatchers(
-            create_snap, 7, now - timedelta(seconds=3)))
+        link_matchers.extend(
+            self.makeSnapsAndMatchers(
+                create_snap, 7, now - timedelta(seconds=3)
+            )
+        )
         self.assertBatches(ref, link_matchers, True, 0, 5)
 
     def test_person_batches_snaps(self):
         owner = self.factory.makePerson()
         create_snap = partial(
-            self.factory.makeSnap, registrant=owner, owner=owner)
+            self.factory.makeSnap, registrant=owner, owner=owner
+        )
         now = datetime.now(pytz.UTC)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(owner, link_matchers, False, 0, 3)
-        link_matchers.extend(self.makeSnapsAndMatchers(
-            create_snap, 7, now - timedelta(seconds=3)))
+        link_matchers.extend(
+            self.makeSnapsAndMatchers(
+                create_snap, 7, now - timedelta(seconds=3)
+            )
+        )
         self.assertBatches(owner, link_matchers, True, 0, 5)
 
     def test_project_batches_snaps(self):
@@ -516,6 +622,9 @@ class TestSnapListing(BrowserTestCase):
         now = datetime.now(pytz.UTC)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(project, link_matchers, False, 0, 3)
-        link_matchers.extend(self.makeSnapsAndMatchers(
-            create_snap, 7, now - timedelta(seconds=3)))
+        link_matchers.extend(
+            self.makeSnapsAndMatchers(
+                create_snap, 7, now - timedelta(seconds=3)
+            )
+        )
         self.assertBatches(project, link_matchers, True, 0, 5)

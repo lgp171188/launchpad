@@ -4,8 +4,8 @@
 """Core implementation of the script to update personal standing."""
 
 __all__ = [
-    'UpdatePersonalStanding',
-    ]
+    "UpdatePersonalStanding",
+]
 
 
 from zope.component import getUtility
@@ -29,10 +29,11 @@ class UpdatePersonalStanding(LaunchpadCronScript):
 
     def main(self):
         """Main script entry point."""
-        self.logger.info('Updating personal standings')
+        self.logger.info("Updating personal standings")
         self.txn.begin()
         # Avoid circular imports.
         from lp.registry.interfaces.person import IPersonSet
+
         getUtility(IPersonSet).updatePersonalStandings()
         self.txn.commit()
-        self.logger.info('Done.')
+        self.logger.info("Done.")

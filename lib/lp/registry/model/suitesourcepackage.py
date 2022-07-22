@@ -4,8 +4,8 @@
 """Implementation of `ISuiteSourcePackage`."""
 
 __all__ = [
-    'SuiteSourcePackage',
-    ]
+    "SuiteSourcePackage",
+]
 
 from zope.interface import implementer
 
@@ -28,7 +28,8 @@ class SuiteSourcePackage:
             return NotImplemented
         return (
             self.sourcepackage == other.sourcepackage
-            and self.pocket == other.pocket)
+            and self.pocket == other.pocket
+        )
 
     def __ne__(self, other):
         return not (self == other)
@@ -37,7 +38,7 @@ class SuiteSourcePackage:
         return hash((self.sourcepackage, self.pocket))
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.path)
+        return "<%s %s>" % (self.__class__.__name__, self.path)
 
     @property
     def displayname(self):
@@ -52,10 +53,9 @@ class SuiteSourcePackage:
     @property
     def path(self):
         """See `ISuiteSourcePackage`."""
-        return '/'.join([
-            self.distribution.name,
-            self.suite,
-            self.sourcepackagename.name])
+        return "/".join(
+            [self.distribution.name, self.suite, self.sourcepackagename.name]
+        )
 
     @property
     def sourcepackage(self):

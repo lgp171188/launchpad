@@ -7,15 +7,10 @@ from lazr.restful.utils import get_current_browser_request
 
 from lp.services.webapp.errorlog import (
     LAZR_OOPS_USER_REQUESTED_KEY,
-    maybe_record_user_requested_oops,
     OopsNamespace,
-    )
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    logout,
-    TestCase,
-    )
+    maybe_record_user_requested_oops,
+)
+from lp.testing import ANONYMOUS, TestCase, login, logout
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -72,7 +67,8 @@ class TestUserRequestedOops(TestCase):
         # annotation, and returns the context that it was created with.
         request = get_current_browser_request()
         self.assertIs(
-            None, request.annotations.get(LAZR_OOPS_USER_REQUESTED_KEY))
+            None, request.annotations.get(LAZR_OOPS_USER_REQUESTED_KEY)
+        )
         context = object()
         namespace = OopsNamespace(context, request)
         result = namespace.traverse("name", None)

@@ -12,15 +12,9 @@ from zope.component import getUtility
 from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceComment,
     IDistroSeriesDifferenceCommentSource,
-    )
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing import TestCaseWithFactory, verifyObject
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.testing.matchers import Provides
 
 
@@ -49,7 +43,8 @@ class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):
     def test_body_text(self):
         # The comment attribute returns the text of the comment.
         dsd_comment = self.factory.makeDistroSeriesDifferenceComment(
-            comment="Wait until version 2.3")
+            comment="Wait until version 2.3"
+        )
 
         self.assertEqual("Wait until version 2.3", dsd_comment.body_text)
 
@@ -60,21 +55,22 @@ class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):
 
         self.assertEqual(
             dsd_comment.distro_series_difference.title,
-            dsd_comment.message.subject)
+            dsd_comment.message.subject,
+        )
 
     def test_comment_author(self):
         # The comment author just proxies the author from the message.
         dsd_comment = self.factory.makeDistroSeriesDifferenceComment()
 
-        self.assertEqual(
-            dsd_comment.message.owner, dsd_comment.comment_author)
+        self.assertEqual(dsd_comment.message.owner, dsd_comment.comment_author)
 
     def test_comment_date(self):
         # The comment date attribute just proxies from the message.
         dsd_comment = self.factory.makeDistroSeriesDifferenceComment()
 
         self.assertEqual(
-            dsd_comment.message.datecreated, dsd_comment.comment_date)
+            dsd_comment.message.datecreated, dsd_comment.comment_date
+        )
 
     def test_getForDifference(self):
         # The utility can get comments by id.
@@ -82,14 +78,18 @@ class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):
         Store.of(dsd_comment).flush()
 
         self.assertEqual(
-            dsd_comment, get_comment_source().getForDifference(
-                dsd_comment.distro_series_difference, dsd_comment.id))
+            dsd_comment,
+            get_comment_source().getForDifference(
+                dsd_comment.distro_series_difference, dsd_comment.id
+            ),
+        )
 
     def test_source_package_name_returns_package_name(self):
         # The comment "knows" the name of the source package it's for.
         package_name = self.factory.getUniqueUnicode()
         dsd = self.factory.makeDistroSeriesDifference(
-            source_package_name_str=package_name)
+            source_package_name_str=package_name
+        )
         comment = self.factory.makeDistroSeriesDifferenceComment(dsd)
         self.assertEqual(package_name, comment.source_package_name)
 
@@ -101,7 +101,8 @@ class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
     def test_implements_interface(self):
         self.assertThat(
             get_comment_source(),
-            Provides(IDistroSeriesDifferenceCommentSource))
+            Provides(IDistroSeriesDifferenceCommentSource),
+        )
 
     def test_getForDistroSeries_returns_result_set(self):
         series = self.factory.makeDistroSeries()
@@ -129,7 +130,8 @@ class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
         source = get_comment_source()
         yesterday = comment.comment_date - timedelta(1)
         self.assertContentEqual(
-            [comment], source.getForDistroSeries(series, since=yesterday))
+            [comment], source.getForDistroSeries(series, since=yesterday)
+        )
 
     def test_getForDistroSeries_filters_by_since(self):
         dsd = self.factory.makeDistroSeriesDifference()
@@ -138,16 +140,20 @@ class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
         source = get_comment_source()
         tomorrow = comment.comment_date + timedelta(1)
         self.assertContentEqual(
-            [], source.getForDistroSeries(series, since=tomorrow))
+            [], source.getForDistroSeries(series, since=tomorrow)
+        )
 
     def test_getForDistroSeries_orders_by_age(self):
         series = self.factory.makeDistroSeries()
-        dsds = randomize_list([
-            self.factory.makeDistroSeriesDifference(derived_series=series)
-            for counter in range(5)])
+        dsds = randomize_list(
+            [
+                self.factory.makeDistroSeriesDifference(derived_series=series)
+                for counter in range(5)
+            ]
+        )
         comments = [
-            self.factory.makeDistroSeriesDifferenceComment(dsd)
-            for dsd in dsds]
+            self.factory.makeDistroSeriesDifferenceComment(dsd) for dsd in dsds
+        ]
         source = get_comment_source()
         self.assertEqual(comments, list(source.getForDistroSeries(series)))
 
@@ -157,8 +163,12 @@ class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
         package_name = dsd.source_package_name.name
         comment = self.factory.makeDistroSeriesDifferenceComment(dsd)
         source = get_comment_source()
-        self.assertContentEqual([comment], source.getForDistroSeries(
-            series, source_package_name=package_name))
+        self.assertContentEqual(
+            [comment],
+            source.getForDistroSeries(
+                series, source_package_name=package_name
+            ),
+        )
 
     def test_getForDistroSeries_filters_by_package_name(self):
         dsd = self.factory.makeDistroSeriesDifference()
@@ -166,5 +176,9 @@ class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
         other_package = self.factory.getUniqueUnicode()
         self.factory.makeDistroSeriesDifferenceComment(dsd)
         source = get_comment_source()
-        self.assertContentEqual([], source.getForDistroSeries(
-            series, source_package_name=other_package))
+        self.assertContentEqual(
+            [],
+            source.getForDistroSeries(
+                series, source_package_name=other_package
+            ),
+        )

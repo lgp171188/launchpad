@@ -4,27 +4,16 @@
 """Browser widget for handling a single `IOCICredentials`."""
 
 __all__ = [
-    'OCICredentialsWidget',
-    ]
+    "OCICredentialsWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
-from zope.formlib.interfaces import (
-    IInputWidget,
-    WidgetInputError,
-    )
+from zope.formlib.interfaces import IInputWidget, WidgetInputError
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputErrors,
-    InputWidget,
-    )
+from zope.formlib.widget import BrowserWidget, InputErrors, InputWidget
 from zope.interface import implementer
-from zope.schema import (
-    Bool,
-    Password,
-    TextLine,
-    )
+from zope.schema import Bool, Password, TextLine
 
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
@@ -32,7 +21,7 @@ from lp.app.validators.url import validate_url
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.services.webapp.interfaces import ISingleLineWidgetLayout
 
@@ -48,40 +37,45 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
             return
         fields = [
             TextLine(
-                __name__='url',
+                __name__="url",
                 title="Registry URL",
-                description=(
-                    "URL for the OCI registry to upload images to."
-                ),
-                required=False),
+                description=("URL for the OCI registry to upload images to."),
+                required=False,
+            ),
             TextLine(
-                __name__='region',
+                __name__="region",
                 title="Region",
                 description="Region for the OCI Registry.",
-                required=False),
+                required=False,
+            ),
             TextLine(
-                __name__='username',
+                __name__="username",
                 title="Username",
                 description="Username for the OCI Registry.",
-                required=False),
+                required=False,
+            ),
             Password(
-                __name__='password',
+                __name__="password",
                 title="Password",
                 description="Password for the OCI Registry.",
-                required=False),
+                required=False,
+            ),
             Password(
-                __name__='confirm_password',
+                __name__="confirm_password",
                 title="Confirm password",
-                required=False),
+                required=False,
+            ),
             Bool(
-                __name__='delete',
+                __name__="delete",
                 title="Delete",
                 description="Delete these credentials.",
-                required=False)
-            ]
+                required=False,
+            ),
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def hasInput(self):
@@ -133,28 +127,33 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
         url = self.url_widget.getInputValue()
         if not url:
             raise WidgetInputError(
-                self.name, self.label,
-                LaunchpadValidationError(
-                    "A URL is required."))
+                self.name,
+                self.label,
+                LaunchpadValidationError("A URL is required."),
+            )
         valid_url = validate_url(
-            url, IOCIRegistryCredentials['url'].allowed_schemes)
+            url, IOCIRegistryCredentials["url"].allowed_schemes
+        )
         if not valid_url:
             raise WidgetInputError(
-                self.name, self.label,
-                LaunchpadValidationError(
-                    "The entered URL is not valid."))
+                self.name,
+                self.label,
+                LaunchpadValidationError("The entered URL is not valid."),
+            )
         username = self.username_widget.getInputValue()
         region = self.region_widget.getInputValue()
         password = self.password_widget.getInputValue()
         confirm_password = self.confirm_password_widget.getInputValue()
         if password != confirm_password:
             raise WidgetInputError(
-                self.name, self.label,
-                LaunchpadValidationError(
-                    "Passwords must match."))
+                self.name,
+                self.label,
+                LaunchpadValidationError("Passwords must match."),
+            )
         credentials_set = getUtility(IOCIRegistryCredentialsSet)
         person = getattr(
-            self.request.principal, 'person', self.request.principal)
+            self.request.principal, "person", self.request.principal
+        )
 
         # Distribution context allows the distro admin to create
         # credentials assigned to the oci_project_admin
@@ -162,19 +161,24 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
         if not in_distribution:
             raise AssertionError(
                 "Attempting to set OCI registry "
-                "credentials outside of a Distribution.")
+                "credentials outside of a Distribution."
+            )
         admin = self.context.context.oci_project_admin
         if in_distribution and not admin:
             raise WidgetInputError(
-                self.name, self.label,
+                self.name,
+                self.label,
                 LaunchpadValidationError(
-                    "There is no OCI Project Admin for this distribution."))
+                    "There is no OCI Project Admin for this distribution."
+                ),
+            )
         credentials = credentials_set.getOrCreate(
             person,
             admin,
             url,
             {"username": username, "password": password, "region": region},
-            override_owner=in_distribution)
+            override_owner=in_distribution,
+        )
         return credentials
 
     def __call__(self):

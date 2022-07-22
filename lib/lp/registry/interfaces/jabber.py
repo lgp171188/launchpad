@@ -4,20 +4,14 @@
 """Jabber interfaces."""
 
 __all__ = [
-    'IJabberID',
-    'IJabberIDSet',
-    ]
+    "IJabberID",
+    "IJabberIDSet",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
@@ -25,15 +19,17 @@ from lp.registry.interfaces.role import IHasOwner
 
 @exported_as_webservice_entry("jabber_id", as_of="beta")
 class IJabberID(IHasOwner):
-    """Jabber specific user ID """
+    """Jabber specific user ID"""
+
     id = Int(title=_("Database ID"), required=True, readonly=True)
     # schema=Interface will be overridden in person.py because of circular
     # dependencies.
     person = exported(
         Reference(
-            title=_("Owner"), required=True, schema=Interface, readonly=True))
-    jabberid = exported(
-        TextLine(title=_("New Jabber user ID"), required=True))
+            title=_("Owner"), required=True, schema=Interface, readonly=True
+        )
+    )
+    jabberid = exported(TextLine(title=_("New Jabber user ID"), required=True))
 
     def destroySelf():
         """Delete this JabberID from the database."""

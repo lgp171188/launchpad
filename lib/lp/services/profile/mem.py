@@ -18,17 +18,17 @@ and improve APIs as needed.
 
 __metatype__ = type
 __all__ = [
-    'classesWithMostRefs',
-    'countsByType',
-    'deltaCounts',
-    'logInThread',
-    'memory',
-    'mostRefs',
-    'printCounts',
-    'readCounts',
-    'resident',
-    'stacksize',
-    ]
+    "classesWithMostRefs",
+    "countsByType",
+    "deltaCounts",
+    "logInThread",
+    "memory",
+    "mostRefs",
+    "printCounts",
+    "readCounts",
+    "resident",
+    "stacksize",
+]
 
 
 import gc
@@ -38,49 +38,48 @@ import threading
 import time
 import types
 
+_proc_status = "/proc/%d/status" % os.getpid()
 
-_proc_status = '/proc/%d/status' % os.getpid()
-
-_scale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0,
-          'KB': 1024.0, 'MB': 1024.0 * 1024.0}
+_scale = {
+    "kB": 1024.0,
+    "mB": 1024.0 * 1024.0,
+    "KB": 1024.0,
+    "MB": 1024.0 * 1024.0,
+}
 
 
 def _VmB(VmKey):
-    '''Private.
-    '''
+    """Private."""
     global _proc_status, _scale
-     # get pseudo file  /proc/<pid>/status
+    # get pseudo file  /proc/<pid>/status
     try:
         t = open(_proc_status)
         v = t.read()
         t.close()
     except OSError:
         return 0.0  # non-Linux?
-     # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
+    # get VmKey line e.g. 'VmRSS:  9999  kB\n ...'
     i = v.index(VmKey)
     v = v[i:].split(None, 3)  # whitespace
     if len(v) < 3:
         return 0.0  # invalid format?
-     # convert Vm value to bytes
+    # convert Vm value to bytes
     return float(v[1]) * _scale[v[2]]
 
 
 def memory(since=0.0):
-    '''Return memory usage in bytes.
-    '''
-    return _VmB('VmSize:') - since
+    """Return memory usage in bytes."""
+    return _VmB("VmSize:") - since
 
 
 def resident(since=0.0):
-    '''Return resident memory usage in bytes.
-    '''
-    return _VmB('VmRSS:') - since
+    """Return resident memory usage in bytes."""
+    return _VmB("VmRSS:") - since
 
 
 def stacksize(since=0.0):
-    '''Return stack size in bytes.
-    '''
-    return _VmB('VmStk:') - since
+    """Return stack size in bytes."""
+    return _VmB("VmStk:") - since
 
 
 def dump_garbage():
@@ -107,6 +106,7 @@ def dump_garbage():
 
 # This is spiv's reference count code, under 'MIT Licence if I'm pressed'.
 #
+
 
 def classesWithMostRefs(n=30):
     """Return the n ClassType objects with the highest reference count.
@@ -198,13 +198,13 @@ def readCounts(file, marker=None):
         line = file.readline()
         if not line or (marker is not None and line == marker):
             break
-        count, ref_type = line.strip().split(' ', 1)
+        count, ref_type = line.strip().split(" ", 1)
         counts.append((int(count), ref_type))
     return counts
 
 
 def logInThread(n=30):
-    reflog = open('/tmp/refs.log', 'w')
+    reflog = open("/tmp/refs.log", "w")
     t = threading.Thread(target=_logRefsEverySecond, args=(reflog, n))
     # Allow process to exit without explicitly stopping thread.
     t.daemon = True
@@ -214,7 +214,7 @@ def logInThread(n=30):
 def _logRefsEverySecond(log, n):
     while True:
         printCounts(mostRefs(n=n), file=log)
-        log.write('\n')
+        log.write("\n")
         log.flush()
         time.sleep(1)
 

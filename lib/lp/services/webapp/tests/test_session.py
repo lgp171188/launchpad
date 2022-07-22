@@ -1,113 +1,114 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from email.utils import parsedate
 import hashlib
 import hmac
+from datetime import datetime, timedelta
+from email.utils import parsedate
 
-from testtools.matchers import (
-    Contains,
-    ContainsDict,
-    Equals,
-    )
+from testtools.matchers import Contains, ContainsDict, Equals
 
 from lp.services.propertycache import get_property_cache
-from lp.services.webapp.login import (
-    isFreshLogin,
-    OpenIDCallbackView,
-    )
+from lp.services.webapp.login import OpenIDCallbackView, isFreshLogin
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.session import (
+    LaunchpadCookieClientIdManager,
     encode_digest,
     get_cookie_domain,
-    LaunchpadCookieClientIdManager,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCase, TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class GetCookieDomainTestCase(TestCase):
-
     def test_base_domain(self):
         # Test that the base Launchpad domain gives a domain parameter
         # that is visible to the virtual hosts.
-        self.assertEqual(get_cookie_domain('launchpad.net'), '.launchpad.net')
+        self.assertEqual(get_cookie_domain("launchpad.net"), ".launchpad.net")
 
     def test_vhost_domain(self):
         # Test Launchpad subdomains give the same domain parameter
-        self.assertEqual(get_cookie_domain('bugs.launchpad.net'),
-                         '.launchpad.net')
+        self.assertEqual(
+            get_cookie_domain("bugs.launchpad.net"), ".launchpad.net"
+        )
 
     def test_other_domain(self):
         # Other domains do not return a cookie domain.
-        self.assertEqual(get_cookie_domain('example.com'), None)
+        self.assertEqual(get_cookie_domain("example.com"), None)
 
     def test_other_instances(self):
         # Test that requests to other launchpad instances are scoped right
-        self.assertEqual(get_cookie_domain('demo.launchpad.net'),
-                         '.demo.launchpad.net')
-        self.assertEqual(get_cookie_domain('bugs.demo.launchpad.net'),
-                         '.demo.launchpad.net')
+        self.assertEqual(
+            get_cookie_domain("demo.launchpad.net"), ".demo.launchpad.net"
+        )
+        self.assertEqual(
+            get_cookie_domain("bugs.demo.launchpad.net"), ".demo.launchpad.net"
+        )
 
-        self.assertEqual(get_cookie_domain('staging.launchpad.net'),
-                         '.staging.launchpad.net')
-        self.assertEqual(get_cookie_domain('bugs.staging.launchpad.net'),
-                         '.staging.launchpad.net')
+        self.assertEqual(
+            get_cookie_domain("staging.launchpad.net"),
+            ".staging.launchpad.net",
+        )
+        self.assertEqual(
+            get_cookie_domain("bugs.staging.launchpad.net"),
+            ".staging.launchpad.net",
+        )
 
-        self.assertEqual(get_cookie_domain('launchpad.test'),
-                         '.launchpad.test')
-        self.assertEqual(get_cookie_domain('bugs.launchpad.test'),
-                         '.launchpad.test')
+        self.assertEqual(
+            get_cookie_domain("launchpad.test"), ".launchpad.test"
+        )
+        self.assertEqual(
+            get_cookie_domain("bugs.launchpad.test"), ".launchpad.test"
+        )
 
 
 class TestLaunchpadCookieClientIdManager(TestCase):
-
     def test_generateUniqueId(self):
         idmanager = LaunchpadCookieClientIdManager()
-        get_property_cache(idmanager).secret = 'secret'
+        get_property_cache(idmanager).secret = "secret"
         self.assertNotEqual(
-            idmanager.generateUniqueId(), idmanager.generateUniqueId())
+            idmanager.generateUniqueId(), idmanager.generateUniqueId()
+        )
 
     def test_expires(self):
         request = LaunchpadTestRequest()
         idmanager = LaunchpadCookieClientIdManager()
-        idmanager.setRequestId(request, 'some-id')
+        idmanager.setRequestId(request, "some-id")
         cookie = request.response.getCookie(idmanager.namespace)
-        expires = datetime(*parsedate(cookie['expires'])[:7])
+        expires = datetime(*parsedate(cookie["expires"])[:7])
         self.assertLess(
             expires - datetime.now() - timedelta(days=365),
             # Allow some slack for slow tests.
-            timedelta(seconds=30))
+            timedelta(seconds=30),
+        )
 
     def test_httponly(self):
         # Authentication cookies are marked as httponly, so JavaScript
         # can't read them directly.
         request = LaunchpadTestRequest()
-        LaunchpadCookieClientIdManager().setRequestId(request, 'some-id')
+        LaunchpadCookieClientIdManager().setRequestId(request, "some-id")
         self.assertThat(
-            dict(request.response.getHeaders())['Set-Cookie'].lower(),
-            Contains('; httponly;'))
+            dict(request.response.getHeaders())["Set-Cookie"].lower(),
+            Contains("; httponly;"),
+        )
 
     def test_headers(self):
         # When the cookie is set, cache headers are added to the response to
         # try to prevent the cookie header from being cached:
         request = LaunchpadTestRequest()
-        LaunchpadCookieClientIdManager().setRequestId(request, 'some-id')
+        LaunchpadCookieClientIdManager().setRequestId(request, "some-id")
         self.assertThat(
             dict(request.response.getHeaders()),
-            ContainsDict({
-                'Cache-Control': Equals('no-cache="Set-Cookie,Set-Cookie2"'),
-                'Pragma': Equals('no-cache'),
-                'Expires': Equals('Mon, 26 Jul 1997 05:00:00 GMT'),
-                }))
+            ContainsDict(
+                {
+                    "Cache-Control": Equals(
+                        'no-cache="Set-Cookie,Set-Cookie2"'
+                    ),
+                    "Pragma": Equals("no-cache"),
+                    "Expires": Equals("Mon, 26 Jul 1997 05:00:00 GMT"),
+                }
+            ),
+        )
 
     def test_stable_client_id(self):
         # Changing the HMAC algorithm used for client IDs would invalidate
@@ -115,11 +116,12 @@ class TestLaunchpadCookieClientIdManager(TestCase):
         # accidentally across upgrades.
         request = LaunchpadTestRequest()
         idmanager = LaunchpadCookieClientIdManager()
-        get_property_cache(idmanager).secret = 'secret'
-        data = b'random'
+        get_property_cache(idmanager).secret = "secret"
+        data = b"random"
         s = encode_digest(hashlib.sha1(data).digest())
         mac = hmac.new(
-            s, idmanager.secret.encode(), digestmod=hashlib.sha1).digest()
+            s, idmanager.secret.encode(), digestmod=hashlib.sha1
+        ).digest()
         sid = (s + encode_digest(mac)).decode()
         idmanager.setRequestId(request, sid)
         # getRequestId will only return the previously-set ID if it was

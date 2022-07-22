@@ -2,7 +2,7 @@ Updating selected bug trackers
 ==============================
 
 The CheckwatchesMaster class can be instructed to update only a subset of
-bugtrackers. This is acheived by passing a list of bug tracker names to
+bugtrackers. This is achieved by passing a list of bug tracker names to
 the updateBugTrackers() method.
 
     >>> import transaction
@@ -55,7 +55,7 @@ line.
     ...         self.logger = FakeLogger()
 
     >>> def run_cronscript_with_args(args):
-    ...     # It may seem a bit weird to do ths rather than letting the
+    ...     # It may seem a bit weird to do this rather than letting the
     ...     # LaunchpadScript code handle it, but doing that means that
     ...     # LayerIsolationErrors get raised as it leaves threads lying
     ...     # around.
@@ -135,6 +135,6 @@ tracker option fully.
       --reset               Update all the watches on the bug tracker,
                             regardless of whether or not they need
                             checking.
-      --jobs=JOBS           The number of simulataneous jobs to run, 1
+      --jobs=JOBS           The number of simultaneous jobs to run, 1
                             by default.
     <BLANKLINE>

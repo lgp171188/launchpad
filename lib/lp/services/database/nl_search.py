@@ -5,27 +5,22 @@
 full text index.
 """
 
-__all__ = ['nl_phrase_search']
+__all__ = ["nl_phrase_search"]
 
 import re
 
 import six
 from storm.databases.postgres import Case
-from storm.locals import (
-    Count,
-    Select,
-    SQL,
-    )
+from storm.locals import SQL, Count, Select
 from zope.component import getUtility
 
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
+    MAIN_STORE,
     IStore,
     IStoreSelector,
-    MAIN_STORE,
-    )
+)
 from lp.services.database.stormexpr import fti_search
-
 
 # Regular expression to extract terms from the printout of a ts_query
 TS_QUERY_TERM_RE = re.compile(r"'([^']+)'")
@@ -49,8 +44,9 @@ def nl_term_candidates(phrase):
     return TS_QUERY_TERM_RE.findall(terms)
 
 
-def nl_phrase_search(phrase, table, constraint_clauses=None,
-                     fast_enabled=True):
+def nl_phrase_search(
+    phrase, table, constraint_clauses=None, fast_enabled=True
+):
     """Return the tsearch2 query that should be used to do a phrase search.
 
     The precise heuristics applied by this function will vary as we tune
@@ -72,7 +68,7 @@ def nl_phrase_search(phrase, table, constraint_clauses=None,
     """
     terms = nl_term_candidates(phrase)
     if len(terms) == 0:
-        return ''
+        return ""
     if fast_enabled:
         return _nl_phrase_search(terms, table, constraint_clauses)
     else:
@@ -92,7 +88,7 @@ def _nl_phrase_search(terms, table, constraint_clauses):
     # a more complex rank & search function.
     # sorted for doctesting convenience - should have no impact on tsearch2.
     if len(terms) < 3:
-        return '|'.join(sorted(terms))
+        return "|".join(sorted(terms))
     # Expand
     and_groups = [None] * (len(terms) + 1)
     for pos in range(len(terms) + 1):
@@ -101,9 +97,8 @@ def _nl_phrase_search(terms, table, constraint_clauses):
     for pos, term in enumerate(sorted(terms)):
         and_groups[pos + 1].discard(term)
     # sorted for doctesting convenience - should have no impact on tsearch2.
-    and_clauses = ['(' + '&'.join(sorted(group)) + ')'
-        for group in and_groups]
-    return '|'.join(and_clauses)
+    and_clauses = ["(" + "&".join(sorted(group)) + ")" for group in and_groups]
+    return "|".join(and_clauses)
 
 
 def _slow_nl_phrase_search(terms, table, constraint_clauses):
@@ -142,7 +137,7 @@ def _slow_nl_phrase_search(terms, table, constraint_clauses):
     total = store.find(table, *constraint_clauses).count()
     term_candidates = terms
     if total < 5:
-        return '|'.join(term_candidates)
+        return "|".join(term_candidates)
 
     # Build the query to get all the counts. We get all the counts in
     # one query, using COUNT(CASE ...), since issuing separate queries
@@ -150,12 +145,15 @@ def _slow_nl_phrase_search(terms, table, constraint_clauses):
     counts = store.find(
         tuple(
             Count(Case([(fti_search(table, term), True)], default=None))
-            for term in term_candidates),
-        *constraint_clauses).one()
+            for term in term_candidates
+        ),
+        *constraint_clauses,
+    ).one()
 
     # Remove words that are too common.
     terms = [
-        term for count, term in zip(counts, term_candidates)
+        term
+        for count, term in zip(counts, term_candidates)
         if float(count) / total < 0.5
-        ]
-    return '|'.join(terms)
+    ]
+    return "|".join(terms)

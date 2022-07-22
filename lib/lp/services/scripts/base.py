@@ -2,62 +2,46 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'disable_oops_handler',
-    'LaunchpadCronScript',
-    'LaunchpadScript',
-    'LaunchpadScriptFailure',
-    'LOCK_PATH',
-    'SilentLaunchpadScriptFailure',
-    ]
+    "disable_oops_handler",
+    "LaunchpadCronScript",
+    "LaunchpadScript",
+    "LaunchpadScriptFailure",
+    "LOCK_PATH",
+    "SilentLaunchpadScriptFailure",
+]
 
-from configparser import ConfigParser
-from contextlib import contextmanager
-from cProfile import Profile
 import datetime
 import io
 import logging
-from optparse import OptionParser
 import os.path
 import sys
-from urllib.parse import (
-    urlparse,
-    urlunparse,
-    )
+from configparser import ConfigParser
+from contextlib import contextmanager
+from cProfile import Profile
+from optparse import OptionParser
+from urllib.parse import urlparse, urlunparse
 
-from contrib.glock import (
-    GlobalLock,
-    LockAlreadyAcquired,
-    )
 import pytz
 import requests
 import transaction
+from contrib.glock import GlobalLock, LockAlreadyAcquired
 from zope.component import getUtility
 
 from lp.services import scripts
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
+from lp.services.config import config, dbconfig
 from lp.services.database.postgresql import ConnectionString
 from lp.services.features import (
     get_relevant_feature_controller,
     install_feature_controller,
     make_script_feature_controller,
-    )
+)
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.scripts.interfaces.scriptactivity import IScriptActivitySet
 from lp.services.scripts.logger import OopsHandler
 from lp.services.scripts.metrics import emit_script_activity_metric
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+from lp.services.timeout import override_timeout, urlfetch
 from lp.services.webapp.errorlog import globalErrorUtility
-from lp.services.webapp.interaction import (
-    ANONYMOUS,
-    setupInteractionByEmail,
-    )
-
+from lp.services.webapp.interaction import ANONYMOUS, setupInteractionByEmail
 
 LOCK_PATH = "/var/lock/"
 UTC = pytz.UTC
@@ -78,6 +62,7 @@ class LaunchpadScriptFailure(Exception):
     LaunchpadScriptFailure.exit_status. If you want a different value
     subclass LaunchpadScriptFailure and redefine it.
     """
+
     exit_status = 1
 
 
@@ -87,6 +72,7 @@ class SilentLaunchpadScriptFailure(Exception):
     def __init__(self, exit_status=1):
         Exception.__init__(self, exit_status)
         self.exit_status = exit_status
+
     exit_status = 1
 
 
@@ -116,6 +102,7 @@ def log_unhandled_exception_and_exit(func):
                 raise
         finally:
             self._log_unhandled_exceptions_level -= 1
+
     return log_unhandled_exceptions_func
 
 
@@ -147,6 +134,7 @@ class LaunchpadScript:
 
     "Give me convenience or give me death."
     """
+
     lock = None
     txn = None
     usage = None
@@ -189,17 +177,21 @@ class LaunchpadScript:
             description = self.__doc__
         else:
             description = self.description
-        self.parser = OptionParser(usage=self.usage,
-                                   description=description)
+        self.parser = OptionParser(usage=self.usage, description=description)
 
         if logger is None:
             scripts.logger_options(self.parser, default=self.loglevel)
         else:
             scripts.dummy_logger_options(self.parser)
         self.parser.add_option(
-            '--profile', dest='profile', metavar='FILE', help=(
-                    "Run the script under the profiler and save the "
-                    "profiling stats in FILE."))
+            "--profile",
+            dest="profile",
+            metavar="FILE",
+            help=(
+                "Run the script under the profiler and save the "
+                "profiling stats in FILE."
+            ),
+        )
 
         self.add_my_options()
         self.options, self.args = self.parser.parse_args(args=test_args)
@@ -290,7 +282,7 @@ class LaunchpadScript:
         try:
             self.lock.acquire(blocking=blocking)
         except LockAlreadyAcquired:
-            self.logger.info('Lockfile %s in use' % self.lockfilepath)
+            self.logger.info("Lockfile %s in use" % self.lockfilepath)
             sys.exit(1)
 
     @log_unhandled_exception_and_exit
@@ -308,7 +300,7 @@ class LaunchpadScript:
         """Actually run the script, executing zcml and initZopeless."""
 
         if isolation is None:
-            isolation = 'read_committed'
+            isolation = "read_committed"
         self._init_zca(use_web_security=use_web_security)
         self._init_db(isolation=isolation)
 
@@ -364,9 +356,13 @@ class LaunchpadScript:
     # Make things happen
     #
     @log_unhandled_exception_and_exit
-    def lock_and_run(self, blocking=False, skip_delete=False,
-                     use_web_security=False,
-                     isolation='read_committed'):
+    def lock_and_run(
+        self,
+        blocking=False,
+        skip_delete=False,
+        use_web_security=False,
+        isolation="read_committed",
+    ):
         """Call lock_or_die(), and then run() the script.
 
         Will die with sys.exit(1) if the locking call fails.
@@ -381,8 +377,14 @@ class LaunchpadScript:
 class LaunchpadCronScript(LaunchpadScript):
     """Logs successful script runs in the database."""
 
-    def __init__(self, name=None, dbuser=None, test_args=None, logger=None,
-                 ignore_cron_control=False):
+    def __init__(
+        self,
+        name=None,
+        dbuser=None,
+        test_args=None,
+        logger=None,
+        ignore_cron_control=False,
+    ):
         super().__init__(name, dbuser, test_args=test_args, logger=logger)
 
         self.ignore_cron_control = ignore_cron_control
@@ -406,7 +408,8 @@ class LaunchpadCronScript(LaunchpadScript):
         # still exit before anything important like database access happens.
         if not self.ignore_cron_control:
             enabled = cronscript_enabled(
-                config.canonical.cron_control_url, self.name, self.logger)
+                config.canonical.cron_control_url, self.name, self.logger
+            )
             if not enabled:
                 # Emit a basic script activity metric so that alerts don't
                 # fire while scripts are intentionally disabled (e.g. during
@@ -427,14 +430,16 @@ class LaunchpadCronScript(LaunchpadScript):
         getUtility(IScriptActivitySet).recordSuccess(
             name=self.name,
             date_started=date_started,
-            date_completed=date_completed)
+            date_completed=date_completed,
+        )
         self.txn.commit()
         # date_started is recorded *after* the lock is acquired and we've
         # initialized Zope components and the database.  Thus this time is
         # only for the script proper, rather than total execution time.
         seconds_taken = (date_completed - date_started).total_seconds()
         self.logger.debug(
-            "%s ran in %ss (excl. load & lock)" % (self.name, seconds_taken))
+            "%s ran in %ss (excl. load & lock)" % (self.name, seconds_taken)
+        )
 
 
 @contextmanager
@@ -454,7 +459,7 @@ def cronscript_enabled(control_url, name, log):
     # In test environments, this may be a file: URL.  Adjust it to be in a
     # form that requests can cope with (i.e. using an absolute path).
     parsed_url = urlparse(control_url)
-    if parsed_url.scheme == 'file' and not os.path.isabs(parsed_url.path):
+    if parsed_url.scheme == "file" and not os.path.isabs(parsed_url.path):
         assert parsed_url.path == parsed_url[2]
         parsed_url = list(parsed_url)
         parsed_url[2] = os.path.join(config.root, parsed_url[2])
@@ -475,7 +480,7 @@ def cronscript_enabled(control_url, name, log):
         log.exception("Error loading %s" % control_url)
         return True
 
-    cron_config = ConfigParser({'enabled': str(True)})
+    cron_config = ConfigParser({"enabled": str(True)})
 
     # Try reading the config file. If it fails, we log the
     # traceback and continue on using the defaults.
@@ -485,17 +490,17 @@ def cronscript_enabled(control_url, name, log):
     except Exception:
         log.exception("Error parsing %s", control_url)
 
-    if cron_config.has_option(name, 'enabled'):
+    if cron_config.has_option(name, "enabled"):
         section = name
     else:
-        section = 'DEFAULT'
+        section = "DEFAULT"
 
     try:
-        enabled = cron_config.getboolean(section, 'enabled')
+        enabled = cron_config.getboolean(section, "enabled")
     except Exception:
         log.exception(
-            "Failed to load value from %s section of %s",
-            section, control_url)
+            "Failed to load value from %s section of %s", section, control_url
+        )
         enabled = True
 
     if enabled:

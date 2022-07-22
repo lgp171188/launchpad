@@ -8,12 +8,11 @@ from zope.component import getUtility
 
 from lp.services.geoip.interfaces import IGeoIP
 
-
 __all__ = [
-    'request_country',
-    'ipaddress_is_global',
-    'ipaddress_from_request',
-    ]
+    "request_country",
+    "ipaddress_is_global",
+    "ipaddress_from_request",
+]
 
 
 def request_country(request):
@@ -68,17 +67,17 @@ def ipaddress_from_request(request):
     ...     'REMOTE_ADDR': '1.1.1.1'
     ...     })
     """
-    ipaddresses = request.get('HTTP_X_FORWARDED_FOR')
+    ipaddresses = request.get("HTTP_X_FORWARDED_FOR")
 
     if ipaddresses is None:
-        ipaddresses = request.get('REMOTE_ADDR')
+        ipaddresses = request.get("REMOTE_ADDR")
 
     if ipaddresses is None:
         return None
 
     # We actually get a comma separated list of addresses. We need to throw
     # away the obvious duds, such as loopback addresses
-    ipaddresses = [addr.strip() for addr in ipaddresses.split(',')]
+    ipaddresses = [addr.strip() for addr in ipaddresses.split(",")]
     ipaddresses = [addr for addr in ipaddresses if ipaddress_is_global(addr)]
 
     if ipaddresses:

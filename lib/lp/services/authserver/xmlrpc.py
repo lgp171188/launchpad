@@ -4,9 +4,9 @@
 """Auth-Server XML-RPC API ."""
 
 __all__ = [
-    'AuthServerApplication',
-    'AuthServerAPIView',
-    ]
+    "AuthServerApplication",
+    "AuthServerAPIView",
+]
 
 from pymacaroons import Macaroon
 from storm.sqlobject import SQLObjectNotFound
@@ -21,14 +21,14 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.authserver.interfaces import (
     IAuthServer,
     IAuthServerApplication,
-    )
+)
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import (
+    NO_USER,
     BadMacaroonContext,
     IMacaroonIssuer,
-    NO_USER,
-    )
+)
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
@@ -48,11 +48,12 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         if person.account_status != AccountStatus.ACTIVE:
             return faults.InactiveAccount(name)
         return {
-            'id': person.id,
-            'name': person.name,
-            'keys': [(key.keytype.title, key.keytext)
-                     for key in person.sshkeys],
-            }
+            "id": person.id,
+            "name": person.name,
+            "keys": [
+                (key.keytype.title, key.keytext) for key in person.sshkeys
+            ],
+        }
 
     def _resolveContext(self, context_type, context):
         """Resolve a serialised context.
@@ -64,25 +65,25 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         :param context: The context as plain data (e.g. an ID).
         :return: The resolved context, or None.
         """
-        if context_type == 'LibraryFileAlias':
+        if context_type == "LibraryFileAlias":
             # The context is a `LibraryFileAlias` ID.
             try:
                 return getUtility(ILibraryFileAliasSet)[context]
             except SQLObjectNotFound:
                 return None
-        elif context_type == 'BinaryPackageBuild':
+        elif context_type == "BinaryPackageBuild":
             # The context is a `BinaryPackageBuild` ID.
             return getUtility(IBinaryPackageBuildSet).getByID(context)
-        elif context_type == 'LiveFSBuild':
+        elif context_type == "LiveFSBuild":
             # The context is a `LiveFSBuild` ID.
             return getUtility(ILiveFSBuildSet).getByID(context)
-        elif context_type == 'SnapBuild':
+        elif context_type == "SnapBuild":
             # The context is a `SnapBuild` ID.
             return getUtility(ISnapBuildSet).getByID(context)
-        elif context_type == 'OCIRecipeBuild':
+        elif context_type == "OCIRecipeBuild":
             # The context is an `OCIRecipeBuild` ID.
             return getUtility(IOCIRecipeBuildSet).getByID(context)
-        elif context_type == 'CIBuild':
+        elif context_type == "CIBuild":
             # The context is a `CIBuild` ID.
             return getUtility(ICIBuildSet).getByID(context)
         else:

@@ -3,7 +3,7 @@
 
 """Run the standalone wadllib tests."""
 
-__all__ = ['test_suite']
+__all__ = ["test_suite"]
 
 import os
 import unittest
@@ -11,7 +11,6 @@ import unittest
 import wadllib
 
 from lp.testing.systemdocs import LayeredDocFileSuite
-
 
 topdir = os.path.dirname(wadllib.__file__)
 
@@ -22,13 +21,13 @@ def test_suite():
     # Find all the doctests in wadllib.
     packages = []
     for dirpath, dirnames, filenames in os.walk(topdir):
-        if 'docs' in dirnames:
-            docsdir = os.path.join(dirpath, 'docs')[len(topdir) + 1:]
+        if "docs" in dirnames:
+            docsdir = os.path.join(dirpath, "docs")[len(topdir) + 1 :]
             packages.append(docsdir)
     doctest_files = {}
     for docsdir in packages:
         for filename in os.listdir(os.path.join(topdir, docsdir)):
-            if os.path.splitext(filename)[1] == '.rst':
+            if os.path.splitext(filename)[1] == ".rst":
                 doctest_files[filename] = os.path.join(docsdir, filename)
     # Sort the tests.
     for filename in sorted(doctest_files):

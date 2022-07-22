@@ -4,13 +4,13 @@
 """Webhook webservice registrations."""
 
 __all__ = [
-    'IWebhook',
-    'IWebhookDeliveryJob',
-    'IWebhookTarget',
-    ]
+    "IWebhook",
+    "IWebhookDeliveryJob",
+    "IWebhookTarget",
+]
 
 from lp.services.webhooks.interfaces import (
     IWebhook,
     IWebhookDeliveryJob,
     IWebhookTarget,
-    )
+)

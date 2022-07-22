@@ -4,9 +4,9 @@
 """Implementation classes for Account and associates."""
 
 __all__ = [
-    'Account',
-    'AccountSet',
-    ]
+    "Account",
+    "AccountSet",
+]
 
 import datetime
 
@@ -16,10 +16,7 @@ from zope.interface import implementer
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
 from lp.services.helpers import backslashreplace
@@ -28,16 +25,15 @@ from lp.services.identity.interfaces.account import (
     AccountStatus,
     IAccount,
     IAccountSet,
-    )
+)
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 
 
 class AccountStatusDBEnum(DBEnum):
-
     def __set__(self, obj, value):
         if self.__get__(obj) == value:
             return
-        IAccount['status'].bind(obj)._validate(value)
+        IAccount["status"].bind(obj)._validate(value)
         super().__set__(obj, value)
 
 
@@ -47,39 +43,49 @@ class Account(SQLBase):
 
     date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
-    displayname = StringCol(dbName='displayname', notNull=True)
+    displayname = StringCol(dbName="displayname", notNull=True)
 
     creation_rationale = DBEnum(
-        name='creation_rationale', enum=AccountCreationRationale,
-        allow_none=False)
+        name="creation_rationale",
+        enum=AccountCreationRationale,
+        allow_none=False,
+    )
     status = AccountStatusDBEnum(
-        enum=AccountStatus, default=AccountStatus.NOACCOUNT, allow_none=False)
+        enum=AccountStatus, default=AccountStatus.NOACCOUNT, allow_none=False
+    )
     date_status_set = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    status_history = StringCol(dbName='status_comment', default=None)
+    status_history = StringCol(dbName="status_comment", default=None)
 
     openid_identifiers = ReferenceSet(
-        "Account.id", OpenIdIdentifier.account_id)
+        "Account.id", OpenIdIdentifier.account_id
+    )
 
     def __repr__(self):
         displayname = backslashreplace(self.displayname)
         return "<%s '%s' (%s)>" % (
-            self.__class__.__name__, displayname, self.status)
+            self.__class__.__name__,
+            displayname,
+            self.status,
+        )
 
     def addStatusComment(self, user, comment):
         """See `IAccountModerateRestricted`."""
-        prefix = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        prefix = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         if user is not None:
-            prefix += ' %s' % user.name
+            prefix += " %s" % user.name
         old_lines = (
-            self.status_history.splitlines() if self.status_history else [])
-        self.status_history = '\n'.join(
-            old_lines + ['%s: %s' % (prefix, comment), ''])
+            self.status_history.splitlines() if self.status_history else []
+        )
+        self.status_history = "\n".join(
+            old_lines + ["%s: %s" % (prefix, comment), ""]
+        )
 
     def setStatus(self, status, user, comment):
         """See `IAccountModerateRestricted`."""
-        comment = comment or ''
+        comment = comment or ""
         self.addStatusComment(
-            user, '%s -> %s: %s' % (self.status.title, status.title, comment))
+            user, "%s -> %s: %s" % (self.status.title, status.title, comment)
+        )
         # date_status_set is maintained by a DB trigger.
         self.status = status
 
@@ -92,13 +98,20 @@ class Account(SQLBase):
 class AccountSet:
     """See `IAccountSet`."""
 
-    def new(self, rationale, displayname, openid_identifier=None,
-            status=AccountStatus.NOACCOUNT):
+    def new(
+        self,
+        rationale,
+        displayname,
+        openid_identifier=None,
+        status=AccountStatus.NOACCOUNT,
+    ):
         """See `IAccountSet`."""
         assert status in (AccountStatus.NOACCOUNT, AccountStatus.PLACEHOLDER)
         account = Account(
-            displayname=displayname, creation_rationale=rationale,
-            status=status)
+            displayname=displayname,
+            creation_rationale=rationale,
+            status=status,
+        )
 
         # Create an OpenIdIdentifier record if requested.
         if openid_identifier is not None:
@@ -123,7 +136,8 @@ class AccountSet:
         account = store.find(
             Account,
             Account.id == OpenIdIdentifier.account_id,
-            OpenIdIdentifier.identifier == openid_identifier).one()
+            OpenIdIdentifier.identifier == openid_identifier,
+        ).one()
         if account is None:
             raise LookupError(openid_identifier)
         return account

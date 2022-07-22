@@ -176,8 +176,7 @@ class ProcessApportBlobJob(ApportJobDerived):
         """See `IProcessApportBlobJobSource`."""
         # If there's already a job for the BLOB, don't create a new one.
         # We also include jobs which have been completed when checking
-        # for exisiting jobs, since a BLOB should only be processed
-        # once.
+        # for existing jobs, since a BLOB should only be processed once.
         job_for_blob = (
             IStore(ApportJob)
             .find(

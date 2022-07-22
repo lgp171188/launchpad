@@ -4,17 +4,17 @@
 """Interface for communication with the snap store."""
 
 __all__ = [
-    'BadRefreshResponse',
-    'BadRequestPackageUploadResponse',
-    'BadScanStatusResponse',
-    'ISnapStoreClient',
-    'NeedsRefreshResponse',
-    'ScanFailedResponse',
-    'SnapStoreError',
-    'UnauthorizedUploadResponse',
-    'UploadFailedResponse',
-    'UploadNotScannedYetResponse',
-    ]
+    "BadRefreshResponse",
+    "BadRequestPackageUploadResponse",
+    "BadScanStatusResponse",
+    "ISnapStoreClient",
+    "NeedsRefreshResponse",
+    "ScanFailedResponse",
+    "SnapStoreError",
+    "UnauthorizedUploadResponse",
+    "UploadFailedResponse",
+    "UploadNotScannedYetResponse",
+]
 
 import http.client
 
@@ -23,9 +23,9 @@ from zope.interface import Interface
 
 
 class SnapStoreError(Exception):
-
     def __init__(
-            self, message="", detail=None, messages=None, can_retry=False):
+        self, message="", detail=None, messages=None, can_retry=False
+    ):
         super().__init__(message)
         self.message = message
         self.detail = detail

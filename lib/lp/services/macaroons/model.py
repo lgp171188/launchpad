@@ -5,12 +5,9 @@
 
 __all__ = [
     "MacaroonIssuerBase",
-    ]
+]
 
-from pymacaroons import (
-    Macaroon,
-    Verifier,
-    )
+from pymacaroons import Macaroon, Verifier
 from pymacaroons.exceptions import MacaroonVerificationFailedException
 from zope.interface import implementer
 
@@ -18,12 +15,11 @@ from lp.services.config import config
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonVerificationResult,
-    )
+)
 
 
 @implementer(IMacaroonVerificationResult)
 class MacaroonVerificationResult:
-
     def __init__(self, identifier):
         self._issuer_name = identifier
         self.user = None
@@ -79,7 +75,8 @@ class MacaroonIssuerBase:
         secret = config.launchpad.internal_macaroon_secret_key
         if not secret:
             raise RuntimeError(
-                "launchpad.internal_macaroon_secret_key not configured.")
+                "launchpad.internal_macaroon_secret_key not configured."
+            )
         return secret
 
     def checkIssuingContext(self, context, **kwargs):
@@ -103,9 +100,12 @@ class MacaroonIssuerBase:
         context = self.checkIssuingContext(context, **kwargs)
         macaroon = Macaroon(
             location=config.vhost.mainsite.hostname,
-            identifier=self.identifier, key=self._root_secret)
+            identifier=self.identifier,
+            key=self._root_secret,
+        )
         macaroon.add_first_party_caveat(
-            "%s %s" % (self._primary_caveat_name, context))
+            "%s %s" % (self._primary_caveat_name, context)
+        )
         return macaroon
 
     def checkVerificationContext(self, context, **kwargs):
@@ -139,18 +139,21 @@ class MacaroonIssuerBase:
         """
         raise NotImplementedError
 
-    def verifyMacaroon(self, macaroon, context, require_context=True,
-                       errors=None, **kwargs):
+    def verifyMacaroon(
+        self, macaroon, context, require_context=True, errors=None, **kwargs
+    ):
         """See `IMacaroonIssuer`."""
         if macaroon.location != config.vhost.mainsite.hostname:
             if errors is not None:
                 errors.append(
-                    "Macaroon has unknown location '%s'." % macaroon.location)
+                    "Macaroon has unknown location '%s'." % macaroon.location
+                )
             return None
         if require_context and context is None:
             if errors is not None:
                 errors.append(
-                    "Expected macaroon verification context but got None.")
+                    "Expected macaroon verification context but got None."
+                )
             return None
         if context is not None:
             try:
@@ -172,7 +175,8 @@ class MacaroonIssuerBase:
             if caveat_name not in self.allow_multiple and caveat_name in seen:
                 if errors is not None:
                     errors.append(
-                        "Multiple '%s' caveats are not allowed." % caveat_name)
+                        "Multiple '%s' caveats are not allowed." % caveat_name
+                    )
                 return False
             seen.add(caveat_name)
             if caveat_name == self._primary_caveat_name:
@@ -182,7 +186,8 @@ class MacaroonIssuerBase:
                 if checker is None:
                     if errors is not None:
                         errors.append(
-                            "Unhandled caveat name '%s'." % caveat_name)
+                            "Unhandled caveat name '%s'." % caveat_name
+                        )
                     return False
             if not checker(verified, caveat_value, context, **kwargs):
                 if errors is not None:

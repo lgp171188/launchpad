@@ -6,7 +6,7 @@
 This is useful in deployment scripts.
 """
 
-__all__ = ['main']
+__all__ = ["main"]
 
 import argparse
 
@@ -16,17 +16,20 @@ from lp.app import versioninfo
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument(
-        '-a', '--attribute',
-        choices=['revision', 'display_revision', 'date', 'branch_nick'],
-        help='Display a single version information attribute.')
+        "-a",
+        "--attribute",
+        choices=["revision", "display_revision", "date", "branch_nick"],
+        help="Display a single version information attribute.",
+    )
     args = parser.parse_args()
 
     if args.attribute:
         print(getattr(versioninfo, args.attribute))
     else:
-        print('Revision:', versioninfo.revision)
-        print('Display revision:', versioninfo.display_revision)
-        print('Date:', versioninfo.date)
-        print('Branch nick:', versioninfo.branch_nick)
+        print("Revision:", versioninfo.revision)
+        print("Display revision:", versioninfo.display_revision)
+        print("Date:", versioninfo.date)
+        print("Branch nick:", versioninfo.branch_nick)

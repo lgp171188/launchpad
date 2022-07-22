@@ -3,9 +3,9 @@
 
 """Tests for the LaunchpadStatementTracer."""
 
-from contextlib import contextmanager
 import io
 import sys
+from contextlib import contextmanager
 
 from lazr.restful.utils import get_current_browser_request
 
@@ -13,11 +13,11 @@ from lp.services.osutils import override_environ
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.webapp import adapter as da
 from lp.testing import (
-    person_logged_in,
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
-    )
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -54,138 +54,161 @@ class StubTime:
 
 
 class StubConnection:
-
     def __init__(self):
-        self._database = type('StubDatabase', (), dict(name='stub-database'))
+        self._database = type("StubDatabase", (), dict(name="stub-database"))
 
     def to_database(self, params):
         yield from params
 
 
 class StubCursor:
-
     def mogrify(self, statement, params):
         # This will behave rather differently than the real thing for
         # most types, but we can't use psycopg2's mogrify without a real
         # connection.
         mangled_params = tuple(
-            repr(p) if isinstance(p, str) else p for p in params)
+            repr(p) if isinstance(p, str) else p for p in params
+        )
         return statement % tuple(mangled_params)
 
 
 class TestLoggingOutsideOfRequest(TestCase):
-
     def setUp(self):
         super().setUp()
         self.connection = StubConnection()
         self.cursor = StubCursor()
         original_time = da.time
-        self.addCleanup(setattr, da, 'time', original_time)
+        self.addCleanup(setattr, da, "time", original_time)
         da.time = StubTime()
 
     def execute(self, statement=None, params=None, **environ):
         with override_environ(**environ):
             tracer = da.LaunchpadStatementTracer()
         if statement is None:
-            statement = 'SELECT * FROM bar WHERE bing = 42'
+            statement = "SELECT * FROM bar WHERE bing = 42"
         tracer.connection_raw_execute(
-            self.connection, self.cursor, statement, params)
+            self.connection, self.cursor, statement, params
+        )
         tracer.connection_raw_execute_success(
-            self.connection, self.cursor, statement, params)
+            self.connection, self.cursor, statement, params
+        )
 
     def test_no_logging(self):
         with stderr() as file:
             self.execute()
-            self.assertEqual('', file.getvalue())
+            self.assertEqual("", file.getvalue())
 
     def test_stderr(self):
         with stderr() as file:
-            self.execute(LP_DEBUG_SQL='1')
+            self.execute(LP_DEBUG_SQL="1")
             self.assertEqual(
-                '0-1@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-                "-" * 70 + "\n",
-                file.getvalue())
+                "0-1@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+                + "-" * 70
+                + "\n",
+                file.getvalue(),
+            )
 
     def test_stderr_with_stacktrace(self):
         with stderr() as file:
-            self.execute(LP_DEBUG_SQL_EXTRA='1')
-            self.assertStartsWith(
-                file.getvalue(),
-                '  File "')
+            self.execute(LP_DEBUG_SQL_EXTRA="1")
+            self.assertStartsWith(file.getvalue(), '  File "')
             self.assertEndsWith(
                 file.getvalue(),
-                "." * 70 + "\n" +
-                '0-1@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-                "-" * 70 + "\n")
+                "." * 70
+                + "\n"
+                + "0-1@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+                + "-" * 70
+                + "\n",
+            )
 
     def test_data_logging(self):
         da.start_sql_logging()
         with stderr() as file:
             self.execute()
-            self.assertEqual('', file.getvalue())
+            self.assertEqual("", file.getvalue())
         result = da.stop_sql_logging()
         self.assertEqual(1, len(result))
-        self.assertIs(None, result[0]['stack'])
-        self.assertIs(None, result[0]['exception'])
+        self.assertIs(None, result[0]["stack"])
+        self.assertIs(None, result[0]["exception"])
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 42',
-             None),
-            result[0]['sql'])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 42",
+                None,
+            ),
+            result[0]["sql"],
+        )
 
     def test_data_logging_with_stacktrace(self):
         da.start_sql_logging(tracebacks_if=True)
         with stderr() as file:
             self.execute()
-            self.assertEqual('', file.getvalue())
+            self.assertEqual("", file.getvalue())
         result = da.stop_sql_logging()
         self.assertEqual(1, len(result))
-        self.assertIsNot(None, result[0]['stack'])
-        self.assertIs(None, result[0]['exception'])
+        self.assertIsNot(None, result[0]["stack"])
+        self.assertIs(None, result[0]["exception"])
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 42',
-             None),
-            result[0]['sql'])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 42",
+                None,
+            ),
+            result[0]["sql"],
+        )
 
     def test_data_logging_with_conditional_stacktrace(self):
         # Conditions must be normalized to uppercase.
-        da.start_sql_logging(tracebacks_if=lambda sql: 'KUMQUAT' in sql)
+        da.start_sql_logging(tracebacks_if=lambda sql: "KUMQUAT" in sql)
         with stderr() as file:
             self.execute()
-            self.execute(statement='SELECT * FROM kumquat WHERE bing = 42')
-            self.assertEqual('', file.getvalue())
+            self.execute(statement="SELECT * FROM kumquat WHERE bing = 42")
+            self.assertEqual("", file.getvalue())
         result = da.stop_sql_logging()
         self.assertEqual(2, len(result))
-        self.assertIs(None, result[0]['stack'])
-        self.assertIsNot(None, result[1]['stack'])
+        self.assertIs(None, result[0]["stack"])
+        self.assertIsNot(None, result[1]["stack"])
 
     def test_data_logging_with_conditional_stacktrace_normalized_whitespace(
-        self):
+        self,
+    ):
         # The whitespace in the SQL is normalized
         da.start_sql_logging(
-            tracebacks_if=lambda sql: 'FROM KUMQUAT WHERE' in sql)
-        self.execute(
-            statement='SELECT * FROM   kumquat \nWHERE bing = 42')
+            tracebacks_if=lambda sql: "FROM KUMQUAT WHERE" in sql
+        )
+        self.execute(statement="SELECT * FROM   kumquat \nWHERE bing = 42")
         result = da.stop_sql_logging()
         self.assertEqual(1, len(result))
-        self.assertIsNot(None, result[0]['stack'])
+        self.assertIsNot(None, result[0]["stack"])
 
     def test_data_logging_with_broken_conditional_stacktrace(self):
-        error = ValueError('rutebega')
+        error = ValueError("rutebega")
 
         def ow(sql):
             raise error
+
         da.start_sql_logging(tracebacks_if=ow)
         with stderr() as file:
             self.execute()
-            self.assertEqual('', file.getvalue())
+            self.assertEqual("", file.getvalue())
         result = da.stop_sql_logging()
         self.assertEqual(1, len(result))
-        self.assertIsNot(None, result[0]['stack'])
-        self.assertEqual((ValueError, error), result[0]['exception'])
+        self.assertIsNot(None, result[0]["stack"])
+        self.assertEqual((ValueError, error), result[0]["exception"])
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 42',
-             None),
-            result[0]['sql'])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 42",
+                None,
+            ),
+            result[0]["sql"],
+        )
 
     def test_print_queries_with_tracebacks(self):
         da.start_sql_logging(tracebacks_if=True)
@@ -193,14 +216,15 @@ class TestLoggingOutsideOfRequest(TestCase):
         result = da.stop_sql_logging()
         with stdout() as file:
             da.print_queries(result)
-            self.assertStartsWith(
-                file.getvalue(),
-                '  File "')
+            self.assertStartsWith(file.getvalue(), '  File "')
             self.assertEndsWith(
                 file.getvalue(),
-                "." * 70 + "\n" +
-                '1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-                "-" * 70 + "\n")
+                "." * 70
+                + "\n"
+                + "1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+                + "-" * 70
+                + "\n",
+            )
 
     def test_print_queries_without_tracebacks(self):
         da.start_sql_logging()
@@ -209,13 +233,16 @@ class TestLoggingOutsideOfRequest(TestCase):
         with stdout() as file:
             da.print_queries(result)
             self.assertEqual(
-                '1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-                "-" * 70 + "\n",
-            file.getvalue())
+                "1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+                + "-" * 70
+                + "\n",
+                file.getvalue(),
+            )
 
     def test_print_queries_with_exceptions(self):
         def ow(sql):
-            raise ValueError('rutebega')
+            raise ValueError("rutebega")
+
         da.start_sql_logging(tracebacks_if=ow)
         self.execute()
         result = da.stop_sql_logging()
@@ -223,57 +250,82 @@ class TestLoggingOutsideOfRequest(TestCase):
             da.print_queries(result)
             self.assertStartsWith(
                 file.getvalue(),
-                'Error when determining whether to generate a stacktrace.\n' +
-                'Traceback (most recent call last):\n' +
-                '  File "')
+                "Error when determining whether to generate a stacktrace.\n"
+                + "Traceback (most recent call last):\n"
+                + '  File "',
+            )
             self.assertEndsWith(
                 file.getvalue(),
-                "ValueError: rutebega\n" +
-                "." * 70 + "\n" +
-                '1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-                "-" * 70 + "\n")
+                "ValueError: rutebega\n"
+                + "." * 70
+                + "\n"
+                + "1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+                + "-" * 70
+                + "\n",
+            )
 
     def test_context_manager(self):
         with StormStatementRecorder() as logger:
             self.execute()
         self.assertEqual(1, len(logger.query_data))
-        self.assertIs(None, logger.query_data[0]['stack'])
-        self.assertIs(None, logger.query_data[0]['exception'])
+        self.assertIs(None, logger.query_data[0]["stack"])
+        self.assertIs(None, logger.query_data[0]["exception"])
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 42',
-             None),
-            logger.query_data[0]['sql'])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 42",
+                None,
+            ),
+            logger.query_data[0]["sql"],
+        )
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 42',
-             None),
-            logger.queries[0])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 42",
+                None,
+            ),
+            logger.queries[0],
+        )
         self.assertEqual(
-            'SELECT * FROM bar WHERE bing = 42',
-            logger.statements[0])
+            "SELECT * FROM bar WHERE bing = 42", logger.statements[0]
+        )
         self.assertEqual(1, logger.count)
         with stdout() as file:
             # Show that calling str does not actually print (bugfix).
             result = str(logger)
-            self.assertEqual('', file.getvalue())
+            self.assertEqual("", file.getvalue())
         self.assertEqual(
-            '1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n' +
-            "-" * 70 + "\n",
-            result)
+            "1-2@SQL-stub-database SELECT * FROM bar WHERE bing = 42\n"
+            + "-" * 70
+            + "\n",
+            result,
+        )
 
     def test_context_manager_with_stacktrace(self):
         with StormStatementRecorder(tracebacks_if=True) as logger:
             self.execute()
         self.assertEqual(1, len(logger.query_data))
-        self.assertIsNot(None, logger.query_data[0]['stack'])
+        self.assertIsNot(None, logger.query_data[0]["stack"])
 
     def test_sql_parameters(self):
         with StormStatementRecorder() as logger:
-            self.execute(statement='SELECT * FROM bar WHERE bing = %s',
-                         params=(142,))
+            self.execute(
+                statement="SELECT * FROM bar WHERE bing = %s", params=(142,)
+            )
         self.assertEqual(
-            (1, 2, 'SQL-stub-database', 'SELECT * FROM bar WHERE bing = 142',
-             None),
-            logger.query_data[0]['sql'])
+            (
+                1,
+                2,
+                "SQL-stub-database",
+                "SELECT * FROM bar WHERE bing = 142",
+                None,
+            ),
+            logger.query_data[0]["sql"],
+        )
 
 
 class TestLoggingWithinRequest(TestCaseWithFactory):
@@ -294,51 +346,66 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
         with person_logged_in(self.person):
             with StormStatementRecorder() as logger:
                 tracer.connection_raw_execute(
-                    self.connection, None,
-                    'SELECT * FROM bar WHERE bing = 42', ())
+                    self.connection,
+                    None,
+                    "SELECT * FROM bar WHERE bing = 42",
+                    (),
+                )
                 timeline = get_request_timeline(get_current_browser_request())
                 action = timeline.actions[-1]
                 self.assertEqual(
-                    'SELECT * FROM bar WHERE bing = 42',
-                    action.detail)
-                self.assertEqual('SQL-stub-database', action.category)
+                    "SELECT * FROM bar WHERE bing = 42", action.detail
+                )
+                self.assertEqual("SQL-stub-database", action.category)
                 self.assertIs(None, action.duration)
                 # Now we change the detail to verify that the action is the
                 # source of the final log.
-                action.detail = 'SELECT * FROM surprise'
+                action.detail = "SELECT * FROM surprise"
                 tracer.connection_raw_execute_success(
-                    self.connection, None,
-                    'SELECT * FROM bar WHERE bing = 42', ())
+                    self.connection,
+                    None,
+                    "SELECT * FROM bar WHERE bing = 42",
+                    (),
+                )
                 self.assertIsNot(None, action.duration)
         self.assertEqual(
-            'SELECT * FROM surprise', logger.query_data[0]['sql'][3])
+            "SELECT * FROM surprise", logger.query_data[0]["sql"][3]
+        )
 
     def test_stderr(self):
-        with override_environ(LP_DEBUG_SQL='1'):
+        with override_environ(LP_DEBUG_SQL="1"):
             tracer = da.LaunchpadStatementTracer()
         with person_logged_in(self.person):
             with stderr() as file:
                 tracer.connection_raw_execute(
-                    self.connection, None,
-                    'SELECT * FROM bar WHERE bing = 42', ())
+                    self.connection,
+                    None,
+                    "SELECT * FROM bar WHERE bing = 42",
+                    (),
+                )
                 timeline = get_request_timeline(get_current_browser_request())
                 action = timeline.actions[-1]
                 self.assertEqual(
-                    'SELECT * FROM bar WHERE bing = 42',
-                    action.detail)
-                self.assertEqual('SQL-stub-database', action.category)
+                    "SELECT * FROM bar WHERE bing = 42", action.detail
+                )
+                self.assertEqual("SQL-stub-database", action.category)
                 self.assertIs(None, action.duration)
                 # Now we change the detail to verify that the action is the
                 # source of the final log.
-                action.detail = 'SELECT * FROM surprise'
+                action.detail = "SELECT * FROM surprise"
                 tracer.connection_raw_execute_success(
-                    self.connection, None,
-                    'SELECT * FROM bar WHERE bing = 42', ())
+                    self.connection,
+                    None,
+                    "SELECT * FROM bar WHERE bing = 42",
+                    (),
+                )
                 self.assertIsNot(None, action.duration)
                 self.assertEndsWith(
                     file.getvalue(),
-                    '@SQL-stub-database SELECT * FROM surprise\n' +
-                    "-" * 70 + "\n")
+                    "@SQL-stub-database SELECT * FROM surprise\n"
+                    + "-" * 70
+                    + "\n",
+                )
 
     def test_gap_between_requests(self):
         # The tracer doesn't get confused by statements executed between
@@ -347,24 +414,30 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
         with person_logged_in(self.person):
             with StormStatementRecorder() as logger:
                 tracer.connection_raw_execute(
-                    self.connection, None, 'SELECT * FROM one', ())
+                    self.connection, None, "SELECT * FROM one", ()
+                )
                 tracer.connection_raw_execute_success(
-                    self.connection, None, 'SELECT * FROM one', ())
-            self.assertEqual(['SELECT * FROM one'], logger.statements)
+                    self.connection, None, "SELECT * FROM one", ()
+                )
+            self.assertEqual(["SELECT * FROM one"], logger.statements)
             da.clear_request_started()
             with StormStatementRecorder() as logger:
                 tracer.connection_raw_execute(
-                    self.connection, None, 'SELECT * FROM two', ())
+                    self.connection, None, "SELECT * FROM two", ()
+                )
                 tracer.connection_raw_execute_success(
-                    self.connection, None, 'SELECT * FROM two', ())
-            self.assertEqual(['SELECT * FROM two'], logger.statements)
+                    self.connection, None, "SELECT * FROM two", ()
+                )
+            self.assertEqual(["SELECT * FROM two"], logger.statements)
             da.set_request_started(2000.0)
             with StormStatementRecorder() as logger:
                 tracer.connection_raw_execute(
-                    self.connection, None, 'SELECT * FROM three', ())
+                    self.connection, None, "SELECT * FROM three", ()
+                )
                 tracer.connection_raw_execute_success(
-                    self.connection, None, 'SELECT * FROM three', ())
-            self.assertEqual(['SELECT * FROM three'], logger.statements)
+                    self.connection, None, "SELECT * FROM three", ()
+                )
+            self.assertEqual(["SELECT * FROM three"], logger.statements)
 
     def test_clears_timeline_action_reference(self):
         # The tracer doesn't leave TimedAction references lying around in
@@ -373,15 +446,18 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
         with person_logged_in(self.person):
             with StormStatementRecorder():
                 tracer.connection_raw_execute(
-                    self.connection, None, 'SELECT * FROM one', ())
+                    self.connection, None, "SELECT * FROM one", ()
+                )
                 self.assertIsNotNone(self.connection._lp_statement_action)
                 tracer.connection_raw_execute_success(
-                    self.connection, None, 'SELECT * FROM one', ())
+                    self.connection, None, "SELECT * FROM one", ()
+                )
                 self.assertIsNone(self.connection._lp_statement_action)
                 tracer.connection_raw_execute(
-                    self.connection, None, 'SELECT * FROM one', ())
+                    self.connection, None, "SELECT * FROM one", ()
+                )
                 self.assertIsNotNone(self.connection._lp_statement_action)
                 tracer.connection_raw_execute_error(
-                    self.connection, None, 'SELECT * FROM one', (),
-                    Exception())
+                    self.connection, None, "SELECT * FROM one", (), Exception()
+                )
                 self.assertIsNone(self.connection._lp_statement_action)

@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DummyTranslationMessage',
     'make_plurals_sql_fragment',
     'make_plurals_fragment',
+    'PlaceholderTranslationMessage',
     'TranslationMessage',
     'TranslationMessageSet',
     ]
@@ -153,7 +153,7 @@ class TranslationMessageMixIn:
 
 
 @implementer(ITranslationMessage)
-class DummyTranslationMessage(TranslationMessageMixIn):
+class PlaceholderTranslationMessage(TranslationMessageMixIn):
     """Represents an `ITranslationMessage` where we don't yet HAVE it.
 
     We do not put TranslationMessages in the database when we only have

@@ -15,24 +15,31 @@ def setUp(test):
 
     # Create a test schema demonstrating the edge cases
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE A (
             aid     serial PRIMARY KEY,
             selfref integer CONSTRAINT a_selfref_fk REFERENCES A(aid),
             name    text
             )
-        """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE INDEX a__name__idx ON A(name)
-        """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE TABLE B (
             bid integer PRIMARY KEY,
             aid integer UNIQUE CONSTRAINT b_aid_fk REFERENCES A(aid)
                 ON DELETE CASCADE ON UPDATE CASCADE
             )
-        """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE TABLE C (
             cid integer PRIMARY KEY,
             aid integer CONSTRAINT c_aid_fk REFERENCES B(aid),
@@ -41,37 +48,41 @@ def setUp(test):
             name text,
             description text
             )
-        """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE INDEX c__name__description__idx ON C(name, description)
-        """)
-    cur.execute("""
+        """
+    )
+    cur.execute(
+        """
         CREATE TABLE D (
             did integer PRIMARY KEY,
             aid integer UNIQUE CONSTRAINT d_aid_fk REFERENCES B(aid),
             bid integer CONSTRAINT d_bid_fk REFERENCES B(bid),
             CONSTRAINT d_aid_bid_key UNIQUE (aid, bid)
             )
-        """)
+        """
+    )
     cur.execute("CREATE SEQUENCE standalone")
     con.commit()
 
     # Store the connection and a cursor for the tests to use
     cur = con.cursor()
-    test.globs['con'] = con
-    test.globs['cur'] = cur
+    test.globs["con"] = con
+    test.globs["cur"] = cur
 
 
 def tearDown(test):
-    test.globs['con'].close()
+    test.globs["con"].close()
     test._db_fixture.tearDown()
     del test._db_fixture
 
 
 def test_suite():
     suite = DocTestSuite(
-            "lp.services.database.postgresql",
-            setUp=setUp, tearDown=tearDown
-            )
+        "lp.services.database.postgresql", setUp=setUp, tearDown=tearDown
+    )
     suite.layer = BaseLayer
     return suite

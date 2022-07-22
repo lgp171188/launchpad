@@ -4,24 +4,18 @@
 """Snappy vocabularies."""
 
 __all__ = [
-    'SnapDistroArchSeriesVocabulary',
-    'SnappyDistroSeriesVocabulary',
-    'SnappySeriesVocabulary',
-    'SnapStoreChannel',
-    'SnapStoreChannelVocabulary',
-    ]
+    "SnapDistroArchSeriesVocabulary",
+    "SnappyDistroSeriesVocabulary",
+    "SnappySeriesVocabulary",
+    "SnapStoreChannel",
+    "SnapStoreChannelVocabulary",
+]
 
 from lazr.restful.interfaces import IJSONPublishable
 from storm.expr import LeftJoin
-from storm.locals import (
-    Desc,
-    Not,
-    )
+from storm.locals import Desc, Not
 from zope.interface import implementer
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.enums import StoreRisk
@@ -38,7 +32,7 @@ from lp.snappy.model.snappyseries import (
     SnappyDistroSeries,
     SnappyDistroSeriesMixin,
     SnappySeries,
-    )
+)
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -76,9 +70,10 @@ class SyntheticSnappyDistroSeries(SnappyDistroSeriesMixin):
 
     def __eq__(self, other):
         return (
-            ISnappyDistroSeries.providedBy(other) and
-            self.snappy_series == other.snappy_series and
-            self.distro_series == other.distro_series)
+            ISnappyDistroSeries.providedBy(other)
+            and self.snappy_series == other.snappy_series
+            and self.distro_series == other.distro_series
+        )
 
     def __ne__(self, other):
         return not (self == other)
@@ -90,17 +85,25 @@ def sorting_tuple_date_created(element):
     # descending order
     if element.distro_series is not None:
         if element.snappy_series is not None:
-            return (1, element.distro_series.distribution.display_name,
-                    (-seconds_since_epoch(element.distro_series.date_created)),
-                    (-seconds_since_epoch(element.snappy_series.date_created)))
+            return (
+                1,
+                element.distro_series.distribution.display_name,
+                (-seconds_since_epoch(element.distro_series.date_created)),
+                (-seconds_since_epoch(element.snappy_series.date_created)),
+            )
         else:
-            return (1, element.distro_series.distribution.display_name,
-                    (-seconds_since_epoch(element.distro_series.date_created)),
-                    0)
+            return (
+                1,
+                element.distro_series.distribution.display_name,
+                (-seconds_since_epoch(element.distro_series.date_created)),
+                0,
+            )
     else:
         if element.snappy_series is not None:
-            return (0,
-                    (-seconds_since_epoch(element.snappy_series.date_created)))
+            return (
+                0,
+                (-seconds_since_epoch(element.snappy_series.date_created)),
+            )
         else:
             return 0, 0
 
@@ -113,24 +116,34 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         SnappyDistroSeries,
         LeftJoin(
             DistroSeries,
-            SnappyDistroSeries.distro_series_id == DistroSeries.id),
+            SnappyDistroSeries.distro_series_id == DistroSeries.id,
+        ),
         LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
         SnappySeries,
-        ]
-    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id,
-                SnappySeries.status.is_in(ACTIVE_STATUSES)]
+    ]
+    _clauses = [
+        SnappyDistroSeries.snappy_series_id == SnappySeries.id,
+        SnappySeries.status.is_in(ACTIVE_STATUSES),
+    ]
 
     @property
     def _entries(self):
-        entries = list(IStore(self._table).using(*self._origin).find(
-            self._table, *self._clauses))
+        entries = list(
+            IStore(self._table)
+            .using(*self._origin)
+            .find(self._table, *self._clauses)
+        )
 
-        if (ISnap.providedBy(self.context) and not
-                any(entry.snappy_series == self.context.store_series
-                    and entry.distro_series == self.context.distro_series
-                    for entry in entries)):
-            entries.append(SyntheticSnappyDistroSeries(
-                self.context.store_series, self.context.distro_series))
+        if ISnap.providedBy(self.context) and not any(
+            entry.snappy_series == self.context.store_series
+            and entry.distro_series == self.context.distro_series
+            for entry in entries
+        ):
+            entries.append(
+                SyntheticSnappyDistroSeries(
+                    self.context.store_series, self.context.distro_series
+                )
+            )
         return sorted(entries, key=sorting_tuple_date_created)
 
     def toTerm(self, obj):
@@ -142,14 +155,16 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
                 token = "%s/%s/%s" % (
                     obj.distro_series.distribution.name,
                     obj.distro_series.name,
-                    obj.snappy_series.name)
+                    obj.snappy_series.name,
+                )
         else:
             if obj.distro_series is None:
                 token = "(unset)"
             else:
                 token = "%s/%s" % (
-                        obj.distro_series.distribution.name,
-                        obj.distro_series.name)
+                    obj.distro_series.distribution.name,
+                    obj.distro_series.name,
+                )
         return SimpleTerm(obj, token, obj.title)
 
     def __contains__(self, value):
@@ -172,20 +187,29 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
                 distribution_name, distro_series_name = bits
                 snappy_series_name = None
             elif len(bits) == 3:
-                distribution_name, distro_series_name, snappy_series_name = (
-                    bits)
+                (
+                    distribution_name,
+                    distro_series_name,
+                    snappy_series_name,
+                ) = bits
             else:
                 raise LookupError(token)
         else:
             distribution_name = None
             distro_series_name = None
             snappy_series_name = token
-        entry = IStore(self._table).using(*self._origin).find(
-            self._table,
-            Not(IsDistinctFrom(Distribution.name, distribution_name)),
-            Not(IsDistinctFrom(DistroSeries.name, distro_series_name)),
-            SnappySeries.name == snappy_series_name,
-            *self._clauses).one()
+        entry = (
+            IStore(self._table)
+            .using(*self._origin)
+            .find(
+                self._table,
+                Not(IsDistinctFrom(Distribution.name, distribution_name)),
+                Not(IsDistinctFrom(DistroSeries.name, distro_series_name)),
+                SnappySeries.name == snappy_series_name,
+                *self._clauses,
+            )
+            .one()
+        )
 
         if entry is None and ISnap.providedBy(self.context):
             if self.context.store_series is None:
@@ -194,16 +218,20 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
                 context_store_series_name = self.context.store_series.name
             if self.context.distro_series is not None:
                 context_distribution_name = (
-                    self.context.distro_series.distribution.name)
+                    self.context.distro_series.distribution.name
+                )
                 context_distro_series_name = self.context.distro_series.name
             else:
                 context_distribution_name = None
                 context_distro_series_name = None
-            if (context_distribution_name == distribution_name and
-                    context_distro_series_name == distro_series_name and
-                    context_store_series_name == snappy_series_name):
+            if (
+                context_distribution_name == distribution_name
+                and context_distro_series_name == distro_series_name
+                and context_store_series_name == snappy_series_name
+            ):
                 entry = SyntheticSnappyDistroSeries(
-                    self.context.store_series, self.context.distro_series)
+                    self.context.store_series, self.context.distro_series
+                )
         if entry is None:
             raise LookupError(token)
 
@@ -225,7 +253,8 @@ class SnapStoreChannelVocabulary(SimpleVocabulary):
     def __init__(self, context=None):
         terms = [
             self.createTerm(item.title, item.title, item.description)
-            for item in StoreRisk.items]
+            for item in StoreRisk.items
+        ]
         if ISnap.providedBy(context):
             # Supplement the vocabulary with any obsolete channels still
             # used by this context.

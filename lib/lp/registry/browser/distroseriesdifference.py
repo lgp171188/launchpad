@@ -4,62 +4,49 @@
 """Browser views for DistroSeriesDifferences."""
 
 __all__ = [
-    'CommentXHTMLRepresentation',
-    'DistroSeriesDifferenceView',
-    ]
+    "CommentXHTMLRepresentation",
+    "DistroSeriesDifferenceView",
+]
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebServiceClientRequest
 from zope.browserpage import ViewPageTemplateFile
-from zope.component import (
-    adapter,
-    getUtility,
-    )
+from zope.component import adapter, getUtility
 from zope.formlib.itemswidgets import RadioWidget
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.schema import Choice
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp.app.browser.launchpadform import LaunchpadFormView
 from lp.registry.enums import (
     DistroSeriesDifferenceStatus,
     DistroSeriesDifferenceType,
-    )
+)
 from lp.registry.interfaces.distroseriesdifference import (
     IDistroSeriesDifference,
-    )
+)
 from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceComment,
     IDistroSeriesDifferenceCommentSource,
-    )
+)
 from lp.registry.model.distroseriesdifferencecomment import (
     DistroSeriesDifferenceComment,
-    )
+)
 from lp.services.comments.browser.messagecomment import MessageComment
 from lp.services.comments.interfaces.conversation import (
     IComment,
     IConversation,
-    )
+)
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    LaunchpadView,
-    Navigation,
-    stepthrough,
-    )
+from lp.services.webapp import LaunchpadView, Navigation, stepthrough
 from lp.services.webapp.authorization import check_permission
 
 
 class DistroSeriesDifferenceNavigation(Navigation):
     usedfor = IDistroSeriesDifference
 
-    @stepthrough('comments')
+    @stepthrough("comments")
     def traverse_comment(self, id_str):
         try:
             id = int(id_str)
@@ -67,8 +54,8 @@ class DistroSeriesDifferenceNavigation(Navigation):
             return None
 
         return getUtility(
-            IDistroSeriesDifferenceCommentSource).getForDifference(
-                self.context, id)
+            IDistroSeriesDifferenceCommentSource
+        ).getForDifference(self.context, id)
 
     @property
     def parent_packagesets_names(self):
@@ -87,24 +74,31 @@ class DistroSeriesDifferenceNavigation(Navigation):
     def _formatPackageSets(self, packagesets):
         """Format a list of packagesets to display in the UI."""
         if packagesets is not None:
-            return ', '.join([packageset.name for packageset in packagesets])
+            return ", ".join([packageset.name for packageset in packagesets])
         else:
             return None
 
 
 class IDistroSeriesDifferenceForm(Interface):
     """An interface used in the browser only for displaying form elements."""
-    blacklist_options = Choice(vocabulary=SimpleVocabulary((
-        SimpleTerm('NONE', 'NONE', 'No'),
-        SimpleTerm(
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS.name,
-            'All versions'),
-        SimpleTerm(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT.name,
-            'These versions'),
-        )))
+
+    blacklist_options = Choice(
+        vocabulary=SimpleVocabulary(
+            (
+                SimpleTerm("NONE", "NONE", "No"),
+                SimpleTerm(
+                    DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
+                    DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS.name,
+                    "All versions",
+                ),
+                SimpleTerm(
+                    DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+                    DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT.name,
+                    "These versions",
+                ),
+            )
+        )
+    )
 
 
 @implementer(IConversation)
@@ -118,11 +112,11 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         blacklisted_statuses = (
             DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
             DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
-            )
+        )
         if self.context.status in blacklisted_statuses:
             return dict(blacklist_options=self.context.status)
 
-        return dict(blacklist_options='NONE')
+        return dict(blacklist_options="NONE")
 
     @property
     def binary_summaries(self):
@@ -136,7 +130,7 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         if source_pub is not None:
             summary = source_pub.meta_sourcepackage.summary
             if summary:
-                return summary.split('\n')
+                return summary.split("\n")
 
         return None
 
@@ -144,15 +138,17 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
     def comments(self):
         """See `IConversation`."""
         comments = self.context.getComments().order_by(
-            DistroSeriesDifferenceComment.id)
+            DistroSeriesDifferenceComment.id
+        )
         return [
-            DistroSeriesDifferenceDisplayComment(comment) for
-                comment in comments]
+            DistroSeriesDifferenceDisplayComment(comment)
+            for comment in comments
+        ]
 
     @cachedproperty
     def can_request_diffs(self):
         """Does the user have permission to request diff calculation?"""
-        return check_permission('launchpad.Edit', self.context)
+        return check_permission("launchpad.Edit", self.context)
 
     @cachedproperty
     def show_add_comment(self):
@@ -167,7 +163,8 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         is an archive admin.
         """
         return self.request.is_ajax and check_permission(
-            'launchpad.Admin', self.context)
+            "launchpad.Admin", self.context
+        )
 
     @cachedproperty
     def blacklist_options_css_class(self):
@@ -176,9 +173,9 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         'blacklist-options-disabled' if not enabled.
         """
         if self.enable_blacklist_options:
-            return 'blacklist-options'
+            return "blacklist-options"
         else:
-            return 'blacklist-options-disabled'
+            return "blacklist-options-disabled"
 
     @property
     def display_diffs(self):
@@ -212,13 +209,16 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         request link.
         """
         derived_diff_computable = (
-            not self.context.package_diff and self.display_child_diff)
+            not self.context.package_diff and self.display_child_diff
+        )
         parent_diff_computable = (
-            not self.context.parent_package_diff and self.display_parent_diff)
-        return (self.display_diffs and
-                self.can_request_diffs and
-                (derived_diff_computable or
-                 parent_diff_computable))
+            not self.context.parent_package_diff and self.display_parent_diff
+        )
+        return (
+            self.display_diffs
+            and self.can_request_diffs
+            and (derived_diff_computable or parent_diff_computable)
+        )
 
     @property
     def display_package_diffs_info(self):
@@ -236,9 +236,10 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
 
         """
         return (
-            self.context.package_diff is not None or
-            self.context.parent_package_diff is not None or
-            self.show_package_diffs_request_link)
+            self.context.package_diff is not None
+            or self.context.parent_package_diff is not None
+            or self.show_package_diffs_request_link
+        )
 
 
 class IDistroSeriesDifferenceDisplayComment(IComment, IMessage):
@@ -246,7 +247,7 @@ class IDistroSeriesDifferenceDisplayComment(IComment, IMessage):
 
 
 @implementer(IDistroSeriesDifferenceDisplayComment)
-@delegate_to(IMessage, context='_message')
+@delegate_to(IMessage, context="_message")
 class DistroSeriesDifferenceDisplayComment(MessageComment):
     """Used simply to provide `IComment` for rendering."""
 
@@ -272,8 +273,10 @@ def get_message(comment):
 @implementer(Interface)
 class CommentXHTMLRepresentation(LaunchpadView):
     """Render individual comments when requested via the API."""
+
     template = ViewPageTemplateFile(
-        '../templates/distroseriesdifferencecomment-fragment.pt')
+        "../templates/distroseriesdifferencecomment-fragment.pt"
+    )
 
     @property
     def comment(self):

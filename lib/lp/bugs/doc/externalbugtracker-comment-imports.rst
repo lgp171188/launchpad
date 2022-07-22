@@ -260,7 +260,7 @@ linking it to the bug watch this method will, of course, return False.
 
 IBugWatch provides an addComment() method by which comments can be
 linked to a bug watch. This method accepts a Launchpad Message object
-representing the comment itself and a comment_id paramter, which can be
+representing the comment itself and a comment_id parameter, which can be
 used to pass the ID of the comment on the remote bug tracker from which
 the comment was imported. It returns the created IBugMessage.
 

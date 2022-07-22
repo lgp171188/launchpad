@@ -4,17 +4,13 @@
 """A widget for selecting source snap channels for builds."""
 
 __all__ = [
-    'SnapBuildChannelsWidget',
-    ]
+    "SnapBuildChannelsWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputErrors,
-    InputWidget,
-    )
+from zope.formlib.widget import BrowserWidget, InputErrors, InputWidget
 from zope.interface import implementer
 from zope.schema import TextLine
 from zope.security.proxy import isinstance as zope_isinstance
@@ -24,7 +20,7 @@ from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     ISingleLineWidgetLayout,
-    )
+)
 from lp.snappy.interfaces.snap import SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG
 
 
@@ -39,34 +35,41 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
     def __init__(self, context, request):
         super().__init__(context, request)
         self.hint = (
-            'The channels to use for build tools when building the snap '
-            'package.\n')
+            "The channels to use for build tools when building the snap "
+            "package.\n"
+        )
         default_snapcraft_channel = (
-            getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt")
+            getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt"
+        )
         if default_snapcraft_channel == "apt":
             self.hint += (
                 'If unset, or if the channel for snapcraft is set to "apt", '
-                'the default is to install snapcraft from the source archive '
-                'using apt.')
+                "the default is to install snapcraft from the source archive "
+                "using apt."
+            )
         else:
             self.hint += (
                 'If unset, the default is to install snapcraft from the "%s" '
                 'channel.  Setting the channel for snapcraft to "apt" causes '
-                'snapcraft to be installed from the source archive using '
-                'apt.' % default_snapcraft_channel)
+                "snapcraft to be installed from the source archive using "
+                "apt." % default_snapcraft_channel
+            )
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
         fields = [
             TextLine(
-                __name__=snap_name, title="%s channel" % snap_name,
-                required=False)
+                __name__=snap_name,
+                title="%s channel" % snap_name,
+                required=False,
+            )
             for snap_name in self.snap_names
-            ]
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def setRenderedValue(self, value):
@@ -76,13 +79,15 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
             value = {}
         for snap_name in self.snap_names:
             getattr(self, "%s_widget" % snap_name).setRenderedValue(
-                value.get(snap_name))
+                value.get(snap_name)
+            )
 
     def hasInput(self):
         """See `IInputWidget`."""
         return any(
             "%s.%s" % (self.name, snap_name) in self.request.form
-            for snap_name in self.snap_names)
+            for snap_name in self.snap_names
+        )
 
     def hasValidInput(self):
         """See `IInputWidget`."""

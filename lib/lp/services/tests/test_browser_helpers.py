@@ -3,7 +3,7 @@
 
 """Unit tests for browser helper functions."""
 
-__all__ = ['TestGetUserAgentDistroSeries']
+__all__ = ["TestGetUserAgentDistroSeries"]
 
 import unittest
 
@@ -15,22 +15,28 @@ class TestGetUserAgentDistroSeries(unittest.TestCase):
 
     def test_get_user_agent_distroseries_when_present(self):
         """The version number is returned when present."""
-        user_agent = ('Mozilla/5.0 '
-                      '(X11; U; Linux i686; en-US; rv:1.9.0.10) '
-                      'Gecko/2009042523 Ubuntu/10.09 (whatever) '
-                      'Firefox/3.0.10')
+        user_agent = (
+            "Mozilla/5.0 "
+            "(X11; U; Linux i686; en-US; rv:1.9.0.10) "
+            "Gecko/2009042523 Ubuntu/10.09 (whatever) "
+            "Firefox/3.0.10"
+        )
 
         version = get_user_agent_distroseries(user_agent)
-        self.assertEqual('10.09', version,
-                         "Incorrect version string returned.")
+        self.assertEqual(
+            "10.09", version, "Incorrect version string returned."
+        )
 
     def test_get_user_agent_distroseries_when_invalid(self):
         """None should be returned when the version is not matched."""
-        user_agent = ('Mozilla/5.0 '
-                      '(X11; U; Linux i686; en-US; rv:1.9.0.10) '
-                      'Gecko/2009042523 Ubuntu/10a.09 (whatever) '
-                      'Firefox/3.0.10')
+        user_agent = (
+            "Mozilla/5.0 "
+            "(X11; U; Linux i686; en-US; rv:1.9.0.10) "
+            "Gecko/2009042523 Ubuntu/10a.09 (whatever) "
+            "Firefox/3.0.10"
+        )
 
         version = get_user_agent_distroseries(user_agent)
         self.assertIsNone(
-            version, "None should be returned when the match fails.")
+            version, "None should be returned when the match fails."
+        )

@@ -8,9 +8,9 @@ filename matches, or whether it is a file outside of any known pattern.
 """
 
 __all__ = [
-    'Filter',
-    'FilterPattern',
-    ]
+    "Filter",
+    "FilterPattern",
+]
 
 import fnmatch
 import itertools
@@ -41,8 +41,12 @@ class Filter:
         self.log.debug("Checking %s", url)
         for pattern in self.filters:
             if pattern.match(url):
-                self.log.info("%s matches %s glob (%s)",
-                              url, pattern.key, pattern.urlglob)
+                self.log.info(
+                    "%s matches %s glob (%s)",
+                    url,
+                    pattern.key,
+                    pattern.urlglob,
+                )
                 return pattern.key
         else:
             self.log.debug("No matches")
@@ -53,8 +57,12 @@ class Filter:
         self.log.debug("Checking if %s is a possible parent", url)
         for pattern in self.filters:
             if pattern.containedBy(url):
-                self.log.info("%s could contain matches for %s glob (%s)",
-                              url, pattern.key, pattern.urlglob)
+                self.log.info(
+                    "%s could contain matches for %s glob (%s)",
+                    url,
+                    pattern.key,
+                    pattern.urlglob,
+                )
                 return True
         else:
             return False
@@ -71,19 +79,22 @@ class FilterPattern:
         self.key = key
         self.urlglob = urlglob
 
-        parts = self.urlglob.split('/')
+        parts = self.urlglob.split("/")
         # construct a base URL by taking components up til the first
         # one containing a glob pattern:
-        self.base_url = '/'.join(itertools.takewhile(
-            lambda part: '*' not in part and '?' not in part, parts))
-        if not self.base_url.endswith('/'):
-            self.base_url += '/'
+        self.base_url = "/".join(
+            itertools.takewhile(
+                lambda part: "*" not in part and "?" not in part, parts
+            )
+        )
+        if not self.base_url.endswith("/"):
+            self.base_url += "/"
 
         self.patterns = [re.compile(fnmatch.translate(part)) for part in parts]
 
     def match(self, url):
         """Returns true if this filter pattern matches the URL."""
-        parts = url.split('/')
+        parts = url.split("/")
         # If the length of list of slash separated parts of the URL
         # differs from the number of patterns, then they can't match.
         if len(parts) != len(self.patterns):
@@ -96,8 +107,8 @@ class FilterPattern:
 
     def containedBy(self, url):
         """Returns true if this pattern could match children of the URL."""
-        url = url.rstrip('/')
-        parts = url.split('/')
+        url = url.rstrip("/")
+        parts = url.split("/")
         # If the URL contains greater than or equal the number of
         # parts as the number of patterns we have, then it couldn't
         # contain any children that match this pattern.

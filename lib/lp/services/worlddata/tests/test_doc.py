@@ -9,20 +9,17 @@ import os
 
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 special = {
-    'language.rst': LayeredDocFileSuite(
-        '../doc/language.rst',
+    "language.rst": LayeredDocFileSuite(
+        "../doc/language.rst",
         layer=LaunchpadZopelessLayer,
-        setUp=setUp, tearDown=tearDown),
-    }
+        setUp=setUp,
+        tearDown=tearDown,
+    ),
+}
 
 
 def test_suite():

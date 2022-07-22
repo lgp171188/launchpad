@@ -4,46 +4,44 @@
 """Snap package interfaces."""
 
 __all__ = [
-    'BadMacaroon',
-    'BadSnapSearchContext',
-    'BadSnapSource',
-    'CannotAuthorizeStoreUploads',
-    'CannotFetchSnapcraftYaml',
-    'CannotModifySnapProcessor',
-    'CannotParseSnapcraftYaml',
-    'CannotRequestAutoBuilds',
-    'DuplicateSnapName',
-    'ISnap',
-    'ISnapBuildRequest',
-    'ISnapEdit',
-    'ISnapSet',
-    'ISnapView',
-    'MissingSnapcraftYaml',
-    'NoSourceForSnap',
-    'NoSuchSnap',
-    'SNAP_PRIVATE_FEATURE_FLAG',
-    'SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG',
-    'SNAP_TESTING_FLAGS',
-    'SNAP_WEBHOOKS_FEATURE_FLAG',
-    'SnapAuthorizationBadGeneratedMacaroon',
-    'SnapBuildAlreadyPending',
-    'SnapBuildArchiveOwnerMismatch',
-    'SnapBuildDisallowedArchitecture',
-    'SnapBuildRequestStatus',
-    'SnapNotOwner',
-    'SnapPrivacyMismatch',
-    'SnapPrivacyPillarError',
-    'SnapPrivateFeatureDisabled',
-    ]
+    "BadMacaroon",
+    "BadSnapSearchContext",
+    "BadSnapSource",
+    "CannotAuthorizeStoreUploads",
+    "CannotFetchSnapcraftYaml",
+    "CannotModifySnapProcessor",
+    "CannotParseSnapcraftYaml",
+    "CannotRequestAutoBuilds",
+    "DuplicateSnapName",
+    "ISnap",
+    "ISnapBuildRequest",
+    "ISnapEdit",
+    "ISnapSet",
+    "ISnapView",
+    "MissingSnapcraftYaml",
+    "NoSourceForSnap",
+    "NoSuchSnap",
+    "SNAP_PRIVATE_FEATURE_FLAG",
+    "SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG",
+    "SNAP_TESTING_FLAGS",
+    "SNAP_WEBHOOKS_FEATURE_FLAG",
+    "SnapAuthorizationBadGeneratedMacaroon",
+    "SnapBuildAlreadyPending",
+    "SnapBuildArchiveOwnerMismatch",
+    "SnapBuildDisallowedArchitecture",
+    "SnapBuildRequestStatus",
+    "SnapNotOwner",
+    "SnapPrivacyMismatch",
+    "SnapPrivacyPillarError",
+    "SnapPrivateFeatureDisabled",
+]
 
 import http.client
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     error_status,
@@ -58,18 +56,10 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    ReferenceChoice,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
     Choice,
@@ -80,11 +70,8 @@ from zope.schema import (
     Set,
     Text,
     TextLine,
-    )
-from zope.security.interfaces import (
-    Forbidden,
-    Unauthorized,
-    )
+)
+from zope.security.interfaces import Forbidden, Unauthorized
 
 from lp import _
 from lp.app.enums import InformationType
@@ -101,21 +88,16 @@ from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import (
-    PersonChoice,
-    PublicPersonChoice,
-    URIField,
-    )
+from lp.services.fields import PersonChoice, PublicPersonChoice, URIField
 from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.snappy.interfaces.snapbase import ISnapBase
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeries,
     ISnappySeries,
-    )
+)
 from lp.snappy.validators.channels import channels_validator
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
-
 
 SNAP_PRIVATE_FEATURE_FLAG = "snap.allow_private"
 SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = "snap.channels.snapcraft"
@@ -125,7 +107,7 @@ SNAP_WEBHOOKS_FEATURE_FLAG = "snap.webhooks.enabled"
 SNAP_TESTING_FLAGS = {
     SNAP_PRIVATE_FEATURE_FLAG: "on",
     SNAP_WEBHOOKS_FEATURE_FLAG: "on",
-    }
+}
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -134,7 +116,8 @@ class SnapBuildAlreadyPending(Exception):
 
     def __init__(self):
         super().__init__(
-            "An identical build of this snap package is already pending.")
+            "An identical build of this snap package is already pending."
+        )
 
 
 @error_status(http.client.FORBIDDEN)
@@ -152,7 +135,8 @@ class SnapBuildArchiveOwnerMismatch(Forbidden):
     def __init__(self):
         super().__init__(
             "Snap package builds against private archives are only allowed "
-            "if the snap package owner and the archive owner are equal.")
+            "if the snap package owner and the archive owner are equal."
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -161,8 +145,9 @@ class SnapBuildDisallowedArchitecture(Exception):
 
     def __init__(self, das, pocket):
         super().__init__(
-            "This snap package is not allowed to build for %s/%s." %
-            (das.distroseries.getSuite(pocket), das.architecturetag))
+            "This snap package is not allowed to build for %s/%s."
+            % (das.distroseries.getSuite(pocket), das.architecturetag)
+        )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -179,7 +164,8 @@ class DuplicateSnapName(Exception):
 
     def __init__(self):
         super().__init__(
-            "There is already a snap package with the same name and owner.")
+            "There is already a snap package with the same name and owner."
+        )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -189,6 +175,7 @@ class SnapNotOwner(Unauthorized):
 
 class NoSuchSnap(NameLookupFailed):
     """The requested snap package does not exist."""
+
     _message_prefix = "No such snap package with this owner"
 
 
@@ -199,7 +186,8 @@ class NoSourceForSnap(Exception):
     def __init__(self):
         super().__init__(
             "New snap packages must have either a Bazaar branch or a Git "
-            "branch.")
+            "branch."
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -213,8 +201,9 @@ class SnapPrivacyMismatch(Exception):
 
     def __init__(self, message=None):
         super().__init__(
-            message or
-            "Snap recipe contains private information and cannot be public.")
+            message
+            or "Snap recipe contains private information and cannot be public."
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -223,7 +212,8 @@ class SnapPrivacyPillarError(Exception):
 
     def __init__(self, message=None):
         super().__init__(
-            message or "Private Snap recipes should have a pillar.")
+            message or "Private Snap recipes should have a pillar."
+        )
 
 
 class BadSnapSearchContext(Exception):
@@ -235,11 +225,12 @@ class CannotModifySnapProcessor(Exception):
     """Tried to enable or disable a restricted processor on an snap package."""
 
     _fmt = (
-        '%(processor)s is restricted, and may only be enabled or disabled '
-        'by administrators.')
+        "%(processor)s is restricted, and may only be enabled or disabled "
+        "by administrators."
+    )
 
     def __init__(self, processor):
-        super().__init__(self._fmt % {'processor': processor.name})
+        super().__init__(self._fmt % {"processor": processor.name})
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -264,7 +255,8 @@ class CannotRequestAutoBuilds(Exception):
     def __init__(self, field):
         super().__init__(
             "This snap package cannot have automatic builds created for it "
-            "because %s is not set." % field)
+            "because %s is not set." % field
+        )
 
 
 class MissingSnapcraftYaml(Exception):
@@ -289,23 +281,29 @@ class CannotParseSnapcraftYaml(Exception):
 class SnapBuildRequestStatus(EnumeratedType):
     """The status of a request to build a snap package."""
 
-    PENDING = Item("""
+    PENDING = Item(
+        """
         Pending
 
         This snap build request is pending.
-        """)
+        """
+    )
 
-    FAILED = Item("""
+    FAILED = Item(
+        """
         Failed
 
         This snap build request failed.
-        """)
+        """
+    )
 
-    COMPLETED = Item("""
+    COMPLETED = Item(
+        """
         Completed
 
         This snap build request completed successfully.
-        """)
+        """
+    )
 
 
 # XXX cjwatson 2018-06-14 bug=760849: "beta" is a lie to get WADL
@@ -317,52 +315,89 @@ class ISnapBuildRequest(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_requested = exported(Datetime(
-        title=_("The time when this request was made"),
-        required=True, readonly=True))
+    date_requested = exported(
+        Datetime(
+            title=_("The time when this request was made"),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    date_finished = exported(Datetime(
-        title=_("The time when this request finished"),
-        required=False, readonly=True))
+    date_finished = exported(
+        Datetime(
+            title=_("The time when this request finished"),
+            required=False,
+            readonly=True,
+        )
+    )
 
-    snap = exported(Reference(
-        # Really ISnap, patched in lp.snappy.interfaces.webservice.
-        Interface,
-        title=_("Snap package"), required=True, readonly=True))
+    snap = exported(
+        Reference(
+            # Really ISnap, patched in lp.snappy.interfaces.webservice.
+            Interface,
+            title=_("Snap package"),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    status = exported(Choice(
-        title=_("Status"), vocabulary=SnapBuildRequestStatus,
-        required=True, readonly=True))
+    status = exported(
+        Choice(
+            title=_("Status"),
+            vocabulary=SnapBuildRequestStatus,
+            required=True,
+            readonly=True,
+        )
+    )
 
-    error_message = exported(TextLine(
-        title=_("Error message"), required=True, readonly=True))
+    error_message = exported(
+        TextLine(title=_("Error message"), required=True, readonly=True)
+    )
 
-    builds = exported(CollectionField(
-        title=_("Builds produced by this request"),
-        # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
-        value_type=Reference(schema=Interface),
-        required=True, readonly=True))
+    builds = exported(
+        CollectionField(
+            title=_("Builds produced by this request"),
+            # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
+            value_type=Reference(schema=Interface),
+            required=True,
+            readonly=True,
+        )
+    )
 
     requester = Reference(
-        title=_("The person requesting the builds."), schema=IPerson,
-        required=True, readonly=True)
+        title=_("The person requesting the builds."),
+        schema=IPerson,
+        required=True,
+        readonly=True,
+    )
 
     archive = Reference(
         IArchive,
         title="The source archive for builds produced by this request",
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     pocket = Choice(
         title=_("The source pocket for builds produced by this request."),
-        vocabulary=PackagePublishingPocket, required=True, readonly=True)
+        vocabulary=PackagePublishingPocket,
+        required=True,
+        readonly=True,
+    )
 
     channels = Dict(
         title=_("Source snap channels for builds produced by this request"),
-        key_type=TextLine(), required=False, readonly=True)
+        key_type=TextLine(),
+        required=False,
+        readonly=True,
+    )
 
     architectures = Set(
         title=_("If set, this request is limited to these architecture tags"),
-        value_type=TextLine(), required=False, readonly=True)
+        value_type=TextLine(),
+        required=False,
+        readonly=True,
+    )
 
 
 class ISnapView(Interface):
@@ -370,25 +405,33 @@ class ISnapView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this snap package.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this snap package."),
+        )
+    )
 
     source = Attribute(
-        "The source branch for this snap package (VCS-agnostic).")
+        "The source branch for this snap package (VCS-agnostic)."
+    )
 
     available_processors = Attribute(
         "The architectures that are available to be enabled or disabled for "
-        "this snap package.")
+        "this snap package."
+    )
 
     @call_with(check_permissions=True, user=REQUEST_USER)
     @operation_parameters(
-        processors=List(
-            value_type=Reference(schema=IProcessor), required=True))
+        processors=List(value_type=Reference(schema=IProcessor), required=True)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setProcessors(processors, check_permissions=False, user=None):
@@ -400,11 +443,17 @@ class ISnapView(Interface):
         :return: Sequence of `IDistroArchSeries` instances.
         """
 
-    can_upload_to_store = exported(Bool(
-        title=_("Can upload to store"), required=True, readonly=True,
-        description=_(
-            "Whether everything is set up to allow uploading builds of this "
-            "snap package to the store.")))
+    can_upload_to_store = exported(
+        Bool(
+            title=_("Can upload to store"),
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether everything is set up to allow uploading builds of "
+                "this snap package to the store."
+            ),
+        )
+    )
 
     @call_with(requester=REQUEST_USER)
     @operation_parameters(
@@ -417,14 +466,25 @@ class ISnapView(Interface):
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
                 "build.  Currently only 'core', 'core18', 'core20', 'core22', "
-                "and 'snapcraft' keys are supported."),
-            key_type=TextLine(), required=False))
+                "and 'snapcraft' keys are supported."
+            ),
+            key_type=TextLine(),
+            required=False,
+        ),
+    )
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def requestBuild(requester, archive, distro_arch_series, pocket,
-                     snap_base=None, channels=None, build_request=None,
-                     target_architectures=None):
+    def requestBuild(
+        requester,
+        archive,
+        distro_arch_series,
+        pocket,
+        snap_base=None,
+        channels=None,
+        build_request=None,
+        target_architectures=None,
+    ):
         """Request that the snap package be built.
 
         :param requester: The person requesting the build.
@@ -450,8 +510,12 @@ class ISnapView(Interface):
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
                 "build.  Currently only 'core', 'core18', 'core20', 'core22', "
-                "and 'snapcraft' keys are supported."),
-            key_type=TextLine(), required=False))
+                "and 'snapcraft' keys are supported."
+            ),
+            key_type=TextLine(),
+            required=False,
+        ),
+    )
     @export_factory_operation(ISnapBuildRequest, [])
     @operation_for_version("devel")
     def requestBuilds(requester, archive, pocket, channels=None):
@@ -469,10 +533,17 @@ class ISnapView(Interface):
         :return: An `ISnapBuildRequest`.
         """
 
-    def requestBuildsFromJob(requester, archive, pocket, channels=None,
-                             architectures=None, allow_failures=False,
-                             fetch_snapcraft_yaml=True, build_request=None,
-                             logger=None):
+    def requestBuildsFromJob(
+        requester,
+        archive,
+        pocket,
+        channels=None,
+        architectures=None,
+        allow_failures=False,
+        fetch_snapcraft_yaml=True,
+        build_request=None,
+        logger=None,
+    ):
         """Synchronous part of `Snap.requestBuilds`.
 
         Request that the snap package be built for relevant architectures.
@@ -507,22 +578,36 @@ class ISnapView(Interface):
         :return: `ISnapBuildRequest`.
         """
 
-    pending_build_requests = exported(doNotSnapshot(CollectionField(
-        title=_("Pending build requests for this snap package."),
-        value_type=Reference(ISnapBuildRequest),
-        required=True, readonly=True)))
+    pending_build_requests = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Pending build requests for this snap package."),
+                value_type=Reference(ISnapBuildRequest),
+                required=True,
+                readonly=True,
+            )
+        )
+    )
 
-    failed_build_requests = exported(doNotSnapshot(CollectionField(
-        title=_("Failed build requests for this snap package."),
-        value_type=Reference(ISnapBuildRequest),
-        required=True, readonly=True)))
+    failed_build_requests = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Failed build requests for this snap package."),
+                value_type=Reference(ISnapBuildRequest),
+                required=True,
+                readonly=True,
+            )
+        )
+    )
 
     # XXX cjwatson 2018-06-20: Deprecated as an exported method; can become
     # an internal helper method once production JavaScript no longer uses
     # it.
     @operation_parameters(
         snap_build_ids=List(
-            title=_("A list of snap build IDs."), value_type=Int()))
+            title=_("A list of snap build IDs."), value_type=Int()
+        )
+    )
     @export_read_operation()
     @operation_for_version("devel")
     def getBuildSummariesForSnapBuildIds(snap_build_ids):
@@ -536,8 +621,8 @@ class ISnapView(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        store_upload_revision=Int(title="Store revision",
-                                  required=True))
+        store_upload_revision=Int(title="Store revision", required=True)
+    )
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
@@ -554,11 +639,16 @@ class ISnapView(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         request_ids=List(
-            title=_("A list of snap build request IDs."), value_type=Int(),
-            required=False),
+            title=_("A list of snap build request IDs."),
+            value_type=Int(),
+            required=False,
+        ),
         build_ids=List(
-            title=_("A list of snap build IDs."), value_type=Int(),
-            required=False))
+            title=_("A list of snap build IDs."),
+            value_type=Int(),
+            required=False,
+        ),
+    )
     @export_read_operation()
     @operation_for_version("devel")
     def getBuildSummaries(request_ids=None, build_ids=None, user=None):
@@ -572,38 +662,66 @@ class ISnapView(Interface):
             builds respectively.
         """
 
-    builds = exported(doNotSnapshot(CollectionField(
-        title=_("All builds of this snap package."),
-        description=_(
-            "All builds of this snap package, sorted in descending order "
-            "of finishing (or starting if not completed successfully)."),
-        # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
-        value_type=Reference(schema=Interface), readonly=True)))
+    builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("All builds of this snap package."),
+                description=_(
+                    "All builds of this snap package, sorted in descending "
+                    "order of finishing (or starting if not completed "
+                    "successfully)."
+                ),
+                # Really ISnapBuild, patched in
+                # lp.snappy.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
-    completed_builds = exported(doNotSnapshot(CollectionField(
-        title=_("Completed builds of this snap package."),
-        description=_(
-            "Completed builds of this snap package, sorted in descending "
-            "order of finishing."),
-        # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
-        value_type=Reference(schema=Interface), readonly=True)))
+    completed_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Completed builds of this snap package."),
+                description=_(
+                    "Completed builds of this snap package, sorted in "
+                    "descending order of finishing."
+                ),
+                # Really ISnapBuild, patched in
+                # lp.snappy.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
-    pending_builds = exported(doNotSnapshot(CollectionField(
-        title=_("Pending builds of this snap package."),
-        description=_(
-            "Pending builds of this snap package, sorted in descending "
-            "order of creation."),
-        # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
-        value_type=Reference(schema=Interface), readonly=True)))
+    pending_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Pending builds of this snap package."),
+                description=_(
+                    "Pending builds of this snap package, sorted in "
+                    "descending order of creation."
+                ),
+                # Really ISnapBuild, patched in
+                # lp.snappy.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
     subscriptions = CollectionField(
         title=_("SnapSubscriptions associated with this snap recipe."),
         readonly=True,
-        value_type=Reference(Interface))
+        value_type=Reference(Interface),
+    )
 
     subscribers = CollectionField(
         title=_("Persons subscribed to this snap recipe."),
-        readonly=True, value_type=Reference(IPerson))
+        readonly=True,
+        value_type=Reference(IPerson),
+    )
 
     def getSubscription(person):
         """Returns the person's snap subscription for this snap recipe."""
@@ -634,8 +752,9 @@ class ISnapEdit(IWebhookTarget):
     @operation_returns_collection_of(Interface)
     @export_write_operation()
     @operation_for_version("devel")
-    def requestAutoBuilds(allow_failures=False, fetch_snapcraft_yaml=False,
-                          logger=None):
+    def requestAutoBuilds(
+        allow_failures=False, fetch_snapcraft_yaml=False, logger=None
+    ):
         """Create and return automatic builds for this snap package.
 
         This webservice API method is deprecated.  It is normally better to
@@ -684,13 +803,18 @@ class ISnapEdit(IWebhookTarget):
         root_macaroon=TextLine(
             title=_("Serialized root macaroon"),
             description=_(
-                "Only required if not already set by beginAuthorization."),
-            required=False),
+                "Only required if not already set by beginAuthorization."
+            ),
+            required=False,
+        ),
         discharge_macaroon=TextLine(
             title=_("Serialized discharge macaroon"),
             description=_(
-                "Only required if root macaroon has SSO third-party caveat."),
-            required=False))
+                "Only required if root macaroon has SSO third-party caveat."
+            ),
+            required=False,
+        ),
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def completeAuthorization(root_macaroon=None, discharge_macaroon=None):
@@ -719,187 +843,322 @@ class ISnapEditableAttributes(IHasOwner):
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
-    date_last_modified = exported(Datetime(
-        title=_("Date last modified"), required=True, readonly=True))
 
-    owner = exported(PersonChoice(
-        title=_("Owner"), required=True, readonly=False,
-        vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_("The owner of this snap package.")))
+    date_last_modified = exported(
+        Datetime(title=_("Date last modified"), required=True, readonly=True)
+    )
+
+    owner = exported(
+        PersonChoice(
+            title=_("Owner"),
+            required=True,
+            readonly=False,
+            vocabulary="AllUserTeamsParticipationPlusSelf",
+            description=_("The owner of this snap package."),
+        )
+    )
 
     project = ReferenceChoice(
-        title=_('The project that this Snap is associated with'),
-        schema=IProduct, vocabulary='Product',
-        required=False, readonly=False)
+        title=_("The project that this Snap is associated with"),
+        schema=IProduct,
+        vocabulary="Product",
+        required=False,
+        readonly=False,
+    )
 
-    private = exported(Bool(
-        title=_("Private"), required=False, readonly=False,
-        description=_("Whether or not this snap is private.")))
+    private = exported(
+        Bool(
+            title=_("Private"),
+            required=False,
+            readonly=False,
+            description=_("Whether or not this snap is private."),
+        )
+    )
 
-    information_type = exported(Choice(
-        title=_("Information type"), vocabulary=InformationType,
-        required=True, readonly=False, default=InformationType.PUBLIC,
-        description=_(
-            "The type of information contained in this Snap recipe.")))
+    information_type = exported(
+        Choice(
+            title=_("Information type"),
+            vocabulary=InformationType,
+            required=True,
+            readonly=False,
+            default=InformationType.PUBLIC,
+            description=_(
+                "The type of information contained in this Snap recipe."
+            ),
+        )
+    )
 
-    distro_series = exported(Reference(
-        IDistroSeries, title=_("Distro Series"),
-        required=False, readonly=False,
-        description=_(
-            "The series for which the snap package should be built.  If not "
-            "set, Launchpad will infer an appropriate series from "
-            "snapcraft.yaml.")))
+    distro_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Distro Series"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The series for which the snap package should be built.  If "
+                "not set, Launchpad will infer an appropriate series from "
+                "snapcraft.yaml."
+            ),
+        )
+    )
 
-    name = exported(TextLine(
-        title=_("Snap recipe name"), required=True, readonly=False,
-        constraint=name_validator,
-        description=_("The name of the snap build recipe.")))
+    name = exported(
+        TextLine(
+            title=_("Snap recipe name"),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+            description=_("The name of the snap build recipe."),
+        )
+    )
 
-    description = exported(Text(
-        title=_("Description"), required=False, readonly=False,
-        description=_("A description of the snap package.")))
+    description = exported(
+        Text(
+            title=_("Description"),
+            required=False,
+            readonly=False,
+            description=_("A description of the snap package."),
+        )
+    )
 
-    branch = exported(ReferenceChoice(
-        title=_("Bazaar branch"), schema=IBranch, vocabulary="Branch",
-        required=False, readonly=False,
-        description=_(
-            "A Bazaar branch containing a snap/snapcraft.yaml, "
-            "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
-            ".snapcraft.yaml recipe at the top level.")))
+    branch = exported(
+        ReferenceChoice(
+            title=_("Bazaar branch"),
+            schema=IBranch,
+            vocabulary="Branch",
+            required=False,
+            readonly=False,
+            description=_(
+                "A Bazaar branch containing a snap/snapcraft.yaml, "
+                "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
+                ".snapcraft.yaml recipe at the top level."
+            ),
+        )
+    )
 
-    git_repository = exported(ReferenceChoice(
-        title=_("Git repository"),
-        schema=IGitRepository, vocabulary="GitRepository",
-        required=False, readonly=True,
-        description=_(
-            "A Git repository with a branch containing a snap/snapcraft.yaml, "
-            "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
-            ".snapcraft.yaml recipe at the top level.")))
+    git_repository = exported(
+        ReferenceChoice(
+            title=_("Git repository"),
+            schema=IGitRepository,
+            vocabulary="GitRepository",
+            required=False,
+            readonly=True,
+            description=_(
+                "A Git repository with a branch containing a "
+                "snap/snapcraft.yaml, build-aux/snap/snapcraft.yaml, "
+                "snapcraft.yaml, or .snapcraft.yaml recipe at the top level."
+            ),
+        )
+    )
 
-    git_repository_url = exported(URIField(
-        title=_("Git repository URL"), required=False, readonly=True,
-        description=_(
-            "The URL of a Git repository with a branch containing a "
-            "snap/snapcraft.yaml, build-aux/snap/snapcraft.yaml, "
-            "snapcraft.yaml, or .snapcraft.yaml recipe at the top level."),
-        allowed_schemes=["git", "http", "https"],
-        allow_userinfo=True,
-        allow_port=True,
-        allow_query=False,
-        allow_fragment=False,
-        trailing_slash=False))
+    git_repository_url = exported(
+        URIField(
+            title=_("Git repository URL"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The URL of a Git repository with a branch containing a "
+                "snap/snapcraft.yaml, build-aux/snap/snapcraft.yaml, "
+                "snapcraft.yaml, or .snapcraft.yaml recipe at the top level."
+            ),
+            allowed_schemes=["git", "http", "https"],
+            allow_userinfo=True,
+            allow_port=True,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=False,
+        )
+    )
 
     git_path = TextLine(
-        title=_("Git branch path"), required=False, readonly=False,
+        title=_("Git branch path"),
+        required=False,
+        readonly=False,
         description=_(
             "The path of the Git branch containing a snap/snapcraft.yaml, "
             "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
-            ".snapcraft.yaml recipe at the top level."))
+            ".snapcraft.yaml recipe at the top level."
+        ),
+    )
     _api_git_path = exported(
         TextLine(
-            title=git_path.title, required=False, readonly=False,
-            description=git_path.description),
-        exported_as="git_path")
+            title=git_path.title,
+            required=False,
+            readonly=False,
+            description=git_path.description,
+        ),
+        exported_as="git_path",
+    )
 
-    git_ref = exported(Reference(
-        IGitRef, title=_("Git branch"), required=False, readonly=False,
-        description=_(
-            "The Git branch containing a snap/snapcraft.yaml, "
-            "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
-            ".snapcraft.yaml recipe at the top level.")))
+    git_ref = exported(
+        Reference(
+            IGitRef,
+            title=_("Git branch"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The Git branch containing a snap/snapcraft.yaml, "
+                "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
+                ".snapcraft.yaml recipe at the top level."
+            ),
+        )
+    )
 
-    build_source_tarball = exported(Bool(
-        title=_("Build source tarball"),
-        required=True, readonly=False,
-        description=_(
-            "Whether builds of this snap package should also build a tarball "
-            "containing all source code, including external dependencies.")))
+    build_source_tarball = exported(
+        Bool(
+            title=_("Build source tarball"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Whether builds of this snap package should also build a "
+                "tarball containing all source code, including external "
+                "dependencies."
+            ),
+        )
+    )
 
-    auto_build = exported(Bool(
-        title=_("Automatically build when branch changes"),
-        required=True, readonly=False,
-        description=_(
-            "Whether this snap package is built automatically when the branch "
-            "containing its snap/snapcraft.yaml, "
-            "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
-            ".snapcraft.yaml recipe changes.")))
+    auto_build = exported(
+        Bool(
+            title=_("Automatically build when branch changes"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Whether this snap package is built automatically when the "
+                "branch containing its snap/snapcraft.yaml, "
+                "build-aux/snap/snapcraft.yaml, snapcraft.yaml, or "
+                ".snapcraft.yaml recipe changes."
+            ),
+        )
+    )
 
-    auto_build_archive = exported(Reference(
-        IArchive, title=_("Source archive for automatic builds"),
-        required=False, readonly=False,
-        description=_(
-            "The archive from which automatic builds of this snap package "
-            "should be built.")))
+    auto_build_archive = exported(
+        Reference(
+            IArchive,
+            title=_("Source archive for automatic builds"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The archive from which automatic builds of this snap package "
+                "should be built."
+            ),
+        )
+    )
 
-    auto_build_pocket = exported(Choice(
-        title=_("Pocket for automatic builds"),
-        vocabulary=PackagePublishingPocket, required=False, readonly=False,
-        description=_(
-            "The package stream within the source archive and distribution "
-            "series to use when building the snap package.  If the source "
-            "archive is a PPA, then the PPA's archive dependencies will be "
-            "used to select the pocket in the distribution's primary "
-            "archive.")))
+    auto_build_pocket = exported(
+        Choice(
+            title=_("Pocket for automatic builds"),
+            vocabulary=PackagePublishingPocket,
+            required=False,
+            readonly=False,
+            description=_(
+                "The package stream within the source archive and "
+                "distribution series to use when building the snap package.  "
+                "If the source archive is a PPA, then the PPA's archive "
+                "dependencies will be used to select the pocket in the "
+                "distribution's primary archive."
+            ),
+        )
+    )
 
-    auto_build_channels = exported(Dict(
-        title=_("Source snap channels for automatic builds"),
-        key_type=TextLine(), required=False, readonly=False,
-        description=_(
-            "A dictionary mapping snap names to channels to use when building "
-            "this snap package.  Currently only 'core', 'core18', "
-            "'core20', 'core22', and 'snapcraft' keys are supported.")))
+    auto_build_channels = exported(
+        Dict(
+            title=_("Source snap channels for automatic builds"),
+            key_type=TextLine(),
+            required=False,
+            readonly=False,
+            description=_(
+                "A dictionary mapping snap names to channels to use when "
+                "building this snap package.  Currently only 'core', "
+                "'core18', 'core20', 'core22', and 'snapcraft' keys are "
+                "supported."
+            ),
+        )
+    )
 
-    is_stale = exported(Bool(
-        title=_("Snap package is stale and is due to be rebuilt."),
-        required=True, readonly=True))
+    is_stale = exported(
+        Bool(
+            title=_("Snap package is stale and is due to be rebuilt."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    store_upload = exported(Bool(
-        title=_("Automatically upload to store"),
-        required=True, readonly=False,
-        description=_(
-            "Whether builds of this snap package are automatically uploaded "
-            "to the store.")))
+    store_upload = exported(
+        Bool(
+            title=_("Automatically upload to store"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Whether builds of this snap package are automatically "
+                "uploaded to the store."
+            ),
+        )
+    )
 
     # XXX cjwatson 2016-12-08: We should limit this to series that are
     # compatible with distro_series, but that entails validating the case
     # where both are changed in a single PATCH request in such a way that
     # neither is compatible with the old value of the other.  As far as I
     # can tell lazr.restful only supports per-field validation.
-    store_series = exported(ReferenceChoice(
-        title=_("Store series"),
-        schema=ISnappySeries, vocabulary="SnappySeries",
-        required=False, readonly=False,
-        description=_(
-            "The series in which this snap package should be published in the "
-            "store.")))
+    store_series = exported(
+        ReferenceChoice(
+            title=_("Store series"),
+            schema=ISnappySeries,
+            vocabulary="SnappySeries",
+            required=False,
+            readonly=False,
+            description=_(
+                "The series in which this snap package should be published in "
+                "the store."
+            ),
+        )
+    )
 
     store_distro_series = ReferenceChoice(
         title=_("Store and distro series"),
-        schema=ISnappyDistroSeries, vocabulary="SnappyDistroSeries",
-        required=False, readonly=False)
+        schema=ISnappyDistroSeries,
+        vocabulary="SnappyDistroSeries",
+        required=False,
+        readonly=False,
+    )
 
-    store_name = exported(TextLine(
-        title=_("Registered store package name"),
-        required=False, readonly=False,
-        description=_(
-            "The registered name of this snap package in the store.")))
+    store_name = exported(
+        TextLine(
+            title=_("Registered store package name"),
+            required=False,
+            readonly=False,
+            description=_(
+                "The registered name of this snap package in the store."
+            ),
+        )
+    )
 
     store_secrets = List(
-        value_type=TextLine(), title=_("Store upload tokens"),
-        required=False, readonly=False,
+        value_type=TextLine(),
+        title=_("Store upload tokens"),
+        required=False,
+        readonly=False,
         description=_(
             "Serialized secrets issued by the store and the login service to "
-            "authorize uploads of this snap package."))
+            "authorize uploads of this snap package."
+        ),
+    )
 
-    store_channels = exported(List(
-        title=_("Store channels"),
-        required=False, readonly=False, constraint=channels_validator,
-        description=_(
-            "Channels to release this snap package to after uploading it to "
-            "the store. A channel is defined by a combination of an optional "
-            " track, a risk, and an optional branch, e.g. "
-            "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
-            "'stable'.")))
+    store_channels = exported(
+        List(
+            title=_("Store channels"),
+            required=False,
+            readonly=False,
+            constraint=channels_validator,
+            description=_(
+                "Channels to release this snap package to after uploading it "
+                "to the store. A channel is defined by a combination of an "
+                "optional track, a risk, and an optional branch, e.g. "
+                "'2.1/stable/fix-123', '2.1/stable', 'stable/fix-123', or "
+                "'stable'."
+            ),
+        )
+    )
 
     def setProject(project):
         """Set the pillar project of this snap recipe."""
@@ -911,23 +1170,37 @@ class ISnapAdminAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
 
-    require_virtualized = exported(Bool(
-        title=_("Require virtualized builders"), required=True, readonly=False,
-        description=_("Only build this snap package on virtual builders.")))
+    require_virtualized = exported(
+        Bool(
+            title=_("Require virtualized builders"),
+            required=True,
+            readonly=False,
+            description=_("Only build this snap package on virtual builders."),
+        )
+    )
 
-    processors = exported(CollectionField(
-        title=_("Processors"),
-        description=_(
-            "The architectures for which the snap package should be built."),
-        value_type=Reference(schema=IProcessor),
-        readonly=False))
+    processors = exported(
+        CollectionField(
+            title=_("Processors"),
+            description=_(
+                "The architectures for which the snap package should be built."
+            ),
+            value_type=Reference(schema=IProcessor),
+            readonly=False,
+        )
+    )
 
-    allow_internet = exported(Bool(
-        title=_("Allow external network access"),
-        required=True, readonly=False,
-        description=_(
-            "Allow access to external network resources via a proxy.  "
-            "Resources hosted on Launchpad itself are always allowed.")))
+    allow_internet = exported(
+        Bool(
+            title=_("Allow external network access"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Allow access to external network resources via a proxy.  "
+                "Resources hosted on Launchpad itself are always allowed."
+            ),
+        )
+    )
 
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
@@ -938,8 +1211,13 @@ class ISnapAdminAttributes(Interface):
 # "devel".
 @exported_as_webservice_entry(as_of="beta")
 class ISnap(
-    ISnapView, ISnapEdit, ISnapEditableAttributes, ISnapAdminAttributes,
-    IPrivacy, IInformationType):
+    ISnapView,
+    ISnapEdit,
+    ISnapEditableAttributes,
+    ISnapAdminAttributes,
+    IPrivacy,
+    IInformationType,
+):
     """A buildable snap package."""
 
 
@@ -951,24 +1229,57 @@ class ISnapSet(Interface):
     @operation_parameters(
         information_type=copy_field(ISnap["information_type"], required=False),
         processors=List(
-            value_type=Reference(schema=IProcessor), required=False))
+            value_type=Reference(schema=IProcessor), required=False
+        ),
+    )
     @export_factory_operation(
-        ISnap, [
-            "owner", "distro_series", "name", "description", "branch",
-            "git_repository", "git_repository_url", "git_path", "git_ref",
-            "auto_build", "auto_build_archive", "auto_build_pocket",
-            "store_upload", "store_series", "store_name", "store_channels",
-            "project"])
+        ISnap,
+        [
+            "owner",
+            "distro_series",
+            "name",
+            "description",
+            "branch",
+            "git_repository",
+            "git_repository_url",
+            "git_path",
+            "git_ref",
+            "auto_build",
+            "auto_build_archive",
+            "auto_build_pocket",
+            "store_upload",
+            "store_series",
+            "store_name",
+            "store_channels",
+            "project",
+        ],
+    )
     @operation_for_version("devel")
-    def new(registrant, owner, distro_series, name, description=None,
-            branch=None, git_repository=None, git_repository_url=None,
-            git_path=None, git_ref=None, auto_build=False,
-            auto_build_archive=None, auto_build_pocket=None,
-            require_virtualized=True, processors=None, date_created=None,
-            information_type=InformationType.PUBLIC, store_upload=False,
-            store_series=None,
-            store_name=None, store_secrets=None, store_channels=None,
-            project=None):
+    def new(
+        registrant,
+        owner,
+        distro_series,
+        name,
+        description=None,
+        branch=None,
+        git_repository=None,
+        git_repository_url=None,
+        git_path=None,
+        git_ref=None,
+        auto_build=False,
+        auto_build_archive=None,
+        auto_build_pocket=None,
+        require_virtualized=True,
+        processors=None,
+        date_created=None,
+        information_type=InformationType.PUBLIC,
+        store_upload=False,
+        store_series=None,
+        store_name=None,
+        store_secrets=None,
+        store_channels=None,
+        project=None,
+    ):
         """Create an `ISnap`."""
 
     def exists(owner, name):
@@ -983,12 +1294,14 @@ class ISnapSet(Interface):
         """Return all snap packages with the given ids."""
 
     def isValidInformationType(
-            information_type, owner, branch=None, git_ref=None):
+        information_type, owner, branch=None, git_ref=None
+    ):
         """Whether or not the information type context is valid."""
 
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),
-        name=TextLine(title=_("Snap name"), required=True))
+        name=TextLine(title=_("Snap name"), required=True),
+    )
     @operation_returns_entry(ISnap)
     @export_read_operation()
     @operation_for_version("devel")
@@ -999,7 +1312,8 @@ class ISnapSet(Interface):
         """Returns the appropriate `ISnap` for the given pillar and name."""
 
     @operation_parameters(
-        owner=Reference(IPerson, title=_("Owner"), required=True))
+        owner=Reference(IPerson, title=_("Owner"), required=True)
+    )
     @operation_returns_collection_of(ISnap)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1053,7 +1367,8 @@ class ISnapSet(Interface):
 
     @operation_parameters(
         url=TextLine(title=_("The URL to search for.")),
-        owner=Reference(IPerson, title=_("Owner"), required=False))
+        owner=Reference(IPerson, title=_("Owner"), required=False),
+    )
     @call_with(visible_by_user=REQUEST_USER)
     @operation_returns_collection_of(ISnap)
     @export_read_operation()
@@ -1073,7 +1388,8 @@ class ISnapSet(Interface):
 
     @operation_parameters(
         url_prefix=TextLine(title=_("The URL prefix to search for.")),
-        owner=Reference(IPerson, title=_("Owner"), required=False))
+        owner=Reference(IPerson, title=_("Owner"), required=False),
+    )
     @call_with(visible_by_user=REQUEST_USER)
     @operation_returns_collection_of(ISnap)
     @export_read_operation()
@@ -1093,8 +1409,10 @@ class ISnapSet(Interface):
 
     @operation_parameters(
         url_prefixes=List(
-            title=_("The URL prefixes to search for."), value_type=TextLine()),
-        owner=Reference(IPerson, title=_("Owner"), required=False))
+            title=_("The URL prefixes to search for."), value_type=TextLine()
+        ),
+        owner=Reference(IPerson, title=_("Owner"), required=False),
+    )
     @call_with(visible_by_user=REQUEST_USER)
     @operation_returns_collection_of(ISnap)
     @export_read_operation()
@@ -1115,8 +1433,10 @@ class ISnapSet(Interface):
 
     @operation_parameters(
         store_name=TextLine(
-            title=_("The registered store package name to search for.")),
-        owner=Reference(IPerson, title=_("Owner"), required=False))
+            title=_("The registered store package name to search for.")
+        ),
+        owner=Reference(IPerson, title=_("Owner"), required=False),
+    )
     @call_with(visible_by_user=REQUEST_USER)
     @operation_returns_collection_of(ISnap)
     @export_read_operation()

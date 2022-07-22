@@ -3,22 +3,16 @@
 
 """Class that implements the IPersonRoles interface."""
 
-__all__ = ['PersonRoles']
+__all__ = ["PersonRoles"]
 
-from zope.component import (
-    adapter,
-    getUtility,
-    )
+from zope.component import adapter, getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.registry.interfaces.person import IPerson
-from lp.registry.interfaces.role import (
-    IHasDrivers,
-    IPersonRoles,
-    )
+from lp.registry.interfaces.role import IHasDrivers, IPersonRoles
 
 
 @adapter(IPerson)
@@ -33,11 +27,11 @@ class PersonRoles:
 
     def __getattr__(self, name):
         """Handle all in_* attributes."""
-        prefix = 'in_'
+        prefix = "in_"
         errortext = "'PersonRoles' object has no attribute '%s'" % name
         if not name.startswith(prefix):
             raise AttributeError(errortext)
-        attribute = name[len(prefix):]
+        attribute = name[len(prefix) :]
         try:
             return self.inTeam(getattr(self._celebrities, attribute))
         except AttributeError:
@@ -53,8 +47,9 @@ class PersonRoles:
 
     def isBugSupervisor(self, obj):
         """See IPersonRoles."""
-        return (IHasBugSupervisor.providedBy(obj)
-                and self.inTeam(obj.bug_supervisor))
+        return IHasBugSupervisor.providedBy(obj) and self.inTeam(
+            obj.bug_supervisor
+        )
 
     def isDriver(self, obj):
         """See IPersonRoles."""

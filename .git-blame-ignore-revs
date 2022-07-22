@@ -78,3 +78,11 @@ ed7d7b97b8fb4ebe92799f922b0fa9c4bd1714e8
 1e6ead9387a1d073eea9271fe8dc646bb22fa3d2
 # apply black to lp.oci
 06b1048510a0b65bb0a6fc46d4e063510b52b5f6
+# apply black to lp.registry
+0a9f5f09fc0c930b73619e77524e60f2740595ed
+# apply black to lp.scripts
+66301b8ad409deeb9092dfe62c8e4ef6f3093302
+# apply black to lp.services
+4719b7aa672a2674c7fdbbde58772871b77c3301
+# apply black to lp.snappy
+cf7c6a08bd010dd260bff4690d64479fadf37e67

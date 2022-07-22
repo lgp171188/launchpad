@@ -8,14 +8,14 @@ __all__ = [
     "is_configured",
     "session",
     "unreliable_session",
-    ]
+]
 
-from collections import deque
-from functools import partial
 import json
 import sys
 import threading
 import time
+from collections import deque
+from functools import partial
 
 import amqp
 import transaction
@@ -30,15 +30,13 @@ from lp.services.messaging.interfaces import (
     MessagingUnavailable,
     QueueEmpty,
     QueueNotFound,
-    )
-
+)
 
 LAUNCHPAD_EXCHANGE = "launchpad-exchange"
 
 
 @implementer(transaction.interfaces.ISynchronizer)
 class RabbitSessionTransactionSync:
-
     def __init__(self, session):
         self.session = session
 
@@ -58,10 +56,11 @@ class RabbitSessionTransactionSync:
 def is_configured():
     """Return True if rabbit looks to be configured."""
     return not (
-        config.rabbitmq.host is None or
-        config.rabbitmq.userid is None or
-        config.rabbitmq.password is None or
-        config.rabbitmq.virtual_host is None)
+        config.rabbitmq.host is None
+        or config.rabbitmq.userid is None
+        or config.rabbitmq.password is None
+        or config.rabbitmq.virtual_host is None
+    )
 
 
 def connect():
@@ -72,9 +71,11 @@ def connect():
     if not is_configured():
         raise MessagingUnavailable("Incomplete configuration")
     connection = amqp.Connection(
-        host=config.rabbitmq.host, userid=config.rabbitmq.userid,
+        host=config.rabbitmq.host,
+        userid=config.rabbitmq.userid,
         password=config.rabbitmq.password,
-        virtual_host=config.rabbitmq.virtual_host)
+        virtual_host=config.rabbitmq.virtual_host,
+    )
     connection.connect()
     return connection
 
@@ -153,8 +154,7 @@ class RabbitSession(threading.local):
 
 # Per-thread sessions.
 session = RabbitSession()
-session_finish_handler = (
-    lambda event: session.finish())
+session_finish_handler = lambda event: session.finish()
 
 
 class RabbitUnreliableSession(RabbitSession):
@@ -174,9 +174,7 @@ class RabbitUnreliableSession(RabbitSession):
     `IOError` or `amqp.AMQPException`.
     """
 
-    suppressed_errors = (
-        MessagingUnavailable,
-        )
+    suppressed_errors = (MessagingUnavailable,)
 
     def finish(self):
         """See `IMessageSession`.
@@ -190,13 +188,13 @@ class RabbitUnreliableSession(RabbitSession):
             pass
         except Exception:
             from lp.services.webapp import errorlog
+
             errorlog.globalErrorUtility.raising(sys.exc_info())
 
 
 # Per-thread "unreliable" sessions.
 unreliable_session = RabbitUnreliableSession()
-unreliable_session_finish_handler = (
-    lambda event: unreliable_session.finish())
+unreliable_session_finish_handler = lambda event: unreliable_session.finish()
 
 
 class RabbitMessageBase:
@@ -212,8 +210,12 @@ class RabbitMessageBase:
             connection = self.session.connect()
             self._channel = connection.channel()
             self._channel.exchange_declare(
-                self.session.exchange, "direct", durable=False,
-                auto_delete=False, nowait=False)
+                self.session.exchange,
+                "direct",
+                durable=False,
+                auto_delete=False,
+                nowait=False,
+            )
         return self._channel
 
 
@@ -234,11 +236,17 @@ class RabbitRoutingKey(RabbitMessageBase):
         # The queue will be auto-deleted 5 minutes after its last use.
         # http://www.rabbitmq.com/extensions.html#queue-leases
         self.channel.queue_declare(
-            consumer.name, nowait=False, auto_delete=False,
-            arguments={"x-expires": 300000})  # 5 minutes.
+            consumer.name,
+            nowait=False,
+            auto_delete=False,
+            arguments={"x-expires": 300000},
+        )  # 5 minutes.
         self.channel.queue_bind(
-            queue=consumer.name, exchange=self.session.exchange,
-            routing_key=self.key, nowait=False)
+            queue=consumer.name,
+            exchange=self.session.exchange,
+            routing_key=self.key,
+            nowait=False,
+        )
 
     def send(self, data):
         """See `IMessageProducer`."""
@@ -249,8 +257,8 @@ class RabbitRoutingKey(RabbitMessageBase):
         json_data = json.dumps(data)
         msg = amqp.Message(json_data)
         self.channel.basic_publish(
-            exchange=self.session.exchange,
-            routing_key=self.key, msg=msg)
+            exchange=self.session.exchange, routing_key=self.key, msg=msg
+        )
 
 
 @implementer(IMessageConsumer)

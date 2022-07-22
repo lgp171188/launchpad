@@ -7,8 +7,8 @@ Dispatches snap package build jobs to build-farm workers.
 """
 
 __all__ = [
-    'SnapBuildBehaviour',
-    ]
+    "SnapBuildBehaviour",
+]
 
 import typing
 
@@ -22,10 +22,10 @@ from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -34,11 +34,9 @@ from lp.services.twistedsupport import cancel_on_timeout
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     SnapBuildArchiveOwnerMismatch,
-    )
+)
 from lp.snappy.interfaces.snapbuild import ISnapBuild
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 
 
@@ -50,7 +48,7 @@ def format_as_rfc3339(timestamp):
 
     This is how snapd/SAS and snapcraft usually represent timestamps.
     """
-    return timestamp.replace(microsecond=0, tzinfo=None).isoformat() + 'Z'
+    return timestamp.replace(microsecond=0, tzinfo=None).isoformat() + "Z"
 
 
 @adapter(ISnapBuild)
@@ -66,9 +64,13 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
 
         # Examples:
         #   buildlog_snap_ubuntu_wily_amd64_name_FULLYBUILT.txt
-        return 'buildlog_snap_%s_%s_%s_%s_%s.txt' % (
-            das.distroseries.distribution.name, das.distroseries.name,
-            das.architecturetag, self.build.snap.name, self.build.status.name)
+        return "buildlog_snap_%s_%s_%s_%s_%s.txt" % (
+            das.distroseries.distribution.name,
+            das.distroseries.name,
+            das.architecturetag,
+            self.build.snap.name,
+            self.build.status.name,
+        )
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -83,7 +85,8 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         build = self.build
         if build.virtualized and not self._builder.virtualized:
             raise AssertionError(
-                "Attempt to build virtual item on a non-virtual builder.")
+                "Attempt to build virtual item on a non-virtual builder."
+            )
 
         if not build.archive.enabled:
             raise ArchiveDisabled(build.archive.displayname)
@@ -93,14 +96,17 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         chroot = build.distro_arch_series.getChroot(pocket=build.pocket)
         if chroot is None:
             raise CannotBuild(
-                "Missing chroot for %s" % build.distro_arch_series.displayname)
+                "Missing chroot for %s" % build.distro_arch_series.displayname
+            )
 
     def issueMacaroon(self):
         """See `IBuildFarmJobBehaviour`."""
         return cancel_on_timeout(
             self._authserver.callRemote(
-                "issueMacaroon", "snap-build", "SnapBuild", self.build.id),
-            config.builddmaster.authentication_timeout)
+                "issueMacaroon", "snap-build", "SnapBuild", self.build.id
+            ),
+            config.builddmaster.authentication_timeout,
+        )
 
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None) -> typing.Dict[str, typing.Any]:
@@ -114,7 +120,8 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         channels = build.channels or {}
         if "snapcraft" not in channels:
             channels["snapcraft"] = (
-                getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt")
+                getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt"
+            )
         if channels.get("snapcraft") == "apt":
             # XXX cjwatson 2015-08-03: Allow tools_source to be overridden
             # at some more fine-grained level.
@@ -130,12 +137,18 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         archive_dependencies = list(build.archive.dependencies)
         if build.snap_base is not None:
             archive_dependencies.extend(build.snap_base.dependencies)
-        args["archives"], args["trusted_keys"] = (
-            yield get_sources_list_for_building(
-                self, build.distro_arch_series, None,
-                archive_dependencies=archive_dependencies,
-                tools_source=tools_source, tools_fingerprint=tools_fingerprint,
-                logger=logger))
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self,
+            build.distro_arch_series,
+            None,
+            archive_dependencies=archive_dependencies,
+            tools_source=tools_source,
+            tools_fingerprint=tools_fingerprint,
+            logger=logger,
+        )
         if build.snap.branch is not None:
             args["branch"] = build.snap.branch.bzr_identity
         elif build.snap.git_ref is not None:
@@ -144,11 +157,13 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             elif build.snap.git_repository.private:
                 macaroon_raw = yield self.issueMacaroon()
                 url = build.snap.git_repository.getCodebrowseUrl(
-                    username=LAUNCHPAD_SERVICES, password=macaroon_raw)
+                    username=LAUNCHPAD_SERVICES, password=macaroon_raw
+                )
                 args["git_repository"] = url
             else:
-                args["git_repository"] = (
-                    build.snap.git_repository.git_https_url)
+                args[
+                    "git_repository"
+                ] = build.snap.git_repository.git_https_url
             # "git clone -b" doesn't accept full ref names.  If this becomes
             # a problem then we could change launchpad-buildd to do "git
             # clone" followed by "git checkout" instead.
@@ -156,8 +171,9 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 args["git_path"] = build.snap.git_ref.name
         else:
             raise CannotBuild(
-                "Source branch/repository for ~%s/%s has been deleted." %
-                (build.snap.owner.name, build.snap.name))
+                "Source branch/repository for ~%s/%s has been deleted."
+                % (build.snap.owner.name, build.snap.name)
+            )
         args["build_source_tarball"] = build.snap.build_source_tarball
         args["private"] = build.is_private
         build_request = build.build_request

@@ -84,7 +84,8 @@ class POFileNavigation(Navigation):
             raise NotFoundError(
                 "%r is not a valid sequence number." % name)
 
-        return potmsgset.getCurrentTranslationMessageOrDummy(self.context)
+        return potmsgset.getCurrentTranslationMessageOrPlaceholder(
+            self.context)
 
 
 class POFileMenuMixin:
@@ -614,7 +615,8 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
         can_edit = self.context.canEditTranslations(self.user)
         for potmsgset in for_potmsgsets:
             translationmessage = (
-                potmsgset.getCurrentTranslationMessageOrDummy(self.context))
+                potmsgset.getCurrentTranslationMessageOrPlaceholder(
+                    self.context))
             error = self.errors.get(potmsgset)
 
             view = self._prepareView(

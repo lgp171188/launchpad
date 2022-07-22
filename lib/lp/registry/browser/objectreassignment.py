@@ -12,27 +12,15 @@ __all__ = ["ObjectReassignmentView"]
 
 from zope.component import getUtility
 from zope.formlib.form import FormFields
-from zope.formlib.interfaces import (
-    ConversionError,
-    WidgetInputError,
-    )
+from zope.formlib.interfaces import ConversionError, WidgetInputError
 from zope.schema import Choice
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.validators.name import valid_name
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
-from lp.registry.interfaces.person import (
-    IObjectReassignment,
-    IPersonSet,
-    )
+from lp.registry.interfaces.person import IObjectReassignment, IPersonSet
 from lp.services.webapp import canonical_url
 
 
@@ -55,8 +43,8 @@ class ObjectReassignmentView(LaunchpadFormView):
     contextName property in your subclass.
     """
 
-    ownerOrMaintainerAttr = 'owner'
-    ownerOrMaintainerName = 'owner'
+    ownerOrMaintainerAttr = "owner"
+    ownerOrMaintainerName = "owner"
     # Called after changing the owner if it is overridden in a subclass.
     callback = None
 
@@ -66,33 +54,42 @@ class ObjectReassignmentView(LaunchpadFormView):
     @property
     def label(self):
         """The form label."""
-        return 'Change the %s of %s' % (
-            self.ownerOrMaintainerName, self.contextName)
+        return "Change the %s of %s" % (
+            self.ownerOrMaintainerName,
+            self.contextName,
+        )
 
     page_title = label
 
     def setUpFields(self):
         super().setUpFields()
         self.form_fields = FormFields(
-            self.form_fields, self.auto_create_team_field)
+            self.form_fields, self.auto_create_team_field
+        )
 
     @property
     def auto_create_team_field(self):
         terms = [
-            SimpleTerm('existing', token='existing',
-                       title='An existing person or team'),
-            SimpleTerm('new', token='new',
-                       title="A new team I'm creating here"),
-            ]
+            SimpleTerm(
+                "existing",
+                token="existing",
+                title="An existing person or team",
+            ),
+            SimpleTerm(
+                "new", token="new", title="A new team I'm creating here"
+            ),
+        ]
         return Choice(
-            __name__='existing',
-            title=_('This is'),
+            __name__="existing",
+            title=_("This is"),
             source=SimpleVocabulary(terms),
-            default='existing',
+            default="existing",
             description=_(
-              "The new team's name must begin with a lower-case letter "
-              "or number, and contain only letters, numbers, dots, hyphens, "
-              "or plus signs."))
+                "The new team's name must begin with a lower-case letter "
+                "or number, and contain only letters, numbers, dots, hyphens, "
+                "or plus signs."
+            ),
+        )
 
     @property
     def ownerOrMaintainer(self):
@@ -110,12 +107,12 @@ class ObjectReassignmentView(LaunchpadFormView):
 
     @property
     def owner_widget(self):
-        return self.widgets['owner']
+        return self.widgets["owner"]
 
     @action("Change", name="change")
     def changeOwner(self, action, data):
         """Change the owner of self.context to the one choosen by the user."""
-        newOwner = data['owner']
+        newOwner = data["owner"]
         oldOwner = getattr(self.context, self.ownerOrMaintainerAttr)
         setattr(self.context, self.ownerOrMaintainerAttr, newOwner)
         if callable(self.callback):
@@ -145,12 +142,13 @@ class ObjectReassignmentView(LaunchpadFormView):
         owner_name = request.form.get(self.owner_widget.name)
         if not owner_name:
             self.setFieldError(
-                'owner',
+                "owner",
                 "You have to specify the name of the person/team that's "
-                "going to be the new %s." % self.ownerOrMaintainerName)
+                "going to be the new %s." % self.ownerOrMaintainerName,
+            )
             return None
 
-        if request.form.get('field.existing') == 'existing':
+        if request.form.get("field.existing") == "existing":
             try:
                 # By getting the owner using getInputValue() we make sure
                 # it's valid according to the vocabulary of self.schema's
@@ -158,35 +156,40 @@ class ObjectReassignmentView(LaunchpadFormView):
                 owner = self.owner_widget.getInputValue()
             except WidgetInputError:
                 self.setFieldError(
-                    'owner',
+                    "owner",
                     "The person/team named '%s' is not a valid owner for %s."
-                    % (owner_name, self.contextName))
+                    % (owner_name, self.contextName),
+                )
                 return None
             except ConversionError:
                 self.setFieldError(
                     self.ownerOrMaintainerName,
                     "There's no person/team named '%s' in Launchpad."
-                    % owner_name)
+                    % owner_name,
+                )
                 return None
         else:
             if personset.getByName(owner_name):
                 self.setFieldError(
-                    'owner',
+                    "owner",
                     "There's already a person/team with the name '%s' in "
                     "Launchpad. Please choose a different name or select "
                     "the option to make that person/team the new owner, "
-                    "if that's what you want." % owner_name)
+                    "if that's what you want." % owner_name,
+                )
                 return None
 
             if not valid_name(owner_name):
                 self.setFieldError(
-                    'owner',
+                    "owner",
                     "'%s' is not a valid name for a team. Please make sure "
                     "it contains only the allowed characters and no spaces."
-                    % owner_name)
+                    % owner_name,
+                )
                 return None
 
             owner = personset.newTeam(
-                self.user, owner_name, owner_name.capitalize())
+                self.user, owner_name, owner_name.capitalize()
+            )
 
         self.validateOwner(owner)

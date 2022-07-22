@@ -9,26 +9,16 @@ from urllib.parse import urljoin
 
 from lazr.restful.utils import get_current_browser_request
 from nacl.encoding import Base64Encoder
-from nacl.public import (
-    Box,
-    PrivateKey,
-    PublicKey,
-    )
+from nacl.public import Box, PrivateKey, PublicKey
 from nacl.utils import random
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
-from lp.services.signing.enums import (
-    SigningKeyType,
-    SigningMode,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.signing.enums import SigningKeyType, SigningMode
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
-    )
+)
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
 
@@ -59,9 +49,11 @@ class SigningServiceClient:
 
     def _decryptResponseJson(self, response, response_nonce):
         box = Box(self.private_key, self.service_public_key)
-        return json.loads(box.decrypt(
-            response.content, response_nonce,
-            encoder=Base64Encoder).decode("UTF-8"))
+        return json.loads(
+            box.decrypt(
+                response.content, response_nonce, encoder=Base64Encoder
+            ).decode("UTF-8")
+        )
 
     def _requestJson(self, path, method="GET", encrypt=False, **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
@@ -94,8 +86,9 @@ class SigningServiceClient:
         else:
             redacted_kwargs = kwargs
         action = timeline.start(
-            "services-signing-proxy-%s" % method, "%s %s" %
-            (path, json.dumps(redacted_kwargs)))
+            "services-signing-proxy-%s" % method,
+            "%s %s" % (path, json.dumps(redacted_kwargs)),
+        )
 
         try:
             url = self.getUrl(path)
@@ -110,15 +103,15 @@ class SigningServiceClient:
 
     @cachedproperty
     def service_public_key(self):
-        """Returns the lp-signing service's public key.
-        """
+        """Returns the lp-signing service's public key."""
         data = self._requestJson("/service-key")
         return PublicKey(data["service-key"], encoder=Base64Encoder)
 
     @property
     def private_key(self):
         return PrivateKey(
-            config.signing.client_private_key, encoder=Base64Encoder)
+            config.signing.client_private_key, encoder=Base64Encoder
+        )
 
     def getNonce(self):
         data = self._requestJson("/nonce", "POST")
@@ -137,8 +130,9 @@ class SigningServiceClient:
             "X-Client-Public-Key": config.signing.client_public_key,
             "X-Nonce": base64.b64encode(nonce).decode("UTF-8"),
             "X-Response-Nonce": (
-                base64.b64encode(response_nonce).decode("UTF-8")),
-            }
+                base64.b64encode(response_nonce).decode("UTF-8")
+            ),
+        }
 
     def _encryptPayload(self, nonce, message):
         """Returns the encrypted version of message, base64 encoded and
@@ -151,33 +145,38 @@ class SigningServiceClient:
         encrypted_message = box.encrypt(message, nonce, encoder=Base64Encoder)
         return encrypted_message.ciphertext
 
-    def generate(self, key_type, description,
-                 openpgp_key_algorithm=None, length=None):
+    def generate(
+        self, key_type, description, openpgp_key_algorithm=None, length=None
+    ):
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
         if key_type == SigningKeyType.OPENPGP:
             if openpgp_key_algorithm is None:
                 raise ValueError(
-                    "SigningKeyType.OPENPGP requires openpgp_key_algorithm")
+                    "SigningKeyType.OPENPGP requires openpgp_key_algorithm"
+                )
             if length is None:
                 raise ValueError("SigningKeyType.OPENPGP requires length")
 
         payload = {
             "key-type": key_type.name,
             "description": description,
-            }
+        }
         if key_type == SigningKeyType.OPENPGP:
-            payload.update({
-                "openpgp-key-algorithm": openpgp_key_algorithm.name,
-                "length": length,
-                })
+            payload.update(
+                {
+                    "openpgp-key-algorithm": openpgp_key_algorithm.name,
+                    "length": length,
+                }
+            )
 
         ret = self._requestJson(
-            "/generate", "POST", encrypt=True, json=payload)
+            "/generate", "POST", encrypt=True, json=payload
+        )
         return {
             "fingerprint": ret["fingerprint"],
             "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
-            }
+        }
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
         valid_modes = {SigningMode.ATTACHED, SigningMode.DETACHED}
@@ -194,17 +193,19 @@ class SigningServiceClient:
             "message-name": message_name,
             "message": base64.b64encode(message).decode("UTF-8"),
             "mode": mode.name,
-            }
+        }
 
         ret = self._requestJson("/sign", "POST", encrypt=True, json=payload)
         return {
             "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
             "signed-message": base64.b64decode(
-                ret["signed-message"].encode("UTF-8")),
-            }
+                ret["signed-message"].encode("UTF-8")
+            ),
+        }
 
-    def inject(self, key_type, private_key, public_key, description,
-               created_at):
+    def inject(
+        self, key_type, private_key, public_key, description, created_at
+    ):
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
 
@@ -214,7 +215,7 @@ class SigningServiceClient:
             "public-key": base64.b64encode(public_key).decode("UTF-8"),
             "created-at": created_at.isoformat(),
             "description": description,
-            }
+        }
 
         ret = self._requestJson("/inject", "POST", encrypt=True, json=payload)
         return {"fingerprint": ret["fingerprint"]}
@@ -227,7 +228,8 @@ class SigningServiceClient:
             "key-type": key_type.name,
             "fingerprint": fingerprint,
             "client-name": client_name,
-            }
+        }
 
         self._requestJson(
-            "/authorizations/add", "POST", encrypt=True, json=payload)
+            "/authorizations/add", "POST", encrypt=True, json=payload
+        )

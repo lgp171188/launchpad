@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TeamJoinMixin',
-    'userIsActiveTeamMember',
-    ]
+    "TeamJoinMixin",
+    "userIsActiveTeamMember",
+]
 
 from zope.component import getUtility
 
@@ -17,7 +17,7 @@ def userIsActiveTeamMember(team):
     user = getUtility(ILaunchBag).user
     if user is None:
         return False
-    if not check_permission('launchpad.View', team):
+    if not check_permission("launchpad.View", team):
         return False
     return user in team.activemembers
 

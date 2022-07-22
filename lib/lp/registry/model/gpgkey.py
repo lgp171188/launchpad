@@ -1,73 +1,81 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['GPGKey', 'GPGKeySet']
+__all__ = ["GPGKey", "GPGKeySet"]
 
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.registry.interfaces.gpg import (
-    IGPGKey,
-    IGPGKeySet,
-    )
+from lp.registry.interfaces.gpg import IGPGKey, IGPGKeySet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
     StringCol,
-    )
-from lp.services.gpg.interfaces import (
-    GPGKeyAlgorithm,
-    IGPGHandler,
-    )
+)
+from lp.services.gpg.interfaces import GPGKeyAlgorithm, IGPGHandler
 
 
 @implementer(IGPGKey)
 class GPGKey(SQLBase):
 
-    _table = 'GPGKey'
-    _defaultOrder = ['owner', 'keyid']
+    _table = "GPGKey"
+    _defaultOrder = ["owner", "keyid"]
 
-    owner = ForeignKey(dbName='owner', foreignKey='Person', notNull=True)
+    owner = ForeignKey(dbName="owner", foreignKey="Person", notNull=True)
 
-    keyid = StringCol(dbName='keyid', notNull=True)
-    fingerprint = StringCol(dbName='fingerprint', notNull=True)
+    keyid = StringCol(dbName="keyid", notNull=True)
+    fingerprint = StringCol(dbName="fingerprint", notNull=True)
 
-    keysize = IntCol(dbName='keysize', notNull=True)
+    keysize = IntCol(dbName="keysize", notNull=True)
 
-    algorithm = DBEnum(name='algorithm', allow_none=False,
-                       enum=GPGKeyAlgorithm)
+    algorithm = DBEnum(
+        name="algorithm", allow_none=False, enum=GPGKeyAlgorithm
+    )
 
-    active = BoolCol(dbName='active', notNull=True)
+    active = BoolCol(dbName="active", notNull=True)
 
-    can_encrypt = BoolCol(dbName='can_encrypt', notNull=False)
+    can_encrypt = BoolCol(dbName="can_encrypt", notNull=False)
 
     @property
     def keyserverURL(self):
-        return getUtility(
-            IGPGHandler).getURLForKeyInServer(self.fingerprint, public=True)
+        return getUtility(IGPGHandler).getURLForKeyInServer(
+            self.fingerprint, public=True
+        )
 
     @property
     def displayname(self):
-        return '%s%s/%s' % (
-            self.keysize, self.algorithm.title, self.fingerprint)
+        return "%s%s/%s" % (
+            self.keysize,
+            self.algorithm.title,
+            self.fingerprint,
+        )
 
 
 @implementer(IGPGKeySet)
 class GPGKeySet:
-
-    def new(self, ownerID, keyid, fingerprint, keysize,
-            algorithm, active=True, can_encrypt=False):
+    def new(
+        self,
+        ownerID,
+        keyid,
+        fingerprint,
+        keysize,
+        algorithm,
+        active=True,
+        can_encrypt=False,
+    ):
         """See `IGPGKeySet`"""
-        return GPGKey(owner=ownerID, keyid=keyid,
-                      fingerprint=fingerprint, keysize=keysize,
-                      algorithm=algorithm, active=active,
-                      can_encrypt=can_encrypt)
+        return GPGKey(
+            owner=ownerID,
+            keyid=keyid,
+            fingerprint=fingerprint,
+            keysize=keysize,
+            algorithm=algorithm,
+            active=active,
+            can_encrypt=can_encrypt,
+        )
 
     def activate(self, requester, key, can_encrypt):
         """See `IGPGKeySet`."""
@@ -86,8 +94,13 @@ class GPGKeySet:
             keysize = key.keysize
             algorithm = key.algorithm
             lp_key = self.new(
-                ownerID, keyid, fingerprint, keysize, algorithm,
-                can_encrypt=can_encrypt)
+                ownerID,
+                keyid,
+                fingerprint,
+                keysize,
+                algorithm,
+                can_encrypt=can_encrypt,
+            )
         return lp_key, is_new
 
     def deactivate(self, key):
@@ -111,8 +124,10 @@ class GPGKeySet:
                            AND requester = %s
                            AND date_consumed is NULL
                     )
-                """ % sqlvalues(owner.id)
+                """ % sqlvalues(
+                owner.id
+            )
         else:
-            query = 'active=true'
-        query += ' AND owner=%s' % sqlvalues(owner.id)
-        return list(GPGKey.select(query, orderBy='id'))
+            query = "active=true"
+        query += " AND owner=%s" % sqlvalues(owner.id)
+        return list(GPGKey.select(query, orderBy="id"))

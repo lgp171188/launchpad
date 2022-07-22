@@ -4,64 +4,61 @@
 """Interface for the Jobs system to change memberships or merge persons."""
 
 __all__ = [
-    'IExpiringMembershipNotificationJob',
-    'IExpiringMembershipNotificationJobSource',
-    'IMembershipNotificationJob',
-    'IMembershipNotificationJobSource',
-    'IPersonCloseAccountJob',
-    'IPersonCloseAccountJobSource',
-    'IPersonDeactivateJob',
-    'IPersonDeactivateJobSource',
-    'IPersonMergeJob',
-    'IPersonMergeJobSource',
-    'IPersonTransferJob',
-    'IPersonTransferJobSource',
-    'ISelfRenewalNotificationJob',
-    'ISelfRenewalNotificationJobSource',
-    'ITeamInvitationNotificationJob',
-    'ITeamInvitationNotificationJobSource',
-    'ITeamJoinNotificationJob',
-    'ITeamJoinNotificationJobSource',
-    ]
+    "IExpiringMembershipNotificationJob",
+    "IExpiringMembershipNotificationJobSource",
+    "IMembershipNotificationJob",
+    "IMembershipNotificationJobSource",
+    "IPersonCloseAccountJob",
+    "IPersonCloseAccountJobSource",
+    "IPersonDeactivateJob",
+    "IPersonDeactivateJobSource",
+    "IPersonMergeJob",
+    "IPersonMergeJobSource",
+    "IPersonTransferJob",
+    "IPersonTransferJobSource",
+    "ISelfRenewalNotificationJob",
+    "ISelfRenewalNotificationJobSource",
+    "ITeamInvitationNotificationJob",
+    "ITeamInvitationNotificationJobSource",
+    "ITeamJoinNotificationJob",
+    "ITeamJoinNotificationJobSource",
+]
 
 from zope.interface import Attribute
-from zope.schema import (
-    Int,
-    Object,
-    )
+from zope.schema import Int, Object
 
 from lp import _
 from lp.services.fields import PublicPersonChoice
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IPersonTransferJob(IRunnableJob):
     """A Job related to team membership or a person merge."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number for this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number for this job."),
+    )
 
     job = Object(
-        title=_('The common Job attributes'),
-        schema=IJob,
-        required=True)
+        title=_("The common Job attributes"), schema=IJob, required=True
+    )
 
     minor_person = PublicPersonChoice(
-        title=_('The person being added to the major person/team'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("The person being added to the major person/team"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     major_person = PublicPersonChoice(
-        title=_('The person or team receiving the minor person'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("The person or team receiving the minor person"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
-    metadata = Attribute('A dict of data about the job.')
+    metadata = Attribute("A dict of data about the job.")
 
 
 class IPersonTransferJobSource(IJobSource):
@@ -75,21 +72,29 @@ class IMembershipNotificationJob(IPersonTransferJob):
     """A Job to notify new members of a team of that change."""
 
     member = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     team = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
 
 class IMembershipNotificationJobSource(IJobSource):
     """An interface for acquiring IMembershipNotificationJobs."""
 
-    def create(member, team, reviewer, old_status, new_status,
-               last_change_comment=None):
+    def create(
+        member,
+        team,
+        reviewer,
+        old_status,
+        new_status,
+        last_change_comment=None,
+    ):
         """Create a new IMembershipNotificationJob."""
 
 
@@ -97,14 +102,16 @@ class IPersonMergeJob(IPersonTransferJob):
     """A Job that merges one person or team into another."""
 
     from_person = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     to_person = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     def getErrorRecipients(self):
         """See `BaseRunnableJob`."""
@@ -148,8 +155,10 @@ class IPersonDeactivateJob(IPersonTransferJob):
     """A Job that deactivates a person."""
 
     person = PublicPersonChoice(
-        title=_('Alias for person attribute'), vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     def getErrorRecipients(self):
         """See `BaseRunnableJob`."""
@@ -176,9 +185,10 @@ class IPersonCloseAccountJob(IPersonTransferJob):
     """A Job that closes the account for a person."""
 
     person = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     def getErrorRecipients(self):
         """See `BaseRunnableJob`."""
@@ -205,14 +215,16 @@ class ITeamInvitationNotificationJob(IPersonTransferJob):
     """A Job to notify about team joining invitations."""
 
     member = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     team = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
 
 class ITeamInvitationNotificationJobSource(IJobSource):
@@ -226,14 +238,16 @@ class ITeamJoinNotificationJob(IPersonTransferJob):
     """A Job to notify about a new member joining a team."""
 
     member = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     team = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
 
 class ITeamJoinNotificationJobSource(IJobSource):
@@ -247,14 +261,16 @@ class IExpiringMembershipNotificationJob(IPersonTransferJob):
     """A Job to send a warning about expiring membership."""
 
     member = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     team = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
 
 class IExpiringMembershipNotificationJobSource(IJobSource):
@@ -268,14 +284,16 @@ class ISelfRenewalNotificationJob(IPersonTransferJob):
     """A Job to notify about a self-renewal."""
 
     member = PublicPersonChoice(
-        title=_('Alias for minor_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for minor_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
     team = PublicPersonChoice(
-        title=_('Alias for major_person attribute'),
-        vocabulary='ValidPersonOrTeam',
-        required=True)
+        title=_("Alias for major_person attribute"),
+        vocabulary="ValidPersonOrTeam",
+        required=True,
+    )
 
 
 class ISelfRenewalNotificationJobSource(IJobSource):

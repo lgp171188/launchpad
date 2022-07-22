@@ -4,25 +4,15 @@
 """Interfaces for feeds generation."""
 
 __all__ = [
-    'IFeed',
-    'IFeedEntry',
-    'IFeedPerson',
-    'IFeedTypedData',
-    'UnsupportedFeedFormat',
-    ]
+    "IFeed",
+    "IFeedEntry",
+    "IFeedPerson",
+    "IFeedTypedData",
+    "UnsupportedFeedFormat",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Datetime,
-    Int,
-    List,
-    Text,
-    TextLine,
-    URI,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import URI, Datetime, Int, List, Text, TextLine
 
 
 class UnsupportedFeedFormat(Exception):
@@ -55,18 +45,19 @@ class IFeed(Interface):
     # stale.
     max_age = Int(
         title="Maximum age",
-        description="Maximum age in seconds for a feed to be cached.")
+        description="Maximum age in seconds for a feed to be cached.",
+    )
 
     # A feed could contain an arbitrary large number of entries, so a quantity
     # may be specified to limit the number of entries returned.
     quantity = Int(
         title="Quantity",
-        description="Number of items to be returned in a feed.")
+        description="Number of items to be returned in a feed.",
+    )
 
     # The title of the feed is prominently displayed in readers and should
     # succinctly identify the feed, e.g. "Latest bugs in Kubuntu".
-    title = TextLine(
-        title="Title of the feed.")
+    title = TextLine(title="Title of the feed.")
 
     # The URL for a feed identifies it uniquely and it should never change.
     # The latest bugs in Kubuntu is:
@@ -74,14 +65,15 @@ class IFeed(Interface):
     link_self = TextLine(
         title="URL for the feed.",
         description="The link_self URL for the feed should be "
-                    "unique and permanent.")
+        "unique and permanent.",
+    )
 
     # The site URL refers to the top-level page for the site serving the
     # feed.  For Launchpad the site_url should be the mainsite URL,
     # i.e. http://launchpad.net.
     site_url = TextLine(
-        title="Site URL",
-        description="The URL for the main site of Launchpad.")
+        title="Site URL", description="The URL for the main site of Launchpad."
+    )
 
     # Feeds are intended to be machine-readable -- XML to be processed by a
     # feed reader and then, possibly, displayed.  The alternate URL is the
@@ -91,10 +83,11 @@ class IFeed(Interface):
     link_alternate = TextLine(
         title="Alternate URL for the feed.",
         description="The URL to a resource that is the human-readable "
-                    "equivalent of the feed.  So for: "
-                    "http://feeds.launchpad.net/ubuntu/announcements.atom "
-                    "the link_alternate would be: "
-                    "http://launchpad.net/ubuntu/+announcements")
+        "equivalent of the feed.  So for: "
+        "http://feeds.launchpad.net/ubuntu/announcements.atom "
+        "the link_alternate would be: "
+        "http://launchpad.net/ubuntu/+announcements",
+    )
 
     # The feed ID is a permanent ID for the feed and it must be unique across
     # all time and domains.  That sounds harder than it really is.  To make
@@ -105,27 +98,25 @@ class IFeed(Interface):
     feed_id = TextLine(
         title="ID for the feed.",
         description="The <id> for a feed is permanent and globally unique. "
-                    "It is constructed following RFC 4151.")
+        "It is constructed following RFC 4151.",
+    )
 
     # The feed format is either 'atom' or 'html'.
     feed_format = TextLine(
         title="Feed format",
         description="Requested feed format.  "
-                    "Raises UnsupportedFeed if not supported.")
+        "Raises UnsupportedFeed if not supported.",
+    )
 
     # The logo URL points to an image identifying the feed and will likely
     # vary from one Launchpad application to another.  For example the logo
     # for bugs is:
     # http://launchpad.net/@@/bug.
-    logo = TextLine(
-        title="Logo URL",
-        description="The URL for the feed logo.")
+    logo = TextLine(title="Logo URL", description="The URL for the feed logo.")
 
     # The icon URL points to an image identifying the feed.  For Launchpad
     # feeds the icon is http://launchpad.net/@@/launchpad.
-    icon = TextLine(
-        title="Icon URL",
-        description="The URL for the feed icon.")
+    icon = TextLine(title="Icon URL", description="The URL for the feed icon.")
 
     # The date updated represents the last date any information in the feed
     # changed.  For instance for feed for Launchpad announcements the date
@@ -133,8 +124,8 @@ class IFeed(Interface):
     # the feed changed.  Feed readers use the date updated one criteria as to
     # whether to fetch the feed information anew.
     date_updated = Datetime(
-        title="Date update",
-        description="Date of last update for the feed.")
+        title="Date update", description="Date of last update for the feed."
+    )
 
     def getItems():
         """Get the individual items for the feed.
@@ -156,16 +147,12 @@ class IFeed(Interface):
 
 
 class IFeedEntry(Interface):
-    """Interface for an entry in a feed.
-
-    """
+    """Interface for an entry in a feed."""
 
     # The title of the entry is prominently displayed in readers and should
     # succinctly identify the entry, e.g. "Microsoft has a majority market
     # share."
-    title = TextLine(
-        title="Title",
-        description="The title of the entry")
+    title = TextLine(title="Title", description="The title of the entry")
 
     # The link alternate is an URL specifying the location of the
     # human-readable equivalent for the entry.  For a Ubuntu announcements, an
@@ -174,8 +161,9 @@ class IFeedEntry(Interface):
     link_alternate = TextLine(
         title="Alternate URL for the entry.",
         description="The URL to a resource that is the human-readable "
-                    "equivalent of the entry, e.g. "
-                    "http://launchpad.net/ubuntu/+announcement/1")
+        "equivalent of the entry, e.g. "
+        "http://launchpad.net/ubuntu/+announcement/1",
+    )
 
     # The actual content for the entry that is to be displayed in the feed
     # reader.  It may be text or marked up HTML.  It should be an
@@ -185,30 +173,34 @@ class IFeedEntry(Interface):
         "For an announcement, for example, the content "
         "is the text of the announcement.  It may be "
         "plain text or formatted html, as is done for "
-        "bugs.")
+        "bugs."
+    )
 
     # Date the entry was created in the system, without respect to the feed.
     date_created = Datetime(
         title="Date Created",
-        description="Date the entry was originally created in Launchpad.")
+        description="Date the entry was originally created in Launchpad.",
+    )
 
     # Date any aspect of the entry was changed.
     date_updated = Datetime(
-        title="Date Updated",
-        description="Date the entry was last updated.")
+        title="Date Updated", description="Date the entry was last updated."
+    )
 
     # Date the entry became published.
     date_published = Datetime(
         title="Date Published",
         description="Date the entry was published.  "
-                    "For some content this date will be the same "
-                    "as the creation date.  For others, like an "
-                    "announcement, it will be the date the announcement "
-                    "became public.")
+        "For some content this date will be the same "
+        "as the creation date.  For others, like an "
+        "announcement, it will be the date the announcement "
+        "became public.",
+    )
 
     # The primary authors for the entry.
     authors = Attribute(
-        "A list of IFeedPerson representing the authors for the entry.")
+        "A list of IFeedPerson representing the authors for the entry."
+    )
 
     # People who contributed to the entry.  The line between authors and
     # contributors is fuzzy.  For a bug, all comment writers could be
@@ -216,21 +208,22 @@ class IFeedEntry(Interface):
     # filer as the author and all commenters as contributors.  Pick an
     # approach and be consistent.
     contributors = Attribute(
-        "A list of IFeedPerson representing the contributors for the entry.")
+        "A list of IFeedPerson representing the contributors for the entry."
+    )
 
     # The logo representing the entry.
     # Not used and ignored.
     logo = TextLine(
         title="Logo URL",
-        description="The URL for the entry logo."
-                    "Currently not used.")
+        description="The URL for the entry logo." "Currently not used.",
+    )
 
     # The icon representing the entry.
     # Not used and ignored.
     icon = TextLine(
         title="Icon URL",
-        description="The URL for the entry icon."
-                    "Currently not used.")
+        description="The URL for the entry icon." "Currently not used.",
+    )
 
     # The description of the program that generated the feed.  May include
     # versioning information.  Useful for debugging purposes only.
@@ -238,8 +231,9 @@ class IFeedEntry(Interface):
     generator = TextLine(
         title="The generator of the feed.",
         description="A description of the program generating the feed.  "
-                    "Analogous to a browser USER-AGENT string.  "
-                    "Currently not used.")
+        "Analogous to a browser USER-AGENT string.  "
+        "Currently not used.",
+    )
 
 
 class IFeedTypedData(Interface):
@@ -248,40 +242,39 @@ class IFeedTypedData(Interface):
     content_types = List(
         title="Content types",
         description="List of supported content types",
-        required=True)
+        required=True,
+    )
 
-    content = Text(
-        title="Content",
-        description="Data contents",
-        required=True)
+    content = Text(title="Content", description="Data contents", required=True)
 
     content_type = Text(
         title="Content type",
         description="The actual content type for this object.  Must be"
-                    "one of those listed in content_types.",
-        required=False)
+        "one of those listed in content_types.",
+        required=False,
+    )
 
     root_url = Text(
         title="Root URL",
         description="URL for the root of the site that produced the content, "
-                    "i.e. 'http://code.launchpad.net'",
-        required=False)
+        "i.e. 'http://code.launchpad.net'",
+        required=False,
+    )
 
 
 class IFeedPerson(Interface):
     """Interface for a person in a feed."""
 
     name = TextLine(
-        title="Name",
-        description="The person's name.",
-        required=True)
+        title="Name", description="The person's name.", required=True
+    )
 
     email = TextLine(
         title="Email",
         description="The person's email address.",
-        required=False)
+        required=False,
+    )
 
     uri = URI(
-        title="URI",
-        description="The URI for the person.",
-        required=True)
+        title="URI", description="The URI for the person.", required=True
+    )

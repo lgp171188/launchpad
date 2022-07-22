@@ -8,11 +8,12 @@ from lp.testing.fakemethod import FakeMethod
 
 
 class TestCallDirective(TestCase):
-
     def test_call(self):
         directive = """
             <call callable="%(this)s.callable" />
-            """ % dict(this=this)
+            """ % dict(
+            this=this
+        )
         xmlconfig.string(zcml_configure % directive)
         self.assertEqual(1, callable.call_count)
 

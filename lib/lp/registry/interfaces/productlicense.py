@@ -3,12 +3,9 @@
 
 """Product licence interface."""
 
-__all__ = ['IProductLicense']
+__all__ = ["IProductLicense"]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IProductLicense(Interface):

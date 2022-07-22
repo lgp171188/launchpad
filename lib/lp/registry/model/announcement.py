@@ -4,41 +4,25 @@
 """Database classes for project news and announcement."""
 
 __all__ = [
-    'Announcement',
-    'AnnouncementSet',
-    'HasAnnouncements',
-    'MakesAnnouncements',
-    ]
+    "Announcement",
+    "AnnouncementSet",
+    "HasAnnouncements",
+    "MakesAnnouncements",
+]
 
 import pytz
-from storm.expr import (
-    And,
-    LeftJoin,
-    Or,
-    Select,
-    )
-from storm.properties import (
-    Bool,
-    DateTime,
-    Int,
-    Unicode,
-    )
+from storm.expr import And, LeftJoin, Or, Select
+from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
 from zope.interface import implementer
 
-from lp.registry.interfaces.announcement import (
-    IAnnouncement,
-    IAnnouncementSet,
-    )
+from lp.registry.interfaces.announcement import IAnnouncement, IAnnouncementSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.utils import utc_now
 
@@ -49,19 +33,21 @@ class Announcement(StormBase):
     project groups, products and distributions.
     """
 
-    __storm_table__ = 'Announcement'
+    __storm_table__ = "Announcement"
 
-    __storm_order__ = ('-date_announced', '-date_created')
+    __storm_order__ = ("-date_announced", "-date_created")
 
     id = Int(primary=True)
 
     date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
     date_announced = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
     date_last_modified = DateTime(
-        name='date_updated', allow_none=True, default=None, tzinfo=pytz.UTC)
+        name="date_updated", allow_none=True, default=None, tzinfo=pytz.UTC
+    )
 
     registrant_id = Int(
-        name="registrant", allow_none=False, validator=validate_public_person)
+        name="registrant", allow_none=False, validator=validate_public_person
+    )
     registrant = Reference(registrant_id, "Person.id")
 
     product_id = Int(name="product", allow_none=True, default=None)
@@ -78,10 +64,20 @@ class Announcement(StormBase):
     url = Unicode(allow_none=True, default=None)
     active = Bool(allow_none=False, default=True)
 
-    def __init__(self, registrant, title, summary=None, url=None,
-                 active=True, date_created=UTC_NOW, date_announced=None,
-                 date_last_modified=None, product=None, projectgroup=None,
-                 distribution=None):
+    def __init__(
+        self,
+        registrant,
+        title,
+        summary=None,
+        url=None,
+        active=True,
+        date_created=UTC_NOW,
+        date_announced=None,
+        date_last_modified=None,
+        product=None,
+        projectgroup=None,
+        distribution=None,
+    ):
         self.registrant = registrant
         self.title = title
         self.summary = summary
@@ -120,7 +116,7 @@ class Announcement(StormBase):
         elif self.distribution is not None:
             return self.distribution
         else:
-            raise AssertionError('Announcement has no obvious target')
+            raise AssertionError("Announcement has no obvious target")
 
     @property
     def date_updated(self):
@@ -143,7 +139,7 @@ class Announcement(StormBase):
             self.distribution = None
             self.product = None
         else:
-            raise AssertionError('Unknown target')
+            raise AssertionError("Unknown target")
         self.date_last_modified = UTC_NOW
 
     def retract(self):
@@ -198,40 +194,49 @@ class HasAnnouncements:
         if published_only:
             query += [
                 Announcement.date_announced <= UTC_NOW,
-                Announcement.active == True]
+                Announcement.active == True,
+            ]
         if IProduct.providedBy(self):
             if self.projectgroup is None:
                 query.append(Announcement.product == self.id)
             else:
-                query.append(Or(
-                    Announcement.product == self.id,
-                    Announcement.projectgroup == self.projectgroup))
+                query.append(
+                    Or(
+                        Announcement.product == self.id,
+                        Announcement.projectgroup == self.projectgroup,
+                    )
+                )
         elif IProjectGroup.providedBy(self):
             child_products = Select(
                 Product.id,
-                And(Product.projectgroup == self, Product.active == True))
-            query.append(Or(
-                Announcement.projectgroup == self,
-                Announcement.product_id.is_in(child_products)))
+                And(Product.projectgroup == self, Product.active == True),
+            )
+            query.append(
+                Or(
+                    Announcement.projectgroup == self,
+                    Announcement.product_id.is_in(child_products),
+                )
+            )
         elif IDistribution.providedBy(self):
             query.append(Announcement.distribution == self)
         elif IAnnouncementSet.providedBy(self):
             # Just filter out inactive projects, mostly to exclude spam.
             using.append(
-                LeftJoin(Product, Product.id == Announcement.product_id))
-            query.append(Or(
-                Announcement.product == None,
-                Product.active == True))
+                LeftJoin(Product, Product.id == Announcement.product_id)
+            )
+            query.append(
+                Or(Announcement.product == None, Product.active == True)
+            )
         else:
-            raise AssertionError('Unsupported announcement target')
+            raise AssertionError("Unsupported announcement target")
         store = IStore(Announcement)
         return store.using(*using).find(Announcement, *query)[:limit]
 
 
 class MakesAnnouncements(HasAnnouncements):
-
-    def announce(self, user, title, summary=None, url=None,
-                 publication_date=None):
+    def announce(
+        self, user, title, summary=None, url=None, publication_date=None
+    ):
         """See IHasAnnouncements."""
 
         # We establish the appropriate target property.
@@ -243,7 +248,7 @@ class MakesAnnouncements(HasAnnouncements):
         elif IDistribution.providedBy(self):
             distribution = self
         else:
-            raise AssertionError('Unsupported announcement target')
+            raise AssertionError("Unsupported announcement target")
 
         # Create the announcement in the database.
         announcement = Announcement(
@@ -254,7 +259,7 @@ class MakesAnnouncements(HasAnnouncements):
             product=product,
             projectgroup=projectgroup,
             distribution=distribution,
-            )
+        )
         store = IMasterStore(Announcement)
         store.add(announcement)
         store.flush()
@@ -267,5 +272,5 @@ class MakesAnnouncements(HasAnnouncements):
 class AnnouncementSet(HasAnnouncements):
     """The set of all announcements across all pillars."""
 
-    displayname = 'Launchpad-hosted'
-    title = 'Launchpad'
+    displayname = "Launchpad-hosted"
+    title = "Launchpad"

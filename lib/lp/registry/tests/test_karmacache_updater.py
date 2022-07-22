@@ -12,11 +12,7 @@ from lp.registry.interfaces.product import IProductSet
 from lp.registry.model.karma import KarmaCache
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    logout,
-    )
+from lp.testing import ANONYMOUS, login, logout
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
@@ -38,9 +34,12 @@ class TestKarmaCacheUpdater(unittest.TestCase):
 
     def _runScript(self):
         process = subprocess.Popen(
-            'cronscripts/foaf-update-karma-cache.py', shell=True,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            "cronscripts/foaf-update-karma-cache.py",
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         (out, err) = process.communicate()
         self.assertTrue(process.returncode == 0, (out, err))
 
@@ -54,7 +53,7 @@ class TestKarmaCacheUpdater(unittest.TestCase):
         # since we last updated this cache, and now the karma they earned a
         # long ago is not worth anything, so the karmacache-updater script
         # will delete the cache entries for Sample Person.
-        sample_person = self.personset.getByName('name12')
+        sample_person = self.personset.getByName("name12")
         cache_entries = self._getCacheEntriesByPerson(sample_person)
         self.assertFalse(cache_entries.is_empty())
         for cache in cache_entries:
@@ -64,21 +63,21 @@ class TestKarmaCacheUpdater(unittest.TestCase):
         # now add some fresh Karma entries for them and later we'll check that
         # the cache-updater script simply updated the existing cache entries
         # instead of creating new ones.
-        foobar = self.personset.getByName('name16')
+        foobar = self.personset.getByName("name16")
         cache_entries = self._getCacheEntriesByPerson(foobar)
         foobar_original_entries_count = cache_entries.count()
         self.assertTrue(foobar_original_entries_count > 0)
         for cache in cache_entries:
             self.assertFalse(cache.karmavalue <= 0)
-        firefox = getUtility(IProductSet)['firefox']
-        foobar.assignKarma('bugcreated', firefox)
+        firefox = getUtility(IProductSet)["firefox"]
+        foobar.assignKarma("bugcreated", firefox)
 
         # In the case of No Priv, they have no KarmaCache entries, so if we
         # add some fresh Karma entries to them, our cache-updater script
         # will have to create new KarmaCache entries for them.
-        nopriv = self.personset.getByName('no-priv')
+        nopriv = self.personset.getByName("no-priv")
         self.assertTrue(self._getCacheEntriesByPerson(nopriv).count() == 0)
-        nopriv.assignKarma('bugcreated', firefox)
+        nopriv.assignKarma("bugcreated", firefox)
 
         transaction.commit()
 
@@ -88,9 +87,10 @@ class TestKarmaCacheUpdater(unittest.TestCase):
         flush_database_caches()
 
         # Check that Sample Person has no KarmaCache entries at all
-        sample_person = self.personset.getByName('name12')
+        sample_person = self.personset.getByName("name12")
         self.assertTrue(
-            self._getCacheEntriesByPerson(sample_person).count() == 0)
+            self._getCacheEntriesByPerson(sample_person).count() == 0
+        )
 
         # Check that Foo Bar had their KarmaCache entries updated.
         entries_count = self._getCacheEntriesByPerson(foobar).count()

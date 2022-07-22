@@ -4,14 +4,11 @@
 """Person notification script utilities."""
 
 __all__ = [
-    'PersonNotificationManager',
-    ]
+    "PersonNotificationManager",
+]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from storm.store import Store
@@ -22,7 +19,6 @@ from lp.services.config import config
 
 
 class PersonNotificationManager:
-
     def __init__(self, txn, logger):
         """Initialize the manager with a transaction manager and logger."""
         self.txn = txn
@@ -35,13 +31,13 @@ class PersonNotificationManager:
         notification_set = getUtility(IPersonNotificationSet)
         pending_notifications = notification_set.getNotificationsToSend()
         self.logger.info(
-            '%d notification(s) to send.' % pending_notifications.count())
+            "%d notification(s) to send." % pending_notifications.count()
+        )
         for notification in pending_notifications:
             person = notification.person
             if not notification.can_send:
                 unsent_notifications.append(notification)
-                self.logger.info(
-                    "%s has no email address." % person.name)
+                self.logger.info("%s has no email address." % person.name)
                 continue
             self.logger.info("Notifying %s." % person.name)
             notification.send(logger=self.logger)
@@ -65,15 +61,18 @@ class PersonNotificationManager:
             purge. These may be messages to users without email addresses.
         """
         retained_days = timedelta(
-            days=int(config.person_notification.retained_days))
-        time_limit = (datetime.now(pytz.timezone('UTC')) - retained_days)
+            days=int(config.person_notification.retained_days)
+        )
+        time_limit = datetime.now(pytz.timezone("UTC")) - retained_days
         notification_set = getUtility(IPersonNotificationSet)
         to_delete = notification_set.getNotificationsOlderThan(time_limit)
         if to_delete.count():
             self.logger.info(
-                "Notification retention limit is %s." % retained_days)
+                "Notification retention limit is %s." % retained_days
+            )
             self.logger.info(
-                "Deleting %d old notification(s)." % to_delete.count())
+                "Deleting %d old notification(s)." % to_delete.count()
+            )
             for notification in to_delete:
                 Store.of(notification).remove(notification)
             self.txn.commit()

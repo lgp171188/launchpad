@@ -10,7 +10,7 @@ from lp.services.openid.interfaces.openididentifier import IOpenIdIdentifier
 
 
 class ViewOpenIdIdentifierBySelfOrAdmin(AuthorizationBase):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IOpenIdIdentifier
 
     def checkAuthenticated(self, user):

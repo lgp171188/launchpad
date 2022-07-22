@@ -150,7 +150,7 @@ class Bugzilla(ExternalBugTracker):
 
         See `IExternalBugTracker`.
         """
-        # checkwatches isn't set up to handle errors here, so we supress
+        # checkwatches isn't set up to handle errors here, so we suppress
         # known connection issues. They'll be handled and logged later on when
         # further requests are attempted.
         try:
@@ -953,7 +953,7 @@ class BugzillaAPI(Bugzilla):
         if "@" not in email:
             return email, None
         # If the display name is empty, set it to None so that it's
-        # useable by IPersonSet.ensurePerson().
+        # usable by IPersonSet.ensurePerson().
         elif display_name == "":
             return None, email
         # Both displayname and email are valid, return both.

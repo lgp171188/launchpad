@@ -3,16 +3,12 @@
 
 """Test for virtual host setup."""
 
-from doctest import (
-    DocTestSuite,
-    ELLIPSIS,
-    NORMALIZE_WHITESPACE,
-    )
+from doctest import ELLIPSIS, NORMALIZE_WHITESPACE, DocTestSuite
 
 
 def test_suite():
     suite = DocTestSuite(
-            'lp.services.webapp.vhosts',
-            optionflags=NORMALIZE_WHITESPACE | ELLIPSIS
-            )
+        "lp.services.webapp.vhosts",
+        optionflags=NORMALIZE_WHITESPACE | ELLIPSIS,
+    )
     return suite

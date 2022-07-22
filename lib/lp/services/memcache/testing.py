@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'MemcacheFixture',
-    ]
+    "MemcacheFixture",
+]
 
 import time as _time
 
@@ -40,7 +40,8 @@ class MemcacheFixture(fixtures.Fixture, MemcacheClient):
         if expire:
             if not isinstance(expire, int):
                 raise MemcacheIllegalInputError(
-                    "expire must be integer, got bad value: %r" % expire)
+                    "expire must be integer, got bad value: %r" % expire
+                )
             if expire <= MONTH_IN_SECONDS:
                 expire = int(_time.time()) + expire
         self._cache[key] = (val, expire)

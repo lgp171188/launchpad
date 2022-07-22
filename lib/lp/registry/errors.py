@@ -2,37 +2,37 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroSeriesDifferenceError',
-    'NotADerivedSeriesError',
-    'CannotChangeInformationType',
-    'CannotDeleteCommercialSubscription',
-    'CannotTransitionToCountryMirror',
-    'CommercialSubscribersOnly',
-    'CannotPackageProprietaryProduct',
-    'CountryMirrorAlreadySet',
-    'DeleteSubscriptionError',
-    'InvalidFilename',
-    'InvalidMirrorReviewState',
-    'InvalidName',
-    'JoinNotAllowed',
-    'MirrorNotOfficial',
-    'MirrorHasNoHTTPURL',
-    'MirrorNotProbed',
-    'NameAlreadyTaken',
-    'NoSuchAccount',
-    'NoSuchDistroSeries',
-    'NoSuchOCIProjectName',
-    'NoSuchSourcePackageName',
-    'NotPlaceholderAccount',
-    'InclusiveTeamLinkageError',
-    'PPACreationError',
-    'PrivatePersonLinkageError',
-    'ProprietaryPillar',
-    'TeamMembershipTransitionError',
-    'TeamMembershipPolicyError',
-    'UserCannotChangeMembershipSilently',
-    'UserCannotSubscribePerson',
-    ]
+    "DistroSeriesDifferenceError",
+    "NotADerivedSeriesError",
+    "CannotChangeInformationType",
+    "CannotDeleteCommercialSubscription",
+    "CannotTransitionToCountryMirror",
+    "CommercialSubscribersOnly",
+    "CannotPackageProprietaryProduct",
+    "CountryMirrorAlreadySet",
+    "DeleteSubscriptionError",
+    "InvalidFilename",
+    "InvalidMirrorReviewState",
+    "InvalidName",
+    "JoinNotAllowed",
+    "MirrorNotOfficial",
+    "MirrorHasNoHTTPURL",
+    "MirrorNotProbed",
+    "NameAlreadyTaken",
+    "NoSuchAccount",
+    "NoSuchDistroSeries",
+    "NoSuchOCIProjectName",
+    "NoSuchSourcePackageName",
+    "NotPlaceholderAccount",
+    "InclusiveTeamLinkageError",
+    "PPACreationError",
+    "PrivatePersonLinkageError",
+    "ProprietaryPillar",
+    "TeamMembershipTransitionError",
+    "TeamMembershipPolicyError",
+    "UserCannotChangeMembershipSilently",
+    "UserCannotSubscribePerson",
+]
 
 import http.client
 
@@ -79,6 +79,7 @@ class InvalidFilename(Exception):
 
 class NoSuchDistroSeries(NameLookupFailed):
     """Raised when we try to find a DistroSeries that doesn't exist."""
+
     _message_prefix = "No such distribution series"
 
 
@@ -106,11 +107,13 @@ class ProprietaryPillar(Exception):
 
 class NoSuchSourcePackageName(NameLookupFailed):
     """Raised when we can't find a particular sourcepackagename."""
+
     _message_prefix = "No such source package"
 
 
 class NoSuchOCIProjectName(NameLookupFailed):
     """Raised when we can't find a particular OCIProjectName."""
+
     _message_prefix = "No such OCI Project"
 
 

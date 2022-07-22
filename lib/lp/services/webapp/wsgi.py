@@ -5,7 +5,7 @@
 
 __all__ = [
     "get_wsgi_application",
-    ]
+]
 
 import logging
 
@@ -21,7 +21,7 @@ from zope.security.management import (
     endInteraction,
     newInteraction,
     system_user,
-    )
+)
 
 from lp.services.config import config
 
@@ -41,7 +41,8 @@ def get_wsgi_application():
         logging.warning(
             "Developer mode is enabled: this is a security risk and should "
             "NOT be enabled on production servers. Developer mode can be "
-            "turned off in launchpad-lazr.conf.")
+            "turned off in launchpad-lazr.conf."
+        )
 
     # Set user to system_user, so we can do anything we want.
     newInteraction(SystemConfigurationParticipation())

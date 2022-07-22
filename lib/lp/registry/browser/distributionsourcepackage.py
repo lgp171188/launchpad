@@ -2,41 +2,35 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistributionSourcePackageAnswersMenu',
-    'DistributionSourcePackageBreadcrumb',
-    'DistributionSourcePackageChangelogView',
-    'DistributionSourcePackageEditView',
-    'DistributionSourcePackageFacets',
-    'DistributionSourcePackageHelpView',
-    'DistributionSourcePackageNavigation',
-    'DistributionSourcePackageOverviewMenu',
-    'DistributionSourcePackagePublishingHistoryView',
-    'DistributionSourcePackageURL',
-    'DistributionSourcePackageView',
-    'PublishingHistoryViewMixin',
-    ]
+    "DistributionSourcePackageAnswersMenu",
+    "DistributionSourcePackageBreadcrumb",
+    "DistributionSourcePackageChangelogView",
+    "DistributionSourcePackageEditView",
+    "DistributionSourcePackageFacets",
+    "DistributionSourcePackageHelpView",
+    "DistributionSourcePackageNavigation",
+    "DistributionSourcePackageOverviewMenu",
+    "DistributionSourcePackagePublishingHistoryView",
+    "DistributionSourcePackageURL",
+    "DistributionSourcePackageView",
+    "PublishingHistoryViewMixin",
+]
 
-from functools import cmp_to_key
 import itertools
 import operator
+from functools import cmp_to_key
 
 import apt_pkg
 from lazr.delegates import delegate_to
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.answers.browser.questiontarget import (
     QuestionTargetAnswersMenu,
     QuestionTargetTraversalMixin,
-    )
+)
 from lp.answers.enums import QuestionStatus
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.app.browser.stringformatter import extract_email_addresses
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.enums import ServiceUsage
@@ -44,10 +38,10 @@ from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.app.interfaces.launchpad import IServiceUsage
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.bugs.browser.structuralsubscription import (
-    expose_structural_subscription_data_to_js,
     StructuralSubscriptionMenuMixin,
     StructuralSubscriptionTargetTraversalMixin,
-    )
+    expose_structural_subscription_data_to_js,
+)
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
@@ -56,41 +50,41 @@ from lp.registry.browser.pillar import PillarBugsMenu
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     Navigation,
-    redirection,
     StandardLaunchpadFacets,
-    )
+    canonical_url,
+    redirection,
+)
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,
     IMultiFacetedBreadcrumb,
-    )
+)
 from lp.services.webapp.menu import (
     ApplicationMenu,
-    enabled_with_permission,
     Link,
     NavigationMenu,
-    )
+    enabled_with_permission,
+)
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.sorting import sorted_dotted_numbers
 from lp.soyuz.browser.sourcepackagerelease import linkify_changelog
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
-    )
+)
 from lp.soyuz.interfaces.packagediff import IPackageDiffSet
 from lp.translations.browser.customlanguagecode import (
     HasCustomLanguageCodesTraversalMixin,
-    )
+)
 
 
 @implementer(ICanonicalUrlData)
@@ -114,8 +108,10 @@ class DistributionSourcePackageURL:
     @property
     def path(self):
         policy = self.context.distribution.default_traversal_policy
-        if (policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE and
-                not self.context.distribution.redirect_default_traversal):
+        if (
+            policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE
+            and not self.context.distribution.redirect_default_traversal
+        ):
             return self.context.name
         else:
             return "+source/%s" % self.context.name
@@ -124,12 +120,12 @@ class DistributionSourcePackageURL:
 class DistributionSourcePackageFormatterAPI(CustomizableFormatter):
     """Adapt IDistributionSourcePackage objects to a formatted string."""
 
-    _link_permission = 'zope.Public'
-    _link_summary_template = '%(displayname)s'
+    _link_permission = "zope.Public"
+    _link_summary_template = "%(displayname)s"
 
     def _link_summary_values(self):
         displayname = self._context.displayname
-        return {'displayname': displayname}
+        return {"displayname": displayname}
 
 
 @implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
@@ -138,32 +134,31 @@ class DistributionSourcePackageBreadcrumb(Breadcrumb):
 
     @property
     def text(self):
-        return '%s package' % self.context.sourcepackagename.name
+        return "%s package" % self.context.sourcepackagename.name
 
 
 class DistributionSourcePackageFacets(StandardLaunchpadFacets):
 
     usedfor = IDistributionSourcePackage
     enable_only = [
-        'overview',
-        'branches',
-        'bugs',
-        'translations',
-        'answers',
-        ]
+        "overview",
+        "branches",
+        "bugs",
+        "translations",
+        "answers",
+    ]
 
 
 class DistributionSourcePackageLinksMixin:
-
     def publishinghistory(self):
-        return Link('+publishinghistory', 'Show publishing history')
+        return Link("+publishinghistory", "Show publishing history")
 
-    @enabled_with_permission('launchpad.BugSupervisor')
+    @enabled_with_permission("launchpad.BugSupervisor")
     def edit(self):
         """Edit the details of this source package."""
         # This is titled "Edit bug reporting guidelines" because that
         # is the only editable property of a source package right now.
-        return Link('+edit', 'Configure bug tracker', icon='edit')
+        return Link("+edit", "Configure bug tracker", icon="edit")
 
     def new_bugs(self):
         base_path = "+bugs"
@@ -177,24 +172,26 @@ class DistributionSourcePackageLinksMixin:
 
 
 class DistributionSourcePackageOverviewMenu(
-    ApplicationMenu, DistributionSourcePackageLinksMixin):
+    ApplicationMenu, DistributionSourcePackageLinksMixin
+):
 
     usedfor = IDistributionSourcePackage
-    facet = 'overview'
-    links = ['new_bugs', 'open_questions']
+    facet = "overview"
+    links = ["new_bugs", "open_questions"]
 
 
 class DistributionSourcePackageBugsMenu(
     PillarBugsMenu,
     StructuralSubscriptionMenuMixin,
-    DistributionSourcePackageLinksMixin):
+    DistributionSourcePackageLinksMixin,
+):
 
     usedfor = IDistributionSourcePackage
-    facet = 'bugs'
+    facet = "bugs"
 
     @cachedproperty
     def links(self):
-        links = ['filebug']
+        links = ["filebug"]
         add_subscribe_link(links)
         return links
 
@@ -202,30 +199,34 @@ class DistributionSourcePackageBugsMenu(
 class DistributionSourcePackageAnswersMenu(QuestionTargetAnswersMenu):
 
     usedfor = IDistributionSourcePackage
-    facet = 'answers'
+    facet = "answers"
 
-    links = QuestionTargetAnswersMenu.links + ['gethelp']
+    links = QuestionTargetAnswersMenu.links + ["gethelp"]
 
     def gethelp(self):
-        return Link('+gethelp', 'Help and support options', icon='info')
+        return Link("+gethelp", "Help and support options", icon="info")
 
 
-class DistributionSourcePackageNavigation(Navigation,
-    BugTargetTraversalMixin, HasCustomLanguageCodesTraversalMixin,
-    QuestionTargetTraversalMixin, TargetDefaultVCSNavigationMixin,
-    StructuralSubscriptionTargetTraversalMixin):
+class DistributionSourcePackageNavigation(
+    Navigation,
+    BugTargetTraversalMixin,
+    HasCustomLanguageCodesTraversalMixin,
+    QuestionTargetTraversalMixin,
+    TargetDefaultVCSNavigationMixin,
+    StructuralSubscriptionTargetTraversalMixin,
+):
 
     usedfor = IDistributionSourcePackage
 
-    @redirection('+editbugcontact')
+    @redirection("+editbugcontact")
     def redirect_editbugcontact(self):
-        return '+subscribe'
+        return "+subscribe"
 
     def traverse(self, name):
         return self.context.getVersion(name)
 
 
-@delegate_to(IDistributionSourcePackageRelease, context='context')
+@delegate_to(IDistributionSourcePackageRelease, context="context")
 class DecoratedDistributionSourcePackageRelease:
     """A decorated DistributionSourcePackageRelease.
 
@@ -234,8 +235,13 @@ class DecoratedDistributionSourcePackageRelease:
     """
 
     def __init__(
-        self, distributionsourcepackagerelease, publishing_history,
-        package_diffs, person_data, user):
+        self,
+        distributionsourcepackagerelease,
+        publishing_history,
+        package_diffs,
+        person_data,
+        user,
+    ):
         self.context = distributionsourcepackagerelease
         self._publishing_history = publishing_history
         self._package_diffs = package_diffs
@@ -244,19 +250,20 @@ class DecoratedDistributionSourcePackageRelease:
 
     @property
     def publishing_history(self):
-        """ See `IDistributionSourcePackageRelease`."""
+        """See `IDistributionSourcePackageRelease`."""
         return self._publishing_history
 
     @property
     def package_diffs(self):
-        """ See `ISourcePackageRelease`."""
+        """See `ISourcePackageRelease`."""
         return self._package_diffs
 
     @property
     def change_summary(self):
-        """ See `ISourcePackageRelease`."""
+        """See `ISourcePackageRelease`."""
         return linkify_changelog(
-            self._user, self.context.change_summary, self._person_data)
+            self._user, self.context.change_summary, self._person_data
+        )
 
 
 class IDistributionSourcePackageActionMenu(Interface):
@@ -266,26 +273,28 @@ class IDistributionSourcePackageActionMenu(Interface):
 class DistributionSourcePackageActionMenu(
     NavigationMenu,
     StructuralSubscriptionMenuMixin,
-    DistributionSourcePackageLinksMixin):
+    DistributionSourcePackageLinksMixin,
+):
     """Action menu for distro source packages."""
+
     usedfor = IDistributionSourcePackageActionMenu
-    facet = 'overview'
-    title = 'Actions'
+    facet = "overview"
+    title = "Actions"
 
     @cachedproperty
     def links(self):
-        links = ['publishing_history', 'change_log']
+        links = ["publishing_history", "change_log"]
         add_subscribe_link(links)
-        links.append('edit')
+        links.append("edit")
         return links
 
     def publishing_history(self):
-        text = 'View full publishing history'
-        return Link('+publishinghistory', text, icon="info")
+        text = "View full publishing history"
+        return Link("+publishinghistory", text, icon="info")
 
     def change_log(self):
-        text = 'View full change log'
-        return Link('+changelog', text, icon="info")
+        text = "View full change log"
+        return Link("+changelog", text, icon="info")
 
 
 class DistributionSourcePackageBaseView(LaunchpadView):
@@ -297,52 +306,71 @@ class DistributionSourcePackageBaseView(LaunchpadView):
 
         def not_empty(text):
             return (
-                text is not None and isinstance(text, str)
-                and len(text.strip()) > 0)
+                text is not None
+                and isinstance(text, str)
+                and len(text.strip()) > 0
+            )
 
         def decorate(dspr_pubs):
             sprs = [dspr.sourcepackagerelease for (dspr, spphs) in dspr_pubs]
             # Preload email/person data only if user is logged on. In
             # the opposite case the emails in the changelog will be
             # obfuscated anyway and thus cause no database lookups.
-            the_changelog = '\n'.join(
-                [spr.changelog_entry for spr in sprs
-                if not_empty(spr.changelog_entry)])
+            the_changelog = "\n".join(
+                [
+                    spr.changelog_entry
+                    for spr in sprs
+                    if not_empty(spr.changelog_entry)
+                ]
+            )
             if self.user:
                 self._person_data = {
-                    email.email: person for (email, person) in
-                        getUtility(IPersonSet).getByEmails(
-                            extract_email_addresses(the_changelog),
-                            include_hidden=False)}
+                    email.email: person
+                    for (email, person) in getUtility(IPersonSet).getByEmails(
+                        extract_email_addresses(the_changelog),
+                        include_hidden=False,
+                    )
+                }
             else:
                 self._person_data = None
             # Collate diffs for relevant SourcePackageReleases
             pkg_diffs = getUtility(IPackageDiffSet).getDiffsToReleases(
-                sprs, preload_for_display=True)
+                sprs, preload_for_display=True
+            )
             spr_diffs = {}
             for spr, diffs in itertools.groupby(
-                    pkg_diffs, operator.attrgetter('to_source')):
+                pkg_diffs, operator.attrgetter("to_source")
+            ):
                 spr_diffs[spr] = list(diffs)
 
             return [
                 DecoratedDistributionSourcePackageRelease(
-                    dspr, spphs, spr_diffs.get(dspr.sourcepackagerelease, []),
-                    self._person_data, self.user)
-                for (dspr, spphs) in dspr_pubs]
+                    dspr,
+                    spphs,
+                    spr_diffs.get(dspr.sourcepackagerelease, []),
+                    self._person_data,
+                    self.user,
+                )
+                for (dspr, spphs) in dspr_pubs
+            ]
+
         return DecoratedResultSet(
             self.context.getReleasesAndPublishingHistory(),
-            bulk_decorator=decorate)
+            bulk_decorator=decorate,
+        )
 
 
 @implementer(IDistributionSourcePackageActionMenu)
-class DistributionSourcePackageView(DistributionSourcePackageBaseView,
-                                    LaunchpadView):
+class DistributionSourcePackageView(
+    DistributionSourcePackageBaseView, LaunchpadView
+):
     """View class for DistributionSourcePackage."""
 
     def initialize(self):
         super().initialize()
         expose_structural_subscription_data_to_js(
-            self.context, self.request, self.user)
+            self.context, self.request, self.user
+        )
 
     @property
     def label(self):
@@ -390,8 +418,10 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
         # three archives.
         archive_set = getUtility(IArchiveSet)
         publications = archive_set.getPublicationsInArchives(
-            self.context.sourcepackagename, top_three_archives,
-            distribution=self.context.distribution)
+            self.context.sourcepackagename,
+            top_three_archives,
+            distribution=self.context.distribution,
+        )
 
         # Collect the publishings for each archive
         archive_publishings = {}
@@ -408,26 +438,28 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
             # 'Jaunty (1.0.1b)' to the versions list.
             for pub in archive_publishings[archive]:
                 versions.append(
-                    "%s (%s)" % (
+                    "%s (%s)"
+                    % (
                         pub.distroseries.displayname,
                         pub.source_package_version,
-                        )
                     )
-            archive_versions.append({
-                'archive': archive,
-                'versions': ", ".join(versions),
-                })
+                )
+            archive_versions.append(
+                {
+                    "archive": archive,
+                    "versions": ", ".join(versions),
+                }
+            )
 
         return archive_versions
 
     @property
     def further_ppa_versions_url(self):
-        """Return the url used to find further PPA versions of this package.
-        """
+        """Return the url used to find further PPA versions of this package."""
         return "%s/+ppas?name_filter=%s" % (
             canonical_url(self.context.distribution),
             self.context.name,
-            )
+        )
 
     @cachedproperty
     def active_distroseries_packages(self):
@@ -453,7 +485,8 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
         for package in self.active_distroseries_packages:
             series.add(package.distroseries)
         result = sorted_dotted_numbers(
-            series, key=operator.attrgetter('version'))
+            series, key=operator.attrgetter("version")
+        )
         result.reverse()
         return result
 
@@ -465,7 +498,8 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
         publications = getUtility(IArchiveSet).getPublicationsInArchives(
             sourcepackage.sourcepackagename,
             sourcepackage.distribution.all_distro_archives,
-            distroseries=sourcepackage.distroseries)
+            distroseries=sourcepackage.distroseries,
+        )
         pocket_dict = {}
         for pub in shortlist(publications):
             version = pub.source_package_version
@@ -477,7 +511,8 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
         if len(self.active_series) == 0:
             return None
         return self.active_series[0].getSourcePackage(
-            self.context.sourcepackagename)
+            self.context.sourcepackagename
+        )
 
     @property
     def version_table(self):
@@ -493,51 +528,57 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
             # fill it in.
             show_set_upstream_link = (
                 packaging is None
-                and distroseries.status in (
+                and distroseries.status
+                in (
                     SeriesStatus.CURRENT,
                     SeriesStatus.DEVELOPMENT,
-                    )
                 )
+            )
             title_row = {
-                'blank_row': False,
-                'title_row': True,
-                'data_row': False,
-                'distroseries': distroseries,
-                'series_package': package,
-                'packaging': packaging,
-                'show_set_upstream_link': show_set_upstream_link,
-                }
+                "blank_row": False,
+                "title_row": True,
+                "data_row": False,
+                "distroseries": distroseries,
+                "series_package": package,
+                "packaging": packaging,
+                "show_set_upstream_link": show_set_upstream_link,
+            }
             rows.append(title_row)
 
             # After the title row, we list each package version that's
             # currently published, and which pockets it's published in.
             pocket_dict = self.published_by_version(package)
             for version in sorted(
-                    pocket_dict,
-                    key=cmp_to_key(apt_pkg.version_compare), reverse=True):
+                pocket_dict,
+                key=cmp_to_key(apt_pkg.version_compare),
+                reverse=True,
+            ):
                 most_recent_publication = pocket_dict[version][0]
                 date_published = most_recent_publication.datepublished
                 pockets = ", ".join(
-                    [pub.pocket.name for pub in pocket_dict[version]])
+                    [pub.pocket.name for pub in pocket_dict[version]]
+                )
                 row = {
-                    'blank_row': False,
-                    'title_row': False,
-                    'data_row': True,
-                    'version': version,
-                    'publication': most_recent_publication,
-                    'pockets': pockets,
-                    'component': most_recent_publication.component_name,
-                    'date_published': date_published,
-                    }
+                    "blank_row": False,
+                    "title_row": False,
+                    "data_row": True,
+                    "version": version,
+                    "publication": most_recent_publication,
+                    "pockets": pockets,
+                    "component": most_recent_publication.component_name,
+                    "date_published": date_published,
+                }
                 rows.append(row)
             # We need a blank row after each section, so the series
             # header row doesn't appear too close to the previous
             # section.
-            rows.append({
-                'blank_row': True,
-                'title_row': False,
-                'data_row': False,
-                })
+            rows.append(
+                {
+                    "blank_row": True,
+                    "title_row": False,
+                    "data_row": False,
+                }
+            )
 
         return rows
 
@@ -548,34 +589,37 @@ class DistributionSourcePackageView(DistributionSourcePackageBaseView,
 
     @cachedproperty
     def bugs_answers_usage(self):
-        """Return a  dict of uses_bugs, uses_answers, uses_both, uses_either.
-        """
+        """Return a dict of uses_bugs, uses_answers, uses_both, uses_either."""
         service_usage = IServiceUsage(self.context)
-        uses_bugs = (
-            service_usage.bug_tracking_usage == ServiceUsage.LAUNCHPAD)
+        uses_bugs = service_usage.bug_tracking_usage == ServiceUsage.LAUNCHPAD
         uses_answers = service_usage.answers_usage == ServiceUsage.LAUNCHPAD
         uses_both = uses_bugs and uses_answers
         uses_either = uses_bugs or uses_answers
         return dict(
-            uses_bugs=uses_bugs, uses_answers=uses_answers,
-            uses_both=uses_both, uses_either=uses_either)
+            uses_bugs=uses_bugs,
+            uses_answers=uses_answers,
+            uses_both=uses_both,
+            uses_either=uses_either,
+        )
 
     @cachedproperty
     def new_bugtasks_count(self):
         search_params = BugTaskSearchParams(
-            self.user, status=BugTaskStatus.NEW, omit_dupes=True)
+            self.user, status=BugTaskStatus.NEW, omit_dupes=True
+        )
         return self.context.searchTasks(search_params).count()
 
 
 class DistributionSourcePackageChangelogView(
-    DistributionSourcePackageBaseView, LaunchpadView):
+    DistributionSourcePackageBaseView, LaunchpadView
+):
     """View for presenting change logs for a `DistributionSourcePackage`."""
 
-    page_title = 'Change log'
+    page_title = "Change log"
 
     @property
     def label(self):
-        return 'Change log for %s' % self.context.title
+        return "Change log for %s" % self.context.title
 
     @cachedproperty
     def batchnav(self):
@@ -591,8 +635,11 @@ class PublishingHistoryViewMixin:
             ids.update((spph.removed_byID, spph.creatorID, spph.sponsorID))
         ids.discard(None)
         if ids:
-            list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                ids, need_validity=True))
+            list(
+                getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                    ids, need_validity=True
+                )
+            )
 
     @property
     def batchnav(self):
@@ -601,19 +648,22 @@ class PublishingHistoryViewMixin:
         return BatchNavigator(
             DecoratedResultSet(
                 self.context.publishing_history,
-                pre_iter_hook=self._preload_people),
-            self.request)
+                pre_iter_hook=self._preload_people,
+            ),
+            self.request,
+        )
 
 
 class DistributionSourcePackagePublishingHistoryView(
-        LaunchpadView, PublishingHistoryViewMixin):
+    LaunchpadView, PublishingHistoryViewMixin
+):
     """View for presenting `DistributionSourcePackage` publishing history."""
 
-    page_title = 'Publishing history'
+    page_title = "Publishing history"
 
     @property
     def label(self):
-        return 'Publishing history of %s' % self.context.title
+        return "Publishing history of %s" % self.context.title
 
 
 class DistributionSourcePackageEditView(LaunchpadEditFormView):
@@ -621,22 +671,22 @@ class DistributionSourcePackageEditView(LaunchpadEditFormView):
 
     schema = IDistributionSourcePackage
     field_names = [
-        'bug_reporting_guidelines',
-        'bug_reported_acknowledgement',
-        'enable_bugfiling_duplicate_search',
-        ]
+        "bug_reporting_guidelines",
+        "bug_reported_acknowledgement",
+        "enable_bugfiling_duplicate_search",
+    ]
 
     @property
     def label(self):
         """The form label."""
-        return 'Edit %s' % self.context.title
+        return "Edit %s" % self.context.title
 
     @property
     def page_title(self):
         """The page title."""
         return self.label
 
-    @action("Change", name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
 
@@ -650,4 +700,4 @@ class DistributionSourcePackageEditView(LaunchpadEditFormView):
 class DistributionSourcePackageHelpView(LaunchpadView):
     """A View to show Answers help."""
 
-    page_title = 'Help and support options'
+    page_title = "Help and support options"

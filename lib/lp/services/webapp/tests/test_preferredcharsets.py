@@ -3,11 +3,8 @@
 
 """Tests for choosing the preferred charsets."""
 
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setGlobs,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setGlobs
 
 
 def test_suite():
-    return LayeredDocFileSuite('test_preferredcharsets.rst', setUp=setGlobs)
+    return LayeredDocFileSuite("test_preferredcharsets.rst", setUp=setGlobs)

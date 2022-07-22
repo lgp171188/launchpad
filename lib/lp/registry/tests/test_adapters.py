@@ -9,7 +9,7 @@ from lp.registry.adapters import (
     package_to_sourcepackagename,
     productseries_to_product,
     sourcepackage_to_distribution,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
@@ -36,7 +36,8 @@ class TestAdapters(TestCaseWithFactory):
         self.assertTrue(IDistribution.providedBy(distribution))
         self.assertEqual(package.distroseries.distribution, distribution)
         self.assertEqual(
-            package.distroseries.distribution, IDistribution(package))
+            package.distroseries.distribution, IDistribution(package)
+        )
 
     def test_sourcepackage_to_sourcepackagename(self):
         # A sourcepackagename can be retrieved source package.
@@ -44,7 +45,8 @@ class TestAdapters(TestCaseWithFactory):
         spn = package_to_sourcepackagename(package)
         self.assertTrue(ISourcePackageName.providedBy(spn))
         self.assertEqual(
-            package.sourcepackagename, ISourcePackageName(package))
+            package.sourcepackagename, ISourcePackageName(package)
+        )
 
     def test_distributionsourcepackage_to_sourcepackagename(self):
         # A sourcepackagename can be retrieved distribution source package.
@@ -52,7 +54,8 @@ class TestAdapters(TestCaseWithFactory):
         spn = package_to_sourcepackagename(package)
         self.assertTrue(ISourcePackageName.providedBy(spn))
         self.assertEqual(
-            package.sourcepackagename, ISourcePackageName(package))
+            package.sourcepackagename, ISourcePackageName(package)
+        )
 
     def test_distroseries_to_distribution(self):
         # distroseries_to_distribution() returns an IDistribution given an
@@ -62,7 +65,8 @@ class TestAdapters(TestCaseWithFactory):
         self.assertTrue(IDistribution.providedBy(distribution))
         self.assertEqual(distro_series.distribution, distribution)
         self.assertEqual(
-            distro_series.distribution, IDistribution(distro_series))
+            distro_series.distribution, IDistribution(distro_series)
+        )
 
     def test_productseries_to_product(self):
         # productseries_to_product() returns an IProduct given an

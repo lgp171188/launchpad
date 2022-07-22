@@ -4,12 +4,12 @@
 """Loggers."""
 
 __all__ = [
-    'BufferLogger',
-    'DevNullLogger',
-    'FakeLogger',
-    'LaunchpadLogger',
-    'PrefixFilter',
-    ]
+    "BufferLogger",
+    "DevNullLogger",
+    "FakeLogger",
+    "LaunchpadLogger",
+    "PrefixFilter",
+]
 
 import io
 import logging
@@ -18,18 +18,20 @@ import traceback
 
 from lp.services.log import loglevels
 
-
 LEVEL_PREFIXES = {
     debug_level: "DEBUG%d" % (1 + debug_level - loglevels.DEBUG)
-    for debug_level in range(loglevels.DEBUG9, loglevels.DEBUG)}
+    for debug_level in range(loglevels.DEBUG9, loglevels.DEBUG)
+}
 
-LEVEL_PREFIXES.update({
-    loglevels.DEBUG: 'DEBUG',
-    loglevels.INFO: 'INFO',
-    loglevels.WARNING: 'WARNING',
-    loglevels.ERROR: 'ERROR',
-    loglevels.CRITICAL: 'CRITICAL',
-})
+LEVEL_PREFIXES.update(
+    {
+        loglevels.DEBUG: "DEBUG",
+        loglevels.INFO: "INFO",
+        loglevels.WARNING: "WARNING",
+        loglevels.ERROR: "ERROR",
+        loglevels.CRITICAL: "CRITICAL",
+    }
+)
 
 
 class LaunchpadLogger(logging.Logger):
@@ -83,13 +85,13 @@ class PrefixFilter:
 
     def filter(self, record):
         prefix = self.prefix or record.name
-        record.msg = '[%s] %s' % (prefix, record.msg)
+        record.msg = "[%s] %s" % (prefix, record.msg)
         return True
 
 
 class FakeLogger:
-    """Emulates a proper logger, just printing everything out the given file.
-    """
+    """Emulates a proper logger, just printing everything to the given file."""
+
     # XXX: GavinPanella 2011-11-04 bug=886053: This is a test fixture not a
     # service.
 
@@ -128,7 +130,7 @@ class FakeLogger:
         prefix = LEVEL_PREFIXES.get(level, "%d>" % level)
         print(prefix, self._format_message(msg, *stuff), file=output_file)
 
-        if kw.get('exc_info', False):
+        if kw.get("exc_info", False):
             traceback.print_exc(file=output_file)
 
     def log(self, level, *stuff, **kw):
@@ -182,6 +184,7 @@ class FakeLogger:
 
 class DevNullLogger(FakeLogger):
     """A logger that drops all messages."""
+
     # XXX: GavinPanella 2011-11-04 bug=886053: This is a test fixture not a
     # service.
 
@@ -191,6 +194,7 @@ class DevNullLogger(FakeLogger):
 
 class BufferLogger(FakeLogger):
     """A logger that logs to a StringIO object."""
+
     # XXX: GavinPanella 2011-11-04 bug=886053: This is a test fixture not a
     # service.
 
@@ -220,4 +224,5 @@ class BufferLogger(FakeLogger):
         """
         # Only import this here to avoid importing testtools outside tests.
         from testtools.content import text_content
+
         return text_content(self.getLogBuffer())

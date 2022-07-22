@@ -14,8 +14,8 @@ from lp.services.features.scopes import ScopesFromRequest
 def start_request(event):
     """Register FeatureController."""
     event.request.features = FeatureController(
-        ScopesFromRequest(event.request).lookup,
-        StormFeatureRuleSource())
+        ScopesFromRequest(event.request).lookup, StormFeatureRuleSource()
+    )
     install_feature_controller(event.request.features)
 
 

@@ -3,8 +3,8 @@
 
 """Tests for lp.services.rabbit.RabbitServer."""
 
-from configparser import ConfigParser
 import io
+from configparser import ConfigParser
 
 from fixtures import EnvironmentVariableFixture
 
@@ -21,7 +21,7 @@ class TestRabbitServer(TestCase):
         # Rabbit needs to fully isolate itself: an existing per user
         # .erlang.cookie has to be ignored, and ditto bogus HOME if other
         # tests fail to cleanup.
-        self.useFixture(EnvironmentVariableFixture('HOME', '/nonsense/value'))
+        self.useFixture(EnvironmentVariableFixture("HOME", "/nonsense/value"))
 
         # The default timeout is 15 seconds, but increase this a bit to
         # allow some more leeway for slow test environments.
@@ -35,6 +35,6 @@ class TestRabbitServer(TestCase):
             "userid": "guest",
             "password": "guest",
             "virtual_host": "/",
-            }
+        }
         observed = dict(service_config.items("rabbitmq"))
         self.assertEqual(expected, observed)

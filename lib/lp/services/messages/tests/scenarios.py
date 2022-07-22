@@ -14,8 +14,8 @@ class MessageTypeScenariosMixin(WithScenarios):
     scenarios = [
         ("bug", {"message_type": "bug"}),
         ("question", {"message_type": "question"}),
-        ("MP comment", {"message_type": "mp"})
-        ]
+        ("MP comment", {"message_type": "mp"}),
+    ]
 
     def setUp(self):
         super().setUp()
@@ -23,15 +23,20 @@ class MessageTypeScenariosMixin(WithScenarios):
         login_person(self.person)
 
     def makeMessage(self, content=None, **kwargs):
-        owner = kwargs.pop('owner', self.person)
+        owner = kwargs.pop("owner", self.person)
         if self.message_type == "bug":
             msg = self.factory.makeBugComment(
-                owner=owner, body=content, **kwargs)
-            return ProxyFactory(IStore(BugMessage).find(
-                BugMessage, BugMessage.message == msg).one())
+                owner=owner, body=content, **kwargs
+            )
+            return ProxyFactory(
+                IStore(BugMessage)
+                .find(BugMessage, BugMessage.message == msg)
+                .one()
+            )
         elif self.message_type == "question":
             question = self.factory.makeQuestion()
             return question.giveAnswer(owner, content)
         elif self.message_type == "mp":
             return self.factory.makeCodeReviewComment(
-                sender=owner, body=content)
+                sender=owner, body=content
+            )

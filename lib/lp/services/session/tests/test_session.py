@@ -3,15 +3,8 @@
 
 """Session tests."""
 
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStandbyStore,
-    IStore,
-    )
-from lp.services.session.model import (
-    SessionData,
-    SessionPkgData,
-    )
+from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.session.model import SessionData, SessionPkgData
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -25,6 +18,7 @@ class TestSessionModelAdapters(TestCase):
                 for obj in [cls, cls()]:
                     store = adapter(obj)
                     self.assertTrue(
-                        'session' in store.get_database()._dsn,
-                        'Unknown store returned adapting %r to %r'
-                        % (obj, adapter))
+                        "session" in store.get_database()._dsn,
+                        "Unknown store returned adapting %r to %r"
+                        % (obj, adapter),
+                    )

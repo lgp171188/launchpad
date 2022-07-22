@@ -7,34 +7,35 @@ from operator import attrgetter
 
 from lp.app.enums import InformationType
 from lp.registry.vocabularies import ProductSeriesVocabulary
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestProductSeriesVocabulary(TestCaseWithFactory):
     """Test that the ProductSeriesVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
         self.vocabulary = ProductSeriesVocabulary()
-        self.product_prefix = 'asdf987-'
-        self.series1_prefix = 'qwerty-'
+        self.product_prefix = "asdf987-"
+        self.series1_prefix = "qwerty-"
         self.product = self.factory.makeProduct(
-            self.product_prefix + 'product1')
+            self.product_prefix + "product1"
+        )
         self.series = self.factory.makeProductSeries(
-            product=self.product, name=self.series1_prefix + "series1")
+            product=self.product, name=self.series1_prefix + "series1"
+        )
         self.series2 = self.factory.makeProductSeries(product=self.product)
 
     def test_search_by_product_name(self):
         # Test that searching by the product name finds all its series.
         result = self.vocabulary.search(self.product.name)
         self.assertEqual(
-            [self.series, self.series2].sort(key=attrgetter('id')),
-            list(result).sort(key=attrgetter('id')))
+            [self.series, self.series2].sort(key=attrgetter("id")),
+            list(result).sort(key=attrgetter("id")),
+        )
 
     def test_search_by_series_name(self):
         # Test that searching by the series name finds the right one.
@@ -49,16 +50,19 @@ class TestProductSeriesVocabulary(TestCaseWithFactory):
         # the slash and a substring match on the series name with
         # the term after the slash.
         result = self.vocabulary.search(
-            '%s/%s' % (self.product_prefix, self.series1_prefix))
+            "%s/%s" % (self.product_prefix, self.series1_prefix)
+        )
         self.assertEqual([self.series], list(result))
 
     def _makePrivateProductAndSeries(self, owner=None):
         product = self.factory.makeProduct(
             self.product_prefix + "private-product",
             information_type=InformationType.PROPRIETARY,
-            owner=owner)
-        series = self.factory.makeProductSeries(product=product,
-            name=self.series1_prefix + "private-series")
+            owner=owner,
+        )
+        series = self.factory.makeProductSeries(
+            product=product, name=self.series1_prefix + "private-series"
+        )
         return product, series
 
     def test_search_respects_privacy_no_user(self):
@@ -66,7 +70,8 @@ class TestProductSeriesVocabulary(TestCaseWithFactory):
         # anonymous/not logged in users.
         self._makePrivateProductAndSeries()
         result = self.vocabulary.search(
-            '%s/%s' % (self.product_prefix, self.series1_prefix))
+            "%s/%s" % (self.product_prefix, self.series1_prefix)
+        )
         self.assertEqual([self.series], list(result))
 
     def test_search_respects_privacy_user(self):
@@ -76,22 +81,24 @@ class TestProductSeriesVocabulary(TestCaseWithFactory):
         product, series = self._makePrivateProductAndSeries(owner=owner)
         with person_logged_in(owner):
             result = self.vocabulary.search(
-                '%s/%s' % (self.product_prefix, self.series1_prefix))
+                "%s/%s" % (self.product_prefix, self.series1_prefix)
+            )
         self.assertEqual(
-            [self.series, series].sort(key=attrgetter('id')),
-            list(result).sort(key=attrgetter('id')))
+            [self.series, series].sort(key=attrgetter("id")),
+            list(result).sort(key=attrgetter("id")),
+        )
 
     def test_toTerm(self):
         # Test the ProductSeriesVocabulary.toTerm() method.
         term = self.vocabulary.toTerm(self.series)
         self.assertEqual(
-            '%s/%s' % (self.product.name, self.series.name),
-            term.token)
+            "%s/%s" % (self.product.name, self.series.name), term.token
+        )
         self.assertEqual(self.series, term.value)
 
     def test_getTermByToken(self):
         # Test the ProductSeriesVocabulary.getTermByToken() method.
-        token = '%s/%s' % (self.product.name, self.series.name)
+        token = "%s/%s" % (self.product.name, self.series.name)
         term = self.vocabulary.getTermByToken(token)
         self.assertEqual(token, term.token)
         self.assertEqual(self.series, term.value)
@@ -100,5 +107,5 @@ class TestProductSeriesVocabulary(TestCaseWithFactory):
         # Test that ProductSeriesVocabulary.getTermByToken() raises
         # the correct exception type when no match is found.
         self.assertRaises(
-            LookupError,
-            self.vocabulary.getTermByToken, 'does/notexist')
+            LookupError, self.vocabulary.getTermByToken, "does/notexist"
+        )

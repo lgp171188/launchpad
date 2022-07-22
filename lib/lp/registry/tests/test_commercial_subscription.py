@@ -15,21 +15,23 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 class CommecialSubscriptionTestCase(TestCaseWithFactory):
     """Test CommercialSubscription."""
+
     layer = DatabaseFunctionalLayer
 
     def test_delete_raises_error_when_active(self):
         # Active commercial subscriptions cannot be deleted.
         product = self.factory.makeProduct(
-            licenses=[License.OTHER_PROPRIETARY])
+            licenses=[License.OTHER_PROPRIETARY]
+        )
         cs = product.commercial_subscription
         self.assertIs(True, cs.is_active)
-        self.assertRaises(
-            CannotDeleteCommercialSubscription, cs.delete)
+        self.assertRaises(CannotDeleteCommercialSubscription, cs.delete)
 
     def test_delete(self):
         # Inactive commercial subscriptions can be deleted.
         product = self.factory.makeProduct(
-            licenses=[License.OTHER_PROPRIETARY])
+            licenses=[License.OTHER_PROPRIETARY]
+        )
         cs = product.commercial_subscription
         date_expires = cs.date_expires - timedelta(days=31)
         removeSecurityProxy(cs).date_expires = date_expires

@@ -3,23 +3,15 @@
 
 import re
 
-from zope.formlib.interfaces import (
-    IBrowserWidget,
-    IInputWidget,
-    )
+from zope.formlib.interfaces import IBrowserWidget, IInputWidget
 from zope.schema import Dict
 
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.snappy.browser.widgets.snapbuildchannels import (
-    SnapBuildChannelsWidget,
-    )
+from lp.snappy.browser.widgets.snapbuildchannels import SnapBuildChannelsWidget
 from lp.snappy.interfaces.snap import SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -31,7 +23,8 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         super().setUp()
         field = Dict(
             __name__="auto_build_channels",
-            title="Source snap channels for automatic builds")
+            title="Source snap channels for automatic builds",
+        )
         self.context = self.factory.makeSnap()
         self.field = field.bind(self.context)
         self.request = LaunchpadTestRequest()
@@ -44,41 +37,47 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
     def test_template(self):
         self.assertTrue(
             self.widget.template.filename.endswith("snapbuildchannels.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_hint_no_feature_flag(self):
         self.assertEqual(
-            'The channels to use for build tools when building the snap '
-            'package.\n'
+            "The channels to use for build tools when building the snap "
+            "package.\n"
             'If unset, or if the channel for snapcraft is set to "apt", '
-            'the default is to install snapcraft from the source archive '
-            'using apt.',
-            self.widget.hint)
+            "the default is to install snapcraft from the source archive "
+            "using apt.",
+            self.widget.hint,
+        )
 
     def test_hint_feature_flag_apt(self):
         self.useFixture(
-            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "apt"}))
+            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "apt"})
+        )
         widget = SnapBuildChannelsWidget(self.field, self.request)
         self.assertEqual(
-            'The channels to use for build tools when building the snap '
-            'package.\n'
+            "The channels to use for build tools when building the snap "
+            "package.\n"
             'If unset, or if the channel for snapcraft is set to "apt", '
-            'the default is to install snapcraft from the source archive '
-            'using apt.',
-            widget.hint)
+            "the default is to install snapcraft from the source archive "
+            "using apt.",
+            widget.hint,
+        )
 
     def test_hint_feature_flag_real_channel(self):
         self.useFixture(
-            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "stable"}))
+            FeatureFixture({SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG: "stable"})
+        )
         widget = SnapBuildChannelsWidget(self.field, self.request)
         self.assertEqual(
-            'The channels to use for build tools when building the snap '
-            'package.\n'
+            "The channels to use for build tools when building the snap "
+            "package.\n"
             'If unset, the default is to install snapcraft from the "stable" '
             'channel.  Setting the channel for snapcraft to "apt" causes '
-            'snapcraft to be installed from the source archive using '
-            'apt.',
-            widget.hint)
+            "snapcraft to be installed from the source archive using "
+            "apt.",
+            widget.hint,
+        )
 
     def test_setUpSubWidgets_first_call(self):
         # The subwidgets are set up and a flag is set.
@@ -125,20 +124,30 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
         self.assertIsNone(self.widget.core20_widget._getCurrentValue())
         self.assertIsNone(self.widget.core22_widget._getCurrentValue())
         self.assertEqual(
-            "stable", self.widget.snapcraft_widget._getCurrentValue())
+            "stable", self.widget.snapcraft_widget._getCurrentValue()
+        )
 
     def test_setRenderedValue_all_channels(self):
         self.widget.setRenderedValue(
-            {"core": "candidate", "core18": "beta", "core20": "edge",
-             "core22": "edge/feature", "snapcraft": "stable"})
+            {
+                "core": "candidate",
+                "core18": "beta",
+                "core20": "edge",
+                "core22": "edge/feature",
+                "snapcraft": "stable",
+            }
+        )
         self.assertEqual(
-            "candidate", self.widget.core_widget._getCurrentValue())
+            "candidate", self.widget.core_widget._getCurrentValue()
+        )
         self.assertEqual("beta", self.widget.core18_widget._getCurrentValue())
         self.assertEqual("edge", self.widget.core20_widget._getCurrentValue())
         self.assertEqual(
-            "edge/feature", self.widget.core22_widget._getCurrentValue())
+            "edge/feature", self.widget.core22_widget._getCurrentValue()
+        )
         self.assertEqual(
-            "stable", self.widget.snapcraft_widget._getCurrentValue())
+            "stable", self.widget.snapcraft_widget._getCurrentValue()
+        )
 
     def test_hasInput_false(self):
         # hasInput is false when there are no channels in the form data.
@@ -148,7 +157,8 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
     def test_hasInput_true(self):
         # hasInput is true when there are channels in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.auto_build_channels.snapcraft": "stable"})
+            form={"field.auto_build_channels.snapcraft": "stable"}
+        )
         self.assertTrue(self.widget.hasInput())
 
     def test_hasValidInput_true(self):
@@ -161,7 +171,7 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core20": "edge",
             "field.auto_build_channels.core22": "edge/feature",
             "field.auto_build_channels.snapcraft": "stable",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
 
@@ -172,12 +182,17 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core20": "edge",
             "field.auto_build_channels.core22": "edge/feature",
             "field.auto_build_channels.snapcraft": "stable",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(
-            {"core18": "beta", "core20": "edge", "core22": "edge/feature",
-             "snapcraft": "stable"},
-            self.widget.getInputValue())
+            {
+                "core18": "beta",
+                "core20": "edge",
+                "core22": "edge/feature",
+                "snapcraft": "stable",
+            },
+            self.widget.getInputValue(),
+        )
 
     def test_call(self):
         # The __call__ method sets up the widgets.
@@ -195,6 +210,6 @@ class TestSnapBuildChannelsWidget(TestCaseWithFactory):
             "field.auto_build_channels.core20",
             "field.auto_build_channels.core22",
             "field.auto_build_channels.snapcraft",
-            ]
+        ]
         ids = [field["id"] for field in fields]
         self.assertContentEqual(expected_ids, ids)

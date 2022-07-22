@@ -16,19 +16,16 @@
 """Support for browser-cookie sessions."""
 
 import base64
-from email.utils import formatdate
-from hashlib import sha1
 import hmac
-from http.cookiejar import domain_match
 import random
 import time
+from email.utils import formatdate
+from hashlib import sha1
+from http.cookiejar import domain_match
 from time import process_time
 
 from lazr.uri import URI
-from zope.component import (
-    adapter,
-    getUtility,
-    )
+from zope.component import adapter, getUtility
 from zope.interface import implementer
 from zope.publisher.interfaces import IRequest
 from zope.publisher.interfaces.http import IHTTPApplicationRequest
@@ -40,8 +37,7 @@ from lp.services.webapp.interfaces import (
     IClientIdManager,
     ISession,
     ISessionDataContainer,
-    )
-
+)
 
 SECONDS = 1
 MINUTES = 60 * SECONDS
@@ -50,7 +46,7 @@ DAYS = 24 * HOURS
 YEARS = 365 * DAYS
 
 
-transtable = bytes.maketrans(b'+/', b'-.')
+transtable = bytes.maketrans(b"+/", b"-.")
 
 
 def encode_digest(s):
@@ -96,24 +92,24 @@ def get_cookie_domain(request_domain):
     all virtual hosts of the Launchpad instance.  If no matching
     domain is known, None is returned.
     """
-    cookie_domains = [v.strip()
-                      for v in config.launchpad.cookie_domains.split(',')]
+    cookie_domains = [
+        v.strip() for v in config.launchpad.cookie_domains.split(",")
+    ]
     for domain in cookie_domains:
-        assert not domain.startswith('.'), \
-               "domain should not start with '.'"
-        dotted_domain = '.' + domain
-        if (domain_match(request_domain, domain)
-            or domain_match(request_domain, dotted_domain)):
+        assert not domain.startswith("."), "domain should not start with '.'"
+        dotted_domain = "." + domain
+        if domain_match(request_domain, domain) or domain_match(
+            request_domain, dotted_domain
+        ):
             return dotted_domain
     return None
 
 
-ANNOTATION_KEY = 'lp.services.webapp.session.sid'
+ANNOTATION_KEY = "lp.services.webapp.session.sid"
 
 
 @implementer(IClientIdManager)
 class LaunchpadCookieClientIdManager:
-
     def __init__(self):
         self.namespace = config.launchpad_session.cookie
 
@@ -137,7 +133,10 @@ class LaunchpadCookieClientIdManager:
     def generateUniqueId(self):
         """Generate a new, random, unique id."""
         data = "%.20f%.20f%.20f" % (
-            random.random(), time.time(), process_time())
+            random.random(),
+            time.time(),
+            process_time(),
+        )
         digest = sha1(data.encode()).digest()
         s = encode_digest(digest)
         # we store a HMAC of the random value together with it, which makes
@@ -152,7 +151,7 @@ class LaunchpadCookieClientIdManager:
         """
         response_cookie = request.response.getCookie(self.namespace)
         if response_cookie:
-            sid = response_cookie['value']
+            sid = response_cookie["value"]
         else:
             request = IHTTPApplicationRequest(request)
             sid = request.getCookies().get(self.namespace, None)
@@ -168,7 +167,8 @@ class LaunchpadCookieClientIdManager:
         # HMAC is specified to work on byte strings only so make
         # sure to feed it that by encoding
         mac_with_my_secret = hmac.new(
-            s.encode(), self.secret.encode(), digestmod=sha1).digest()
+            s.encode(), self.secret.encode(), digestmod=sha1
+        ).digest()
         mac_with_my_secret = encode_digest(mac_with_my_secret).decode()
 
         if mac_with_my_secret != mac:
@@ -206,32 +206,36 @@ class LaunchpadCookieClientIdManager:
         # Set the cookie lifetime to something big.  It should be larger
         # than our session expiry time.
         expires = formatdate(
-            time.time() + 1 * YEARS, localtime=False, usegmt=True)
-        options['expires'] = expires
+            time.time() + 1 * YEARS, localtime=False, usegmt=True
+        )
+        options["expires"] = expires
 
         # Set domain attribute on cookie if vhosting requires it.
         cookie_domain = get_cookie_domain(uri.host)
         if cookie_domain is not None:
-            options['domain'] = cookie_domain
+            options["domain"] = cookie_domain
 
         # Forbid browsers from exposing it to JS.
-        options['HttpOnly'] = True
+        options["HttpOnly"] = True
 
         # Set secure flag on cookie.
-        if uri.scheme != 'http':
-            options['secure'] = True
+        if uri.scheme != "http":
+            options["secure"] = True
         else:
-            options['secure'] = False
+            options["secure"] = False
 
         response.setCookie(
-            self.namespace, id,
+            self.namespace,
+            id,
             path=request.getApplicationURL(path_only=True),
-            **options)
+            **options,
+        )
 
         response.setHeader(
-            'Cache-Control', 'no-cache="Set-Cookie,Set-Cookie2"')
-        response.setHeader('Pragma', 'no-cache')
-        response.setHeader('Expires', 'Mon, 26 Jul 1997 05:00:00 GMT')
+            "Cache-Control", 'no-cache="Set-Cookie,Set-Cookie2"'
+        )
+        response.setHeader("Pragma", "no-cache")
+        response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT")
 
 
 idmanager = LaunchpadCookieClientIdManager()

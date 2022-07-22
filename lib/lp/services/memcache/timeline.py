@@ -4,8 +4,8 @@
 """Timeline-friendly Launchpad Memcache client."""
 
 __all__ = [
-    'TimelineRecordingClient',
-    ]
+    "TimelineRecordingClient",
+]
 
 from lazr.restful.utils import get_current_browser_request
 
@@ -15,7 +15,6 @@ from lp.services.timeline.requesttimeline import get_request_timeline
 
 
 class TimelineRecordingClient(MemcacheClient):
-
     def __get_timeline_action(self, suffix, key):
         request = get_current_browser_request()
         timeline = get_request_timeline(request)
@@ -23,7 +22,7 @@ class TimelineRecordingClient(MemcacheClient):
 
     @property
     def _enabled(self):
-        configured_value = features.getFeatureFlag('memcache')
+        configured_value = features.getFeatureFlag("memcache")
         if configured_value is None:
             return True
         else:

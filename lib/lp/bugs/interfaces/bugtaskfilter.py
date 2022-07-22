@@ -1,7 +1,7 @@
 # Copyright 2011-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Fiter bugtasks based on context."""
+"""Filter bugtasks based on context."""
 
 __all__ = [
     "filter_bugtasks_by_context",
@@ -26,7 +26,7 @@ def simple_weight_calculator(bugtask):
 def filter_bugtasks_by_context(context, bugtasks):
     """Return the bugtasks filtered so there is only one bug task per bug.
 
-    The context is used to return the most relevent bugtask for that context.
+    The context is used to return the most relevant bugtask for that context.
 
     An initial constraint is to not require any database queries from this
     method.

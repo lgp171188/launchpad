@@ -641,7 +641,7 @@ class TestBug(TestCaseWithFactory):
             self.assertIsInstance(recorder.events[0], ObjectCreatedEvent)
 
     def test_newMessage_send_notification_false(self):
-        # Notifications about new messages can be supressed.
+        # Notifications about new messages can be suppressed.
         bug = self.factory.makeBug()
         login_person(bug.owner)
         with EventRecorder() as recorder:

@@ -927,7 +927,7 @@ notifications containing that comment.
     >>> len(notifications)
     1
 
-If we pass this notifcation to get_email_notifications we can see that
+If we pass this notification to get_email_notifications we can see that
 Verbose Person and Team Person will receive notifications which contain
 the bug description and the status in all of its targets. All other
 subscribers will receive standard notifications that don't include the

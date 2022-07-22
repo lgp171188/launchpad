@@ -24,11 +24,17 @@ class TestSphinxDocumentation(TestCase):
         # test assumes that make command devolves into 'sphinx-build ...',
         # because running make commands from tests seems distasteful.
         output_dir = self.makeTemporaryDirectory()
-        doc_dir = os.path.join(config.root, 'doc')
+        doc_dir = os.path.join(config.root, "doc")
         returncode, stdout, stderr = run_capturing_output(
             sphinx_main,
-            ['-d', '%s/doctrees' % output_dir,
-             '-aNqW', doc_dir, '%s/html' % output_dir])
-        self.addDetail('stdout', text_content(stdout))
-        self.addDetail('stderr', text_content(stderr))
+            [
+                "-d",
+                "%s/doctrees" % output_dir,
+                "-aNqW",
+                doc_dir,
+                "%s/html" % output_dir,
+            ],
+        )
+        self.addDetail("stdout", text_content(stdout))
+        self.addDetail("stderr", text_content(stderr))
         self.assertEqual(0, returncode)

@@ -3,7 +3,7 @@
 
 """Memcached interfaces."""
 
-__all__ = ['IMemcacheClient']
+__all__ = ["IMemcacheClient"]
 
 from zope.interface import Interface
 

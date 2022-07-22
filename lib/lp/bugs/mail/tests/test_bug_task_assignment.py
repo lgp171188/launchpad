@@ -104,7 +104,9 @@ class TestAssignmentNotification(TestCaseWithFactory):
         notifications, omitted, messages = construct_email_notifications(
             [latest_notification]
         )
-        self.assertEqual(len(notifications), 1, "email notication not created")
+        self.assertEqual(
+            len(notifications), 1, "email notification not created"
+        )
         receivers = [message["To"] for message in messages]
         self.assertFalse(
             self.person_assigned_email in receivers,

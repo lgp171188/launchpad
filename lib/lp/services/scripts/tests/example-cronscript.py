@@ -10,12 +10,12 @@ import sys
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     SilentLaunchpadScriptFailure,
-    )
+)
 
 
 class Script(LaunchpadCronScript):
     def main(self):
-        if self.name == 'example-cronscript-enabled':
+        if self.name == "example-cronscript-enabled":
             raise SilentLaunchpadScriptFailure(42)
         else:
             # Raise a non-standard error code, as if the
@@ -23,10 +23,11 @@ class Script(LaunchpadCronScript):
             # method should never be invoked.
             raise SilentLaunchpadScriptFailure(999)
 
-if __name__ == '__main__':
-    if sys.argv[-1] == 'enabled':
-        name = 'example-cronscript-enabled'
+
+if __name__ == "__main__":
+    if sys.argv[-1] == "enabled":
+        name = "example-cronscript-enabled"
     else:
-        name = 'example-cronscript-disabled'
+        name = "example-cronscript-disabled"
     script = Script(name)
     script.lock_and_run()

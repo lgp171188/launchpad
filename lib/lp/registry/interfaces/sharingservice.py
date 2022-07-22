@@ -4,10 +4,11 @@
 """Interfaces for sharing service."""
 
 __all__ = [
-    'ISharingService',
-    ]
+    "ISharingService",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     export_write_operation,
@@ -16,14 +17,9 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     rename_parameters_as,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.schema import (
-    Choice,
-    Dict,
-    List,
-    )
+from zope.schema import Choice, Dict, List
 
 from lp import _
 from lp.app.enums import InformationType
@@ -38,7 +34,7 @@ from lp.registry.enums import (
     BugSharingPolicy,
     SharingPermission,
     SpecificationSharingPolicy,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pillar import IPillar
@@ -49,9 +45,8 @@ from lp.snappy.interfaces.snap import ISnap
 # XXX 2012-02-24 wallyworld bug 939910
 # Need to export for version 'beta' even though we only want to use it in
 # version 'devel'
-@exported_as_webservice_entry(publish_web_link=False, as_of='beta')
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class ISharingService(IService):
-
     def checkPillarAccess(pillars, information_type, person):
         """Check the person's access to the given pillars and information type.
 
@@ -70,9 +65,10 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=True))
+        person=Reference(IPerson, title=_("Person"), required=True)
+    )
     @operation_returns_collection_of(IProduct)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedProjects(person, user):
         """Find projects for which person has one or more access policy grants.
 
@@ -85,9 +81,10 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=True))
+        person=Reference(IPerson, title=_("Person"), required=True)
+    )
     @operation_returns_collection_of(IDistribution)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedDistributions(person, user):
         """Find distributions for which person has one or more access policy
            grants.
@@ -114,10 +111,11 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        person=Reference(IPerson, title=_('Person'), required=True))
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        person=Reference(IPerson, title=_("Person"), required=True),
+    )
     @operation_returns_collection_of(IBug)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedBugs(pillar, person, user):
         """Return the bugs shared between the pillar and person.
 
@@ -133,10 +131,11 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        person=Reference(IPerson, title=_('Person'), required=True))
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        person=Reference(IPerson, title=_("Person"), required=True),
+    )
     @operation_returns_collection_of(IBranch)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedBranches(pillar, person, user):
         """Return the branches shared between the pillar and person.
 
@@ -148,10 +147,11 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        person=Reference(IPerson, title=_('Person'), required=True))
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        person=Reference(IPerson, title=_("Person"), required=True),
+    )
     @operation_returns_collection_of(IGitRepository)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedGitRepositories(pillar, person, user):
         """Return the Git repositories shared between the pillar and person.
 
@@ -171,10 +171,11 @@ class ISharingService(IService):
     @export_read_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        person=Reference(IPerson, title=_('Person'), required=True))
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        person=Reference(IPerson, title=_("Person"), required=True),
+    )
     @operation_returns_collection_of(ISpecification)
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSharedSpecifications(pillar, person, user):
         """Return the specifications shared between the pillar and person.
 
@@ -191,9 +192,15 @@ class ISharingService(IService):
         :return: a collection of OCI recipes.
         """
 
-    def getVisibleArtifacts(person, bugs=None, branches=None,
-                            gitrepositories=None, snaps=None,
-                            specifications=None, ocirecipes=None):
+    def getVisibleArtifacts(
+        person,
+        bugs=None,
+        branches=None,
+        gitrepositories=None,
+        snaps=None,
+        specifications=None,
+        ocirecipes=None,
+    ):
         """Return the artifacts shared with person.
 
         Given lists of artifacts, return those a person has access to either
@@ -212,8 +219,9 @@ class ISharingService(IService):
         :return: a collection of artifacts the person can see.
         """
 
-    def getInvisibleArtifacts(person, bugs=None, branches=None,
-                              gitrepositories=None):
+    def getInvisibleArtifacts(
+        person, bugs=None, branches=None, gitrepositories=None
+    ):
         """Return the artifacts which are not shared with person.
 
         Given lists of artifacts, return those a person does not have access to
@@ -273,8 +281,9 @@ class ISharingService(IService):
 
     @export_read_operation()
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True))
-    @operation_for_version('devel')
+        pillar=Reference(IPillar, title=_("Pillar"), required=True)
+    )
+    @operation_for_version("devel")
     def getPillarGranteeData(pillar):
         """Return people/teams who can see pillar artifacts.
 
@@ -297,12 +306,14 @@ class ISharingService(IService):
     @export_write_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        grantee=Reference(IPerson, title=_('Grantee'), required=True),
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        grantee=Reference(IPerson, title=_("Grantee"), required=True),
         permissions=Dict(
             key_type=Choice(vocabulary=InformationType),
-            value_type=Choice(vocabulary=SharingPermission)))
-    @operation_for_version('devel')
+            value_type=Choice(vocabulary=SharingPermission),
+        ),
+    )
+    @operation_for_version("devel")
     def sharePillarInformation(pillar, grantee, user, permissions):
         """Ensure grantee has the grants for information types on a pillar.
 
@@ -319,11 +330,13 @@ class ISharingService(IService):
     @export_write_operation()
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        grantee=Reference(IPerson, title=_('Grantee'), required=True),
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        grantee=Reference(IPerson, title=_("Grantee"), required=True),
         information_types=List(
-            Choice(vocabulary=InformationType), required=False))
-    @operation_for_version('devel')
+            Choice(vocabulary=InformationType), required=False
+        ),
+    )
+    @operation_for_version("devel")
     def deletePillarGrantee(pillar, grantee, user, information_types):
         """Remove a grantee from a pillar.
 
@@ -336,30 +349,45 @@ class ISharingService(IService):
 
     @export_write_operation()
     @call_with(user=REQUEST_USER)
-    @rename_parameters_as(gitrepositories='git_repositories')
+    @rename_parameters_as(gitrepositories="git_repositories")
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
-        grantee=Reference(IPerson, title=_('Grantee'), required=True),
-        bugs=List(
-            Reference(schema=IBug), title=_('Bugs'), required=False),
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
+        grantee=Reference(IPerson, title=_("Grantee"), required=True),
+        bugs=List(Reference(schema=IBug), title=_("Bugs"), required=False),
         branches=List(
-            Reference(schema=IBranch), title=_('Branches'), required=False),
+            Reference(schema=IBranch), title=_("Branches"), required=False
+        ),
         gitrepositories=List(
             Reference(schema=IGitRepository),
-            title=_('Git repositories'), required=False),
+            title=_("Git repositories"),
+            required=False,
+        ),
         snaps=List(
-            Reference(schema=ISnap),
-            title=_('Snap recipes'), required=False),
+            Reference(schema=ISnap), title=_("Snap recipes"), required=False
+        ),
         specifications=List(
-            Reference(schema=ISpecification), title=_('Specifications'),
-            required=False),
+            Reference(schema=ISpecification),
+            title=_("Specifications"),
+            required=False,
+        ),
         ocirecipes=List(
             Reference(schema=IOCIRecipe),
-            title=_('OCI recipes'), required=False))
-    @operation_for_version('devel')
-    def revokeAccessGrants(pillar, grantee, user, bugs=None, branches=None,
-                           gitrepositories=None, snaps=None,
-                           specifications=None, ocirecipes=None):
+            title=_("OCI recipes"),
+            required=False,
+        ),
+    )
+    @operation_for_version("devel")
+    def revokeAccessGrants(
+        pillar,
+        grantee,
+        user,
+        bugs=None,
+        branches=None,
+        gitrepositories=None,
+        snaps=None,
+        specifications=None,
+        ocirecipes=None,
+    ):
         """Remove a grantee's access to the specified artifacts.
 
         :param pillar: the pillar from which to remove access
@@ -375,28 +403,38 @@ class ISharingService(IService):
 
     @export_write_operation()
     @call_with(user=REQUEST_USER)
-    @rename_parameters_as(gitrepositories='git_repositories')
+    @rename_parameters_as(gitrepositories="git_repositories")
     @operation_parameters(
-        grantees=List(
-            Reference(IPerson, title=_('Grantee'), required=True)),
-        bugs=List(
-            Reference(schema=IBug), title=_('Bugs'), required=False),
+        grantees=List(Reference(IPerson, title=_("Grantee"), required=True)),
+        bugs=List(Reference(schema=IBug), title=_("Bugs"), required=False),
         branches=List(
-            Reference(schema=IBranch), title=_('Branches'), required=False),
+            Reference(schema=IBranch), title=_("Branches"), required=False
+        ),
         gitrepositories=List(
             Reference(schema=IGitRepository),
-            title=_('Git repositories'), required=False),
+            title=_("Git repositories"),
+            required=False,
+        ),
         snaps=List(
-            Reference(schema=ISnap),
-            title=_('Snap recipes'), required=False),
+            Reference(schema=ISnap), title=_("Snap recipes"), required=False
+        ),
         ocirecipes=List(
             Reference(schema=IOCIRecipe),
-            title=_('OCI recipes'), required=False)
+            title=_("OCI recipes"),
+            required=False,
+        ),
     )
-    @operation_for_version('devel')
-    def ensureAccessGrants(grantees, user, bugs=None, branches=None,
-                           gitrepositories=None, snaps=None,
-                           specifications=None, ocirecipes=None):
+    @operation_for_version("devel")
+    def ensureAccessGrants(
+        grantees,
+        user,
+        bugs=None,
+        branches=None,
+        gitrepositories=None,
+        snaps=None,
+        specifications=None,
+        ocirecipes=None,
+    ):
         """Ensure a grantee has an access grant to the specified artifacts.
 
         :param grantees: the people or teams for whom to grant access
@@ -411,15 +449,20 @@ class ISharingService(IService):
 
     @export_write_operation()
     @operation_parameters(
-        pillar=Reference(IPillar, title=_('Pillar'), required=True),
+        pillar=Reference(IPillar, title=_("Pillar"), required=True),
         branch_sharing_policy=Choice(vocabulary=BranchSharingPolicy),
         bug_sharing_policy=Choice(vocabulary=BugSharingPolicy),
         specification_sharing_policy=Choice(
-            vocabulary=SpecificationSharingPolicy))
-    @operation_for_version('devel')
-    def updatePillarSharingPolicies(pillar, branch_sharing_policy=None,
-                                    bug_sharing_policy=None,
-                                    specification_sharing_policy=None):
+            vocabulary=SpecificationSharingPolicy
+        ),
+    )
+    @operation_for_version("devel")
+    def updatePillarSharingPolicies(
+        pillar,
+        branch_sharing_policy=None,
+        bug_sharing_policy=None,
+        specification_sharing_policy=None,
+    ):
         """Update the sharing policies for a pillar.
 
         :param pillar: the pillar to update

@@ -36,11 +36,13 @@ class TestURLNamespace(TestCase):
         # The ++oops++ namespace should not be available as a "oops" view.
         # First, we will verify that it is available as a namespace.
         namespace = self.sm.getMultiAdapter(
-            (self.context, self.request), ITraversable, 'oops')
+            (self.context, self.request), ITraversable, "oops"
+        )
         self.assertTrue(isinstance(namespace, OopsNamespace))
         # However, it is not available as a view.
         not_a_namespace = self.sm.queryMultiAdapter(
-            (self.context, self.request), Interface, 'oops')
+            (self.context, self.request), Interface, "oops"
+        )
         self.assertFalse(isinstance(not_a_namespace, OopsNamespace))
 
     def test_no_namespaces_are_views(self):
@@ -48,11 +50,13 @@ class TestURLNamespace(TestCase):
         # At the time of writing, namespaces were 'resource', 'oops', 'form',
         # and 'view'.
         namespace_info = self.sm.adapters.lookupAll(
-            (Interface, IBrowserRequest), ITraversable)
+            (Interface, IBrowserRequest), ITraversable
+        )
         for name, factory in namespace_info:
             try:
                 not_the_namespace_factory = self.sm.adapters.lookup(
-                    (Interface, IBrowserRequest), Interface, name)
+                    (Interface, IBrowserRequest), Interface, name
+                )
             except LookupError:
                 pass
             else:
@@ -67,16 +71,16 @@ class TestWrappedParameterConverter(TestCase):
     def test_return_value_untouched(self):
         # When a converter succeeds, its return value is passed through the
         # wrapper untouched.
-        converter = browser.get_converter('int')
-        self.assertEqual(42, converter('42'))
+        converter = browser.get_converter("int")
+        self.assertEqual(42, converter("42"))
 
     def test_value_errors_marked(self):
         # When a ValueError is raised by the wrapped converter, the exception
         # is marked with IUnloggedException so the OOPS machinery knows that a
         # report should not be logged.
-        converter = browser.get_converter('int')
+        converter = browser.get_converter("int")
         try:
-            converter('not an int')
+            converter("not an int")
         except ValueError as e:
             self.assertTrue(IUnloggedException.providedBy(e))
 
@@ -88,7 +92,7 @@ class TestWrappedParameterConverter(TestCase):
             def __str__(self):
                 raise RuntimeError
 
-        converter = browser.get_converter('string')
+        converter = browser.get_converter("string")
         try:
             converter(BadString())
         except RuntimeError as e:
@@ -98,5 +102,5 @@ class TestWrappedParameterConverter(TestCase):
         # The get_converter function that we're wrapping can return None, in
         # that case there's no function for us to wrap and we just return None
         # as well.
-        converter = browser.get_converter('unregistered')
+        converter = browser.get_converter("unregistered")
         self.assertIsNone(converter)

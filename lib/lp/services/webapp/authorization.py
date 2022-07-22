@@ -2,49 +2,40 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'available_with_permission',
-    'check_permission',
-    'clear_cache',
-    'iter_authorization',
-    'LaunchpadPermissiveSecurityPolicy',
-    'LaunchpadSecurityPolicy',
-    'LAUNCHPAD_SECURITY_POLICY_CACHE_KEY',
-    'LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY',
-    'precache_permission_for_objects',
-    ]
+    "available_with_permission",
+    "check_permission",
+    "clear_cache",
+    "iter_authorization",
+    "LaunchpadPermissiveSecurityPolicy",
+    "LaunchpadSecurityPolicy",
+    "LAUNCHPAD_SECURITY_POLICY_CACHE_KEY",
+    "LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY",
+    "precache_permission_for_objects",
+]
 
-from collections import deque
-from collections.abc import Iterable
 import warnings
 import weakref
+from collections import deque
+from collections.abc import Iterable
 
 from zope.browser.interfaces import IView
-from zope.component import (
-    getUtility,
-    queryAdapter,
-    )
+from zope.component import getUtility, queryAdapter
 from zope.interface import provider
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.proxy import removeAllProxies
 from zope.publisher.interfaces import IApplicationRequest
 from zope.security.checker import CheckerPublic
-from zope.security.interfaces import (
-    ISecurityPolicy,
-    Unauthorized,
-    )
-from zope.security.management import (
-    checkPermission as zcheckPermission,
-    getInteraction,
-    system_user,
-    )
+from zope.security.interfaces import ISecurityPolicy, Unauthorized
+from zope.security.management import checkPermission as zcheckPermission
+from zope.security.management import getInteraction, system_user
 from zope.security.permission import (
     checkPermission as check_permission_is_registered,
-    )
+)
 from zope.security.proxy import removeSecurityProxy
 from zope.security.simplepolicies import (
     ParanoidSecurityPolicy,
     PermissiveSecurityPolicy,
-    )
+)
 
 from lp.app.interfaces.security import IAuthorization
 from lp.registry.interfaces.role import IPersonRoles
@@ -57,18 +48,17 @@ from lp.services.webapp.interfaces import (
     ILaunchpadContainer,
     ILaunchpadPrincipal,
     IPlacelessAuthUtility,
-    )
+)
 from lp.services.webapp.metazcml import ILaunchpadPermission
 
-
-LAUNCHPAD_SECURITY_POLICY_CACHE_KEY = 'launchpad.security_policy_cache'
+LAUNCHPAD_SECURITY_POLICY_CACHE_KEY = "launchpad.security_policy_cache"
 LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY = (
-    'launchpad.security_policy_cache.unauthenticated')
+    "launchpad.security_policy_cache.unauthenticated"
+)
 
 
 @provider(ISecurityPolicy)
 class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
-
     def __init__(self, *participations):
         ParanoidSecurityPolicy.__init__(self, *participations)
         self.extras = InteractionExtras()
@@ -84,8 +74,10 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         lp_permission = getUtility(ILaunchpadPermission, permission)
         if lp_permission.access_level == "write":
             required_access_level = [
-                AccessLevel.WRITE_PUBLIC, AccessLevel.WRITE_PRIVATE,
-                AccessLevel.DESKTOP_INTEGRATION]
+                AccessLevel.WRITE_PUBLIC,
+                AccessLevel.WRITE_PRIVATE,
+                AccessLevel.DESKTOP_INTEGRATION,
+            ]
             if access_level not in required_access_level:
                 return False
         elif lp_permission.access_level == "read":
@@ -94,7 +86,8 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
             pass
         else:
             raise AssertionError(
-                "Unknown access level: %s" % lp_permission.access_level)
+                "Unknown access level: %s" % lp_permission.access_level
+            )
         return True
 
     def _checkPrivacy(self, access_level, object):
@@ -104,8 +97,10 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         access to private objects, return False.  Return True otherwise.
         """
         private_access_levels = [
-            AccessLevel.READ_PRIVATE, AccessLevel.WRITE_PRIVATE,
-            AccessLevel.DESKTOP_INTEGRATION]
+            AccessLevel.READ_PRIVATE,
+            AccessLevel.WRITE_PRIVATE,
+            AccessLevel.DESKTOP_INTEGRATION,
+        ]
         if access_level in private_access_levels:
             # The user has access to private objects. Return early,
             # before checking whether the object is private, since
@@ -129,8 +124,9 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
             else:
                 return AccessLevel.READ_PUBLIC
 
-    def _baseCheckPermission(self, permission, object, cache_key,
-                             principal=None):
+    def _baseCheckPermission(
+        self, permission, object, cache_key, principal=None
+    ):
         """Check the permission, object, user against the launchpad
         authorization policy.
 
@@ -166,8 +162,10 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         objecttoauthorize = removeAllProxies(objecttoauthorize)
 
         participations = [
-            participation for participation in self.participations
-            if participation.principal is not system_user]
+            participation
+            for participation in self.participations
+            if participation.principal is not system_user
+        ]
 
         if len(participations) > 1:
             raise RuntimeError("More than one principal participating.")
@@ -186,20 +184,25 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
             participation = participations[0]
             if IApplicationRequest.providedBy(participation):
                 participation_cache = participation.annotations.setdefault(
-                    cache_key, weakref.WeakKeyDictionary())
+                    cache_key, weakref.WeakKeyDictionary()
+                )
                 object_cache = participation_cache.setdefault(
-                    objecttoauthorize, {})
+                    objecttoauthorize, {}
+                )
                 if permission in object_cache:
                     return object_cache[permission]
             if principal is None:
                 principal = removeAllProxies(participation.principal)
 
-        if (principal is not None and
-            not isinstance(principal, UnauthenticatedPrincipal)):
+        if principal is not None and not isinstance(
+            principal, UnauthenticatedPrincipal
+        ):
             access_level = self._getPrincipalsAccessLevel(
-                principal, objecttoauthorize)
+                principal, objecttoauthorize
+            )
             if not self._checkRequiredAccessLevel(
-                access_level, permission, objecttoauthorize):
+                access_level, permission, objecttoauthorize
+            ):
                 return False
             if not self._checkPrivacy(access_level, objecttoauthorize):
                 return False
@@ -210,21 +213,28 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         # a "belt and braces". It is also a bit of a lie: if the permission is
         # zope.Public, privacy and access levels (checked above) will be
         # irrelevant!
-        if permission == 'zope.Public':
+        if permission == "zope.Public":
             return True
         if permission is CheckerPublic:
             return True
 
-        if (permission == 'launchpad.AnyPerson' and
-            ILaunchpadPrincipal.providedBy(principal)):
+        if (
+            permission == "launchpad.AnyPerson"
+            and ILaunchpadPrincipal.providedBy(principal)
+        ):
             return True
 
         # If there are delegated authorizations they must *all* be allowed
         # before permission to access objecttoauthorize is granted.
         result = all(
             iter_authorization(
-                objecttoauthorize, permission, principal,
-                participation_cache, breadth_first=True))
+                objecttoauthorize,
+                permission,
+                principal,
+                participation_cache,
+                breadth_first=True,
+            )
+        )
 
         # Cache the top-level result. Be warned that this result /may/ be
         # based on 10s or 100s of delegated authorization checks, and so even
@@ -240,7 +250,8 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         authorization policy.
         """
         return self._baseCheckPermission(
-            permission, object, LAUNCHPAD_SECURITY_POLICY_CACHE_KEY)
+            permission, object, LAUNCHPAD_SECURITY_POLICY_CACHE_KEY
+        )
 
     @block_implicit_flushes
     def checkUnauthenticatedPermission(self, permission, object):
@@ -253,12 +264,16 @@ class LaunchpadSecurityPolicy(ParanoidSecurityPolicy):
         auth_utility = getUtility(IPlacelessAuthUtility)
         principal = auth_utility.unauthenticatedPrincipal()
         return self._baseCheckPermission(
-            permission, object, LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
-            principal=principal)
+            permission,
+            object,
+            LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
+            principal=principal,
+        )
 
 
-def iter_authorization(objecttoauthorize, permission, principal, cache,
-                       breadth_first=True):
+def iter_authorization(
+    objecttoauthorize, permission, principal, cache, breadth_first=True
+):
     """Work through `IAuthorization` adapters for `objecttoauthorize`.
 
     Adapters are permitted to delegate checks to other adapters, and this
@@ -280,20 +295,23 @@ def iter_authorization(objecttoauthorize, permission, principal, cache,
     # checkUnauthenticated as appropriate.
     if ILaunchpadPrincipal.providedBy(principal):
         check_auth = lambda authorization: (
-            authorization.checkAuthenticated(IPersonRoles(principal.person)))
+            authorization.checkAuthenticated(IPersonRoles(principal.person))
+        )
     elif IPersonRoles.providedBy(principal):
         # In some cases it's cumbersome to get hold of a proper principal,
         # so also allow passing an IPersonRoles directly.
         check_auth = lambda authorization: (
-            authorization.checkAuthenticated(principal))
+            authorization.checkAuthenticated(principal)
+        )
     else:
         check_auth = lambda authorization: (
-            authorization.checkUnauthenticated())
+            authorization.checkUnauthenticated()
+        )
 
     # Each entry in queue should be an iterable of (object, permission)
     # tuples, upon which permission checks will be performed.
     queue = deque()
-    enqueue = (queue.append if breadth_first else queue.appendleft)
+    enqueue = queue.append if breadth_first else queue.appendleft
 
     # Enqueue the starting object and permission.
     enqueue(((objecttoauthorize, permission),))
@@ -324,8 +342,9 @@ def iter_authorization(objecttoauthorize, permission, principal, cache,
             # We have a non-delegated result.
             if result is not True and result is not False:
                 warnings.warn(
-                    '%r returned %r (%r)' % (
-                        authorization, result, type(result)))
+                    "%r returned %r (%r)"
+                    % (authorization, result, type(result))
+                )
                 result = bool(result)
             # Update the cache if one has been provided.
             if cache is not None:
@@ -344,8 +363,8 @@ def precache_permission_for_objects(
     if participation is None:
         participation = getInteraction().participations[0]
     permission_cache = participation.annotations.setdefault(
-        LAUNCHPAD_SECURITY_POLICY_CACHE_KEY,
-        weakref.WeakKeyDictionary())
+        LAUNCHPAD_SECURITY_POLICY_CACHE_KEY, weakref.WeakKeyDictionary()
+    )
     for obj in objects:
         naked_obj = removeSecurityProxy(obj)
         obj_permission_cache = permission_cache.setdefault(naked_obj, {})
@@ -366,8 +385,7 @@ def check_permission(permission_name, context):
 
 
 def clear_cache():
-    """clear current interaction's IApplicationRequests' authorization caches.
-    """
+    """Clear current interaction's request authorization caches."""
     for p in getInteraction().participations:
         if IApplicationRequest.providedBy(p):
             # LaunchpadBrowserRequest provides a ``clearSecurityPolicyCache``
@@ -380,7 +398,6 @@ def clear_cache():
 
 
 class LaunchpadPermissiveSecurityPolicy(PermissiveSecurityPolicy):
-
     def __init__(self, *participations):
         PermissiveSecurityPolicy.__init__(self, *participations)
         self.extras = InteractionExtras()
@@ -428,7 +445,8 @@ class available_with_permission:
                 context = args[0]
             if not check_permission(permission, context):
                 raise Unauthorized(
-                    "Permission %s required on %s."
-                        % (permission, context))
+                    "Permission %s required on %s." % (permission, context)
+                )
             return func(self, *args, **kwargs)
+
         return permission_checker

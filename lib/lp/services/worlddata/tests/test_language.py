@@ -8,19 +8,10 @@ from zope.component import getUtility
 from lp.registry.interfaces.karma import IKarmaCacheManager
 from lp.registry.model.karma import KarmaCategory
 from lp.services.database.interfaces import IStore
-from lp.services.worlddata.interfaces.language import (
-    ILanguage,
-    ILanguageSet,
-    )
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.services.worlddata.interfaces.language import ILanguage, ILanguageSet
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
 
 
@@ -31,9 +22,10 @@ class TestLanguageWebservice(TestCaseWithFactory):
 
     def test_translators(self):
         self.assertTrue(
-            IDoNotSnapshot.providedBy(ILanguage['translators']),
+            IDoNotSnapshot.providedBy(ILanguage["translators"]),
             "ILanguage.translators should not be included in snapshots, "
-            "see bug 553093.")
+            "see bug 553093.",
+        )
 
     def test_guessed_pluralforms_guesses(self):
         language = self.factory.makeLanguage(pluralforms=None)
@@ -57,13 +49,17 @@ class TestTranslatorsCounts(TestCaseWithFactory):
         for i in range(3):
             translator = self.factory.makePerson()
             translator.addLanguage(self.translated_lang)
-            with dbuser('karma'):
-                translations_category = IStore(KarmaCategory).find(
-                    KarmaCategory, name='translations').one()
+            with dbuser("karma"):
+                translations_category = (
+                    IStore(KarmaCategory)
+                    .find(KarmaCategory, name="translations")
+                    .one()
+                )
                 getUtility(IKarmaCacheManager).new(
                     person_id=translator.id,
                     category_id=translations_category.id,
-                    value=100)
+                    value=100,
+                )
 
     def test_translators_count(self):
         # translators_count works.
@@ -78,8 +74,11 @@ class TestTranslatorsCounts(TestCaseWithFactory):
 
     def test_getAllLanguages_can_preload_translators_count(self):
         # LanguageSet.getAllLanguages() can preload translators_count.
-        list(getUtility(ILanguageSet).getAllLanguages(
-            want_translators_count=True))
+        list(
+            getUtility(ILanguageSet).getAllLanguages(
+                want_translators_count=True
+            )
+        )
         with StormStatementRecorder() as recorder:
             self.assertEqual(3, self.translated_lang.translators_count)
             self.assertEqual(0, self.untranslated_lang.translators_count)

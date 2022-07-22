@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'StormBase',
-    ]
+    "StormBase",
+]
 
 from storm.info import get_obj_info
 from storm.locals import Storm

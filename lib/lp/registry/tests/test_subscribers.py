@@ -5,8 +5,8 @@
 
 from datetime import datetime
 
-from lazr.restful.utils import get_current_browser_request
 import pytz
+from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -15,19 +15,19 @@ from lp.registry.interfaces.product import License
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.registry.model.product import LicensesModifiedEvent
 from lp.registry.subscribers import (
     LicenseNotification,
     product_licenses_modified,
-    )
+)
 from lp.services.webapp.escaping import html_escape
 from lp.testing import (
+    TestCaseWithFactory,
     login_person,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
 
@@ -98,32 +98,34 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
 
     def make_product_user(self, licenses):
         user = self.factory.makePerson(
-            name='registrant', email='registrant@launchpad.test')
+            name="registrant", email="registrant@launchpad.test"
+        )
         login_person(user)
         product = self.factory.makeProduct(
-            name='ball', owner=user, licenses=licenses)
+            name="ball", owner=user, licenses=licenses
+        )
         pop_notifications()
         return product, user
 
     def verify_whiteboard(self, product):
         # Verify that the review whiteboard was updated.
         naked_product = removeSecurityProxy(product)
-        entries = naked_product.reviewer_whiteboard.split('\n')
-        whiteboard, stamp = entries[-1].rsplit(' ', 1)
-        self.assertEqual(
-            'User notified of licence policy on', whiteboard)
+        entries = naked_product.reviewer_whiteboard.split("\n")
+        whiteboard, stamp = entries[-1].rsplit(" ", 1)
+        self.assertEqual("User notified of licence policy on", whiteboard)
 
     def verify_user_email(self, notification):
         # Verify that the user was sent an email about the licence change.
         self.assertEqual(
-            'Licence information for ball in Launchpad',
-            notification['Subject'])
+            "Licence information for ball in Launchpad",
+            notification["Subject"],
+        )
         self.assertEqual(
-            'Registrant <registrant@launchpad.test>',
-            notification['To'])
+            "Registrant <registrant@launchpad.test>", notification["To"]
+        )
         self.assertEqual(
-            'Commercial <commercial@launchpad.net>',
-            notification['Reply-To'])
+            "Commercial <commercial@launchpad.net>", notification["Reply-To"]
+        )
 
     def test_send_known_license(self):
         # A known licence does not generate an email.
@@ -169,10 +171,11 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
     def test_send_other_proprietary_team_admins(self):
         # An Other/Proprietary licence sends one email to the team admins.
         product, user = self.make_product_user([License.OTHER_PROPRIETARY])
-        owner = self.factory.makePerson(email='owner@eg.dom')
+        owner = self.factory.makePerson(email="owner@eg.dom")
         team = self.factory.makeTeam(
-            owner=owner, membership_policy=TeamMembershipPolicy.RESTRICTED)
-        admin = self.factory.makePerson(email='admin@eg.dom')
+            owner=owner, membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
+        admin = self.factory.makePerson(email="admin@eg.dom")
         with person_logged_in(owner):
             team.addMember(admin, owner)
             membership_set = getUtility(ITeamMembershipSet)
@@ -186,15 +189,16 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         self.assertIs(True, result)
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
-        self.assertEqual('admin@eg.dom,owner@eg.dom', notifications[0]['To'])
+        self.assertEqual("admin@eg.dom,owner@eg.dom", notifications[0]["To"])
 
     def test_send_other_proprietary_no_team_admins_falls_back_to_owner(self):
         # If there are no team admins, an Other/Proprietary licence falls
         # back to sending email to the team owner.
         product, user = self.make_product_user([License.OTHER_PROPRIETARY])
-        owner = self.factory.makePerson(email='owner@eg.dom')
+        owner = self.factory.makePerson(email="owner@eg.dom")
         team = self.factory.makeTeam(
-            owner=owner, membership_policy=TeamMembershipPolicy.RESTRICTED)
+            owner=owner, membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
         with person_logged_in(team.teamowner):
             team.teamowner.leave(team)
         with person_logged_in(product.owner):
@@ -205,7 +209,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         self.assertIs(True, result)
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
-        self.assertEqual('owner@eg.dom', notifications[0]['To'])
+        self.assertEqual("owner@eg.dom", notifications[0]["To"])
 
     def test_display_no_request(self):
         # If there is no request, there is no reason to show a message in
@@ -224,7 +228,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         product, user = self.make_product_user([License.GNU_GPL_V2])
         notification = LicenseNotification(product)
         result = notification.display()
-        self.assertEqual('', notification.getCommercialUseMessage())
+        self.assertEqual("", notification.getCommercialUseMessage())
         self.assertIs(False, result)
 
     def test_display_has_message(self):
@@ -237,62 +241,68 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         request = get_current_browser_request()
         self.assertEqual(1, len(request.response.notifications))
         self.assertIn(
-            html_escape(message), request.response.notifications[0].message)
+            html_escape(message), request.response.notifications[0].message
+        )
         self.assertIn(
             '<a href="https://help.launchpad.net/CommercialHosting">',
-            request.response.notifications[0].message)
+            request.response.notifications[0].message,
+        )
 
     def test_display_escapee_user_data(self):
         # A notification is added if there is a message to show.
         product, user = self.make_product_user([License.OTHER_PROPRIETARY])
-        product.display_name = '<b>Look</b>'
+        product.display_name = "<b>Look</b>"
         notification = LicenseNotification(product)
         result = notification.display()
         self.assertIs(True, result)
         request = get_current_browser_request()
         self.assertEqual(1, len(request.response.notifications))
         self.assertIn(
-            '&lt;b&gt;Look&lt;/b&gt;',
-            request.response.notifications[0].message)
+            "&lt;b&gt;Look&lt;/b&gt;",
+            request.response.notifications[0].message,
+        )
 
     def test_formatDate(self):
         # Verify the date format.
         now = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
         result = LicenseNotification._formatDate(now)
-        self.assertEqual('2005-06-15', result)
+        self.assertEqual("2005-06-15", result)
 
     def test_getTemplateName_other_dont_know(self):
         product, user = self.make_product_user([License.DONT_KNOW])
         notification = LicenseNotification(product)
         self.assertEqual(
-            'product-license-dont-know.txt',
-            notification.getTemplateName())
+            "product-license-dont-know.txt", notification.getTemplateName()
+        )
 
     def test_getTemplateName_propietary(self):
         product, user = self.make_product_user([License.OTHER_PROPRIETARY])
         notification = LicenseNotification(product)
         self.assertEqual(
-            'product-license-other-proprietary.txt',
-            notification.getTemplateName())
+            "product-license-other-proprietary.txt",
+            notification.getTemplateName(),
+        )
 
     def test_getTemplateName_other_open_source(self):
         product, user = self.make_product_user([License.OTHER_OPEN_SOURCE])
         notification = LicenseNotification(product)
         self.assertEqual(
-            'product-license-other-open-source.txt',
-            notification.getTemplateName())
+            "product-license-other-open-source.txt",
+            notification.getTemplateName(),
+        )
 
     def test_getCommercialUseMessage_without_commercial_subscription(self):
         product, user = self.make_product_user([License.MIT])
         notification = LicenseNotification(product)
-        self.assertEqual('', notification.getCommercialUseMessage())
+        self.assertEqual("", notification.getCommercialUseMessage())
 
     def test_getCommercialUseMessage_with_complimentary_cs(self):
         product, user = self.make_product_user([License.OTHER_PROPRIETARY])
         notification = LicenseNotification(product)
         message = (
-            "Ball's complimentary commercial subscription expires on %s." %
-            product.commercial_subscription.date_expires.date().isoformat())
+            "Ball's complimentary commercial subscription expires on %s."
+            % product.commercial_subscription.date_expires.date().isoformat()
+        )
         self.assertEqual(message, notification.getCommercialUseMessage())
 
     def test_getCommercialUseMessage_with_commercial_subscription(self):
@@ -301,8 +311,9 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         product.licenses = [License.MIT, License.OTHER_PROPRIETARY]
         notification = LicenseNotification(product)
         message = (
-            "Ball's commercial subscription expires on %s." %
-            product.commercial_subscription.date_expires.date().isoformat())
+            "Ball's commercial subscription expires on %s."
+            % product.commercial_subscription.date_expires.date().isoformat()
+        )
         self.assertEqual(message, notification.getCommercialUseMessage())
 
     def test_getCommercialUseMessage_with_expired_cs(self):
@@ -311,7 +322,8 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         product.licenses = [License.MIT, License.OTHER_PROPRIETARY]
         notification = LicenseNotification(product)
         message = (
-            "Ball's commercial subscription expired on %s." %
-            product.commercial_subscription.date_expires.date().isoformat())
+            "Ball's commercial subscription expired on %s."
+            % product.commercial_subscription.date_expires.date().isoformat()
+        )
         self.assertEqual(message, notification.getCommercialUseMessage())
         self.assertEqual(message, notification.getCommercialUseMessage())

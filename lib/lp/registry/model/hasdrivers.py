@@ -4,17 +4,18 @@
 """Common implementations for IHasDrivers."""
 
 __all__ = [
-    'HasDriversMixin',
-    ]
+    "HasDriversMixin",
+]
 
 from lp.registry.interfaces.role import IPersonRoles
 
 
 class HasDriversMixin:
-
     def personHasDriverRights(self, person):
         """See `IHasDrivers`."""
         person_roles = IPersonRoles(person)
-        return (person_roles.isDriver(self) or
-                person_roles.isOwner(self) or
-                person_roles.in_admin)
+        return (
+            person_roles.isDriver(self)
+            or person_roles.isOwner(self)
+            or person_roles.in_admin
+        )

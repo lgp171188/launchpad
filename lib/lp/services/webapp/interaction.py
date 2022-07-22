@@ -41,27 +41,26 @@ from zope.security.management import (
     endInteraction,
     newInteraction,
     queryInteraction,
-    )
+)
 
 from lp.services.webapp.interfaces import (
     IInteractionExtras,
     IOpenLaunchBag,
     IPlacelessAuthUtility,
-    )
-
+)
 
 __all__ = [
-    'ANONYMOUS',
-    'get_current_principal',
-    'get_interaction_extras',
-    'setupInteraction',
-    'setupInteractionByEmail',
-    'setupInteractionForPerson',
-    'InteractionExtras',
-    ]
+    "ANONYMOUS",
+    "get_current_principal",
+    "get_interaction_extras",
+    "setupInteraction",
+    "setupInteractionByEmail",
+    "setupInteractionForPerson",
+    "InteractionExtras",
+]
 
 
-ANONYMOUS = 'launchpad.anonymous'
+ANONYMOUS = "launchpad.anonymous"
 
 
 def get_current_principal():
@@ -75,11 +74,12 @@ def get_current_principal():
     principals = [
         participation.principal
         for participation in interaction.participations
-        if participation.principal is not None]
+        if participation.principal is not None
+    ]
     if not principals:
         return None
     elif len(principals) > 1:
-        raise ValueError('Too many principals')
+        raise ValueError("Too many principals")
     else:
         return principals[0]
 
@@ -157,6 +157,7 @@ def setupInteractionByEmail(email, participation=None):
 def setupInteractionForPerson(person, participation=None):
     """Setup a participation for a person."""
     from zope.security.proxy import removeSecurityProxy
+
     if person is None:
         return setupInteraction(ANONYMOUS, participation)
     else:

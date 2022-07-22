@@ -4,30 +4,22 @@
 """ORM object representing jobs."""
 
 __all__ = [
-    'EnumeratedSubclass',
-    'InvalidTransition',
-    'Job',
-    'UniversalJobSource',
-    ]
+    "EnumeratedSubclass",
+    "InvalidTransition",
+    "Job",
+    "UniversalJobSource",
+]
 
 
-from calendar import timegm
 import datetime
 import time
+from calendar import timegm
 
-from lazr.jobrunner.jobrunner import LeaseHeld
 import pytz
-from storm.expr import (
-    And,
-    Or,
-    Select,
-    )
-from storm.locals import (
-    Int,
-    JSON,
-    Reference,
-    )
 import transaction
+from lazr.jobrunner.jobrunner import LeaseHeld
+from storm.expr import And, Or, Select
+from storm.locals import JSON, Int, Reference
 from zope.interface import implementer
 
 from lp.services.database import bulk
@@ -37,14 +29,9 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
-from lp.services.job.interfaces.job import (
-    IJob,
-    JobStatus,
-    JobType,
-    )
+from lp.services.job.interfaces.job import IJob, JobStatus, JobType
 
-
-UTC = pytz.timezone('UTC')
+UTC = pytz.timezone("UTC")
 
 
 class InvalidTransition(Exception):
@@ -52,8 +39,10 @@ class InvalidTransition(Exception):
 
     def __init__(self, current_status, requested_status):
         Exception.__init__(
-            self, 'Transition from %s to %s is invalid.' %
-            (current_status, requested_status))
+            self,
+            "Transition from %s to %s is invalid."
+            % (current_status, requested_status),
+        )
 
 
 @implementer(IJob)
@@ -77,41 +66,41 @@ class Job(SQLBase):
     log = StringCol()
 
     _status = DBEnum(
-        enum=JobStatus, allow_none=False, default=JobStatus.WAITING,
-        name='status')
+        enum=JobStatus,
+        allow_none=False,
+        default=JobStatus.WAITING,
+        name="status",
+    )
 
     attempt_count = Int(default=0)
 
     max_retries = Int(default=0)
 
-    requester_id = Int(name='requester', allow_none=True)
-    requester = Reference(requester_id, 'Person.id')
+    requester_id = Int(name="requester", allow_none=True)
+    requester = Reference(requester_id, "Person.id")
 
-    base_json_data = JSON(name='json_data')
+    base_json_data = JSON(name="json_data")
 
-    base_job_type = DBEnum(enum=JobType, name='job_type')
+    base_job_type = DBEnum(enum=JobType, name="job_type")
 
     # Mapping of valid target states from a given state.
     _valid_transitions = {
-        JobStatus.WAITING:
-            (JobStatus.RUNNING,
-             JobStatus.SUSPENDED),
-        JobStatus.RUNNING:
-            (JobStatus.COMPLETED,
-             JobStatus.FAILED,
-             JobStatus.SUSPENDED,
-             JobStatus.WAITING),
+        JobStatus.WAITING: (JobStatus.RUNNING, JobStatus.SUSPENDED),
+        JobStatus.RUNNING: (
+            JobStatus.COMPLETED,
+            JobStatus.FAILED,
+            JobStatus.SUSPENDED,
+            JobStatus.WAITING,
+        ),
         JobStatus.FAILED: (JobStatus.WAITING,),
         JobStatus.COMPLETED: (JobStatus.WAITING,),
-        JobStatus.SUSPENDED:
-            (JobStatus.WAITING,),
-        }
+        JobStatus.SUSPENDED: (JobStatus.WAITING,),
+    }
 
     # Set of all states where the job could eventually complete.
     PENDING_STATUSES = frozenset(
-        (JobStatus.WAITING,
-         JobStatus.RUNNING,
-         JobStatus.SUSPENDED))
+        (JobStatus.WAITING, JobStatus.RUNNING, JobStatus.SUSPENDED)
+    )
 
     def _set_status(self, status):
         if status not in self._valid_transitions[self._status]:
@@ -144,17 +133,19 @@ class Job(SQLBase):
         :return: An iterable of `Job.id` values for the new jobs.
         """
         return bulk.create(
-                (Job._status, Job.requester),
-                [(JobStatus.WAITING, requester) for i in range(num_jobs)],
-                get_primary_keys=True)
+            (Job._status, Job.requester),
+            [(JobStatus.WAITING, requester) for i in range(num_jobs)],
+            get_primary_keys=True,
+        )
 
     def acquireLease(self, duration=300):
         """See `IJob`."""
-        if (self.lease_expires is not None
-            and self.lease_expires >= datetime.datetime.now(UTC)):
+        if (
+            self.lease_expires is not None
+            and self.lease_expires >= datetime.datetime.now(UTC)
+        ):
             raise LeaseHeld
-        expiry = datetime.datetime.fromtimestamp(time.time() + duration,
-            UTC)
+        expiry = datetime.datetime.fromtimestamp(time.time() + duration, UTC)
         self.lease_expires = expiry
 
     def getTimeout(self):
@@ -194,8 +185,12 @@ class Job(SQLBase):
         if manage_transaction:
             transaction.commit()
 
-    def queue(self, manage_transaction=False, abort_transaction=False,
-              add_commit_hook=None):
+    def queue(
+        self,
+        manage_transaction=False,
+        abort_transaction=False,
+        add_commit_hook=None,
+    ):
         """See `IJob`."""
         if manage_transaction:
             if abort_transaction:
@@ -230,14 +225,15 @@ class EnumeratedSubclass(type):
     """Metaclass for when subclasses are assigned enums."""
 
     def __init__(cls, name, bases, dict_):
-        if getattr(cls, '_subclass', None) is None:
+        if getattr(cls, "_subclass", None) is None:
             cls._subclass = {}
-        job_type = dict_.get('class_job_type')
+        job_type = dict_.get("class_job_type")
         if job_type is not None:
             value = cls._subclass.setdefault(job_type, cls)
-            assert value is cls, (
-                '%s already registered to %s.' % (
-                    job_type.name, value.__name__))
+            assert value is cls, "%s already registered to %s." % (
+                job_type.name,
+                value.__name__,
+            )
         # Perform any additional set-up requested by class.
         cls._register_subclass(cls)
 
@@ -255,13 +251,14 @@ Job.ready_jobs = Select(
         Job._status == JobStatus.WAITING,
         Or(Job.lease_expires == None, Job.lease_expires < UTC_NOW),
         Or(Job.scheduled_start == None, Job.scheduled_start <= UTC_NOW),
-        ))
+    ),
+)
 
 
 class UniversalJobSource:
     """Returns the RunnableJob associated with a Job.id."""
 
-    memory_limit = 2 * (1024 ** 3)
+    memory_limit = 2 * (1024**3)
 
     @staticmethod
     def get(ujob_id):
@@ -274,7 +271,7 @@ class UniversalJobSource:
         job_id, module_name, class_name = ujob_id
         bc_module = __import__(module_name, fromlist=[class_name])
         db_class = getattr(bc_module, class_name)
-        factory = getattr(db_class, 'makeInstance', None)
+        factory = getattr(db_class, "makeInstance", None)
         if factory is not None:
             return factory(job_id)
         # This method can be called with two distinct types of Jobs:
@@ -284,7 +281,7 @@ class UniversalJobSource:
         #   job class.
         # If there is no __storm_table__, it is the second type, and we have
         # to look it up via the Job table.
-        if getattr(db_class, '__storm_table__', None) is None:
+        if getattr(db_class, "__storm_table__", None) is None:
             db_job = IStore(Job).find(Job, Job.id == job_id).one()
             # Job.makeDerived() would be a mess of circular imports, so it is
             # cleaner to just return the bare Job wrapped in the class.

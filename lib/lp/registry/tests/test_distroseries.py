@@ -4,13 +4,13 @@
 """Tests for distroseries."""
 
 __all__ = [
-    'CurrentSourceReleasesMixin',
-    ]
+    "CurrentSourceReleasesMixin",
+]
 
 import json
 
-from testtools.matchers import Equals
 import transaction
+from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -24,36 +24,33 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     IndexCompressionType,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.distributionjob import (
     IInitializeDistroSeriesJobSource,
-    )
+)
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
-    )
+)
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
-    api_url,
-    login,
-    person_logged_in,
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+    admin_logged_in,
+    api_url,
+    login,
+    person_logged_in,
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 
 
 class CurrentSourceReleasesMixin:
@@ -62,16 +59,18 @@ class CurrentSourceReleasesMixin:
     Used by tests of DistroSeries and Distribution.  The mixin must not extend
     TestCase or it will be run by other modules when imported.
     """
+
     def setUp(self):
         # Log in as an admin, so that we can create distributions.
         super().setUp()
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         self.publisher = SoyuzTestPublisher()
         self.factory = self.publisher.factory
         self.development_series = self.publisher.setUpDefaultDistroSeries()
         self.distribution = self.development_series.distribution
         self.published_package = self.target.getSourcePackage(
-            self.publisher.default_package_name)
+            self.publisher.default_package_name
+        )
         login(ANONYMOUS)
 
     def assertCurrentVersion(self, expected_version, package_name=None):
@@ -86,96 +85,105 @@ class CurrentSourceReleasesMixin:
             package_name = self.publisher.default_package_name
         package = self.target.getSourcePackage(package_name)
         releases = self.target.getCurrentSourceReleases(
-            [package.sourcepackagename])
+            [package.sourcepackagename]
+        )
         self.assertEqual(releases[package].version, expected_version)
 
     def test_one_release(self):
         # If there is one published version, that one will be returned.
-        self.publisher.getPubSource(version='0.9')
-        self.assertCurrentVersion('0.9')
+        self.publisher.getPubSource(version="0.9")
+        self.assertCurrentVersion("0.9")
 
     def test_return_value(self):
         # getCurrentSourceReleases() returns a dict. The corresponding
         # source package is used as the key, with
         # a DistributionSourcePackageRelease as the values.
-        self.publisher.getPubSource(version='0.9')
+        self.publisher.getPubSource(version="0.9")
         releases = self.target.getCurrentSourceReleases(
-            [self.published_package.sourcepackagename])
+            [self.published_package.sourcepackagename]
+        )
         self.assertTrue(self.published_package in releases)
-        self.assertTrue(self.release_interface.providedBy(
-            releases[self.published_package]))
+        self.assertTrue(
+            self.release_interface.providedBy(releases[self.published_package])
+        )
 
     def test_latest_version(self):
         # If more than one version is published, the latest one is
         # returned.
-        self.publisher.getPubSource(version='0.9')
-        self.publisher.getPubSource(version='1.0')
-        self.assertCurrentVersion('1.0')
+        self.publisher.getPubSource(version="0.9")
+        self.publisher.getPubSource(version="1.0")
+        self.assertCurrentVersion("1.0")
 
     def test_active_publishing_status(self):
         # Every status defined in active_publishing_status is considered
         # when checking for the current release.
-        self.publisher.getPubSource(version='0.9')
+        self.publisher.getPubSource(version="0.9")
         for minor_version, status in enumerate(active_publishing_status):
-            latest_version = '1.%s' % minor_version
+            latest_version = "1.%s" % minor_version
             self.publisher.getPubSource(version=latest_version, status=status)
             self.assertCurrentVersion(latest_version)
 
     def test_not_active_publishing_status(self):
         # Every status not defined in active_publishing_status is
         # ignored when checking for the current release.
-        self.publisher.getPubSource(version='0.9')
+        self.publisher.getPubSource(version="0.9")
         for minor_version, status in enumerate(PackagePublishingStatus.items):
             if status in active_publishing_status:
                 continue
             self.publisher.getPubSource(
-                version='1.%s' % minor_version, status=status)
-            self.assertCurrentVersion('0.9')
+                version="1.%s" % minor_version, status=status
+            )
+            self.assertCurrentVersion("0.9")
 
     def test_ignore_other_package_names(self):
         # Packages with different names don't affect the returned
         # version.
-        self.publisher.getPubSource(version='0.9', sourcename='foo')
-        self.publisher.getPubSource(version='1.0', sourcename='bar')
-        self.assertCurrentVersion('0.9', package_name='foo')
+        self.publisher.getPubSource(version="0.9", sourcename="foo")
+        self.publisher.getPubSource(version="1.0", sourcename="bar")
+        self.assertCurrentVersion("0.9", package_name="foo")
 
     def ignore_other_distributions(self):
         # Packages with the same name in other distributions don't
         # affect the returned version.
         series_in_other_distribution = self.factory.makeDistroSeries()
-        self.publisher.getPubSource(version='0.9')
+        self.publisher.getPubSource(version="0.9")
         self.publisher.getPubSource(
-            version='1.0', distroseries=series_in_other_distribution)
-        self.assertCurrentVersion('0.9')
+            version="1.0", distroseries=series_in_other_distribution
+        )
+        self.assertCurrentVersion("0.9")
 
     def test_ignore_ppa(self):
         # PPA packages having the same name don't affect the returned
         # version.
         ppa_uploader = self.factory.makePerson()
         ppa_archive = getUtility(IArchiveSet).new(
-            purpose=ArchivePurpose.PPA, owner=ppa_uploader,
-            distribution=self.distribution)
-        self.publisher.getPubSource(version='0.9')
-        self.publisher.getPubSource(version='1.0', archive=ppa_archive)
-        self.assertCurrentVersion('0.9')
+            purpose=ArchivePurpose.PPA,
+            owner=ppa_uploader,
+            distribution=self.distribution,
+        )
+        self.publisher.getPubSource(version="0.9")
+        self.publisher.getPubSource(version="1.0", archive=ppa_archive)
+        self.assertCurrentVersion("0.9")
 
     def test_get_multiple(self):
         # getCurrentSourceReleases() allows you to get information about
         # the current release for multiple packages at the same time.
         # This is done using a single DB query, making it more efficient
         # than using IDistributionSource.currentrelease.
-        self.publisher.getPubSource(version='0.9', sourcename='foo')
-        self.publisher.getPubSource(version='1.0', sourcename='bar')
-        foo_package = self.distribution.getSourcePackage('foo')
-        bar_package = self.distribution.getSourcePackage('bar')
+        self.publisher.getPubSource(version="0.9", sourcename="foo")
+        self.publisher.getPubSource(version="1.0", sourcename="bar")
+        foo_package = self.distribution.getSourcePackage("foo")
+        bar_package = self.distribution.getSourcePackage("bar")
         releases = self.distribution.getCurrentSourceReleases(
-            [foo_package.sourcepackagename, bar_package.sourcepackagename])
-        self.assertEqual(releases[foo_package].version, '0.9')
-        self.assertEqual(releases[bar_package].version, '1.0')
+            [foo_package.sourcepackagename, bar_package.sourcepackagename]
+        )
+        self.assertEqual(releases[foo_package].version, "0.9")
+        self.assertEqual(releases[bar_package].version, "1.0")
 
 
 class TestDistroSeriesCurrentSourceReleases(
-    CurrentSourceReleasesMixin, TestCase):
+    CurrentSourceReleasesMixin, TestCase
+):
     """Test for DistroSeries.getCurrentSourceReleases()."""
 
     layer = LaunchpadFunctionalLayer
@@ -196,7 +204,8 @@ class TestDistroSeries(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         self.assertEqual(
             distroseries.name,
-            distroseries.getSuite(PackagePublishingPocket.RELEASE))
+            distroseries.getSuite(PackagePublishingPocket.RELEASE),
+        )
 
     def test_getSuite_non_release_pocket(self):
         # The suite of a distro series and a non-release pocket is the name of
@@ -204,7 +213,7 @@ class TestDistroSeries(TestCaseWithFactory):
         # lower case.
         distroseries = self.factory.makeDistroSeries()
         pocket = PackagePublishingPocket.PROPOSED
-        suite = '%s-%s' % (distroseries.name, pocket.name.lower())
+        suite = "%s-%s" % (distroseries.name, pocket.name.lower())
         self.assertEqual(suite, distroseries.getSuite(pocket))
 
     def test_getDistroArchSeriesByProcessor(self):
@@ -212,11 +221,14 @@ class TestDistroSeries(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         processor = self.factory.makeProcessor()
         distroarchseries = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag='i386',
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         self.assertEqual(
             distroarchseries,
-            distroseries.getDistroArchSeriesByProcessor(processor))
+            distroseries.getDistroArchSeriesByProcessor(processor),
+        )
 
     def test_getDistroArchSeriesByProcessor_none(self):
         # getDistroArchSeriesByProcessor returns None when no distroarchseries
@@ -224,12 +236,14 @@ class TestDistroSeries(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         processor = self.factory.makeProcessor()
         self.assertIs(
-            None, distroseries.getDistroArchSeriesByProcessor(processor))
+            None, distroseries.getDistroArchSeriesByProcessor(processor)
+        )
 
     def test_getDerivedSeries(self):
         dsp = self.factory.makeDistroSeriesParent()
         self.assertEqual(
-            [dsp.derived_series], dsp.parent_series.getDerivedSeries())
+            [dsp.derived_series], dsp.parent_series.getDerivedSeries()
+        )
 
     def test_registrant_owner_differ(self):
         # The registrant is the creator whereas the owner is the
@@ -254,9 +268,11 @@ class TestDistroSeries(TestCaseWithFactory):
         # UI simplicity for now.
         distroseries = self.factory.makeDistroSeries()
         dsp1 = self.factory.makeDistroSeriesParent(
-            derived_series=distroseries, inherit_overrides=True)
+            derived_series=distroseries, inherit_overrides=True
+        )
         dsp2 = self.factory.makeDistroSeriesParent(
-            derived_series=distroseries, inherit_overrides=False)
+            derived_series=distroseries, inherit_overrides=False
+        )
         self.assertEqual(True, distroseries.inherit_overrides_from_parents)
         with person_logged_in(distroseries.distribution.owner):
             distroseries.inherit_overrides_from_parents = False
@@ -292,7 +308,8 @@ class TestDistroSeries(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         self.assertFalse(distroseries.isInitialized())
         self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, archive=distroseries.main_archive)
+            distroseries=distroseries, archive=distroseries.main_archive
+        )
         self.assertTrue(distroseries.isInitialized())
 
     def test_getInitializationJob(self):
@@ -308,18 +325,22 @@ class TestDistroSeries(TestCaseWithFactory):
     def test_getDifferenceComments_gets_DistroSeriesDifferenceComments(self):
         distroseries = self.factory.makeDistroSeries()
         dsd = self.factory.makeDistroSeriesDifference(
-            derived_series=distroseries)
+            derived_series=distroseries
+        )
         comment = self.factory.makeDistroSeriesDifferenceComment(dsd)
         self.assertContentEqual(
-            [comment], distroseries.getDifferenceComments())
+            [comment], distroseries.getDifferenceComments()
+        )
 
     def test_valid_specifications_query_count(self):
         distroseries = self.factory.makeDistroSeries()
         distribution = distroseries.distribution
         spec1 = self.factory.makeSpecification(
-            distribution=distribution, goal=distroseries)
+            distribution=distribution, goal=distroseries
+        )
         spec2 = self.factory.makeSpecification(
-            distribution=distribution, goal=distroseries)
+            distribution=distribution, goal=distroseries
+        )
         for i in range(5):
             self.factory.makeSpecificationWorkItem(specification=spec1)
             self.factory.makeSpecificationWorkItem(specification=spec2)
@@ -333,13 +354,15 @@ class TestDistroSeries(TestCaseWithFactory):
     def test_valid_specifications_preloading_excludes_deleted_workitems(self):
         distroseries = self.factory.makeDistroSeries()
         spec = self.factory.makeSpecification(
-            distribution=distroseries.distribution, goal=distroseries)
+            distribution=distroseries.distribution, goal=distroseries
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=spec, deleted=True)
+            specification=spec, deleted=True
+        )
         self.factory.makeSpecificationWorkItem(specification=spec)
         workitems = [
-            s.workitems_text
-            for s in distroseries.api_valid_specifications]
+            s.workitems_text for s in distroseries.api_valid_specifications
+        ]
         self.assertContentEqual([spec.workitems_text], workitems)
 
     def test_backports_not_automatic(self):
@@ -350,7 +373,8 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertTrue(distroseries.backports_not_automatic)
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertTrue(
-            naked_distroseries.publishing_options["backports_not_automatic"])
+            naked_distroseries.publishing_options["backports_not_automatic"]
+        )
 
     def test_proposed_not_automatic(self):
         distroseries = self.factory.makeDistroSeries()
@@ -360,7 +384,8 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertTrue(distroseries.proposed_not_automatic)
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertTrue(
-            naked_distroseries.publishing_options["proposed_not_automatic"])
+            naked_distroseries.publishing_options["proposed_not_automatic"]
+        )
 
     def test_include_long_descriptions(self):
         distroseries = self.factory.makeDistroSeries()
@@ -370,20 +395,24 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertFalse(distroseries.include_long_descriptions)
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertFalse(
-            naked_distroseries.publishing_options["include_long_descriptions"])
+            naked_distroseries.publishing_options["include_long_descriptions"]
+        )
 
     def test_index_compressors(self):
         distroseries = self.factory.makeDistroSeries()
         self.assertEqual(
             [IndexCompressionType.GZIP, IndexCompressionType.BZIP2],
-            distroseries.index_compressors)
+            distroseries.index_compressors,
+        )
         with admin_logged_in():
             distroseries.index_compressors = [IndexCompressionType.XZ]
         self.assertEqual(
-            [IndexCompressionType.XZ], distroseries.index_compressors)
+            [IndexCompressionType.XZ], distroseries.index_compressors
+        )
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertEqual(
-            ["xz"], naked_distroseries.publishing_options["index_compressors"])
+            ["xz"], naked_distroseries.publishing_options["index_compressors"]
+        )
 
     def test_publish_by_hash(self):
         distroseries = self.factory.makeDistroSeries()
@@ -393,7 +422,8 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertTrue(distroseries.publish_by_hash)
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertTrue(
-            naked_distroseries.publishing_options["publish_by_hash"])
+            naked_distroseries.publishing_options["publish_by_hash"]
+        )
 
     def test_advertise_by_hash(self):
         distroseries = self.factory.makeDistroSeries()
@@ -403,7 +433,8 @@ class TestDistroSeries(TestCaseWithFactory):
         self.assertTrue(distroseries.advertise_by_hash)
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertTrue(
-            naked_distroseries.publishing_options["advertise_by_hash"])
+            naked_distroseries.publishing_options["advertise_by_hash"]
+        )
 
     def test_strict_supported_component_dependencies(self):
         distroseries = self.factory.makeDistroSeries()
@@ -414,7 +445,9 @@ class TestDistroSeries(TestCaseWithFactory):
         naked_distroseries = removeSecurityProxy(distroseries)
         self.assertFalse(
             naked_distroseries.publishing_options[
-                "strict_supported_component_dependencies"])
+                "strict_supported_component_dependencies"
+            ]
+        )
 
 
 class TestDistroSeriesPackaging(TestCaseWithFactory):
@@ -425,30 +458,39 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         super().setUp()
         self.series = self.factory.makeDistroSeries()
         self.user = self.series.distribution.owner
-        login('admin@canonical.com')
+        login("admin@canonical.com")
         component_set = getUtility(IComponentSet)
         self.packages = {}
-        self.main_component = component_set['main']
-        self.universe_component = component_set['universe']
-        self.makeSeriesPackage('normal')
-        self.makeSeriesPackage('translatable', messages=800)
-        hot_package = self.makeSeriesPackage('hot', bugs=50)
+        self.main_component = component_set["main"]
+        self.universe_component = component_set["universe"]
+        self.makeSeriesPackage("normal")
+        self.makeSeriesPackage("translatable", messages=800)
+        hot_package = self.makeSeriesPackage("hot", bugs=50)
         # Create a second SPPH for 'hot', to verify that duplicates are
         # eliminated in the queries.
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=hot_package.sourcepackagename,
             distroseries=self.series,
-            component=self.universe_component, section_name='web')
-        self.makeSeriesPackage('hot-translatable', bugs=25, messages=1000)
-        self.makeSeriesPackage('main', is_main=True)
-        self.makeSeriesPackage('linked')
-        self.linkPackage('linked')
+            component=self.universe_component,
+            section_name="web",
+        )
+        self.makeSeriesPackage("hot-translatable", bugs=25, messages=1000)
+        self.makeSeriesPackage("main", is_main=True)
+        self.makeSeriesPackage("linked")
+        self.linkPackage("linked")
         transaction.commit()
         login(ANONYMOUS)
 
-    def makeSeriesPackage(self, name=None, is_main=False, bugs=None,
-                          messages=None, is_translations=False, pocket=None,
-                          status=None):
+    def makeSeriesPackage(
+        self,
+        name=None,
+        is_main=False,
+        bugs=None,
+        messages=None,
+        is_translations=False,
+        pocket=None,
+        status=None,
+    ):
         # Make a published source package.
         if name is None:
             name = self.factory.getUniqueString()
@@ -457,125 +499,172 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
         else:
             component = self.universe_component
         if is_translations:
-            section = 'translations'
+            section = "translations"
         else:
-            section = 'web'
+            section = "web"
         sourcepackagename = self.factory.makeSourcePackageName(name)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagename=sourcepackagename, distroseries=self.series,
-            component=component, section_name=section, pocket=pocket,
-            status=status)
+            sourcepackagename=sourcepackagename,
+            distroseries=self.series,
+            component=component,
+            section_name=section,
+            pocket=pocket,
+            status=status,
+        )
         source_package = self.factory.makeSourcePackage(
-            sourcepackagename=sourcepackagename, distroseries=self.series)
+            sourcepackagename=sourcepackagename, distroseries=self.series
+        )
         if bugs is not None:
             dsp = removeSecurityProxy(
-                source_package.distribution_sourcepackage)
+                source_package.distribution_sourcepackage
+            )
             dsp.bug_count = bugs
         if messages is not None:
             template = self.factory.makePOTemplate(
-                distroseries=self.series, sourcepackagename=sourcepackagename,
-                owner=self.user)
+                distroseries=self.series,
+                sourcepackagename=sourcepackagename,
+                owner=self.user,
+            )
             removeSecurityProxy(template).messagecount = messages
         spr = spph.sourcepackagerelease
         for extension in ("dsc", "tar.gz"):
             filename = "%s_%s.%s" % (spr.name, spr.version, extension)
-            spr.addFile(self.factory.makeLibraryFileAlias(
-                filename=filename, db_only=True))
+            spr.addFile(
+                self.factory.makeLibraryFileAlias(
+                    filename=filename, db_only=True
+                )
+            )
         self.packages[name] = source_package
         return source_package
 
-    def makeSeriesBinaryPackage(self, name=None, is_main=False,
-                                is_translations=False, das=None, pocket=None,
-                                status=None):
+    def makeSeriesBinaryPackage(
+        self,
+        name=None,
+        is_main=False,
+        is_translations=False,
+        das=None,
+        pocket=None,
+        status=None,
+    ):
         # Make a published binary package.
         if name is None:
             name = self.factory.getUniqueString()
         source = self.makeSeriesPackage(
-            name=name, is_main=is_main, is_translations=is_translations,
-            pocket=pocket, status=status)
+            name=name,
+            is_main=is_main,
+            is_translations=is_translations,
+            pocket=pocket,
+            status=status,
+        )
         spr = source.distinctreleases[0]
         binarypackagename = self.factory.makeBinaryPackageName(name)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            binarypackagename=binarypackagename, distroarchseries=das,
-            component=spr.component, section_name=spr.section.name,
-            status=status, pocket=pocket, source_package_release=spr)
+            binarypackagename=binarypackagename,
+            distroarchseries=das,
+            component=spr.component,
+            section_name=spr.section.name,
+            status=status,
+            pocket=pocket,
+            source_package_release=spr,
+        )
         bpr = bpph.binarypackagerelease
         filename = "%s_%s_%s.deb" % (
-            bpr.name, bpr.version, das.architecturetag)
-        bpr.addFile(self.factory.makeLibraryFileAlias(
-            filename=filename, db_only=True))
+            bpr.name,
+            bpr.version,
+            das.architecturetag,
+        )
+        bpr.addFile(
+            self.factory.makeLibraryFileAlias(filename=filename, db_only=True)
+        )
         return bpph
 
     def linkPackage(self, name):
         product_series = self.factory.makeProductSeries()
         product_series.setPackaging(
-            self.series, self.packages[name].sourcepackagename, self.user)
+            self.series, self.packages[name].sourcepackagename, self.user
+        )
         return product_series
 
     def test_getPrioritizedUnlinkedSourcePackages(self):
         # Verify the ordering of source packages that need linking.
         package_summaries = self.series.getPrioritizedUnlinkedSourcePackages()
-        names = [summary['package'].name for summary in package_summaries]
+        names = [summary["package"].name for summary in package_summaries]
         expected = [
-            'main', 'hot-translatable', 'hot', 'translatable', 'normal']
+            "main",
+            "hot-translatable",
+            "hot",
+            "translatable",
+            "normal",
+        ]
         self.assertEqual(expected, names)
 
     def test_getPrioritizedUnlinkedSourcePackages_no_language_packs(self):
         # Verify that translations packages are not listed.
-        self.makeSeriesPackage('language-pack-vi', is_translations=True)
+        self.makeSeriesPackage("language-pack-vi", is_translations=True)
         package_summaries = self.series.getPrioritizedUnlinkedSourcePackages()
-        names = [summary['package'].name for summary in package_summaries]
+        names = [summary["package"].name for summary in package_summaries]
         expected = [
-            'main', 'hot-translatable', 'hot', 'translatable', 'normal']
+            "main",
+            "hot-translatable",
+            "hot",
+            "translatable",
+            "normal",
+        ]
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings(self):
         # Verify the ordering of packagings that need more upstream info.
-        for name in ['main', 'hot-translatable', 'hot', 'translatable']:
+        for name in ["main", "hot-translatable", "hot", "translatable"]:
             self.linkPackage(name)
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
         expected = [
-            'main', 'hot-translatable', 'hot', 'translatable', 'linked']
+            "main",
+            "hot-translatable",
+            "hot",
+            "translatable",
+            "linked",
+        ]
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_bug_tracker(self):
         # Verify the ordering of packagings with and without a bug tracker.
-        self.linkPackage('hot')
-        self.makeSeriesPackage('cold')
-        product_series = self.linkPackage('cold')
+        self.linkPackage("hot")
+        self.makeSeriesPackage("cold")
+        product_series = self.linkPackage("cold")
         with person_logged_in(product_series.product.owner):
             product_series.product.bugtracker = self.factory.makeBugTracker()
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = ['hot', 'linked', 'cold']
+        expected = ["hot", "linked", "cold"]
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_branch(self):
         # Verify the ordering of packagings with and without a branch.
-        self.linkPackage('translatable')
-        self.makeSeriesPackage('withbranch')
-        product_series = self.linkPackage('withbranch')
+        self.linkPackage("translatable")
+        self.makeSeriesPackage("withbranch")
+        product_series = self.linkPackage("withbranch")
         with person_logged_in(product_series.product.owner):
             product_series.branch = self.factory.makeBranch()
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = ['translatable', 'linked', 'withbranch']
+        expected = ["translatable", "linked", "withbranch"]
         self.assertEqual(expected, names)
 
     def test_getPrioritizedPackagings_translation(self):
         # Verify the ordering of translatable packagings that are and are not
         # configured to import.
-        self.linkPackage('translatable')
-        self.makeSeriesPackage('importabletranslatable')
-        product_series = self.linkPackage('importabletranslatable')
+        self.linkPackage("translatable")
+        self.makeSeriesPackage("importabletranslatable")
+        product_series = self.linkPackage("importabletranslatable")
         with person_logged_in(product_series.product.owner):
             product_series.branch = self.factory.makeBranch()
             product_series.translations_autoimport_mode = (
-                TranslationsBranchImportMode.IMPORT_TEMPLATES)
+                TranslationsBranchImportMode.IMPORT_TEMPLATES
+            )
         packagings = self.series.getPrioritizedPackagings()
         names = [packaging.sourcepackagename.name for packaging in packagings]
-        expected = ['translatable', 'linked', 'importabletranslatable']
+        expected = ["translatable", "linked", "importabletranslatable"]
         self.assertEqual(expected, names)
 
 
@@ -593,10 +682,13 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         with admin_logged_in():
             distroseries.distribution.translationgroup = group
         webservice = webservice_for_person(
-            group.owner, permission=OAuthPermission.WRITE_PRIVATE)
+            group.owner, permission=OAuthPermission.WRITE_PRIVATE
+        )
         response = webservice.patch(
-            distroseries_url, "application/json",
-            json.dumps({"language_pack_full_export_requested": True}))
+            distroseries_url,
+            "application/json",
+            json.dumps({"language_pack_full_export_requested": True}),
+        )
         self.assertEqual(401, response.status)
         self.assertFalse(distroseries.language_pack_full_export_requested)
 
@@ -607,12 +699,16 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         distroseries_url = api_url(distroseries)
         self.assertFalse(distroseries.language_pack_full_export_requested)
         person = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).rosetta_experts])
+            member_of=[getUtility(ILaunchpadCelebrities).rosetta_experts]
+        )
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PRIVATE)
+            person, permission=OAuthPermission.WRITE_PRIVATE
+        )
         response = webservice.patch(
-            distroseries_url, "application/json",
-            json.dumps({"language_pack_full_export_requested": True}))
+            distroseries_url,
+            "application/json",
+            json.dumps({"language_pack_full_export_requested": True}),
+        )
         self.assertEqual(209, response.status)
         self.assertTrue(distroseries.language_pack_full_export_requested)
 
@@ -625,7 +721,8 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         distro_series_set = getUtility(IDistroSeriesSet)
         # Get translatables as a sequence of names of the series.
         return sorted(
-            series.name for series in distro_series_set.translatables())
+            series.name for series in distro_series_set.translatables()
+        )
 
     def _ref_translatables(self, expected=None):
         # Return the reference value, merged with expected data.
@@ -641,52 +738,59 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         # See whatever distroseries sample data already has.
         self.ref_translatables = self._get_translatables()
 
-        new_distroseries = (
-            self.factory.makeDistroSeries(name="sampleseries"))
+        new_distroseries = self.factory.makeDistroSeries(name="sampleseries")
         with person_logged_in(new_distroseries.distribution.owner):
             new_distroseries.hide_all_translations = False
         transaction.commit()
         translatables = self._get_translatables()
         self.assertEqual(
-            translatables, self._ref_translatables(),
+            translatables,
+            self._ref_translatables(),
             "A newly created distroseries should not be translatable but "
-            "translatables() returns %r instead of %r." % (
-                translatables, self._ref_translatables()))
+            "translatables() returns %r instead of %r."
+            % (translatables, self._ref_translatables()),
+        )
 
         new_sourcepackagename = self.factory.makeSourcePackageName()
         self.factory.makePOTemplate(
             distroseries=new_distroseries,
-            sourcepackagename=new_sourcepackagename)
+            sourcepackagename=new_sourcepackagename,
+        )
         transaction.commit()
         translatables = self._get_translatables()
         self.assertEqual(
-            translatables, self._ref_translatables("sampleseries"),
+            translatables,
+            self._ref_translatables("sampleseries"),
             "After assigning a PO template, a distroseries should be "
-            "translatable but translatables() returns %r instead of %r." % (
-                translatables,
-                self._ref_translatables("sampleseries")))
+            "translatable but translatables() returns %r instead of %r."
+            % (translatables, self._ref_translatables("sampleseries")),
+        )
 
         with person_logged_in(new_distroseries.distribution.owner):
             new_distroseries.hide_all_translations = True
         transaction.commit()
         translatables = self._get_translatables()
         self.assertEqual(
-            translatables, self._ref_translatables(),
+            translatables,
+            self._ref_translatables(),
             "After hiding all translation, a distroseries should not be "
-            "translatable but translatables() returns %r instead of %r." % (
-                translatables, self._ref_translatables()))
+            "translatable but translatables() returns %r instead of %r."
+            % (translatables, self._ref_translatables()),
+        )
 
     def test_fromSuite_release_pocket(self):
         series = self.factory.makeDistroSeries()
         result = getUtility(IDistroSeriesSet).fromSuite(
-            series.distribution, series.name)
+            series.distribution, series.name
+        )
         self.assertEqual((series, PackagePublishingPocket.RELEASE), result)
 
     def test_fromSuite_non_release_pocket(self):
         series = self.factory.makeDistroSeries()
-        suite = '%s-backports' % series.name
+        suite = "%s-backports" % series.name
         result = getUtility(IDistroSeriesSet).fromSuite(
-            series.distribution, suite)
+            series.distribution, suite
+        )
         self.assertEqual((series, PackagePublishingPocket.BACKPORTS), result)
 
     def test_fromSuite_no_such_series(self):
@@ -694,4 +798,6 @@ class TestDistroSeriesSet(TestCaseWithFactory):
         self.assertRaises(
             NoSuchDistroSeries,
             getUtility(IDistroSeriesSet).fromSuite,
-            distribution, 'doesntexist')
+            distribution,
+            "doesntexist",
+        )

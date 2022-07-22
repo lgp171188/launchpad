@@ -203,7 +203,7 @@ property activity_and_comments.
     ...     ubuntu_bugview.activity_and_comments if event.get('comment')]
 
 Because we omit the first comment, and because the third comment is
-indentical to the second, we really only display one comment:
+identical to the second, we really only display one comment:
 
     >>> print(len(comments))
     1
@@ -917,7 +917,7 @@ searched for.
     Firefox install instructions should be complete
     a firefox bug
 
-If we refine the search critera, we'll get different results.
+If we refine the search criteria, we'll get different results.
 
     >>> request = LaunchpadTestRequest(
     ...     method="GET",

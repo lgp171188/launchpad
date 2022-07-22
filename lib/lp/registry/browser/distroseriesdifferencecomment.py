@@ -20,4 +20,4 @@ class DistroSeriesDifferenceCommentView(LaunchpadView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         error_persona = getUtility(ILaunchpadCelebrities).janitor
-        self.is_error = (self.context.comment_author == error_persona)
+        self.is_error = self.context.comment_author == error_persona

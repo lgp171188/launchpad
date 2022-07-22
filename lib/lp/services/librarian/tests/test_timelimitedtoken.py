@@ -17,8 +17,8 @@ class TestLibraryFileAlias(testtools.TestCase):
     def test_allocate(self):
         store = session_store()
         store.find(TimeLimitedToken).remove()
-        token1 = TimeLimitedToken.allocate('foo://')
-        token2 = TimeLimitedToken.allocate('foo://')
+        token1 = TimeLimitedToken.allocate("foo://")
+        token2 = TimeLimitedToken.allocate("foo://")
         # We must get unique tokens
         self.assertNotEqual(token1, token2)
         # They must be bytestrings (as a surrogate for valid url fragment')

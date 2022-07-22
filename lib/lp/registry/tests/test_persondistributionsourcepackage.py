@@ -5,7 +5,7 @@
 
 from lp.registry.model.persondistributionsourcepackage import (
     PersonDistributionSourcePackage,
-    )
+)
 from lp.services.webapp.interfaces import IBreadcrumb
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import TestCaseWithFactory
@@ -27,9 +27,11 @@ class TestPersonDistributionSourcePackage(TestCaseWithFactory):
         # ~person/distribution/+source/sourcepackagename.
         pdsp = self._makePersonDistributionSourcePackage()
         dsp = pdsp.distro_source_package
-        expected = 'http://launchpad.test/~%s/%s/+source/%s' % (
-            pdsp.person.name, dsp.distribution.name,
-            dsp.sourcepackagename.name)
+        expected = "http://launchpad.test/~%s/%s/+source/%s" % (
+            pdsp.person.name,
+            dsp.distribution.name,
+            dsp.sourcepackagename.name,
+        )
         self.assertEqual(expected, canonical_url(pdsp))
 
     def test_breadcrumb(self):
@@ -37,4 +39,5 @@ class TestPersonDistributionSourcePackage(TestCaseWithFactory):
         pdsp = self._makePersonDistributionSourcePackage()
         breadcrumb = IBreadcrumb(pdsp, None)
         self.assertEqual(
-            canonical_url(pdsp.distro_source_package), breadcrumb.url)
+            canonical_url(pdsp.distro_source_package), breadcrumb.url
+        )

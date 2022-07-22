@@ -4,10 +4,10 @@
 """Integration between the normal Launchpad logging and Twisted's."""
 
 __all__ = [
-    'LaunchpadLogFile',
-    'set_up_logging_for_script',
-    'set_up_oops_reporting',
-    ]
+    "LaunchpadLogFile",
+    "set_up_logging_for_script",
+    "set_up_oops_reporting",
+]
 
 
 import bz2
@@ -19,10 +19,7 @@ import sys
 
 import oops_twisted
 from oops_twisted import OOPSObserver
-from twisted.python import (
-    log,
-    logfile,
-    )
+from twisted.python import log, logfile
 from twisted.python.logfile import DailyLogFile
 from twisted.web import xmlrpc
 from zope.interface import implementer
@@ -55,10 +52,12 @@ def set_up_oops_reporting(name, configuration, logfile):
         configuration,
         config_factory=oops_twisted.Config,
         publisher_adapter=oops_twisted.defer_publisher,
-        publisher_helpers=oops_twisted.publishers)
+        publisher_helpers=oops_twisted.publishers,
+    )
     log_observer = RotatableFileLogObserver(logfile)
-    oops_observer = OOPSObserver(errorlog.globalErrorUtility._oops_config,
-        log_observer)
+    oops_observer = OOPSObserver(
+        errorlog.globalErrorUtility._oops_config, log_observer
+    )
     return oops_observer
 
 
@@ -69,20 +68,30 @@ class LaunchpadLogFile(DailyLogFile):
     call sites to control the number of rotated logfiles kept around and
     when to start compressing them.
     """
+
     maxRotatedFiles = 5
     compressLast = 3
 
-    def __init__(self, name, directory, defaultMode=None,
-                 maxRotatedFiles=None, compressLast=None):
+    def __init__(
+        self,
+        name,
+        directory,
+        defaultMode=None,
+        maxRotatedFiles=None,
+        compressLast=None,
+    ):
         DailyLogFile.__init__(self, name, directory, defaultMode)
         if maxRotatedFiles is not None:
             self.maxRotatedFiles = int(maxRotatedFiles)
         if compressLast is not None:
             self.compressLast = int(compressLast)
 
-        assert self.compressLast <= self.maxRotatedFiles, (
-            "Only %d rotate files are kept, cannot compress %d"
-            % (self.maxRotatedFiles, self.compressLast))
+        assert (
+            self.compressLast <= self.maxRotatedFiles
+        ), "Only %d rotate files are kept, cannot compress %d" % (
+            self.maxRotatedFiles,
+            self.compressLast,
+        )
 
     def _compressFile(self, path):
         """Compress the file in the given path using bzip2.
@@ -92,8 +101,8 @@ class LaunchpadLogFile(DailyLogFile):
 
         :return: the path to the compressed file.
         """
-        bz2_path = '%s.bz2' % path
-        copy_and_close(open(path, 'rb'), bz2.BZ2File(bz2_path, mode='w'))
+        bz2_path = "%s.bz2" % path
+        copy_and_close(open(path, "rb"), bz2.BZ2File(bz2_path, mode="w"))
         os.remove(path)
         return bz2_path
 
@@ -107,7 +116,7 @@ class LaunchpadLogFile(DailyLogFile):
 
         # Remove 'extra' rotated log files.
         logs = self.listLogs()
-        for log_path in logs[self.maxRotatedFiles:]:
+        for log_path in logs[self.maxRotatedFiles :]:
             os.remove(log_path)
 
         # Refresh the list of existing rotated logs
@@ -118,9 +127,9 @@ class LaunchpadLogFile(DailyLogFile):
             return
 
         # Compress last log files.
-        for log_path in logs[-self.compressLast:]:
+        for log_path in logs[-self.compressLast :]:
             # Skip already compressed files.
-            if log_path.endswith('bz2'):
+            if log_path.endswith("bz2"):
                 continue
             self._compressFile(log_path)
 
@@ -131,6 +140,7 @@ class LaunchpadLogFile(DailyLogFile):
 
 class _QuietQueryFactory(xmlrpc._QueryFactory):
     """Override noisy to false to avoid useless log spam."""
+
     noisy = False
 
 
@@ -160,12 +170,15 @@ class LoggingProxy(xmlrpc.Proxy):
         request = self.request_count
         self.request_count += 1
         self.logger.log(
-            self.level, 'Sending request [%d]: %s%s', request, method, args)
+            self.level, "Sending request [%d]: %s%s", request, method, args
+        )
 
         def _logResult(result):
             self.logger.log(
-                self.level, 'Reply to request [%d]: %s', request, result)
+                self.level, "Reply to request [%d]: %s", request, result
+            )
             return result
+
         deferred = xmlrpc.Proxy.callRemote(self, method, *args)
         return deferred.addBoth(_logResult)
 
@@ -187,12 +200,16 @@ class RotatableFileLogObserver:
             logFile = sys.stdout
         else:
             logFile = logfile.LogFile.fromFullPath(
-                logfilepath, rotateLength=None)
+                logfilepath, rotateLength=None
+            )
             # Override if signal is set to None or SIG_DFL (0)
             if not signal.getsignal(signal.SIGUSR1):
+
                 def signalHandler(signal, frame):
                     from twisted.internet import reactor
+
                     reactor.callFromThread(logFile.reopen)
+
                 signal.signal(signal.SIGUSR1, signalHandler)
         self.observer = log.FileLogObserver(logFile)
 

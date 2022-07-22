@@ -9,7 +9,7 @@ First, we need some imports.
     >>> from zope.publisher.browser import FileUpload
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.translations.model.translationmessage import (
-    ...     TranslationMessage, DummyTranslationMessage)
+    ...     TranslationMessage, PlaceholderTranslationMessage)
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue)
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -471,10 +471,10 @@ message.
 Now, we are going to select a translation message that doesn't exist
 yet in our database.
 
-    >>> isinstance(navigation.traverse('22'), DummyTranslationMessage)
+    >>> isinstance(navigation.traverse('22'), PlaceholderTranslationMessage)
     True
 
-But if we do a POST, instead of getting a DummyTranslationMessage
+But if we do a POST, instead of getting a PlaceholderTranslationMessage
 object, we will get a TranslationMessage.
 
 #    >>> request.method = 'POST'

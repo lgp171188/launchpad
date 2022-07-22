@@ -2,20 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IWikiName',
-    'IWikiNameSet',
-    ]
+    "IWikiName",
+    "IWikiNameSet",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
@@ -25,20 +19,26 @@ from lp.services.fields import URIField
 @exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IWikiName(IHasOwner):
     """Wiki for Users"""
+
     id = Int(title=_("Database ID"), required=True, readonly=True)
     # schema=Interface will be overridden in person.py because of circular
     # dependencies.
     person = exported(
         Reference(
-            title=_("Owner"), schema=Interface, required=True, readonly=True))
+            title=_("Owner"), schema=Interface, required=True, readonly=True
+        )
+    )
     wiki = exported(
-        URIField(title=_("Wiki host"),
-                 allowed_schemes=['http', 'https'],
-                 required=True))
-    wikiname = exported(
-        TextLine(title=_("Wikiname"), required=True))
+        URIField(
+            title=_("Wiki host"),
+            allowed_schemes=["http", "https"],
+            required=True,
+        )
+    )
+    wikiname = exported(TextLine(title=_("Wikiname"), required=True))
     url = exported(
-        TextLine(title=_("The URL for this wiki home page."), readonly=True))
+        TextLine(title=_("The URL for this wiki home page."), readonly=True)
+    )
 
     def destroySelf():
         """Remove this WikiName from the database."""

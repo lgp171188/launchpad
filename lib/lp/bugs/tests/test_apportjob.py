@@ -87,7 +87,7 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         transaction.commit()  # We need the blob available from the Librarian.
 
     def _assertFileBugDataMatchesDict(self, filebug_data, data_dict):
-        """Asser that the data in a FileBugData object matches a dict."""
+        """Assert that the data in a FileBugData object matches a dict."""
         self.assertEqual(
             filebug_data.initial_summary,
             data_dict["initial_summary"],
@@ -221,7 +221,7 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
         self.assertEqual(
             job,
             job_from_uuid,
-            "Job returend by getByBlobUUID() did not match original job.",
+            "Job returned by getByBlobUUID() did not match original job.",
         )
         self.assertEqual(
             self.blob,

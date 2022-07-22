@@ -1,50 +1,37 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
 import os
 import shutil
 import subprocess
+from datetime import datetime
 from unittest import mock
 
-from fixtures import (
-    Fixture,
-    MockPatch,
-    )
 import gpgme
 import pytz
 import responses
 import six
-from testtools.matchers import (
-    Equals,
-    Is,
-    MatchesListwise,
-    MatchesStructure,
-    )
+from fixtures import Fixture, MockPatch
+from testtools.matchers import Equals, Is, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.handler import signing_only_param
 from lp.services.gpg.interfaces import (
-    get_gpg_path,
-    get_gpgme_context,
     GPG_INJECT,
     GPGKeyDoesNotExistOnServer,
     GPGKeyMismatchOnServer,
     GPGKeyTemporarilyNotFoundError,
     IGPGHandler,
-    )
+    get_gpg_path,
+    get_gpgme_context,
+)
 from lp.services.log.logger import BufferLogger
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.timeout import TimeoutError
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    logout,
-    TestCase,
-    )
+from lp.testing import ANONYMOUS, TestCase, login, logout
 from lp.testing.gpgkeys import (
     gpgkeysdir,
     import_secret_test_key,
@@ -52,13 +39,12 @@ from lp.testing.gpgkeys import (
     test_keyrings,
     test_pubkey_file_from_email,
     test_pubkey_from_email,
-    )
+)
 from lp.testing.keyserver import KeyServerTac
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class FakeGenerateKey(Fixture):
-
     def __init__(self, keyfile):
         filepath = os.path.join(gpgkeysdir, keyfile)
         with open(filepath, "rb") as f:
@@ -74,15 +60,17 @@ class FakeGenerateKey(Fixture):
         def mock_genkey(params):
             # Import the key so that it's in the local keyring.
             imported_key = getUtility(IGPGHandler).importSecretKey(
-                self.secret_key)
+                self.secret_key
+            )
 
             # Fail if the key generation parameters aren't what we expect.
             expected_params = signing_only_param % {
                 "name": imported_key.uids[0].name,
-                }
+            }
             if params != expected_params:
                 raise ValueError(
-                    "Got params %r, expected %r" % (params, expected_params))
+                    "Got params %r, expected %r" % (params, expected_params)
+                )
             return GenKeyResult(imported_key.fingerprint)
 
         real_context = get_gpgme_context()
@@ -93,6 +81,7 @@ class FakeGenerateKey(Fixture):
 
 class TestGPGHandler(TestCase):
     """Unit tests for the GPG handler."""
+
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -125,12 +114,15 @@ class TestGPGHandler(TestCase):
         self.populateKeyring()
 
         self.assertNotEqual([], list(self.gpg_handler.localKeys()))
-        fingerprints = {key.fingerprint
-                           for key in self.gpg_handler.localKeys()}
-        self.assertTrue("340CA3BB270E2716C9EE0B768E7EB7086C64A8C5"
-                        in fingerprints)
-        self.assertTrue("A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
-                        in fingerprints)
+        fingerprints = {
+            key.fingerprint for key in self.gpg_handler.localKeys()
+        }
+        self.assertTrue(
+            "340CA3BB270E2716C9EE0B768E7EB7086C64A8C5" in fingerprints
+        )
+        self.assertTrue(
+            "A419AE861E88BC9E04B9C26FBA2B9389DFD20543" in fingerprints
+        )
 
     def testFilteredGetKeys(self):
         """Check the filtered key lookup mechanism.
@@ -139,7 +131,7 @@ class TestGPGHandler(TestCase):
         or secret keyrings.
         """
         self.populateKeyring()
-        target_fpr = '340CA3BB270E2716C9EE0B768E7EB7086C64A8C5'
+        target_fpr = "340CA3BB270E2716C9EE0B768E7EB7086C64A8C5"
 
         # Finding a key by its fingerprint.
         filtered_keys = self.gpg_handler.localKeys(target_fpr)
@@ -152,21 +144,20 @@ class TestGPGHandler(TestCase):
         self.assertEqual(key.fingerprint, target_fpr)
 
         # Multiple results when filtering by email.
-        filtered_keys = self.gpg_handler.localKeys('foo.bar@canonical.com')
+        filtered_keys = self.gpg_handler.localKeys("foo.bar@canonical.com")
 
         filtered_fingerprints = [key.fingerprint for key in filtered_keys]
         self.assertTrue(target_fpr in filtered_fingerprints)
         self.assertTrue(
-            'FD311613D941C6DE55737D310E3498675D147547'
-            in filtered_fingerprints)
+            "FD311613D941C6DE55737D310E3498675D147547" in filtered_fingerprints
+        )
 
         # Secret keys only filter.
-        self.assertEqual(
-            list(self.gpg_handler.localKeys(secret=True)), [])
+        self.assertEqual(list(self.gpg_handler.localKeys(secret=True)), [])
 
         # Import a secret key and look it up.
         import_secret_test_key()
-        secret_target_fpr = 'A419AE861E88BC9E04B9C26FBA2B9389DFD20543'
+        secret_target_fpr = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
 
         filtered_keys = self.gpg_handler.localKeys(secret=True)
         [key] = filtered_keys
@@ -174,7 +165,8 @@ class TestGPGHandler(TestCase):
 
         # Combining 'filter' and 'secret'.
         filtered_keys = self.gpg_handler.localKeys(
-            filter=secret_target_fpr[-8:], secret=True)
+            filter=secret_target_fpr[-8:], secret=True
+        )
         [key] = filtered_keys
         self.assertEqual(key.fingerprint, secret_target_fpr)
 
@@ -188,7 +180,7 @@ class TestGPGHandler(TestCase):
         """
         self.populateKeyring()
 
-        target_fpr = '340CA3BB270E2716C9EE0B768E7EB7086C64A8C5'
+        target_fpr = "340CA3BB270E2716C9EE0B768E7EB7086C64A8C5"
 
         # Finding a key by its unicode fingerprint.
         filtered_keys = self.gpg_handler.localKeys(target_fpr)
@@ -197,7 +189,7 @@ class TestGPGHandler(TestCase):
 
     def test_non_ascii_filter(self):
         """localKeys should not error if passed non-ascii unicode strings."""
-        filtered_keys = self.gpg_handler.localKeys('non-ascii \u8463')
+        filtered_keys = self.gpg_handler.localKeys("non-ascii \u8463")
         self.assertRaises(StopIteration, next, filtered_keys)
 
     def testTestkeyrings(self):
@@ -210,29 +202,36 @@ class TestGPGHandler(TestCase):
         self.useFixture(KeyServerTac())
         gpghandler = getUtility(IGPGHandler)
         self.assertRaises(
-            GPGKeyDoesNotExistOnServer, gpghandler.retrieveKey,
-            'non-existent-fp')
+            GPGKeyDoesNotExistOnServer,
+            gpghandler.retrieveKey,
+            "non-existent-fp",
+        )
 
     @responses.activate
     def test_retrieveKey_raises_GPGKeyTemporarilyNotFoundError_for_timeout(
-            self):
+        self,
+    ):
         # If the keyserver responds too slowly, GPGHandler.retrieveKey()
         # raises GPGKeyTemporarilyNotFoundError.
         # We simulate a timeout using responses rather than by setting a low
         # timeout, as otherwise the test will fail if the fetch thread
         # happens to complete between Thread.start and Thread.is_alive.
         responses.add(
-            'GET',
+            "GET",
             self.gpg_handler.getURLForKeyInServer(
-                'non-existent-fp', action='get'),
-            body=TimeoutError('timeout exceeded.'))
+                "non-existent-fp", action="get"
+            ),
+            body=TimeoutError("timeout exceeded."),
+        )
         self.assertRaises(
-            GPGKeyTemporarilyNotFoundError, self.gpg_handler.retrieveKey,
-            'non-existent-fp')
+            GPGKeyTemporarilyNotFoundError,
+            self.gpg_handler.retrieveKey,
+            "non-existent-fp",
+        )
         # An OOPS report is generated for the timeout.
         error_report = self.oopses[-1]
-        self.assertEqual('TimeoutError', error_report['type'])
-        self.assertEqual('timeout exceeded.', error_report['value'])
+        self.assertEqual("TimeoutError", error_report["type"])
+        self.assertEqual("timeout exceeded.", error_report["value"])
 
     def test_retrieveKey_checks_fingerprint(self):
         # retrieveKey ensures that the key fetched from the keyserver has
@@ -242,10 +241,12 @@ class TestGPGHandler(TestCase):
         # Associate a different key with this fingerprint.
         shutil.copy2(
             test_pubkey_file_from_email("test@canonical.com"),
-            os.path.join(keyserver.root, "0x%s.get" % fingerprint))
+            os.path.join(keyserver.root, "0x%s.get" % fingerprint),
+        )
         gpghandler = getUtility(IGPGHandler)
         self.assertRaises(
-            GPGKeyMismatchOnServer, gpghandler.retrieveKey, fingerprint)
+            GPGKeyMismatchOnServer, gpghandler.retrieveKey, fingerprint
+        )
         self.assertEqual([], list(gpghandler.localKeys()))
 
     def test_retrieveKey_allows_subkey(self):
@@ -255,7 +256,8 @@ class TestGPGHandler(TestCase):
         subkey_fingerprint = "A2E916260726EE2BF86501A14244E5A6067595FF"
         shutil.copy2(
             test_pubkey_file_from_email("foo.bar@canonical.com"),
-            os.path.join(keyserver.root, "0x%s.get" % subkey_fingerprint))
+            os.path.join(keyserver.root, "0x%s.get" % subkey_fingerprint),
+        )
         gpghandler = getUtility(IGPGHandler)
         key = gpghandler.retrieveKey(subkey_fingerprint)
         self.assertEqual(primary_fingerprint, key.fingerprint)
@@ -272,10 +274,12 @@ class TestGPGHandler(TestCase):
         key_id = fingerprint[-16:]
         shutil.copy2(
             test_pubkey_file_from_email("foo.bar@canonical.com"),
-            os.path.join(keyserver.root, "0x%s.get" % key_id))
+            os.path.join(keyserver.root, "0x%s.get" % key_id),
+        )
         gpghandler = getUtility(IGPGHandler)
         self.assertEqual(
-            fingerprint, gpghandler.retrieveKey(key_id).fingerprint)
+            fingerprint, gpghandler.retrieveKey(key_id).fingerprint
+        )
         fingerprints = {key.fingerprint for key in gpghandler.localKeys()}
         self.assertIn(fingerprint, fingerprints)
 
@@ -286,10 +290,12 @@ class TestGPGHandler(TestCase):
         key_id = "0000000000000000"
         shutil.copy2(
             test_pubkey_file_from_email("foo.bar@canonical.com"),
-            os.path.join(keyserver.root, "0x%s.get" % key_id))
+            os.path.join(keyserver.root, "0x%s.get" % key_id),
+        )
         gpghandler = getUtility(IGPGHandler)
         self.assertRaises(
-            GPGKeyMismatchOnServer, gpghandler.retrieveKey, key_id)
+            GPGKeyMismatchOnServer, gpghandler.retrieveKey, key_id
+        )
         self.assertEqual([], list(gpghandler.localKeys()))
 
     def test_retrieveKey_forbids_32bit_key_id(self):
@@ -300,10 +306,12 @@ class TestGPGHandler(TestCase):
         key_id = fingerprint[-8:]
         shutil.copy2(
             test_pubkey_file_from_email("foo.bar@canonical.com"),
-            os.path.join(keyserver.root, "0x%s.get" % key_id))
+            os.path.join(keyserver.root, "0x%s.get" % key_id),
+        )
         gpghandler = getUtility(IGPGHandler)
         self.assertRaises(
-            GPGKeyMismatchOnServer, gpghandler.retrieveKey, key_id)
+            GPGKeyMismatchOnServer, gpghandler.retrieveKey, key_id
+        )
         self.assertEqual([], list(gpghandler.localKeys()))
 
     def test_uploadPublicKey_suppress_in_config(self):
@@ -315,10 +323,14 @@ class TestGPGHandler(TestCase):
         self.gpg_handler.uploadPublicKey(fingerprint, logger=logger)
         self.assertEqual(
             "INFO Not submitting key to keyserver "
-            "(disabled in configuration).\n", logger.getLogBuffer())
+            "(disabled in configuration).\n",
+            logger.getLogBuffer(),
+        )
         self.assertRaises(
             GPGKeyDoesNotExistOnServer,
-            removeSecurityProxy(self.gpg_handler)._getPubKey, fingerprint)
+            removeSecurityProxy(self.gpg_handler)._getPubKey,
+            fingerprint,
+        )
 
     def test_getURLForKeyInServer_default(self):
         # By default the action is to display the key's index page.  Notice
@@ -328,7 +340,8 @@ class TestGPGHandler(TestCase):
         self.assertEqual(
             "http://localhost:11371/pks/lookup?fingerprint=on&"
             "op=index&search=0x%s" % fingerprint,
-            self.gpg_handler.getURLForKeyInServer(fingerprint))
+            self.gpg_handler.getURLForKeyInServer(fingerprint),
+        )
 
     def test_getURLForKeyInServer_different_action(self):
         # The caller can specify a different action.
@@ -336,7 +349,8 @@ class TestGPGHandler(TestCase):
         self.assertEqual(
             "http://localhost:11371/pks/lookup?fingerprint=on&"
             "op=get&search=0x%s" % fingerprint,
-            self.gpg_handler.getURLForKeyInServer(fingerprint, action="get"))
+            self.gpg_handler.getURLForKeyInServer(fingerprint, action="get"),
+        )
 
     def test_getURLForKeyInServer_public_http(self):
         # The caller can request a link to the public keyserver web
@@ -347,7 +361,8 @@ class TestGPGHandler(TestCase):
         self.assertEqual(
             "http://keyserver.ubuntu.com:11371/pks/lookup?fingerprint=on&"
             "op=index&search=0x%s" % fingerprint,
-            self.gpg_handler.getURLForKeyInServer(fingerprint, public=True))
+            self.gpg_handler.getURLForKeyInServer(fingerprint, public=True),
+        )
 
     def test_getURLForKeyInServer_public_https(self):
         # The caller can request a link to the public keyserver web
@@ -359,7 +374,8 @@ class TestGPGHandler(TestCase):
         self.assertEqual(
             "https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&"
             "op=index&search=0x%s" % fingerprint,
-            self.gpg_handler.getURLForKeyInServer(fingerprint, public=True))
+            self.gpg_handler.getURLForKeyInServer(fingerprint, public=True),
+        )
 
     def assertGeneratesKey(self, logger=None):
         # We don't test real key generation because it depends on machine
@@ -378,50 +394,68 @@ class TestGPGHandler(TestCase):
         self.useFixture(FakeGenerateKey("ppa-sample@canonical.com.sec"))
         new_key = self.gpg_handler.generateKey(
             "Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo",
-            logger=logger)
+            logger=logger,
+        )
         # generateKey currently only generates passwordless sign-only keys,
         # i.e. they can sign content but cannot encrypt.  The generated key
         # contains a single UID and only its "name" term is set.
-        self.assertThat(new_key, MatchesStructure(
-            secret=Is(True),
-            algorithm=MatchesStructure.byEquality(title="R"),
-            keysize=Equals(1024),
-            can_sign=Is(True),
-            can_encrypt=Is(False),
-            can_certify=Is(True),
-            can_authenticate=Is(False),
-            uids=MatchesListwise([
-                MatchesStructure.byEquality(
-                    name=(
-                        "Launchpad PPA for Celso "
-                        "\xe1\xe9\xed\xf3\xfa Providelo"),
-                    comment="",
-                    email=""),
-                ])))
+        self.assertThat(
+            new_key,
+            MatchesStructure(
+                secret=Is(True),
+                algorithm=MatchesStructure.byEquality(title="R"),
+                keysize=Equals(1024),
+                can_sign=Is(True),
+                can_encrypt=Is(False),
+                can_certify=Is(True),
+                can_authenticate=Is(False),
+                uids=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            name=(
+                                "Launchpad PPA for Celso "
+                                "\xe1\xe9\xed\xf3\xfa Providelo"
+                            ),
+                            comment="",
+                            email="",
+                        ),
+                    ]
+                ),
+            ),
+        )
         # The public key is also available.
         pub_key = self.gpg_handler.retrieveKey(new_key.fingerprint)
-        self.assertThat(pub_key, MatchesStructure(
-            secret=Is(False),
-            algorithm=MatchesStructure.byEquality(title="R"),
-            keysize=Equals(1024),
-            can_sign=Is(True),
-            can_encrypt=Is(False),
-            can_certify=Is(True),
-            can_authenticate=Is(False),
-            uids=MatchesListwise([
-                MatchesStructure.byEquality(
-                    name=(
-                        "Launchpad PPA for Celso "
-                        "\xe1\xe9\xed\xf3\xfa Providelo"),
-                    comment="",
-                    email=""),
-                ])))
+        self.assertThat(
+            pub_key,
+            MatchesStructure(
+                secret=Is(False),
+                algorithm=MatchesStructure.byEquality(title="R"),
+                keysize=Equals(1024),
+                can_sign=Is(True),
+                can_encrypt=Is(False),
+                can_certify=Is(True),
+                can_authenticate=Is(False),
+                uids=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            name=(
+                                "Launchpad PPA for Celso "
+                                "\xe1\xe9\xed\xf3\xfa Providelo"
+                            ),
+                            comment="",
+                            email="",
+                        ),
+                    ]
+                ),
+            ),
+        )
         return new_key
 
     def test_generateKey(self):
         # Generating a key works as expected.
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         self.assertGeneratesKey()
         # The gpg.signing_service.injection.enabled feature flag is
         # disabled, so the key is not injected into the signing service.
@@ -431,11 +465,13 @@ class TestGPGHandler(TestCase):
         # If the gpg.signing_service.injection.enabled feature flag is
         # enabled, a generated key is injected into the signing service.
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         self.useFixture(FeatureFixture({GPG_INJECT: "on"}))
         now = datetime.now()
-        mock_datetime = self.useFixture(MockPatch(
-            "lp.services.gpg.handler.datetime")).mock
+        mock_datetime = self.useFixture(
+            MockPatch("lp.services.gpg.handler.datetime")
+        ).mock
         mock_datetime.now = lambda: now
         logger = BufferLogger()
         new_key = self.assertGeneratesKey(logger=logger)
@@ -443,19 +479,24 @@ class TestGPGHandler(TestCase):
         self.assertEqual(
             "INFO Injecting key_type OpenPGP 'Launchpad PPA for Celso "
             "\xe1\xe9\xed\xf3\xfa Providelo' into signing service\n",
-            logger.getLogBuffer())
+            logger.getLogBuffer(),
+        )
         self.assertEqual(1, signing_service_client.inject.call_count)
         self.assertThat(
             signing_service_client.inject.call_args[0],
-            MatchesListwise([
-                Equals(SigningKeyType.OPENPGP),
-                Equals(new_key.export()),
-                Equals(new_public_key.export()),
-                Equals(
-                    "Launchpad PPA for Celso "
-                    "\xe1\xe9\xed\xf3\xfa Providelo"),
-                Equals(now.replace(tzinfo=pytz.UTC)),
-                ]))
+            MatchesListwise(
+                [
+                    Equals(SigningKeyType.OPENPGP),
+                    Equals(new_key.export()),
+                    Equals(new_public_key.export()),
+                    Equals(
+                        "Launchpad PPA for Celso "
+                        "\xe1\xe9\xed\xf3\xfa Providelo"
+                    ),
+                    Equals(now.replace(tzinfo=pytz.UTC)),
+                ]
+            ),
+        )
 
     def test_generateKey_handles_key_injection_failure(self):
         # If the gpg.signing_service.injection.enabled feature flag is
@@ -463,28 +504,32 @@ class TestGPGHandler(TestCase):
         # generated key and re-raises the exception raised by the failed
         # injection.
         signing_service_client = self.useFixture(
-            SigningServiceClientFixture(self.factory))
+            SigningServiceClientFixture(self.factory)
+        )
         signing_service_client.inject.side_effect = ValueError("boom")
         self.useFixture(FeatureFixture({GPG_INJECT: "on"}))
         self.useFixture(FakeGenerateKey("ppa-sample@canonical.com.sec"))
         self.assertRaisesWithContent(
-            ValueError, "boom",
+            ValueError,
+            "boom",
             self.gpg_handler.generateKey,
-            "Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo")
+            "Launchpad PPA for Celso \xe1\xe9\xed\xf3\xfa Providelo",
+        )
         self.assertEqual(1, signing_service_client.inject.call_count)
         self.assertEqual([], list(self.gpg_handler.localKeys()))
 
     def test_signContent_uses_sha512_digests(self):
         secret_keys = [
-            ("ppa-sample@canonical.com.sec", ""),       # 1024R
+            ("ppa-sample@canonical.com.sec", ""),  # 1024R
             ("ppa-sample-4096@canonical.com.sec", ""),  # 4096R
-            ]
+        ]
         for key_name, password in secret_keys:
             self.gpg_handler.resetLocalState()
             secret_key = import_secret_test_key(key_name)
             content = b"abc\n"
             signed_content = self.gpg_handler.signContent(
-                content, secret_key, password)
+                content, secret_key, password
+            )
             signature = self.gpg_handler.getVerifiedSignature(signed_content)
             self.assertEqual(content, signature.plain_data)
             self.assertEqual(secret_key.fingerprint, signature.fingerprint)
@@ -495,14 +540,22 @@ class TestGPGHandler(TestCase):
             # plumbing.
             with open(os.devnull, "w") as devnull:
                 gpg_proc = subprocess.Popen(
-                    [get_gpg_path(), "--quiet", "--status-fd", "1",
-                     "--verify"],
-                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                    stderr=devnull)
+                    [
+                        get_gpg_path(),
+                        "--quiet",
+                        "--status-fd",
+                        "1",
+                        "--verify",
+                    ],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=devnull,
+                )
             output = six.ensure_text(gpg_proc.communicate(signed_content)[0])
             status = output.splitlines()
             validsig_prefix = "[GNUPG:] VALIDSIG "
             [validsig_line] = [
-                line for line in status if line.startswith(validsig_prefix)]
-            validsig_tokens = validsig_line[len(validsig_prefix):].split()
+                line for line in status if line.startswith(validsig_prefix)
+            ]
+            validsig_tokens = validsig_line[len(validsig_prefix) :].split()
             self.assertEqual(gpgme.MD_SHA512, int(validsig_tokens[7]))

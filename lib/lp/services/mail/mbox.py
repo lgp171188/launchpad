@@ -3,18 +3,17 @@
 
 """An IMailer that stores messages in a specified mbox file."""
 
-from contextlib import closing
 import email
+import mailbox
+from contextlib import closing
 from email.utils import make_msgid
 from logging import getLogger
-import mailbox
 
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.sendmail.interfaces import IMailer
 
-
-COMMASPACE = ', '
+COMMASPACE = ", "
 
 
 @implementer(IMailer)
@@ -28,29 +27,33 @@ class MboxMailer:
             # this is effectively an overwrite.  Note that because IMailer
             # doesn't have a close() method, we can't leave the file open
             # here, otherwise it will never get closed.
-            with open(self.filename, 'w'):
+            with open(self.filename, "w"):
                 pass
         self.mailer = mailer
 
     def send(self, fromaddr, toaddrs, message):
         """See IMailer."""
         env_recips = COMMASPACE.join(toaddrs)
-        log = getLogger('lp.services.mail')
-        log.info('Email from %s to %s being stored in mailbox %s',
-                 fromaddr, env_recips, self.filename)
+        log = getLogger("lp.services.mail")
+        log.info(
+            "Email from %s to %s being stored in mailbox %s",
+            fromaddr,
+            env_recips,
+            self.filename,
+        )
         msg = email.message_from_string(message)
         # Mimic what MTAs such as Postfix do in transfering the envelope
         # sender into the Return-Path header.  It's okay if the message has
         # multiple such headers.
-        msg['Return-Path'] = fromaddr
+        msg["Return-Path"] = fromaddr
         # Because it might be useful, copy the envelope recipients into the
         # RFC 2822 headers too.
-        msg['X-Envelope-To'] = env_recips
+        msg["X-Envelope-To"] = env_recips
         # Add the Message-ID required by the interface; even though the
         # interface says that the message text doesn't include such a header,
         # zap it first just in case.
-        del msg['message-id']
-        msg['Message-ID'] = message_id = make_msgid()
+        del msg["message-id"]
+        msg["Message-ID"] = message_id = make_msgid()
         with closing(mailbox.mbox(self.filename)) as mbox:
             mbox.lock()
             try:

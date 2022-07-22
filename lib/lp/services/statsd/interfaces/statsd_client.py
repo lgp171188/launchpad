@@ -3,7 +3,7 @@
 
 """Interfaces for configuring and retrieving a statsd client."""
 
-__all__ = ['IStatsdClient']
+__all__ = ["IStatsdClient"]
 
 
 from zope.interface import Interface

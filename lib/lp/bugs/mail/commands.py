@@ -408,7 +408,7 @@ class DuplicateEmailCommand(EmailCommand):
     def execute(self, context, current_event):
         """See IEmailCommand."""
         if isinstance(context, CreateBugParams):
-            # No one intentially reports a duplicate bug. Bug email commands
+            # No one intentionally reports a duplicate bug. Bug email commands
             # support CreateBugParams, so in this case, just return.
             return context, current_event
         self._ensureNumberOfArguments()
@@ -756,7 +756,7 @@ class DBSchemaEditEmailCommand(EditEmailCommand):
     Subclasses should set 'dbschema' to the correct schema.
 
     For example, if context.foo can be assigned to values in
-    FooDBSchema, the follwing command class could be created:
+    FooDBSchema, the following command class could be created:
 
         class FooEmailCommand(DBSchemaEditEmailCommand):
             dbschema = FooDBSchema

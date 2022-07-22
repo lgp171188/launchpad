@@ -4,13 +4,10 @@
 """A generic collection of database objects."""
 
 __all__ = [
-    'Collection',
-    ]
+    "Collection",
+]
 
-from storm.expr import (
-    Join,
-    LeftJoin,
-    )
+from storm.expr import Join, LeftJoin
 
 from lp.services.database.interfaces import IStore
 
@@ -59,21 +56,24 @@ class Collection:
         self.base = base
 
         if base is None:
-            base_conditions = (True, )
+            base_conditions = (True,)
             base_tables = []
         else:
             self.store = base.store
             base_conditions = base.conditions
             base_tables = list(base.tables)
 
-        self.store = kwargs.get('store')
+        self.store = kwargs.get("store")
         if self.store is None:
             from lp.services.librarian.model import LibraryFileAlias
+
             self.store = IStore(LibraryFileAlias)
 
         self.tables = (
-            starting_tables + base_tables +
-            self._parseTablesArg(kwargs.get('tables', [])))
+            starting_tables
+            + base_tables
+            + self._parseTablesArg(kwargs.get("tables", []))
+        )
 
         self.conditions = base_conditions + conditions
 
@@ -131,8 +131,9 @@ class Collection:
         else:
             # Select the starting table by default.
             assert self.starting_table is not None, (
-                "Collection %s does not define a starting table." %
-                    self.__class__.__name__)
+                "Collection %s does not define a starting table."
+                % self.__class__.__name__
+            )
             values = self.starting_table
 
         return source.find(values, *self.conditions)

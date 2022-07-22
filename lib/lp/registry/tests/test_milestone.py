@@ -3,42 +3,30 @@
 
 """Milestone related test helper."""
 
-from operator import attrgetter
 import unittest
+from operator import attrgetter
 
 from storm.exceptions import NoneError
 from zope.component import getUtility
-from zope.security.checker import (
-    CheckerPublic,
-    getChecker,
-    )
+from zope.security.checker import CheckerPublic, getChecker
 from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.services import IService
-from lp.registry.enums import (
-    SharingPermission,
-    SpecificationSharingPolicy,
-    )
+from lp.registry.enums import SharingPermission, SpecificationSharingPolicy
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.milestone import (
-    IHasMilestones,
-    IMilestoneSet,
-    )
+from lp.registry.interfaces.milestone import IHasMilestones, IMilestoneSet
 from lp.registry.interfaces.product import IProductSet
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     login,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import DoesNotSnapshot
 
 
@@ -56,9 +44,11 @@ class MilestoneTest(unittest.TestCase):
     def testMilestoneSetIterator(self):
         """Test of MilestoneSet.__iter__()."""
         all_milestones_ids = {
-            milestone.id for milestone in getUtility(IMilestoneSet)}
-        self.assertEqual(all_milestones_ids,
-                         {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})
+            milestone.id for milestone in getUtility(IMilestoneSet)
+        }
+        self.assertEqual(
+            all_milestones_ids, {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+        )
 
     def testMilestoneSetGet(self):
         """Test of MilestoneSet.get()"""
@@ -70,7 +60,7 @@ class MilestoneTest(unittest.TestCase):
         """Test of MilestoneSet.getByIds()"""
         milestone_set = getUtility(IMilestoneSet)
         milestones = milestone_set.getByIds([1, 3])
-        ids = sorted(map(attrgetter('id'), milestones))
+        ids = sorted(map(attrgetter("id"), milestones))
         self.assertEqual([1, 3], ids)
 
     def testMilestoneSetGetByIDs_ignores_missing(self):
@@ -79,37 +69,38 @@ class MilestoneTest(unittest.TestCase):
 
     def testMilestoneSetGetByNameAndProduct(self):
         """Test of MilestoneSet.getByNameAndProduct()"""
-        firefox = getUtility(IProductSet).getByName('firefox')
+        firefox = getUtility(IProductSet).getByName("firefox")
         milestone_set = getUtility(IMilestoneSet)
-        milestone = milestone_set.getByNameAndProduct('1.0', firefox)
-        self.assertEqual(milestone.name, '1.0')
+        milestone = milestone_set.getByNameAndProduct("1.0", firefox)
+        self.assertEqual(milestone.name, "1.0")
         self.assertEqual(milestone.target, firefox)
 
         marker = object()
         milestone = milestone_set.getByNameAndProduct(
-            'does not exist', firefox, default=marker)
+            "does not exist", firefox, default=marker
+        )
         self.assertEqual(milestone, marker)
 
     def testMilestoneSetGetByNameAndDistribution(self):
         """Test of MilestoneSet.getByNameAndDistribution()"""
-        debian = getUtility(IDistributionSet).getByName('debian')
+        debian = getUtility(IDistributionSet).getByName("debian")
         milestone_set = getUtility(IMilestoneSet)
-        milestone = milestone_set.getByNameAndDistribution('3.1', debian)
-        self.assertEqual(milestone.name, '3.1')
+        milestone = milestone_set.getByNameAndDistribution("3.1", debian)
+        self.assertEqual(milestone.name, "3.1")
         self.assertEqual(milestone.target, debian)
 
         marker = object()
         milestone = milestone_set.getByNameAndDistribution(
-            'does not exist', debian, default=marker)
+            "does not exist", debian, default=marker
+        )
         self.assertEqual(milestone, marker)
 
     def testMilestoneSetGetVisibleMilestones(self):
         all_visible_milestones_ids = [
             milestone.id
-            for milestone in getUtility(IMilestoneSet).getVisibleMilestones()]
-        self.assertEqual(
-            all_visible_milestones_ids,
-            [1, 2, 3])
+            for milestone in getUtility(IMilestoneSet).getVisibleMilestones()
+        ]
+        self.assertEqual(all_visible_milestones_ids, [1, 2, 3])
 
 
 class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
@@ -121,62 +112,96 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         super().setUp()
         self.public_product = self.factory.makeProduct()
         self.public_milestone = self.factory.makeMilestone(
-            product=self.public_product)
+            product=self.public_product
+        )
         self.proprietary_product_owner = self.factory.makePerson()
         self.proprietary_product = self.factory.makeProduct(
             owner=self.proprietary_product_owner,
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY,
+        )
         self.proprietary_milestone = self.factory.makeMilestone(
-            product=self.proprietary_product)
+            product=self.proprietary_product
+        )
 
     expected_get_permissions = {
         CheckerPublic: {
-            'id', 'checkAuthenticated', 'checkUnauthenticated',
-            'userCanView',
-            },
-        'launchpad.LimitedView': {
-            'displayname', 'name', 'target',  'title'},
-        'launchpad.View': {
-            'active', 'bug_subscriptions', 'bugtasks', 'code_name',
-            'dateexpected', 'distribution', 'distroseries',
-            '_getOfficialTagClause', 'getBugSummaryContextWhereClause',
-            'getBugTaskWeightFunction', 'getSpecifications',
-            'getSubscription', 'getSubscriptions', 'getTags', 'getTagsData',
-            'getUsedBugTagsWithOpenCounts', 'official_bug_tags',
-            'parent_subscription_target', 'product', 'product_release',
-            'productseries', 'searchTasks', 'series_target',
-            'summary', 'target_type_display', 'all_specifications',
-            'userCanAlterBugSubscription', 'userCanAlterSubscription',
-            'userHasBugSubscriptions',
-            },
-        'launchpad.AnyAllowedPerson': {
-            'addBugSubscription', 'addBugSubscriptionFilter',
-            'addSubscription', 'removeBugSubscription',
-            },
-        'launchpad.Edit': {
-            'closeBugsAndBlueprints', 'createProductRelease',
-            'destroySelf', 'setTags',
-            },
-        }
+            "id",
+            "checkAuthenticated",
+            "checkUnauthenticated",
+            "userCanView",
+        },
+        "launchpad.LimitedView": {"displayname", "name", "target", "title"},
+        "launchpad.View": {
+            "active",
+            "bug_subscriptions",
+            "bugtasks",
+            "code_name",
+            "dateexpected",
+            "distribution",
+            "distroseries",
+            "_getOfficialTagClause",
+            "getBugSummaryContextWhereClause",
+            "getBugTaskWeightFunction",
+            "getSpecifications",
+            "getSubscription",
+            "getSubscriptions",
+            "getTags",
+            "getTagsData",
+            "getUsedBugTagsWithOpenCounts",
+            "official_bug_tags",
+            "parent_subscription_target",
+            "product",
+            "product_release",
+            "productseries",
+            "searchTasks",
+            "series_target",
+            "summary",
+            "target_type_display",
+            "all_specifications",
+            "userCanAlterBugSubscription",
+            "userCanAlterSubscription",
+            "userHasBugSubscriptions",
+        },
+        "launchpad.AnyAllowedPerson": {
+            "addBugSubscription",
+            "addBugSubscriptionFilter",
+            "addSubscription",
+            "removeBugSubscription",
+        },
+        "launchpad.Edit": {
+            "closeBugsAndBlueprints",
+            "createProductRelease",
+            "destroySelf",
+            "setTags",
+        },
+    }
 
     def test_get_permissions(self):
         milestone = self.factory.makeMilestone()
         checker = getChecker(milestone)
         self.checkPermissions(
-            self.expected_get_permissions, checker.get_permissions, 'get')
+            self.expected_get_permissions, checker.get_permissions, "get"
+        )
 
     expected_set_permissions = {
-        'launchpad.Edit': {
-            'active', 'code_name', 'dateexpected', 'distroseries', 'name',
-            'product_release', 'productseries', 'summary',
-            },
-        }
+        "launchpad.Edit": {
+            "active",
+            "code_name",
+            "dateexpected",
+            "distroseries",
+            "name",
+            "product_release",
+            "productseries",
+            "summary",
+        },
+    }
 
     def test_set_permissions(self):
         milestone = self.factory.makeMilestone()
         checker = getChecker(milestone)
         self.checkPermissions(
-            self.expected_set_permissions, checker.set_permissions, 'set')
+            self.expected_set_permissions, checker.set_permissions, "set"
+        )
 
     def assertAccessAuthorized(self, attribute_names, obj):
         # Try to access the given attributes of obj. No exception
@@ -225,44 +250,55 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         with person_logged_in(ANONYMOUS):
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.public_milestone)
+                self.public_milestone,
+            )
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.proprietary_milestone)
+                self.proprietary_milestone,
+            )
 
             # They have access to attributes requiring the permission
             # launchpad.View or launchpad.LimitedView of milestones for
             # public products...
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.public_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.public_milestone,
+            )
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.public_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.public_milestone,
+            )
 
             # ...but not to the same attributes of milestones for private
             # products.
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_milestone,
+            )
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.proprietary_milestone,
+            )
 
             # They cannot access other attributes.
             for permission, names in self.expected_get_permissions.items():
-                if permission in (CheckerPublic, 'launchpad.View',
-                                  'launchpad.LimitedView'):
+                if permission in (
+                    CheckerPublic,
+                    "launchpad.View",
+                    "launchpad.LimitedView",
+                ):
                     continue
                 self.assertAccessUnauthorized(names, self.public_milestone)
                 self.assertAccessUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
             # They cannot change any attributes.
             for permission, names in self.expected_set_permissions.items():
                 self.assertChangeUnauthorized(names, self.public_milestone)
                 self.assertChangeUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
     def test_access_for_ordinary_user(self):
         # Regular users have to public attributes of milestones for
@@ -271,52 +307,65 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         with person_logged_in(user):
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.public_milestone)
+                self.public_milestone,
+            )
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.proprietary_milestone)
+                self.proprietary_milestone,
+            )
 
             # They have access to attributes requiring the permission
             # launchpad.View, launchpad.LimitedView or
             # launchpad.AnyAllowedPerson of milestones for public
             # products...
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.public_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.public_milestone,
+            )
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.public_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.public_milestone,
+            )
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.AnyAllowedPerson'],
-                self.public_milestone)
+                self.expected_get_permissions["launchpad.AnyAllowedPerson"],
+                self.public_milestone,
+            )
 
             # ...but not to the same attributes of milestones for private
             # products.
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_milestone,
+            )
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.proprietary_milestone,
+            )
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.AnyAllowedPerson'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.AnyAllowedPerson"],
+                self.proprietary_milestone,
+            )
 
             # They cannot access other attributes.
             for permission, names in self.expected_get_permissions.items():
                 if permission in (
-                    CheckerPublic, 'launchpad.View', 'launchpad.LimitedView',
-                    'launchpad.AnyAllowedPerson'):
+                    CheckerPublic,
+                    "launchpad.View",
+                    "launchpad.LimitedView",
+                    "launchpad.AnyAllowedPerson",
+                ):
                     continue
                 self.assertAccessUnauthorized(names, self.public_milestone)
                 self.assertAccessUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
             # They cannot change attributes.
             for permission, names in self.expected_set_permissions.items():
                 self.assertChangeUnauthorized(names, self.public_milestone)
                 self.assertChangeUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
     def test_access_for_user_with_grant_for_private_product(self):
         # Users with a policy grant for a private product have access
@@ -325,33 +374,37 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         with person_logged_in(self.proprietary_product_owner):
             bug = self.factory.makeBug(
                 target=self.proprietary_product,
-                owner=self.proprietary_product_owner)
+                owner=self.proprietary_product_owner,
+            )
             bug.subscribe(user, subscribed_by=self.proprietary_product_owner)
 
         with person_logged_in(user):
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.proprietary_milestone)
+                self.proprietary_milestone,
+            )
 
             # They have access to attributes requiring the permission
             # launchpad.LimitedView of milestones for the private
             # product.
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.proprietary_milestone,
+            )
 
             # They cannot access other attributes.
             for permission, names in self.expected_get_permissions.items():
-                if permission in (
-                    CheckerPublic, 'launchpad.LimitedView'):
+                if permission in (CheckerPublic, "launchpad.LimitedView"):
                     continue
                 self.assertAccessUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
             # They cannot change attributes.
             for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
     def test_access_for_user_with_artifact_grant_for_private_product(self):
         # Users with an artifact grant for a private product have access
@@ -359,42 +412,54 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         # milestones for the private product.
         user = self.factory.makePerson()
         with person_logged_in(self.proprietary_product_owner):
-            getUtility(IService, 'sharing').sharePillarInformation(
-                self.proprietary_product, user, self.proprietary_product_owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, "sharing").sharePillarInformation(
+                self.proprietary_product,
+                user,
+                self.proprietary_product_owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
 
         with person_logged_in(user):
             self.assertAccessAuthorized(
                 self.expected_get_permissions[CheckerPublic],
-                self.proprietary_milestone)
+                self.proprietary_milestone,
+            )
 
             # They have access to attributes requiring the permission
             # launchpad.View, launchpad.LimitedView or
             # launchpad.AnyAllowedPerson of milestones for the private
             # product.
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_milestone,
+            )
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.LimitedView'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.LimitedView"],
+                self.proprietary_milestone,
+            )
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.AnyAllowedPerson'],
-                self.proprietary_milestone)
+                self.expected_get_permissions["launchpad.AnyAllowedPerson"],
+                self.proprietary_milestone,
+            )
 
             # They cannot access other attributes.
             for permission, names in self.expected_get_permissions.items():
                 if permission in (
-                    CheckerPublic, 'launchpad.View', 'launchpad.LimitedView',
-                    'launchpad.AnyAllowedPerson'):
+                    CheckerPublic,
+                    "launchpad.View",
+                    "launchpad.LimitedView",
+                    "launchpad.AnyAllowedPerson",
+                ):
                     continue
                 self.assertAccessUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
             # They cannot change attributes.
             for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(
-                    names, self.proprietary_milestone)
+                    names, self.proprietary_milestone
+                )
 
     def test_access_for_product_owner(self):
         # The owner of a private product can access all attributes.
@@ -424,9 +489,9 @@ class HasMilestonesSnapshotTestCase(TestCaseWithFactory):
     def check_skipped(self, target):
         """Asserts that fields marked doNotSnapshot are skipped."""
         skipped = [
-            'milestones',
-            'all_milestones',
-            ]
+            "milestones",
+            "all_milestones",
+        ]
         self.assertThat(target, DoesNotSnapshot(skipped, IHasMilestones))
 
     def test_product(self):
@@ -447,8 +512,7 @@ class HasMilestonesSnapshotTestCase(TestCaseWithFactory):
 
 
 class MilestoneBugTaskSpecificationTest(TestCaseWithFactory):
-    """Test cases for retrieving bugtasks and specifications for a milestone.
-    """
+    """Test retrieving bugtasks and specifications for a milestone."""
 
     layer = DatabaseFunctionalLayer
 
@@ -459,7 +523,7 @@ class MilestoneBugTaskSpecificationTest(TestCaseWithFactory):
         self.milestone = self.factory.makeMilestone(product=self.product)
 
     def _make_bug(self, **kwargs):
-        milestone = kwargs.pop('milestone', None)
+        milestone = kwargs.pop("milestone", None)
         bugtask = self.factory.makeBugTask(**kwargs)
         bugtask.milestone = milestone
         return bugtask
@@ -474,23 +538,26 @@ class MilestoneBugTaskSpecificationTest(TestCaseWithFactory):
     def test_bugtask_retrieval(self):
         # Ensure that all bugtasks on a milestone can be retrieved.
         bugtasks = self._create_items(
-            5, self._make_bug,
+            5,
+            self._make_bug,
             milestone=self.milestone,
             owner=self.owner,
             target=self.product,
-            )
+        )
         self.assertContentEqual(bugtasks, self.milestone.bugtasks(self.owner))
 
     def test_specification_retrieval(self):
         # Ensure that all specifications on a milestone can be retrieved.
         specifications = self._create_items(
-            5, self.factory.makeSpecification,
+            5,
+            self.factory.makeSpecification,
             milestone=self.milestone,
             owner=self.owner,
             product=self.product,
-            )
-        self.assertContentEqual(specifications,
-                                self.milestone.getSpecifications(None))
+        )
+        self.assertContentEqual(
+            specifications, self.milestone.getSpecifications(None)
+        )
 
 
 class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
@@ -507,26 +574,33 @@ class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
         other_milestone = self.factory.makeMilestone(**kwargs)
         target_milestone = self.factory.makeMilestone(**kwargs)
         specification = self.factory.makeSpecification(
-            milestone=other_milestone, **kwargs)
+            milestone=other_milestone, **kwargs
+        )
         # Create two workitems to ensure this doesn't cause
         # two specifications to be returned.
         self.factory.makeSpecificationWorkItem(
-            specification=specification, milestone=target_milestone)
+            specification=specification, milestone=target_milestone
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=specification, milestone=target_milestone)
+            specification=specification, milestone=target_milestone
+        )
         return specification, target_milestone
 
     def test_milestones_on_product(self):
         spec, target_milestone = self._create_milestones_on_target(
-            product=self.factory.makeProduct())
-        self.assertContentEqual([spec],
-                                target_milestone.getSpecifications(None))
+            product=self.factory.makeProduct()
+        )
+        self.assertContentEqual(
+            [spec], target_milestone.getSpecifications(None)
+        )
 
     def test_milestones_on_distribution(self):
         spec, target_milestone = self._create_milestones_on_target(
-            distribution=self.factory.makeDistribution())
-        self.assertContentEqual([spec],
-                                target_milestone.getSpecifications(None))
+            distribution=self.factory.makeDistribution()
+        )
+        self.assertContentEqual(
+            [spec], target_milestone.getSpecifications(None)
+        )
 
     def test_milestones_on_project_group(self):
         # A Project Group milestone contains all specifications targetted to
@@ -534,7 +608,8 @@ class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
         projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(projectgroup=projectgroup)
         spec, target_milestone = self._create_milestones_on_target(
-            product=product)
+            product=product
+        )
         milestone = projectgroup.getMilestone(name=target_milestone.name)
         self.assertContentEqual([spec], milestone.getSpecifications(None))
 
@@ -544,10 +619,13 @@ class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
         public_product = self.factory.makeProduct(projectgroup=projectgroup)
         public_milestone = self.factory.makeMilestone(product=public_product)
         product = self.factory.makeProduct(
-            owner=owner, information_type=InformationType.PROPRIETARY,
-            projectgroup=projectgroup)
+            owner=owner,
+            information_type=InformationType.PROPRIETARY,
+            projectgroup=projectgroup,
+        )
         target_milestone = self.factory.makeMilestone(
-            product=product, name=public_milestone.name)
+            product=product, name=public_milestone.name
+        )
         milestone = projectgroup.getMilestone(name=public_milestone.name)
         return milestone, target_milestone, owner
 
@@ -562,35 +640,37 @@ class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
         milestone, target_milestone, owner = self.makeMixedMilestone()
         with person_logged_in(owner):
             spec = self.factory.makeSpecification(milestone=target_milestone)
-        self.assertContentEqual([],
-                                milestone.getSpecifications(None))
-        self.assertContentEqual([spec],
-                                milestone.getSpecifications(owner))
+        self.assertContentEqual([], milestone.getSpecifications(None))
+        self.assertContentEqual([spec], milestone.getSpecifications(owner))
 
     def test_getSpecifications_specification_privacy(self):
         # Only specifications visible to the specified user are listed.
         owner = self.factory.makePerson()
         enum = SpecificationSharingPolicy
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=enum.PROPRIETARY)
+            owner=owner, specification_sharing_policy=enum.PROPRIETARY
+        )
         milestone = self.factory.makeMilestone(product=product)
         specification = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY,
-            milestone=milestone)
-        self.assertIn(
-            specification, list(milestone.getSpecifications(owner)))
+            information_type=InformationType.PROPRIETARY, milestone=milestone
+        )
+        self.assertIn(specification, list(milestone.getSpecifications(owner)))
         self.assertNotIn(
-            specification, list(milestone.getSpecifications(None)))
+            specification, list(milestone.getSpecifications(None))
+        )
 
     def test_milestones_with_deleted_workitems(self):
         # Deleted work items do not cause the specification to show up
         # in the milestone page.
         milestone = self.factory.makeMilestone(
-            product=self.factory.makeProduct())
+            product=self.factory.makeProduct()
+        )
         specification = self.factory.makeSpecification(
-            product=milestone.product)
+            product=milestone.product
+        )
         self.factory.makeSpecificationWorkItem(
-            specification=specification, milestone=milestone, deleted=True)
+            specification=specification, milestone=milestone, deleted=True
+        )
         self.assertContentEqual([], milestone.getSpecifications(None))
 
 
@@ -604,12 +684,13 @@ class TestMilestoneInformationType(TestCaseWithFactory):
         owner = self.factory.makePerson()
         information_type = InformationType.PROPRIETARY
         product = self.factory.makeProduct(
-            owner=owner, information_type=information_type)
+            owner=owner, information_type=information_type
+        )
         milestone = self.factory.makeMilestone(product=product)
         with person_logged_in(owner):
             self.assertEqual(
-                IInformationType(milestone).information_type,
-                information_type)
+                IInformationType(milestone).information_type, information_type
+            )
 
 
 class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
@@ -622,17 +703,20 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         project_group = self.factory.makeProject()
         public_product = self.factory.makeProduct(projectgroup=project_group)
         self.factory.makeMilestone(
-            product=public_product, name='public-milestone')
+            product=public_product, name="public-milestone"
+        )
         self.proprietary_product_owner = self.factory.makePerson()
         self.proprietary_product = self.factory.makeProduct(
             projectgroup=project_group,
             owner=self.proprietary_product_owner,
-            information_type=InformationType.PROPRIETARY)
+            information_type=InformationType.PROPRIETARY,
+        )
         self.factory.makeMilestone(
-            product=self.proprietary_product, name='proprietary-milestone')
+            product=self.proprietary_product, name="proprietary-milestone"
+        )
         with person_logged_in(self.proprietary_product_owner):
             milestone_1, milestone_2 = project_group.milestones
-            if milestone_1.name == 'public-milestone':
+            if milestone_1.name == "public-milestone":
                 self.public_projectgroup_milestone = milestone_1
                 self.proprietary_projectgroup_milestone = milestone_2
             else:
@@ -640,35 +724,62 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
                 self.proprietary_projectgroup_milestone = milestone_1
 
     expected_get_permissions = {
-        'launchpad.View': {
-            '_getOfficialTagClause', 'active', 'addBugSubscription',
-            'addBugSubscriptionFilter', 'addSubscription',
-            'bug_subscriptions', 'bugtasks', 'closeBugsAndBlueprints',
-            'code_name', 'createProductRelease', 'dateexpected',
-            'destroySelf', 'displayname', 'distribution', 'distroseries',
-            'getBugTaskWeightFunction', 'getSpecifications',
-            'getSubscription', 'getSubscriptions', 'all_specifications',
-            'getUsedBugTagsWithOpenCounts', 'id', 'name',
-            'official_bug_tags', 'parent_subscription_target', 'product',
-            'product_release', 'productseries', 'removeBugSubscription',
-            'searchTasks', 'series_target', 'summary', 'target',
-            'target_type_display', 'title', 'userCanAlterBugSubscription',
-            'userCanAlterSubscription', 'userHasBugSubscriptions'},
-        }
+        "launchpad.View": {
+            "_getOfficialTagClause",
+            "active",
+            "addBugSubscription",
+            "addBugSubscriptionFilter",
+            "addSubscription",
+            "bug_subscriptions",
+            "bugtasks",
+            "closeBugsAndBlueprints",
+            "code_name",
+            "createProductRelease",
+            "dateexpected",
+            "destroySelf",
+            "displayname",
+            "distribution",
+            "distroseries",
+            "getBugTaskWeightFunction",
+            "getSpecifications",
+            "getSubscription",
+            "getSubscriptions",
+            "all_specifications",
+            "getUsedBugTagsWithOpenCounts",
+            "id",
+            "name",
+            "official_bug_tags",
+            "parent_subscription_target",
+            "product",
+            "product_release",
+            "productseries",
+            "removeBugSubscription",
+            "searchTasks",
+            "series_target",
+            "summary",
+            "target",
+            "target_type_display",
+            "title",
+            "userCanAlterBugSubscription",
+            "userCanAlterSubscription",
+            "userHasBugSubscriptions",
+        },
+    }
 
     def test_get_permissions(self):
         checker = getChecker(self.public_projectgroup_milestone)
         self.checkPermissions(
-            self.expected_get_permissions, checker.get_permissions, 'get')
+            self.expected_get_permissions, checker.get_permissions, "get"
+        )
 
     # Project milestones are read-only objects, so no set permissions.
-    expected_set_permissions = {
-        }
+    expected_set_permissions = {}
 
     def test_set_permissions(self):
         checker = getChecker(self.public_projectgroup_milestone)
         self.checkPermissions(
-            self.expected_set_permissions, checker.set_permissions, 'set')
+            self.expected_set_permissions, checker.set_permissions, "set"
+        )
 
     def assertAccessAuthorized(self, attribute_names, obj):
         # Try to access the given attributes of obj. No exception
@@ -693,45 +804,54 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         # Anonymous users have access to public project group milestones.
         with person_logged_in(ANONYMOUS):
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.public_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.public_projectgroup_milestone,
+            )
 
             # ...but not to private project group milestones.
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_projectgroup_milestone,
+            )
 
     def test_access_for_ordinary_user(self):
         # Regular users have to public project group milestones.
         user = self.factory.makePerson()
         with person_logged_in(user):
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.public_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.public_projectgroup_milestone,
+            )
 
             # ...but not to private project group milestones.
             self.assertAccessUnauthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_projectgroup_milestone,
+            )
 
     def test_access_for_user_with_grant_for_private_product(self):
         # Users with a policy grant for a private product have access
         # to private project group milestones.
         user = self.factory.makePerson()
         with person_logged_in(self.proprietary_product_owner):
-            getUtility(IService, 'sharing').sharePillarInformation(
-                self.proprietary_product, user, self.proprietary_product_owner,
-                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, "sharing").sharePillarInformation(
+                self.proprietary_product,
+                user,
+                self.proprietary_product_owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL},
+            )
 
         with person_logged_in(user):
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_projectgroup_milestone,
+            )
 
     def test_access_for_product_owner(self):
         # The owner of a private product can access a rpivate project group
         # milestone.
         with person_logged_in(self.proprietary_product_owner):
             self.assertAccessAuthorized(
-                self.expected_get_permissions['launchpad.View'],
-                self.proprietary_projectgroup_milestone)
+                self.expected_get_permissions["launchpad.View"],
+                self.proprietary_projectgroup_milestone,
+            )

@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'OrderingCheck',
-    ]
+    "OrderingCheck",
+]
 
 
 class OrderingCheck:
@@ -14,6 +14,7 @@ class OrderingCheck:
     you expect are reported to a customizable failure handler; it raises
     an error by default.
     """
+
     def __init__(self, **kwargs):
         """Define an ordering.  Parameters are as for sorted()."""
         self.ordering = kwargs
@@ -43,5 +44,6 @@ class OrderingCheck:
         Default action is to raise an assertion error.
         """
         raise AssertionError(
-            "Unexpected ordering at item %d: %s should come before %s." % (
-                self.item_count, repr(item), repr(self.last_item)))
+            "Unexpected ordering at item %d: %s should come before %s."
+            % (self.item_count, repr(item), repr(self.last_item))
+        )

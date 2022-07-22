@@ -4,15 +4,12 @@
 """Classes related to OpenID discovery."""
 
 __all__ = [
-    'XRDSContentNegotiationMixin',
-    ]
+    "XRDSContentNegotiationMixin",
+]
 
-from openid.yadis.accept import getAcceptable
-from openid.yadis.constants import (
-    YADIS_CONTENT_TYPE,
-    YADIS_HEADER_NAME,
-    )
 import six
+from openid.yadis.accept import getAcceptable
+from openid.yadis.constants import YADIS_CONTENT_TYPE, YADIS_HEADER_NAME
 
 from lp.services.openid.adapters.openid import CurrentOpenIDEndPoint
 from lp.services.propertycache import cachedproperty
@@ -26,16 +23,16 @@ class XRDSContentNegotiationMixin:
 
     def xrds(self):
         """Render the XRDS document for this content object."""
-        self.request.response.setHeader('Content-Type', YADIS_CONTENT_TYPE)
+        self.request.response.setHeader("Content-Type", YADIS_CONTENT_TYPE)
         data = self.xrds_template()
-        return data.encode('utf-8')
+        return data.encode("utf-8")
 
     def _getURL(self):
         """Return the URL as sent by the browser."""
-        url = self.request.getApplicationURL() + self.request['PATH_INFO']
-        query_string = self.request.get('QUERY_STRING', '')
+        url = self.request.getApplicationURL() + self.request["PATH_INFO"]
+        query_string = self.request.get("QUERY_STRING", "")
         if query_string:
-            url += '?' + query_string
+            url += "?" + query_string
         return url
 
     def render(self):
@@ -48,31 +45,35 @@ class XRDSContentNegotiationMixin:
         expected_url = canonical_url(self.context)
         if current_url != expected_url:
             self.request.response.redirect(expected_url)
-            return ''
+            return ""
 
         if self.enable_xrds_discovery:
             # Tell the user agent that we do different things depending on
             # the value of the "Accept" header.
-            self.request.response.setHeader('Vary', 'Accept')
+            self.request.response.setHeader("Vary", "Accept")
 
             accept_content = six.ensure_text(
-                self.request.get('HTTP_ACCEPT', ''), encoding='ISO-8859-1')
-            acceptable = getAcceptable(accept_content,
-                                       ['text/html', YADIS_CONTENT_TYPE])
+                self.request.get("HTTP_ACCEPT", ""), encoding="ISO-8859-1"
+            )
+            acceptable = getAcceptable(
+                accept_content, ["text/html", YADIS_CONTENT_TYPE]
+            )
             # Return the XRDS document if it is preferred to text/html.
             for mtype in acceptable:
-                if mtype == 'text/html':
+                if mtype == "text/html":
                     break
                 elif mtype == YADIS_CONTENT_TYPE:
                     return self.xrds()
                 else:
                     raise AssertionError(
-                        'Unexpected acceptable content type: %s' % mtype)
+                        "Unexpected acceptable content type: %s" % mtype
+                    )
 
             # Add a header pointing to the location of the XRDS document
             # and chain to the default render() method.
             self.request.response.setHeader(
-                YADIS_HEADER_NAME, '%s/+xrds' % canonical_url(self.context))
+                YADIS_HEADER_NAME, "%s/+xrds" % canonical_url(self.context)
+            )
         return super().render()
 
     @cachedproperty

@@ -4,34 +4,26 @@
 """Helper functions for testing feeds."""
 
 __all__ = [
-    'IThing',
-    'parse_entries',
-    'parse_ids',
-    'parse_links',
-    'Thing',
-    'ThingFeedView',
-    ]
+    "IThing",
+    "parse_entries",
+    "parse_ids",
+    "parse_links",
+    "Thing",
+    "ThingFeedView",
+]
 
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from zope.interface import Attribute, Interface, implementer
 
-from lp.services.beautifulsoup import (
-    BeautifulSoup,
-    SoupStrainer,
-    )
+from lp.services.beautifulsoup import BeautifulSoup, SoupStrainer
 from lp.services.webapp.publisher import LaunchpadView
 
 
 class IThing(Interface):
-    value = Attribute('the value of the thing')
+    value = Attribute("the value of the thing")
 
 
 @implementer(IThing)
 class Thing:
-
     def __init__(self, value):
         self.value = value
 
@@ -49,22 +41,24 @@ class ThingFeedView(LaunchpadView):
 
 def parse_entries(contents):
     """Define a helper function for parsing feed entries."""
-    strainer = SoupStrainer('entry')
+    strainer = SoupStrainer("entry")
     entries = [
-        tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
+        tag for tag in BeautifulSoup(contents, "xml", parse_only=strainer)
+    ]
     return entries
 
 
 def parse_links(contents, rel):
     """Define a helper function for parsing feed links."""
-    strainer = SoupStrainer('link', rel=rel)
+    strainer = SoupStrainer("link", rel=rel)
     entries = [
-        tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
+        tag for tag in BeautifulSoup(contents, "xml", parse_only=strainer)
+    ]
     return entries
 
 
 def parse_ids(contents):
     """Define a helper function for parsing ids."""
-    strainer = SoupStrainer('id')
-    ids = [tag for tag in BeautifulSoup(contents, 'xml', parse_only=strainer)]
+    strainer = SoupStrainer("id")
+    ids = [tag for tag in BeautifulSoup(contents, "xml", parse_only=strainer)]
     return ids

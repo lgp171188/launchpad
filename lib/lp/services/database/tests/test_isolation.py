@@ -3,9 +3,9 @@
 
 """Tests of the isolation module."""
 
+import transaction
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 from storm.zope.interfaces import IZStorm
-import transaction
 from zope.component import getUtility
 
 from lp.services.database import isolation
@@ -25,7 +25,7 @@ class TestIsolation(TestCase):
         # for these tests, so execute a query in every store; one of them will
         # have a transactional state.
         for store in stores:
-            store.execute('SELECT 1')
+            store.execute("SELECT 1")
 
     def test_gen_store_statuses(self):
         # All stores are either disconnected or idle when all
@@ -38,8 +38,11 @@ class TestIsolation(TestCase):
         # begun.
         self.createTransaction()
         self.assertTrue(
-            any(status not in (None, TRANSACTION_STATUS_IDLE)
-                for _, status in isolation.gen_store_statuses()))
+            any(
+                status not in (None, TRANSACTION_STATUS_IDLE)
+                for _, status in isolation.gen_store_statuses()
+            )
+        )
 
     def test_is_transaction_in_progress(self):
         # is_transaction_in_progress() returns False when all
@@ -60,8 +63,8 @@ class TestIsolation(TestCase):
         # transaction has begun.
         self.createTransaction()
         self.assertRaises(
-            isolation.TransactionInProgress,
-            isolation.check_no_transaction)
+            isolation.TransactionInProgress, isolation.check_no_transaction
+        )
 
     def test_ensure_no_transaction(self):
         # ensure_no_transaction() is a decorator that raises
@@ -70,12 +73,13 @@ class TestIsolation(TestCase):
         @isolation.ensure_no_transaction
         def echo(*args, **kwargs):
             return args, kwargs
+
         # echo() will just return the given args no transaction is in
         # progress.
         transaction.abort()
         self.assertEqual(
-            ((1, 2, 3), {'a': 4, 'b': 5, 'c': 6}),
-            echo(1, 2, 3, a=4, b=5, c=6))
+            ((1, 2, 3), {"a": 4, "b": 5, "c": 6}), echo(1, 2, 3, a=4, b=5, c=6)
+        )
         # echo() will break with TransactionInProgress when a
         # transaction has begun.
         self.createTransaction()

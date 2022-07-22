@@ -15,23 +15,26 @@ class PillarNameTriggersTestCase(unittest.TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        switch_dbuser('testadmin')
+        switch_dbuser("testadmin")
 
     def testDistributionTable(self):
         cur = cursor()
 
         # Ensure our sample data is valid and that each Distribution.name
         # has a corresponding entry in PillarName.name
-        cur.execute("""
+        cur.execute(
+            """
             SELECT COUNT(*)
             FROM Distribution FULL OUTER JOIN PillarName
                 ON Distribution.id = PillarName.distribution
             WHERE Distribution.name != PillarName.name
-            """)
+            """
+        )
         self.assertEqual(cur.fetchone()[0], 0)
 
         def is_in_sync(name):
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT COUNT(*)
                 FROM Distribution, PillarName
                 WHERE Distribution.id = PillarName.distribution
@@ -39,11 +42,14 @@ class PillarNameTriggersTestCase(unittest.TestCase):
                     AND PillarName.product IS NULL
                     AND PillarName.project IS NULL
                     AND Distribution.name = %(name)s
-                """, dict(name=name))
+                """,
+                dict(name=name),
+            )
             return cur.fetchone()[0] == 1
 
         # Inserting a new Distribution will populate PillarName
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO Distribution (
                 name, description, domainname, owner, registrant,
                 displayname, summary, title, members, mirror_admin
@@ -52,21 +58,26 @@ class PillarNameTriggersTestCase(unittest.TestCase):
                     'whatever', 'whatever', 'whatever', 1, 1,
                     'whatever', 'whatever', 'whatever', 1, 1
                     )
-            """)
-        self.assertTrue(is_in_sync('whatever'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever"))
 
         # Updating the Distribution.name will propogate changes to PillarName
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Distribution SET name='whatever2' where name='whatever'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Updating other fields won't do any harm.
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Distribution SET description='whatever2'
             WHERE name='whatever2'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Deleting a Distribution removes the corresponding entry in
         # PillarName
@@ -79,16 +90,19 @@ class PillarNameTriggersTestCase(unittest.TestCase):
 
         # Ensure our sample data is valid and that each Product.name
         # has a corresponding entry in PillarName.name
-        cur.execute("""
+        cur.execute(
+            """
             SELECT COUNT(*)
             FROM Product FULL OUTER JOIN PillarName
                 ON Product.id = PillarName.product
             WHERE Product.name != PillarName.name
-            """)
+            """
+        )
         self.assertEqual(cur.fetchone()[0], 0)
 
         def is_in_sync(name):
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT COUNT(*)
                 FROM Product, PillarName
                 WHERE Product.id = PillarName.product
@@ -96,31 +110,39 @@ class PillarNameTriggersTestCase(unittest.TestCase):
                     AND PillarName.distribution IS NULL
                     AND PillarName.project IS NULL
                     AND Product.name = %(name)s
-                """, dict(name=name))
+                """,
+                dict(name=name),
+            )
             return cur.fetchone()[0] == 1
 
         # Inserting a new Product will populate PillarName
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO Product (
                 owner, registrant, name, displayname, title, summary)
             VALUES (
                 1, 1, 'whatever', 'whatever', 'whatever', 'whatever'
                 )
-            """)
-        self.assertTrue(is_in_sync('whatever'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever"))
 
         # Updating the Product.name will propogate changes to PillarName
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Product SET name='whatever2' where name='whatever'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Updating other fields won't do any harm.
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Product SET summary='whatever2'
             WHERE name='whatever2'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Deleting a Product removes the corresponding entry in PillarName
         cur.execute("DELETE FROM Product WHERE name='whatever2'")
@@ -132,16 +154,19 @@ class PillarNameTriggersTestCase(unittest.TestCase):
 
         # Ensure our sample data is valid and that each Project.name
         # has a corresponding entry in PillarName.name
-        cur.execute("""
+        cur.execute(
+            """
             SELECT COUNT(*)
             FROM Project FULL OUTER JOIN PillarName
                 ON Project.id = PillarName.project
             WHERE Project.name != PillarName.name
-            """)
+            """
+        )
         self.assertEqual(cur.fetchone()[0], 0)
 
         def is_in_sync(name):
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT COUNT(*)
                 FROM Project, PillarName
                 WHERE Project.id = PillarName.project
@@ -149,11 +174,14 @@ class PillarNameTriggersTestCase(unittest.TestCase):
                     AND PillarName.product IS NULL
                     AND PillarName.distribution IS NULL
                     AND Project.name = %(name)s
-                """, dict(name=name))
+                """,
+                dict(name=name),
+            )
             return cur.fetchone()[0] == 1
 
         # Inserting a new ProjectGroup will populate PillarName
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO Project (
                 name, owner, registrant, displayname, title, summary,
                 description
@@ -162,21 +190,26 @@ class PillarNameTriggersTestCase(unittest.TestCase):
                     'whatever', 1, 1, 'whatever', 'whatever',
                     'whatever', 'whatever'
                     )
-            """)
-        self.assertTrue(is_in_sync('whatever'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever"))
 
         # Updating the ProjectGroup.name will propogate changes to PillarName
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Project SET name='whatever2' where name='whatever'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Updating other fields won't do any harm.
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE Project SET description='whatever2'
             WHERE name='whatever2'
-            """)
-        self.assertTrue(is_in_sync('whatever2'))
+            """
+        )
+        self.assertTrue(is_in_sync("whatever2"))
 
         # Deleting a ProjectGroup removes the corresponding entry in
         # PillarName.

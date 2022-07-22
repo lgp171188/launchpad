@@ -3,7 +3,7 @@
 
 """Statsd client wrapper with Launchpad configuration"""
 
-__all__ = ['StatsdClient']
+__all__ = ["StatsdClient"]
 
 import re
 
@@ -12,7 +12,6 @@ from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
-
 
 client = None
 
@@ -33,7 +32,8 @@ class StatsdClient:
             self._client = StatsClient(
                 host=config.statsd.host,
                 port=config.statsd.port,
-                prefix=config.statsd.prefix)
+                prefix=config.statsd.prefix,
+            )
         else:
             self._client = None
 
@@ -59,19 +59,24 @@ class StatsdClient:
             labels = {}
         elements = [self._escapeMeasurement(name)]
         for key, value in sorted(labels.items()):
-            elements.append("{}={}".format(
-                self._escapeTag(key), self._escapeTag(str(value))))
+            elements.append(
+                "{}={}".format(
+                    self._escapeTag(key), self._escapeTag(str(value))
+                )
+            )
         return ",".join(elements)
 
     def __getattr__(self, name):
         if self._client is not None:
             wrapped = getattr(self._client, name)
             if name in ("timer", "timing", "incr", "decr", "gauge", "set"):
+
                 def wrapper(stat, *args, **kwargs):
                     labels = kwargs.pop("labels", None) or {}
                     labels["env"] = config.statsd.environment
                     return wrapped(
-                        self.composeMetric(stat, labels), *args, **kwargs)
+                        self.composeMetric(stat, labels), *args, **kwargs
+                    )
 
                 return wrapper
             else:

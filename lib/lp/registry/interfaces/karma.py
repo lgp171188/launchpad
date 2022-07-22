@@ -4,29 +4,20 @@
 """Karma interfaces."""
 
 __all__ = [
-    'IKarma',
-    'IKarmaAction',
-    'IKarmaActionSet',
-    'IKarmaAssignedEvent',
-    'IKarmaCache',
-    'IKarmaCacheManager',
-    'IKarmaTotalCache',
-    'IKarmaCategory',
-    'IKarmaContext',
-    ]
+    "IKarma",
+    "IKarmaAction",
+    "IKarmaActionSet",
+    "IKarmaAssignedEvent",
+    "IKarmaCache",
+    "IKarmaCacheManager",
+    "IKarmaTotalCache",
+    "IKarmaCategory",
+    "IKarmaContext",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.interface.interfaces import IObjectEvent
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Choice, Datetime, Int, Text, TextLine
 
 from lp import _
 
@@ -37,16 +28,24 @@ class IKarma(Interface):
     id = Int(title=_("Database ID"), required=True, readonly=True)
 
     person = Int(
-        title=_("Person"), required=True, readonly=True,
-        description=_("The user which this karma is assigned to."))
+        title=_("Person"),
+        required=True,
+        readonly=True,
+        description=_("The user which this karma is assigned to."),
+    )
 
     action = Int(
-        title=_("Action"), required=True,
-        description=_("The action which gives the karma to the user."))
+        title=_("Action"),
+        required=True,
+        description=_("The action which gives the karma to the user."),
+    )
 
     datecreated = Datetime(
-        title=_("Date Created"), required=True, readonly=True,
-        description=_("The date this karma was assigned to the user."))
+        title=_("Date Created"),
+        required=True,
+        readonly=True,
+        description=_("The date this karma was assigned to the user."),
+    )
 
     product = Attribute(_("Project"))
 
@@ -59,23 +58,30 @@ class IKarmaAction(Interface):
     """The Action that gives karma to a Person."""
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
-    name = TextLine(
-        title=_("Name"), required=True, readonly=False)
+    name = TextLine(title=_("Name"), required=True, readonly=False)
     category = Choice(
-        title=_("Category"), required=True, readonly=False,
-        vocabulary='KarmaCategory')
+        title=_("Category"),
+        required=True,
+        readonly=False,
+        vocabulary="KarmaCategory",
+    )
     title = TextLine(title=_("Title"), required=True)
     summary = Text(title=_("Summary"), required=True)
     points = Int(
-        title=_("Points"), required=True, readonly=False,
-        description=_("The number of points we give to a user which performs "
-                      "this action."))
+        title=_("Points"),
+        required=True,
+        readonly=False,
+        description=_(
+            "The number of points we give to a user which performs "
+            "this action."
+        ),
+    )
 
 
 class IKarmaActionSet(Interface):
     """The set of actions that gives karma to a Person."""
 
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     def __iter__():
         """Iterate over all Karma Actions."""
@@ -113,18 +119,31 @@ class IKarmaCache(Interface):
     """
 
     person = Int(
-        title=_("Person"), required=True, readonly=True,
-        description=_("The person which performed the actions of this "
-                      "category, and thus got the karma."))
+        title=_("Person"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The person which performed the actions of this "
+            "category, and thus got the karma."
+        ),
+    )
 
     category = Choice(
-        title=_("Category"), required=False, readonly=True,
-        vocabulary='KarmaCategory')
+        title=_("Category"),
+        required=False,
+        readonly=True,
+        vocabulary="KarmaCategory",
+    )
 
     karmavalue = Int(
-        title=_("Karma Points"), required=True, readonly=True,
-        description=_("The karma points of all actions of this category "
-                      "performed by this person."))
+        title=_("Karma Points"),
+        required=True,
+        readonly=True,
+        description=_(
+            "The karma points of all actions of this category "
+            "performed by this person."
+        ),
+    )
 
     product = Attribute(_("Project"))
 
@@ -136,18 +155,30 @@ class IKarmaCache(Interface):
 
 
 class IKarmaCacheManager(Interface):
-
-    def new(value, person_id, category_id, product_id=None,
-            distribution_id=None, sourcepackagename_id=None, project_id=None):
+    def new(
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        project_id=None,
+    ):
         """Create and return a new KarmaCache.
 
         We expect the objects IDs (instead of the real objects) here because
         foaf-update-karma-cache.py (our only client) only has them.
         """
 
-    def updateKarmaValue(value, person_id, category_id, product_id=None,
-                         distribution_id=None, sourcepackagename_id=None,
-                         projectgroup_id=None):
+    def updateKarmaValue(
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """Update the karmavalue attribute of the KarmaCache with the given
         person_id, category_id, product_id, distribution_id,
         sourcepackagename_id, and projectgroup_id.
@@ -165,14 +196,18 @@ class IKarmaTotalCache(Interface):
     id = Int(title=_("Database ID"), required=True, readonly=True)
 
     person = Int(
-            title=_("Person"), required=True, readonly=True,
-            description=_("The person who has the karma.")
-            )
+        title=_("Person"),
+        required=True,
+        readonly=True,
+        description=_("The person who has the karma."),
+    )
 
     karma_total = Int(
-            title=_("Karma"), required=True, readonly=True,
-            description=_("The total karma points scored by the person.")
-            )
+        title=_("Karma"),
+        required=True,
+        readonly=True,
+        description=_("The total karma points scored by the person."),
+    )
 
 
 class IKarmaCategory(Interface):

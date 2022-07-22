@@ -17,6 +17,11 @@ def test_suite():
     # We run this test on the AppServerLayer because it needs the cookie login
     # page (+login), which cannot be used through the normal testbrowser that
     # goes straight to zope's publication instead of making HTTP requests.
-    suite.addTest(LayeredDocFileSuite(
-        'no-anonymous-session-cookies.rst', setUp=setUp, layer=AppServerLayer))
+    suite.addTest(
+        LayeredDocFileSuite(
+            "no-anonymous-session-cookies.rst",
+            setUp=setUp,
+            layer=AppServerLayer,
+        )
+    )
     return suite

@@ -2,53 +2,48 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'block_implicit_flushes',
-    'clear_current_connection_cache',
-    'connect',
-    'convert_storm_clause_to_string',
-    'cursor',
-    'disconnect_stores',
-    'flush_database_caches',
-    'flush_database_updates',
-    'get_transaction_timestamp',
-    'ISOLATION_LEVEL_AUTOCOMMIT',
-    'ISOLATION_LEVEL_DEFAULT',
-    'ISOLATION_LEVEL_READ_COMMITTED',
-    'ISOLATION_LEVEL_REPEATABLE_READ',
-    'ISOLATION_LEVEL_SERIALIZABLE',
-    'quote',
-    'quoteIdentifier',
-    'quote_identifier',
-    'reset_store',
-    'session_store',
-    'SQLBase',
-    'sqlvalues',
-    'StupidCache',
-    ]
+    "block_implicit_flushes",
+    "clear_current_connection_cache",
+    "connect",
+    "convert_storm_clause_to_string",
+    "cursor",
+    "disconnect_stores",
+    "flush_database_caches",
+    "flush_database_updates",
+    "get_transaction_timestamp",
+    "ISOLATION_LEVEL_AUTOCOMMIT",
+    "ISOLATION_LEVEL_DEFAULT",
+    "ISOLATION_LEVEL_READ_COMMITTED",
+    "ISOLATION_LEVEL_REPEATABLE_READ",
+    "ISOLATION_LEVEL_SERIALIZABLE",
+    "quote",
+    "quoteIdentifier",
+    "quote_identifier",
+    "reset_store",
+    "session_store",
+    "SQLBase",
+    "sqlvalues",
+    "StupidCache",
+]
 
 
 from datetime import datetime
 
 import psycopg2
+import pytz
+import storm
+import transaction
 from psycopg2.extensions import (
     ISOLATION_LEVEL_AUTOCOMMIT,
     ISOLATION_LEVEL_READ_COMMITTED,
     ISOLATION_LEVEL_REPEATABLE_READ,
     ISOLATION_LEVEL_SERIALIZABLE,
-    )
-import pytz
-import storm
+)
 from storm.databases.postgres import compile as postgres_compile
-from storm.expr import (
-    compile as storm_compile,
-    State,
-    )
-from storm.locals import (
-    Store,
-    Storm,
-    )
+from storm.expr import State
+from storm.expr import compile as storm_compile
+from storm.locals import Store, Storm
 from storm.zope.interfaces import IZStorm
-import transaction
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
 from zope.interface import implementer
@@ -57,17 +52,16 @@ from zope.security.proxy import removeSecurityProxy
 from lp.services.config import dbconfig
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
+    MAIN_STORE,
     DisallowedStore,
     IMasterObject,
     IMasterStore,
     ISQLBase,
     IStore,
     IStoreSelector,
-    MAIN_STORE,
-    )
+)
 from lp.services.database.sqlobject import sqlrepr
 from lp.services.propertycache import clear_property_cache
-
 
 # Default we want for scripts, and the PostgreSQL default. Note psycopg1 will
 # use SERIALIZABLE unless we override, but psycopg2 will not.
@@ -80,7 +74,7 @@ ISOLATION_LEVEL_DEFAULT = ISOLATION_LEVEL_READ_COMMITTED
 # automatically quotes, which includes a few of our table names.  We
 # remove them here due to case mismatches between the DB and Launchpad
 # code.
-postgres_compile.remove_reserved_words(['language', 'section'])
+postgres_compile.remove_reserved_words(["language", "section"])
 
 
 class StupidCache:
@@ -143,7 +137,7 @@ class LaunchpadStyle(storm.sqlobject.SQLObjectStyle):
         return table
 
     def idForTable(self, table):
-        return 'id'
+        return "id"
 
     def pythonClassToAttr(self, className):
         return className.lower()
@@ -159,8 +153,8 @@ class LaunchpadStyle(storm.sqlobject.SQLObjectStyle):
 
 @implementer(ISQLBase)
 class SQLBase(storm.sqlobject.SQLObjectBase):
-    """Base class emulating SQLObject for legacy database classes.
-    """
+    """Base class emulating SQLObject for legacy database classes."""
+
     _style = LaunchpadStyle()
 
     # Silence warnings in linter script, which complains about all
@@ -197,9 +191,11 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
             argument_store = Store.of(argument)
             if argument_store is not store:
                 new_argument = store.find(
-                    argument.__class__, id=argument.id).one()
-                assert new_argument is not None, (
-                    '%s not yet synced to this store' % repr(argument))
+                    argument.__class__, id=argument.id
+                ).one()
+                assert (
+                    new_argument is not None
+                ), "%s not yet synced to this store" % repr(argument)
                 kwargs[key] = new_argument
 
         store.add(self)
@@ -217,7 +213,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         # XXX jamesh 2008-05-09:
         # This matches the repr() output for the sqlos.SQLOS class.
         # A number of the doctests rely on this formatting.
-        return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
+        return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
     def destroySelf(self):
         my_master = IMasterObject(self)
@@ -283,16 +279,16 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
 
 
 def clear_current_connection_cache():
-    """Clear SQLObject's object cache. SQLObject compatibility - DEPRECATED.
-    """
+    """Clear SQLObject's object cache. SQLObject compatibility - DEPRECATED."""
     _get_sqlobject_store().invalidate()
 
 
 def get_transaction_timestamp(store):
     """Get the timestamp for the current transaction on `store`."""
     timestamp = store.execute(
-        "SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'").get_one()[0]
-    return timestamp.replace(tzinfo=pytz.timezone('UTC'))
+        "SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'"
+    ).get_one()[0]
+    return timestamp.replace(tzinfo=pytz.timezone("UTC"))
 
 
 def quote(x):
@@ -360,7 +356,7 @@ def quote(x):
         # SQLObject can't cope with sets, so convert to a list, which it
         # /does/ know how to handle.
         x = list(x)
-    return sqlrepr(x, 'postgres')
+    return sqlrepr(x, "postgres")
 
 
 def sqlvalues(*values, **kwvalues):
@@ -404,7 +400,8 @@ def sqlvalues(*values, **kwvalues):
     """
     if (values and kwvalues) or (not values and not kwvalues):
         raise TypeError(
-            "Use either positional or keyword values with sqlvalue.")
+            "Use either positional or keyword values with sqlvalue."
+        )
     if values:
         return tuple(quote(item) for item in values)
     elif kwvalues:
@@ -476,7 +473,7 @@ def convert_storm_clause_to_string(storm_clause):
     clause = storm_compile(storm_clause, state)
     if len(state.parameters):
         parameters = [param.get(to_db=True) for param in state.parameters]
-        clause = clause.replace('?', '%s') % sqlvalues(*parameters)
+        clause = clause.replace("?", "%s") % sqlvalues(*parameters)
     return clause
 
 
@@ -539,6 +536,7 @@ def block_implicit_flushes(func):
             return func(*args, **kwargs)
         finally:
             store.unblock_implicit_flushes()
+
     return mergeFunctionMetadata(func, block_implicit_flushes_decorator)
 
 
@@ -550,6 +548,7 @@ def reset_store(func):
             return func(*args, **kwargs)
         finally:
             _get_sqlobject_store().reset()
+
     return mergeFunctionMetadata(func, reset_store_decorator)
 
 
@@ -575,6 +574,7 @@ def connect_string(user=None, dbname=None):
     # We must connect to the read-write DB here, so we use rw_main_primary
     # directly.
     from lp.services.database.postgresql import ConnectionString
+
     con_str = ConnectionString(dbconfig.rw_main_primary)
     if user is not None:
         con_str.user = user
@@ -626,7 +626,7 @@ class cursor:
 
 def session_store():
     """Return a store connected to the session DB."""
-    return getUtility(IZStorm).get('session', 'launchpad-session:')
+    return getUtility(IZStorm).get("session", "launchpad-session:")
 
 
 def disconnect_stores():
@@ -639,7 +639,8 @@ def disconnect_stores():
     """
     zstorm = getUtility(IZStorm)
     stores = [
-        store for name, store in zstorm.iterstores() if name != 'session']
+        store for name, store in zstorm.iterstores() if name != "session"
+    ]
 
     # If we have any stores, abort the transaction and close them.
     if stores:

@@ -8,15 +8,12 @@ download.
 """
 
 __all__ = [
-    'Hose',
-    ]
+    "Hose",
+]
 
 from lp.registry.scripts.productreleasefinder import log
 from lp.registry.scripts.productreleasefinder.filter import Filter
-from lp.registry.scripts.productreleasefinder.walker import (
-    combine_url,
-    walk,
-    )
+from lp.registry.scripts.productreleasefinder.walker import combine_url, walk
 
 
 class Hose:
@@ -73,7 +70,7 @@ class Hose:
                     if self.filter.isPossibleParent(url):
                         i += 1
                     else:
-                        self.log.info('Skipping %s', url)
+                        self.log.info("Skipping %s", url)
                         del dirnames[i]
 
     __iter__ = run

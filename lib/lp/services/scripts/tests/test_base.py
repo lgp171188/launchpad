@@ -20,7 +20,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestScript(LaunchpadCronScript):
-
     def _init_zca(self, use_web_security):
         # Already done by test layer.
         pass
@@ -47,7 +46,8 @@ class TestLaunchpadCronScript(StatsMixin, TestCase):
         with open(config_path, "w") as config_file:
             config_file.write(body)
         self.pushConfig(
-            "canonical", cron_control_url="file://%s" % config_path)
+            "canonical", cron_control_url="file://%s" % config_path
+        )
 
     def test_cronscript_disabled(self):
         # If scripts are centrally disabled, there is no activity record in
@@ -55,26 +55,33 @@ class TestLaunchpadCronScript(StatsMixin, TestCase):
         self.setCronControlConfig("[DEFAULT]\nenabled: False\n")
         self.setUpStats()
         script = TestScript(
-            "script-name", test_args=["fail"], logger=DevNullLogger())
+            "script-name", test_args=["fail"], logger=DevNullLogger()
+        )
         with ExpectedException(
-                SystemExit, MatchesStructure.byEquality(code=0)):
+            SystemExit, MatchesStructure.byEquality(code=0)
+        ):
             script.run()
         self.assertIsNone(
-            getUtility(IScriptActivitySet).getLastActivity("script-name"))
+            getUtility(IScriptActivitySet).getLastActivity("script-name")
+        )
         self.stats_client.timing.assert_called_once_with(
-            "script_activity,env=test,name=script-name", 0.0)
+            "script_activity,env=test,name=script-name", 0.0
+        )
 
     def test_script_fails(self):
         # If the script fails, there is no activity record in the database
         # and no activity metric in statsd.
         self.setUpStats()
         script = TestScript(
-            "script-name", test_args=["fail"], logger=DevNullLogger())
+            "script-name", test_args=["fail"], logger=DevNullLogger()
+        )
         with ExpectedException(
-                SystemExit, MatchesStructure.byEquality(code=1)):
+            SystemExit, MatchesStructure.byEquality(code=1)
+        ):
             script.run()
         self.assertIsNone(
-            getUtility(IScriptActivitySet).getLastActivity("script-name"))
+            getUtility(IScriptActivitySet).getLastActivity("script-name")
+        )
         self.stats_client.timing.assert_not_called()
 
     def test_script_succeeds(self):
@@ -82,11 +89,15 @@ class TestLaunchpadCronScript(StatsMixin, TestCase):
         # database and an activity metric in statsd.
         self.setUpStats()
         script = TestScript(
-            "script-name", test_args=["pass"], logger=DevNullLogger())
+            "script-name", test_args=["pass"], logger=DevNullLogger()
+        )
         script.run()
         self.assertThat(
             getUtility(IScriptActivitySet).getLastActivity("script-name"),
             MatchesStructure.byEquality(
-                name="script-name", hostname=socket.gethostname()))
+                name="script-name", hostname=socket.gethostname()
+            ),
+        )
         self.stats_client.timing.assert_called_once_with(
-            "script_activity,env=test,name=script-name", mock.ANY)
+            "script_activity,env=test,name=script-name", mock.ANY
+        )

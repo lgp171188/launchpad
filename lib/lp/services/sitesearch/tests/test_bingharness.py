@@ -6,5 +6,6 @@ import doctest
 
 def test_suite():
     return doctest.DocTestSuite(
-            'lp.services.sitesearch.tests.bingserviceharness',
-            optionflags=doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS)
+        "lp.services.sitesearch.tests.bingserviceharness",
+        optionflags=doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS,
+    )

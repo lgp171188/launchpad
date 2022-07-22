@@ -125,12 +125,12 @@ class IPOTMsgSet(Interface):
     def clone():
         """Return a new copy of this POTMsgSet."""
 
-    def getCurrentTranslationMessageOrDummy(pofile):
-        """Return the current `TranslationMessage`, or a dummy.
+    def getCurrentTranslationMessageOrPlaceholder(pofile):
+        """Return the current `TranslationMessage`, or a placeholder.
 
         :param pofile: PO template you want a translation message for.
         :return: The current translation for `self` in `pofile`, if
-            there is one.  Otherwise, a `DummyTranslationMessage` for
+            there is one.  Otherwise, a `PlaceholderTranslationMessage` for
             `self` in `pofile`.
         """
 

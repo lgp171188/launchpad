@@ -4,8 +4,8 @@
 """Utilities for HTTP request handling with Twisted and treq."""
 
 __all__ = [
-    'check_status',
-    ]
+    "check_status",
+]
 
 import treq
 from twisted.internet import defer
@@ -26,6 +26,7 @@ def check_status(response):
     if 100 <= response.code < 400:
         d = defer.succeed(response)
     else:
+
         def raise_error(body):
             raise Error(response.code, response=body)
 

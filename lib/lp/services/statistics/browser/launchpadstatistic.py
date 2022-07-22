@@ -4,8 +4,8 @@
 """Browser views for LaunchpadStatisticSet."""
 
 __all__ = [
-    'LaunchpadStatisticSet',
-    ]
+    "LaunchpadStatisticSet",
+]
 
 from lp.services.webapp import LaunchpadView
 

@@ -4,23 +4,14 @@
 """Interfaces to do with conversations on Launchpad entities."""
 
 __all__ = [
-    'IComment',
-    'IConversation',
-    ]
+    "IComment",
+    "IConversation",
+]
 
 
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Bool, Datetime, Int, Text, TextLine
 
 from lp import _
 
@@ -28,54 +19,64 @@ from lp import _
 class IComment(Interface):
     """A comment which may have a body or footer."""
 
-    index = Int(title='The comment number', required=True, readonly=True)
+    index = Int(title="The comment number", required=True, readonly=True)
 
     extra_css_class = TextLine(
-        description=_("A css class to apply to the comment's outer div."))
+        description=_("A css class to apply to the comment's outer div.")
+    )
 
     has_body = Bool(
-        description=_("Does the comment have body text?"),
-        readonly=True)
+        description=_("Does the comment have body text?"), readonly=True
+    )
 
     has_footer = Bool(
-        description=_("Does the comment have a footer?"),
-        readonly=True)
+        description=_("Does the comment have a footer?"), readonly=True
+    )
 
     too_long = Bool(
-        title='Whether the comment body is too long to display in full.',
-        readonly=True)
+        title="Whether the comment body is too long to display in full.",
+        readonly=True,
+    )
 
     too_long_to_render = Bool(
-        title=('Whether the comment body is so long that rendering is'
-        ' inappropriate.'), readonly=True)
+        title=(
+            "Whether the comment body is so long that rendering is"
+            " inappropriate."
+        ),
+        readonly=True,
+    )
 
     text_for_display = Text(
-        title='The comment text to be displayed in the UI.', readonly=True)
+        title="The comment text to be displayed in the UI.", readonly=True
+    )
 
     body_text = Text(
-        description=_("The body text of the comment."),
-        readonly=True)
+        description=_("The body text of the comment."), readonly=True
+    )
 
     download_url = Text(
-        description=_("URL for downloading full text."),
-        readonly=True)
+        description=_("URL for downloading full text."), readonly=True
+    )
 
     comment_author = Reference(
         # Really IPerson.
-        Interface, title=_("The author of the comment."),
-        readonly=True)
+        Interface,
+        title=_("The author of the comment."),
+        readonly=True,
+    )
 
-    comment_date = Datetime(
-        title=_('Comment date.'), readonly=True)
+    comment_date = Datetime(title=_("Comment date."), readonly=True)
 
     display_attachments = Bool(
         description=_("Should attachments be displayed for this comment."),
-        readonly=True)
+        readonly=True,
+    )
 
     visible = Bool(title=_("Whether this comment is visible."))
 
     show_spam_controls = Bool(
-        title=_("Whether to show spam controls for this comment."))
+        title=_("Whether to show spam controls for this comment.")
+    )
 
 
 class IConversation(Interface):
@@ -83,4 +84,5 @@ class IConversation(Interface):
 
     comments = CollectionField(
         value_type=Reference(schema=IComment),
-        title=_('The comments in the conversation'))
+        title=_("The comments in the conversation"),
+    )

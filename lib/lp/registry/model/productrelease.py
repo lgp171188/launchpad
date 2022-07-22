@@ -2,82 +2,77 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ProductRelease',
-    'ProductReleaseFile',
-    'ProductReleaseSet',
-    'productrelease_to_milestone',
-    ]
+    "ProductRelease",
+    "ProductReleaseFile",
+    "ProductReleaseSet",
+    "productrelease_to_milestone",
+]
 
-from io import (
-    BufferedIOBase,
-    BytesIO,
-    )
 import os
+from io import BufferedIOBase, BytesIO
 
-from storm.expr import (
-    And,
-    Desc,
-    )
+from storm.expr import And, Desc
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
-from lp.registry.errors import (
-    InvalidFilename,
-    ProprietaryPillar,
-    )
+from lp.registry.errors import InvalidFilename, ProprietaryPillar
 from lp.registry.interfaces.person import (
     validate_person,
     validate_public_person,
-    )
+)
 from lp.registry.interfaces.productrelease import (
     IProductRelease,
     IProductReleaseFile,
     IProductReleaseSet,
     UpstreamFileType,
-    )
+)
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     StringCol,
-    )
+)
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import (
     get_raw_form_value_from_current_request,
-    )
+)
 
 
 @implementer(IProductRelease)
 class ProductRelease(SQLBase):
     """A release of a product."""
-    _table = 'ProductRelease'
-    _defaultOrder = ['-datereleased']
+
+    _table = "ProductRelease"
+    _defaultOrder = ["-datereleased"]
 
     datereleased = UtcDateTimeCol(notNull=True)
     release_notes = StringCol(notNull=False, default=None)
     changelog = StringCol(notNull=False, default=None)
     datecreated = UtcDateTimeCol(
-        dbName='datecreated', notNull=True, default=UTC_NOW)
+        dbName="datecreated", notNull=True, default=UTC_NOW
+    )
     owner = ForeignKey(
-        dbName="owner", foreignKey="Person",
+        dbName="owner",
+        foreignKey="Person",
         storm_validator=validate_person,
-        notNull=True)
-    milestone = ForeignKey(dbName='milestone', foreignKey='Milestone')
+        notNull=True,
+    )
+    milestone = ForeignKey(dbName="milestone", foreignKey="Milestone")
 
     _files = SQLMultipleJoin(
-        'ProductReleaseFile', joinColumn='productrelease',
-        orderBy='-date_uploaded', prejoins=['productrelease'])
+        "ProductReleaseFile",
+        joinColumn="productrelease",
+        orderBy="-date_uploaded",
+        prejoins=["productrelease"],
+    )
 
     @cachedproperty
     def files(self):
@@ -116,13 +111,14 @@ class ProductRelease(SQLBase):
     @staticmethod
     def normalizeFilename(filename):
         # Replace slashes in the filename with less problematic dashes.
-        return filename.replace('/', '-')
+        return filename.replace("/", "-")
 
     def destroySelf(self):
         """See `IProductRelease`."""
         assert self._files.count() == 0, (
             "You can't delete a product release which has files associated "
-            "with it.")
+            "with it."
+        )
         SQLBase.destroySelf(self)
 
     def _getFileObjectAndSize(self, file_or_data):
@@ -135,8 +131,9 @@ class ProductRelease(SQLBase):
             file_size = len(file_or_data)
             file_obj = BytesIO(file_or_data)
         else:
-            assert isinstance(file_or_data, BufferedIOBase), (
-                "file_or_data is not an expected type")
+            assert isinstance(
+                file_or_data, BufferedIOBase
+            ), "file_or_data is not an expected type"
             file_obj = file_or_data
             start = file_obj.tell()
             file_obj.seek(0, os.SEEK_END)
@@ -144,15 +141,23 @@ class ProductRelease(SQLBase):
             file_obj.seek(start)
         return file_obj, file_size
 
-    def addReleaseFile(self, filename, file_content, content_type,
-                       uploader, signature_filename=None,
-                       signature_content=None,
-                       file_type=UpstreamFileType.CODETARBALL,
-                       description=None, from_api=False):
+    def addReleaseFile(
+        self,
+        filename,
+        file_content,
+        content_type,
+        uploader,
+        signature_filename=None,
+        signature_content=None,
+        file_type=UpstreamFileType.CODETARBALL,
+        description=None,
+        from_api=False,
+    ):
         """See `IProductRelease`."""
         if not self.can_have_release_files:
             raise ProprietaryPillar(
-                "Only public projects can have download files.")
+                "Only public projects can have download files."
+            )
         if self.hasReleaseFile(filename):
             raise InvalidFilename
         # Create the alias for the file.
@@ -162,30 +167,44 @@ class ProductRelease(SQLBase):
         # wrongly encoded.
         if from_api:
             file_content = get_raw_form_value_from_current_request(
-                file_content, 'file_content')
+                file_content, "file_content"
+            )
         file_obj, file_size = self._getFileObjectAndSize(file_content)
 
         alias = getUtility(ILibraryFileAliasSet).create(
-            name=filename, size=file_size, file=file_obj,
-            contentType=content_type)
+            name=filename,
+            size=file_size,
+            file=file_obj,
+            contentType=content_type,
+        )
         if signature_filename is not None and signature_content is not None:
             # XXX: StevenK 2013-02-06 bug=1116954: We should not need to
             # refetch the file content from the request, since the passed in
             # one has been wrongly encoded.
             if from_api:
                 signature_content = get_raw_form_value_from_current_request(
-                    signature_content, 'signature_content')
+                    signature_content, "signature_content"
+                )
             signature_obj, signature_size = self._getFileObjectAndSize(
-                signature_content)
+                signature_content
+            )
             signature_filename = self.normalizeFilename(signature_filename)
             signature_alias = getUtility(ILibraryFileAliasSet).create(
-                name=signature_filename, size=signature_size,
-                file=signature_obj, contentType='application/pgp-signature')
+                name=signature_filename,
+                size=signature_size,
+                file=signature_obj,
+                contentType="application/pgp-signature",
+            )
         else:
             signature_alias = None
         return ProductReleaseFile(
-            productrelease=self, libraryfile=alias, signature=signature_alias,
-            filetype=file_type, description=description, uploader=uploader)
+            productrelease=self,
+            libraryfile=alias,
+            signature=signature_alias,
+            filetype=file_type,
+            description=description,
+            uploader=uploader,
+        )
 
     def getFileAliasByName(self, name):
         """See `IProductRelease`."""
@@ -216,25 +235,33 @@ class ProductRelease(SQLBase):
 class ProductReleaseFile(SQLBase):
     """A file of a product release."""
 
-    _table = 'ProductReleaseFile'
+    _table = "ProductReleaseFile"
 
-    productrelease = ForeignKey(dbName='productrelease',
-                                foreignKey='ProductRelease', notNull=True)
+    productrelease = ForeignKey(
+        dbName="productrelease", foreignKey="ProductRelease", notNull=True
+    )
 
-    libraryfile = ForeignKey(dbName='libraryfile',
-                             foreignKey='LibraryFileAlias', notNull=True)
+    libraryfile = ForeignKey(
+        dbName="libraryfile", foreignKey="LibraryFileAlias", notNull=True
+    )
 
-    signature = ForeignKey(dbName='signature',
-                           foreignKey='LibraryFileAlias')
+    signature = ForeignKey(dbName="signature", foreignKey="LibraryFileAlias")
 
-    filetype = DBEnum(name='filetype', enum=UpstreamFileType,
-                      allow_none=False, default=UpstreamFileType.CODETARBALL)
+    filetype = DBEnum(
+        name="filetype",
+        enum=UpstreamFileType,
+        allow_none=False,
+        default=UpstreamFileType.CODETARBALL,
+    )
 
     description = StringCol(notNull=False, default=None)
 
     uploader = ForeignKey(
-        dbName="uploader", foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        dbName="uploader",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
 
     date_uploaded = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
@@ -247,6 +274,7 @@ class ProductReleaseSet:
         """See `IProductReleaseSet`."""
         # Local import of Milestone to avoid circular imports.
         from lp.registry.model.milestone import Milestone
+
         store = IStore(productseries)
         # The Milestone is cached too because most uses of a ProductRelease
         # need it.
@@ -254,7 +282,8 @@ class ProductReleaseSet:
             (ProductRelease, Milestone),
             Milestone.productseries == productseries,
             ProductRelease.milestone == Milestone.id,
-            Milestone.name == version)
+            Milestone.name == version,
+        )
         found = result.one()
         if found is None:
             return None
@@ -265,14 +294,19 @@ class ProductReleaseSet:
         """See `IProductReleaseSet`."""
         # Local import of Milestone to avoid import loop.
         from lp.registry.model.milestone import Milestone
+
         if len(list(series)) == 0:
             return EmptyResultSet()
         series_ids = [s.id for s in series]
-        return IStore(ProductRelease).find(
-            ProductRelease,
-            And(ProductRelease.milestone == Milestone.id),
-                Milestone.productseriesID.is_in(series_ids)).order_by(
-                    Desc(ProductRelease.datereleased))
+        return (
+            IStore(ProductRelease)
+            .find(
+                ProductRelease,
+                And(ProductRelease.milestone == Milestone.id),
+                Milestone.productseriesID.is_in(series_ids),
+            )
+            .order_by(Desc(ProductRelease.datereleased))
+        )
 
     def getFilesForReleases(self, releases):
         """See `IProductReleaseSet`."""
@@ -280,15 +314,16 @@ class ProductReleaseSet:
         if len(releases) == 0:
             return EmptyResultSet()
         return ProductReleaseFile.select(
-            """ProductReleaseFile.productrelease IN %s""" % (
-                sqlvalues([release.id for release in releases])),
-            orderBy='-date_uploaded',
+            """ProductReleaseFile.productrelease IN %s"""
+            % (sqlvalues([release.id for release in releases])),
+            orderBy="-date_uploaded",
             prejoins=[
-                'libraryfile',
-                'libraryfile.content',
-                'productrelease',
-                'signature',
-                ])
+                "libraryfile",
+                "libraryfile.content",
+                "productrelease",
+                "signature",
+            ],
+        )
 
 
 def productrelease_to_milestone(productrelease):

@@ -4,106 +4,123 @@
 """People Merge related wiew classes."""
 
 __all__ = [
-    'AdminPeopleMergeView',
-    'AdminTeamMergeView',
-    'DeleteTeamView',
-    'FinishedPeopleMergeRequestView',
-    'RequestPeopleMergeMultipleEmailsView',
-    'RequestPeopleMergeView',
-    ]
+    "AdminPeopleMergeView",
+    "AdminTeamMergeView",
+    "DeleteTeamView",
+    "FinishedPeopleMergeRequestView",
+    "RequestPeopleMergeMultipleEmailsView",
+    "RequestPeopleMergeView",
+]
 
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
-from lp.registry.interfaces.mailinglist import (
-    MailingListStatus,
-    PURGE_STATES,
-    )
+from lp.registry.interfaces.mailinglist import PURGE_STATES, MailingListStatus
 from lp.registry.interfaces.person import (
     IAdminPeopleMergeSchema,
     IAdminTeamMergeSchema,
     IPersonSet,
     IRequestPeopleMerge,
-    )
+)
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.soyuz.enums import ArchiveStatus
 from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class ValidatingMergeView(LaunchpadFormView):
-
     def validate(self, data):
         """Check that user is not attempting to merge a person into itself."""
-        dupe_person = data.get('dupe_person')
-        target_person = data.get('target_person') or self.user
+        dupe_person = data.get("dupe_person")
+        target_person = data.get("target_person") or self.user
         if dupe_person is None:
             self.setFieldError(
-                'dupe_person', 'The duplicate is not a valid person or team.')
+                "dupe_person", "The duplicate is not a valid person or team."
+            )
         else:
             if dupe_person == target_person:
-                self.addError(_("You can't merge ${name} into itself.",
-                      mapping=dict(name=dupe_person.name)))
+                self.addError(
+                    _(
+                        "You can't merge ${name} into itself.",
+                        mapping=dict(name=dupe_person.name),
+                    )
+                )
             dupe_person_ppas = getUtility(IArchiveSet).getPPAOwnedByPerson(
-                dupe_person, statuses=[ArchiveStatus.ACTIVE,
-                                       ArchiveStatus.DELETING])
+                dupe_person,
+                statuses=[ArchiveStatus.ACTIVE, ArchiveStatus.DELETING],
+            )
             if dupe_person_ppas is not None:
-                self.addError(_(
-                    "${name} has a PPA that must be deleted before it "
-                    "can be merged. It may take ten minutes to remove the "
-                    "deleted PPA's files.",
-                    mapping=dict(name=dupe_person.name)))
+                self.addError(
+                    _(
+                        "${name} has a PPA that must be deleted before it "
+                        "can be merged. It may take ten minutes to remove the "
+                        "deleted PPA's files.",
+                        mapping=dict(name=dupe_person.name),
+                    )
+                )
             all_branches = getUtility(IAllBranches)
             if not all_branches.ownedBy(dupe_person).isPrivate().is_empty():
                 self.addError(
-                    _("${name} owns private branches that must be "
-                      "deleted or transferred to another owner first.",
-                    mapping=dict(name=dupe_person.name)))
+                    _(
+                        "${name} owns private branches that must be "
+                        "deleted or transferred to another owner first.",
+                        mapping=dict(name=dupe_person.name),
+                    )
+                )
             all_repositories = getUtility(IAllGitRepositories)
-            if not all_repositories.ownedBy(
-                    dupe_person).isPrivate().is_empty():
+            if (
+                not all_repositories.ownedBy(dupe_person)
+                .isPrivate()
+                .is_empty()
+            ):
                 self.addError(
-                    _("${name} owns private Git repositories that must be "
-                      "deleted or transferred to another owner first.",
-                    mapping=dict(name=dupe_person.name)))
+                    _(
+                        "${name} owns private Git repositories that must be "
+                        "deleted or transferred to another owner first.",
+                        mapping=dict(name=dupe_person.name),
+                    )
+                )
             if dupe_person.isMergePending():
-                self.addError(_("${name} is already queued for merging.",
-                      mapping=dict(name=dupe_person.name)))
+                self.addError(
+                    _(
+                        "${name} is already queued for merging.",
+                        mapping=dict(name=dupe_person.name),
+                    )
+                )
         if target_person is not None and target_person.isMergePending():
-            self.addError(_("${name} is already queued for merging.",
-                  mapping=dict(name=target_person.name)))
+            self.addError(
+                _(
+                    "${name} is already queued for merging.",
+                    mapping=dict(name=target_person.name),
+                )
+            )
 
 
 class AdminMergeBaseView(ValidatingMergeView):
     """Base view for the pages where admins can merge people/teams."""
 
-    page_title = 'Merge Launchpad accounts'
+    page_title = "Merge Launchpad accounts"
     # Both subclasses share the same template so we need to define these
     # variables (which are used in the template) here rather than on
     # subclasses.
     should_confirm_email_reassignment = False
     should_confirm_member_deactivation = False
     merge_message = _(
-        'A merge is queued and is expected to complete in a few minutes.')
+        "A merge is queued and is expected to complete in a few minutes."
+    )
 
     dupe_person_emails = ()
     dupe_person = None
@@ -132,8 +149,8 @@ class AdminMergeBaseView(ValidatingMergeView):
         instance variable.
         """
         emailset = getUtility(IEmailAddressSet)
-        self.dupe_person = data['dupe_person']
-        self.target_person = data.get('target_person', None)
+        self.dupe_person = data["dupe_person"]
+        self.target_person = data.get("target_person", None)
         self.dupe_person_emails = emailset.getByPerson(self.dupe_person)
 
     def doMerge(self, data):
@@ -151,8 +168,12 @@ class AdminMergeBaseView(ValidatingMergeView):
                 naked_email.personID = self.target_person.id
                 naked_email.status = EmailAddressStatus.NEW
         getUtility(IPersonSet).mergeAsync(
-            self.dupe_person, self.target_person, reviewer=self.user,
-            delete=self.delete, requester=self.user)
+            self.dupe_person,
+            self.target_person,
+            reviewer=self.user,
+            delete=self.delete,
+            requester=self.user,
+        )
         self.request.response.addInfoNotification(self.merge_message)
         self.next_url = self.success_url
 
@@ -170,7 +191,7 @@ class AdminPeopleMergeView(AdminMergeBaseView):
     label = "Merge Launchpad people"
     schema = IAdminPeopleMergeSchema
 
-    @action('Merge', name='merge')
+    @action("Merge", name="merge")
     def merge_action(self, action, data):
         """Merge the two person entries specified in the form.
 
@@ -187,7 +208,7 @@ class AdminPeopleMergeView(AdminMergeBaseView):
             return
         self.doMerge(data)
 
-    @action('Reassign Emails and Merge', name='reassign_emails_and_merge')
+    @action("Reassign Emails and Merge", name="reassign_emails_and_merge")
     def reassign_emails_and_merge_action(self, action, data):
         """Reassign emails of the person to be merged and merge them."""
         self.setUpPeople(data)
@@ -210,7 +231,8 @@ class AdminTeamMergeView(AdminMergeBaseView):
         unused_states.append(MailingListStatus.PURGED)
         return (
             team.mailing_list is not None
-            and team.mailing_list.status not in unused_states)
+            and team.mailing_list.status not in unused_states
+        )
 
     @cachedproperty
     def registry_experts(self):
@@ -225,15 +247,19 @@ class AdminTeamMergeView(AdminMergeBaseView):
             return
 
         super().validate(data)
-        dupe_team = data['dupe_person']
+        dupe_team = data["dupe_person"]
         # We cannot merge the teams if there is a mailing list on the
         # duplicate person, unless that mailing list is purged.
         if self.hasMailingList(dupe_team):
-            self.addError(_(
-                "${name} is associated with a Launchpad mailing list; we "
-                "can't merge it.", mapping=dict(name=dupe_team.name)))
+            self.addError(
+                _(
+                    "${name} is associated with a Launchpad mailing list; we "
+                    "can't merge it.",
+                    mapping=dict(name=dupe_team.name),
+                )
+            )
 
-    @action('Merge', name='merge')
+    @action("Merge", name="merge")
     def merge_action(self, action, data):
         """Merge the two team entries specified in the form.
 
@@ -250,8 +276,9 @@ class AdminTeamMergeView(AdminMergeBaseView):
             return
         super().doMerge(data)
 
-    @action('Deactivate Members and Merge',
-            name='deactivate_members_and_merge')
+    @action(
+        "Deactivate Members and Merge", name="deactivate_members_and_merge"
+    )
     def deactivate_members_and_merge_action(self, action, data):
         """Deactivate all members of the team to be merged and merge them."""
         self.setUpPeople(data)
@@ -261,22 +288,22 @@ class AdminTeamMergeView(AdminMergeBaseView):
 class DeleteTeamView(AdminTeamMergeView):
     """A view that deletes a team by merging it with Registry experts."""
 
-    page_title = 'Delete'
-    field_names = ['dupe_person']
-    merge_message = _('The team is queued to be deleted.')
+    page_title = "Delete"
+    field_names = ["dupe_person"]
+    merge_message = _("The team is queued to be deleted.")
 
     @property
     def label(self):
-        return 'Delete %s' % self.context.displayname
+        return "Delete %s" % self.context.displayname
 
     def __init__(self, context, request):
         super().__init__(context, request)
-        if ('field.dupe_person' in self.request.form):
+        if "field.dupe_person" in self.request.form:
             # These fields have fixed values and are managed by this method.
             # The user has crafted a request to gain ownership of the dupe
             # team's assets.
-            self.addError('Unable to process submitted data.')
-        elif 'field.actions.delete' in self.request.form:
+            self.addError("Unable to process submitted data.")
+        elif "field.actions.delete" in self.request.form:
             # In the case of deleting a team, the form values are always
             # the context team, and the registry experts team. These values
             # are injected during __init__ because the base classes assume the
@@ -290,9 +317,9 @@ class DeleteTeamView(AdminTeamMergeView):
     @property
     def default_values(self):
         return {
-            'field.dupe_person': self.context.name,
-            'field.delete': True,
-            }
+            "field.dupe_person": self.context.name,
+            "field.delete": True,
+        }
 
     @property
     def cancel_url(self):
@@ -309,7 +336,7 @@ class DeleteTeamView(AdminTeamMergeView):
     def canDelete(self, data):
         return not self.has_mailing_list
 
-    @action('Delete', name='delete', condition=canDelete)
+    @action("Delete", name="delete", condition=canDelete)
     def merge_action(self, action, data):
         self.delete = True
         super().deactivate_members_and_merge_action.success(data)
@@ -322,12 +349,12 @@ class FinishedPeopleMergeRequestView(LaunchpadView):
     This view is used only when the dupe account has a single email address.
     """
 
-    page_title = 'Merge request sent'
+    page_title = "Merge request sent"
 
     def initialize(self):
         user = getUtility(ILaunchBag).user
         try:
-            dupe_id = int(self.request.get('dupe'))
+            dupe_id = int(self.request.get("dupe"))
         except (ValueError, TypeError):
             self.request.response.redirect(canonical_url(user))
             return
@@ -350,13 +377,13 @@ class FinishedPeopleMergeRequestView(LaunchpadView):
         if self.dupe_email:
             return LaunchpadView.render(self)
         else:
-            return ''
+            return ""
 
 
 class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
     """Merge request view when dupe account has multiple email addresses."""
 
-    label = 'Merge Launchpad accounts'
+    label = "Merge Launchpad accounts"
     page_title = label
 
     def __init__(self, context, request):
@@ -366,11 +393,11 @@ class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
         self.notified_addresses = []
 
     def processForm(self):
-        dupe = self.request.form.get('dupe')
+        dupe = self.request.form.get("dupe")
         if dupe is None:
             # We just got redirected to this page and we don't have the dupe
             # hidden field in request.form.
-            dupe = self.request.get('dupe')
+            dupe = self.request.get("dupe")
             if dupe is None:
                 return
 
@@ -389,8 +416,9 @@ class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
             # If the email addresses are hidden we must send a merge request
             # to each of them.  But first we've got to remove the security
             # proxy so we can get to them.
-            email_addresses = [removeSecurityProxy(email).email
-                               for email in self.dupeemails]
+            email_addresses = [
+                removeSecurityProxy(email).email for email in self.dupeemails
+            ]
         else:
             # Otherwise we send a merge request only to the ones the user
             # selected.
@@ -411,13 +439,15 @@ class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
                         self.request.response.addNotification(
                             "An address was removed from the duplicate "
                             "account while you were making this merge "
-                            "request. Select again.")
+                            "request. Select again."
+                        )
                         return
                     email_addresses.append(emailaddress)
 
         for emailaddress in email_addresses:
             token = logintokenset.new(
-                self.user, login, emailaddress, LoginTokenType.ACCOUNTMERGE)
+                self.user, login, emailaddress, LoginTokenType.ACCOUNTMERGE
+            )
             token.sendMergeRequestEmail()
             self.notified_addresses.append(emailaddress)
         self.form_processed = True
@@ -443,7 +473,7 @@ class RequestPeopleMergeView(ValidatingMergeView):
     of those they want to claim.
     """
 
-    label = 'Merge Launchpad accounts'
+    label = "Merge Launchpad accounts"
     page_title = label
     schema = IRequestPeopleMerge
 
@@ -451,9 +481,9 @@ class RequestPeopleMergeView(ValidatingMergeView):
     def cancel_url(self):
         return canonical_url(getUtility(IPersonSet))
 
-    @action('Continue', name='continue')
+    @action("Continue", name="continue")
     def continue_action(self, action, data):
-        dupeaccount = data['dupe_person']
+        dupeaccount = data["dupe_person"]
         if dupeaccount == self.user:
             # Please, don't try to merge you into yourself.
             return
@@ -464,7 +494,7 @@ class RequestPeopleMergeView(ValidatingMergeView):
             # The dupe account have more than one email address. Must redirect
             # the user to another page to ask which of those emails they
             # want to claim.
-            self.next_url = '+requestmerge-multiple?dupe=%d' % dupeaccount.id
+            self.next_url = "+requestmerge-multiple?dupe=%d" % dupeaccount.id
             return
 
         assert emails_count == 1
@@ -474,7 +504,10 @@ class RequestPeopleMergeView(ValidatingMergeView):
         # Need to remove the security proxy because the dupe account may have
         # hidden email addresses.
         token = logintokenset.new(
-            self.user, login, removeSecurityProxy(email).email,
-            LoginTokenType.ACCOUNTMERGE)
+            self.user,
+            login,
+            removeSecurityProxy(email).email,
+            LoginTokenType.ACCOUNTMERGE,
+        )
         token.sendMergeRequestEmail()
-        self.next_url = './+mergerequest-sent?dupe=%d' % dupeaccount.id
+        self.next_url = "./+mergerequest-sent?dupe=%d" % dupeaccount.id

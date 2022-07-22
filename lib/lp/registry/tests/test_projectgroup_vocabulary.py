@@ -10,15 +10,15 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 class TestProjectGroupVocabulary(TestCaseWithFactory):
     """Test that the ProjectGroupVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def test_search_with_or_expression(self):
         # Searches for either of two or more names are possible.
         blah_group = self.factory.makeProject(
-            name='blah', displayname='Blah', summary='Blah blather')
-        baz_group = self.factory.makeProject(
-            name='baz', displayname='Baz')
+            name="blah", displayname="Blah", summary="Blah blather"
+        )
+        baz_group = self.factory.makeProject(name="baz", displayname="Baz")
         vocabulary = ProjectGroupVocabulary()
-        result = vocabulary.search('blah OR baz')
-        self.assertEqual(
-            [blah_group, baz_group], list(result))
+        result = vocabulary.search("blah OR baz")
+        self.assertEqual([blah_group, baz_group], list(result))

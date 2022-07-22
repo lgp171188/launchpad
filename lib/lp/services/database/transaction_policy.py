@@ -4,11 +4,11 @@
 """Policy for database transactions."""
 
 __all__ = [
-    'DatabaseTransactionPolicy',
-    ]
+    "DatabaseTransactionPolicy",
+]
 
-from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 import transaction
+from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IMasterStore
@@ -87,7 +87,8 @@ class DatabaseTransactionPolicy:
         :raise TransactionInProgress: if a transaction was already ongoing.
         """
         self._checkNoTransaction(
-            "Entered DatabaseTransactionPolicy while in a transaction.")
+            "Entered DatabaseTransactionPolicy while in a transaction."
+        )
         self.previous_policy = self._getCurrentPolicy()
         self._setPolicy(self.read_only)
         # Commit should include the policy itself.  If this breaks
@@ -105,7 +106,7 @@ class DatabaseTransactionPolicy:
         :raise TransactionInProgress: if trying to exit normally from a
             read-write policy without closing its transaction first.
         """
-        successful_exit = (exc_type is None)
+        successful_exit = exc_type is None
         if successful_exit:
             # We're going to abort any ongoing transactions, but flush
             # first to catch out any writes that we might still be
@@ -117,7 +118,8 @@ class DatabaseTransactionPolicy:
             if not self.read_only:
                 self._checkNoTransaction(
                     "Failed to close transaction before leaving read-write "
-                    "DatabaseTransactionPolicy.")
+                    "DatabaseTransactionPolicy."
+                )
 
         transaction.abort()
         self._setPolicy(self.previous_policy)
@@ -162,11 +164,11 @@ class DatabaseTransactionPolicy:
         :return: True for read-only policy, False for read-write policy.
         """
         db_switch_value_to_policy = {
-            'on': True,
-            'off': False,
+            "on": True,
+            "off": False,
         }
         show_command = "SHOW %s" % self.db_switch
-        db_switch_value, = self.store.execute(show_command).get_one()
+        (db_switch_value,) = self.store.execute(show_command).get_one()
         return db_switch_value_to_policy[db_switch_value]
 
     def _setPolicy(self, read_only=True):
@@ -175,5 +177,4 @@ class DatabaseTransactionPolicy:
         :param read_only: True for read-only policy, False for read-write
             policy.
         """
-        self.store.execute(
-            "SET %s TO %s" % (self.db_switch, quote(read_only)))
+        self.store.execute("SET %s TO %s" % (self.db_switch, quote(read_only)))

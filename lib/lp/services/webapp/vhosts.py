@@ -3,7 +3,7 @@
 
 """Virtual host handling for the Launchpad webapp."""
 
-__all__ = ['allvhosts']
+__all__ = ["allvhosts"]
 
 
 class VirtualHostConfig:
@@ -17,10 +17,10 @@ class VirtualHostConfig:
 
         if rooturl is None:
             if use_https:
-                protocol = 'https'
+                protocol = "https"
             else:
-                protocol = 'http'
-            rooturl = '%s://%s/' % (protocol, hostname)
+                protocol = "http"
+            rooturl = "%s://%s/" % (protocol, hostname)
 
         self.hostname = hostname
         self.rooturl = rooturl
@@ -51,7 +51,8 @@ class VirtualHostConfig:
         if not althostnames.strip():
             return []
         return [
-            name.strip() for name in althostnames.split(',') if name.strip()]
+            name.strip() for name in althostnames.split(",") if name.strip()
+        ]
 
 
 class AllVirtualHostsConfiguration:
@@ -84,10 +85,11 @@ class AllVirtualHostsConfiguration:
         if self._has_vhost_data:
             return
         from lp.services.config import config
+
         self._use_https = config.vhosts.use_https
         self._configs = {}
         self._hostnames = set()
-        for section in config.getByCategory('vhost'):
+        for section in config.getByCategory("vhost"):
             if section.hostname is None:
                 continue
             category, vhost = section.category_and_section_names
@@ -95,7 +97,8 @@ class AllVirtualHostsConfiguration:
                 section.hostname,
                 section.althostnames,
                 section.rooturl,
-                self._use_https)
+                self._use_https,
+            )
             self._hostnames.add(config.hostname)
             self._hostnames.update(config.althostnames)
         self._has_vhost_data = True
@@ -122,6 +125,7 @@ class AllVirtualHostsConfiguration:
         """Return the set of hostnames."""
         self._getVHostData()
         return self._hostnames
+
 
 # The only public API to this module, the global virtual host configuration.
 allvhosts = AllVirtualHostsConfiguration()

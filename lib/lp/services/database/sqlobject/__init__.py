@@ -9,25 +9,24 @@ import datetime
 from storm.expr import SQL
 from storm.sqlobject import *  # noqa: F401,F403
 
-
 _sqlStringReplace = [
-    ('\\', '\\\\'),
+    ("\\", "\\\\"),
     ("'", "''"),
-    ('\000', '\\0'),
-    ('\b', '\\b'),
-    ('\n', '\\n'),
-    ('\r', '\\r'),
-    ('\t', '\\t'),
-    ]
+    ("\000", "\\0"),
+    ("\b", "\\b"),
+    ("\n", "\\n"),
+    ("\r", "\\r"),
+    ("\t", "\\t"),
+]
 
 # XXX 2007-03-07 jamesh:
 # This is a cut down version of sqlobject's sqlrepr() method.  Ideally
 # we can get rid of this as code is converted to use store.execute().
 def sqlrepr(value, dbname=None):
-    assert dbname in [None, 'postgres']
-    if hasattr(value, '__sqlrepr__'):
+    assert dbname in [None, "postgres"]
+    if hasattr(value, "__sqlrepr__"):
         return value.__sqlrepr__(dbname)
-    elif hasattr(value, 'getquoted'):
+    elif hasattr(value, "getquoted"):
         return value.getquoted()
     elif isinstance(value, SQL):
         return value.expr
@@ -56,6 +55,9 @@ def sqlrepr(value, dbname=None):
         return value.strftime("'%Y-%m-%d'")
     elif isinstance(value, datetime.timedelta):
         return "INTERVAL '%d DAYS %d SECONDS %d MICROSECONDS'" % (
-            value.days, value.seconds, value.microseconds)
+            value.days,
+            value.seconds,
+            value.microseconds,
+        )
     else:
         raise AssertionError("Unhandled type: %r" % type(value))

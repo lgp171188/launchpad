@@ -4,27 +4,24 @@
 """Communication with the snap store."""
 
 __all__ = [
-    'SnapStoreClient',
-    ]
+    "SnapStoreClient",
+]
 
 import base64
 import json
 import string
 
+import requests
+import six
 from lazr.restful.utils import get_current_browser_request
 from pymacaroons import Macaroon
-import requests
 from requests_toolbelt import MultipartEncoder
-import six
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
-from lp.services.crypto.interfaces import (
-    CryptoError,
-    IEncryptedContainer,
-    )
+from lp.services.crypto.interfaces import CryptoError, IEncryptedContainer
 from lp.services.librarian.utils import EncodableLibraryFileAlias
 from lp.services.scripts import log
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -40,7 +37,7 @@ from lp.snappy.interfaces.snapstoreclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotScannedYetResponse,
-    )
+)
 
 
 class InvalidStoreSecretsError(Exception):
@@ -53,8 +50,12 @@ class MacaroonAuth(requests.auth.AuthBase):
     # The union of the base64 and URL-safe base64 alphabets.
     allowed_chars = set(string.digits + string.ascii_letters + "+/=-_")
 
-    def __init__(self, root_macaroon_raw, unbound_discharge_macaroon_raw=None,
-                 logger=log):
+    def __init__(
+        self,
+        root_macaroon_raw,
+        unbound_discharge_macaroon_raw=None,
+        logger=log,
+    ):
         self.root_macaroon_raw = root_macaroon_raw
         self.unbound_discharge_macaroon_raw = unbound_discharge_macaroon_raw
         self.logger = logger
@@ -70,29 +71,34 @@ class MacaroonAuth(requests.auth.AuthBase):
             try:
                 _, key, value = caveat.caveat_id.split("|")
                 if key == "account":
-                    account = json.loads(base64.b64decode(
-                        value.encode("UTF-8")).decode("UTF-8"))
+                    account = json.loads(
+                        base64.b64decode(value.encode("UTF-8")).decode("UTF-8")
+                    )
                     if "openid" in account:
                         self.logger.debug(
-                            "%s macaroon: OpenID identifier: %s" %
-                            (macaroon_name, account["openid"]))
+                            "%s macaroon: OpenID identifier: %s"
+                            % (macaroon_name, account["openid"])
+                        )
                 elif key == "acl":
                     self.logger.debug(
-                        "%s macaroon: permissions: %s" %
-                        (macaroon_name, value))
+                        "%s macaroon: permissions: %s" % (macaroon_name, value)
+                    )
                 elif key == "channel":
                     self.logger.debug(
-                        "%s macaroon: channels: %s" % (macaroon_name, value))
+                        "%s macaroon: channels: %s" % (macaroon_name, value)
+                    )
                 elif key == "expires":
                     self.logger.debug(
-                        "%s macaroon: expires: %s" % (macaroon_name, value))
+                        "%s macaroon: expires: %s" % (macaroon_name, value)
+                    )
                 elif key == "package_id":
                     self.logger.debug(
-                        "%s macaroon: snap-ids: %s" % (macaroon_name, value))
+                        "%s macaroon: snap-ids: %s" % (macaroon_name, value)
+                    )
                 elif key == "valid_since":
                     self.logger.debug(
-                        "%s macaroon: valid since: %s" %
-                        (macaroon_name, value))
+                        "%s macaroon: valid since: %s" % (macaroon_name, value)
+                    )
             except ValueError:
                 pass
 
@@ -100,7 +106,8 @@ class MacaroonAuth(requests.auth.AuthBase):
         # Check framing.
         if not set(key).issubset(self.allowed_chars):
             raise InvalidStoreSecretsError(
-                "Key contains unsafe characters: %r" % key)
+                "Key contains unsafe characters: %r" % key
+            )
         if not set(value).issubset(self.allowed_chars):
             # Don't include secrets in exception arguments.
             raise InvalidStoreSecretsError("Value contains unsafe characters")
@@ -111,9 +118,11 @@ class MacaroonAuth(requests.auth.AuthBase):
     def discharge_macaroon_raw(self):
         root_macaroon = Macaroon.deserialize(self.root_macaroon_raw)
         unbound_discharge_macaroon = Macaroon.deserialize(
-            self.unbound_discharge_macaroon_raw)
+            self.unbound_discharge_macaroon_raw
+        )
         discharge_macaroon = root_macaroon.prepare_for_request(
-            unbound_discharge_macaroon)
+            unbound_discharge_macaroon
+        )
         return discharge_macaroon.serialize()
 
     def __call__(self, r):
@@ -121,7 +130,8 @@ class MacaroonAuth(requests.auth.AuthBase):
         params.append(self._makeAuthParam("root", self.root_macaroon_raw))
         if self.unbound_discharge_macaroon_raw is not None:
             params.append(
-                self._makeAuthParam("discharge", self.discharge_macaroon_raw))
+                self._makeAuthParam("discharge", self.discharge_macaroon_raw)
+            )
         r.headers["Authorization"] = "Macaroon " + ", ".join(params)
         return r
 
@@ -138,10 +148,12 @@ def _get_discharge_macaroon_raw(snap):
         container = getUtility(IEncryptedContainer, "snap-store-secrets")
         try:
             return container.decrypt(
-                snap.store_secrets["discharge_encrypted"]).decode("UTF-8")
+                snap.store_secrets["discharge_encrypted"]
+            ).decode("UTF-8")
         except CryptoError as e:
             raise UnauthorizedUploadResponse(
-                "Failed to decrypt discharge macaroon: %s" % e)
+                "Failed to decrypt discharge macaroon: %s" % e
+            )
     else:
         return snap.store_secrets.get("discharge")
 
@@ -155,9 +167,9 @@ def _set_discharge_macaroon_raw(snap, discharge_macaroon_raw):
     new_secrets = dict(snap.store_secrets)
     container = getUtility(IEncryptedContainer, "snap-store-secrets")
     if container.can_encrypt:
-        new_secrets["discharge_encrypted"] = (
-            removeSecurityProxy(container.encrypt(
-                discharge_macaroon_raw.encode("UTF-8"))))
+        new_secrets["discharge_encrypted"] = removeSecurityProxy(
+            container.encrypt(discharge_macaroon_raw.encode("UTF-8"))
+        )
         new_secrets.pop("discharge", None)
     else:
         new_secrets["discharge"] = discharge_macaroon_raw
@@ -171,7 +183,7 @@ _default_store_channels = [
     {"name": "edge", "display_name": "Edge"},
     {"name": "beta", "display_name": "Beta"},
     {"name": "stable", "display_name": "Stable"},
-    ]
+]
 
 
 @implementer(ISnapStoreClient)
@@ -199,9 +211,11 @@ class SnapStoreClient:
                 if "error_list" in response_data:
                     error_message = "\n".join(
                         error["message"]
-                        for error in response_data["error_list"])
+                        for error in response_data["error_list"]
+                    )
         detail = six.ensure_text(
-            requests_error.response.content, errors="replace")
+            requests_error.response.content, errors="replace"
+        )
         can_retry = requests_error.response.status_code in (502, 503, 504)
         return error_class(error_message, detail=detail, can_retry=can_retry)
 
@@ -212,15 +226,20 @@ class SnapStoreClient:
         request = get_current_browser_request()
         timeline_action = get_request_timeline(request).start(
             "request-snap-upload-macaroon",
-            "%s/%s" % (snappy_series.name, snap_name), allow_nested=True)
+            "%s/%s" % (snappy_series.name, snap_name),
+            allow_nested=True,
+        )
         try:
             response = urlfetch(
-                request_url, method="POST",
+                request_url,
+                method="POST",
                 json={
                     "packages": [
-                        {"name": snap_name, "series": snappy_series.name}],
+                        {"name": snap_name, "series": snappy_series.name}
+                    ],
                     "permissions": ["package_upload"],
-                    })
+                },
+            )
             response_data = response.json()
             if "macaroon" not in response_data:
                 raise BadRequestPackageUploadResponse(response.text)
@@ -235,24 +254,32 @@ class SnapStoreClient:
         """Upload a single file."""
         assert config.snappy.store_upload_url is not None
         unscanned_upload_url = urlappend(
-            config.snappy.store_upload_url, "unscanned-upload/")
+            config.snappy.store_upload_url, "unscanned-upload/"
+        )
         lfa.open()
         try:
             lfa_wrapper = EncodableLibraryFileAlias(lfa)
             encoder = MultipartEncoder(
                 fields={
                     "binary": (
-                        lfa.filename, lfa_wrapper, "application/octet-stream"),
-                    })
+                        lfa.filename,
+                        lfa_wrapper,
+                        "application/octet-stream",
+                    ),
+                }
+            )
             # XXX cjwatson 2016-05-09: This should add timeline information,
             # but that's currently difficult in jobs.
             try:
                 response = urlfetch(
-                    unscanned_upload_url, method="POST", data=encoder,
+                    unscanned_upload_url,
+                    method="POST",
+                    data=encoder,
                     headers={
                         "Content-Type": encoder.content_type,
                         "Accept": "application/json",
-                        })
+                    },
+                )
                 response_data = response.json()
                 if not response_data.get("successful", False):
                     raise UploadFailedResponse(response.text)
@@ -274,40 +301,50 @@ class SnapStoreClient:
             "updown_id": upload_id,
             "series": snap.store_series.name,
             "built_at": snapbuild.date_started.isoformat(),
-            }
+        }
         # The security proxy is useless and breaks JSON serialisation.
         channels = removeSecurityProxy(snap.store_channels)
         if channels:
             # This will cause a release
-            data.update({
-                "channels": channels,
-                "only_if_newer": True,
-                })
+            data.update(
+                {
+                    "channels": channels,
+                    "only_if_newer": True,
+                }
+            )
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
             response = urlfetch(
-                upload_url, method="POST", json=data,
+                upload_url,
+                method="POST",
+                json=data,
                 auth=MacaroonAuth(
                     snap.store_secrets["root"],
-                    _get_discharge_macaroon_raw(snap)))
+                    _get_discharge_macaroon_raw(snap),
+                ),
+            )
             response_data = response.json()
             return response_data["status_details_url"]
         except requests.HTTPError as e:
             if e.response.status_code == 401:
-                if (e.response.headers.get("WWW-Authenticate") ==
-                        "Macaroon needs_refresh=1"):
+                if (
+                    e.response.headers.get("WWW-Authenticate")
+                    == "Macaroon needs_refresh=1"
+                ):
                     raise NeedsRefreshResponse()
                 else:
                     raise cls._makeSnapStoreError(
-                        UnauthorizedUploadResponse, e)
+                        UnauthorizedUploadResponse, e
+                    )
             raise cls._makeSnapStoreError(UploadFailedResponse, e)
 
     @classmethod
     def push(cls, snapbuild, upload_id):
         """See `ISnapStoreClient`."""
         return cls.refreshIfNecessary(
-            snapbuild.snap, cls._push, snapbuild, upload_id)
+            snapbuild.snap, cls._push, snapbuild, upload_id
+        )
 
     @classmethod
     def refreshDischargeMacaroon(cls, snap):
@@ -315,12 +352,14 @@ class SnapStoreClient:
         assert config.launchpad.openid_provider_root is not None
         assert snap.store_secrets is not None
         refresh_url = urlappend(
-            config.launchpad.openid_provider_root, "api/v2/tokens/refresh")
+            config.launchpad.openid_provider_root, "api/v2/tokens/refresh"
+        )
         discharge_macaroon_raw = _get_discharge_macaroon_raw(snap)
         if discharge_macaroon_raw is None:
             raise UnauthorizedUploadResponse(
                 "Tried to refresh discharge for snap with no discharge "
-                "macaroon")
+                "macaroon"
+            )
         data = {"discharge_macaroon": discharge_macaroon_raw}
         try:
             response = urlfetch(refresh_url, method="POST", json=data)
@@ -352,7 +391,7 @@ class SnapStoreClient:
                 # This is returned as error in the upload,
                 # but there is nothing we can do about it,
                 # our upload has been successful
-                if response_data['code'] == 'need_manual_review':
+                if response_data["code"] == "need_manual_review":
                     return response_data["url"], response_data["revision"]
                 # The review-queued state is a little odd.  It shows up as a
                 # processing error of sorts, and it doesn't contain a URL or
@@ -361,12 +400,14 @@ class SnapStoreClient:
                 # take an arbitrary amount of time.  We'll just return
                 # (None, None) to indicate that we have no information but
                 # that it's OK to continue.
-                if (response_data["code"] == "processing_error" and
-                    any(error["code"] == "review-queued"
-                        for error in response_data["errors"])):
+                if response_data["code"] == "processing_error" and any(
+                    error["code"] == "review-queued"
+                    for error in response_data["errors"]
+                ):
                     return None, None
                 error_message = "\n".join(
-                    error["message"] for error in response_data["errors"])
+                    error["message"] for error in response_data["errors"]
+                )
                 error_messages = []
                 for error in response_data["errors"]:
                     error_detail = {"message": error["message"]}
@@ -374,7 +415,8 @@ class SnapStoreClient:
                         error_detail["link"] = error["link"]
                     error_messages.append(error_detail)
                 raise ScanFailedResponse(
-                    error_message, messages=error_messages)
+                    error_message, messages=error_messages
+                )
             else:
                 return response_data["url"], response_data["revision"]
         except requests.HTTPError as e:

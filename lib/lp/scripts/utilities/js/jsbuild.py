@@ -4,28 +4,29 @@
 """build.py - Minifies and creates the JS build directory."""
 
 __all__ = [
-    'CSSComboFile',
-    ]
+    "CSSComboFile",
+]
 
-from glob import glob
 import optparse
 import os
 import re
 import sys
+from glob import glob
 
 import cssutils
 from cssutils import settings
 
-
 HERE = os.path.dirname(__file__)
-BUILD_DIR = os.path.normpath(os.path.join(
-    HERE, os.pardir, os.pardir, os.pardir, 'build'))
-DEFAULT_SRC_DIR = os.path.normpath(os.path.join(
-    HERE, os.pardir, os.pardir, os.pardir, 'app', 'javascript'))
+BUILD_DIR = os.path.normpath(
+    os.path.join(HERE, os.pardir, os.pardir, os.pardir, "build")
+)
+DEFAULT_SRC_DIR = os.path.normpath(
+    os.path.join(HERE, os.pardir, os.pardir, os.pardir, "app", "javascript")
+)
 
-ESCAPE_STAR_PROPERTY_RE = re.compile(br'\*([a-zA-Z0-9_-]+):')
-UNESCAPE_STAR_PROPERTY_RE = re.compile(br'([a-zA-Z0-9_-]+)_ie_star_hack:')
-URL_RE = re.compile(br"url\([ \"\']*([^ \"\']+)[ \"\']*\)")
+ESCAPE_STAR_PROPERTY_RE = re.compile(rb"\*([a-zA-Z0-9_-]+):")
+UNESCAPE_STAR_PROPERTY_RE = re.compile(rb"([a-zA-Z0-9_-]+)_ie_star_hack:")
+URL_RE = re.compile(rb"url\([ \"\']*([^ \"\']+)[ \"\']*\)")
 
 
 def relative_path(from_file, to_file):
@@ -70,19 +71,20 @@ class ComboFile:
             return False
 
     def log(self, msg):
-        sys.stdout.write(msg + '\n')
+        sys.stdout.write(msg + "\n")
 
     def update(self):
         """Update the file from its source files."""
-        with open(self.target_file, 'wb') as target_fh:
+        with open(self.target_file, "wb") as target_fh:
             for src_file in self.src_files:
                 self.log("Processing '%s'" % os.path.basename(src_file))
                 target_fh.write(self.get_file_header(src_file))
-                with open(src_file, 'rb') as fh:
+                with open(src_file, "rb") as fh:
                     content = fh.read()
                 try:
                     target_fh.write(
-                        self.filter_file_content(content, src_file))
+                        self.filter_file_content(content, src_file)
+                    )
                 except Exception:
                     os.remove(self.target_file)
                     raise
@@ -92,7 +94,7 @@ class ComboFile:
 
         Can be used to help annotate the output file.
         """
-        return b''
+        return b""
 
     def get_file_header(self, path):
         """Return a byte string to include before outputting a file.
@@ -100,7 +102,7 @@ class ComboFile:
         Can be used by subclasses to output a file reference in the combined
         file. Default implementation returns nothing.
         """
-        return b''
+        return b""
 
     def filter_file_content(self, file_content, path):
         """Hook to process the file content before being combined."""
@@ -114,8 +116,14 @@ class CSSComboFile(ComboFile):
     to the new location, and minify the result.
     """
 
-    def __init__(self, src_files, target_file, resource_prefix=b"",
-                 minify=True, rewrite_urls=True):
+    def __init__(
+        self,
+        src_files,
+        target_file,
+        resource_prefix=b"",
+        minify=True,
+        rewrite_urls=True,
+    ):
         super().__init__(src_files, target_file)
         self.resource_prefix = resource_prefix.rstrip(b"/")
         self.minify = minify
@@ -136,14 +144,17 @@ class CSSComboFile(ComboFile):
                 relative_parts = []
             else:
                 relative_parts = relative_src_dir.encode("UTF-8").split(
-                    os.path.sep.encode("UTF-8"))
+                    os.path.sep.encode("UTF-8")
+                )
 
             def fix_relative_url(match):
                 url = match.group(1)
                 # Don't modify absolute URLs or 'data:' urls.
-                if (url.startswith(b"http") or
-                        url.startswith(b"/") or
-                        url.startswith(b"data:")):
+                if (
+                    url.startswith(b"http")
+                    or url.startswith(b"/")
+                    or url.startswith(b"data:")
+                ):
                     return match.group(0)
                 parts = relative_parts + url.split(b"/")
                 result = []
@@ -153,7 +164,9 @@ class CSSComboFile(ComboFile):
                         continue
                     result.append(part)
                 return b"url(%s)" % b"/".join(
-                    filter(None, [self.resource_prefix] + result))
+                    filter(None, [self.resource_prefix] + result)
+                )
+
             file_content = URL_RE.sub(fix_relative_url, file_content)
 
         if self.minify:
@@ -163,12 +176,14 @@ class CSSComboFile(ComboFile):
                 cssutils.ser.prefs.useMinified()
 
                 stylesheet = ESCAPE_STAR_PROPERTY_RE.sub(
-                    br'\1_ie_star_hack:', file_content)
-                settings.set('DXImageTransform.Microsoft', True)
+                    rb"\1_ie_star_hack:", file_content
+                )
+                settings.set("DXImageTransform.Microsoft", True)
                 parser = cssutils.CSSParser(raiseExceptions=True)
                 css = parser.parseString(stylesheet)
                 stylesheet = UNESCAPE_STAR_PROPERTY_RE.sub(
-                    br'*\1:', css.cssText)
+                    rb"*\1:", css.cssText
+                )
                 return stylesheet + b"\n"
             finally:
                 cssutils.setSerializer(old_serializer)
@@ -176,9 +191,13 @@ class CSSComboFile(ComboFile):
 
 
 class Builder:
-
-    def __init__(self, name='launchpad', build_dir=BUILD_DIR,
-                 src_dir=DEFAULT_SRC_DIR, extra_files=None):
+    def __init__(
+        self,
+        name="launchpad",
+        build_dir=BUILD_DIR,
+        src_dir=DEFAULT_SRC_DIR,
+        extra_files=None,
+    ):
         """Create a new Builder.
 
         :param name: The name of the package we are building. This will
@@ -204,11 +223,11 @@ class Builder:
             self.extra_files = extra_files
 
     def log(self, msg):
-        sys.stdout.write(msg + '\n')
+        sys.stdout.write(msg + "\n")
 
     def fail(self, msg):
         """An error was encountered, abort build."""
-        sys.stderr.write(msg + '\n')
+        sys.stderr.write(msg + "\n")
         sys.exit(1)
 
     def ensure_build_directory(self, path):
@@ -217,9 +236,10 @@ class Builder:
         if os.path.exists(target_dir):
             if not os.path.isdir(target_dir):
                 self.fail(
-                    "The target path, '%s', is not a directory!" % target_dir)
+                    "The target path, '%s', is not a directory!" % target_dir
+                )
         else:
-            self.log('Creating %s' % target_dir)
+            self.log("Creating %s" % target_dir)
             os.makedirs(target_dir)
         return target_dir
 
@@ -228,9 +248,10 @@ class Builder:
         if os.path.lexists(dst):
             if not os.path.islink(dst):
                 self.fail(
-                    "The target path, '%s', is not a symbolic link! " % dst)
+                    "The target path, '%s', is not a symbolic link! " % dst
+                )
         else:
-            self.log('Linking %s -> %s' % (src, dst))
+            self.log("Linking %s -> %s" % (src, dst))
             os.symlink(src, dst)
 
     def build_assets(self, component_name):
@@ -238,7 +259,7 @@ class Builder:
         join = os.path.join
         isdir = os.path.isdir
 
-        assets_path = join(component_name, 'assets')
+        assets_path = join(component_name, "assets")
         src_assets_dir = join(self.src_dir, assets_path)
         if not isdir(src_assets_dir):
             return
@@ -246,10 +267,12 @@ class Builder:
         target_assets_dir = self.ensure_build_directory(assets_path)
         # Symlink everything except the skins subdirectory.
         self.link_directory_content(
-            src_assets_dir, target_assets_dir,
-            lambda src: not src.endswith('skins'))
+            src_assets_dir,
+            target_assets_dir,
+            lambda src: not src.endswith("skins"),
+        )
 
-        src_skins_dir = join(src_assets_dir, 'skins')
+        src_skins_dir = join(src_assets_dir, "skins")
         if not isdir(src_skins_dir):
             return
 
@@ -268,7 +291,7 @@ class Builder:
             default a symlink is created for everything.
         """
         for entry in os.scandir(src_dir):
-            if entry.name.endswith('~'):
+            if entry.name.endswith("~"):
                 continue
             if link_filter and not link_filter(entry.path):
                 continue
@@ -279,7 +302,7 @@ class Builder:
         """Build a skin for a particular component."""
         join = os.path.join
 
-        skin_dir = join(component_name, 'assets', 'skins', skin_name)
+        skin_dir = join(component_name, "assets", "skins", skin_name)
         src_skin_dir = join(self.src_dir, skin_dir)
         target_skin_dir = self.ensure_build_directory(skin_dir)
 
@@ -290,43 +313,53 @@ class Builder:
         skin_files = self.skins.setdefault(skin_name, [])
 
         # Create the combined core+skin CSS file.
-        for skin_file in glob(join(src_skin_dir, '*-skin.css')):
-            module_name = os.path.basename(skin_file)[:-len('-skin.css')]
+        for skin_file in glob(join(src_skin_dir, "*-skin.css")):
+            module_name = os.path.basename(skin_file)[: -len("-skin.css")]
 
-            target_skin_file = join(target_skin_dir, '%s.css' % module_name)
+            target_skin_file = join(target_skin_dir, "%s.css" % module_name)
             skin_files.append(target_skin_file)
 
             # Combine files from the build directory so that
             # relative paths are sane.
             css_files = [
-                os.path.join(target_skin_dir, os.path.basename(skin_file))]
+                os.path.join(target_skin_dir, os.path.basename(skin_file))
+            ]
             core_css_file = join(
-                self.src_dir, component_name, 'assets',
-                '%s-core.css' % module_name)
+                self.src_dir,
+                component_name,
+                "assets",
+                "%s-core.css" % module_name,
+            )
             if os.path.exists(core_css_file):
                 css_files.insert(0, core_css_file)
 
             combined_css = CSSComboFile(css_files, target_skin_file)
             if combined_css.needs_update():
-                self.log('Combining %s into %s...' % (
-                    ", ".join(map(os.path.basename, css_files)),
-                    target_skin_file))
+                self.log(
+                    "Combining %s into %s..."
+                    % (
+                        ", ".join(map(os.path.basename, css_files)),
+                        target_skin_file,
+                    )
+                )
                 combined_css.update()
 
     def update_combined_css_skins(self):
         """Create one combined CSS file per skin."""
-        extra_css_files = [f for f in self.extra_files if f.endswith('.css')]
+        extra_css_files = [f for f in self.extra_files if f.endswith(".css")]
         for skin_name in self.skins:
-            skin_build_file = os.path.join(self.build_dir, "%s-%s.css" %
-                (self.name, skin_name))
+            skin_build_file = os.path.join(
+                self.build_dir, "%s-%s.css" % (self.name, skin_name)
+            )
 
             css_files = extra_css_files + self.skins[skin_name]
             # Embedded URL rewrite should start with build/ for correct
             # filesystem location, as node-sass cannot add it.
             combined_css = CSSComboFile(
-                css_files, skin_build_file, resource_prefix=b"build/")
+                css_files, skin_build_file, resource_prefix=b"build/"
+            )
             if combined_css.needs_update():
-                self.log('Updating %s...' % skin_build_file)
+                self.log("Updating %s..." % skin_build_file)
                 combined_css.update()
 
     def do_build(self):
@@ -334,7 +367,8 @@ class Builder:
         dir_list = sorted(
             os.scandir(self.src_dir),
             key=lambda x: x.name.lower(),
-            reverse=True)
+            reverse=True,
+        )
         for entry in dir_list:
             if not entry.is_dir():
                 continue
@@ -346,19 +380,32 @@ def get_options():
     """Parse the command line options."""
     parser = optparse.OptionParser(
         usage="%prog [options] [extra_files]",
-        description=(
-            "Create a build directory of CSS/JS files. "
-            ))
+        description=("Create a build directory of CSS/JS files. "),
+    )
     parser.add_option(
-        '-n', '--name', dest='name', default='launchpad',
-        help=('The basename of the generated compilation file. Defaults to '
-            '"launchpad".'))
+        "-n",
+        "--name",
+        dest="name",
+        default="launchpad",
+        help=(
+            "The basename of the generated compilation file. Defaults to "
+            '"launchpad".'
+        ),
+    )
     parser.add_option(
-        '-b', '--builddir', dest='build_dir', default=BUILD_DIR,
-        help=('The directory that should contain built files.'))
+        "-b",
+        "--builddir",
+        dest="build_dir",
+        default=BUILD_DIR,
+        help=("The directory that should contain built files."),
+    )
     parser.add_option(
-        '-s', '--srcdir', dest='src_dir', default=DEFAULT_SRC_DIR,
-        help=('The directory containing the src files.'))
+        "-s",
+        "--srcdir",
+        dest="src_dir",
+        default=DEFAULT_SRC_DIR,
+        help=("The directory containing the src files."),
+    )
     return parser.parse_args()
 
 
@@ -366,8 +413,8 @@ def main():
     options, extra = get_options()
 
     Builder(
-       name=options.name,
-       build_dir=options.build_dir,
-       src_dir=options.src_dir,
-       extra_files=extra,
-       ).do_build()
+        name=options.name,
+        build_dir=options.build_dir,
+        src_dir=options.src_dir,
+        extra_files=extra,
+    ).do_build()

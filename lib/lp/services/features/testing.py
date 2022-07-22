@@ -4,25 +4,25 @@
 """Helpers for writing tests that use feature flags."""
 
 __all__ = [
-    'FeatureFixture',
-    'MemoryFeatureFixture',
-    ]
+    "FeatureFixture",
+    "MemoryFeatureFixture",
+]
 
 
+import psycopg2
 from fixtures import Fixture
 from lazr.restful.utils import get_current_browser_request
-import psycopg2
 
 from lp.services.features import (
     get_relevant_feature_controller,
     install_feature_controller,
-    )
+)
 from lp.services.features.flags import FeatureController
 from lp.services.features.rulesource import (
     MemoryFeatureRuleSource,
     Rule,
     StormFeatureRuleSource,
-    )
+)
 from lp.services.features.scopes import ScopesFromRequest
 from lp.testing.dbuser import dbuser
 
@@ -34,19 +34,24 @@ def dbadmin(func):
     implicitly commits the transaction, and we want to avoid unnecessary
     commits to avoid breaking database setup optimizations.
     """
+
     def dbadmin_retry(*args, **kw):
         try:
             return func(*args, **kw)
         except psycopg2.ProgrammingError:
-            with dbuser('testadmin'):
+            with dbuser("testadmin"):
                 return func(*args, **kw)
+
     return dbadmin_retry
 
 
 class FeatureFixtureMixin:
-
-    def __init__(self, features_dict, full_feature_rules=None,
-            override_scope_lookup=None):
+    def __init__(
+        self,
+        features_dict,
+        full_feature_rules=None,
+        override_scope_lookup=None,
+    ):
         """Constructor.
 
         :param features_dict: A dictionary-like object with keys and values
@@ -68,12 +73,14 @@ class FeatureFixtureMixin:
         if self.override_scope_lookup:
             scope_lookup = self.override_scope_lookup
         else:
+
             def scope_lookup(scope_name):
                 request = get_current_browser_request()
                 return ScopesFromRequest(request).lookup(scope_name)
 
         install_feature_controller(
-            FeatureController(scope_lookup, rule_source))
+            FeatureController(scope_lookup, rule_source)
+        )
         self.addCleanup(install_feature_controller, original_controller)
 
     def makeNewRules(self):
@@ -87,17 +94,16 @@ class FeatureFixtureMixin:
         # by setAllRules().
         new_rules = [
             Rule(
-                flag=flag_name,
-                scope='default',
-                priority=999,
-                value=str(value))
+                flag=flag_name, scope="default", priority=999, value=str(value)
+            )
             for flag_name, value in self.desired_features.items()
-                if value is not None]
+            if value is not None
+        ]
 
         if self.full_feature_rules is not None:
             new_rules.extend(
-                Rule(**rule_spec)
-                for rule_spec in self.full_feature_rules)
+                Rule(**rule_spec) for rule_spec in self.full_feature_rules
+            )
 
         return new_rules
 
@@ -123,7 +129,8 @@ class FeatureFixture(FeatureFixtureMixin, Fixture):
         rule_source = StormFeatureRuleSource()
         self.addCleanup(
             dbadmin(rule_source.setAllRules),
-            dbadmin(rule_source.getAllRulesAsTuples)())
+            dbadmin(rule_source.getAllRulesAsTuples)(),
+        )
         dbadmin(rule_source.setAllRules)(rules)
         return rule_source
 

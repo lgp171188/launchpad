@@ -1,21 +1,21 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
-from gzip import GzipFile
 import hashlib
 import http.client
-from io import BytesIO
 import os
 import unittest
+from datetime import datetime
+from gzip import GzipFile
+from io import BytesIO
 from urllib.parse import urlparse
 
-from lazr.uri import URI
 import pytz
 import requests
+import transaction
+from lazr.uri import URI
 from storm.expr import SQL
 from testtools.matchers import EndsWith
-import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -27,30 +27,24 @@ from lp.services.database.sqlbase import (
     cursor,
     flush_database_updates,
     session_store,
-    )
+)
 from lp.services.librarian.client import (
-    get_libraryfilealias_download_path,
     LibrarianClient,
-    )
+    get_libraryfilealias_download_path,
+)
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import DownloadFailed
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    TimeLimitedToken,
-    )
+from lp.services.librarian.model import LibraryFileAlias, TimeLimitedToken
 from lp.services.librarianserver.storage import LibrarianStorage
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.testing import TestCaseWithFactory
-from lp.testing.dbuser import (
-    dbuser,
-    switch_dbuser,
-    )
+from lp.testing.dbuser import dbuser, switch_dbuser
 from lp.testing.layers import (
     AppServerLayer,
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessAppServerLayer,
-    )
+)
 
 
 def uri_path_replace(url, old, new):
@@ -68,13 +62,14 @@ class LibrarianWebTestMixin:
         flush_database_updates()
         transaction.commit()
 
-    def get_restricted_file_and_public_url(self, filename='sample'):
+    def get_restricted_file_and_public_url(self, filename="sample"):
         # Use a regular LibrarianClient to ensure we speak to the
         # nonrestricted port on the librarian which is where secured
         # restricted files are served from.
         client = LibrarianClient()
         fileAlias = client.addFile(
-            filename, 12, BytesIO(b'a' * 12), contentType='text/plain')
+            filename, 12, BytesIO(b"a" * 12), contentType="text/plain"
+        )
         # Note: We're deliberately using the wrong url here: we should be
         # passing secure=True to getURLForAlias, but to use the returned URL
         # we would need a wildcard DNS facility patched into requests; instead
@@ -85,8 +80,8 @@ class LibrarianWebTestMixin:
         # Now that we have a url which talks to the public librarian, make the
         # file restricted.
         IMasterStore(LibraryFileAlias).find(
-            LibraryFileAlias, LibraryFileAlias.id == fileAlias).set(
-                restricted=True)
+            LibraryFileAlias, LibraryFileAlias.id == fileAlias
+        ).set(restricted=True)
         self.commit()
         return fileAlias, url
 
@@ -124,10 +119,13 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         for count in range(10):
             # Upload a file.  This should work without any exceptions being
             # thrown.
-            sampleData = b'x' + (b'blah' * (count % 5))
-            fileAlias = client.addFile('sample', len(sampleData),
-                                                 BytesIO(sampleData),
-                                                 contentType='text/plain')
+            sampleData = b"x" + (b"blah" * (count % 5))
+            fileAlias = client.addFile(
+                "sample",
+                len(sampleData),
+                BytesIO(sampleData),
+                contentType="text/plain",
+            )
 
             # Make sure we can get its URL
             url = client.getURLForAlias(fileAlias)
@@ -157,49 +155,57 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # displaying Ubuntu build logs in the browser.  The mimetype should be
         # "text/plain" for these files.
         client = LibrarianClient()
-        contents = 'Build log \N{SNOWMAN}...'.encode()
+        contents = "Build log \N{SNOWMAN}...".encode()
         build_log = BytesIO()
-        with GzipFile(mode='wb', fileobj=build_log) as f:
+        with GzipFile(mode="wb", fileobj=build_log) as f:
             f.write(contents)
         build_log.seek(0)
-        alias_id = client.addFile(name="build_log.txt.gz",
-                                  size=len(build_log.getvalue()),
-                                  file=build_log,
-                                  contentType="text/plain")
+        alias_id = client.addFile(
+            name="build_log.txt.gz",
+            size=len(build_log.getvalue()),
+            file=build_log,
+            contentType="text/plain",
+        )
 
         self.commit()
 
         url = client.getURLForAlias(alias_id)
         response = requests.get(url)
         response.raise_for_status()
-        mimetype = response.headers['content-type']
-        encoding = response.headers['content-encoding']
-        self.assertTrue(mimetype == "text/plain; charset=utf-8",
-                        "Wrong mimetype. %s != 'text/plain'." % mimetype)
-        self.assertTrue(encoding == "gzip",
-                        "Wrong encoding. %s != 'gzip'." % encoding)
-        self.assertEqual(contents.decode('UTF-8'), response.text)
+        mimetype = response.headers["content-type"]
+        encoding = response.headers["content-encoding"]
+        self.assertTrue(
+            mimetype == "text/plain; charset=utf-8",
+            "Wrong mimetype. %s != 'text/plain'." % mimetype,
+        )
+        self.assertTrue(
+            encoding == "gzip", "Wrong encoding. %s != 'gzip'." % encoding
+        )
+        self.assertEqual(contents.decode("UTF-8"), response.text)
 
     def test_checkNoEncoding(self):
         # Other files should have no encoding.
         client = LibrarianClient()
-        contents = b'Build log...'
+        contents = b"Build log..."
         build_log = BytesIO(contents)
-        alias_id = client.addFile(name="build_log.tgz",
-                                  size=len(contents),
-                                  file=build_log,
-                                  contentType="application/x-tar")
+        alias_id = client.addFile(
+            name="build_log.tgz",
+            size=len(contents),
+            file=build_log,
+            contentType="application/x-tar",
+        )
 
         self.commit()
 
         url = client.getURLForAlias(alias_id)
         response = requests.get(url)
         response.raise_for_status()
-        mimetype = response.headers['content-type']
-        self.assertNotIn('content-encoding', response.headers)
+        mimetype = response.headers["content-type"]
+        self.assertNotIn("content-encoding", response.headers)
         self.assertTrue(
             mimetype == "application/x-tar",
-            "Wrong mimetype. %s != 'application/x-tar'." % mimetype)
+            "Wrong mimetype. %s != 'application/x-tar'." % mimetype,
+        )
 
     def test_aliasNotFound(self):
         client = LibrarianClient()
@@ -210,34 +216,34 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # which we want to continue supporting. The content id is simply
         # ignored
         client = LibrarianClient()
-        filename = 'sample.txt'
-        aid = client.addFile(filename, 6, BytesIO(b'sample'), 'text/plain')
+        filename = "sample.txt"
+        aid = client.addFile(filename, 6, BytesIO(b"sample"), "text/plain")
         self.commit()
         url = client.getURLForAlias(aid)
         response = requests.get(url)
         response.raise_for_status()
-        self.assertEqual(response.content, b'sample')
+        self.assertEqual(response.content, b"sample")
 
-        old_url = uri_path_replace(url, str(aid), '42/%d' % aid)
+        old_url = uri_path_replace(url, str(aid), "42/%d" % aid)
         response = requests.get(url)
         response.raise_for_status()
-        self.assertEqual(response.content, b'sample')
+        self.assertEqual(response.content, b"sample")
 
         # If the content and alias IDs are not integers, a 404 is raised
-        old_url = uri_path_replace(url, str(aid), 'foo/%d' % aid)
+        old_url = uri_path_replace(url, str(aid), "foo/%d" % aid)
         self.require404(old_url)
-        old_url = uri_path_replace(url, str(aid), '%d/foo' % aid)
+        old_url = uri_path_replace(url, str(aid), "%d/foo" % aid)
         self.require404(old_url)
 
     def test_404(self):
         client = LibrarianClient()
-        filename = 'sample.txt'
-        aid = client.addFile(filename, 6, BytesIO(b'sample'), 'text/plain')
+        filename = "sample.txt"
+        aid = client.addFile(filename, 6, BytesIO(b"sample"), "text/plain")
         self.commit()
         url = client.getURLForAlias(aid)
         response = requests.get(url)
         response.raise_for_status()
-        self.assertEqual(response.content, b'sample')
+        self.assertEqual(response.content, b"sample")
 
         # Change the aliasid and assert we get a 404
         self.assertIn(str(aid), url)
@@ -246,45 +252,52 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
         # Change the filename and assert we get a 404
         self.assertIn(filename, url)
-        bad_name_url = uri_path_replace(url, filename, 'different.txt')
+        bad_name_url = uri_path_replace(url, filename, "different.txt")
         self.require404(bad_name_url)
 
     def test_duplicateuploads(self):
         client = LibrarianClient()
-        filename = 'sample.txt'
-        id1 = client.addFile(filename, 6, BytesIO(b'sample'), 'text/plain')
-        id2 = client.addFile(filename, 6, BytesIO(b'sample'), 'text/plain')
+        filename = "sample.txt"
+        id1 = client.addFile(filename, 6, BytesIO(b"sample"), "text/plain")
+        id2 = client.addFile(filename, 6, BytesIO(b"sample"), "text/plain")
 
-        self.assertNotEqual(id1, id2, 'Got allocated the same id!')
+        self.assertNotEqual(id1, id2, "Got allocated the same id!")
 
         self.commit()
 
-        self.assertEqual(client.getFileByAlias(id1).read(), b'sample')
-        self.assertEqual(client.getFileByAlias(id2).read(), b'sample')
+        self.assertEqual(client.getFileByAlias(id1).read(), b"sample")
+        self.assertEqual(client.getFileByAlias(id2).read(), b"sample")
 
     def test_robotsTxt(self):
-        url = 'http://%s:%d/robots.txt' % (
-            config.librarian.download_host, config.librarian.download_port)
+        url = "http://%s:%d/robots.txt" % (
+            config.librarian.download_host,
+            config.librarian.download_port,
+        )
         response = requests.get(url)
         response.raise_for_status()
-        self.assertIn('Disallow: /', response.text)
+        self.assertIn("Disallow: /", response.text)
 
     def test_headers(self):
         client = LibrarianClient()
 
         # Upload a file so we can retrieve it.
-        sample_data = b'blah'
+        sample_data = b"blah"
         file_alias_id = client.addFile(
-            'sample', len(sample_data), BytesIO(sample_data),
-            contentType='text/plain')
+            "sample",
+            len(sample_data),
+            BytesIO(sample_data),
+            contentType="text/plain",
+        )
         url = client.getURLForAlias(file_alias_id)
 
         # Change the date_created to a known value that doesn't match
         # the disk timestamp. The timestamp on disk cannot be trusted.
         file_alias = IMasterStore(LibraryFileAlias).get(
-            LibraryFileAlias, file_alias_id)
+            LibraryFileAlias, file_alias_id
+        )
         file_alias.date_created = datetime(
-            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc)
+            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc
+        )
 
         # Commit so the file is available from the Librarian.
         self.commit()
@@ -292,16 +305,15 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # Fetch the file via HTTP, recording the interesting headers
         response = requests.get(url)
         response.raise_for_status()
-        last_modified_header = response.headers['Last-Modified']
-        cache_control_header = response.headers['Cache-Control']
+        last_modified_header = response.headers["Last-Modified"]
+        cache_control_header = response.headers["Cache-Control"]
 
         # URLs point to the same content for ever, so we have a hardcoded
         # 1 year max-age cache policy.
-        self.assertEqual(cache_control_header, 'max-age=31536000, public')
+        self.assertEqual(cache_control_header, "max-age=31536000, public")
 
         # And we should have a correct Last-Modified header too.
-        self.assertEqual(
-            last_modified_header, 'Tue, 30 Jan 2001 13:45:59 GMT')
+        self.assertEqual(last_modified_header, "Tue, 30 Jan 2001 13:45:59 GMT")
 
     def test_missing_storage(self):
         # When a file exists in the DB but is missing from disk, a 404
@@ -309,16 +321,20 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         client = LibrarianClient()
 
         # Upload a file so we can retrieve it.
-        sample_data = b'blah'
+        sample_data = b"blah"
         file_alias_id = client.addFile(
-            'sample', len(sample_data), BytesIO(sample_data),
-            contentType='text/plain')
+            "sample",
+            len(sample_data),
+            BytesIO(sample_data),
+            contentType="text/plain",
+        )
         url = client.getURLForAlias(file_alias_id)
 
         # Change the date_created to a known value that doesn't match
         # the disk timestamp. The timestamp on disk cannot be trusted.
         file_alias = IMasterStore(LibraryFileAlias).get(
-            LibraryFileAlias, file_alias_id)
+            LibraryFileAlias, file_alias_id
+        )
 
         # Commit so the file is available from the Librarian.
         self.commit()
@@ -334,51 +350,56 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         # The URL now 500s, since the DB says it should exist.
         response = requests.get(url)
         self.assertEqual(500, response.status_code)
-        self.assertIn('Server', response.headers)
-        self.assertNotIn('Last-Modified', response.headers)
-        self.assertNotIn('Cache-Control', response.headers)
+        self.assertIn("Server", response.headers)
+        self.assertNotIn("Last-Modified", response.headers)
+        self.assertNotIn("Cache-Control", response.headers)
 
     def test_restricted_subdomain_must_match_file_alias(self):
         # IFF there is a .restricted. in the host, then the library file alias
         # in the subdomain must match that in the path.
         client = LibrarianClient()
-        fileAlias = client.addFile('sample', 12, BytesIO(b'a' * 12),
-            contentType='text/plain')
-        fileAlias2 = client.addFile('sample', 12, BytesIO(b'b' * 12),
-            contentType='text/plain')
+        fileAlias = client.addFile(
+            "sample", 12, BytesIO(b"a" * 12), contentType="text/plain"
+        )
+        fileAlias2 = client.addFile(
+            "sample", 12, BytesIO(b"b" * 12), contentType="text/plain"
+        )
         self.commit()
         url = client.getURLForAlias(fileAlias)
         download_host = urlparse(config.librarian.download_url)[1]
-        if ':' in download_host:
-            download_host = download_host[:download_host.find(':')]
-        template_host = 'i%%d.restricted.%s' % download_host
-        path = get_libraryfilealias_download_path(fileAlias, 'sample')
+        if ":" in download_host:
+            download_host = download_host[: download_host.find(":")]
+        template_host = "i%%d.restricted.%s" % download_host
+        path = get_libraryfilealias_download_path(fileAlias, "sample")
         # The basic URL must work.
         response = requests.get(url)
         response.raise_for_status()
         # Use the network level protocol because DNS resolution won't work
         # here (no wildcard support)
         connection = http.client.HTTPConnection(
-            config.librarian.download_host,
-            config.librarian.download_port)
+            config.librarian.download_host, config.librarian.download_port
+        )
         # A valid subdomain based URL must work.
         good_host = template_host % fileAlias
-        connection.request("GET", path, headers={'Host': good_host})
+        connection.request("GET", path, headers={"Host": good_host})
         response = connection.getresponse()
         response.read()
         self.assertEqual(200, response.status, response)
         # A subdomain based URL trying to put fileAlias into the restricted
         # domain of fileAlias2 must not work.
         hostile_host = template_host % fileAlias2
-        connection.request("GET", path, headers={'Host': hostile_host})
+        connection.request("GET", path, headers={"Host": hostile_host})
         response = connection.getresponse()
         response.read()
         self.assertEqual(404, response.status)
         # A subdomain which matches the LFA but is nested under one that
         # doesn't is also treated as hostile.
-        nested_host = 'i%d.restricted.i%d.restricted.%s' % (
-            fileAlias, fileAlias2, download_host)
-        connection.request("GET", path, headers={'Host': nested_host})
+        nested_host = "i%d.restricted.i%d.restricted.%s" % (
+            fileAlias,
+            fileAlias2,
+            download_host,
+        )
+        connection.request("GET", path, headers={"Host": nested_host})
         response = connection.getresponse()
         response.read()
         self.assertEqual(404, response.status)
@@ -411,8 +432,8 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         self.assertEqual(b"a" * 12, response.content)
 
     def test_restricted_with_token_encoding(self):
-        fileAlias, url = self.get_restricted_file_and_public_url('foo~%')
-        self.assertThat(url, EndsWith('/foo~%25'))
+        fileAlias, url = self.get_restricted_file_and_public_url("foo~%")
+        self.assertThat(url, EndsWith("/foo~%25"))
 
         # We have the base url for a restricted file; grant access to it
         # for a short time.
@@ -424,7 +445,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         self.assertEqual(b"a" * 12, response.content)
 
         # The token is valid even if the filename is encoded differently.
-        mangled_url = url.replace('~', '%7E')
+        mangled_url = url.replace("~", "%7E")
         self.assertNotEqual(mangled_url, url)
         response = requests.get(url, params={"token": token})
         response.raise_for_status()
@@ -439,10 +460,12 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         store = session_store()
         tokens = store.find(
             TimeLimitedToken,
-            TimeLimitedToken.token == hashlib.sha256(
-                token.encode('ASCII')).hexdigest())
+            TimeLimitedToken.token
+            == hashlib.sha256(token.encode("ASCII")).hexdigest(),
+        )
         tokens.set(
-            TimeLimitedToken.created == SQL("created - interval '1 week'"))
+            TimeLimitedToken.created == SQL("created - interval '1 week'")
+        )
         # Now, as per test_restricted_no_token we should get a 404.
         self.require404(url, params={"token": token})
 
@@ -451,39 +474,43 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         token = TimeLimitedToken.allocate(url)
         # Change the date_created to a known value for testing.
         file_alias = IMasterStore(LibraryFileAlias).get(
-            LibraryFileAlias, fileAlias)
+            LibraryFileAlias, fileAlias
+        )
         file_alias.date_created = datetime(
-            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc)
+            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc
+        )
         # Commit the update.
         self.commit()
         # Fetch the file via HTTP, recording the interesting headers
         response = requests.get(url, params={"token": token})
-        last_modified_header = response.headers['Last-Modified']
-        cache_control_header = response.headers['Cache-Control']
+        last_modified_header = response.headers["Last-Modified"]
+        cache_control_header = response.headers["Cache-Control"]
         # No caching for restricted files.
-        self.assertEqual(cache_control_header, 'max-age=0, private')
+        self.assertEqual(cache_control_header, "max-age=0, private")
         # And we should have a correct Last-Modified header too.
-        self.assertEqual(
-            last_modified_header, 'Tue, 30 Jan 2001 13:45:59 GMT')
+        self.assertEqual(last_modified_header, "Tue, 30 Jan 2001 13:45:59 GMT")
         # Perhaps we should also set Expires to the Last-Modified.
 
 
 class LibrarianZopelessWebTestCase(
-        LibrarianZopelessWebTestMixin, LibrarianWebTestCase):
-
+    LibrarianZopelessWebTestMixin, LibrarianWebTestCase
+):
     def test_getURLForAliasObject(self):
         # getURLForAliasObject returns the same URL as getURLForAlias.
         client = LibrarianClient()
         content = b"Test content"
         alias_id = client.addFile(
-            'test.txt', len(content), BytesIO(content),
-            contentType='text/plain')
+            "test.txt",
+            len(content),
+            BytesIO(content),
+            contentType="text/plain",
+        )
         self.commit()
 
         alias = getUtility(ILibraryFileAliasSet)[alias_id]
         self.assertEqual(
-            client.getURLForAlias(alias_id),
-            client.getURLForAliasObject(alias))
+            client.getURLForAlias(alias_id), client.getURLForAliasObject(alias)
+        )
 
 
 class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
@@ -501,13 +528,15 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
     def test_restricted_with_macaroon(self):
         fileAlias, url = self.get_restricted_file_and_public_url()
         lfa = IMasterStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             build = self.factory.makeBinaryPackageBuild(
-                archive=self.factory.makeArchive(private=True))
+                archive=self.factory.makeArchive(private=True)
+            )
             naked_build = removeSecurityProxy(build)
             self.factory.makeSourcePackageReleaseFile(
                 sourcepackagerelease=naked_build.source_package_release,
-                library_file=lfa)
+                library_file=lfa,
+            )
             naked_build.updateStatus(BuildStatus.BUILDING)
             issuer = getUtility(IMacaroonIssuer, "binary-package-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
@@ -519,22 +548,25 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
     def test_restricted_with_invalid_macaroon(self):
         fileAlias, url = self.get_restricted_file_and_public_url()
         lfa = IMasterStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             build = self.factory.makeBinaryPackageBuild(
-                archive=self.factory.makeArchive(private=True))
+                archive=self.factory.makeArchive(private=True)
+            )
             naked_build = removeSecurityProxy(build)
             self.factory.makeSourcePackageReleaseFile(
                 sourcepackagerelease=naked_build.source_package_release,
-                library_file=lfa)
+                library_file=lfa,
+            )
             naked_build.updateStatus(BuildStatus.BUILDING)
         self.commit()
         self.require404(url, auth=("", "not-a-macaroon"))
 
     def test_restricted_with_unverifiable_macaroon(self):
         fileAlias, url = self.get_restricted_file_and_public_url()
-        with dbuser('testadmin'):
+        with dbuser("testadmin"):
             build = self.factory.makeBinaryPackageBuild(
-                archive=self.factory.makeArchive(private=True))
+                archive=self.factory.makeArchive(private=True)
+            )
             removeSecurityProxy(build).updateStatus(BuildStatus.BUILDING)
             issuer = getUtility(IMacaroonIssuer, "binary-package-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
@@ -543,7 +575,8 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
 
 class LibrarianZopelessWebMacaroonTestCase(
-        LibrarianZopelessWebTestMixin, LibrarianWebMacaroonTestCase):
+    LibrarianZopelessWebTestMixin, LibrarianWebMacaroonTestCase
+):
 
     layer = ZopelessAppServerLayer
 
@@ -559,10 +592,11 @@ class DeletedContentTestCase(unittest.TestCase):
     def test_deletedContentNotFound(self):
         # Use a user with rights to change the deleted flag in the db.
         # This currently means a superuser.
-        switch_dbuser('testadmin')
+        switch_dbuser("testadmin")
 
         alias = getUtility(ILibraryFileAliasSet).create(
-                'whatever', 8, BytesIO(b'xxx\nxxx\n'), 'text/plain')
+            "whatever", 8, BytesIO(b"xxx\nxxx\n"), "text/plain"
+        )
         alias_id = alias.id
         transaction.commit()
 
@@ -576,13 +610,16 @@ class DeletedContentTestCase(unittest.TestCase):
         url = alias.http_url
         response = requests.get(url)
         response.raise_for_status()
-        self.assertEqual(response.content, b'xxx\nxxx\n')
+        self.assertEqual(response.content, b"xxx\nxxx\n")
 
         # But when we flag the content as deleted
         cur = cursor()
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE LibraryFileAlias SET content=NULL WHERE id=%s
-            """, (alias.id, ))
+            """,
+            (alias.id,),
+        )
         transaction.commit()
 
         # Things become not found

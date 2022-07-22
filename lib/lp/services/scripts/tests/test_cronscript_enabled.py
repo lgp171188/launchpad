@@ -15,97 +15,126 @@ from lp.testing import TestCase
 
 
 class TestCronscriptEnabled(TestCase):
-
     def setUp(self):
         super().setUp()
         self.log = BufferLogger()
 
     def makeConfig(self, body):
-        tempfile = NamedTemporaryFile(suffix='.ini')
-        tempfile.write(body.encode('UTF-8'))
+        tempfile = NamedTemporaryFile(suffix=".ini")
+        tempfile.write(body.encode("UTF-8"))
         tempfile.flush()
         # Ensure a reference is kept until the test is over.
         # tempfile will then clean itself up.
         self.addCleanup(lambda x: None, tempfile)
-        return 'file://' + os.path.abspath(tempfile.name)
+        return "file://" + os.path.abspath(tempfile.name)
 
     def test_noconfig(self):
-        enabled = cronscript_enabled('file:///idontexist.ini', 'foo', self.log)
+        enabled = cronscript_enabled("file:///idontexist.ini", "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_emptyconfig(self):
-        config = self.makeConfig('')
-        enabled = cronscript_enabled(config, 'foo', self.log)
+        config = self.makeConfig("")
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_default_true(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: True
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_default_false(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: False
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(False, enabled)
 
     def test_specific_true(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: False
             [foo]
             enabled: True
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_specific_false(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: True
             [foo]
             enabled: False
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(False, enabled)
 
     def test_broken_true(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             # This file is unparsable
             [DEFAULT
             enabled: False
             [foo
             enabled: False
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_invalid_boolean_true(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: whoops
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_specific_missing_fallsback(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             enabled: False
             [foo]
             # There is a typo in the next line.
             enobled: True
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(False, enabled)
 
     def test_default_missing_fallsback(self):
-        config = self.makeConfig(dedent("""\
+        config = self.makeConfig(
+            dedent(
+                """\
             [DEFAULT]
             # There is a typo in the next line. Fallsback to hardcoded
             # default.
@@ -113,22 +142,26 @@ class TestCronscriptEnabled(TestCase):
             [foo]
             # There is a typo in the next line.
             enobled: False
-            """))
-        enabled = cronscript_enabled(config, 'foo', self.log)
+            """
+            )
+        )
+        enabled = cronscript_enabled(config, "foo", self.log)
         self.assertIs(True, enabled)
 
     def test_enabled_cronscript(self):
         cmd = [
             sys.executable,
-            os.path.join(os.path.dirname(__file__), 'example-cronscript.py'),
-            '-qqqqq', 'enabled',
-            ]
+            os.path.join(os.path.dirname(__file__), "example-cronscript.py"),
+            "-qqqqq",
+            "enabled",
+        ]
         self.assertEqual(42, subprocess.call(cmd))
 
     def test_disabled_cronscript(self):
         cmd = [
             sys.executable,
-            os.path.join(os.path.dirname(__file__), 'example-cronscript.py'),
-            '-qqqqq', 'disabled',
-            ]
+            os.path.join(os.path.dirname(__file__), "example-cronscript.py"),
+            "-qqqqq",
+            "disabled",
+        ]
         self.assertEqual(0, subprocess.call(cmd))

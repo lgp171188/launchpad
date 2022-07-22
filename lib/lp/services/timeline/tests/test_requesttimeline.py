@@ -11,7 +11,7 @@ from lp.services import webapp
 from lp.services.timeline.requesttimeline import (
     get_request_timeline,
     set_request_timeline,
-    )
+)
 
 
 class TestRequestTimeline(testtools.TestCase):
@@ -53,4 +53,5 @@ class TestRequestTimeline(testtools.TestCase):
         timeline = Timeline()
         set_request_timeline(req, timeline)
         self.assertEqual(timeline, get_request_timeline(req))
+
     # Tests while adapter._local contains the timeline ---end---

@@ -1,8 +1,8 @@
 # Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
 import json
+from datetime import datetime
 
 import pytz
 from zope.security.proxy import removeSecurityProxy
@@ -12,17 +12,13 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
+)
 from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
-    )
+)
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.testing import (
-    anonymous_logged_in,
-    api_url,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, anonymous_logged_in, api_url
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import webservice_for_person
 
@@ -37,7 +33,8 @@ class TestDistribution(TestCaseWithFactory):
         distro_url = api_url(distro)
         ws = webservice_for_person(None, default_api_version="devel")
         response = ws.patch(
-            distro_url, "application/json", json.dumps({"active": False}))
+            distro_url, "application/json", json.dumps({"active": False})
+        )
         self.assertEqual(401, response.status)
 
 
@@ -56,16 +53,27 @@ class TestGetBranchTips(TestCaseWithFactory):
         source_package = self.factory.makeSourcePackage(distroseries=series_1)
         branch = self.factory.makeBranch(sourcepackage=source_package)
         unofficial_branch = self.factory.makeBranch(
-            sourcepackage=source_package)
+            sourcepackage=source_package
+        )
         registrant = self.factory.makePerson()
         now = datetime.now(pytz.UTC)
         sourcepackagename = self.factory.makeSourcePackageName()
         SeriesSourcePackageBranchSet.new(
-            series_1, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch, registrant, now)
+            series_1,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch,
+            registrant,
+            now,
+        )
         SeriesSourcePackageBranchSet.new(
-            series_2, PackagePublishingPocket.RELEASE, sourcepackagename,
-            branch, registrant, now)
+            series_2,
+            PackagePublishingPocket.RELEASE,
+            sourcepackagename,
+            branch,
+            registrant,
+            now,
+        )
         self.factory.makeRevisionsForBranch(branch)
         self.branch_name = branch.unique_name
         self.unofficial_branch_name = unofficial_branch.unique_name
@@ -82,8 +90,8 @@ class TestGetBranchTips(TestCaseWithFactory):
         self.assertEqual(item[0], self.branch_name)
         self.assertTrue(item[1], self.branch_last_scanned_id)
         self.assertEqual(
-            sorted(item[2]),
-            [self.series_1.name, self.series_2.name])
+            sorted(item[2]), [self.series_1.name, self.series_2.name]
+        )
 
     def test_same_results(self):
         """Calling getBranchTips directly matches calling it via the API."""
@@ -106,14 +114,18 @@ class TestGetBranchTips(TestCaseWithFactory):
         """If "since" is given, return branches with new tips since then."""
         # There is at least one branch with a tip since the year 2000.
         response = self.ws.named_get(
-            self.distro_url, "getBranchTips",
-            since=datetime(2000, 1, 1).isoformat())
+            self.distro_url,
+            "getBranchTips",
+            since=datetime(2000, 1, 1).isoformat(),
+        )
         self.assertEqual(200, response.status)
         self.assertNotEqual(0, len(response.jsonBody()))
         # There are no branches with a tip since the year 3000.
         response = self.ws.named_get(
-            self.distro_url, "getBranchTips",
-            since=datetime(3000, 1, 1).isoformat())
+            self.distro_url,
+            "getBranchTips",
+            since=datetime(3000, 1, 1).isoformat(),
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(0, len(response.jsonBody()))
 
@@ -163,7 +175,9 @@ class TestGetBranchTipsSecurity(TestCaseWithFactory):
         source_package = self.factory.makeSourcePackage(distroseries=series)
         branch = self.factory.makeBranch(
             sourcepackage=source_package,
-            information_type=InformationType.USERDATA, **kwargs)
+            information_type=InformationType.USERDATA,
+            **kwargs,
+        )
         return branch, distro
 
     def test_private_branch_hidden(self):
@@ -171,16 +185,19 @@ class TestGetBranchTipsSecurity(TestCaseWithFactory):
         # authenticated users who do not have the necessary privileges.
         branch, distro = self.makeBranch()
         self.assertFalse(  # Double-checking.
-            removeSecurityProxy(branch).visibleByUser(None))
+            removeSecurityProxy(branch).visibleByUser(None)
+        )
         self.assertEqual([], distro.getBranchTips())
         person = self.factory.makePerson()
         self.assertFalse(  # Double-checking.
-            removeSecurityProxy(branch).visibleByUser(person))
+            removeSecurityProxy(branch).visibleByUser(person)
+        )
         self.assertEqual([], distro.getBranchTips(user=person))
 
     def assertVisible(self, distro, branch, person):
         self.assertTrue(  # Double-checking.
-            removeSecurityProxy(branch).visibleByUser(person))
+            removeSecurityProxy(branch).visibleByUser(person)
+        )
         self.assertEqual(1, len(distro.getBranchTips(user=person)))
 
     def test_owned_visible(self):
@@ -201,10 +218,12 @@ class TestGetBranchTipsSecurity(TestCaseWithFactory):
         branch, distro = self.makeBranch()
         person = self.factory.makePerson()
         removeSecurityProxy(branch).subscribe(
-            person, BranchSubscriptionNotificationLevel.NOEMAIL,
+            person,
+            BranchSubscriptionNotificationLevel.NOEMAIL,
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.NOEMAIL,
-            person)
+            person,
+        )
         self.assertVisible(distro, branch, person)
 
     def test_subscriber_member_visible(self):
@@ -213,11 +232,13 @@ class TestGetBranchTipsSecurity(TestCaseWithFactory):
         branch, distro = self.makeBranch()
         person = self.factory.makePerson()
         team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED,
-            members=[person])
+            membership_policy=TeamMembershipPolicy.MODERATED, members=[person]
+        )
         removeSecurityProxy(branch).subscribe(
-            team, BranchSubscriptionNotificationLevel.NOEMAIL,
+            team,
+            BranchSubscriptionNotificationLevel.NOEMAIL,
             BranchSubscriptionDiffSize.NODIFF,
             CodeReviewNotificationLevel.NOEMAIL,
-            team)
+            team,
+        )
         self.assertVisible(distro, branch, person)

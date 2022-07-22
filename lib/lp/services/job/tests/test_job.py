@@ -1,37 +1,31 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import time
+from datetime import datetime, timedelta
 
-from lazr.jobrunner.jobrunner import LeaseHeld
 import pytz
+import transaction
+from lazr.jobrunner.jobrunner import LeaseHeld
 from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals
-import transaction
 
 from lp.code.model.branchmergeproposaljob import CodeReviewCommentEmailJob
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.job.interfaces.job import (
-    IJob,
-    JobStatus,
-    )
+from lp.services.job.interfaces.job import IJob, JobStatus
 from lp.services.job.model.job import (
     InvalidTransition,
     Job,
     UniversalJobSource,
-    )
+)
 from lp.testing import (
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -195,9 +189,7 @@ class TestJob(TestCaseWithFactory):
         """A job that is in the WAITING state can be suspended."""
         job = Job(_status=JobStatus.WAITING)
         job.suspend()
-        self.assertEqual(
-            job.status,
-            JobStatus.SUSPENDED)
+        self.assertEqual(job.status, JobStatus.SUSPENDED)
 
     def test_suspend_when_running(self):
         """When a job is running, attempting to suspend is valid."""
@@ -219,9 +211,7 @@ class TestJob(TestCaseWithFactory):
         """A job that is suspended can be resumed."""
         job = Job(_status=JobStatus.SUSPENDED)
         job.resume()
-        self.assertEqual(
-            job.status,
-            JobStatus.WAITING)
+        self.assertEqual(job.status, JobStatus.WAITING)
 
     def test_resume_clears_lease_expires(self):
         """A job that resumes should null out the lease_expires."""
@@ -249,8 +239,7 @@ class TestJob(TestCaseWithFactory):
         """is_pending is True when the job can possibly complete."""
         for status in JobStatus.items:
             job = Job(_status=status)
-            self.assertEqual(
-                status in Job.PENDING_STATUSES, job.is_pending)
+            self.assertEqual(status in Job.PENDING_STATUSES, job.is_pending)
 
     def test_is_runnable_when_failed(self):
         """is_runnable is false when the job is not WAITING."""
@@ -261,14 +250,16 @@ class TestJob(TestCaseWithFactory):
         """is_runnable is false when the job is scheduled in the future."""
         job = Job(
             _status=JobStatus.WAITING,
-            scheduled_start=datetime.now(UTC) + timedelta(seconds=60))
+            scheduled_start=datetime.now(UTC) + timedelta(seconds=60),
+        )
         self.assertFalse(job.is_runnable)
 
     def test_is_runnable_when_scheduled_in_past(self):
         """is_runnable is true when the job is scheduled in the past."""
         job = Job(
             _status=JobStatus.WAITING,
-            scheduled_start=datetime.now(UTC) - timedelta(seconds=60))
+            scheduled_start=datetime.now(UTC) - timedelta(seconds=60),
+        )
         self.assertTrue(job.is_runnable)
 
     def test_is_runnable_when_not_scheduled(self):
@@ -287,7 +278,7 @@ class TestJob(TestCaseWithFactory):
         with TransactionRecorder() as recorder:
             job = Job()
             job.start(manage_transaction=True)
-            self.assertEqual(['commit'], recorder.transaction_calls)
+            self.assertEqual(["commit"], recorder.transaction_calls)
 
     def test_complete_manages_transactions(self):
         # Job.complete() does not commit the transaction by default.
@@ -302,7 +293,7 @@ class TestJob(TestCaseWithFactory):
         job.start()
         with TransactionRecorder() as recorder:
             job.complete(manage_transaction=True)
-            self.assertEqual(['commit', 'commit'], recorder.transaction_calls)
+            self.assertEqual(["commit", "commit"], recorder.transaction_calls)
 
     def test_fail_manages_transactions(self):
         # Job.fail() does not commit the transaction by default.
@@ -318,7 +309,7 @@ class TestJob(TestCaseWithFactory):
         job.start()
         with TransactionRecorder() as recorder:
             job.fail(manage_transaction=True)
-            self.assertEqual(['abort', 'commit'], recorder.transaction_calls)
+            self.assertEqual(["abort", "commit"], recorder.transaction_calls)
 
     def test_queue_manages_transactions(self):
         # Job.queue() does not commit the transaction by default.
@@ -334,7 +325,7 @@ class TestJob(TestCaseWithFactory):
         job.start()
         with TransactionRecorder() as recorder:
             job.queue(manage_transaction=True)
-            self.assertEqual(['commit', 'commit'], recorder.transaction_calls)
+            self.assertEqual(["commit", "commit"], recorder.transaction_calls)
 
         # If abort_transaction=True is also passed to Job.queue()
         # the transaction is first aborted, then two times committed.
@@ -343,7 +334,8 @@ class TestJob(TestCaseWithFactory):
         with TransactionRecorder() as recorder:
             job.queue(manage_transaction=True, abort_transaction=True)
             self.assertEqual(
-                ['abort', 'commit', 'commit'], recorder.transaction_calls)
+                ["abort", "commit", "commit"], recorder.transaction_calls
+            )
 
     def test_suspend_manages_transactions(self):
         # Job.suspend() does not commit the transaction by default.
@@ -358,7 +350,7 @@ class TestJob(TestCaseWithFactory):
         job.start()
         with TransactionRecorder() as recorder:
             job.suspend(manage_transaction=True)
-            self.assertEqual(['commit'], recorder.transaction_calls)
+            self.assertEqual(["commit"], recorder.transaction_calls)
 
 
 class TransactionRecorder:
@@ -377,11 +369,11 @@ class TransactionRecorder:
         transaction.abort = self.real_abort
 
     def commit(self):
-        self.transaction_calls.append('commit')
+        self.transaction_calls.append("commit")
         self.real_commit()
 
     def abort(self):
-        self.transaction_calls.append('abort')
+        self.transaction_calls.append("abort")
         self.real_abort()
 
 
@@ -399,32 +391,37 @@ class TestReadiness(TestCase):
         job = Job()
         self.assertEqual(
             preexisting + [(job.id,)],
-            list(Store.of(job).execute(Job.ready_jobs)))
+            list(Store.of(job).execute(Job.ready_jobs)),
+        )
 
     def test_ready_jobs_started(self):
         """Job.ready_jobs should not jobs that have been started."""
         preexisting = self._sampleData()
         job = Job(_status=JobStatus.RUNNING)
         self.assertEqual(
-            preexisting, list(Store.of(job).execute(Job.ready_jobs)))
+            preexisting, list(Store.of(job).execute(Job.ready_jobs))
+        )
 
     def test_ready_jobs_lease_expired(self):
         """Job.ready_jobs should include jobs with expired leases."""
         preexisting = self._sampleData()
-        UNIX_EPOCH = datetime.fromtimestamp(0, pytz.timezone('UTC'))
+        UNIX_EPOCH = datetime.fromtimestamp(0, pytz.timezone("UTC"))
         job = Job(lease_expires=UNIX_EPOCH)
         self.assertEqual(
             preexisting + [(job.id,)],
-            list(Store.of(job).execute(Job.ready_jobs)))
+            list(Store.of(job).execute(Job.ready_jobs)),
+        )
 
     def test_ready_jobs_lease_in_future(self):
         """Job.ready_jobs should not include jobs with active leases."""
         preexisting = self._sampleData()
         future = datetime.fromtimestamp(
-            time.time() + 1000, pytz.timezone('UTC'))
+            time.time() + 1000, pytz.timezone("UTC")
+        )
         job = Job(lease_expires=future)
         self.assertEqual(
-            preexisting, list(Store.of(job).execute(Job.ready_jobs)))
+            preexisting, list(Store.of(job).execute(Job.ready_jobs))
+        )
 
     def test_ready_jobs_not_jobs_scheduled_in_future(self):
         """Job.ready_jobs does not included jobs scheduled for a time in the
@@ -432,10 +429,12 @@ class TestReadiness(TestCase):
         """
         preexisting = self._sampleData()
         future = datetime.fromtimestamp(
-            time.time() + 1000, pytz.timezone('UTC'))
+            time.time() + 1000, pytz.timezone("UTC")
+        )
         job = Job(scheduled_start=future)
         self.assertEqual(
-            preexisting, list(Store.of(job).execute(Job.ready_jobs)))
+            preexisting, list(Store.of(job).execute(Job.ready_jobs))
+        )
 
     def test_acquireLease(self):
         """Job.acquireLease should set job.lease_expires."""
@@ -486,7 +485,11 @@ class TestUniversalJobSource(TestCaseWithFactory):
         transaction.commit()
         with StormStatementRecorder() as recorder:
             got_job = UniversalJobSource.get(
-                (job_id, 'lp.code.model.branchmergeproposaljob',
-                 'BranchMergeProposalJob'))
+                (
+                    job_id,
+                    "lp.code.model.branchmergeproposaljob",
+                    "BranchMergeProposalJob",
+                )
+            )
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(got_job, job)

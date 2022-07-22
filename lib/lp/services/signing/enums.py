@@ -4,17 +4,12 @@
 """Enums for signing keys management."""
 
 __all__ = [
-    'OpenPGPKeyAlgorithm',
-    'SigningKeyType',
-    'SigningMode',
-    ]
+    "OpenPGPKeyAlgorithm",
+    "SigningKeyType",
+    "SigningMode",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import DBEnumeratedType, DBItem, EnumeratedType, Item
 
 
 class SigningKeyType(DBEnumeratedType):
@@ -24,62 +19,89 @@ class SigningKeyType(DBEnumeratedType):
     lp-signing:lp-signing/lp_signing/enums.py (specially the numbers) to
     avoid confusion when reading values from different databases.
     """
-    UEFI = DBItem(1, """
+
+    UEFI = DBItem(
+        1,
+        """
         UEFI
 
         A signing key for UEFI Secure Boot images.
-        """)
+        """,
+    )
 
-    KMOD = DBItem(2, """
+    KMOD = DBItem(
+        2,
+        """
         Kmod
 
         A signing key for kernel modules.
-        """)
+        """,
+    )
 
-    OPAL = DBItem(3, """
+    OPAL = DBItem(
+        3,
+        """
         OPAL
 
         A signing key for OPAL kernel images.
-        """)
+        """,
+    )
 
-    SIPL = DBItem(4, """
+    SIPL = DBItem(
+        4,
+        """
         SIPL
 
         A signing key for Secure Initial Program Load kernel images.
-        """)
+        """,
+    )
 
-    FIT = DBItem(5, """
+    FIT = DBItem(
+        5,
+        """
         FIT
 
         A signing key for U-Boot Flat Image Tree images.
-        """)
+        """,
+    )
 
-    OPENPGP = DBItem(6, """
+    OPENPGP = DBItem(
+        6,
+        """
         OpenPGP
 
         An OpenPGP signing key.
-        """)
+        """,
+    )
 
-    CV2_KERNEL = DBItem(7, """
+    CV2_KERNEL = DBItem(
+        7,
+        """
         CV2 Kernel
 
         An Ambarella CV2 kernel signing key.
-        """)
+        """,
+    )
 
-    ANDROID_KERNEL = DBItem(8, """
+    ANDROID_KERNEL = DBItem(
+        8,
+        """
         Android Kernel
 
         An Android kernel signing key.
-        """)
+        """,
+    )
 
 
 class OpenPGPKeyAlgorithm(EnumeratedType):
 
-    RSA = Item("""
+    RSA = Item(
+        """
         RSA
 
         A Rivest-Shamir-Adleman key.
-        """)
+        """
+    )
 
 
 class SigningMode(EnumeratedType):

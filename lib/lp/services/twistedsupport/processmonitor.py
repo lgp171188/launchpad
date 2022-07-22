@@ -4,27 +4,20 @@
 """Helpers for running a child process and communicating things about it."""
 
 __all__ = [
-    'ProcessMonitorProtocol',
-    'ProcessMonitorProtocolWithTimeout',
-    'ProcessWithTimeout',
-    'run_process_with_timeout',
-    ]
+    "ProcessMonitorProtocol",
+    "ProcessMonitorProtocolWithTimeout",
+    "ProcessWithTimeout",
+    "run_process_with_timeout",
+]
 
 
 import io
 import os
 
-from twisted.internet import (
-    defer,
-    error,
-    reactor,
-    )
+from twisted.internet import defer, error, reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.protocols.policies import TimeoutMixin
-from twisted.python import (
-    failure,
-    log,
-    )
+from twisted.python import failure, log
 
 
 class ProcessProtocolWithTwoStageKill(ProcessProtocol):
@@ -63,19 +56,20 @@ class ProcessProtocolWithTwoStageKill(ProcessProtocol):
         if timeout is None:
             timeout = self.default_wait_before_kill
         try:
-            self.transport.signalProcess('INT')
+            self.transport.signalProcess("INT")
         except error.ProcessExitedAlready:
             # The process has already died. Fine.
             pass
         else:
             self._sigkill_delayed_call = self._clock.callLater(
-                timeout, self._sigkill)
+                timeout, self._sigkill
+            )
 
     def _sigkill(self):
         """Forcefully kill the process."""
         self._sigkill_delayed_call = None
         try:
-            self.transport.signalProcess('KILL')
+            self.transport.signalProcess("KILL")
         except error.ProcessExitedAlready:
             # The process has already died. Fine.
             pass
@@ -150,12 +144,15 @@ class ProcessMonitorProtocol(ProcessProtocolWithTwoStageKill):
         that if func() errors out, this is considered a fatal error and the
         subprocess will be killed.
         """
+
         def wrapper():
             if self._termination_failure is not None:
                 return
             else:
                 return defer.maybeDeferred(func, *args).addErrback(
-                    self.unexpectedError)
+                    self.unexpectedError
+                )
+
         return self._notification_lock.run(wrapper)
 
     def unexpectedError(self, failure):
@@ -167,7 +164,8 @@ class ProcessMonitorProtocol(ProcessProtocolWithTwoStageKill):
         if self._termination_failure is not None:
             log.msg(
                 "unexpectedError called for second time, dropping error:",
-                isError=True)
+                isError=True,
+            )
             log.err(failure)
             return
         self._termination_failure = failure
@@ -233,8 +231,7 @@ class ProcessMonitorProtocolWithTimeout(ProcessMonitorProtocol, TimeoutMixin):
         self.setTimeout(self._timeout)
 
     def timeoutConnection(self):
-        """When a timeout occurs, kill the process and record a TimeoutError.
-        """
+        """On timeout, kill the process and record a TimeoutError."""
         self.unexpectedError(failure.Failure(error.TimeoutError()))
 
     def processEnded(self, reason):
@@ -304,8 +301,7 @@ class ProcessWithTimeout(ProcessProtocol, TimeoutMixin):
 
         See reactor.spawnProcess.
         """
-        self._process_transport = reactor.spawnProcess(
-            self, *args, **kwargs)
+        self._process_transport = reactor.spawnProcess(self, *args, **kwargs)
 
     def connectionMade(self):
         """Start the timeout counter when connection is made."""

@@ -18,5 +18,6 @@ class TestSourcePackageNameSet(TestCase):
     def test_invalid_name(self):
         with ExpectedException(
             InvalidName,
-            'invalid%20name is not a valid name for a source package.'):
-            SourcePackageNameSet().new('invalid%20name')
+            "invalid%20name is not a valid name for a source package.",
+        ):
+            SourcePackageNameSet().new("invalid%20name")

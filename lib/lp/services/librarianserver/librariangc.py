@@ -3,17 +3,14 @@
 
 """Librarian garbage collection routines"""
 
-from contextlib import ExitStack
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import errno
 import hashlib
 import multiprocessing.pool
 import os
 import re
 import sys
+from contextlib import ExitStack
+from datetime import datetime, timedelta
 from time import time
 
 import iso8601
@@ -26,17 +23,13 @@ from lp.services.database.postgresql import (
     drop_tables,
     listReferences,
     quoteIdentifier,
-    )
+)
 from lp.services.features import getFeatureFlag
 from lp.services.librarianserver import swift
 from lp.services.librarianserver.storage import (
     _relFileLocation as relative_file_path,
-    )
-from lp.services.looptuner import (
-    DBLoopTuner,
-    ITunableLoop,
-    )
-
+)
+from lp.services.looptuner import DBLoopTuner, ITunableLoop
 
 log = None  # This is set by cronscripts/librarian-gc.py
 debug = False
@@ -51,14 +44,15 @@ def file_exists(content_id):
     Swift is only checked if the librarian.swift.enabled feature flag
     is set.
     """
-    swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
+    swift_enabled = getFeatureFlag("librarian.swift.enabled") or False
     if swift_enabled:
         for connection_pool in swift.connection_pools:
             swift_connection = connection_pool.get()
             container, name = swift.swift_location(content_id)
             try:
                 swift.quiet_swiftclient(
-                    swift_connection.head_object, container, name)
+                    swift_connection.head_object, container, name
+                )
                 return True
             except swiftclient.ClientException as x:
                 if x.http_status != 404:
@@ -77,7 +71,7 @@ def open_stream(content_id):
 
     Returns None if the file cannot be found.
     """
-    swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
+    swift_enabled = getFeatureFlag("librarian.swift.enabled") or False
     if swift_enabled:
         for connection_pool in swift.connection_pools:
             try:
@@ -85,9 +79,13 @@ def open_stream(content_id):
                 container, name = swift.swift_location(content_id)
                 chunks = swift.quiet_swiftclient(
                     swift_connection.get_object,
-                    container, name, resp_chunk_size=STREAM_CHUNK_SIZE)[1]
+                    container,
+                    name,
+                    resp_chunk_size=STREAM_CHUNK_SIZE,
+                )[1]
                 return swift.SwiftStream(
-                    connection_pool, swift_connection, chunks)
+                    connection_pool, swift_connection, chunks
+                )
             except swiftclient.ClientException as x:
                 if x.http_status == 404:
                     connection_pool.put(swift_connection)
@@ -95,14 +93,14 @@ def open_stream(content_id):
                     raise
     path = get_file_path(content_id)
     if os.path.exists(path):
-        return open(path, 'rb')
+        return open(path, "rb")
 
     return None  # File not found.
 
 
 def sha1_file(content_id):
     file = open_stream(content_id)
-    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), b'')
+    chunks_iter = iter(lambda: file.read(STREAM_CHUNK_SIZE), b"")
     length = 0
     hasher = hashlib.sha1()
     for chunk in chunks_iter:
@@ -130,36 +128,40 @@ def confirm_no_clock_skew(con):
     if -five_minutes < local_now - db_now < five_minutes:
         return
     else:
-        raise Exception("%s clock skew between librarian and database" % (
-            local_now - db_now,
-            ))
+        raise Exception(
+            "%s clock skew between librarian and database"
+            % (local_now - db_now,)
+        )
 
 
 def delete_expired_blobs(con):
     """Remove expired TemporaryBlobStorage entries and their corresponding
-       LibraryFileAlias entries.
+    LibraryFileAlias entries.
 
-       We delete the LibraryFileAliases here as the default behaviour of the
-       garbage collector could leave them hanging around indefinitely.
+    We delete the LibraryFileAliases here as the default behaviour of the
+    garbage collector could leave them hanging around indefinitely.
 
-       We also delete any linked ApportJob and Job records here.
+    We also delete any linked ApportJob and Job records here.
     """
     log.info("Expiring blobs.")
 
     cur = con.cursor()
 
     # Generate the list of expired blobs.
-    cur.execute("""
+    cur.execute(
+        """
         SELECT file_alias
         INTO TEMPORARY TABLE BlobAliasesToDelete
         FROM LibraryFileAlias, TemporaryBlobStorage
         WHERE file_alias = LibraryFileAlias.id
             AND expires < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-        """)
+        """
+    )
 
     # Generate the list of expired Jobs. We ignore jobs that have not
     # finished.
-    cur.execute("""
+    cur.execute(
+        """
         SELECT job
         INTO TEMPORARY TABLE JobsToDelete
         FROM Job, ApportJob, TemporaryBlobStorage, LibraryFileAlias
@@ -169,35 +171,44 @@ def delete_expired_blobs(con):
             AND Job.date_finished < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
             AND TemporaryBlobStorage.file_alias = LibraryFileAlias.id
                 AND expires < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-        """)
+        """
+    )
 
     # Delete expired ApportJob records.
-    cur.execute("""
+    cur.execute(
+        """
         DELETE FROM ApportJob
         USING JobsToDelete
         WHERE ApportJob.job = JobsToDelete.job
-        """)
+        """
+    )
 
     # Delete expired Job records.
-    cur.execute("""
+    cur.execute(
+        """
         DELETE FROM Job
         USING JobsToDelete
         WHERE Job.id = JobsToDelete.job
-        """)
+        """
+    )
 
     # Delete expired blobs.
-    cur.execute("""
+    cur.execute(
+        """
         DELETE FROM TemporaryBlobStorage
         USING BlobAliasesToDelete
         WHERE TemporaryBlobStorage.file_alias = BlobAliasesToDelete.file_alias
-        """)
+        """
+    )
 
     # Delete LibraryFileAliases referencing expired blobs.
-    cur.execute("""
+    cur.execute(
+        """
         DELETE FROM LibraryFileAlias
         USING BlobAliasesToDelete
         WHERE file_alias = LibraryFileAlias.id
-        """)
+        """
+    )
     log.info("Removed %d expired blobs" % cur.rowcount)
     con.commit()
 
@@ -216,12 +227,14 @@ def merge_duplicates(con):
     # Get a list of all (sha1, filesize) that are duplicated in
     # LibraryFileContent
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT sha1, filesize
         FROM LibraryFileContent
         GROUP BY sha1, filesize
         HAVING COUNT(*) > 1
-        """)
+        """
+    )
     rows = list(cur.fetchall())
     log.info("Found %d sets to deduplicate.", len(rows))
 
@@ -236,12 +249,15 @@ def merge_duplicates(con):
         # the most recently added one first, because this is the version
         # most likely to exist on the staging server (it should be
         # irrelevant on production).
-        cur.execute("""
+        cur.execute(
+            """
             SELECT id, sha1, filesize
             FROM LibraryFileContent
             WHERE sha1=%(sha1)s AND filesize=%(filesize)s
             ORDER BY datecreated DESC
-            """, vars())
+            """,
+            vars(),
+        )
         dupes = cur.fetchall()
 
         if debug:
@@ -249,10 +265,13 @@ def merge_duplicates(con):
             # Spit out more info in case it helps work out where
             # dupes are coming from.
             for dupe_id, _, _ in dupes:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT id, filename, mimetype FROM LibraryFileAlias
                     WHERE content = %(dupe_id)s
-                    """, vars())
+                    """,
+                    vars(),
+                )
                 for id, filename, mimetype in cur.fetchall():
                     log.debug3("> %d %s %s" % (id, filename, mimetype))
 
@@ -263,12 +282,10 @@ def merge_duplicates(con):
         # production but the actual librarian contents has not.
         dupe1_id = dupes[0][0]
         if not file_exists(dupe1_id):
-            if config.instance_name == 'staging':
-                log.debug3(
-                        "LibraryFileContent %d data is missing", dupe1_id)
+            if config.instance_name == "staging":
+                log.debug3("LibraryFileContent %d data is missing", dupe1_id)
             else:
-                log.warning(
-                        "LibraryFileContent %d data is missing", dupe1_id)
+                log.warning("LibraryFileContent %d data is missing", dupe1_id)
             continue
 
         # Check that the first file is intact. Don't want to delete
@@ -277,23 +294,32 @@ def merge_duplicates(con):
         if actual_sha1 != dupes[0][1] or actual_size != dupes[0][2]:
             log.error(
                 "Corruption found. LibraryFileContent %d has SHA-1 %s and "
-                "size %d, expected %s and %d.", dupes[0][0],
-                actual_sha1, actual_size, dupes[0][1], dupes[0][2])
+                "size %d, expected %s and %d.",
+                dupes[0][0],
+                actual_sha1,
+                actual_size,
+                dupes[0][1],
+                dupes[0][2],
+            )
             sys.exit(1)
 
         # Update all the LibraryFileAlias entries to point to a single
         # LibraryFileContent
         prime_id = dupes[0][0]
-        other_ids = ', '.join(str(dupe) for dupe, _, _ in dupes[1:])
+        other_ids = ", ".join(str(dupe) for dupe, _, _ in dupes[1:])
         log.debug3(
             "Making LibraryFileAliases referencing %s reference %s instead",
-            other_ids, prime_id
-            )
+            other_ids,
+            prime_id,
+        )
         for other_id, _, _ in dupes[1:]:
-            cur.execute("""
+            cur.execute(
+                """
                 UPDATE LibraryFileAlias SET content=%(prime_id)s
                 WHERE content = %(other_id)s
-                """, vars())
+                """,
+                vars(),
+            )
         prime_count += 1
         dupe_count += len(dupes)
         dupe_size += filesize * (len(dupes) - 1)
@@ -302,7 +328,10 @@ def merge_duplicates(con):
         con.commit()
     log.info(
         "Deduplicated %d LibraryFileContents into %d, saving %d bytes.",
-        dupe_count, prime_count, dupe_size)
+        dupe_count,
+        prime_count,
+        dupe_size,
+    )
 
 
 @implementer(ITunableLoop)
@@ -321,8 +350,7 @@ class ExpireAliases:
 
     def isDone(self):
         if self._done:
-            log.info(
-                "Expired %d LibraryFileAliases." % self.total_expired)
+            log.info("Expired %d LibraryFileAliases." % self.total_expired)
             return True
         else:
             return False
@@ -330,7 +358,8 @@ class ExpireAliases:
     def __call__(self, chunksize):
         chunksize = int(chunksize)
         cur = self.con.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE LibraryFileAlias
             SET content=NULL
             WHERE id IN (
@@ -341,7 +370,9 @@ class ExpireAliases:
                         - interval '1 week'
                 ORDER BY expires
                 LIMIT %d)
-            """ % chunksize)
+            """
+            % chunksize
+        )
         self.total_expired += cur.rowcount
         if cur.rowcount == 0:
             self._done = True
@@ -377,45 +408,55 @@ class UnreferencedLibraryFileAliasPruner:
         cur = con.cursor()
 
         drop_tables(cur, "ReferencedLibraryFileAlias")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TEMPORARY TABLE ReferencedLibraryFileAlias (
                 alias integer)
-            """)
+            """
+        )
 
         # Determine what columns link to LibraryFileAlias
         # references = [(table, column), ...]
         references = [
             tuple(ref[:2])
-            for ref in listReferences(cur, 'libraryfilealias', 'id')
-            if ref[0] != 'libraryfiledownloadcount'
-            ]
-        assert len(references) > 10, (
-            'Database introspection returned nonsense')
+            for ref in listReferences(cur, "libraryfilealias", "id")
+            if ref[0] != "libraryfiledownloadcount"
+        ]
+        assert len(references) > 10, "Database introspection returned nonsense"
         log.debug(
-            "Found %d columns referencing LibraryFileAlias.", len(references))
+            "Found %d columns referencing LibraryFileAlias.", len(references)
+        )
 
         # Find all relevant LibraryFileAlias references and fill in
         # ReferencedLibraryFileAlias
         for table, column in references:
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO ReferencedLibraryFileAlias
                 SELECT LibraryFileAlias.id
                 FROM LibraryFileAlias, %(table)s
                 WHERE LibraryFileAlias.id = %(table)s.%(column)s
-                """ % {
-                    'table': quoteIdentifier(table),
-                    'column': quoteIdentifier(column)})
-            log.debug("%s.%s references %d LibraryFileAlias rows." % (
-                table, column, cur.rowcount))
+                """
+                % {
+                    "table": quoteIdentifier(table),
+                    "column": quoteIdentifier(column),
+                }
+            )
+            log.debug(
+                "%s.%s references %d LibraryFileAlias rows."
+                % (table, column, cur.rowcount)
+            )
             con.commit()
 
         log.debug("Calculating unreferenced LibraryFileAlias set.")
         drop_tables(cur, "UnreferencedLibraryFileAlias")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TEMPORARY TABLE UnreferencedLibraryFileAlias (
                 id serial PRIMARY KEY,
                 alias integer UNIQUE)
-            """)
+            """
+        )
         # Calculate the set of unreferenced LibraryFileAlias.
         # We also exclude all unexpired records - we don't remove them
         # even if they are unlinked. We currently don't remove stuff
@@ -425,7 +466,8 @@ class UnreferencedLibraryFileAliasPruner:
         # created content here rather than earlier when creating the
         # ReferencedLibraryFileAlias table to handle uploads going on
         # while this script is running.
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO UnreferencedLibraryFileAlias (alias)
             SELECT id AS alias FROM LibraryFileAlias
             WHERE
@@ -441,20 +483,20 @@ class UnreferencedLibraryFileAliasPruner:
                    )
             EXCEPT
             SELECT alias FROM ReferencedLibraryFileAlias
-            """)
+            """
+        )
         con.commit()
         drop_tables(cur, "ReferencedLibraryFileAlias")
         cur.execute(
-            "SELECT COALESCE(max(id),0) FROM UnreferencedLibraryFileAlias")
+            "SELECT COALESCE(max(id),0) FROM UnreferencedLibraryFileAlias"
+        )
         self.max_id = cur.fetchone()[0]
-        log.info(
-            "%d unreferenced LibraryFileAliases to remove." % self.max_id)
+        log.info("%d unreferenced LibraryFileAliases to remove." % self.max_id)
         con.commit()
 
     def isDone(self):
         if self.index > self.max_id:
-            log.info(
-                "Deleted %d LibraryFileAliases." % self.total_deleted)
+            log.info("Deleted %d LibraryFileAliases." % self.total_deleted)
             return True
         else:
             return False
@@ -462,12 +504,15 @@ class UnreferencedLibraryFileAliasPruner:
     def __call__(self, chunksize):
         chunksize = int(chunksize)
         cur = self.con.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             DELETE FROM LibraryFileAlias
             WHERE id IN
                 (SELECT alias FROM UnreferencedLibraryFileAlias
                 WHERE id BETWEEN %s AND %s)
-            """, (self.index, self.index + chunksize - 1))
+            """,
+            (self.index, self.index + chunksize - 1),
+        )
         deleted_rows = cur.rowcount
         self.total_deleted += deleted_rows
         self.con.commit()
@@ -477,7 +522,8 @@ class UnreferencedLibraryFileAliasPruner:
 def delete_unreferenced_aliases(con):
     "Run the UnreferencedLibraryFileAliasPruner."
     loop_tuner = DBLoopTuner(
-        UnreferencedLibraryFileAliasPruner(con), 5, log=log)
+        UnreferencedLibraryFileAliasPruner(con), 5, log=log
+    )
     loop_tuner.run()
 
 
@@ -491,40 +537,46 @@ class UnreferencedContentPruner:
     """
 
     def __init__(self, con):
-        self.swift_enabled = getFeatureFlag(
-            'librarian.swift.enabled') or False
+        self.swift_enabled = getFeatureFlag("librarian.swift.enabled") or False
         self.con = con
         self.index = 1
         self.total_deleted = 0
         log.info("Deleting unreferenced LibraryFileContents.")
         cur = con.cursor()
         drop_tables(cur, "UnreferencedLibraryFileContent")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TEMPORARY TABLE UnreferencedLibraryFileContent (
                 id bigserial PRIMARY KEY,
                 content bigint UNIQUE)
-            """)
-        cur.execute("""
+            """
+        )
+        cur.execute(
+            """
             INSERT INTO UnreferencedLibraryFileContent (content)
             SELECT DISTINCT LibraryFileContent.id
             FROM LibraryFileContent
             LEFT OUTER JOIN LibraryFileAlias
                 ON LibraryFileContent.id = LibraryFileAlias.content
             WHERE LibraryFileAlias.content IS NULL
-        """)
-        cur.execute("""
+        """
+        )
+        cur.execute(
+            """
             SELECT COALESCE(max(id), 0) FROM UnreferencedLibraryFileContent
-            """)
+            """
+        )
         self.max_id = cur.fetchone()[0]
         log.info(
-            "%d unreferenced LibraryFileContents to remove."
-            % self.max_id)
+            "%d unreferenced LibraryFileContents to remove." % self.max_id
+        )
 
     def isDone(self):
         if self.index > self.max_id:
             log.info(
                 "Deleted %d unreferenced LibraryFileContents and files.",
-                self.total_deleted)
+                self.total_deleted,
+            )
             return True
         else:
             return False
@@ -536,7 +588,7 @@ class UnreferencedContentPruner:
         path = get_file_path(content_id)
         try:
             os.unlink(path)
-            removed.append('filesystem')
+            removed.append("filesystem")
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
@@ -548,18 +600,22 @@ class UnreferencedContentPruner:
                 with swift.connection(connection_pool) as swift_connection:
                     try:
                         swift.quiet_swiftclient(
-                            swift_connection.delete_object, container, name)
+                            swift_connection.delete_object, container, name
+                        )
                         removed.append(
-                            'Swift {}'.format(connection_pool.os_auth_url))
+                            "Swift {}".format(connection_pool.os_auth_url)
+                        )
                     except swiftclient.ClientException as x:
                         if x.http_status != 404:
                             log.exception(
                                 "Failed to delete (%s, %s) from Swift (%s)",
-                                container, name, connection_pool.os_auth_url)
+                                container,
+                                name,
+                                connection_pool.os_auth_url,
+                            )
 
         if removed:
-            log.debug3(
-                "Deleted %s from %s", content_id, ' & '.join(removed))
+            log.debug3("Deleted %s from %s", content_id, " & ".join(removed))
 
         elif config.librarian_server.upstream_host is None:
             # It is normal to have files in the database that
@@ -574,14 +630,17 @@ class UnreferencedContentPruner:
         cur = self.con.cursor()
 
         # Delete unreferenced LibraryFileContent entries.
-        cur.execute("""
+        cur.execute(
+            """
             DELETE FROM LibraryFileContent
             USING (
                 SELECT content FROM UnreferencedLibraryFileContent
                 WHERE id BETWEEN %s AND %s) AS UnreferencedLibraryFileContent
             WHERE
                 LibraryFileContent.id = UnreferencedLibraryFileContent.content
-            """, (self.index, self.index + chunksize - 1))
+            """,
+            (self.index, self.index + chunksize - 1),
+        )
         rows_deleted = cur.rowcount
         self.total_deleted += rows_deleted
         self.con.commit()
@@ -589,10 +648,13 @@ class UnreferencedContentPruner:
         # Remove files from disk. We do this outside the transaction,
         # as the garbage collector happily deals with files that exist
         # on disk but not in the DB.
-        cur.execute("""
+        cur.execute(
+            """
             SELECT content FROM UnreferencedLibraryFileContent
             WHERE id BETWEEN %s AND %s
-            """, (self.index, self.index + chunksize - 1))
+            """,
+            (self.index, self.index + chunksize - 1),
+        )
 
         pool = multiprocessing.pool.ThreadPool(10)
         try:
@@ -618,7 +680,7 @@ def delete_unwanted_files(con):
         # Disable autocommit so that we can use named cursors.
         con.autocommit = False
         delete_unwanted_disk_files(con)
-        swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
+        swift_enabled = getFeatureFlag("librarian.swift.enabled") or False
         if swift_enabled:
             delete_unwanted_swift_files(con)
     finally:
@@ -637,15 +699,17 @@ def delete_unwanted_disk_files(con):
 
     log.info("Deleting unwanted files from disk.")
 
-    swift_enabled = getFeatureFlag('librarian.swift.enabled') or False
+    swift_enabled = getFeatureFlag("librarian.swift.enabled") or False
 
     cur = con.cursor(name="librariangc_disk_lfcs")
 
     # Calculate all stored LibraryFileContent ids that we want to keep.
     # Results are ordered so we don't have to suck them all in at once.
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id FROM LibraryFileContent ORDER BY id
-        """)
+        """
+    )
     content_id_iter = iter(cur)
 
     def get_next_wanted_content_id():
@@ -659,26 +723,28 @@ def delete_unwanted_disk_files(con):
     removed_count = 0
     content_id = next_wanted_content_id = -1
 
-    hex_content_id_re = re.compile(r'^([0-9a-f]{8})(\.migrated)?$')
+    hex_content_id_re = re.compile(r"^([0-9a-f]{8})(\.migrated)?$")
     ONE_DAY = 24 * 60 * 60
 
     for dirpath, dirnames, filenames in os.walk(
-            get_storage_root(), followlinks=True):
+        get_storage_root(), followlinks=True
+    ):
 
         # Ignore known and harmless noise in the Librarian storage area.
-        if 'incoming' in dirnames:
-            dirnames.remove('incoming')
-        if 'lost+found' in dirnames:
-            dirnames.remove('lost+found')
+        if "incoming" in dirnames:
+            dirnames.remove("incoming")
+        if "lost+found" in dirnames:
+            dirnames.remove("lost+found")
         filenames = set(filenames)
-        filenames.discard('librarian.pid')
-        filenames.discard('librarian.log')
+        filenames.discard("librarian.pid")
+        filenames.discard("librarian.log")
 
         for dirname in dirnames[:]:
             if len(dirname) != 2:
                 dirnames.remove(dirname)
                 log.warning(
-                    "Ignoring directory %s that shouldn't be here" % dirname)
+                    "Ignoring directory %s that shouldn't be here" % dirname
+                )
                 continue
             try:
                 int(dirname, 16)
@@ -696,42 +762,49 @@ def delete_unwanted_disk_files(con):
         if dirnames and filenames:
             log.warning(
                 "%s contains both files %r and subdirectories %r. Skipping."
-                % (dirpath, filenames, dirnames))
+                % (dirpath, filenames, dirnames)
+            )
             continue
 
         for filename in filenames:
             path = os.path.join(dirpath, filename)
-            hex_content_id = ''.join(path.split(os.sep)[-4:])
+            hex_content_id = "".join(path.split(os.sep)[-4:])
             match = hex_content_id_re.search(hex_content_id)
             if match is None:
-                log.warning(
-                    "Ignoring invalid path %s" % path)
+                log.warning("Ignoring invalid path %s" % path)
                 continue
 
             content_id = int(match.groups()[0], 16)
 
-            while (next_wanted_content_id is not None
-                    and content_id > next_wanted_content_id):
+            while (
+                next_wanted_content_id is not None
+                and content_id > next_wanted_content_id
+            ):
 
                 next_wanted_content_id = get_next_wanted_content_id()
 
-                if (config.librarian_server.upstream_host is None
-                        and not swift_enabled  # Maybe the file is in Swift.
-                        and next_wanted_content_id is not None
-                        and next_wanted_content_id < content_id):
+                if (
+                    config.librarian_server.upstream_host is None
+                    and not swift_enabled  # Maybe the file is in Swift.
+                    and next_wanted_content_id is not None
+                    and next_wanted_content_id < content_id
+                ):
                     log.error(
                         "LibraryFileContent %d exists in the database but "
-                        "was not found on disk." % next_wanted_content_id)
+                        "was not found on disk." % next_wanted_content_id
+                    )
 
             file_wanted = (
-                    next_wanted_content_id is not None
-                    and next_wanted_content_id == content_id)
+                next_wanted_content_id is not None
+                and next_wanted_content_id == content_id
+            )
 
             if not file_wanted:
                 if time() - os.path.getctime(path) < ONE_DAY:
                     log.debug3(
                         "File %d not removed - created too recently"
-                        % content_id)
+                        % content_id
+                    )
                 else:
                     # File uploaded a while ago but no longer wanted.
                     os.unlink(path)
@@ -746,13 +819,15 @@ def delete_unwanted_disk_files(con):
         while next_wanted_content_id is not None:
             log.error(
                 "LibraryFileContent %d exists in the database but "
-                "was not found on disk." % next_wanted_content_id)
+                "was not found on disk." % next_wanted_content_id
+            )
             next_wanted_content_id = get_next_wanted_content_id()
 
     cur.close()
     log.info(
         "Deleted %d files from disk that were no longer referenced "
-        "in the db." % removed_count)
+        "in the db." % removed_count
+    )
 
 
 def swift_files(max_lfc_id):
@@ -768,7 +843,8 @@ def swift_files(max_lfc_id):
     with ExitStack() as stack:
         swift_connections = [
             stack.enter_context(swift.connection(connection_pool))
-            for connection_pool in swift.connection_pools]
+            for connection_pool in swift.connection_pools
+        ]
         # We generate the container names, rather than query the
         # server, because the mock Swift implementation doesn't
         # support that operation.
@@ -781,26 +857,35 @@ def swift_files(max_lfc_id):
             objs = []
             for pool_index, swift_connection in enumerate(swift_connections):
                 try:
-                    objs.extend([
-                        (obj, pool_index)
-                        for obj in swift.quiet_swiftclient(
-                            swift_connection.get_container,
-                            container, full_listing=True)[1]])
+                    objs.extend(
+                        [
+                            (obj, pool_index)
+                            for obj in swift.quiet_swiftclient(
+                                swift_connection.get_container,
+                                container,
+                                full_listing=True,
+                            )[1]
+                        ]
+                    )
                 except swiftclient.ClientException as x:
                     if x.http_status == 404:
                         continue
                     raise
-            objs.sort(key=lambda x: (
-                [int(segment) for segment in x[0]['name'].split('/')], x[1]))
+            objs.sort(
+                key=lambda x: (
+                    [int(segment) for segment in x[0]["name"].split("/")],
+                    x[1],
+                )
+            )
             for obj, pool_index in objs:
-                if (obj['name'], pool_index) not in seen_names:
+                if (obj["name"], pool_index) not in seen_names:
                     yield (swift.connection_pools[pool_index], container, obj)
-                seen_names.add((obj['name'], pool_index))
+                seen_names.add((obj["name"], pool_index))
 
 
 def delete_unwanted_swift_files(con):
     """Delete files found in Swift that have no corresponding db record."""
-    assert getFeatureFlag('librarian.swift.enabled')
+    assert getFeatureFlag("librarian.swift.enabled")
 
     log.info("Deleting unwanted files from Swift.")
 
@@ -817,9 +902,11 @@ def delete_unwanted_swift_files(con):
 
     # Calculate all stored LibraryFileContent ids that we want to keep.
     # Results are ordered so we don't have to suck them all in at once.
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id FROM LibraryFileContent ORDER BY id
-        """)
+        """
+    )
     content_id_iter = iter(cur)
 
     def get_next_wanted_content_id():
@@ -834,50 +921,62 @@ def delete_unwanted_swift_files(con):
     content_id = next_wanted_content_id = -1
 
     for connection_pool, container, obj in swift_files(max_lfc_id):
-        name = obj['name']
+        name = obj["name"]
 
         # We may have a segment of a large file.
-        if '/' in name:
-            content_id = int(name.split('/', 1)[0])
+        if "/" in name:
+            content_id = int(name.split("/", 1)[0])
         else:
             content_id = int(name)
 
-        while (next_wanted_content_id is not None
-            and content_id > next_wanted_content_id):
+        while (
+            next_wanted_content_id is not None
+            and content_id > next_wanted_content_id
+        ):
 
             next_wanted_content_id = get_next_wanted_content_id()
 
-            if (config.librarian_server.upstream_host is None
-                    and next_wanted_content_id is not None
-                    and next_wanted_content_id < content_id
-                    and not os.path.exists(
-                        get_file_path(next_wanted_content_id))):
+            if (
+                config.librarian_server.upstream_host is None
+                and next_wanted_content_id is not None
+                and next_wanted_content_id < content_id
+                and not os.path.exists(get_file_path(next_wanted_content_id))
+            ):
                 log.error(
                     "LibraryFileContent %d exists in the database but "
                     "was not found on disk nor in Swift."
-                    % next_wanted_content_id)
+                    % next_wanted_content_id
+                )
 
         file_wanted = (
             next_wanted_content_id is not None
-            and next_wanted_content_id == content_id)
+            and next_wanted_content_id == content_id
+        )
 
         if not file_wanted:
-            mod_time = iso8601.parse_date(obj['last_modified'])
+            mod_time = iso8601.parse_date(obj["last_modified"])
             if mod_time > _utcnow() - timedelta(days=1):
                 log.debug3(
-                    "File %d not removed - created too recently", content_id)
+                    "File %d not removed - created too recently", content_id
+                )
             else:
                 with swift.connection(connection_pool) as swift_connection:
                     try:
                         swift_connection.delete_object(container, name)
                         log.debug3(
-                            'Deleted (%s, %s) from Swift (%s)',
-                            container, name, connection_pool.os_auth_url)
+                            "Deleted (%s, %s) from Swift (%s)",
+                            container,
+                            name,
+                            connection_pool.os_auth_url,
+                        )
                     except swiftclient.ClientException as e:
                         if e.http_status != 404:
                             log.exception(
                                 "Failed to delete (%s, %s) from Swift (%s)",
-                                container, name, connection_pool.os_auth_url)
+                                container,
+                                name,
+                                connection_pool.os_auth_url,
+                            )
                 removed_count += 1
 
     if next_wanted_content_id == content_id:
@@ -891,24 +990,27 @@ def delete_unwanted_swift_files(con):
         # has not run recently. Report an error if the file is older
         # than one week and doesn't exist in Swift.
         path = get_file_path(next_wanted_content_id)
-        if os.path.exists(path) and (os.stat(path).st_ctime
-                                     < time() - (7 * 24 * 60 * 60)):
+        if os.path.exists(path) and (
+            os.stat(path).st_ctime < time() - (7 * 24 * 60 * 60)
+        ):
             log.error(
                 "LibraryFileContent {} exists in the database and disk "
-                "but was not found in Swift.".format(next_wanted_content_id))
+                "but was not found in Swift.".format(next_wanted_content_id)
+            )
         next_wanted_content_id = get_next_wanted_content_id()
 
     cur.close()
     log.info(
         "Deleted {} files from Swift that were no longer referenced "
-        "in the db.".format(removed_count))
+        "in the db.".format(removed_count)
+    )
 
 
 def get_file_path(content_id):
-    """Return the physical file path to the matching LibraryFileContent id.
-    """
-    assert isinstance(content_id, int), (
-        'Invalid content_id %s' % repr(content_id))
+    """Return the physical file path to the matching LibraryFileContent id."""
+    assert isinstance(content_id, int), "Invalid content_id %s" % repr(
+        content_id
+    )
     return os.path.join(get_storage_root(), relative_file_path(content_id))
 
 
@@ -919,6 +1021,7 @@ def get_storage_root():
     """
     storage_root = config.librarian_server.root
     # Do a basic sanity check.
-    assert os.path.isdir(os.path.join(storage_root, 'incoming')), (
-        '%s is not a Librarian storage area' % storage_root)
+    assert os.path.isdir(os.path.join(storage_root, "incoming")), (
+        "%s is not a Librarian storage area" % storage_root
+    )
     return storage_root

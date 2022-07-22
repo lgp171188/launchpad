@@ -1,37 +1,26 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import re
 from collections.abc import Sequence
 from datetime import datetime
 from functools import reduce
-import re
 
-from iso8601 import (
-    parse_date,
-    ParseError,
-    )
 import lazr.batchnavigator
-from lazr.batchnavigator.interfaces import IRangeFactory
 import simplejson
+from iso8601 import ParseError, parse_date
+from lazr.batchnavigator.interfaces import IRangeFactory
 from storm import Undef
-from storm.expr import (
-    And,
-    compile,
-    Desc,
-    Or,
-    SQL,
-    )
+from storm.expr import SQL, And, Desc, Or, compile
 from storm.properties import PropertyColumn
 from storm.store import EmptyResultSet
 from storm.zope.interfaces import IResultSet
 from zope.component import adapter
 from zope.interface import implementer
 from zope.interface.common.sequence import IFiniteSequence
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import ProxyFactory
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.launchpad import iter_view_registrations
 from lp.services.config import config
@@ -40,38 +29,36 @@ from lp.services.database.interfaces import IStandbyStore
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     sqlvalues,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.interfaces import (
     ITableBatchNavigator,
     StormRangeFactoryError,
-    )
+)
 from lp.services.webapp.publisher import LaunchpadView
 
 
 def get_batch_properties_for_json_cache(view, batchnav):
     """Get values to insert into `IJSONRequestCache` for JS batchnavs."""
     properties = {}
-    view_names = {
-        reg.name for reg in iter_view_registrations(view.__class__)}
+    view_names = {reg.name for reg in iter_view_registrations(view.__class__)}
     if len(view_names) != 1:
         raise AssertionError("Ambiguous view name.")
-    properties['view_name'] = view_names.pop()
+    properties["view_name"] = view_names.pop()
 
     def _getBatchInfo(batch):
         if batch is None:
             return None
-        return {'memo': batch.range_memo,
-                'start': batch.startNumber() - 1}
+        return {"memo": batch.range_memo, "start": batch.startNumber() - 1}
 
     next_batch = batchnav.batch.nextBatch()
-    properties['next'] = _getBatchInfo(next_batch)
+    properties["next"] = _getBatchInfo(next_batch)
     prev_batch = batchnav.batch.prevBatch()
-    properties['prev'] = _getBatchInfo(prev_batch)
-    properties['total'] = batchnav.batch.total()
-    properties['forwards'] = batchnav.batch.range_forwards
+    properties["prev"] = _getBatchInfo(prev_batch)
+    properties["total"] = batchnav.batch.total()
+    properties["forwards"] = batchnav.batch.range_forwards
     last_batch = batchnav.batch.lastBatch()
-    properties['last_start'] = last_batch.startNumber() - 1
+    properties["last_start"] = last_batch.startNumber() - 1
     properties.update(_getBatchInfo(batchnav.batch))
     return properties
 
@@ -79,7 +66,6 @@ def get_batch_properties_for_json_cache(view, batchnav):
 @adapter(IResultSet)
 @implementer(IFiniteSequence)
 class FiniteSequenceAdapter:
-
     def __init__(self, context):
         self.context = context
 
@@ -126,14 +112,28 @@ class LowerBatchNavigationView(UpperBatchNavigationView):
 
 
 class BatchNavigator(lazr.batchnavigator.BatchNavigator):
-
-    def __init__(self, results, request, start=0, size=None, callback=None,
-                 transient_parameters=None, force_start=False,
-                 range_factory=None, hide_counts=False):
-        super().__init__(results, request,
-            start=start, size=size, callback=callback,
+    def __init__(
+        self,
+        results,
+        request,
+        start=0,
+        size=None,
+        callback=None,
+        transient_parameters=None,
+        force_start=False,
+        range_factory=None,
+        hide_counts=False,
+    ):
+        super().__init__(
+            results,
+            request,
+            start=start,
+            size=size,
+            callback=callback,
             transient_parameters=transient_parameters,
-            force_start=force_start, range_factory=range_factory)
+            force_start=force_start,
+            range_factory=range_factory,
+        )
         self.hide_counts = hide_counts
 
     @property
@@ -160,7 +160,8 @@ class ActiveBatchNavigator(BatchNavigator):
 
     Used when a view needs to display two BatchNavigators.
     """
-    variable_name_prefix = 'active'
+
+    variable_name_prefix = "active"
 
 
 class InactiveBatchNavigator(BatchNavigator):
@@ -168,15 +169,23 @@ class InactiveBatchNavigator(BatchNavigator):
 
     Used when a view needs to display two Batchavigators.
     """
-    variable_name_prefix = 'inactive'
+
+    variable_name_prefix = "inactive"
 
 
 @implementer(ITableBatchNavigator)
 class TableBatchNavigator(BatchNavigator):
     """See lp.services.webapp.interfaces.ITableBatchNavigator."""
 
-    def __init__(self, results, request, start=0, size=None,
-                 columns_to_show=None, callback=None):
+    def __init__(
+        self,
+        results,
+        request,
+        start=0,
+        size=None,
+        columns_to_show=None,
+        callback=None,
+    ):
         BatchNavigator.__init__(self, results, request, start, size, callback)
 
         self.show_column = {}
@@ -190,6 +199,7 @@ class DateTimeJSONEncoder(simplejson.JSONEncoder):
 
     Datetime objects are formatted according to ISO 1601.
     """
+
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
@@ -218,13 +228,16 @@ class ShadowedList:
     It implements only those parts of the sequence protocol needed by
     BatchNavigator and Batch.
     """
+
     def __init__(self, values, shadow_values):
-        if (not isinstance(values, Sequence) or
-                not isinstance(shadow_values, Sequence)):
+        if not isinstance(values, Sequence) or not isinstance(
+            shadow_values, Sequence
+        ):
             raise TypeError("values and shadow_values must be sequences.")
         if len(values) != len(shadow_values):
             raise ValueError(
-                "values and shadow_values must have the same length.")
+                "values and shadow_values must have the same length."
+            )
         self.values = values
         # Store always a copy: values and shadow_values may be identical,
         # and if this is the case, the two reverse() calls in the method
@@ -246,10 +259,12 @@ class ShadowedList:
         """See `list`."""
         if not isinstance(other, ShadowedList):
             raise TypeError(
-                'You can only add another ShadowedList to a ShadowedList')
+                "You can only add another ShadowedList to a ShadowedList"
+            )
         return ShadowedList(
             self.values + other.values,
-            self.shadow_values + other.shadow_values)
+            self.shadow_values + other.shadow_values,
+        )
 
     def __iter__(self):
         """See `list`."""
@@ -315,7 +330,8 @@ class StormRangeFactory:
             self.forward_sort_order = self.getOrderBy()
             if self.forward_sort_order is Undef:
                 raise StormRangeFactoryError(
-                    'StormRangeFactory requires a sorted result set.')
+                    "StormRangeFactory requires a sorted result set."
+                )
             self.backward_sort_order = self.reverseSortOrder()
 
     @property
@@ -327,18 +343,18 @@ class StormRangeFactory:
         return removeSecurityProxy(self.plain_resultset)._order_by
 
     def getOrderValuesFor(self, row):
-        """Return the values of the order_by expressions for the given row.
-        """
+        """Return the values of the order_by expressions for the given row."""
         sort_values = []
         if not zope_isinstance(row, tuple):
-            row = (row, )
+            row = (row,)
         sort_expressions = self.getOrderBy()
         for expression in sort_expressions:
             expression = plain_expression(expression)
             if not zope_isinstance(expression, PropertyColumn):
                 raise StormRangeFactoryError(
-                    'StormRangeFactory only supports sorting by '
-                    'PropertyColumn, not by %r.' % expression)
+                    "StormRangeFactory only supports sorting by "
+                    "PropertyColumn, not by %r." % expression
+                )
             class_instance_found = False
             for row_part in row:
                 if zope_isinstance(row_part, expression.cls):
@@ -347,23 +363,27 @@ class StormRangeFactory:
                     break
             if not class_instance_found:
                 raise StormRangeFactoryError(
-                    'Instances of %r are not contained in the result set, '
-                    'but are required to retrieve the value of %s.%s.'
-                    % (expression.cls, expression.cls.__name__,
-                       expression.name))
+                    "Instances of %r are not contained in the result set, "
+                    "but are required to retrieve the value of %s.%s."
+                    % (
+                        expression.cls,
+                        expression.cls.__name__,
+                        expression.name,
+                    )
+                )
         return sort_values
 
     def getEndpointMemos(self, batch):
         """See `IRangeFactory`."""
         plain_slice = batch.sliced_list.shadow_values
         if len(plain_slice) == 0:
-            return ('', '')
+            return ("", "")
         lower = self.getOrderValuesFor(plain_slice[0])
         upper = self.getOrderValuesFor(plain_slice[batch.trueSize - 1])
         return (
             simplejson.dumps(lower, cls=DateTimeJSONEncoder),
             simplejson.dumps(upper, cls=DateTimeJSONEncoder),
-            )
+        )
 
     def reportError(self, message):
         if self.error_cb is not None:
@@ -381,24 +401,24 @@ class StormRangeFactory:
         Parsing errors or data not matching the sort parameters of the
         result set are simply ignored.
         """
-        if memo == '':
+        if memo == "":
             return None
         try:
             parsed_memo = simplejson.loads(memo)
         except simplejson.JSONDecodeError:
-            self.reportError('memo is not a valid JSON string.')
+            self.reportError("memo is not a valid JSON string.")
             return None
         if not isinstance(parsed_memo, list):
-            self.reportError(
-                'memo must be the JSON representation of a list.')
+            self.reportError("memo must be the JSON representation of a list.")
             return None
 
         sort_expressions = self.getOrderBy()
         if len(sort_expressions) != len(parsed_memo):
             self.reportError(
-                'Invalid number of elements in memo string. '
-                'Expected: %i, got: %i'
-                % (len(sort_expressions), len(parsed_memo)))
+                "Invalid number of elements in memo string. "
+                "Expected: %i, got: %i"
+                % (len(sort_expressions), len(parsed_memo))
+            )
             return None
 
         converted_memo = []
@@ -414,8 +434,9 @@ class StormRangeFactory:
                 # ISO format. If value is a string and if it can be
                 # converted into a datetime object, we have a valid
                 # value.
-                if (str(error).startswith('Expected datetime') and
-                    isinstance(value, str)):
+                if str(error).startswith("Expected datetime") and isinstance(
+                    value, str
+                ):
                     try:
                         value = parse_date(value)
                     except (ParseError, ValueError):
@@ -423,17 +444,17 @@ class StormRangeFactory:
                         # a certain regex, and we get a ValueError
                         # for formally correct but invalid dates,
                         # like May 35.
-                        self.reportError('Invalid datetime value: %r' % value)
+                        self.reportError("Invalid datetime value: %r" % value)
                         return None
                 else:
-                    self.reportError(
-                        'Invalid parameter: %r' % value)
+                    self.reportError("Invalid parameter: %r" % value)
                     return None
             converted_memo.append(value)
         return converted_memo
 
     def reverseSortOrder(self):
         """Return a list of reversed sort expressions."""
+
         def invert_sort_expression(expr):
             if isinstance(expr, Desc):
                 return expr.expr
@@ -442,7 +463,8 @@ class StormRangeFactory:
 
         return [
             invert_sort_expression(expression)
-            for expression in self.getOrderBy()]
+            for expression in self.getOrderBy()
+        ]
 
     def limitsGroupedByOrderDirection(self, sort_expressions, memos):
         """Group sort expressions and memo values by order direction."""
@@ -473,12 +495,12 @@ class StormRangeFactory:
         if descending:
             expressions = [expression.expr for expression in expressions]
         expressions = map(compile, expressions)
-        expressions = ', '.join(expressions)
-        memos = ', '.join(sqlvalues(*memos))
+        expressions = ", ".join(expressions)
+        memos = ", ".join(sqlvalues(*memos))
         if descending:
-            return SQL('(%s) < (%s)' % (expressions, memos))
+            return SQL("(%s) < (%s)" % (expressions, memos))
         else:
-            return SQL('(%s) > (%s)' % (expressions, memos))
+            return SQL("(%s) > (%s)" % (expressions, memos))
 
     def equalsExpressionsFromLimits(self, limits):
         """Return a list [expression == memo, ...] for the given limits."""
@@ -487,7 +509,8 @@ class StormRangeFactory:
         for expressions, memos in limits:
             result.extend(
                 plain_expression(expression) == memo
-                for expression, memo in zip(expressions, memos))
+                for expression, memo in zip(expressions, memos)
+            )
         return result
 
     def whereExpressionsFromGroupedLimits(self, limits):
@@ -531,7 +554,8 @@ class StormRangeFactory:
         start = limits[:-1]
         last_expressions, last_memos = limits[-1]
         last_clause = self.lessThanOrGreaterThanExpression(
-            last_expressions, last_memos)
+            last_expressions, last_memos
+        )
         if len(start) > 0:
             clauses = self.equalsExpressionsFromLimits(start)
             clauses.append(last_clause)
@@ -543,7 +567,8 @@ class StormRangeFactory:
     def whereExpressions(self, sort_expressions, memos):
         """WHERE expressions for the given sort columns and memos values."""
         grouped_limits = self.limitsGroupedByOrderDirection(
-            sort_expressions, memos)
+            sort_expressions, memos
+        )
         return self.whereExpressionsFromGroupedLimits(grouped_limits)
 
     def getSliceFromMemo(self, size, memo):
@@ -582,7 +607,7 @@ class StormRangeFactory:
             shadow_result = real_result = list(result)
         return ShadowedList(real_result, shadow_result)
 
-    def getSlice(self, size, endpoint_memo='', forwards=True):
+    def getSlice(self, size, endpoint_memo="", forwards=True):
         """See `IRangeFactory`."""
         if self.empty_resultset:
             return ShadowedList([], [])
@@ -619,13 +644,15 @@ class StormRangeFactory:
             return 0
         columns = [plain_expression(column) for column in self.getOrderBy()]
         select = removeSecurityProxy(self.plain_resultset).get_select_expr(
-            *columns)
-        explain = 'EXPLAIN ' + convert_storm_clause_to_string(select)
+            *columns
+        )
+        explain = "EXPLAIN " + convert_storm_clause_to_string(select)
         result = IStandbyStore(LibraryFileAlias).execute(explain)
         _rows_re = re.compile(r"rows=(\d+)\swidth=")
         first_line = result.get_one()[0]
         match = _rows_re.search(first_line)
         if match is None:
             raise RuntimeError(
-                "Unexpected EXPLAIN output %s" % repr(first_line))
+                "Unexpected EXPLAIN output %s" % repr(first_line)
+            )
         return int(match.group(1))

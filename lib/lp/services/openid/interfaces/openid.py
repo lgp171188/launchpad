@@ -4,13 +4,10 @@
 """Miscelaneous OpenID-related interfaces."""
 
 __all__ = [
-    'IOpenIDPersistentIdentity',
-    ]
+    "IOpenIDPersistentIdentity",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IOpenIDPersistentIdentity(Interface):
@@ -18,8 +15,9 @@ class IOpenIDPersistentIdentity(Interface):
 
     This interface is generally needed by the UI.
     """
-    account = Attribute('The `IAccount` for the user.')
-    openid_identity_url = Attribute(
-        'The OpenID identity URL for the user.')
+
+    account = Attribute("The `IAccount` for the user.")
+    openid_identity_url = Attribute("The OpenID identity URL for the user.")
     openid_identifier = Attribute(
-        'The OpenID identifier used with the request.')
+        "The OpenID identifier used with the request."
+    )

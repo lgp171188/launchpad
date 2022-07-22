@@ -32,7 +32,9 @@ from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
     TranslationConflict,
     )
-from lp.translations.model.translationmessage import DummyTranslationMessage
+from lp.translations.model.translationmessage import (
+    PlaceholderTranslationMessage,
+    )
 
 
 class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
@@ -87,15 +89,17 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         transaction.commit()
         self.assertTrue(self.potmsgset.uses_english_msgids)
 
-    def test_getCurrentTranslationMessageOrDummy_returns_upstream_tm(self):
+    def test_getCurrentTranslationMessageOrPlaceholder_returns_upstream_tm(
+            self):
         pofile = self.factory.makePOFile('nl')
         message = self.factory.makeCurrentTranslationMessage(pofile=pofile)
 
         self.assertEqual(
             message,
-            message.potmsgset.getCurrentTranslationMessageOrDummy(pofile))
+            message.potmsgset.getCurrentTranslationMessageOrPlaceholder(
+                pofile))
 
-    def test_getCurrentTranslationMessageOrDummy_returns_ubuntu_tm(self):
+    def test_getCurrentTranslationMessageOrPlaceholder_returns_ubuntu_tm(self):
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
@@ -105,36 +109,40 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
 
         self.assertEqual(
             message,
-            message.potmsgset.getCurrentTranslationMessageOrDummy(pofile))
+            message.potmsgset.getCurrentTranslationMessageOrPlaceholder(
+                pofile))
 
-    def test_getCurrentTranslationMessageOrDummy_returns_dummy_tm(self):
+    def test_getCurrentTranslationMessageOrPlaceholder_returns_placeholder_tm(
+            self):
         pofile = self.factory.makePOFile('nl')
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
 
-        message = potmsgset.getCurrentTranslationMessageOrDummy(pofile)
-        self.assertIsInstance(message, DummyTranslationMessage)
+        message = potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile)
+        self.assertIsInstance(message, PlaceholderTranslationMessage)
 
-    def test_getCurrentTranslationMessageOrDummy_dummy_is_upstream(self):
-        # When getCurrentDummyTranslationMessage creates a dummy for an
-        # upstream translation, the dummy is current for upstream (but
-        # not for Ubuntu).
+    def test_getCurrentTranslationMessageOrPlaceholder_is_upstream(self):
+        # When getCurrentTranslationMessageOrPlaceholder creates a
+        # placeholder for an upstream translation, the placeholder is
+        # current for upstream (but not for Ubuntu).
         pofile = self.factory.makePOFile('fy')
-        dummy = self.potmsgset.getCurrentTranslationMessageOrDummy(pofile)
-        self.assertTrue(dummy.is_current_upstream)
-        self.assertFalse(dummy.is_current_ubuntu)
+        placeholder = self.potmsgset.getCurrentTranslationMessageOrPlaceholder(
+            pofile)
+        self.assertTrue(placeholder.is_current_upstream)
+        self.assertFalse(placeholder.is_current_ubuntu)
 
-    def test_getCurrentTranslationMessageOrDummy_dummy_is_ubuntu(self):
-        # When getCurrentDummyTranslationMessage creates a dummy for an
-        # Ubuntu translation, the dummy is current for Ubuntu (but
-        # not upstream).
+    def test_getCurrentTranslationMessageOrPlaceholder_is_ubuntu(self):
+        # When getCurrentTranslationMessageOrPlaceholder creates a
+        # placeholder for an Ubuntu translation, the placeholder is current
+        # for Ubuntu (but not upstream).
         package = self.factory.makeSourcePackage()
         template = self.factory.makePOTemplate(
             distroseries=package.distroseries,
             sourcepackagename=package.sourcepackagename)
         pofile = self.factory.makePOFile(potemplate=template)
-        dummy = self.potmsgset.getCurrentTranslationMessageOrDummy(pofile)
-        self.assertTrue(dummy.is_current_ubuntu)
-        self.assertFalse(dummy.is_current_upstream)
+        placeholder = self.potmsgset.getCurrentTranslationMessageOrPlaceholder(
+            pofile)
+        self.assertTrue(placeholder.is_current_ubuntu)
+        self.assertFalse(placeholder.is_current_upstream)
 
     def test_getCurrentTranslation(self):
         """Test how shared and diverged current translation messages

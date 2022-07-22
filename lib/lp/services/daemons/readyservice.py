@@ -9,14 +9,13 @@ with the launchpad-buildd deployment.
 """
 
 __all__ = [
-    'ReadyService',
-    ]
+    "ReadyService",
+]
 
 from twisted.application import service
 from twisted.python import log
 
-
-LOG_MAGIC = 'daemon ready!'
+LOG_MAGIC = "daemon ready!"
 
 
 class ReadyService(service.Service):
@@ -24,5 +23,6 @@ class ReadyService(service.Service):
 
     def startService(self):
         from twisted.internet import reactor
-        reactor.addSystemEventTrigger('after', 'startup', log.msg, LOG_MAGIC)
+
+        reactor.addSystemEventTrigger("after", "startup", log.msg, LOG_MAGIC)
         service.Service.startService(self)

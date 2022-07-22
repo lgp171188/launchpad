@@ -14,28 +14,29 @@ from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 class TestPillarSharingBreadcrumb(BaseBreadcrumbTestCase, SharingBaseTestCase):
     """Test breadcrumbs for the sharing views."""
 
-    pillar_type = 'product'
+    pillar_type = "product"
 
     def setUp(self):
         super().setUp()
         login_person(self.driver)
 
     def test_sharing_breadcrumb(self):
-        crumbs = [self.pillar.displayname, 'Sharing']
+        crumbs = [self.pillar.displayname, "Sharing"]
         self.assertBreadcrumbTexts(
-            expected=crumbs,
-            obj=self.pillar,
-            view_name="+sharing")
+            expected=crumbs, obj=self.pillar, view_name="+sharing"
+        )
 
     def test_sharing_details_breadcrumbs(self):
         grantee = self.makeArtifactGrantee()
         expected_crumbs = [
             self.pillar.displayname,
-            'Sharing',
-            'Sharing details for %s' % grantee.displayname,
-            ]
-        url = 'https://launchpad.test/%s/+sharing/%s' % (
-            self.pillar.name, grantee.name)
+            "Sharing",
+            "Sharing details for %s" % grantee.displayname,
+        ]
+        url = "https://launchpad.test/%s/+sharing/%s" % (
+            self.pillar.name,
+            grantee.name,
+        )
         crumbs = [c.text for c in self.getBreadcrumbsForUrl(url)]
         self.assertEqual(expected_crumbs, crumbs)
 
@@ -46,9 +47,11 @@ class TestDistroseriesBreadcrumb(BaseBreadcrumbTestCase):
     def setUp(self):
         super().setUp()
         self.distribution = self.factory.makeDistribution(
-            name='youbuntu', displayname='Youbuntu')
+            name="youbuntu", displayname="Youbuntu"
+        )
         self.distroseries = self.factory.makeDistroSeries(
-            name='groovy', version="1.06", distribution=self.distribution)
+            name="groovy", version="1.06", distribution=self.distribution
+        )
         self.distroseries_url = canonical_url(self.distroseries)
 
     def test_distroseries(self):
@@ -69,8 +72,8 @@ class TestDistributionMirrorBreadcrumb(BaseBreadcrumbTestCase):
         # displayname.
         displayname = "Akbar and Jeff's Hut of Mirrors"
         mirror = self.factory.makeMirror(
-            distribution=self.distribution,
-            displayname=displayname)
+            distribution=self.distribution, displayname=displayname
+        )
         crumbs = self.getBreadcrumbsForObject(mirror)
         last_crumb = crumbs[-1]
         self.assertEqual(displayname, last_crumb.text)
@@ -80,9 +83,8 @@ class TestDistributionMirrorBreadcrumb(BaseBreadcrumbTestCase):
         # which is derived from the URL.
         http_url = "http://example.com/akbar"
         mirror = self.factory.makeMirror(
-            distribution=self.distribution,
-            displayname=None,
-            http_url=http_url)
+            distribution=self.distribution, displayname=None, http_url=http_url
+        )
         crumbs = self.getBreadcrumbsForObject(mirror)
         last_crumb = crumbs[-1]
         self.assertEqual(mirror.displayname, last_crumb.text)
@@ -92,9 +94,8 @@ class TestDistributionMirrorBreadcrumb(BaseBreadcrumbTestCase):
         # which is derived from the URL.
         ftp_url = "ftp://example.com/jeff"
         mirror = self.factory.makeMirror(
-            distribution=self.distribution,
-            displayname=None,
-            ftp_url=ftp_url)
+            distribution=self.distribution, displayname=None, ftp_url=ftp_url
+        )
         crumbs = self.getBreadcrumbsForObject(mirror)
         last_crumb = crumbs[-1]
         self.assertEqual(mirror.displayname, last_crumb.text)
@@ -108,7 +109,8 @@ class TestMilestoneBreadcrumb(BaseBreadcrumbTestCase):
         self.project = self.factory.makeProduct()
         self.series = self.factory.makeProductSeries(product=self.project)
         self.milestone = self.factory.makeMilestone(
-            productseries=self.series, name="1.1")
+            productseries=self.series, name="1.1"
+        )
         self.milestone_url = canonical_url(self.milestone)
 
     def test_milestone_without_code_name(self):
@@ -122,7 +124,9 @@ class TestMilestoneBreadcrumb(BaseBreadcrumbTestCase):
         crumbs = self.getBreadcrumbsForObject(self.milestone)
         last_crumb = crumbs[-1]
         expected_text = '%s "%s"' % (
-            self.milestone.name, self.milestone.code_name)
+            self.milestone.name,
+            self.milestone.code_name,
+        )
         self.assertEqual(expected_text, last_crumb.text)
 
     def test_productrelease(self):
@@ -142,10 +146,8 @@ class TestPollBreadcrumb(BaseBreadcrumbTestCase):
         title = "Marco Pollo"
         proposition = "Be mine"
         self.poll = self.factory.makePoll(
-            team=self.team,
-            name=name,
-            title=title,
-            proposition=proposition)
+            team=self.team, name=name, title=title, proposition=proposition
+        )
 
     def test_poll(self):
         crumbs = self.getBreadcrumbsForObject(self.poll)
@@ -163,15 +165,16 @@ class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):
         login_person(self.registry_expert)
 
     def test_nameblacklist(self):
-        expected = [('Name Blacklist', 'http://launchpad.test/+nameblacklist')]
+        expected = [("Name Blacklist", "http://launchpad.test/+nameblacklist")]
         self.assertBreadcrumbs(expected, self.name_blacklist_set)
 
     def test_nameblacklist_edit(self):
-        blacklist = self.name_blacklist_set.getByRegExp('blacklist')
+        blacklist = self.name_blacklist_set.getByRegExp("blacklist")
         expected = [
-            ('Name Blacklist',
-             'http://launchpad.test/+nameblacklist'),
-            ('Edit a blacklist expression',
-             'http://launchpad.test/+nameblacklist/1/+edit'),
-            ]
-        self.assertBreadcrumbs(expected, blacklist, view_name='+edit')
+            ("Name Blacklist", "http://launchpad.test/+nameblacklist"),
+            (
+                "Edit a blacklist expression",
+                "http://launchpad.test/+nameblacklist/1/+edit",
+            ),
+        ]
+        self.assertBreadcrumbs(expected, blacklist, view_name="+edit")

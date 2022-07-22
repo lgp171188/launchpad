@@ -470,6 +470,52 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         )
 
     @defer.inlineCallbacks
+    def test_dispatchBuildToWorker_redacts_secrets(self):
+        self.pushConfig(
+            "cibuild.soss",
+            secrets=json.dumps(
+                {
+                    "soss_read_auth": "%(read_auth)s",
+                    "more_secrets": "confidential",
+                }
+            ),
+        )
+        self.pushConfig("builddmaster", builder_proxy_host=None)
+
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.factory.makeDistribution(name="soss")
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        job = self.makeJob(
+            stages=[[("test", 0)]], git_repository=git_repository
+        )
+
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        worker = OkWorker()
+        job.setBuilder(builder, worker)
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT
+        )
+        lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            lxd_lfa, image_type=BuildBaseImageType.LXD
+        )
+        logger = BufferLogger()
+        yield job.dispatchBuildToWorker(logger)
+
+        # Secrets are redacted in the log output.
+        self.assertIn("'soss_read_auth': '<redacted>'", logger.getLogBuffer())
+        self.assertIn("'more_secrets': '<redacted>'", logger.getLogBuffer())
+
+        # ... but not in the arguments dispatched to the worker.
+        self.assertEqual(
+            {"soss_read_auth": "user:pass", "more_secrets": "confidential"},
+            worker.call_log[1][5]["secrets"],
+        )
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_archive_trusted_keys(self):
         # If the archive has a signing key, extraBuildArgs sends it.
         yield self.useFixture(InProcessKeyServerFixture()).start()

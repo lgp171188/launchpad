@@ -4,46 +4,33 @@
 """Team membership interfaces."""
 
 __all__ = [
-    'ACTIVE_STATES',
-    'CyclicalTeamMembershipError',
-    'DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT',
-    'IJoinTeamEvent',
-    'ITeamInvitationEvent',
-    'ITeamMembership',
-    'ITeamMembershipSet',
-    'ITeamParticipation',
-    'TeamMembershipStatus',
-    ]
+    "ACTIVE_STATES",
+    "CyclicalTeamMembershipError",
+    "DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT",
+    "IJoinTeamEvent",
+    "ITeamInvitationEvent",
+    "ITeamMembership",
+    "ITeamMembershipSet",
+    "ITeamParticipation",
+    "TeamMembershipStatus",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Text
 
 from lp import _
-
 
 # Four weeks before a membership expires we send a notification to the member,
 # either inviting them to renew their own membership or asking them to get a
@@ -61,57 +48,81 @@ class TeamMembershipStatus(DBEnumeratedType):
     can be found in the TeamMembership spec.
     """
 
-    PROPOSED = DBItem(1, """
+    PROPOSED = DBItem(
+        1,
+        """
         Proposed
 
         You are a proposed member of this team. To become an active member
         your subscription has to be approved by one of the team's
         administrators.
-        """)
+        """,
+    )
 
-    APPROVED = DBItem(2, """
+    APPROVED = DBItem(
+        2,
+        """
         Approved
 
         You are an active member of this team.
-        """)
+        """,
+    )
 
-    ADMIN = DBItem(3, """
+    ADMIN = DBItem(
+        3,
+        """
         Administrator
 
         You are an administrator of this team.
-        """)
+        """,
+    )
 
-    DEACTIVATED = DBItem(4, """
+    DEACTIVATED = DBItem(
+        4,
+        """
         Deactivated
 
         Your subscription to this team has been deactivated.
-        """)
+        """,
+    )
 
-    EXPIRED = DBItem(5, """
+    EXPIRED = DBItem(
+        5,
+        """
         Expired
 
         Your subscription to this team is expired.
-        """)
+        """,
+    )
 
-    DECLINED = DBItem(6, """
+    DECLINED = DBItem(
+        6,
+        """
         Declined
 
         Your proposed subscription to this team has been declined.
-        """)
+        """,
+    )
 
-    INVITED = DBItem(7, """
+    INVITED = DBItem(
+        7,
+        """
         Invited
 
         You have been invited as a member of this team. In order to become an
         actual member, you have to accept the invitation.
-        """)
+        """,
+    )
 
-    INVITATION_DECLINED = DBItem(8, """
+    INVITATION_DECLINED = DBItem(
+        8,
+        """
         Invitation declined
 
         You have been invited as a member of this team but the invitation has
         been declined.
-        """)
+        """,
+    )
 
 
 ACTIVE_STATES = [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
@@ -125,64 +136,116 @@ class ITeamMembership(Interface):
     handled by the TeamParticipation table.
     """
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     team = exported(
-        Reference(title=_("Team"), required=True, readonly=True,
-                  schema=Interface))  # Specified in interfaces/person.py.
+        Reference(
+            title=_("Team"), required=True, readonly=True, schema=Interface
+        )
+    )  # Specified in interfaces/person.py.
     person = exported(
-        Reference(title=_("Member"), required=True, readonly=True,
-                  schema=Interface),  # Specified in interfaces/person.py.
-        exported_as='member')
+        Reference(
+            title=_("Member"), required=True, readonly=True, schema=Interface
+        ),  # Specified in interfaces/person.py.
+        exported_as="member",
+    )
     personID = Int(title=_("Person ID"), required=True, readonly=True)
-    proposed_by = Attribute(_('Proponent'))
+    proposed_by = Attribute(_("Proponent"))
     reviewed_by = Attribute(
-        _("The team admin who approved/rejected the member."))
+        _("The team admin who approved/rejected the member.")
+    )
     acknowledged_by = Attribute(
-        _('The person (usually the member or someone acting on their behalf) '
-          'that acknowledged (accepted/declined) a membership invitation.'))
+        _(
+            "The person (usually the member or someone acting on their "
+            "behalf) that acknowledged (accepted/declined) a membership "
+            "invitation."
+        )
+    )
     last_changed_by = exported(
-        Reference(title=_('Last person who change this'),
-                  required=False, readonly=True,
-                  schema=Interface))  # Specified in interfaces/person.py.
+        Reference(
+            title=_("Last person who change this"),
+            required=False,
+            readonly=True,
+            schema=Interface,
+        )
+    )  # Specified in interfaces/person.py.
 
     datejoined = exported(
-        Datetime(title=_("Date joined"), required=False, readonly=True,
-                 description=_("The date in which this membership was made "
-                               "active for the first time.")),
-        exported_as='date_joined')
+        Datetime(
+            title=_("Date joined"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The date in which this membership was made "
+                "active for the first time."
+            ),
+        ),
+        exported_as="date_joined",
+    )
     dateexpires = exported(
         Datetime(title=_("Date expires"), required=False, readonly=True),
-        exported_as='date_expires')
+        exported_as="date_expires",
+    )
     date_created = Datetime(
-        title=_("Date created"), required=False, readonly=True,
-        description=_("The date in which this membership was created."))
+        title=_("Date created"),
+        required=False,
+        readonly=True,
+        description=_("The date in which this membership was created."),
+    )
     date_proposed = Datetime(
-        title=_("Date proposed"), required=False, readonly=True,
-        description=_("The date in which this membership was proposed."))
+        title=_("Date proposed"),
+        required=False,
+        readonly=True,
+        description=_("The date in which this membership was proposed."),
+    )
     date_acknowledged = Datetime(
-        title=_("Date acknowledged"), required=False, readonly=True,
-        description=_("The date in which this membership was acknowledged by "
-                      "the member (or someone acting on their behalf)."))
+        title=_("Date acknowledged"),
+        required=False,
+        readonly=True,
+        description=_(
+            "The date in which this membership was acknowledged by "
+            "the member (or someone acting on their behalf)."
+        ),
+    )
     date_reviewed = Datetime(
-        title=_("Date reviewed"), required=False, readonly=True,
-        description=_("The date in which this membership was approved/"
-                      "rejected by one of the team's admins."))
+        title=_("Date reviewed"),
+        required=False,
+        readonly=True,
+        description=_(
+            "The date in which this membership was approved/"
+            "rejected by one of the team's admins."
+        ),
+    )
     date_last_changed = Datetime(
-        title=_("Date last changed"), required=False, readonly=True,
-        description=_("The date in which this membership was last changed."))
+        title=_("Date last changed"),
+        required=False,
+        readonly=True,
+        description=_("The date in which this membership was last changed."),
+    )
 
     last_change_comment = exported(
-        Text(title=_("Comment on the last change"), required=False,
-             readonly=True))
+        Text(
+            title=_("Comment on the last change"),
+            required=False,
+            readonly=True,
+        )
+    )
     proponent_comment = Text(
-        title=_("Proponent comment"), required=False, readonly=True)
+        title=_("Proponent comment"), required=False, readonly=True
+    )
     acknowledger_comment = Text(
-        title=_("Acknowledger comment"), required=False, readonly=True)
+        title=_("Acknowledger comment"), required=False, readonly=True
+    )
     reviewer_comment = Text(
-        title=_("Reviewer comment"), required=False, readonly=True)
+        title=_("Reviewer comment"), required=False, readonly=True
+    )
     status = exported(
-        Choice(title=_("The state of this membership"), required=True,
-               readonly=True, vocabulary=TeamMembershipStatus))
+        Choice(
+            title=_("The state of this membership"),
+            required=True,
+            readonly=True,
+            vocabulary=TeamMembershipStatus,
+        )
+    )
 
     def isExpired():
         """Return True if this membership's status is EXPIRED."""
@@ -240,9 +303,15 @@ class ITeamMembership(Interface):
     @operation_parameters(
         status=copy_field(status),
         comment=copy_field(reviewer_comment),
-        silent=Bool(title=_("Do not send notifications of status change.  "
-                            "For use by Launchpad administrators only."),
-                            required=False, default=False))
+        silent=Bool(
+            title=_(
+                "Do not send notifications of status change.  "
+                "For use by Launchpad administrators only."
+            ),
+            required=False,
+            default=False,
+        ),
+    )
     @export_write_operation()
     @operation_for_version("beta")
     def setStatus(status, user, comment=None, silent=False):
@@ -325,13 +394,13 @@ class ITeamParticipation(Interface):
     member of itself.
     """
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     team = Reference(
-        title=_("The team"), required=True, readonly=True,
-        schema=Interface)  # Specified in interfaces/person.py.
+        title=_("The team"), required=True, readonly=True, schema=Interface
+    )  # Specified in interfaces/person.py.
     person = Reference(
-        title=_("The member"), required=True, readonly=True,
-        schema=Interface)  # Specified in interfaces/person.py.
+        title=_("The member"), required=True, readonly=True, schema=Interface
+    )  # Specified in interfaces/person.py.
 
 
 class CyclicalTeamMembershipError(Exception):

@@ -4,73 +4,50 @@
 """Launchpad ProjectGroup-related Database Table Objects."""
 
 __all__ = [
-    'ProjectGroup',
-    'ProjectGroupSeries',
-    'ProjectGroupSet',
-    ]
+    "ProjectGroup",
+    "ProjectGroupSeries",
+    "ProjectGroupSet",
+]
 
 import six
-from storm.expr import (
-    And,
-    In,
-    Join,
-    SQL,
-    )
+from storm.expr import SQL, And, In, Join
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
 from lp.answers.interfaces.faqcollection import IFAQCollection
-from lp.answers.interfaces.questioncollection import (
-    ISearchableByQuestionOwner,
-    )
-from lp.answers.model.faq import (
-    FAQ,
-    FAQSearch,
-    )
+from lp.answers.interfaces.questioncollection import ISearchableByQuestionOwner
+from lp.answers.model.faq import FAQ, FAQSearch
 from lp.answers.model.question import QuestionTargetSearch
 from lp.app.enums import ServiceUsage
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import (
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    )
+from lp.app.interfaces.launchpad import IHasIcon, IHasLogo, IHasMugshot
 from lp.blueprints.enums import SprintSpecificationStatus
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
-    )
+)
 from lp.blueprints.model.specificationsearch import search_specifications
-from lp.blueprints.model.sprint import (
-    HasSprintsMixin,
-    Sprint,
-    )
+from lp.blueprints.model.sprint import HasSprintsMixin, Sprint
 from lp.blueprints.model.sprintspecification import SprintSpecification
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
-from lp.bugs.model.bugtarget import (
-    BugTargetBase,
-    OfficialBugTag,
-    )
+from lp.bugs.model.bugtarget import BugTargetBase, OfficialBugTag
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
-    )
-from lp.code.model.hasbranches import (
-    HasBranchesMixin,
-    HasMergeProposalsMixin,
-    )
+)
+from lp.code.model.hasbranches import HasBranchesMixin, HasMergeProposalsMixin
 from lp.registry.interfaces.person import (
     validate_person_or_closed_team,
     validate_public_person,
-    )
+)
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import (
     IProjectGroup,
     IProjectGroupSeries,
     IProjectGroupSet,
-    )
+)
 from lp.registry.model.announcement import MakesAnnouncements
 from lp.registry.model.hasdrivers import HasDriversMixin
 from lp.registry.model.karma import KarmaContextMixin
@@ -78,28 +55,22 @@ from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
     ProjectMilestone,
-    )
+)
 from lp.registry.model.pillar import HasAliasMixin
-from lp.registry.model.product import (
-    Product,
-    ProductSet,
-    )
+from lp.registry.model.product import Product, ProductSet
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
     AND,
     BoolCol,
     ForeignKey,
     SQLObjectNotFound,
     StringCol,
-    )
+)
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
@@ -112,59 +83,98 @@ from lp.translations.model.translationpolicy import TranslationPolicyMixin
 
 
 @implementer(
-    IBugSummaryDimension, IProjectGroup, IFAQCollection, IHasIcon,
-    IHasLogo, IHasMugshot, ISearchableByQuestionOwner)
-class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
-                   MakesAnnouncements, HasSprintsMixin, HasAliasMixin,
-                   KarmaContextMixin, StructuralSubscriptionTargetMixin,
-                   HasBranchesMixin, HasMergeProposalsMixin,
-                   HasMilestonesMixin, HasDriversMixin,
-                   TranslationPolicyMixin):
+    IBugSummaryDimension,
+    IProjectGroup,
+    IFAQCollection,
+    IHasIcon,
+    IHasLogo,
+    IHasMugshot,
+    ISearchableByQuestionOwner,
+)
+class ProjectGroup(
+    SQLBase,
+    BugTargetBase,
+    HasSpecificationsMixin,
+    MakesAnnouncements,
+    HasSprintsMixin,
+    HasAliasMixin,
+    KarmaContextMixin,
+    StructuralSubscriptionTargetMixin,
+    HasBranchesMixin,
+    HasMergeProposalsMixin,
+    HasMilestonesMixin,
+    HasDriversMixin,
+    TranslationPolicyMixin,
+):
     """A ProjectGroup"""
 
     _table = "Project"
 
     # db field names
     owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_person_or_closed_team, notNull=True)
+        dbName="owner",
+        foreignKey="Person",
+        storm_validator=validate_person_or_closed_team,
+        notNull=True,
+    )
     registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    name = StringCol(dbName='name', notNull=True)
-    display_name = StringCol(dbName='displayname', notNull=True)
-    _title = StringCol(dbName='title', notNull=True)
-    summary = StringCol(dbName='summary', notNull=True)
-    description = StringCol(dbName='description', notNull=True)
-    datecreated = UtcDateTimeCol(dbName='datecreated', notNull=True,
-        default=UTC_NOW)
+        dbName="registrant",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
+    name = StringCol(dbName="name", notNull=True)
+    display_name = StringCol(dbName="displayname", notNull=True)
+    _title = StringCol(dbName="title", notNull=True)
+    summary = StringCol(dbName="summary", notNull=True)
+    description = StringCol(dbName="description", notNull=True)
+    datecreated = UtcDateTimeCol(
+        dbName="datecreated", notNull=True, default=UTC_NOW
+    )
     driver = ForeignKey(
-        dbName="driver", foreignKey="Person",
-        storm_validator=validate_public_person, notNull=False, default=None)
-    homepageurl = StringCol(dbName='homepageurl', notNull=False, default=None)
+        dbName="driver",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=False,
+        default=None,
+    )
+    homepageurl = StringCol(dbName="homepageurl", notNull=False, default=None)
     homepage_content = StringCol(default=None)
     icon = ForeignKey(
-        dbName='icon', foreignKey='LibraryFileAlias', default=None)
+        dbName="icon", foreignKey="LibraryFileAlias", default=None
+    )
     logo = ForeignKey(
-        dbName='logo', foreignKey='LibraryFileAlias', default=None)
+        dbName="logo", foreignKey="LibraryFileAlias", default=None
+    )
     mugshot = ForeignKey(
-        dbName='mugshot', foreignKey='LibraryFileAlias', default=None)
-    wikiurl = StringCol(dbName='wikiurl', notNull=False, default=None)
-    sourceforgeproject = StringCol(dbName='sourceforgeproject', notNull=False,
-        default=None)
+        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
+    )
+    wikiurl = StringCol(dbName="wikiurl", notNull=False, default=None)
+    sourceforgeproject = StringCol(
+        dbName="sourceforgeproject", notNull=False, default=None
+    )
     freshmeatproject = None
-    lastdoap = StringCol(dbName='lastdoap', notNull=False, default=None)
-    translationgroup = ForeignKey(dbName='translationgroup',
-        foreignKey='TranslationGroup', notNull=False, default=None)
+    lastdoap = StringCol(dbName="lastdoap", notNull=False, default=None)
+    translationgroup = ForeignKey(
+        dbName="translationgroup",
+        foreignKey="TranslationGroup",
+        notNull=False,
+        default=None,
+    )
     translationpermission = DBEnum(
-        name='translationpermission',
-        allow_none=False, enum=TranslationPermission,
-        default=TranslationPermission.OPEN)
-    active = BoolCol(dbName='active', notNull=True, default=True)
-    reviewed = BoolCol(dbName='reviewed', notNull=True, default=False)
+        name="translationpermission",
+        allow_none=False,
+        enum=TranslationPermission,
+        default=TranslationPermission.OPEN,
+    )
+    active = BoolCol(dbName="active", notNull=True, default=True)
+    reviewed = BoolCol(dbName="reviewed", notNull=True, default=False)
     bugtracker = ForeignKey(
-        foreignKey="BugTracker", dbName="bugtracker", notNull=False,
-        default=None)
+        foreignKey="BugTracker",
+        dbName="bugtracker",
+        notNull=False,
+        default=None,
+    )
     bug_reporting_guidelines = StringCol(default=None)
     bug_reported_acknowledgement = StringCol(default=None)
 
@@ -183,8 +193,11 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getProducts(self, user):
         results = Store.of(self).find(
-            Product, Product.projectgroup == self, Product.active == True,
-            ProductSet.getProductPrivacyFilter(user))
+            Product,
+            Product.projectgroup == self,
+            Product.active == True,
+            ProductSet.getProductPrivacyFilter(user),
+        )
         return results.order_by(Product.display_name)
 
     @cachedproperty
@@ -195,8 +208,11 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         return Product.selectOneBy(projectgroup=self, name=name)
 
     def getConfigurableProducts(self):
-        return [product for product in self.products
-                if check_permission('launchpad.Edit', product)]
+        return [
+            product
+            for product in self.products
+            if check_permission("launchpad.Edit", product)
+        ]
 
     @property
     def drivers(self):
@@ -216,12 +232,16 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
             Product,
             Join(ProductSeries, Product.id == ProductSeries.productID),
             Join(POTemplate, ProductSeries.id == POTemplate.productseriesID),
-            ]
-        return store.using(*origin).find(
-            Product,
-            Product.projectgroup == self.id,
-            Product.translations_usage == ServiceUsage.LAUNCHPAD,
-            ).config(distinct=True)
+        ]
+        return (
+            store.using(*origin)
+            .find(
+                Product,
+                Product.projectgroup == self.id,
+                Product.translations_usage == ServiceUsage.LAUNCHPAD,
+            )
+            .config(distinct=True)
+        )
 
     @cachedproperty
     def translatables(self):
@@ -232,18 +252,17 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See `IProjectGroup`."""
         return len(self.translatables) > 0
 
-    def sharesTranslationsWithOtherSide(self, person, language,
-                                        sourcepackage=None,
-                                        purportedly_upstream=False):
+    def sharesTranslationsWithOtherSide(
+        self, person, language, sourcepackage=None, purportedly_upstream=False
+    ):
         """See `ITranslationPolicy`."""
-        assert sourcepackage is None, (
-            "Got a SourcePackage for a ProjectGroup!")
+        assert sourcepackage is None, "Got a SourcePackage for a ProjectGroup!"
         # ProjectGroup translations are considered upstream.  They are
         # automatically shared.
         return True
 
     def has_branches(self):
-        """ See `IProjectGroup`."""
+        """See `IProjectGroup`."""
         return not self.getBranches().is_empty()
 
     def _getBaseClausesForQueryingSprints(self):
@@ -253,25 +272,45 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
             Specification.id == SprintSpecification.specification_id,
             SprintSpecification.sprint == Sprint.id,
             SprintSpecification.status == SprintSpecificationStatus.ACCEPTED,
-            ]
+        ]
 
-    def specifications(self, user, sort=None, quantity=None, filter=None,
-                       series=None, need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        self,
+        user,
+        sort=None,
+        quantity=None,
+        filter=None,
+        series=None,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         """See `IHasSpecifications`."""
         base_clauses = [
             Specification.productID == Product.id,
-            Product.projectgroupID == self.id]
+            Product.projectgroupID == self.id,
+        ]
         tables = [Specification]
         if series:
             base_clauses.append(ProductSeries.name == series)
             tables.append(
-                Join(ProductSeries,
-                Specification.productseriesID == ProductSeries.id))
+                Join(
+                    ProductSeries,
+                    Specification.productseriesID == ProductSeries.id,
+                )
+            )
         return search_specifications(
-            self, base_clauses, user, sort, quantity, filter, tables=tables,
-            need_people=need_people, need_branches=need_branches,
-            need_workitems=need_workitems)
+            self,
+            base_clauses,
+            user,
+            sort,
+            quantity,
+            filter,
+            tables=tables,
+            need_people=need_people,
+            need_branches=need_branches,
+            need_workitems=need_workitems,
+        )
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this milestone."""
@@ -279,8 +318,10 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def _getOfficialTagClause(self):
         """See `OfficialBugTagTargetMixin`."""
-        And(ProjectGroup.id == Product.projectgroupID,
-            Product.id == OfficialBugTag.productID)
+        And(
+            ProjectGroup.id == Product.projectgroupID,
+            Product.id == OfficialBugTag.productID,
+        )
 
     @property
     def official_bug_tags(self):
@@ -289,7 +330,8 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         result = store.find(
             OfficialBugTag.tag,
             OfficialBugTag.product == Product.id,
-            Product.projectgroup == self.id).order_by(OfficialBugTag.tag)
+            Product.projectgroup == self.id,
+        ).order_by(OfficialBugTag.tag)
         result.config(distinct=True)
         return result
 
@@ -297,16 +339,23 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         """See BugTargetBase."""
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
+
         product_ids = [product.id for product in self.products]
         if not product_ids:
             return False
         return BugSummary.product_id.is_in(product_ids)
 
     # IQuestionCollection
-    def searchQuestions(self, search_text=None,
-                        status=QUESTION_STATUS_DEFAULT_SEARCH,
-                        language=None, sort=None, owner=None,
-                        needs_attention_from=None, unsupported=False):
+    def searchQuestions(
+        self,
+        search_text=None,
+        status=QUESTION_STATUS_DEFAULT_SEARCH,
+        language=None,
+        sort=None,
+        owner=None,
+        needs_attention_from=None,
+        unsupported=False,
+    ):
         """See `IQuestionCollection`."""
         if unsupported:
             unsupported_target = self
@@ -315,18 +364,28 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
         return QuestionTargetSearch(
             projectgroup=self,
-            search_text=search_text, status=status,
-            language=language, sort=sort, owner=owner,
+            search_text=search_text,
+            status=status,
+            language=language,
+            sort=sort,
+            owner=owner,
             needs_attention_from=needs_attention_from,
-            unsupported_target=unsupported_target).getResults()
+            unsupported_target=unsupported_target,
+        ).getResults()
 
     def getQuestionLanguages(self):
         """See `IQuestionCollection`."""
-        return set(Language.select("""
+        return set(
+            Language.select(
+                """
             Language.id = Question.language AND
             Question.product = Product.id AND
-            Product.project = %s""" % sqlvalues(self.id),
-            clauseTables=['Question', 'Product'], distinct=True))
+            Product.project = %s"""
+                % sqlvalues(self.id),
+                clauseTables=["Question", "Product"],
+                distinct=True,
+            )
+        )
 
     @property
     def bugtargetname(self):
@@ -337,9 +396,11 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
     def getFAQ(self, id):
         """See `IQuestionCollection`."""
         faq = FAQ.getForTarget(id, None)
-        if (faq is not None
+        if (
+            faq is not None
             and IProduct.providedBy(faq.target)
-            and faq.target in self.products):
+            and faq.target in self.products
+        ):
             # Filter out faq not related to this project.
             return faq
         else:
@@ -348,8 +409,8 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
     def searchFAQs(self, search_text=None, owner=None, sort=None):
         """See `IQuestionCollection`."""
         return FAQSearch(
-            search_text=search_text, owner=owner, sort=sort,
-            projectgroup=self).getResults()
+            search_text=search_text, owner=owner, sort=sort, projectgroup=self
+        ).getResults()
 
     def hasProducts(self):
         """Returns True if a project group has products associated with it,
@@ -368,7 +429,8 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         return And(
             Milestone.productID == Product.id,
             Product.projectgroupID == self.id,
-            privacy_filter)
+            privacy_filter,
+        )
 
     def _getMilestones(self, user, only_active):
         """Return a list of milestones for this project group.
@@ -383,23 +445,26 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
         columns = (
             Milestone.name,
-            SQL('MIN(Milestone.dateexpected)'),
-            SQL('BOOL_OR(Milestone.active)'),
-            )
+            SQL("MIN(Milestone.dateexpected)"),
+            SQL("BOOL_OR(Milestone.active)"),
+        )
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
-        conditions = And(Milestone.product == Product.id,
-                         Product.projectgroup == self,
-                         Product.active == True,
-                         privacy_filter)
+        conditions = And(
+            Milestone.product == Product.id,
+            Product.projectgroup == self,
+            Product.active == True,
+            privacy_filter,
+        )
         result = store.find(columns, conditions)
         result.group_by(Milestone.name)
         if only_active:
-            result.having('BOOL_OR(Milestone.active) = TRUE')
+            result.having("BOOL_OR(Milestone.active) = TRUE")
         # MIN(Milestone.dateexpected) has to be used to match the
         # aggregate function in the `columns` variable.
         result.order_by(
-            'milestone_sort_key(MIN(Milestone.dateexpected), Milestone.name) '
-            'DESC')
+            "milestone_sort_key(MIN(Milestone.dateexpected), Milestone.name) "
+            "DESC"
+        )
         # An extra query is required here in order to get the correct
         # products without affecting the group/order of the query above.
         products_by_name = {}
@@ -410,16 +475,25 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
                 Milestone.product == Product.id,
                 Product.active == True,
                 privacy_filter,
-                In(Milestone.name, milestone_names))
-            for product, name in (
-                store.find((Product, Milestone.name), product_conditions)):
+                In(Milestone.name, milestone_names),
+            )
+            for product, name in store.find(
+                (Product, Milestone.name), product_conditions
+            ):
                 if name not in products_by_name.keys():
                     products_by_name[name] = product
         return shortlist(
-            [ProjectMilestone(
-                self, name, dateexpected, active,
-                products_by_name.get(name, None))
-             for name, dateexpected, active in result])
+            [
+                ProjectMilestone(
+                    self,
+                    name,
+                    dateexpected,
+                    active,
+                    products_by_name.get(name, None),
+                )
+                for name, dateexpected, active in result
+            ]
+        )
 
     @property
     def has_milestones(self):
@@ -427,9 +501,12 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
         store = Store.of(self)
         result = store.find(
             Milestone.id,
-            And(Milestone.product == Product.id,
+            And(
+                Milestone.product == Product.id,
                 Product.projectgroup == self,
-                Product.active == True))
+                Product.active == True,
+            ),
+        )
         return result.any() is not None
 
     @property
@@ -461,9 +538,13 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
     def getSeries(self, series_name):
         """See `IProjectGroup.`"""
         has_series = ProductSeries.selectFirst(
-            AND(ProductSeries.q.productID == Product.q.id,
+            AND(
+                ProductSeries.q.productID == Product.q.id,
                 ProductSeries.q.name == series_name,
-                Product.q.projectgroupID == self.id), orderBy='id')
+                Product.q.projectgroupID == self.id,
+            ),
+            orderBy="id",
+        )
 
         if has_series is None:
             return None
@@ -489,11 +570,11 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     @property
     def answers_usage(self):
-        return self._get_usage('answers_usage')
+        return self._get_usage("answers_usage")
 
     @property
     def blueprints_usage(self):
-        return self._get_usage('blueprints_usage')
+        return self._get_usage("blueprints_usage")
 
     @property
     def translations_usage(self):
@@ -508,24 +589,25 @@ class ProjectGroup(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     @property
     def bug_tracking_usage(self):
-        return self._get_usage('bug_tracking_usage')
+        return self._get_usage("bug_tracking_usage")
 
     @property
     def uses_launchpad(self):
-        if (self.answers_usage == ServiceUsage.LAUNCHPAD
+        if (
+            self.answers_usage == ServiceUsage.LAUNCHPAD
             or self.blueprints_usage == ServiceUsage.LAUNCHPAD
             or self.translations_usage == ServiceUsage.LAUNCHPAD
             or self.codehosting_usage == ServiceUsage.LAUNCHPAD
-            or self.bug_tracking_usage == ServiceUsage.LAUNCHPAD):
+            or self.bug_tracking_usage == ServiceUsage.LAUNCHPAD
+        ):
             return True
         return False
 
 
 @implementer(IProjectGroupSet)
 class ProjectGroupSet:
-
     def __init__(self):
-        self.title = 'Project groups registered in Launchpad'
+        self.title = "Project groups registered in Launchpad"
 
     def __iter__(self):
         return iter(ProjectGroup.selectBy(active=True))
@@ -560,9 +642,22 @@ class ProjectGroupSet:
             return None
         return pillar
 
-    def new(self, name, display_name, title, homepageurl, summary,
-            description, owner, mugshot=None, logo=None, icon=None,
-            registrant=None, bug_supervisor=None, driver=None):
+    def new(
+        self,
+        name,
+        display_name,
+        title,
+        homepageurl,
+        summary,
+        description,
+        owner,
+        mugshot=None,
+        logo=None,
+        icon=None,
+        registrant=None,
+        bug_supervisor=None,
+        driver=None,
+    ):
         """See `lp.registry.interfaces.projectgroup.IProjectGroupSet`."""
         if registrant is None:
             registrant = owner
@@ -578,7 +673,8 @@ class ProjectGroupSet:
             datecreated=UTC_NOW,
             mugshot=mugshot,
             logo=logo,
-            icon=icon)
+            icon=icon,
+        )
 
     def count_all(self):
         return ProjectGroup.select().count()
@@ -601,10 +697,12 @@ class ProjectGroupSet:
             text = six.ensure_text(text)
             if search_products:
                 joining_product = True
-                clauses.extend([
-                    Product.projectgroup == ProjectGroup.id,
-                    fti_search(Product, text),
-                    ])
+                clauses.extend(
+                    [
+                        Product.projectgroup == ProjectGroup.id,
+                        fti_search(Product, text),
+                    ]
+                )
             else:
                 clauses.append(fti_search(ProjectGroup, text))
 
@@ -613,8 +711,11 @@ class ProjectGroupSet:
             if joining_product:
                 clauses.append(Product.active)
 
-        return IStore(ProjectGroup).find(
-            ProjectGroup, *clauses).config(distinct=True)
+        return (
+            IStore(ProjectGroup)
+            .find(ProjectGroup, *clauses)
+            .config(distinct=True)
+        )
 
 
 @implementer(IProjectGroupSeries)
@@ -625,12 +726,26 @@ class ProjectGroupSeries(HasSpecificationsMixin):
         self.projectgroup = projectgroup
         self.name = name
 
-    def specifications(self, user, sort=None, quantity=None, filter=None,
-                       need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        self,
+        user,
+        sort=None,
+        quantity=None,
+        filter=None,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         return self.projectgroup.specifications(
-            user, sort, quantity, filter, self.name, need_people=need_people,
-            need_branches=need_branches, need_workitems=need_workitems)
+            user,
+            sort,
+            quantity,
+            filter,
+            self.name,
+            need_people=need_people,
+            need_branches=need_branches,
+            need_workitems=need_workitems,
+        )
 
     @property
     def title(self):

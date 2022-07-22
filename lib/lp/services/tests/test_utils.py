@@ -3,20 +3,15 @@
 
 """Tests for lp.services.utils."""
 
+import itertools
+import os
 from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
-import itertools
-import os
 
 from fixtures import TempDir
 from pytz import UTC
-from testtools.matchers import (
-    Equals,
-    GreaterThan,
-    LessThan,
-    MatchesAny,
-    )
+from testtools.matchers import Equals, GreaterThan, LessThan, MatchesAny
 
 from lp.services.utils import (
     AutoDecorateMetaClass,
@@ -34,7 +29,7 @@ from lp.services.utils import (
     seconds_since_epoch,
     traceback_info,
     utc_now,
-    )
+)
 from lp.testing import TestCase
 
 
@@ -46,17 +41,17 @@ class TestAutoDecorateMetaClass(TestCase):
         self.log = None
 
     def decorator_1(self, f):
-
         def decorated(*args, **kwargs):
             self.log.append(1)
             return f(*args, **kwargs)
+
         return decorated
 
     def decorator_2(self, f):
-
         def decorated(*args, **kwargs):
             self.log.append(2)
             return f(*args, **kwargs)
+
         return decorated
 
     def test_auto_decorate_meta_class(self):
@@ -67,18 +62,18 @@ class TestAutoDecorateMetaClass(TestCase):
             __decorators = (self.decorator_1, self.decorator_2)
 
             def method_a(s):
-                self.log.append('a')
+                self.log.append("a")
 
             def method_b(s):
-                self.log.append('b')
+                self.log.append("b")
 
         obj = AutoDecoratedClass()
         self.log = []
         obj.method_a()
-        self.assertEqual([2, 1, 'a'], self.log)
+        self.assertEqual([2, 1, "a"], self.log)
         self.log = []
         obj.method_b()
-        self.assertEqual([2, 1, 'b'], self.log)
+        self.assertEqual([2, 1, "b"], self.log)
 
 
 class TestIterateSplit(TestCase):
@@ -87,15 +82,20 @@ class TestIterateSplit(TestCase):
     def test_iter_split(self):
         # iter_split loops over each way of splitting a string in two using
         # the given splitter.
-        self.assertEqual([('one', '')], list(iter_split('one', '/')))
-        self.assertEqual([], list(iter_split('', '/')))
+        self.assertEqual([("one", "")], list(iter_split("one", "/")))
+        self.assertEqual([], list(iter_split("", "/")))
         self.assertEqual(
-            [('one/two', ''), ('one', '/two')],
-            list(iter_split('one/two', '/')))
+            [("one/two", ""), ("one", "/two")],
+            list(iter_split("one/two", "/")),
+        )
         self.assertEqual(
-            [('one/two/three', ''), ('one/two', '/three'),
-             ('one', '/two/three')],
-            list(iter_split('one/two/three', '/')))
+            [
+                ("one/two/three", ""),
+                ("one/two", "/three"),
+                ("one", "/two/three"),
+            ],
+            list(iter_split("one/two/three", "/")),
+        )
 
 
 class TestIterChunks(TestCase):
@@ -106,22 +106,25 @@ class TestIterChunks(TestCase):
 
     def test_sequence(self):
         self.assertEqual(
-            [('a', 'b'), ('c', 'd'), ('e',)], list(iter_chunks('abcde', 2)))
+            [("a", "b"), ("c", "d"), ("e",)], list(iter_chunks("abcde", 2))
+        )
 
     def test_iterable(self):
         self.assertEqual(
-            [('a', 'b'), ('c', 'd'), ('e',)],
-            list(iter_chunks(iter('abcde'), 2)))
+            [("a", "b"), ("c", "d"), ("e",)],
+            list(iter_chunks(iter("abcde"), 2)),
+        )
 
     def test_size_divides_exactly(self):
         self.assertEqual(
             [(1, 2, 3), (4, 5, 6), (7, 8, 9)],
-            list(iter_chunks(range(1, 10), 3)))
+            list(iter_chunks(range(1, 10), 3)),
+        )
 
     def test_size_does_not_divide_exactly(self):
         self.assertEqual(
-            [(1, 2, 3), (4, 5, 6), (7, 8)],
-            list(iter_chunks(range(1, 9), 3)))
+            [(1, 2, 3), (4, 5, 6), (7, 8)], list(iter_chunks(range(1, 9), 3))
+        )
 
 
 class TestCachingIterator(TestCase):
@@ -131,24 +134,25 @@ class TestCachingIterator(TestCase):
         # The same iterator can be used multiple times.
         iterator = CachingIterator(itertools.count)
         self.assertEqual(
-            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5)))
+            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5))
+        )
         self.assertEqual(
-            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5)))
+            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5))
+        )
 
     def test_more_values(self):
         # If a subsequent call to iter causes more values to be fetched, they
         # are also cached.
         iterator = CachingIterator(itertools.count)
+        self.assertEqual([0, 1, 2], list(itertools.islice(iterator, 0, 3)))
         self.assertEqual(
-            [0, 1, 2], list(itertools.islice(iterator, 0, 3)))
-        self.assertEqual(
-            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5)))
+            [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5))
+        )
 
     def test_limited_iterator(self):
         # Make sure that StopIteration is handled correctly.
         iterator = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
-        self.assertEqual(
-            [0, 1, 2], list(itertools.islice(iterator, 0, 3)))
+        self.assertEqual([0, 1, 2], list(itertools.islice(iterator, 0, 3)))
         self.assertEqual([0, 1, 2, 3, 4], list(iterator))
 
     def test_parallel_iteration(self):
@@ -193,15 +197,16 @@ class TestDecorateWith(TestCase):
 
         @contextmanager
         def appending_twice():
-            calls.append('before')
+            calls.append("before")
             yield
-            calls.append('after')
+            calls.append("after")
 
         @decorate_with(appending_twice)
         def function():
             pass
+
         function()
-        self.assertEqual(['before', 'after'], calls)
+        self.assertEqual(["before", "after"], calls)
 
     def test_decorate_with_function(self):
         # The original function is actually called when we call the result of
@@ -210,9 +215,10 @@ class TestDecorateWith(TestCase):
 
         @decorate_with(self.trivialContextManager)
         def function():
-            calls.append('foo')
+            calls.append("foo")
+
         function()
-        self.assertEqual(['foo'], calls)
+        self.assertEqual(["foo"], calls)
 
     def test_decorate_with_call_twice(self):
         # A function decorated with decorate_with can be called twice.
@@ -220,10 +226,11 @@ class TestDecorateWith(TestCase):
 
         @decorate_with(self.trivialContextManager)
         def function():
-            calls.append('foo')
+            calls.append("foo")
+
         function()
         function()
-        self.assertEqual(['foo', 'foo'], calls)
+        self.assertEqual(["foo", "foo"], calls)
 
     def test_decorate_with_arguments(self):
         # decorate_with passes through arguments.
@@ -232,16 +239,18 @@ class TestDecorateWith(TestCase):
         @decorate_with(self.trivialContextManager)
         def function(*args, **kwargs):
             calls.append((args, kwargs))
-        function('foo', 'bar', qux=4)
-        self.assertEqual([(('foo', 'bar'), {'qux': 4})], calls)
+
+        function("foo", "bar", qux=4)
+        self.assertEqual([(("foo", "bar"), {"qux": 4})], calls)
 
     def test_decorate_with_name_and_docstring(self):
         # decorate_with preserves function names and docstrings.
         @decorate_with(self.trivialContextManager)
         def arbitrary_name():
             """Arbitrary docstring."""
-        self.assertEqual('arbitrary_name', arbitrary_name.__name__)
-        self.assertEqual('Arbitrary docstring.', arbitrary_name.__doc__)
+
+        self.assertEqual("arbitrary_name", arbitrary_name.__name__)
+        self.assertEqual("Arbitrary docstring.", arbitrary_name.__doc__)
 
     def test_decorate_with_returns(self):
         # decorate_with returns the original function's return value.
@@ -255,14 +264,14 @@ class TestDocstringDedent(TestCase):
     """Tests for `docstring_dedent`."""
 
     def test_single_line(self):
-        self.assertEqual(docstring_dedent('docstring'), 'docstring')
+        self.assertEqual(docstring_dedent("docstring"), "docstring")
 
     def test_multi_line(self):
         docstring = """This is a multiline docstring.
 
         This is the second line.
         """
-        result = 'This is a multiline docstring.\n\nThis is the second line.'
+        result = "This is a multiline docstring.\n\nThis is the second line."
         self.assertEqual(docstring_dedent(docstring), result)
 
 
@@ -298,7 +307,8 @@ class TestFileExists(TestCase):
 
     def test_is_not_upset_by_missing_directory(self):
         self.assertFalse(
-            file_exists("a-nonexistent-directory/a-nonexistent-file.txt"))
+            file_exists("a-nonexistent-directory/a-nonexistent-file.txt")
+        )
 
 
 class TestUTCNow(TestCase):
@@ -344,54 +354,54 @@ class TestBZ2Pickle(TestCase):
 
 
 class TestObfuscateStructure(TestCase):
-
     def test_obfuscate_string(self):
         """Strings are obfuscated."""
-        obfuscated = obfuscate_structure('My address is a@example.com')
-        self.assertEqual(
-            'My address is <email address hidden>', obfuscated)
+        obfuscated = obfuscate_structure("My address is a@example.com")
+        self.assertEqual("My address is <email address hidden>", obfuscated)
 
     def test_obfuscate_list(self):
         """List elements are obfuscated."""
-        obfuscated = obfuscate_structure(['My address is a@example.com'])
-        self.assertEqual(
-            ['My address is <email address hidden>'], obfuscated)
+        obfuscated = obfuscate_structure(["My address is a@example.com"])
+        self.assertEqual(["My address is <email address hidden>"], obfuscated)
 
     def test_obfuscate_tuple(self):
         """Tuple elements are obfuscated."""
-        obfuscated = obfuscate_structure(('My address is a@example.com',))
-        self.assertEqual(
-            ['My address is <email address hidden>'], obfuscated)
+        obfuscated = obfuscate_structure(("My address is a@example.com",))
+        self.assertEqual(["My address is <email address hidden>"], obfuscated)
 
     def test_obfuscate_dict_key(self):
         """Dictionary keys are obfuscated."""
         obfuscated = obfuscate_structure(
-            {'My address is a@example.com': 'foo'})
+            {"My address is a@example.com": "foo"}
+        )
         self.assertEqual(
-            {'My address is <email address hidden>': 'foo'}, obfuscated)
+            {"My address is <email address hidden>": "foo"}, obfuscated
+        )
 
     def test_obfuscate_dict_value(self):
         """Dictionary values are obfuscated."""
         obfuscated = obfuscate_structure(
-            {'foo': 'My address is a@example.com'})
+            {"foo": "My address is a@example.com"}
+        )
         self.assertEqual(
-            {'foo': 'My address is <email address hidden>'}, obfuscated)
+            {"foo": "My address is <email address hidden>"}, obfuscated
+        )
 
     def test_recursion(self):
         """Values are obfuscated recursively."""
-        obfuscated = obfuscate_structure({'foo': (['a@example.com'],)})
-        self.assertEqual({'foo': [['<email address hidden>']]}, obfuscated)
+        obfuscated = obfuscate_structure({"foo": (["a@example.com"],)})
+        self.assertEqual({"foo": [["<email address hidden>"]]}, obfuscated)
 
 
 class TestSanitiseURLs(TestCase):
-
     def test_already_clean(self):
-        self.assertEqual('clean', sanitise_urls('clean'))
+        self.assertEqual("clean", sanitise_urls("clean"))
 
     def test_removes_credentials(self):
         self.assertEqual(
-            'http://<redacted>@example.com/',
-            sanitise_urls('http://user:secret@example.com/'))
+            "http://<redacted>@example.com/",
+            sanitise_urls("http://user:secret@example.com/"),
+        )
 
     def test_non_greedy(self):
         self.assertEqual(
@@ -401,11 +411,12 @@ class TestSanitiseURLs(TestCase):
             sanitise_urls(
                 '{"one": "http://example.com/", '
                 '"two": "http://alice:secret@example.com/", '
-                '"three": "http://bob:hidden@example.org/"}'))
+                '"three": "http://bob:hidden@example.org/"}'
+            ),
+        )
 
 
 class TestRoundHalfUp(TestCase):
-
     def test_exact_integer(self):
         self.assertEqual(-2, round_half_up(-2.0))
         self.assertEqual(-1, round_half_up(-1.0))

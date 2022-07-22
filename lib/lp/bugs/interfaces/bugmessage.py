@@ -154,4 +154,4 @@ class IBugComment(IMessage, IComment):
     show_spam_controls = Attribute(
         "Whether or not to show a footer for the comment."
     )
-    patches = Attribute("Patches attched to this comment.")
+    patches = Attribute("Patches attached to this comment.")

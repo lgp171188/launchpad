@@ -4,9 +4,9 @@
 """Support code for using a custom test result in test.py."""
 
 __all__ = [
-    'filter_tests',
-    'patch_find_tests',
-    ]
+    "filter_tests",
+    "patch_find_tests",
+]
 
 from unittest import TestSuite
 
@@ -56,6 +56,7 @@ def filter_tests(list_name, reorder_tests=False):
     Should a test be listed, but not present in any of the suites, it is
     silently ignored.
     """
+
     def do_filter(tests_by_layer_name):
         # Read the tests, filtering out any blank lines.
         with open(list_name) as f:
@@ -67,10 +68,8 @@ def filter_tests(list_name, reorder_tests=False):
         # must be tracked separately.
         for layer_name, suite in tests_by_layer_name.items():
             for testcase in suite:
-                layer_to_tests = test_lookup.setdefault(
-                    testcase.id(), {})
-                testcases = layer_to_tests.setdefault(
-                    layer_name, [])
+                layer_to_tests = test_lookup.setdefault(testcase.id(), {})
+                testcases = layer_to_tests.setdefault(layer_name, [])
                 testcases.append(testcase)
 
         result = {}
@@ -81,4 +80,5 @@ def filter_tests(list_name, reorder_tests=False):
                     suite = result.setdefault(layer_name, TestSuite())
                     suite.addTests(testcases)
         return result
+
     return do_filter

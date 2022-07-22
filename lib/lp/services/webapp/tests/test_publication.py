@@ -7,64 +7,43 @@ import sys
 
 from fixtures import FakeLogger
 from oauthlib import oauth1
-from storm.database import (
-    STATE_DISCONNECTED,
-    STATE_RECONNECT,
-    )
+from storm.database import STATE_DISCONNECTED, STATE_RECONNECT
 from storm.exceptions import DisconnectionError
-from testtools.matchers import (
-    Equals,
-    GreaterThan,
-    MatchesListwise,
-    )
+from testtools.matchers import Equals, GreaterThan, MatchesListwise
 from zope.component import getUtility
 from zope.interface import directlyProvides
-from zope.publisher.interfaces import (
-    NotFound,
-    Retry,
-    )
+from zope.publisher.interfaces import NotFound, Retry
 from zope.publisher.publish import publish
-from zope.security.management import (
-    thread_local as zope_security_thread_local,
-    )
+from zope.security.management import thread_local as zope_security_thread_local
 
+import lp.services.webapp.adapter as dbadapter
 from lp.services.auth.interfaces import IAccessTokenVerifiedRequest
 from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.model.emailaddress import EmailAddress
-from lp.services.oauth.interfaces import (
-    IOAuthConsumerSet,
-    IOAuthSignedRequest,
-    )
+from lp.services.oauth.interfaces import IOAuthConsumerSet, IOAuthSignedRequest
 from lp.services.statsd.tests import StatsMixin
-import lp.services.webapp.adapter as dbadapter
 from lp.services.webapp.interfaces import (
     NoReferrerError,
     OAuthPermission,
     OffsiteFormPostError,
-    )
+)
 from lp.services.webapp.publication import (
-    is_browser,
-    LaunchpadBrowserPublication,
-    maybe_block_offsite_form_post,
     OFFSITE_POST_WHITELIST,
-    )
+    LaunchpadBrowserPublication,
+    is_browser,
+    maybe_block_offsite_form_post,
+)
 from lp.services.webapp.servers import (
     LaunchpadTestRequest,
     WebServicePublication,
-    )
+)
 from lp.services.webapp.vhosts import allvhosts
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import ANONYMOUS, TestCase, TestCaseWithFactory, login
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestLaunchpadBrowserPublication(TestCase):
-
     def test_callTraversalHooks_appends_to_traversed_objects(self):
         # Traversed objects are appended to request.traversed_objects in the
         # order they're traversed.
@@ -98,13 +77,15 @@ class TestLaunchpadBrowserPublicationInteractionHandling(TestCase):
         # zope.security.management.thread_local.previous_interaction, which
         # can complicate memory leak analysis.  Since we don't need this
         # reference, LaunchpadBrowserPublication.endRequest removes it.
-        request = LaunchpadTestRequest(PATH_INFO='/')
+        request = LaunchpadTestRequest(PATH_INFO="/")
         request.setPublication(LaunchpadBrowserPublication(None))
         publish(request)
         self.assertIsNone(
-            getattr(zope_security_thread_local, 'interaction', None))
+            getattr(zope_security_thread_local, "interaction", None)
+        )
         self.assertIsNone(
-            getattr(zope_security_thread_local, 'previous_interaction', None))
+            getattr(zope_security_thread_local, "previous_interaction", None)
+        )
 
 
 class TestWebServicePublication(TestCaseWithFactory):
@@ -121,15 +102,16 @@ class TestWebServicePublication(TestCaseWithFactory):
         # Create a lone account followed by an account-with-person just to
         # make sure in the second one the ID of the account and the person are
         # different.
-        self.factory.makeAccount('Personless account')
+        self.factory.makeAccount("Personless account")
         person = self.factory.makePerson()
         self.assertNotEqual(person.id, person.account.id)
 
         # Create an OAuth access token for our new person.
-        consumer = getUtility(IOAuthConsumerSet).new('test-consumer')
+        consumer = getUtility(IOAuthConsumerSet).new("test-consumer")
         request_token, _ = consumer.newRequestToken()
         request_token.review(
-            person, permission=OAuthPermission.READ_PUBLIC, context=None)
+            person, permission=OAuthPermission.READ_PUBLIC, context=None
+        )
         access_token, access_secret = request_token.createAccessToken()
 
         # Make an OAuth signature using the access token we just created for
@@ -138,10 +120,12 @@ class TestWebServicePublication(TestCaseWithFactory):
             consumer.key,
             resource_owner_key=access_token.key,
             resource_owner_secret=access_secret,
-            signature_method=oauth1.SIGNATURE_PLAINTEXT)
-        _, headers, _ = client.sign('/dummy')
+            signature_method=oauth1.SIGNATURE_PLAINTEXT,
+        )
+        _, headers, _ = client.sign("/dummy")
         return LaunchpadTestRequest(
-            environ={'HTTP_AUTHORIZATION': headers['Authorization']})
+            environ={"HTTP_AUTHORIZATION": headers["Authorization"]}
+        )
 
     def test_getPrincipal_for_person_and_account_with_different_ids(self):
         # WebServicePublication.getPrincipal() does not rely on accounts
@@ -157,18 +141,22 @@ class TestWebServicePublication(TestCaseWithFactory):
         publication = WebServicePublication(None)
         dbadapter.set_request_started()
         try:
-            raise DisconnectionError('Fake')
+            raise DisconnectionError("Fake")
         except DisconnectionError:
             self.assertRaises(
                 Retry,
                 publication.handleException,
-                None, request, sys.exc_info(), True)
+                None,
+                request,
+                sys.exc_info(),
+                True,
+            )
         dbadapter.clear_request_started()
         self.assertEqual(1, len(self.oopses))
         oops = self.oopses[0]
 
         # Ensure the OOPS mentions the correct exception
-        self.assertEqual(oops['type'], "DisconnectionError")
+        self.assertEqual(oops["type"], "DisconnectionError")
 
     def test_store_disconnected_after_request_handled_logs_oops(self):
         # Bug #504291 was that a Store was being left in a disconnected
@@ -190,7 +178,7 @@ class TestWebServicePublication(TestCaseWithFactory):
         oops = self.oopses[0]
 
         # Ensure the OOPS mentions the correct exception
-        self.assertStartsWith(oops['value'], "Bug #504291")
+        self.assertStartsWith(oops["value"], "Bug #504291")
 
         # Ensure the store has been rolled back and in a usable state.
         self.assertEqual(store._connection._state, STATE_RECONNECT)
@@ -202,12 +190,13 @@ class TestWebServicePublication(TestCaseWithFactory):
         self.assertFalse(is_browser(request))
 
         # Browser User-Agent: header.
-        request = LaunchpadTestRequest(environ={
-            'USER_AGENT': 'Mozilla/42 Extreme Edition'})
+        request = LaunchpadTestRequest(
+            environ={"USER_AGENT": "Mozilla/42 Extreme Edition"}
+        )
         self.assertTrue(is_browser(request))
 
         # Robot User-Agent: header.
-        request = LaunchpadTestRequest(environ={'USER_AGENT': 'BottyBot'})
+        request = LaunchpadTestRequest(environ={"USER_AGENT": "BottyBot"})
         self.assertFalse(is_browser(request))
 
 
@@ -218,13 +207,15 @@ class TestBlockingOffsitePosts(TestCase):
         # If this request is a POST and there is no referrer, an exception is
         # raised.
         request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO='/'))
+            method="POST", environ=dict(PATH_INFO="/")
+        )
         self.assertRaises(
-            NoReferrerError, maybe_block_offsite_form_post, request)
+            NoReferrerError, maybe_block_offsite_form_post, request
+        )
 
     def test_nonPOST_requests(self):
         # If the request isn't a POST it is always allowed.
-        request = LaunchpadTestRequest(method='SOMETHING')
+        request = LaunchpadTestRequest(method="SOMETHING")
         maybe_block_offsite_form_post(request)
 
     def test_whitelisted_paths(self):
@@ -233,14 +224,16 @@ class TestBlockingOffsitePosts(TestCase):
         # bug reports.
         for path in OFFSITE_POST_WHITELIST:
             request = LaunchpadTestRequest(
-                method='POST', environ=dict(PATH_INFO=path))
+                method="POST", environ=dict(PATH_INFO=path)
+            )
             # this call shouldn't raise an exception
             maybe_block_offsite_form_post(request)
 
     def test_OAuth_signed_requests(self):
         # Requests that are OAuth signed are allowed.
         request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO='/'))
+            method="POST", environ=dict(PATH_INFO="/")
+        )
         directlyProvides(request, IOAuthSignedRequest)
         # this call shouldn't raise an exception
         maybe_block_offsite_form_post(request)
@@ -248,7 +241,8 @@ class TestBlockingOffsitePosts(TestCase):
     def test_access_token_verified_requests(self):
         # Requests that are verified with an access token are allowed.
         request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO='/'))
+            method="POST", environ=dict(PATH_INFO="/")
+        )
         directlyProvides(request, IAccessTokenVerifiedRequest)
         # this call shouldn't raise an exception
         maybe_block_offsite_form_post(request)
@@ -256,7 +250,7 @@ class TestBlockingOffsitePosts(TestCase):
     def test_nonbrowser_requests(self):
         # Requests that are from non-browsers are allowed.
         class FakeNonBrowserRequest:
-            method = 'SOMETHING'
+            method = "SOMETHING"
 
         # this call shouldn't raise an exception
         maybe_block_offsite_form_post(FakeNonBrowserRequest)
@@ -265,37 +259,43 @@ class TestBlockingOffsitePosts(TestCase):
         # Other than the explicit exceptions, all POSTs have to come from a
         # known LP virtual host.
         for hostname in allvhosts.hostnames:
-            referer = 'http://' + hostname + '/foo'
+            referer = "http://" + hostname + "/foo"
             request = LaunchpadTestRequest(
-                method='POST', environ=dict(PATH_INFO='/', REFERER=referer))
+                method="POST", environ=dict(PATH_INFO="/", REFERER=referer)
+            )
             # this call shouldn't raise an exception
             maybe_block_offsite_form_post(request)
 
     def test_offsite_posts(self):
         # If a post comes from an unknown host an exception is raised.
-        disallowed_hosts = ['example.com', 'not-subdomain.launchpad.net']
+        disallowed_hosts = ["example.com", "not-subdomain.launchpad.net"]
         for hostname in disallowed_hosts:
-            referer = 'http://' + hostname + '/foo'
+            referer = "http://" + hostname + "/foo"
             request = LaunchpadTestRequest(
-                method='POST', environ=dict(PATH_INFO='/', REFERER=referer))
+                method="POST", environ=dict(PATH_INFO="/", REFERER=referer)
+            )
             self.assertRaises(
-                OffsiteFormPostError, maybe_block_offsite_form_post, request)
+                OffsiteFormPostError, maybe_block_offsite_form_post, request
+            )
 
     def test_unparsable_referer(self):
         # If a post has a referer that is unparsable as a URI an exception is
         # raised.
-        referer = 'this is not a URI'
+        referer = "this is not a URI"
         request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO='/', REFERER=referer))
+            method="POST", environ=dict(PATH_INFO="/", REFERER=referer)
+        )
         self.assertRaises(
-            OffsiteFormPostError, maybe_block_offsite_form_post, request)
+            OffsiteFormPostError, maybe_block_offsite_form_post, request
+        )
 
     def test_openid_callback_with_query_string(self):
         # An OpenId provider (OP) may post to the +openid-callback URL with a
         # query string and without a referer.  These posts need to be allowed.
-        path_info = '/+openid-callback?starting_url=...'
+        path_info = "/+openid-callback?starting_url=..."
         request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO=path_info))
+            method="POST", environ=dict(PATH_INFO=path_info)
+        )
         # this call shouldn't raise an exception
         maybe_block_offsite_form_post(request)
 
@@ -309,11 +309,10 @@ class TestEncodedReferer(TestCaseWithFactory):
         # the page.
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
-        browser.addHeader('Referer', '/whut\xe7foo')
+        browser.addHeader("Referer", "/whut\xe7foo")
         self.assertRaises(
-            NotFound,
-            browser.open,
-            'http://launchpad.test/missing')
+            NotFound, browser.open, "http://launchpad.test/missing"
+        )
         self.assertEqual(0, len(self.oopses))
 
 
@@ -327,9 +326,8 @@ class TestUnicodePath(TestCaseWithFactory):
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         self.assertRaises(
-            NotFound,
-            browser.open,
-            'http://launchpad.test/%EC%B4%B5')
+            NotFound, browser.open, "http://launchpad.test/%EC%B4%B5"
+        )
         self.assertEqual(0, len(self.oopses))
 
 
@@ -344,63 +342,96 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
     def test_traversal_stats(self):
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
-        browser.open('http://launchpad.test')
+        browser.open("http://launchpad.test")
         self.assertEqual(2, self.stats_client.timing.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
-                [MatchesListwise(
-                    (Equals('traversal_duration,env=test,'
-                     'pageid=RootObject-index-html,success=True'),
-                     GreaterThan(0))),
-                 MatchesListwise(
-                     (Equals('publication_duration,env=test,'
-                      'pageid=RootObject-index-html,success=True'),
-                      GreaterThan(0)))]))
+                [
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "traversal_duration,env=test,"
+                                "pageid=RootObject-index-html,success=True"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "publication_duration,env=test,"
+                                "pageid=RootObject-index-html,success=True"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                ]
+            ),
+        )
 
     def test_traversal_failure_stats(self):
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         self.patch(
             LaunchpadBrowserPublication,
-            'afterTraversal',
-            FakeMethod(failure=Exception))
-        self.assertRaises(
-            Exception,
-            browser.open,
-            'http://launchpad.test/')
+            "afterTraversal",
+            FakeMethod(failure=Exception),
+        )
+        self.assertRaises(Exception, browser.open, "http://launchpad.test/")
         self.assertEqual(1, self.stats_client.timing.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
-                [MatchesListwise(
-                    (Equals('traversal_duration,env=test,'
-                     'pageid=None,success=False'),
-                     GreaterThan(0)))]))
+                [
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "traversal_duration,env=test,"
+                                "pageid=None,success=False"
+                            ),
+                            GreaterThan(0),
+                        )
+                    )
+                ]
+            ),
+        )
 
     def test_publication_failure_stats(self):
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         self.patch(
             dbadapter,
-            'set_permit_timeout_from_features',
-            FakeMethod(failure=Exception))
-        self.assertRaises(
-            Exception,
-            browser.open,
-            'http://launchpad.test/')
+            "set_permit_timeout_from_features",
+            FakeMethod(failure=Exception),
+        )
+        self.assertRaises(Exception, browser.open, "http://launchpad.test/")
         self.assertEqual(2, self.stats_client.timing.call_count)
         self.assertThat(
             [x[0] for x in self.stats_client.timing.call_args_list],
             MatchesListwise(
-                [MatchesListwise(
-                    (Equals('traversal_duration,env=test,'
-                     'pageid=RootObject-index-html,success=True'),
-                     GreaterThan(0))),
-                 MatchesListwise(
-                     (Equals('publication_duration,env=test,'
-                      'pageid=RootObject-index-html,success=False'),
-                      GreaterThan(0)))]))
+                [
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "traversal_duration,env=test,"
+                                "pageid=RootObject-index-html,success=True"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                    MatchesListwise(
+                        (
+                            Equals(
+                                "publication_duration,env=test,"
+                                "pageid=RootObject-index-html,success=False"
+                            ),
+                            GreaterThan(0),
+                        )
+                    ),
+                ]
+            ),
+        )
 
     def test_prepPageIDForMetrics_none(self):
         # Sometimes we have no pageid
@@ -411,19 +442,19 @@ class TestPublisherStats(StatsMixin, TestCaseWithFactory):
         # Pageids have characters that are invalid in statsd protocol
         publication = LaunchpadBrowserPublication(None)
         self.assertEqual(
-            'RootObject-index-html',
-            publication._prepPageIDForMetrics("RootObject:index.html"))
+            "RootObject-index-html",
+            publication._prepPageIDForMetrics("RootObject:index.html"),
+        )
 
     def test_no_context_pageid(self):
         # request context may not exist in redirect scenarios
         owner = self.factory.makePerson()
         ppa = self.factory.makeArchive(owner=owner)
-        redirect_url = ("http://launchpad.test/api/devel/~{}/"
-                        "+archive/{}/testpackage".format(owner.name, ppa.name))
+        redirect_url = (
+            "http://launchpad.test/api/devel/~{}/"
+            "+archive/{}/testpackage".format(owner.name, ppa.name)
+        )
         self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         # This shouldn't raise ValueError
-        self.assertRaises(
-            NotFound,
-            browser.open,
-            redirect_url)
+        self.assertRaises(NotFound, browser.open, redirect_url)
