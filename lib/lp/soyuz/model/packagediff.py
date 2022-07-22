@@ -2,11 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'PackageDiff',
-    'PackageDiffSet',
-    ]
+    "PackageDiff",
+    "PackageDiffSet",
+]
 
-from functools import partial
 import gzip
 import itertools
 import os
@@ -14,39 +13,26 @@ import resource
 import shutil
 import subprocess
 import tempfile
+from functools import partial
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Desc,
-    Int,
-    Reference,
-    )
+from storm.locals import DateTime, Desc, Int, Reference
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.database.bulk import load
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.librarian.utils import copy_and_close
 from lp.soyuz.enums import PackageDiffStatus
-from lp.soyuz.interfaces.packagediff import (
-    IPackageDiff,
-    IPackageDiffSet,
-    )
+from lp.soyuz.interfaces.packagediff import IPackageDiff, IPackageDiffSet
 from lp.soyuz.model.files import SourcePackageReleaseFile
 
 
@@ -80,26 +66,32 @@ def perform_deb_diff(tmp_dir, out_filename, from_files, to_files):
         with the second package.
     :type to_files: ``list``
     """
-    [from_dsc] = [name for name in from_files
-                  if name.lower().endswith('.dsc')]
-    [to_dsc] = [name for name in to_files
-                if name.lower().endswith('.dsc')]
+    [from_dsc] = [name for name in from_files if name.lower().endswith(".dsc")]
+    [to_dsc] = [name for name in to_files if name.lower().endswith(".dsc")]
     args = [
-        'timeout', str(config.packagediff.debdiff_timeout),
-        'debdiff', from_dsc, to_dsc,
-        ]
+        "timeout",
+        str(config.packagediff.debdiff_timeout),
+        "debdiff",
+        from_dsc,
+        to_dsc,
+    ]
     env = os.environ.copy()
-    env['TMPDIR'] = tmp_dir
+    env["TMPDIR"] = tmp_dir
 
     full_path = os.path.join(tmp_dir, out_filename)
     out_file = None
     try:
-        out_file = open(full_path, 'wb')
+        out_file = open(full_path, "wb")
         process = subprocess.Popen(
-            args, stdout=out_file, stderr=subprocess.PIPE,
+            args,
+            stdout=out_file,
+            stderr=subprocess.PIPE,
             preexec_fn=partial(
-                limit_deb_diff, config.packagediff.debdiff_max_size),
-            cwd=tmp_dir, env=env)
+                limit_deb_diff, config.packagediff.debdiff_max_size
+            ),
+            cwd=tmp_dir,
+            env=env,
+        )
         stdout, stderr = process.communicate()
     finally:
         if out_file is not None:
@@ -118,7 +110,7 @@ def download_file(destination_path, libraryfile):
     :type libraryfile: ``LibraryFileAlias``
     """
     libraryfile.open()
-    destination_file = open(destination_path, 'wb')
+    destination_file = open(destination_path, "wb")
     copy_and_close(libraryfile, destination_file)
 
 
@@ -132,7 +124,8 @@ class PackageDiff(StormBase):
     id = Int(primary=True)
 
     date_requested = DateTime(
-        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+    )
 
     requester_id = Int(name="requester", allow_none=True)
     requester = Reference(requester_id, "Person.id")
@@ -149,11 +142,21 @@ class PackageDiff(StormBase):
     diff_content = Reference(diff_content_id, "LibraryFileAlias.id")
 
     status = DBEnum(
-        name='status', allow_none=False, enum=PackageDiffStatus,
-        default=PackageDiffStatus.PENDING)
+        name="status",
+        allow_none=False,
+        enum=PackageDiffStatus,
+        default=PackageDiffStatus.PENDING,
+    )
 
-    def __init__(self, from_source, to_source, requester=None,
-                 date_fulfilled=None, diff_content=None, status=DEFAULT):
+    def __init__(
+        self,
+        from_source,
+        to_source,
+        requester=None,
+        date_fulfilled=None,
+        diff_content=None,
+        status=DEFAULT,
+    ):
         super().__init__()
         self.from_source = from_source
         self.to_source = to_source
@@ -171,9 +174,12 @@ class PackageDiff(StormBase):
         else:
             ancestry_identifier = "%s (in %s)" % (
                 self.from_source.version,
-                ancestry_archive.distribution.name.capitalize())
-        return 'diff from %s to %s' % (
-            ancestry_identifier, self.to_source.version)
+                ancestry_archive.distribution.name.capitalize(),
+            )
+        return "diff from %s to %s" % (
+            ancestry_identifier,
+            self.to_source.version,
+        )
 
     @property
     def private(self):
@@ -188,14 +194,20 @@ class PackageDiff(StormBase):
         # Circular import.
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
-        return IStore(LibraryFileAlias).find(
-            LibraryFileAlias.id,
-            SourcePackageRelease.id.is_in(
-                (self.from_source_id, self.to_source_id)),
-            SourcePackageReleaseFile.sourcepackagereleaseID ==
-                SourcePackageRelease.id,
-            SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
-            LibraryFileAlias.content == None).count()
+        return (
+            IStore(LibraryFileAlias)
+            .find(
+                LibraryFileAlias.id,
+                SourcePackageRelease.id.is_in(
+                    (self.from_source_id, self.to_source_id)
+                ),
+                SourcePackageReleaseFile.sourcepackagereleaseID
+                == SourcePackageRelease.id,
+                SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
+                LibraryFileAlias.content == None,
+            )
+            .count()
+        )
 
     def performDiff(self):
         """See `IPackageDiff`.
@@ -220,14 +232,15 @@ class PackageDiff(StormBase):
         tmp_dir = tempfile.mkdtemp()
 
         try:
-            directions = ('from', 'to')
+            directions = ("from", "to")
 
             # Keep track of the files belonging to the respective packages.
             downloaded = dict(zip(directions, ([], [])))
 
             # Make it easy to iterate over packages.
             packages = dict(
-                zip(directions, (self.from_source, self.to_source)))
+                zip(directions, (self.from_source, self.to_source))
+            )
 
             # Iterate over the packages to be diff'ed.
             for direction, package in packages.items():
@@ -247,15 +260,16 @@ class PackageDiff(StormBase):
 
             # All downloads are done. Construct the name of the resulting
             # diff file.
-            result_filename = '%s_%s_%s.diff' % (
+            result_filename = "%s_%s_%s.diff" % (
                 self.from_source.sourcepackagename.name,
                 self.from_source.version,
-                self.to_source.version)
+                self.to_source.version,
+            )
 
             # Perform the actual diff operation.
             return_code, stderr = perform_deb_diff(
-                tmp_dir, result_filename, downloaded['from'],
-                downloaded['to'])
+                tmp_dir, result_filename, downloaded["from"], downloaded["to"]
+            )
 
             # `debdiff` failed, mark the package diff request accordingly
             # and return. 0 means no differences, 1 means they differ.
@@ -265,10 +279,10 @@ class PackageDiff(StormBase):
                 return
 
             # Compress the generated diff.
-            out_file = open(os.path.join(tmp_dir, result_filename), 'rb')
-            gzip_result_filename = result_filename + '.gz'
+            out_file = open(os.path.join(tmp_dir, result_filename), "rb")
+            gzip_result_filename = result_filename + ".gz"
             gzip_file_path = os.path.join(tmp_dir, gzip_result_filename)
-            gzip_file = gzip.GzipFile(gzip_file_path, mode='wb')
+            gzip_file = gzip.GzipFile(gzip_file_path, mode="wb")
             copy_and_close(out_file, gzip_file)
 
             # Calculate the compressed size.
@@ -276,12 +290,16 @@ class PackageDiff(StormBase):
 
             # Upload the compressed diff to librarian and update
             # the package diff request.
-            gzip_file = open(gzip_file_path, 'rb')
+            gzip_file = open(gzip_file_path, "rb")
             try:
                 librarian_set = getUtility(ILibraryFileAliasSet)
                 self.diff_content = librarian_set.create(
-                    gzip_result_filename, gzip_size, gzip_file,
-                    'application/gzipped-patch', restricted=self.private)
+                    gzip_result_filename,
+                    gzip_size,
+                    gzip_file,
+                    "application/gzipped-patch",
+                    restricted=self.private,
+                )
             finally:
                 gzip_file.close()
 
@@ -313,13 +331,16 @@ class PackageDiffSet:
         from lp.registry.model.distribution import Distribution
         from lp.soyuz.model.archive import Archive
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
+
         if len(sprs) == 0:
             return EmptyResultSet()
         spr_ids = [spr.id for spr in sprs]
         result = IStore(PackageDiff).find(
-            PackageDiff, PackageDiff.to_source_id.is_in(spr_ids))
-        result.order_by(PackageDiff.to_source_id,
-                        Desc(PackageDiff.date_requested))
+            PackageDiff, PackageDiff.to_source_id.is_in(spr_ids)
+        )
+        result.order_by(
+            PackageDiff.to_source_id, Desc(PackageDiff.date_requested)
+        )
 
         def preload_hook(rows):
             lfas = load(LibraryFileAlias, (pd.diff_content_id for pd in rows))
@@ -327,7 +348,9 @@ class PackageDiffSet:
             sprs = load(
                 SourcePackageRelease,
                 itertools.chain.from_iterable(
-                    (pd.from_source_id, pd.to_source_id) for pd in rows))
+                    (pd.from_source_id, pd.to_source_id) for pd in rows
+                ),
+            )
             archives = load(Archive, (spr.upload_archiveID for spr in sprs))
             load(Distribution, (a.distributionID for a in archives))
 
@@ -338,6 +361,8 @@ class PackageDiffSet:
 
     def getDiffBetweenReleases(self, from_spr, to_spr):
         """See `IPackageDiffSet`."""
-        return IStore(PackageDiff).find(
-            PackageDiff,
-            from_source=from_spr, to_source=to_spr).first()
+        return (
+            IStore(PackageDiff)
+            .find(PackageDiff, from_source=from_spr, to_source=to_spr)
+            .first()
+        )

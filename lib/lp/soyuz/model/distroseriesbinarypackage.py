@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroSeriesBinaryPackage',
-    ]
+    "DistroSeriesBinaryPackage",
+]
 
 from operator import attrgetter
 
@@ -11,13 +11,10 @@ from storm.expr import Desc
 from storm.store import Store
 from zope.interface import implementer
 
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.interfaces.distroseriesbinarypackage import (
     IDistroSeriesBinaryPackage,
-    )
+)
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
@@ -49,7 +46,10 @@ class DistroSeriesBinaryPackage:
     def title(self):
         """See IDistroSeriesBinaryPackage."""
         return 'Binary package "%s" in %s %s' % (
-            self.name, self.distribution.name, self.distroseries.name)
+            self.name,
+            self.distribution.name,
+            self.distroseries.name,
+        )
 
     @property
     def distribution(self):
@@ -61,16 +61,19 @@ class DistroSeriesBinaryPackage:
         """See IDistroSeriesBinaryPackage."""
         from lp.soyuz.model.distroseriespackagecache import (
             DistroSeriesPackageCache,
-            )
+        )
+
         store = Store.of(self.distroseries)
-        archive_ids = (
-            self.distroseries.distribution.all_distro_archive_ids)
+        archive_ids = self.distroseries.distribution.all_distro_archive_ids
         result = store.find(
             DistroSeriesPackageCache,
             DistroSeriesPackageCache.distroseries == self.distroseries,
             DistroSeriesPackageCache.archiveID.is_in(archive_ids),
-            (DistroSeriesPackageCache.binarypackagename ==
-                self.binarypackagename))
+            (
+                DistroSeriesPackageCache.binarypackagename
+                == self.binarypackagename
+            ),
+        )
         return result.any()
 
     @property
@@ -81,7 +84,8 @@ class DistroSeriesBinaryPackage:
             return "No summary available for %s in %s %s." % (
                 self.name,
                 self.distribution.name,
-                self.distroseries.name)
+                self.distroseries.name,
+            )
         return cache.summary
 
     @property
@@ -92,38 +96,44 @@ class DistroSeriesBinaryPackage:
             return "No description available for %s in %s %s." % (
                 self.name,
                 self.distribution.name,
-                self.distroseries.name)
+                self.distroseries.name,
+            )
         return cache.description
 
     @property
     def _current_publishings(self):
         # Import here so as to avoid circular import.
         from lp.soyuz.model.distroarchseries import DistroArchSeries
+
         return Store.of(self.distroseries).find(
             BinaryPackagePublishingHistory,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                DistroArchSeries.id,
+            BinaryPackagePublishingHistory.distroarchseries
+            == DistroArchSeries.id,
             DistroArchSeries.distroseries == self.distroseries,
-            BinaryPackagePublishingHistory.binarypackagerelease ==
-                BinaryPackageRelease.id,
-            BinaryPackagePublishingHistory.binarypackagename ==
-                self.binarypackagename,
+            BinaryPackagePublishingHistory.binarypackagerelease
+            == BinaryPackageRelease.id,
+            BinaryPackagePublishingHistory.binarypackagename
+            == self.binarypackagename,
             BinaryPackagePublishingHistory.archiveID.is_in(
-                self.distribution.all_distro_archive_ids),
-            BinaryPackagePublishingHistory.dateremoved == None)
+                self.distribution.all_distro_archive_ids
+            ),
+            BinaryPackagePublishingHistory.dateremoved == None,
+        )
 
     @property
     def current_publishings(self):
         """See IDistroSeriesBinaryPackage."""
         return sorted(
             self._current_publishings,
-            key=attrgetter('distroarchseries.architecturetag', 'datecreated'))
+            key=attrgetter("distroarchseries.architecturetag", "datecreated"),
+        )
 
     @property
     def last_published(self):
         """See `IDistroSeriesBinaryPackage`."""
         last_published_history = self._current_publishings.order_by(
-            Desc(BinaryPackagePublishingHistory.datepublished)).first()
+            Desc(BinaryPackagePublishingHistory.datepublished)
+        ).first()
         if last_published_history is None:
             return None
         else:
@@ -134,7 +144,8 @@ class DistroSeriesBinaryPackage:
         """See `IDistroSeriesBinaryPackage`."""
         from lp.soyuz.model.distributionsourcepackagerelease import (
             DistributionSourcePackageRelease,
-            )
+        )
+
         last_published = self.last_published
         if last_published is None:
             return None
@@ -142,4 +153,5 @@ class DistroSeriesBinaryPackage:
         src_pkg_release = last_published.build.source_package_release
 
         return DistributionSourcePackageRelease(
-            self.distribution, src_pkg_release)
+            self.distribution, src_pkg_release
+        )

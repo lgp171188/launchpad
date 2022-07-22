@@ -1,13 +1,12 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['DistributionSourcePackageCache', ]
+__all__ = [
+    "DistributionSourcePackageCache",
+]
 
 from collections import defaultdict
-from operator import (
-    attrgetter,
-    itemgetter,
-    )
+from operator import attrgetter, itemgetter
 
 from zope.interface import implementer
 
@@ -18,13 +17,10 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.soyuz.interfaces.distributionsourcepackagecache import (
     IDistributionSourcePackageCache,
-    )
+)
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -32,20 +28,22 @@ from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
-
 _DEFAULT = object()
 
 
 @implementer(IDistributionSourcePackageCache)
 class DistributionSourcePackageCache(SQLBase):
-    _table = 'DistributionSourcePackageCache'
+    _table = "DistributionSourcePackageCache"
 
-    archive = ForeignKey(dbName='archive',
-        foreignKey='Archive', notNull=False)
-    distribution = ForeignKey(dbName='distribution',
-        foreignKey='Distribution', notNull=True)
-    sourcepackagename = ForeignKey(dbName='sourcepackagename',
-        foreignKey='SourcePackageName', notNull=True)
+    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=False)
+    distribution = ForeignKey(
+        dbName="distribution", foreignKey="Distribution", notNull=True
+    )
+    sourcepackagename = ForeignKey(
+        dbName="sourcepackagename",
+        foreignKey="SourcePackageName",
+        notNull=True,
+    )
 
     name = StringCol(notNull=False, default=None)
     binpkgnames = StringCol(notNull=False, default=None)
@@ -60,10 +58,11 @@ class DistributionSourcePackageCache(SQLBase):
         # import here to avoid circular imports
         from lp.registry.model.distributionsourcepackage import (
             DistributionSourcePackage,
-            )
+        )
 
-        return DistributionSourcePackage(self.distribution,
-            self.sourcepackagename)
+        return DistributionSourcePackage(
+            self.distribution, self.sourcepackagename
+        )
 
     @classmethod
     def findCurrentSourcePackageNames(cls, distro, archive):
@@ -71,13 +70,16 @@ class DistributionSourcePackageCache(SQLBase):
             spn_ids = IStore(SeriesSourcePackageBranch).find(
                 SeriesSourcePackageBranch.sourcepackagenameID,
                 DistroSeries.distribution == distro.id,
-                SeriesSourcePackageBranch.distroseriesID == DistroSeries.id)
+                SeriesSourcePackageBranch.distroseriesID == DistroSeries.id,
+            )
         else:
             spn_ids = IStore(SourcePackagePublishingHistory).find(
                 SourcePackagePublishingHistory.sourcepackagenameID,
                 SourcePackagePublishingHistory.archive == archive,
                 SourcePackagePublishingHistory.status.is_in(
-                    active_publishing_status))
+                    active_publishing_status
+                ),
+            )
         return bulk.load(SourcePackageName, spn_ids.config(distinct=True))
 
     @classmethod
@@ -89,20 +91,25 @@ class DistributionSourcePackageCache(SQLBase):
         """
         archive_column = DistributionSourcePackageCache.archiveID
         if archive is _DEFAULT:
-            archive_clause = (
-                archive_column.is_in(distro.all_distro_archive_ids))
+            archive_clause = archive_column.is_in(
+                distro.all_distro_archive_ids
+            )
         elif archive is not None:
-            archive_clause = (archive_column == archive.id)
+            archive_clause = archive_column == archive.id
         else:
-            archive_clause = (archive_column == None)
+            archive_clause = archive_column == None
 
-        result = IStore(DistributionSourcePackageCache).find(
-            (DistributionSourcePackageCache, SourcePackageName),
-            DistributionSourcePackageCache.distribution == distro,
-            archive_clause,
-            SourcePackageName.id ==
-                DistributionSourcePackageCache.sourcepackagenameID,
-            ).order_by(DistributionSourcePackageCache.name)
+        result = (
+            IStore(DistributionSourcePackageCache)
+            .find(
+                (DistributionSourcePackageCache, SourcePackageName),
+                DistributionSourcePackageCache.distribution == distro,
+                archive_clause,
+                SourcePackageName.id
+                == DistributionSourcePackageCache.sourcepackagenameID,
+            )
+            .order_by(DistributionSourcePackageCache.name)
+        )
         return DecoratedResultSet(result, itemgetter(0))
 
     @classmethod
@@ -121,20 +128,21 @@ class DistributionSourcePackageCache(SQLBase):
         if archive is not None and not archive.enabled:
             spns = set()
         else:
-            spns = set(
-                cls.findCurrentSourcePackageNames(distro, archive))
+            spns = set(cls.findCurrentSourcePackageNames(distro, archive))
 
         # Remove the cache entries for packages we no longer publish.
         for cache in cls._find(distro, archive):
             if cache.sourcepackagename not in spns:
                 log.debug(
                     "Removing source cache for '%s' (%s)"
-                    % (cache.name, cache.id))
+                    % (cache.name, cache.id)
+                )
                 cache.destroySelf()
 
     @classmethod
-    def update(cls, distro, sourcepackagenames, archive, with_binaries=True,
-               log=None):
+    def update(
+        cls, distro, sourcepackagenames, archive, with_binaries=True, log=None
+    ):
         """Update the package cache for a given set of `ISourcePackageName`s.
 
         Cached details include generated binarypackage names, summary
@@ -142,32 +150,46 @@ class DistributionSourcePackageCache(SQLBase):
         """
 
         # Get the set of published sourcepackage releases.
-        all_sprs = list(IStore(SourcePackageRelease).find(
-            (SourcePackageRelease.sourcepackagenameID,
-             SourcePackageRelease.id, SourcePackageRelease.version),
-            SourcePackageRelease.id ==
-                SourcePackagePublishingHistory.sourcepackagereleaseID,
-            SourcePackagePublishingHistory.sourcepackagenameID.is_in(
-                [spn.id for spn in sourcepackagenames]),
-            SourcePackagePublishingHistory.archive == archive,
-            SourcePackagePublishingHistory.status.is_in(
-                active_publishing_status),
-            ).config(distinct=True).order_by(SourcePackageRelease.id))
+        all_sprs = list(
+            IStore(SourcePackageRelease)
+            .find(
+                (
+                    SourcePackageRelease.sourcepackagenameID,
+                    SourcePackageRelease.id,
+                    SourcePackageRelease.version,
+                ),
+                SourcePackageRelease.id
+                == SourcePackagePublishingHistory.sourcepackagereleaseID,
+                SourcePackagePublishingHistory.sourcepackagenameID.is_in(
+                    [spn.id for spn in sourcepackagenames]
+                ),
+                SourcePackagePublishingHistory.archive == archive,
+                SourcePackagePublishingHistory.status.is_in(
+                    active_publishing_status
+                ),
+            )
+            .config(distinct=True)
+            .order_by(SourcePackageRelease.id)
+        )
         if len(all_sprs) == 0:
             if log is not None:
                 log.debug("No sources releases found.")
             return
 
         all_caches = IStore(cls).find(
-            cls, cls.distribution == distro, cls.archive == archive,
+            cls,
+            cls.distribution == distro,
+            cls.archive == archive,
             cls.sourcepackagenameID.is_in(
-                [spn.id for spn in sourcepackagenames]))
+                [spn.id for spn in sourcepackagenames]
+            ),
+        )
         cache_map = {cache.sourcepackagename: cache for cache in all_caches}
 
         for spn in set(sourcepackagenames) - set(cache_map):
             cache_map[spn] = cls(
-                archive=archive, distribution=distro,
-                sourcepackagename=spn)
+                archive=archive, distribution=distro, sourcepackagename=spn
+            )
 
         if with_binaries:
             spr_map = defaultdict(list)
@@ -184,28 +206,47 @@ class DistributionSourcePackageCache(SQLBase):
             # the primary archive; COPY archive builds are caught too, of
             # which there are dozens for most SPRs, and there's no easy way
             # to exclude them!
-            all_builds = list(IStore(BinaryPackageBuild).find(
-                (BinaryPackageBuild.source_package_release_id,
-                 BinaryPackageBuild.id),
-                BinaryPackageBuild.source_package_release_id.is_in(
-                    [row[1] for row in all_sprs])))
-            all_binaries = list(IStore(BinaryPackageRelease).find(
-                (BinaryPackageRelease.buildID,
-                 BinaryPackageRelease.binarypackagenameID,
-                 BinaryPackageRelease.summary,
-                 BinaryPackageRelease.description),
-                BinaryPackageRelease.buildID.is_in(
-                    [row[1] for row in all_builds])))
+            all_builds = list(
+                IStore(BinaryPackageBuild).find(
+                    (
+                        BinaryPackageBuild.source_package_release_id,
+                        BinaryPackageBuild.id,
+                    ),
+                    BinaryPackageBuild.source_package_release_id.is_in(
+                        [row[1] for row in all_sprs]
+                    ),
+                )
+            )
+            all_binaries = list(
+                IStore(BinaryPackageRelease).find(
+                    (
+                        BinaryPackageRelease.buildID,
+                        BinaryPackageRelease.binarypackagenameID,
+                        BinaryPackageRelease.summary,
+                        BinaryPackageRelease.description,
+                    ),
+                    BinaryPackageRelease.buildID.is_in(
+                        [row[1] for row in all_builds]
+                    ),
+                )
+            )
             sprs_by_build = {
-                build_id: spr_id for spr_id, build_id in all_builds}
+                build_id: spr_id for spr_id, build_id in all_builds
+            }
 
             bulk.load(BinaryPackageName, [row[1] for row in all_binaries])
             binaries_by_spr = defaultdict(list)
             for bpb_id, bpn_id, summary, description in all_binaries:
                 spr_id = sprs_by_build[bpb_id]
-                binaries_by_spr[spr_id].append((
-                    IStore(BinaryPackageName).get(BinaryPackageName, bpn_id),
-                    summary, description))
+                binaries_by_spr[spr_id].append(
+                    (
+                        IStore(BinaryPackageName).get(
+                            BinaryPackageName, bpn_id
+                        ),
+                        summary,
+                        description,
+                    )
+                )
 
         for spn in sourcepackagenames:
             cache = cache_map[spn]
@@ -218,7 +259,8 @@ class DistributionSourcePackageCache(SQLBase):
                 for spr_id, spr_version in spr_map.get(spn, []):
                     if log is not None:
                         log.debug(
-                            "Considering source %s %s", spn.name, spr_version)
+                            "Considering source %s %s", spn.name, spr_version
+                        )
                     binpkgs = binaries_by_spr.get(spr_id, [])
                     for bpn, summary, description in binpkgs:
                         binpkgnames.add(bpn.name)
@@ -226,9 +268,9 @@ class DistributionSourcePackageCache(SQLBase):
                         binpkgdescriptions.add(description)
 
                 # Update the caches.
-                cache.binpkgnames = ' '.join(sorted(binpkgnames))
-                cache.binpkgsummaries = ' '.join(sorted(binpkgsummaries))
-                cache.binpkgdescriptions = ' '.join(sorted(binpkgdescriptions))
+                cache.binpkgnames = " ".join(sorted(binpkgnames))
+                cache.binpkgsummaries = " ".join(sorted(binpkgsummaries))
+                cache.binpkgdescriptions = " ".join(sorted(binpkgdescriptions))
 
             # Column due for deletion.
             cache.changelog = None
@@ -240,15 +282,22 @@ class DistributionSourcePackageCache(SQLBase):
         We just cache the names for these.
         """
         all_caches = IStore(cls).find(
-            cls, cls.distribution == distro, cls.archive == None,
+            cls,
+            cls.distribution == distro,
+            cls.archive == None,
             cls.sourcepackagenameID.is_in(
-                [spn.id for spn in sourcepackagenames]))
+                [spn.id for spn in sourcepackagenames]
+            ),
+        )
         cache_map = {cache.sourcepackagename: cache for cache in all_caches}
 
         for spn in set(sourcepackagenames) - set(cache_map):
             cache_map[spn] = cls(
-                archive=None, distribution=distro, sourcepackagename=spn,
-                name=spn.name)
+                archive=None,
+                distribution=distro,
+                sourcepackagename=spn,
+                name=spn.name,
+            )
 
     @classmethod
     def updateAll(cls, distro, archive, log, ztm, commit_chunk=500):
@@ -270,9 +319,12 @@ class DistributionSourcePackageCache(SQLBase):
             return 0
 
         # Get the set of source package names to deal with.
-        spns = list(sorted(
-            cls.findCurrentSourcePackageNames(distro, archive),
-            key=attrgetter('name')))
+        spns = list(
+            sorted(
+                cls.findCurrentSourcePackageNames(distro, archive),
+                key=attrgetter("name"),
+            )
+        )
 
         number_of_updates = 0
         chunks = []
@@ -288,7 +340,8 @@ class DistributionSourcePackageCache(SQLBase):
             bulk.load(SourcePackageName, [spn.id for spn in chunk])
             log.debug(
                 "Considering sources %s",
-                ', '.join([spn.name for spn in chunk]))
+                ", ".join([spn.name for spn in chunk]),
+            )
             if archive is None:
                 cls.updateOfficialBranches(distro, chunk)
             else:

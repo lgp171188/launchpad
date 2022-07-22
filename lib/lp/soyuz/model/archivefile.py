@@ -4,65 +4,50 @@
 """A file in an archive."""
 
 __all__ = [
-    'ArchiveFile',
-    'ArchiveFileSet',
-    ]
+    "ArchiveFile",
+    "ArchiveFileSet",
+]
 
 import os.path
 
 import pytz
 from storm.databases.postgres import Returning
-from storm.locals import (
-    And,
-    DateTime,
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import And, DateTime, Int, Reference, Storm, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormexpr import BulkUpdate
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
-from lp.soyuz.interfaces.archivefile import (
-    IArchiveFile,
-    IArchiveFileSet,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
+from lp.soyuz.interfaces.archivefile import IArchiveFile, IArchiveFileSet
 
 
 @implementer(IArchiveFile)
 class ArchiveFile(Storm):
     """See `IArchiveFile`."""
 
-    __storm_table__ = 'ArchiveFile'
+    __storm_table__ = "ArchiveFile"
 
     id = Int(primary=True)
 
-    archive_id = Int(name='archive', allow_none=False)
-    archive = Reference(archive_id, 'Archive.id')
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
 
-    container = Unicode(name='container', allow_none=False)
+    container = Unicode(name="container", allow_none=False)
 
-    path = Unicode(name='path', allow_none=False)
+    path = Unicode(name="path", allow_none=False)
 
-    library_file_id = Int(name='library_file', allow_none=False)
-    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
+    library_file_id = Int(name="library_file", allow_none=False)
+    library_file = Reference(library_file_id, "LibraryFileAlias.id")
 
     scheduled_deletion_date = DateTime(
-        name='scheduled_deletion_date', tzinfo=pytz.UTC, allow_none=True)
+        name="scheduled_deletion_date", tzinfo=pytz.UTC, allow_none=True
+    )
 
     def __init__(self, archive, container, path, library_file):
         """Construct an `ArchiveFile`."""
@@ -95,16 +80,27 @@ class ArchiveFileSet:
         return archive_file
 
     @classmethod
-    def newFromFile(cls, archive, container, path, fileobj, size,
-                    content_type):
+    def newFromFile(
+        cls, archive, container, path, fileobj, size, content_type
+    ):
         library_file = getUtility(ILibraryFileAliasSet).create(
-            os.path.basename(path), size, fileobj, content_type,
-            restricted=archive.private, allow_zero_length=True)
+            os.path.basename(path),
+            size,
+            fileobj,
+            content_type,
+            restricted=archive.private,
+            allow_zero_length=True,
+        )
         return cls.new(archive, container, path, library_file)
 
     @staticmethod
-    def getByArchive(archive, container=None, path=None, only_condemned=False,
-                     eager_load=False):
+    def getByArchive(
+        archive,
+        container=None,
+        path=None,
+        only_condemned=False,
+        eager_load=False,
+    ):
         """See `IArchiveFileSet`."""
         clauses = [ArchiveFile.archive == archive]
         # XXX cjwatson 2016-03-15: We'll need some more sophisticated way to
@@ -131,50 +127,73 @@ class ArchiveFileSet:
         """See `IArchiveFileSet`."""
         clauses = [
             ArchiveFile.id.is_in(
-                {archive_file.id for archive_file in archive_files}),
+                {archive_file.id for archive_file in archive_files}
+            ),
             ArchiveFile.library_file == LibraryFileAlias.id,
             LibraryFileAlias.content == LibraryFileContent.id,
-            ]
+        ]
         new_date = _now() + stay_of_execution
         return_columns = [
-            ArchiveFile.container, ArchiveFile.path, LibraryFileContent.sha256]
-        return list(IMasterStore(ArchiveFile).execute(Returning(
-            BulkUpdate(
-                {ArchiveFile.scheduled_deletion_date: new_date},
-                table=ArchiveFile,
-                values=[LibraryFileAlias, LibraryFileContent],
-                where=And(*clauses)),
-            columns=return_columns)))
+            ArchiveFile.container,
+            ArchiveFile.path,
+            LibraryFileContent.sha256,
+        ]
+        return list(
+            IMasterStore(ArchiveFile).execute(
+                Returning(
+                    BulkUpdate(
+                        {ArchiveFile.scheduled_deletion_date: new_date},
+                        table=ArchiveFile,
+                        values=[LibraryFileAlias, LibraryFileContent],
+                        where=And(*clauses),
+                    ),
+                    columns=return_columns,
+                )
+            )
+        )
 
     @staticmethod
     def unscheduleDeletion(archive_files):
         """See `IArchiveFileSet`."""
         clauses = [
             ArchiveFile.id.is_in(
-                {archive_file.id for archive_file in archive_files}),
+                {archive_file.id for archive_file in archive_files}
+            ),
             ArchiveFile.library_file == LibraryFileAlias.id,
             LibraryFileAlias.content == LibraryFileContent.id,
-            ]
+        ]
         return_columns = [
-            ArchiveFile.container, ArchiveFile.path, LibraryFileContent.sha256]
-        return list(IMasterStore(ArchiveFile).execute(Returning(
-            BulkUpdate(
-                {ArchiveFile.scheduled_deletion_date: None},
-                table=ArchiveFile,
-                values=[LibraryFileAlias, LibraryFileContent],
-                where=And(*clauses)),
-            columns=return_columns)))
+            ArchiveFile.container,
+            ArchiveFile.path,
+            LibraryFileContent.sha256,
+        ]
+        return list(
+            IMasterStore(ArchiveFile).execute(
+                Returning(
+                    BulkUpdate(
+                        {ArchiveFile.scheduled_deletion_date: None},
+                        table=ArchiveFile,
+                        values=[LibraryFileAlias, LibraryFileContent],
+                        where=And(*clauses),
+                    ),
+                    columns=return_columns,
+                )
+            )
+        )
 
     @staticmethod
     def getContainersToReap(archive, container_prefix=None):
         clauses = [
             ArchiveFile.archive == archive,
             ArchiveFile.scheduled_deletion_date < _now(),
-            ]
+        ]
         if container_prefix is not None:
             clauses.append(ArchiveFile.container.startswith(container_prefix))
-        return IStore(ArchiveFile).find(
-            ArchiveFile.container, *clauses).group_by(ArchiveFile.container)
+        return (
+            IStore(ArchiveFile)
+            .find(ArchiveFile.container, *clauses)
+            .group_by(ArchiveFile.container)
+        )
 
     @staticmethod
     def reap(archive, container=None):
@@ -186,16 +205,22 @@ class ArchiveFileSet:
             ArchiveFile.scheduled_deletion_date < _now(),
             ArchiveFile.library_file_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
-            ]
+        ]
         if container is not None:
             clauses.append(ArchiveFile.container == container)
         where = convert_storm_clause_to_string(And(*clauses))
-        return list(IMasterStore(ArchiveFile).execute("""
+        return list(
+            IMasterStore(ArchiveFile).execute(
+                """
             DELETE FROM ArchiveFile
             USING LibraryFileAlias, LibraryFileContent
-            WHERE """ + where + """
+            WHERE """
+                + where
+                + """
             RETURNING
                 ArchiveFile.container,
                 ArchiveFile.path,
                 LibraryFileContent.sha256
-            """))
+            """
+            )
+        )

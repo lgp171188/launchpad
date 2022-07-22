@@ -2,11 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import signal
-from subprocess import (
-    PIPE,
-    Popen,
-    STDOUT,
-    )
+from subprocess import PIPE, STDOUT, Popen
 
 from lp.services.scripts import log
 
@@ -24,8 +20,14 @@ def subprocess_setup():
 def call(cmd):
     """Run a command, raising a RuntimeError if the command failed"""
     log.debug("Running %s" % cmd)
-    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
-              preexec_fn=subprocess_setup)
+    p = Popen(
+        cmd,
+        shell=True,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=STDOUT,
+        preexec_fn=subprocess_setup,
+    )
     out, err = p.communicate()
     for line in out.splitlines():
         log.debug("> %s" % line)

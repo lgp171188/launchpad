@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ILatestPersonSourcePackageReleaseCache',
-    ]
+    "ILatestPersonSourcePackageReleaseCache",
+]
 
 
 from zope.interface import Attribute
@@ -23,8 +23,11 @@ class ILatestPersonSourcePackageReleaseCache(ISourcePackageRelease):
 
     cache_id = Attribute(
         "The id of the associated LatestPersonSourcePackageReleaseCache"
-        "record.")
+        "record."
+    )
     sourcepackagerelease = Attribute(
-        "The SourcePackageRelease which this object represents.")
+        "The SourcePackageRelease which this object represents."
+    )
     publication = Attribute(
-        "The publication record for the associated SourcePackageRelease.")
+        "The publication record for the associated SourcePackageRelease."
+    )

@@ -5,8 +5,8 @@
 distributionarchitecture release."""
 
 __all__ = [
-    'DistroArchSeriesBinaryPackageRelease',
-    ]
+    "DistroArchSeriesBinaryPackageRelease",
+]
 
 from storm.locals import Desc
 from zope.interface import implementer
@@ -14,17 +14,16 @@ from zope.interface import implementer
 from lp.services.database.interfaces import IStore
 from lp.soyuz.interfaces.distroarchseriesbinarypackagerelease import (
     IDistroArchSeriesBinaryPackageRelease,
-    )
+)
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
-    )
+)
 from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
 
 @implementer(IDistroArchSeriesBinaryPackageRelease)
 class DistroArchSeriesBinaryPackageRelease:
-
     def __init__(self, distroarchseries, binarypackagerelease):
         self.distroarchseries = distroarchseries
         self.binarypackagerelease = binarypackagerelease
@@ -52,27 +51,30 @@ class DistroArchSeriesBinaryPackageRelease:
     @property
     def displayname(self):
         """See `IDistroArchSeriesBinaryPackageRelease`."""
-        return '%s %s' % (self.name, self.version)
+        return "%s %s" % (self.name, self.version)
 
     @property
     def title(self):
         """See `IDistroArchSeriesBinaryPackageRelease`."""
-        return '%s %s (%s binary) in %s %s' % (
-            self.name, self.version, self.distroarchseries.architecturetag,
-            self.distribution.name, self.distroseries.name)
+        return "%s %s (%s binary) in %s %s" % (
+            self.name,
+            self.version,
+            self.distroarchseries.architecturetag,
+            self.distribution.name,
+            self.distroseries.name,
+        )
 
     @property
     def distributionsourcepackagerelease(self):
         """See `IDistroArchSeriesBinaryPackageRelease`."""
         return DistributionSourcePackageRelease(
-            self.distribution,
-            self.build.source_package_release)
+            self.distribution, self.build.source_package_release
+        )
 
     @property
     def distroarchseriesbinarypackage(self):
         """See `IDistroArchSeriesBinaryPackage`."""
-        return self.distroarchseries.getBinaryPackage(
-            self.binarypackagename)
+        return self.distroarchseries.getBinaryPackage(self.binarypackagename)
 
     # XXX: kiko, 2006-02-01: I'd like to rename this to
     # current_published_publishing_record, because that's what it
@@ -82,44 +84,55 @@ class DistroArchSeriesBinaryPackageRelease:
         """See `IDistroArchSeriesBinaryPackageRelease`."""
         return self._latest_publishing_record(status=active_publishing_status)
 
-# XXX cprov 20071026: heavy queries should be moved near to the related
-# content classes in order to be better maintained. In this specific case
-# the publishing queries should live in publishing.py.
+    # XXX cprov 20071026: heavy queries should be moved near to the related
+    # content classes in order to be better maintained. In this specific case
+    # the publishing queries should live in publishing.py.
     def _latest_publishing_record(self, status=None):
         clauses = [
-            BinaryPackagePublishingHistory.binarypackagerelease ==
-                self.binarypackagerelease,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                self.distroarchseries,
+            BinaryPackagePublishingHistory.binarypackagerelease
+            == self.binarypackagerelease,
+            BinaryPackagePublishingHistory.distroarchseries
+            == self.distroarchseries,
             BinaryPackagePublishingHistory.archiveID.is_in(
-                self.distribution.all_distro_archive_ids),
-            ]
+                self.distribution.all_distro_archive_ids
+            ),
+        ]
 
         if status is not None:
             if not isinstance(status, (tuple, list)):
                 status = [status]
             clauses.append(BinaryPackagePublishingHistory.status.is_in(status))
 
-        return IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory,
-            *clauses).order_by(
+        return (
+            IStore(BinaryPackagePublishingHistory)
+            .find(BinaryPackagePublishingHistory, *clauses)
+            .order_by(
                 Desc(BinaryPackagePublishingHistory.datecreated),
-                Desc(BinaryPackagePublishingHistory.id)).first()
+                Desc(BinaryPackagePublishingHistory.id),
+            )
+            .first()
+        )
 
     @property
     def publishing_history(self):
         """See `IDistroArchSeriesBinaryPackage`."""
-        return IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                self.distroarchseries,
-            BinaryPackagePublishingHistory.archiveID.is_in(
-                self.distribution.all_distro_archive_ids),
-            BinaryPackagePublishingHistory.binarypackagerelease ==
-                self.binarypackagerelease,
-            ).order_by(
+        return (
+            IStore(BinaryPackagePublishingHistory)
+            .find(
+                BinaryPackagePublishingHistory,
+                BinaryPackagePublishingHistory.distroarchseries
+                == self.distroarchseries,
+                BinaryPackagePublishingHistory.archiveID.is_in(
+                    self.distribution.all_distro_archive_ids
+                ),
+                BinaryPackagePublishingHistory.binarypackagerelease
+                == self.binarypackagerelease,
+            )
+            .order_by(
                 Desc(BinaryPackagePublishingHistory.datecreated),
-                Desc(BinaryPackagePublishingHistory.id))
+                Desc(BinaryPackagePublishingHistory.id),
+            )
+        )
 
     @property
     def pocket(self):

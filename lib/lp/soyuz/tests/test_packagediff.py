@@ -3,13 +3,13 @@
 
 """Test source package diffs."""
 
-from datetime import datetime
 import errno
 import os.path
+from datetime import datetime
 from textwrap import dedent
 
-from fixtures import EnvironmentVariableFixture
 import transaction
+from fixtures import EnvironmentVariableFixture
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
@@ -27,30 +27,36 @@ from lp.testing.layers import LaunchpadZopelessLayer
 def create_proper_job(factory, sourcepackagename=None):
     archive = factory.makeArchive()
     foo_dash1 = factory.makeSourcePackageRelease(
-        archive=archive, sourcepackagename=sourcepackagename)
+        archive=archive, sourcepackagename=sourcepackagename
+    )
     foo_dash15 = factory.makeSourcePackageRelease(
-        archive=archive, sourcepackagename=sourcepackagename)
-    suite_dir = 'lib/lp/archiveuploader/tests/data/suite'
+        archive=archive, sourcepackagename=sourcepackagename
+    )
+    suite_dir = "lib/lp/archiveuploader/tests/data/suite"
     files = {
-        '%s/foo_1.0-1/foo_1.0-1.diff.gz' % suite_dir: None,
-        '%s/foo_1.0-1/foo_1.0-1.dsc' % suite_dir: None,
-        '%s/foo_1.0-1/foo_1.0.orig.tar.gz' % suite_dir: None,
-        '%s/foo_1.0-1.5/foo_1.0-1.5.diff.gz' % suite_dir: None,
-        '%s/foo_1.0-1.5/foo_1.0-1.5.dsc' % suite_dir: None}
+        "%s/foo_1.0-1/foo_1.0-1.diff.gz" % suite_dir: None,
+        "%s/foo_1.0-1/foo_1.0-1.dsc" % suite_dir: None,
+        "%s/foo_1.0-1/foo_1.0.orig.tar.gz" % suite_dir: None,
+        "%s/foo_1.0-1.5/foo_1.0-1.5.diff.gz" % suite_dir: None,
+        "%s/foo_1.0-1.5/foo_1.0-1.5.dsc" % suite_dir: None,
+    }
     for name in files:
         filename = os.path.split(name)[-1]
-        with open(name, 'rb') as content:
+        with open(name, "rb") as content:
             files[name] = factory.makeLibraryFileAlias(
-                filename=filename, content=content.read())
+                filename=filename, content=content.read()
+            )
     transaction.commit()
     dash1_files = (
-        '%s/foo_1.0-1/foo_1.0-1.diff.gz' % suite_dir,
-        '%s/foo_1.0-1/foo_1.0-1.dsc' % suite_dir,
-        '%s/foo_1.0-1/foo_1.0.orig.tar.gz' % suite_dir)
+        "%s/foo_1.0-1/foo_1.0-1.diff.gz" % suite_dir,
+        "%s/foo_1.0-1/foo_1.0-1.dsc" % suite_dir,
+        "%s/foo_1.0-1/foo_1.0.orig.tar.gz" % suite_dir,
+    )
     dash15_files = (
-        '%s/foo_1.0-1/foo_1.0.orig.tar.gz' % suite_dir,
-        '%s/foo_1.0-1.5/foo_1.0-1.5.diff.gz' % suite_dir,
-        '%s/foo_1.0-1.5/foo_1.0-1.5.dsc' % suite_dir)
+        "%s/foo_1.0-1/foo_1.0.orig.tar.gz" % suite_dir,
+        "%s/foo_1.0-1.5/foo_1.0-1.5.diff.gz" % suite_dir,
+        "%s/foo_1.0-1.5/foo_1.0-1.5.dsc" % suite_dir,
+    )
     for name in dash1_files:
         foo_dash1.addFile(files[name])
     for name in dash15_files:
@@ -60,6 +66,7 @@ def create_proper_job(factory, sourcepackagename=None):
 
 class TestPackageDiffs(TestCaseWithFactory):
     """Test package diffs."""
+
     layer = LaunchpadZopelessLayer
     dbuser = config.uploader.dbuser
 
@@ -89,8 +96,10 @@ class TestPackageDiffs(TestCaseWithFactory):
                 spr.id = %s
                 AND sprf.SourcePackageRelease = spr.id
                 AND sprf.libraryfile = lfa.id
-            """ % sqlvalues(source.id)
-        with dbuser('launchpad'):
+            """ % sqlvalues(
+            source.id
+        )
+        with dbuser("launchpad"):
             IStore(Archive).execute(query)
 
     def test_packagediff_with_expired_and_deleted_lfas(self):
@@ -129,7 +138,8 @@ class TestPackageDiffs(TestCaseWithFactory):
         p3a = self.factory.makeArchive(private=True)
         orig_spr = self.factory.makeSourcePackageRelease(archive=p3a)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=p3a, sourcepackagerelease=orig_spr)
+            archive=p3a, sourcepackagerelease=orig_spr
+        )
         private_spr = self.factory.makeSourcePackageRelease(archive=p3a)
         private_diff = private_spr.requestDiffTo(p3a.owner, orig_spr)
         self.assertEqual(1, len(orig_spr.published_archives))
@@ -157,7 +167,8 @@ class TestPackageDiffs(TestCaseWithFactory):
         to_spr = self.factory.makeSourcePackageRelease(archive=ppa)
         from_spr.requestDiffTo(ppa.owner, to_spr)
         [job] = IStore(Job).find(
-            Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF)
+            Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF
+        )
         self.assertIsNot(None, job)
 
     def test_packagediff_timeout(self):
@@ -167,14 +178,21 @@ class TestPackageDiffs(TestCaseWithFactory):
         mock_debdiff_path = os.path.join(temp_dir, "debdiff")
         marker_path = os.path.join(temp_dir, "marker")
         with open(mock_debdiff_path, "w") as mock_debdiff:
-            print(dedent("""\
+            print(
+                dedent(
+                    """\
                 #! /bin/sh
                 # Make sure we don't rely on the child leaving its SIGALRM
                 # disposition undisturbed.
                 trap '' ALRM
                 (echo "$$"; echo "$TMPDIR") >%s
                 sleep 5
-                """ % marker_path), end="", file=mock_debdiff)
+                """
+                    % marker_path
+                ),
+                end="",
+                file=mock_debdiff,
+            )
         os.chmod(mock_debdiff_path, 0o755)
         mock_path = "%s:%s" % (temp_dir, os.environ["PATH"])
         diff = create_proper_job(self.factory)
@@ -195,12 +213,19 @@ class TestPackageDiffs(TestCaseWithFactory):
         mock_debdiff_path = os.path.join(temp_dir, "debdiff")
         marker_path = os.path.join(temp_dir, "marker")
         with open(mock_debdiff_path, "w") as mock_debdiff:
-            print(dedent("""\
+            print(
+                dedent(
+                    """\
                 #! /bin/sh
                 (echo "$$"; echo "$TMPDIR") >%s
                 yes | head -n2048 || exit 2
                 sleep 5
-                """ % marker_path), end="", file=mock_debdiff)
+                """
+                    % marker_path
+                ),
+                end="",
+                file=mock_debdiff,
+            )
         os.chmod(mock_debdiff_path, 0o755)
         mock_path = "%s:%s" % (temp_dir, os.environ["PATH"])
         diff = create_proper_job(self.factory)

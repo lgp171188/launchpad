@@ -16,18 +16,16 @@ from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.scripts.ftpmasterbase import SoyuzScriptError
 from lp.soyuz.scripts.obsolete_distroseries import ObsoleteDistroseries
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestObsoleteDistroseriesScript(TestCase):
     """Test the obsolete-distroseries.py script."""
+
     layer = LaunchpadZopelessLayer
 
     def runCopyPackage(self, extra_args=None):
@@ -39,13 +37,19 @@ class TestObsoleteDistroseriesScript(TestCase):
         if extra_args is None:
             extra_args = []
         script = os.path.join(
-            config.root, "scripts", "ftpmaster-tools",
-            "obsolete-distroseries.py")
-        args = [script, '-y']
+            config.root,
+            "scripts",
+            "ftpmaster-tools",
+            "obsolete-distroseries.py",
+        )
+        args = [script, "-y"]
         args.extend(extra_args)
         process = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
         stdout, stderr = process.communicate()
         return (process.returncode, stdout, stderr)
 
@@ -56,46 +60,51 @@ class TestObsoleteDistroseriesScript(TestCase):
         We'll try to obsolete a non-obsolete distroseries, so it will
         just exit without doing anything.
         """
-        returncode, out, err = self.runCopyPackage(extra_args=['-s', 'warty'])
+        returncode, out, err = self.runCopyPackage(extra_args=["-s", "warty"])
         # Need to print these or you can't see what happened if the
         # return code is bad:
         self.assertEqual(1, returncode)
         expected = "ERROR   warty is not at status OBSOLETE."
-        assert expected in err, (
-            "Expected %s, got %s" % (expected, err))
+        assert expected in err, "Expected %s, got %s" % (expected, err)
 
 
 class TestObsoleteDistroseries(TestCaseWithFactory):
     """Test the ObsoleteDistroseries class."""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         """Set up test data common to all test cases."""
         super().setUp()
-        self.warty = getUtility(IDistributionSet)['ubuntu']['warty']
+        self.warty = getUtility(IDistributionSet)["ubuntu"]["warty"]
 
         # Re-process the returned list otherwise it ends up being a list
         # of zope proxy objects that sqlvalues cannot deal with.
         self.main_archive_ids = [
-            id for id in self.warty.distribution.all_distro_archive_ids]
+            id for id in self.warty.distribution.all_distro_archive_ids
+        ]
 
-    def getObsoleter(self, suite='warty', distribution='ubuntu',
-                     confirm_all=True):
+    def getObsoleter(
+        self, suite="warty", distribution="ubuntu", confirm_all=True
+    ):
         """Return an ObsoleteDistroseries instance.
 
         Allow tests to use a set of default options and pass an
         inactive logger to ObsoleteDistroseries.
         """
         test_args = [
-            '-s', suite,
-            '-d', distribution,
-            ]
+            "-s",
+            suite,
+            "-d",
+            distribution,
+        ]
 
         if confirm_all:
-            test_args.append('-y')
+            test_args.append("-y")
 
         obsoleter = ObsoleteDistroseries(
-            name='obsolete-distroseries', test_args=test_args)
+            name="obsolete-distroseries", test_args=test_args
+        )
         # Swallow all log messages.
         obsoleter.logger = DevNullLogger()
         obsoleter.setupLocation()
@@ -108,26 +117,30 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         published_sources = IStore(SourcePackagePublishingHistory).find(
             SourcePackagePublishingHistory,
             SourcePackagePublishingHistory.distroseries == distroseries,
-            SourcePackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
+            SourcePackagePublishingHistory.status
+            == PackagePublishingStatus.PUBLISHED,
             SourcePackagePublishingHistory.archiveID.is_in(
-                self.main_archive_ids))
+                self.main_archive_ids
+            ),
+        )
         published_binaries = IStore(BinaryPackagePublishingHistory).find(
             BinaryPackagePublishingHistory,
-            BinaryPackagePublishingHistory.distroarchseries ==
-                DistroArchSeries.id,
+            BinaryPackagePublishingHistory.distroarchseries
+            == DistroArchSeries.id,
             DistroArchSeries.distroseries == distroseries,
-            BinaryPackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
+            BinaryPackagePublishingHistory.status
+            == PackagePublishingStatus.PUBLISHED,
             BinaryPackagePublishingHistory.archiveID.is_in(
-                self.main_archive_ids))
+                self.main_archive_ids
+            ),
+        )
         return (published_sources, published_binaries)
 
     def testNonObsoleteDistroseries(self):
         """Test running over a non-obsolete distroseries."""
         # Default to warty, which is not obsolete.
         self.assertTrue(self.warty.status != PackagePublishingStatus.OBSOLETE)
-        obsoleter = self.getObsoleter(suite='warty')
+        obsoleter = self.getObsoleter(suite="warty")
         self.assertRaises(SoyuzScriptError, obsoleter.mainTask)
 
     def testObsoleteDistroseriesWorks(self):
@@ -136,19 +149,19 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         self.warty.status = SeriesStatus.OBSOLETE
 
         # Get all the published sources in warty.
-        published_sources, published_binaries = (
-            self.getPublicationsForDistroseries())
+        (
+            published_sources,
+            published_binaries,
+        ) = self.getPublicationsForDistroseries()
 
         # Assert that none of them is obsolete yet:
         self.assertFalse(published_sources.is_empty())
         self.assertFalse(published_binaries.is_empty())
         for source in published_sources:
-            self.assertTrue(
-                source.status == PackagePublishingStatus.PUBLISHED)
+            self.assertTrue(source.status == PackagePublishingStatus.PUBLISHED)
             self.assertTrue(source.scheduleddeletiondate is None)
         for binary in published_binaries:
-            self.assertTrue(
-                binary.status == PackagePublishingStatus.PUBLISHED)
+            self.assertTrue(binary.status == PackagePublishingStatus.PUBLISHED)
             self.assertTrue(binary.scheduleddeletiondate is None)
 
         # Keep their DB IDs for later.
@@ -165,13 +178,11 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         store = IStore(SourcePackagePublishingHistory)
         for id in source_ids:
             source = store.get(SourcePackagePublishingHistory, id)
-            self.assertTrue(
-                source.status == PackagePublishingStatus.OBSOLETE)
+            self.assertTrue(source.status == PackagePublishingStatus.OBSOLETE)
             self.assertTrue(source.scheduleddeletiondate is not None)
         for id in binary_ids:
             binary = store.get(BinaryPackagePublishingHistory, id)
-            self.assertTrue(
-                binary.status == PackagePublishingStatus.OBSOLETE)
+            self.assertTrue(binary.status == PackagePublishingStatus.OBSOLETE)
             self.assertTrue(binary.scheduleddeletiondate is not None)
 
         # Make sure nothing else was obsoleted.  Subtract the set of
@@ -187,12 +198,10 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
 
         for id in remaining_source_ids:
             source = store.get(SourcePackagePublishingHistory, id)
-            self.assertTrue(
-                source.status != PackagePublishingStatus.OBSOLETE)
+            self.assertTrue(source.status != PackagePublishingStatus.OBSOLETE)
         for id in remaining_binary_ids:
             binary = store.get(BinaryPackagePublishingHistory, id)
-            self.assertTrue(
-                binary.status != PackagePublishingStatus.OBSOLETE)
+            self.assertTrue(binary.status != PackagePublishingStatus.OBSOLETE)
 
     def test_schedules_deletion_of_uncondemned_pubs(self):
         # Any publications that were no longer Published but never
@@ -201,13 +210,16 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
         # binaries.
 
         obsolete_series = self.factory.makeDistroSeries(
-            status=SeriesStatus.OBSOLETE)
+            status=SeriesStatus.OBSOLETE
+        )
         other_series = self.factory.makeDistroSeries(
             distribution=obsolete_series.distribution,
-            status=SeriesStatus.CURRENT)
+            status=SeriesStatus.CURRENT,
+        )
         obsoleter = self.getObsoleter(
             distribution=obsolete_series.distribution.name,
-            suite=obsolete_series.name)
+            suite=obsolete_series.name,
+        )
 
         pubs = dict()
         for series in (obsolete_series, other_series):
@@ -215,11 +227,13 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
             pubs[series] = [
                 self.factory.makeSourcePackagePublishingHistory(
                     distroseries=series,
-                    status=PackagePublishingStatus.SUPERSEDED),
+                    status=PackagePublishingStatus.SUPERSEDED,
+                ),
                 self.factory.makeBinaryPackagePublishingHistory(
                     distroarchseries=arch,
-                    status=PackagePublishingStatus.SUPERSEDED),
-                ]
+                    status=PackagePublishingStatus.SUPERSEDED,
+                ),
+            ]
 
         for pub in pubs[obsolete_series] + pubs[other_series]:
             self.assertIs(None, pub.scheduleddeletiondate)

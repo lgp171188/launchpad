@@ -3,10 +3,7 @@
 
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.soyuz.browser.distroarchseries import DistroArchSeriesAdminView
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.sampledata import LAUNCHPAD_ADMIN
 
@@ -25,18 +22,19 @@ class TestDistroArchSeriesView(TestCaseWithFactory):
 
     def initialize_admin_view(self, enabled=True):
         # Initialize the admin view with the supplied params.
-        method = 'POST'
+        method = "POST"
         form = {
-            'field.actions.update': 'update',
-            }
+            "field.actions.update": "update",
+        }
 
         if enabled:
-            form['field.enabled'] = 'on'
+            form["field.enabled"] = "on"
         else:
-            form['field.enabled'] = 'off'
+            form["field.enabled"] = "off"
 
         view = DistroArchSeriesAdminView(
-            self.das, LaunchpadTestRequest(method=method, form=form))
+            self.das, LaunchpadTestRequest(method=method, form=form)
+        )
         view.initialize()
         return view
 

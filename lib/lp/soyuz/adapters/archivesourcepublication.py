@@ -9,8 +9,8 @@ references needed to present them properly in the PPA pages.
 """
 
 __all__ = [
-    'ArchiveSourcePublications',
-    ]
+    "ArchiveSourcePublications",
+]
 
 from collections import defaultdict
 
@@ -24,7 +24,7 @@ from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.soyuz.interfaces.publishing import (
     IPublishingSet,
     ISourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 
@@ -63,11 +63,13 @@ class ArchiveSourcePublication:
     def sourcepackagerelease(self):
         if self._changesfile is not None:
             changesfile = ProxiedLibraryFileAlias(
-                self._changesfile, self.context.archive)
+                self._changesfile, self.context.archive
+            )
         else:
             changesfile = None
         return ArchiveSourcePackageRelease(
-            self.context.sourcepackagerelease, changesfile)
+            self.context.sourcepackagerelease, changesfile
+        )
 
     def getStatusSummaryForBuilds(self):
         """See `ISourcePackagePublishingHistory`."""
@@ -90,7 +92,8 @@ class ArchiveSourcePublications:
         """Map changesfiles by their corresponding source publications."""
         publishing_set = getUtility(IPublishingSet)
         changesfile_set = publishing_set.getChangesFilesForSources(
-            self._source_publications)
+            self._source_publications
+        )
         changesfile_mapping = {}
         for entry in changesfile_set:
             source, queue_record, source_release, changesfile, content = entry
@@ -116,8 +119,11 @@ class ArchiveSourcePublications:
         spn_ids = set()
         for spph in self._source_publications:
             spn_ids.add(spph.sourcepackagerelease.sourcepackagenameID)
-        list(IStore(SourcePackageName).find(SourcePackageName,
-            SourcePackageName.id.is_in(spn_ids)))
+        list(
+            IStore(SourcePackageName).find(
+                SourcePackageName, SourcePackageName.id.is_in(spn_ids)
+            )
+        )
         DistroSeries.setNewerDistroSeriesVersions(self._source_publications)
         # Load all the build status summaries at once.
         publishing_set = getUtility(IPublishingSet)
@@ -128,14 +134,17 @@ class ArchiveSourcePublications:
         for archive, pub_ids in archive_pub_ids.items():
             status_summaries.update(
                 publishing_set.getBuildStatusSummariesForSourceIdsAndArchive(
-                    pub_ids, archive))
+                    pub_ids, archive
+                )
+            )
 
         # Build the decorated object with the information we have.
         for pub in self._source_publications:
             changesfile = changesfiles_by_source.get(pub, None)
             status_summary = status_summaries[pub.id]
             complete_pub = ArchiveSourcePublication(
-                pub, changesfile=changesfile, status_summary=status_summary)
+                pub, changesfile=changesfile, status_summary=status_summary
+            )
             results.append(complete_pub)
 
         return iter(results)

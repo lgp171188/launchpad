@@ -4,14 +4,11 @@
 """Source package format interfaces."""
 
 __all__ = [
-    'ISourcePackageFormatSelection',
-    'ISourcePackageFormatSelectionSet',
-    ]
+    "ISourcePackageFormatSelection",
+    "ISourcePackageFormatSelectionSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class ISourcePackageFormatSelection(Interface):

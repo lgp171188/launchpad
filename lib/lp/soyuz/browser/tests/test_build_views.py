@@ -2,21 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import soupmatchers
-from testtools.matchers import (
-    MatchesException,
-    Not,
-    Raises,
-    )
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
-    )
+from testtools.matchers import MatchesException, Not, Raises
+from zope.component import getMultiAdapter, getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import (
-    BuildQueueStatus,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -30,11 +20,11 @@ from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
-    person_logged_in,
     TestCaseWithFactory,
-    )
+    admin_logged_in,
+    person_logged_in,
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
 from lp.testing.views import create_initialized_view
@@ -59,7 +49,7 @@ class TestBuildViews(TestCaseWithFactory):
         removeSecurityProxy(archive).require_virtualized = False
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         view = create_initialized_view(build, name="+index")
-        self.assertEqual('multiverse', view.component_name)
+        self.assertEqual("multiverse", view.component_name)
 
     def test_view_without_component(self):
         # Production has some buggy builds without source publications.
@@ -67,10 +57,13 @@ class TestBuildViews(TestCaseWithFactory):
         spph = self.factory.makeSourcePackagePublishingHistory()
         other_das = self.factory.makeDistroArchSeries()
         build = getUtility(IBinaryPackageBuildSet).new(
-            spph.sourcepackagerelease, spph.archive, other_das,
-            PackagePublishingPocket.RELEASE)
+            spph.sourcepackagerelease,
+            spph.archive,
+            other_das,
+            PackagePublishingPocket.RELEASE,
+        )
         view = create_initialized_view(build, name="+index")
-        self.assertEqual('unknown', view.component_name)
+        self.assertEqual("unknown", view.component_name)
 
     def test_build_menu_primary(self):
         # The menu presented in the build page depends on the targeted
@@ -81,8 +74,8 @@ class TestBuildViews(TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         build_menu = BuildContextMenu(build)
         self.assertEqual(
-            build_menu.links,
-            ['ppa', 'records', 'retry', 'rescore', 'cancel'])
+            build_menu.links, ["ppa", "records", "retry", "rescore", "cancel"]
+        )
         self.assertFalse(build_menu.is_ppa_build)
         self.assertFalse(build_menu.ppa().enabled)
         # Cancel is not enabled on non-virtual builds.
@@ -92,13 +85,14 @@ class TestBuildViews(TestCaseWithFactory):
         # The 'PPA' action-menu item will be enabled if we target the build
         # to a PPA.
         ppa = self.factory.makeArchive(
-            purpose=ArchivePurpose.PPA, virtualized=True)
+            purpose=ArchivePurpose.PPA, virtualized=True
+        )
         build = self.factory.makeBinaryPackageBuild(archive=ppa)
         build.queueBuild()
         build_menu = BuildContextMenu(build)
         self.assertEqual(
-            build_menu.links,
-            ['ppa', 'records', 'retry', 'rescore', 'cancel'])
+            build_menu.links, ["ppa", "records", "retry", "rescore", "cancel"]
+        )
         self.assertTrue(build_menu.is_ppa_build)
         self.assertTrue(build_menu.ppa().enabled)
         # Cancel is enabled on virtual builds if the user is in the
@@ -112,15 +106,17 @@ class TestBuildViews(TestCaseWithFactory):
         # build for a released distroseries cannot be retried.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         build = self.factory.makeBinaryPackageBuild(
-            archive=archive, status=BuildStatus.FAILEDTOBUILD)
+            archive=archive, status=BuildStatus.FAILEDTOBUILD
+        )
         distroseries = build.distro_arch_series.distroseries
         with person_logged_in(self.admin):
             distroseries.status = SeriesStatus.CURRENT
         build_view = getMultiAdapter(
-            (build, self.empty_request), name="+index")
+            (build, self.empty_request), name="+index"
+        )
         self.assertFalse(build_view.is_ppa)
         self.assertEqual(build.buildqueue_record, None)
-        self.assertEqual(build_view.component_name, 'multiverse')
+        self.assertEqual(build_view.component_name, "multiverse")
         self.assertFalse(build.can_be_retried)
         self.assertBuildMenuRetryIsExpected(build, build.archive.owner, False)
 
@@ -128,7 +124,8 @@ class TestBuildViews(TestCaseWithFactory):
         # PPA builds can always be retried, no matter what status the
         # distroseries has.
         build = self.factory.makeBinaryPackageBuild(
-            status=BuildStatus.FAILEDTOBUILD)
+            status=BuildStatus.FAILEDTOBUILD
+        )
         self.assertTrue(build.can_be_retried)
         # Anonymous, therefore supposed to be disallowed
         self.assertBuildMenuRetryIsExpected(build, ANONYMOUS, False)
@@ -139,7 +136,8 @@ class TestBuildViews(TestCaseWithFactory):
         # permits it to be re-tried.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         build = self.factory.makeBinaryPackageBuild(
-            archive=archive, status=BuildStatus.FAILEDTOBUILD)
+            archive=archive, status=BuildStatus.FAILEDTOBUILD
+        )
         with person_logged_in(self.admin):
             self.assertTrue(build.can_be_retried)
         nopriv = getUtility(IPersonSet).getByName("no-priv")
@@ -147,7 +145,8 @@ class TestBuildViews(TestCaseWithFactory):
         self.assertBuildMenuRetryIsExpected(build, nopriv, False)
         # But they can as a member of launchpad-buildd-admins
         buildd_admins = getUtility(IPersonSet).getByName(
-            "launchpad-buildd-admins")
+            "launchpad-buildd-admins"
+        )
         with person_logged_in(self.admin):
             buildd_admins.addMember(nopriv, nopriv)
         self.assertBuildMenuRetryIsExpected(build, nopriv, True)
@@ -158,17 +157,22 @@ class TestBuildViews(TestCaseWithFactory):
         team = self.factory.makeTeam()
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         build = self.factory.makeBinaryPackageBuild(
-            archive=archive, status=BuildStatus.FAILEDTOBUILD)
+            archive=archive, status=BuildStatus.FAILEDTOBUILD
+        )
         with person_logged_in(self.admin):
             packageset = getUtility(IPackagesetSet).new(
-                'rebuild', 'test', team,
-                distroseries=build.distro_arch_series.distroseries)
+                "rebuild",
+                "test",
+                team,
+                distroseries=build.distro_arch_series.distroseries,
+            )
             packageset.add((build.source_package_release.sourcepackagename,))
         # The team doesn't have permission until we grant it
         self.assertBuildMenuRetryIsExpected(build, team.teamowner, False)
         with person_logged_in(self.admin):
             getUtility(IArchivePermissionSet).newPackagesetUploader(
-                archive, team, packageset)
+                archive, team, packageset
+            )
         self.assertBuildMenuRetryIsExpected(build, team.teamowner, True)
 
     def test_build_view_package_upload(self):
@@ -177,41 +181,48 @@ class TestBuildViews(TestCaseWithFactory):
         # a build were not yet collected.
         build = self.factory.makeBinaryPackageBuild()
         build_view = getMultiAdapter(
-            (build, self.empty_request), name="+index")
+            (build, self.empty_request), name="+index"
+        )
         self.assertEqual(build_view.package_upload, None)
         self.assertFalse(build_view.has_published_binaries)
         package_upload = build.distro_series.createQueueEntry(
-            PackagePublishingPocket.UPDATES, build.archive,
-            'changes.txt', b'my changes')
+            PackagePublishingPocket.UPDATES,
+            build.archive,
+            "changes.txt",
+            b"my changes",
+        )
         with person_logged_in(self.admin):
             package_upload.addBuild(build)
-        self.assertEqual(package_upload.status.name, 'NEW')
+        self.assertEqual(package_upload.status.name, "NEW")
         build_view = getMultiAdapter(
-            (build, self.empty_request), name="+index")
-        self.assertEqual(build_view.package_upload.status.name, 'NEW')
+            (build, self.empty_request), name="+index"
+        )
+        self.assertEqual(build_view.package_upload.status.name, "NEW")
         self.assertFalse(build_view.has_published_binaries)
         with person_logged_in(self.admin):
             package_upload.setDone()
         build_view = getMultiAdapter(
-            (build, self.empty_request), name="+index")
-        self.assertEqual(build_view.package_upload.status.name, 'DONE')
+            (build, self.empty_request), name="+index"
+        )
+        self.assertEqual(build_view.package_upload.status.name, "DONE")
         self.assertTrue(build_view.has_published_binaries)
 
     def test_build_view_files_helper(self):
         # The BuildIndex view also has a files helper which returns
         # all the files from the related binary package releases.
         build = self.factory.makeBinaryPackageBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         bpr = self.factory.makeBinaryPackageRelease(build=build)
         bprf = self.factory.makeBinaryPackageFile(binarypackagerelease=bpr)
-        build_view = create_initialized_view(build, '+index')
+        build_view = create_initialized_view(build, "+index")
         deb_file = build_view.files[0]
         self.assertEqual(deb_file.filename, bprf.libraryfile.filename)
         # Deleted files won't be included
         self.assertFalse(deb_file.deleted)
         removeSecurityProxy(deb_file.context).content = None
         self.assertTrue(deb_file.deleted)
-        build_view = create_initialized_view(build, '+index')
+        build_view = create_initialized_view(build, "+index")
         self.assertEqual(len(build_view.files), 0)
 
     def test_build_rescoring_view(self):
@@ -220,31 +231,41 @@ class TestBuildViews(TestCaseWithFactory):
         # It redirects users to the `Build` page when the build cannot be
         # rescored.
         build = self.factory.makeBinaryPackageBuild(
-            status=BuildStatus.FAILEDTOBUILD)
+            status=BuildStatus.FAILEDTOBUILD
+        )
         self.assertFalse(build.can_be_rescored)
-        view = create_initialized_view(build, name='+rescore')
+        view = create_initialized_view(build, name="+rescore")
         self.assertEqual(view.request.response.getStatus(), 302)
-        self.assertEqual(view.request.response.getHeader('Location'),
-            canonical_url(build))
+        self.assertEqual(
+            view.request.response.getHeader("Location"), canonical_url(build)
+        )
         pending_build = self.factory.makeBinaryPackageBuild()
-        view = create_initialized_view(pending_build, name='+rescore')
+        view = create_initialized_view(pending_build, name="+rescore")
         self.assertEqual(view.cancel_url, canonical_url(pending_build))
 
     def test_rescore_value_too_large(self):
         build = self.factory.makeBinaryPackageBuild()
         view = create_initialized_view(
-            build, name="+rescore", form={
-                'field.priority': str(2 ** 31 + 1),
-                'field.actions.rescore': 'Rescore'})
+            build,
+            name="+rescore",
+            form={
+                "field.priority": str(2**31 + 1),
+                "field.actions.rescore": "Rescore",
+            },
+        )
         self.assertEqual(view.errors[0].widget_title, "Priority")
         self.assertEqual(view.errors[0].doc(), "Value is too big")
 
     def test_rescore_value_too_small(self):
         build = self.factory.makeBinaryPackageBuild()
         view = create_initialized_view(
-            build, name="+rescore", form={
-                'field.priority': '-' + str(2 ** 31 + 1),
-                'field.actions.rescore': 'Rescore'})
+            build,
+            name="+rescore",
+            form={
+                "field.priority": "-" + str(2**31 + 1),
+                "field.actions.rescore": "Rescore",
+            },
+        )
         self.assertEqual(view.errors[0].widget_title, "Priority")
         self.assertEqual(view.errors[0].doc(), "Value is too small")
 
@@ -253,9 +274,13 @@ class TestBuildViews(TestCaseWithFactory):
         pending_build.queueBuild()
         with person_logged_in(self.admin):
             view = create_initialized_view(
-                pending_build, name="+rescore", form={
-                    'field.priority': '0',
-                    'field.actions.rescore': 'Rescore'})
+                pending_build,
+                name="+rescore",
+                form={
+                    "field.priority": "0",
+                    "field.actions.rescore": "Rescore",
+                },
+            )
         notification = view.request.response.notifications[0]
         self.assertEqual(notification.message, "Build rescored to 0.")
         self.assertEqual(pending_build.buildqueue_record.lastscore, 0)
@@ -266,12 +291,13 @@ class TestBuildViews(TestCaseWithFactory):
         person = build.archive.owner
         with person_logged_in(person):
             build_view = create_initialized_view(
-                build, "+index", principal=person)
+                build, "+index", principal=person
+            )
             page = build_view()
         url = canonical_url(build) + "/+cancel"
         matches_cancel_link = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                "CANCEL_LINK", "a", attrs=dict(href=url)))
+            soupmatchers.Tag("CANCEL_LINK", "a", attrs=dict(href=url))
+        )
         self.assertThat(page, matches_cancel_link)
 
     def test_cancelling_pending_build(self):
@@ -280,8 +306,10 @@ class TestBuildViews(TestCaseWithFactory):
         pending_build.queueBuild()
         with person_logged_in(ppa.owner):
             view = create_initialized_view(
-                pending_build, name="+cancel", form={
-                    'field.actions.cancel': 'Cancel'})
+                pending_build,
+                name="+cancel",
+                form={"field.actions.cancel": "Cancel"},
+            )
         notification = view.request.response.notifications[0]
         self.assertEqual(notification.message, "Build cancelled.")
         self.assertEqual(BuildStatus.CANCELLED, pending_build.status)
@@ -292,11 +320,14 @@ class TestBuildViews(TestCaseWithFactory):
         pending_build.queueBuild().markAsBuilding(self.factory.makeBuilder())
         with person_logged_in(ppa.owner):
             view = create_initialized_view(
-                pending_build, name="+cancel", form={
-                    'field.actions.cancel': 'Cancel'})
+                pending_build,
+                name="+cancel",
+                form={"field.actions.cancel": "Cancel"},
+            )
         notification = view.request.response.notifications[0]
         self.assertEqual(
-            notification.message, "Build cancellation in progress.")
+            notification.message, "Build cancellation in progress."
+        )
         self.assertEqual(BuildStatus.CANCELLING, pending_build.status)
 
     def test_cancelling_uncancellable_build(self):
@@ -306,11 +337,12 @@ class TestBuildViews(TestCaseWithFactory):
         pending_build.updateStatus(BuildStatus.FAILEDTOBUILD)
         with person_logged_in(archive.owner):
             view = create_initialized_view(
-                pending_build, name="+cancel", form={
-                    'field.actions.cancel': 'Cancel'})
+                pending_build,
+                name="+cancel",
+                form={"field.actions.cancel": "Cancel"},
+            )
         notification = view.request.response.notifications[0]
-        self.assertEqual(
-            notification.message, "Unable to cancel build.")
+        self.assertEqual(notification.message, "Unable to cancel build.")
         self.assertEqual(BuildStatus.FAILEDTOBUILD, pending_build.status)
 
     def test_build_records_view(self):
@@ -321,18 +353,23 @@ class TestBuildViews(TestCaseWithFactory):
             das = self.factory.makeDistroArchSeries(distroseries=distroseries)
             arch_list.append(das.architecturetag)
             build = self.factory.makeBinaryPackageBuild(
-                distroarchseries=das, archive=distroseries.main_archive,
-                status=BuildStatus.NEEDSBUILD)
+                distroarchseries=das,
+                archive=distroseries.main_archive,
+                status=BuildStatus.NEEDSBUILD,
+            )
             build.updateStatus(BuildStatus.BUILDING)
             build.updateStatus(BuildStatus.FULLYBUILT)
         view = create_initialized_view(
-            distroseries, name="+builds", form={'build_state': 'all'})
+            distroseries, name="+builds", form={"build_state": "all"}
+        )
         view.setupBuildList()
         build_arches = [build.arch_tag for build in view.complete_builds]
         self.assertEqual(arch_list.sort(), build_arches.sort())
         view = create_initialized_view(
-            distroseries, name="+builds", form={
-                'build_state': 'all', 'arch_tag': arch_list[0]})
+            distroseries,
+            name="+builds",
+            form={"build_state": "all", "arch_tag": arch_list[0]},
+        )
         view.setupBuildList()
         self.assertEqual(len(view.complete_builds), 1)
         self.assertEqual(view.complete_builds[0].arch_tag, arch_list[0])
@@ -341,9 +378,9 @@ class TestBuildViews(TestCaseWithFactory):
         selected = []
         option_arches = []
         for option in view.architecture_options:
-            option_arches.append(option['name'])
-            if option['selected'] is not None:
-                selected.append(option['name'])
+            option_arches.append(option["name"])
+            if option["selected"] is not None:
+                selected.append(option["name"])
         self.assertEqual(option_arches.sort(), arch_list.sort())
         self.assertTrue(len(selected), 1)
         self.assertEqual(selected, [arch_list[0]])
@@ -387,21 +424,33 @@ class TestBuildViews(TestCaseWithFactory):
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         for status in BuildStatus.items:
             build = self.factory.makeBinaryPackageBuild(
-                distroarchseries=das, archive=distroseries.main_archive,
-                status=status)
+                distroarchseries=das,
+                archive=distroseries.main_archive,
+                status=status,
+            )
             # BPBs in certain states need a bit tweaking to appear in
             # the result of getBuildRecords().
             if status == BuildStatus.FULLYBUILT:
                 build.updateStatus(
-                    BuildStatus.BUILDING, force_invalid_transition=True)
+                    BuildStatus.BUILDING, force_invalid_transition=True
+                )
                 build.updateStatus(BuildStatus.FULLYBUILT)
             elif status in (BuildStatus.NEEDSBUILD, BuildStatus.BUILDING):
                 build.queueBuild()
-        for status in ('built', 'failed', 'depwait', 'chrootwait',
-                       'superseded', 'uploadfail', 'all', 'building',
-                       'pending'):
+        for status in (
+            "built",
+            "failed",
+            "depwait",
+            "chrootwait",
+            "superseded",
+            "uploadfail",
+            "all",
+            "building",
+            "pending",
+        ):
             view = create_initialized_view(
-                distribution, name="+builds", form={'build_state': status})
+                distribution, name="+builds", form={"build_state": status}
+            )
             view.setupBuildList()
             range_factory = view.batchnav.batch.range_factory
 
@@ -411,18 +460,22 @@ class TestBuildViews(TestCaseWithFactory):
 
             self.assertThat(
                 test_range_factory,
-                Not(Raises(MatchesException(StormRangeFactoryError))))
+                Not(Raises(MatchesException(StormRangeFactoryError))),
+            )
 
     def test_name_filter_with_storm_range_factory(self):
         distroseries = self.factory.makeDistroSeries()
         self.factory.makeDistroArchSeries(distroseries=distroseries)
         view = create_initialized_view(
-            distroseries.distribution, name="+builds",
+            distroseries.distribution,
+            name="+builds",
             form={
-                'build_state': 'built',
-                'build_text': 'foo',
-                'start': 75,
-                'memo': '["2012-01-01T01:01:01", 0]'})
+                "build_state": "built",
+                "build_text": "foo",
+                "start": 75,
+                "memo": '["2012-01-01T01:01:01", 0]',
+            },
+        )
         view.setupBuildList()
 
     def test_eta(self):
@@ -431,9 +484,10 @@ class TestBuildViews(TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild()
         build.queueBuild()
         self.factory.makeBuilder(
-            processors=[build.processor], virtualized=True)
-        self.assertIsNot(None, create_initialized_view(build, '+index').eta)
+            processors=[build.processor], virtualized=True
+        )
+        self.assertIsNot(None, create_initialized_view(build, "+index").eta)
         with admin_logged_in():
             build.archive.disable()
         flush_database_caches()
-        self.assertIs(None, create_initialized_view(build, '+index').eta)
+        self.assertIs(None, create_initialized_view(build, "+index").eta)

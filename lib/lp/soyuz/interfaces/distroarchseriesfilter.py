@@ -4,22 +4,15 @@
 """Distro arch series filter interfaces."""
 
 __all__ = [
-    'IDistroArchSeriesFilter',
-    'IDistroArchSeriesFilterSet',
-    'NoSuchDistroArchSeriesFilter',
-    ]
+    "IDistroArchSeriesFilter",
+    "IDistroArchSeriesFilterSet",
+    "NoSuchDistroArchSeriesFilter",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    )
+from zope.schema import Choice, Datetime, Int
 
 from lp import _
 from lp.app.errors import NameLookupFailed
@@ -31,8 +24,10 @@ from lp.soyuz.interfaces.packageset import IPackageset
 
 class NoSuchDistroArchSeriesFilter(NameLookupFailed):
     """Raised when we try to look up a nonexistent DistroArchSeriesFilter."""
+
     _message_prefix = (
-        "The given distro arch series has no DistroArchSeriesFilter")
+        "The given distro arch series has no DistroArchSeriesFilter"
+    )
 
 
 class IDistroArchSeriesFilterView(Interface):
@@ -40,37 +35,69 @@ class IDistroArchSeriesFilterView(Interface):
 
     id = Int(title=_("ID"), readonly=True, required=True)
 
-    distroarchseries = exported(Reference(
-        title=_("Distro arch series"), required=True, readonly=True,
-        schema=IDistroArchSeries,
-        description=_("The distro arch series that this filter is for.")))
+    distroarchseries = exported(
+        Reference(
+            title=_("Distro arch series"),
+            required=True,
+            readonly=True,
+            schema=IDistroArchSeries,
+            description=_("The distro arch series that this filter is for."),
+        )
+    )
 
-    packageset = exported(Reference(
-        title=_("Package set"), required=True, readonly=True,
-        schema=IPackageset,
-        description=_(
-            "The package set to be included in or excluded from this distro "
-            "arch series.")))
+    packageset = exported(
+        Reference(
+            title=_("Package set"),
+            required=True,
+            readonly=True,
+            schema=IPackageset,
+            description=_(
+                "The package set to be included in or excluded from this "
+                "distro arch series."
+            ),
+        )
+    )
 
-    sense = exported(Choice(
-        title=_("Sense"),
-        vocabulary=DistroArchSeriesFilterSense, required=True, readonly=True,
-        description=_(
-            "Whether the filter represents packages to include or exclude "
-            "from the distro arch series.")))
+    sense = exported(
+        Choice(
+            title=_("Sense"),
+            vocabulary=DistroArchSeriesFilterSense,
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether the filter represents packages to include or exclude "
+                "from the distro arch series."
+            ),
+        )
+    )
 
-    creator = exported(PublicPersonChoice(
-        title=_("Creator"), required=True, readonly=True,
-        vocabulary="ValidPerson",
-        description=_("The user who created this filter.")))
+    creator = exported(
+        PublicPersonChoice(
+            title=_("Creator"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPerson",
+            description=_("The user who created this filter."),
+        )
+    )
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True,
-        description=_("The time when this filter was created.")))
+    date_created = exported(
+        Datetime(
+            title=_("Date created"),
+            required=True,
+            readonly=True,
+            description=_("The time when this filter was created."),
+        )
+    )
 
-    date_last_modified = exported(Datetime(
-        title=_("Date last modified"), required=True, readonly=True,
-        description=_("The time when this filter was last modified.")))
+    date_last_modified = exported(
+        Datetime(
+            title=_("Date last modified"),
+            required=True,
+            readonly=True,
+            description=_("The time when this filter was last modified."),
+        )
+    )
 
     def isSourceIncluded(sourcepackagename):
         """Is this source package name included by this filter?
@@ -98,7 +125,8 @@ class IDistroArchSeriesFilterEdit(Interface):
 # "devel".
 @exported_as_webservice_entry(as_of="beta")
 class IDistroArchSeriesFilter(
-        IDistroArchSeriesFilterView, IDistroArchSeriesFilterEdit):
+    IDistroArchSeriesFilterView, IDistroArchSeriesFilterEdit
+):
     """A filter for packages to be included in or excluded from a DAS.
 
     Since package sets can include other package sets, a single package set

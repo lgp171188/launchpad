@@ -21,10 +21,14 @@ class TestSourcePackageRelease(TestCaseWithFactory):
 
     def test___repr__(self):
         spr = self.factory.makeSourcePackageRelease()
-        expected_repr = ('<{cls} {pkg_name} (id: {id}, '
-                         'version: {version})>').format(
-                             cls=spr.__class__.__name__, pkg_name=spr.name,
-                             id=spr.id, version=spr.version)
+        expected_repr = (
+            "<{cls} {pkg_name} (id: {id}, " "version: {version})>"
+        ).format(
+            cls=spr.__class__.__name__,
+            pkg_name=spr.name,
+            id=spr.id,
+            version=spr.version,
+        )
         self.assertEqual(expected_repr, repr(spr))
 
     def test_uploader_dsc_package(self):
@@ -36,17 +40,21 @@ class TestSourcePackageRelease(TestCaseWithFactory):
     def test_uploader_recipe(self):
         recipe_build = self.factory.makeSourcePackageRecipeBuild()
         spr = self.factory.makeSourcePackageRelease(
-            source_package_recipe_build=recipe_build)
+            source_package_recipe_build=recipe_build
+        )
         self.assertEqual(recipe_build.requester, spr.uploader)
 
     def test_user_defined_fields(self):
         release = self.factory.makeSourcePackageRelease(
-                user_defined_fields=[
-                    ("Python-Version", ">= 2.4"),
-                    ("Other", "Bla")])
-        self.assertEqual([
-            ["Python-Version", ">= 2.4"],
-            ["Other", "Bla"]], release.user_defined_fields)
+            user_defined_fields=[
+                ("Python-Version", ">= 2.4"),
+                ("Other", "Bla"),
+            ]
+        )
+        self.assertEqual(
+            [["Python-Version", ">= 2.4"], ["Other", "Bla"]],
+            release.user_defined_fields,
+        )
 
     def test_homepage_default(self):
         # By default, no homepage is set.
@@ -69,8 +77,10 @@ class TestSourcePackageRelease(TestCaseWithFactory):
         # should contain the changelogs for all releases *since*
         # that version and up to and including the context SPR.
         changelog = self.factory.makeChangelog(
-            spn="foo", versions=["1.3",  "1.2",  "1.1",  "1.0"])
-        expected_changelog = dedent("""\
+            spn="foo", versions=["1.3", "1.2", "1.1", "1.0"]
+        )
+        expected_changelog = dedent(
+            """\
             foo (1.3) unstable; urgency=low
 
               * 1.3.
@@ -81,36 +91,41 @@ class TestSourcePackageRelease(TestCaseWithFactory):
 
             foo (1.1) unstable; urgency=low
 
-              * 1.1.""")
+              * 1.1."""
+        )
         spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagename="foo", version="1.3", changelog=changelog)
+            sourcepackagename="foo", version="1.3", changelog=changelog
+        )
         transaction.commit()  # Yay, librarian.
 
         observed = spph.sourcepackagerelease.aggregate_changelog(
-            since_version="1.0")
+            since_version="1.0"
+        )
         self.assertEqual(expected_changelog, observed)
 
     def test_aggregate_changelog_invalid_utf8(self):
         # aggregate_changelog copes with invalid UTF-8.
-        changelog_main = dedent("""\
+        changelog_main = dedent(
+            """\
             foo (1.0) unstable; urgency=low
 
-              * 1.0 (héllo).""").encode("ISO-8859-1")
+              * 1.0 (héllo)."""
+        ).encode("ISO-8859-1")
         changelog_trailer = (
-            " -- Føo Bær <foo@example.com>  "
-            "Tue, 01 Jan 1970 01:50:41 +0000").encode("ISO-8859-1")
+            " -- Føo Bær <foo@example.com>  " "Tue, 01 Jan 1970 01:50:41 +0000"
+        ).encode("ISO-8859-1")
         changelog_text = changelog_main + b"\n\n" + changelog_trailer
         changelog = self.factory.makeLibraryFileAlias(content=changelog_text)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagename="foo", version="1.0", changelog=changelog)
+            sourcepackagename="foo", version="1.0", changelog=changelog
+        )
         transaction.commit()
         observed = spph.sourcepackagerelease.aggregate_changelog(
-            since_version=None)
+            since_version=None
+        )
         self.assertEqual(changelog_main.decode("UTF-8", "replace"), observed)
 
     def test_null_string_in_copyright(self):
         test_string = "test string with null \0 character"
         package = self.factory.makeSourcePackageRelease(copyright=test_string)
-        self.assertEqual(
-            package.copyright,
-            "test string with null  character")
+        self.assertEqual(package.copyright, "test string with null  character")

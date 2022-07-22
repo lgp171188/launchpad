@@ -7,7 +7,7 @@ from lp.soyuz.enums import BinaryPackageFormat
 from lp.soyuz.interfaces.binarypackagerelease import (
     BinaryPackageReleaseNameLinkageError,
     IBinaryPackageRelease,
-    )
+)
 from lp.soyuz.interfaces.publishing import PackagePublishingPriority
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -21,33 +21,41 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
     def test_provides(self):
         build = self.factory.makeBinaryPackageBuild()
         release = build.createBinaryPackageRelease(
-                binarypackagename=self.factory.makeBinaryPackageName(),
-                version="0.1", summary="My package",
-                description="My description",
-                binpackageformat=BinaryPackageFormat.DEB,
-                component=self.factory.makeComponent("main"),
-                section=self.factory.makeSection("net"),
-                priority=PackagePublishingPriority.OPTIONAL,
-                installedsize=0, architecturespecific=False)
+            binarypackagename=self.factory.makeBinaryPackageName(),
+            version="0.1",
+            summary="My package",
+            description="My description",
+            binpackageformat=BinaryPackageFormat.DEB,
+            component=self.factory.makeComponent("main"),
+            section=self.factory.makeSection("net"),
+            priority=PackagePublishingPriority.OPTIONAL,
+            installedsize=0,
+            architecturespecific=False,
+        )
         self.assertProvides(release, IBinaryPackageRelease)
 
     def test_user_defined_fields(self):
         build = self.factory.makeBinaryPackageBuild()
         release = build.createBinaryPackageRelease(
-                binarypackagename=self.factory.makeBinaryPackageName(),
-                version="0.1", summary="My package",
-                description="My description",
-                binpackageformat=BinaryPackageFormat.DEB,
-                component=self.factory.makeComponent("main"),
-                section=self.factory.makeSection("net"),
-                priority=PackagePublishingPriority.OPTIONAL,
-                installedsize=0, architecturespecific=False,
-                user_defined_fields=[
-                    ("Python-Version", ">= 2.4"),
-                    ("Other", "Bla")])
-        self.assertEqual([
-            ["Python-Version", ">= 2.4"],
-            ["Other", "Bla"]], release.user_defined_fields)
+            binarypackagename=self.factory.makeBinaryPackageName(),
+            version="0.1",
+            summary="My package",
+            description="My description",
+            binpackageformat=BinaryPackageFormat.DEB,
+            component=self.factory.makeComponent("main"),
+            section=self.factory.makeSection("net"),
+            priority=PackagePublishingPriority.OPTIONAL,
+            installedsize=0,
+            architecturespecific=False,
+            user_defined_fields=[
+                ("Python-Version", ">= 2.4"),
+                ("Other", "Bla"),
+            ],
+        )
+        self.assertEqual(
+            [["Python-Version", ">= 2.4"], ["Other", "Bla"]],
+            release.user_defined_fields,
+        )
 
     def test_homepage_default(self):
         # By default, no homepage is set.
@@ -75,16 +83,19 @@ class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
         # Assertion passes if this returns without raising an exception.
         self.factory.makeBinaryPackageRelease(
             binarypackagename=binarypackagename,
-            binpackageformat=binpackageformat)
+            binpackageformat=binpackageformat,
+        )
 
-    def assertNameDisallowed(self, expected_message, binarypackagename,
-                             binpackageformat):
+    def assertNameDisallowed(
+        self, expected_message, binarypackagename, binpackageformat
+    ):
         self.assertRaisesWithContent(
             BinaryPackageReleaseNameLinkageError,
             expected_message,
             self.factory.makeBinaryPackageRelease,
             binarypackagename=binarypackagename,
-            binpackageformat=binpackageformat)
+            binpackageformat=binpackageformat,
+        )
 
     def test_deb_name_allowed(self):
         self.assertNameAllowed("foo", BinaryPackageFormat.DEB)
@@ -93,7 +104,9 @@ class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
         self.assertNameDisallowed(
             r"Invalid package name 'foo_bar'; must match "
             r"/^[a-z0-9][a-z0-9\+\.\-]+$/",
-            "foo_bar", BinaryPackageFormat.DEB)
+            "foo_bar",
+            BinaryPackageFormat.DEB,
+        )
 
     def test_wheel_name_allowed(self):
         self.assertNameAllowed("foo", BinaryPackageFormat.WHL)
@@ -103,7 +116,9 @@ class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
         self.assertNameDisallowed(
             r"Invalid Python wheel name 'foo_bar+'; must match "
             r"/^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$/i",
-            "foo_bar+", BinaryPackageFormat.WHL)
+            "foo_bar+",
+            BinaryPackageFormat.WHL,
+        )
 
     def test_conda_v1_name_allowed(self):
         self.assertNameAllowed("foo", BinaryPackageFormat.CONDA_V1)
@@ -114,13 +129,17 @@ class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
         self.assertNameDisallowed(
             r"Invalid Conda package name 'Foo'; must match "
             r"/^[a-z0-9_][a-z0-9.+_-]*$/",
-            "Foo", BinaryPackageFormat.CONDA_V1)
+            "Foo",
+            BinaryPackageFormat.CONDA_V1,
+        )
 
     def test_conda_v1_name_hash_disallowed(self):
         self.assertNameDisallowed(
             r"Invalid Conda package name 'foo_bar#'; must match "
             r"/^[a-z0-9_][a-z0-9.+_-]*$/",
-            "foo_bar#", BinaryPackageFormat.CONDA_V1)
+            "foo_bar#",
+            BinaryPackageFormat.CONDA_V1,
+        )
 
     def test_conda_v2_name_allowed(self):
         self.assertNameAllowed("foo", BinaryPackageFormat.CONDA_V2)
@@ -131,10 +150,14 @@ class TestBinaryPackageReleaseNameConstraints(TestCaseWithFactory):
         self.assertNameDisallowed(
             r"Invalid Conda package name 'Foo'; must match "
             r"/^[a-z0-9_][a-z0-9.+_-]*$/",
-            "Foo", BinaryPackageFormat.CONDA_V2)
+            "Foo",
+            BinaryPackageFormat.CONDA_V2,
+        )
 
     def test_conda_v2_name_hash_disallowed(self):
         self.assertNameDisallowed(
             r"Invalid Conda package name 'foo_bar#'; must match "
             r"/^[a-z0-9_][a-z0-9.+_-]*$/",
-            "foo_bar#", BinaryPackageFormat.CONDA_V2)
+            "foo_bar#",
+            BinaryPackageFormat.CONDA_V2,
+        )

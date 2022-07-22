@@ -4,8 +4,8 @@
 """Browser views for archivepermission."""
 
 __all__ = [
-    'ArchivePermissionURL',
-    ]
+    "ArchivePermissionURL",
+]
 
 from zope.interface import implementer
 
@@ -16,6 +16,7 @@ from lp.soyuz.enums import ArchivePermissionType
 @implementer(ICanonicalUrlData)
 class ArchivePermissionURL:
     """Dynamic URL declaration for `IArchivePermission`."""
+
     rootsite = None
 
     def __init__(self, context):
@@ -33,7 +34,8 @@ class ArchivePermissionURL:
             perm_type = "+queue-admin"
         else:
             raise AssertionError(
-                "Unknown permission type %s" % self.context.permission)
+                "Unknown permission type %s" % self.context.permission
+            )
 
         username = self.context.person.name
 
@@ -41,11 +43,13 @@ class ArchivePermissionURL:
             item = "type=component&item=%s" % self.context.component_name
         elif self.context.source_package_name is not None:
             item = (
-                "type=packagename&item=%s" % self.context.source_package_name)
+                "type=packagename&item=%s" % self.context.source_package_name
+            )
         elif self.context.package_set_name is not None:
-            item = ("type=packageset&item=%s&series=%s" %
-                    (self.context.package_set_name,
-                     self.context.distro_series_name))
+            item = "type=packageset&item=%s&series=%s" % (
+                self.context.package_set_name,
+                self.context.distro_series_name,
+            )
         elif self.context.pocket is not None:
             item = "type=pocket&item=%s" % self.context.pocket.name
             # Queue admin permissions for pockets may be granted by series.
@@ -54,6 +58,7 @@ class ArchivePermissionURL:
         else:
             raise AssertionError(
                 "One of component, sourcepackagename or package set should "
-                "be set")
+                "be set"
+            )
 
         return "%s/%s?%s" % (perm_type, username, item)

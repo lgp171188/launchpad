@@ -4,13 +4,10 @@
 """Source package in Distribution Cache interfaces."""
 
 __all__ = [
-    'IDistributionSourcePackageCache',
-    ]
+    "IDistributionSourcePackageCache",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IDistributionSourcePackageCache(Interface):
@@ -20,16 +17,25 @@ class IDistributionSourcePackageCache(Interface):
     sourcepackagename = Attribute("The source package name.")
 
     name = Attribute("The source package name as text.")
-    binpkgnames = Attribute("A concatenation of the binary package names "
-        "associated with this source package in the distribution.")
-    binpkgsummaries = Attribute("A concatenation of the binary package "
-        "summaries for this source package.")
-    binpkgdescriptions = Attribute("A concatenation of the descriptions "
+    binpkgnames = Attribute(
+        "A concatenation of the binary package names "
+        "associated with this source package in the distribution."
+    )
+    binpkgsummaries = Attribute(
+        "A concatenation of the binary package "
+        "summaries for this source package."
+    )
+    binpkgdescriptions = Attribute(
+        "A concatenation of the descriptions "
         "of the binary packages from this source package name in the "
-        "distro.")
-    changelog = Attribute("A concatenation of the source package release "
+        "distro."
+    )
+    changelog = Attribute(
+        "A concatenation of the source package release "
         "changelog entries for this source package, where the status is "
-        "not REMOVED.  (Deprecated; due to be removed.)")
+        "not REMOVED.  (Deprecated; due to be removed.)"
+    )
 
-    distributionsourcepackage = Attribute("The DistributionSourcePackage "
-        "for which this is a cache.")
+    distributionsourcepackage = Attribute(
+        "The DistributionSourcePackage " "for which this is a cache."
+    )

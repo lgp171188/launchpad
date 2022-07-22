@@ -2,37 +2,34 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LiveFSBuild',
-    'LiveFSFile',
-    ]
+    "LiveFSBuild",
+    "LiveFSFile",
+]
 
 from datetime import timedelta
 
 import pytz
 from storm.locals import (
+    JSON,
     And,
     Bool,
     DateTime,
     Desc,
     Int,
-    JSON,
     Or,
     Reference,
     Select,
     Store,
     Storm,
     Unicode,
-    )
+)
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import (
-    BuildFarmJobType,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
@@ -43,21 +40,15 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.macaroons.interfaces import (
+    NO_USER,
     BadMacaroonContext,
     IMacaroonIssuer,
-    NO_USER,
-    )
+)
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.archive import IArchive
@@ -65,12 +56,12 @@ from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
     LiveFSFeatureDisabled,
-    )
+)
 from lp.soyuz.interfaces.livefsbuild import (
     ILiveFSBuild,
     ILiveFSBuildSet,
     ILiveFSFile,
-    )
+)
 from lp.soyuz.mail.livefsbuild import LiveFSBuildMailer
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivedependency import ArchiveDependency
@@ -80,15 +71,15 @@ from lp.soyuz.model.archivedependency import ArchiveDependency
 class LiveFSFile(Storm):
     """See `ILiveFS`."""
 
-    __storm_table__ = 'LiveFSFile'
+    __storm_table__ = "LiveFSFile"
 
-    id = Int(name='id', primary=True)
+    id = Int(name="id", primary=True)
 
-    livefsbuild_id = Int(name='livefsbuild', allow_none=False)
-    livefsbuild = Reference(livefsbuild_id, 'LiveFSBuild.id')
+    livefsbuild_id = Int(name="livefsbuild", allow_none=False)
+    livefsbuild = Reference(livefsbuild_id, "LiveFSBuild.id")
 
-    libraryfile_id = Int(name='libraryfile', allow_none=False)
-    libraryfile = Reference(libraryfile_id, 'LibraryFileAlias.id')
+    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
 
     def __init__(self, livefsbuild, libraryfile):
         """Construct a `LiveFSFile`."""
@@ -101,65 +92,80 @@ class LiveFSFile(Storm):
 class LiveFSBuild(PackageBuildMixin, Storm):
     """See `ILiveFSBuild`."""
 
-    __storm_table__ = 'LiveFSBuild'
+    __storm_table__ = "LiveFSBuild"
 
     job_type = BuildFarmJobType.LIVEFSBUILD
 
-    id = Int(name='id', primary=True)
+    id = Int(name="id", primary=True)
 
-    build_farm_job_id = Int(name='build_farm_job', allow_none=False)
-    build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
+    build_farm_job_id = Int(name="build_farm_job", allow_none=False)
+    build_farm_job = Reference(build_farm_job_id, "BuildFarmJob.id")
 
-    requester_id = Int(name='requester', allow_none=False)
-    requester = Reference(requester_id, 'Person.id')
+    requester_id = Int(name="requester", allow_none=False)
+    requester = Reference(requester_id, "Person.id")
 
-    livefs_id = Int(name='livefs', allow_none=False)
-    livefs = Reference(livefs_id, 'LiveFS.id')
+    livefs_id = Int(name="livefs", allow_none=False)
+    livefs = Reference(livefs_id, "LiveFS.id")
 
-    archive_id = Int(name='archive', allow_none=False)
-    archive = Reference(archive_id, 'Archive.id')
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
 
-    distro_arch_series_id = Int(name='distro_arch_series', allow_none=False)
+    distro_arch_series_id = Int(name="distro_arch_series", allow_none=False)
     distro_arch_series = Reference(
-        distro_arch_series_id, 'DistroArchSeries.id')
+        distro_arch_series_id, "DistroArchSeries.id"
+    )
 
     pocket = DBEnum(enum=PackagePublishingPocket, allow_none=False)
 
-    processor_id = Int(name='processor', allow_none=False)
-    processor = Reference(processor_id, 'Processor.id')
-    virtualized = Bool(name='virtualized')
+    processor_id = Int(name="processor", allow_none=False)
+    processor = Reference(processor_id, "Processor.id")
+    virtualized = Bool(name="virtualized")
 
-    unique_key = Unicode(name='unique_key')
+    unique_key = Unicode(name="unique_key")
 
-    metadata_override = JSON('json_data_override')
+    metadata_override = JSON("json_data_override")
 
-    _version = Unicode(name='version')
+    _version = Unicode(name="version")
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False)
-    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
-    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
+    date_started = DateTime(name="date_started", tzinfo=pytz.UTC)
+    date_finished = DateTime(name="date_finished", tzinfo=pytz.UTC)
     date_first_dispatched = DateTime(
-        name='date_first_dispatched', tzinfo=pytz.UTC)
+        name="date_first_dispatched", tzinfo=pytz.UTC
+    )
 
-    builder_id = Int(name='builder')
-    builder = Reference(builder_id, 'Builder.id')
+    builder_id = Int(name="builder")
+    builder = Reference(builder_id, "Builder.id")
 
-    status = DBEnum(name='status', enum=BuildStatus, allow_none=False)
+    status = DBEnum(name="status", enum=BuildStatus, allow_none=False)
 
-    log_id = Int(name='log')
-    log = Reference(log_id, 'LibraryFileAlias.id')
+    log_id = Int(name="log")
+    log = Reference(log_id, "LibraryFileAlias.id")
 
-    upload_log_id = Int(name='upload_log')
-    upload_log = Reference(upload_log_id, 'LibraryFileAlias.id')
+    upload_log_id = Int(name="upload_log")
+    upload_log = Reference(upload_log_id, "LibraryFileAlias.id")
 
-    dependencies = Unicode(name='dependencies')
+    dependencies = Unicode(name="dependencies")
 
-    failure_count = Int(name='failure_count', allow_none=False)
+    failure_count = Int(name="failure_count", allow_none=False)
 
-    def __init__(self, build_farm_job, requester, livefs, archive,
-                 distro_arch_series, pocket, processor, virtualized,
-                 unique_key, metadata_override, version, date_created):
+    def __init__(
+        self,
+        build_farm_job,
+        requester,
+        livefs,
+        archive,
+        distro_arch_series,
+        pocket,
+        processor,
+        virtualized,
+        unique_key,
+        metadata_override,
+        version,
+        date_created,
+    ):
         """Construct a `LiveFSBuild`."""
         if not getFeatureFlag(LIVEFS_FEATURE_FLAG):
             raise LiveFSFeatureDisabled
@@ -192,8 +198,11 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         if self.unique_key is not None:
             name += " (%s)" % self.unique_key
         return "%s build of %s livefs in %s %s" % (
-            das.architecturetag, name, das.distroseries.distribution.name,
-            das.distroseries.getSuite(self.pocket))
+            das.architecturetag,
+            name,
+            das.distroseries.distribution.name,
+            das.distroseries.getSuite(self.pocket),
+        )
 
     @property
     def distribution(self):
@@ -234,8 +243,10 @@ class LiveFSBuild(PackageBuildMixin, Storm):
 
     def calculateScore(self):
         return (
-            2510 + self.archive.relative_build_score +
-            self.livefs.relative_build_score)
+            2510
+            + self.archive.relative_build_score
+            + self.livefs.relative_build_score
+        )
 
     def getMedianBuildDuration(self):
         """Return the median duration of our successful builds."""
@@ -244,7 +255,8 @@ class LiveFSBuild(PackageBuildMixin, Storm):
             (LiveFSBuild.date_started, LiveFSBuild.date_finished),
             LiveFSBuild.livefs == self.livefs_id,
             LiveFSBuild.distro_arch_series == self.distro_arch_series_id,
-            LiveFSBuild.status == BuildStatus.FULLYBUILT)
+            LiveFSBuild.status == BuildStatus.FULLYBUILT,
+        )
         result.order_by(Desc(LiveFSBuild.date_finished))
         durations = [row[1] - row[0] for row in result[:9]]
         if len(durations) == 0:
@@ -265,7 +277,8 @@ class LiveFSBuild(PackageBuildMixin, Storm):
             (LiveFSFile, LibraryFileAlias, LibraryFileContent),
             LiveFSFile.livefsbuild == self.id,
             LibraryFileAlias.id == LiveFSFile.libraryfile_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID)
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+        )
         return result.order_by([LibraryFileAlias.filename, LiveFSFile.id])
 
     def getFileByName(self, filename):
@@ -275,11 +288,16 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         elif filename.endswith("_log.txt"):
             file_object = self.upload_log
         else:
-            file_object = Store.of(self).find(
-                LibraryFileAlias,
-                LiveFSFile.livefsbuild == self.id,
-                LibraryFileAlias.id == LiveFSFile.libraryfile_id,
-                LibraryFileAlias.filename == filename).one()
+            file_object = (
+                Store.of(self)
+                .find(
+                    LibraryFileAlias,
+                    LiveFSFile.livefsbuild == self.id,
+                    LibraryFileAlias.id == LiveFSFile.libraryfile_id,
+                    LibraryFileAlias.filename == filename,
+                )
+                .one()
+            )
 
         if file_object is not None and file_object.filename == filename:
             return file_object
@@ -296,17 +314,27 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
 
-    def updateStatus(self, status, builder=None, worker_status=None,
-                     date_started=None, date_finished=None,
-                     force_invalid_transition=False):
+    def updateStatus(
+        self,
+        status,
+        builder=None,
+        worker_status=None,
+        date_started=None,
+        date_finished=None,
+        force_invalid_transition=False,
+    ):
         """See `IBuildFarmJob`."""
 
         edited_fields = set()
         with notify_modified(self, edited_fields) as previous_obj:
             super().updateStatus(
-                status, builder=builder, worker_status=worker_status,
-                date_started=date_started, date_finished=date_finished,
-                force_invalid_transition=force_invalid_transition)
+                status,
+                builder=builder,
+                worker_status=worker_status,
+                date_started=date_started,
+                date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition,
+            )
             if self.status != previous_obj.status:
                 edited_fields.add("status")
 
@@ -341,21 +369,43 @@ class LiveFSBuild(PackageBuildMixin, Storm):
 
 @implementer(ILiveFSBuildSet)
 class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
-
-    def new(self, requester, livefs, archive, distro_arch_series, pocket,
-            unique_key=None, metadata_override=None, version=None,
-            date_created=DEFAULT):
+    def new(
+        self,
+        requester,
+        livefs,
+        archive,
+        distro_arch_series,
+        pocket,
+        unique_key=None,
+        metadata_override=None,
+        version=None,
+        date_created=DEFAULT,
+    ):
         """See `ILiveFSBuildSet`."""
         store = IMasterStore(LiveFSBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
-            LiveFSBuild.job_type, BuildStatus.NEEDSBUILD, date_created, None,
-            archive)
+            LiveFSBuild.job_type,
+            BuildStatus.NEEDSBUILD,
+            date_created,
+            None,
+            archive,
+        )
         livefsbuild = LiveFSBuild(
-            build_farm_job, requester, livefs, archive, distro_arch_series,
-            pocket, distro_arch_series.processor,
+            build_farm_job,
+            requester,
+            livefs,
+            archive,
+            distro_arch_series,
+            pocket,
+            distro_arch_series.processor,
             not distro_arch_series.processor.supports_nonvirtualized
-            or livefs.require_virtualized or archive.require_virtualized,
-            unique_key, metadata_override, version, date_created)
+            or livefs.require_virtualized
+            or archive.require_virtualized,
+            unique_key,
+            metadata_override,
+            version,
+            date_created,
+        )
         store.add(livefsbuild)
         return livefsbuild
 
@@ -366,12 +416,16 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByBuildFarmJob(self, build_farm_job):
         """See `ISpecificBuildFarmJobSource`."""
-        return Store.of(build_farm_job).find(
-            LiveFSBuild, build_farm_job_id=build_farm_job.id).one()
+        return (
+            Store.of(build_farm_job)
+            .find(LiveFSBuild, build_farm_job_id=build_farm_job.id)
+            .one()
+        )
 
     def preloadBuildsData(self, builds):
         # Circular import.
         from lp.soyuz.model.livefs import LiveFS
+
         load_related(Person, builds, ["requester_id"])
         load_related(LibraryFileAlias, builds, ["log_id"])
         archives = load_related(Archive, builds, ["archive_id"])
@@ -383,8 +437,11 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
         if len(build_farm_jobs) == 0:
             return EmptyResultSet()
         rows = Store.of(build_farm_jobs[0]).find(
-            LiveFSBuild, LiveFSBuild.build_farm_job_id.is_in(
-                bfj.id for bfj in build_farm_jobs))
+            LiveFSBuild,
+            LiveFSBuild.build_farm_job_id.is_in(
+                bfj.id for bfj in build_farm_jobs
+            ),
+        )
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
 
 
@@ -412,7 +469,8 @@ class LiveFSBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         if not removeSecurityProxy(context).is_private:
             raise BadMacaroonContext(
-                context, "Refusing to issue macaroon for public build.")
+                context, "Refusing to issue macaroon for public build."
+            )
         return removeSecurityProxy(context).id
 
     def checkVerificationContext(self, context, **kwargs):
@@ -421,8 +479,9 @@ class LiveFSBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         return context
 
-    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
-                            **kwargs):
+    def verifyPrimaryCaveat(
+        self, verified, caveat_value, context, user=None, **kwargs
+    ):
         """See `MacaroonIssuerBase`.
 
         For verification, the context is an `IArchive`.  We check that the
@@ -442,16 +501,22 @@ class LiveFSBuildMacaroonIssuer(MacaroonIssuerBase):
         clauses = [
             LiveFSBuild.id == build_id,
             LiveFSBuild.status == BuildStatus.BUILDING,
-            ]
+        ]
         if IArchive.providedBy(context):
             clauses.append(
                 Or(
                     LiveFSBuild.archive == context,
-                    LiveFSBuild.archive_id.is_in(Select(
-                        Archive.id,
-                        where=And(
-                            ArchiveDependency.archive == Archive.id,
-                            ArchiveDependency.dependency == context)))))
+                    LiveFSBuild.archive_id.is_in(
+                        Select(
+                            Archive.id,
+                            where=And(
+                                ArchiveDependency.archive == Archive.id,
+                                ArchiveDependency.dependency == context,
+                            ),
+                        )
+                    ),
+                )
+            )
         else:
             return False
         return not IStore(LiveFSBuild).find(LiveFSBuild, *clauses).is_empty()

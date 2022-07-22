@@ -32,8 +32,9 @@ def getLibraryAlias(root, filename):
     fname = os.path.join(root, filename)
     fobj = open(fname, "rb")
     size = os.stat(fname).st_size
-    alias = librarian.create(filename, size, fobj,
-                             contentType=_libType(filename))
+    alias = librarian.create(
+        filename, size, fobj, contentType=_libType(filename)
+    )
     fobj.close()
     return alias
 
@@ -43,7 +44,7 @@ def checkLibraryForFile(path, filename):
     assert os.path.exists(fullpath)
     digester = hashlib.sha256()
     openfile = open(fullpath, "rb")
-    for chunk in iter(lambda: openfile.read(1024 * 4), b''):
+    for chunk in iter(lambda: openfile.read(1024 * 4), b""):
         digester.update(chunk)
     digest = digester.hexdigest()
     openfile.close()

@@ -8,98 +8,88 @@ __all__ = []
 from operator import methodcaller
 
 from storm.expr import And
-from zope.component import (
-    getUtility,
-    queryAdapter,
-    )
+from zope.component import getUtility, queryAdapter
 
 from lp.app.interfaces.security import IAuthorization
 from lp.app.security import (
     AnonymousAuthorization,
     AuthorizationBase,
     DelegatedAuthorization,
-    )
+)
 from lp.buildmaster.security import EditPackageBuild
 from lp.security import (
     AdminByAdminsTeam,
     AdminByBuilddAdmin,
     AdminByCommercialTeamOrAdmins,
-    )
+)
 from lp.services.database.interfaces import IStore
-from lp.soyuz.interfaces.archive import (
-    IArchive,
-    IArchiveSet,
-    )
+from lp.soyuz.interfaces.archive import IArchive, IArchiveSet
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthToken
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.archivesubscriber import (
     IArchiveSubscriber,
     IArchiveSubscriberSet,
     IPersonalArchiveSubscription,
-    )
+)
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
-    )
+)
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
 from lp.soyuz.interfaces.livefs import ILiveFS
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJob
-from lp.soyuz.interfaces.packageset import (
-    IPackageset,
-    IPackagesetSet,
-    )
+from lp.soyuz.interfaces.packageset import IPackageset, IPackagesetSet
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     IPublishingEdit,
     ISourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadLog,
     IPackageUploadQueue,
-    )
+)
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
-from lp.soyuz.model.archive import (
-    Archive,
-    get_enabled_archive_filter,
-    )
+from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
 
 
 class ViewDistroArchSeries(AnonymousAuthorization):
     """Anyone can view a DistroArchSeries."""
+
     usedfor = IDistroArchSeries
 
 
 class ModerateDistroArchSeries(AuthorizationBase):
-    permission = 'launchpad.Moderate'
+    permission = "launchpad.Moderate"
     usedfor = IDistroArchSeries
 
     def checkAuthenticated(self, user):
         return (
-                user.isOwner(self.obj.distroseries.distribution.main_archive)
-                or user.in_admin)
+            user.isOwner(self.obj.distroseries.distribution.main_archive)
+            or user.in_admin
+        )
 
 
 class ViewDistroArchSeriesFilter(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = IDistroArchSeriesFilter
 
     def __init__(self, obj):
-        super().__init__(obj, obj.distroarchseries, 'launchpad.View')
+        super().__init__(obj, obj.distroarchseries, "launchpad.View")
 
 
 class EditDistroArchSeriesFilter(DelegatedAuthorization):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IDistroArchSeriesFilter
 
     def __init__(self, obj):
-        super().__init__(obj, obj.distroarchseries, 'launchpad.Moderate')
+        super().__init__(obj, obj.distroarchseries, "launchpad.Moderate")
 
 
 class EditPackageUploadQueue(AdminByAdminsTeam):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IPackageUploadQueue
 
     def checkAuthenticated(self, user):
@@ -109,13 +99,13 @@ class EditPackageUploadQueue(AdminByAdminsTeam):
 
         permission_set = getUtility(IArchivePermissionSet)
         component_permissions = permission_set.componentsForQueueAdmin(
-            self.obj.distroseries.distribution.all_distro_archives,
-            user.person)
+            self.obj.distroseries.distribution.all_distro_archives, user.person
+        )
         if not component_permissions.is_empty():
             return True
         pocket_permissions = permission_set.pocketsForQueueAdmin(
-            self.obj.distroseries.distribution.all_distro_archives,
-            user.person)
+            self.obj.distroseries.distribution.all_distro_archives, user.person
+        )
         for permission in pocket_permissions:
             if permission.distroseries in (None, self.obj.distroseries):
                 return True
@@ -123,7 +113,7 @@ class EditPackageUploadQueue(AdminByAdminsTeam):
 
 
 class EditPlainPackageCopyJob(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IPlainPackageCopyJob
 
     def checkAuthenticated(self, user):
@@ -133,7 +123,8 @@ class EditPlainPackageCopyJob(AuthorizationBase):
 
         permission_set = getUtility(IArchivePermissionSet)
         permissions = permission_set.componentsForQueueAdmin(
-            archive, user.person)
+            archive, user.person
+        )
         return not permissions.is_empty()
 
 
@@ -144,7 +135,8 @@ class ViewPackageUpload(AuthorizationBase):
     upload.  The SPR may be visible without the archive being visible if the
     source package has been copied from a private archive.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IPackageUpload
 
     def iter_adapters(self):
@@ -162,17 +154,20 @@ class ViewPackageUpload(AuthorizationBase):
             yield ViewSourcePackageRelease(spr)
 
     def checkAuthenticated(self, user):
-        return any(map(
-            methodcaller("checkAuthenticated", user), self.iter_adapters()))
+        return any(
+            map(methodcaller("checkAuthenticated", user), self.iter_adapters())
+        )
 
     def checkUnauthenticated(self):
-        return any(map(
-            methodcaller("checkUnauthenticated"), self.iter_adapters()))
+        return any(
+            map(methodcaller("checkUnauthenticated"), self.iter_adapters())
+        )
 
 
 class ViewPackageUploadLog(DelegatedAuthorization):
     """Anyone who can view a package upload can view its logs."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IPackageUploadLog
 
     def __init__(self, obj):
@@ -180,7 +175,7 @@ class ViewPackageUploadLog(DelegatedAuthorization):
 
 
 class EditPackageUpload(AdminByAdminsTeam):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IPackageUpload
 
     def checkAuthenticated(self, user):
@@ -189,12 +184,15 @@ class EditPackageUpload(AdminByAdminsTeam):
             return True
 
         return self.obj.archive.canAdministerQueue(
-            user.person, self.obj.components, self.obj.pocket,
-            self.obj.distroseries)
+            user.person,
+            self.obj.components,
+            self.obj.pocket,
+            self.obj.distroseries,
+        )
 
 
 class EditBinaryPackageBuild(EditPackageBuild):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IBinaryPackageBuild
 
     def checkAuthenticated(self, user):
@@ -215,15 +213,18 @@ class EditBinaryPackageBuild(EditPackageBuild):
         # strict_component is True because the source package already exists,
         # otherwise, how can they give it back?
         check_perms = self.obj.archive.checkUpload(
-            user.person, self.obj.distro_series,
+            user.person,
+            self.obj.distro_series,
             self.obj.source_package_release.sourcepackagename,
-            self.obj.current_component, self.obj.pocket,
-            strict_component=True)
+            self.obj.current_component,
+            self.obj.pocket,
+            strict_component=True,
+        )
         return check_perms == None
 
 
 class ViewBinaryPackageBuild(EditBinaryPackageBuild):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
 
     # This code MUST match the logic in
     # IBinaryPackageBuildSet.getBuildsForBuilder() otherwise users are
@@ -265,7 +266,7 @@ class ViewBinaryPackageBuild(EditBinaryPackageBuild):
 
 
 class ModerateBinaryPackageBuild(ViewBinaryPackageBuild):
-    permission = 'launchpad.Moderate'
+    permission = "launchpad.Moderate"
 
     def checkAuthenticated(self, user):
         # Only people who can see the build and administer its archive can
@@ -273,9 +274,9 @@ class ModerateBinaryPackageBuild(ViewBinaryPackageBuild):
         # setting BinaryPackageBuild.external_dependencies; people who can
         # administer the archive can already achieve the same effect by
         # setting Archive.external_dependencies.)
-        return (
-                super().checkAuthenticated(user) and
-                AdminArchive(self.obj.archive).checkAuthenticated(user))
+        return super().checkAuthenticated(user) and AdminArchive(
+            self.obj.archive
+        ).checkAuthenticated(user)
 
     def checkUnauthenticated(self, user):
         return False
@@ -286,15 +287,16 @@ class ViewArchive(AuthorizationBase):
 
     Only admins or members of a private team can view the archive.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
         """Verify that the user can view the archive."""
         archive_set = getUtility(IArchiveSet)  # type: IArchiveSet
-        return archive_set.checkViewPermission(
-            [self.obj], user.person
-        )[self.obj]
+        return archive_set.checkViewPermission([self.obj], user.person)[
+            self.obj
+        ]
 
     def checkUnauthenticated(self):
         """Unauthenticated users can see the PPA if it's not private."""
@@ -303,7 +305,8 @@ class ViewArchive(AuthorizationBase):
 
 class SubscriberViewArchive(ViewArchive):
     """Restrict viewing of private archives."""
-    permission = 'launchpad.SubscriberView'
+
+    permission = "launchpad.SubscriberView"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
@@ -312,9 +315,13 @@ class SubscriberViewArchive(ViewArchive):
         if super().checkAuthenticated(user):
             return True
         filter = get_enabled_archive_filter(
-            user.person, include_subscribed=True)
-        return not IStore(self.obj).find(
-            Archive.id, And(Archive.id == self.obj.id, filter)).is_empty()
+            user.person, include_subscribed=True
+        )
+        return (
+            not IStore(self.obj)
+            .find(Archive.id, And(Archive.id == self.obj.id, filter))
+            .is_empty()
+        )
 
 
 class LimitedViewArchive(AuthorizationBase):
@@ -322,14 +329,15 @@ class LimitedViewArchive(AuthorizationBase):
 
     Just delegate to SubscriberView, since that includes View.
     """
-    permission = 'launchpad.LimitedView'
+
+    permission = "launchpad.LimitedView"
     usedfor = IArchive
 
     def checkUnauthenticated(self):
-        yield self.obj, 'launchpad.SubscriberView'
+        yield self.obj, "launchpad.SubscriberView"
 
     def checkAuthenticated(self, user):
-        yield self.obj, 'launchpad.SubscriberView'
+        yield self.obj, "launchpad.SubscriberView"
 
 
 class EditArchive(AuthorizationBase):
@@ -338,7 +346,8 @@ class EditArchive(AuthorizationBase):
     If the archive a primary archive then we check the user is in the
     distribution's owning team, otherwise we check the archive owner.
     """
-    permission = 'launchpad.Edit'
+
+    permission = "launchpad.Edit"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
@@ -354,13 +363,14 @@ class DeleteArchive(EditArchive):
     People who can edit an archive can delete it.  In addition, registry
     experts can delete non-main archives, as a spam control mechanism.
     """
-    permission = 'launchpad.Delete'
+
+    permission = "launchpad.Delete"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
-        return (
-                super().checkAuthenticated(user) or
-                (not self.obj.is_main and user.in_registry_experts))
+        return super().checkAuthenticated(user) or (
+            not self.obj.is_main and user.in_registry_experts
+        )
 
 
 class AppendArchive(AuthorizationBase):
@@ -372,7 +382,8 @@ class AppendArchive(AuthorizationBase):
 
     Appending to PRIMARY, PARTNER or COPY archives is restricted to owners.
     """
-    permission = 'launchpad.Append'
+
+    permission = "launchpad.Append"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
@@ -396,12 +407,17 @@ class ModerateArchive(AuthorizationBase):
     non-virtualized PPAs.  PPA/commercial admins can also change this since
     it affects the relative priority of (private) PPAs.
     """
-    permission = 'launchpad.Moderate'
+
+    permission = "launchpad.Moderate"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
-        return (user.in_buildd_admin or user.in_ppa_admin or
-                user.in_commercial_admin or user.in_admin)
+        return (
+            user.in_buildd_admin
+            or user.in_ppa_admin
+            or user.in_commercial_admin
+            or user.in_admin
+        )
 
 
 class AdminArchive(AuthorizationBase):
@@ -411,15 +427,16 @@ class AdminArchive(AuthorizationBase):
     settings, so they can only be changed by PPA/commercial admins, or by
     PPA self admins on PPAs that they can already edit.
     """
-    permission = 'launchpad.Admin'
+
+    permission = "launchpad.Admin"
     usedfor = IArchive
 
     def checkAuthenticated(self, user):
         if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
             return True
-        return (
-                user.in_ppa_self_admins
-                and EditArchive(self.obj).checkAuthenticated(user))
+        return user.in_ppa_self_admins and EditArchive(
+            self.obj
+        ).checkAuthenticated(user)
 
 
 class ViewArchiveAuthToken(AuthorizationBase):
@@ -428,6 +445,7 @@ class ViewArchiveAuthToken(AuthorizationBase):
     The user just needs to be mentioned in the token, have append privilege
     to the archive or be an admin.
     """
+
     permission = "launchpad.View"
     usedfor = IArchiveAuthToken
 
@@ -444,15 +462,15 @@ class EditArchiveAuthToken(DelegatedAuthorization):
     The user should have append privileges to the context archive, or be an
     admin.
     """
+
     permission = "launchpad.Edit"
     usedfor = IArchiveAuthToken
 
     def __init__(self, obj):
-        super().__init__(obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, "launchpad.Append")
 
     def checkAuthenticated(self, user):
-        return (user.in_admin or
-                super().checkAuthenticated(user))
+        return user.in_admin or super().checkAuthenticated(user)
 
 
 class ViewPersonalArchiveSubscription(DelegatedAuthorization):
@@ -461,11 +479,12 @@ class ViewPersonalArchiveSubscription(DelegatedAuthorization):
     The user should be the subscriber, have append privilege to the archive
     or be an admin.
     """
+
     permission = "launchpad.View"
     usedfor = IPersonalArchiveSubscription
 
     def __init__(self, obj):
-        super().__init__(obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, "launchpad.Append")
 
     def checkAuthenticated(self, user):
         if user.person == self.obj.subscriber or user.in_admin:
@@ -479,16 +498,19 @@ class ViewArchiveSubscriber(DelegatedAuthorization):
     The user should be the subscriber, have append privilege to the
     archive or be an admin.
     """
+
     permission = "launchpad.View"
     usedfor = IArchiveSubscriber
 
     def __init__(self, obj):
-        super().__init__(obj, obj, 'launchpad.Edit')
+        super().__init__(obj, obj, "launchpad.Edit")
 
     def checkAuthenticated(self, user):
-        return (user.inTeam(self.obj.subscriber) or
-                user.in_commercial_admin or
-                super().checkAuthenticated(user))
+        return (
+            user.inTeam(self.obj.subscriber)
+            or user.in_commercial_admin
+            or super().checkAuthenticated(user)
+        )
 
 
 class EditArchiveSubscriber(DelegatedAuthorization):
@@ -496,52 +518,61 @@ class EditArchiveSubscriber(DelegatedAuthorization):
 
     The user should have append privilege to the archive or be an admin.
     """
+
     permission = "launchpad.Edit"
     usedfor = IArchiveSubscriber
 
     def __init__(self, obj):
-        super().__init__(obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, "launchpad.Append")
 
     def checkAuthenticated(self, user):
-        return (user.in_admin or
-                user.in_commercial_admin or
-                super().checkAuthenticated(user))
+        return (
+            user.in_admin
+            or user.in_commercial_admin
+            or super().checkAuthenticated(user)
+        )
 
 
 class AdminArchiveSubscriberSet(AdminByCommercialTeamOrAdmins):
     """Only (commercial) admins can manipulate archive subscribers in bulk."""
+
     usedfor = IArchiveSubscriberSet
 
 
 class ViewSourcePackagePublishingHistory(AuthorizationBase):
     """Restrict viewing of source publications."""
+
     permission = "launchpad.View"
     usedfor = ISourcePackagePublishingHistory
 
     def checkUnauthenticated(self):
-        yield self.obj.archive, 'launchpad.SubscriberView'
+        yield self.obj.archive, "launchpad.SubscriberView"
 
     def checkAuthenticated(self, user):
-        yield self.obj.archive, 'launchpad.SubscriberView'
+        yield self.obj.archive, "launchpad.SubscriberView"
 
 
 class EditPublishing(DelegatedAuthorization):
     """Restrict editing of source and binary packages.."""
+
     permission = "launchpad.Edit"
     usedfor = IPublishingEdit
 
     def __init__(self, obj):
-        super().__init__(obj, obj.archive, 'launchpad.Append')
+        super().__init__(obj, obj.archive, "launchpad.Append")
 
 
 class ViewBinaryPackagePublishingHistory(ViewSourcePackagePublishingHistory):
     """Restrict viewing of binary publications."""
+
     usedfor = IBinaryPackagePublishingHistory
 
 
 class ViewBinaryPackageReleaseDownloadCount(
-    ViewSourcePackagePublishingHistory):
+    ViewSourcePackagePublishingHistory
+):
     """Restrict viewing of binary package download counts."""
+
     usedfor = IBinaryPackageReleaseDownloadCount
 
 
@@ -555,7 +586,8 @@ class ViewSourcePackageRelease(AuthorizationBase):
     automatically viewable even if the package is also published in
     a private archive.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = ISourcePackageRelease
 
     def checkAuthenticated(self, user):
@@ -580,11 +612,12 @@ class ViewSourcePackageRelease(AuthorizationBase):
 
 class ViewPackageset(AnonymousAuthorization):
     """Anyone can view an IPackageset."""
+
     usedfor = IPackageset
 
 
 class EditPackageset(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IPackageset
 
     def checkAuthenticated(self, user):
@@ -593,12 +626,12 @@ class EditPackageset(AuthorizationBase):
 
 
 class ModeratePackageset(AdminByBuilddAdmin):
-    permission = 'launchpad.Moderate'
+    permission = "launchpad.Moderate"
     usedfor = IPackageset
 
 
 class EditPackagesetSet(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = IPackagesetSet
 
     def checkAuthenticated(self, user):
@@ -607,25 +640,26 @@ class EditPackagesetSet(AuthorizationBase):
 
 
 class ViewLiveFS(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ILiveFS
 
     def __init__(self, obj):
-        super().__init__(obj, obj.owner, 'launchpad.View')
+        super().__init__(obj, obj.owner, "launchpad.View")
 
 
 class EditLiveFS(AuthorizationBase):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ILiveFS
 
     def checkAuthenticated(self, user):
         return (
-                user.isOwner(self.obj) or
-                user.in_commercial_admin or user.in_admin)
+            user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin
+        )
 
 
 class ModerateLiveFS(ModerateArchive):
     """Restrict changing the build score on live filesystems."""
+
     usedfor = ILiveFS
 
 
@@ -636,19 +670,20 @@ class AdminLiveFS(AuthorizationBase):
     settings, so they can only be changed by "PPA"/commercial admins, or by
     "PPA" self admins on live filesystems that they can already edit.
     """
-    permission = 'launchpad.Admin'
+
+    permission = "launchpad.Admin"
     usedfor = ILiveFS
 
     def checkAuthenticated(self, user):
         if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
             return True
-        return (
-                user.in_ppa_self_admins
-                and EditLiveFS(self.obj).checkAuthenticated(user))
+        return user.in_ppa_self_admins and EditLiveFS(
+            self.obj
+        ).checkAuthenticated(user)
 
 
 class ViewLiveFSBuild(DelegatedAuthorization):
-    permission = 'launchpad.View'
+    permission = "launchpad.View"
     usedfor = ILiveFSBuild
 
     def iter_objects(self):
@@ -657,7 +692,7 @@ class ViewLiveFSBuild(DelegatedAuthorization):
 
 
 class EditLiveFSBuild(AdminByBuilddAdmin):
-    permission = 'launchpad.Edit'
+    permission = "launchpad.Edit"
     usedfor = ILiveFSBuild
 
     def checkAuthenticated(self, user):

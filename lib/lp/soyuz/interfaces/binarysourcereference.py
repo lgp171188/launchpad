@@ -4,17 +4,14 @@
 """Interface for references from binary packages to source packages."""
 
 __all__ = [
-    'IBinarySourceReference',
-    'IBinarySourceReferenceSet',
-    'UnparsableBuiltUsing',
-    ]
+    "IBinarySourceReference",
+    "IBinarySourceReferenceSet",
+    "UnparsableBuiltUsing",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    )
+from zope.schema import Choice, Int
 
 from lp import _
 from lp.soyuz.enums import BinarySourceReferenceType
@@ -34,15 +31,21 @@ class IBinarySourceReference(Interface):
     binary_package_release = Reference(
         IBinaryPackageRelease,
         title=_("The referencing binary package release."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     source_package_release = Reference(
         ISourcePackageRelease,
         title=_("The referenced source package release."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     reference_type = Choice(
         title=_("The type of the reference."),
         vocabulary=BinarySourceReferenceType,
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
 
 class IBinarySourceReferenceSet(Interface):

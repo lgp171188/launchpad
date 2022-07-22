@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'SourcePackageRelease',
-    ]
+    "SourcePackageRelease",
+]
 
 
 import datetime
@@ -13,20 +13,15 @@ import operator
 import re
 
 import apt_pkg
+import pytz
+import six
 from debian.changelog import (
     Changelog,
     ChangelogCreateError,
     ChangelogParseError,
-    )
-import pytz
-import six
+)
 from storm.expr import Join
-from storm.locals import (
-    Desc,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import Desc, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -38,30 +33,20 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.sourcepackage import (
     SourcePackageType,
     SourcePackageUrgency,
-    )
+)
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    cursor,
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
 from lp.services.database.sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
     StringCol,
-    )
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+)
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES
 from lp.soyuz.interfaces.packagediff import PackageDiffAlreadyRequested
 from lp.soyuz.interfaces.packagediffjob import IPackageDiffJobSource
@@ -70,91 +55,112 @@ from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.files import SourcePackageReleaseFile
 from lp.soyuz.model.packagediff import PackageDiff
-from lp.soyuz.model.queue import (
-    PackageUpload,
-    PackageUploadSource,
-    )
+from lp.soyuz.model.queue import PackageUpload, PackageUploadSource
 
 
 @implementer(ISourcePackageRelease)
 class SourcePackageRelease(SQLBase):
-    _table = 'SourcePackageRelease'
+    _table = "SourcePackageRelease"
 
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    section = ForeignKey(foreignKey='Section', dbName='section')
+    section = ForeignKey(foreignKey="Section", dbName="section")
     creator = ForeignKey(
-        dbName='creator', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        dbName="creator",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    component = ForeignKey(foreignKey='Component', dbName='component')
-    sourcepackagename = ForeignKey(foreignKey='SourcePackageName',
-        dbName='sourcepackagename', notNull=True)
+    component = ForeignKey(foreignKey="Component", dbName="component")
+    sourcepackagename = ForeignKey(
+        foreignKey="SourcePackageName",
+        dbName="sourcepackagename",
+        notNull=True,
+    )
     maintainer = ForeignKey(
-        dbName='maintainer', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False)
+        dbName="maintainer",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=False,
+    )
     signing_key_owner_id = Int(name="signing_key_owner")
-    signing_key_owner = Reference(signing_key_owner_id, 'Person.id')
+    signing_key_owner = Reference(signing_key_owner_id, "Person.id")
     signing_key_fingerprint = Unicode()
     # DB constraint: non-nullable for SourcePackageType.DPKG.
     urgency = DBEnum(
-        name='urgency', enum=SourcePackageUrgency,
-        default=SourcePackageUrgency.LOW, allow_none=True)
-    dateuploaded = UtcDateTimeCol(dbName='dateuploaded', notNull=True,
-        default=UTC_NOW)
-    dsc = StringCol(dbName='dsc')
-    version = StringCol(dbName='version', notNull=True)
-    changelog = ForeignKey(foreignKey='LibraryFileAlias', dbName='changelog')
-    changelog_entry = StringCol(dbName='changelog_entry')
-    buildinfo = ForeignKey(foreignKey='LibraryFileAlias', dbName='buildinfo')
-    builddepends = StringCol(dbName='builddepends')
-    builddependsindep = StringCol(dbName='builddependsindep')
-    build_conflicts = StringCol(dbName='build_conflicts')
-    build_conflicts_indep = StringCol(dbName='build_conflicts_indep')
-    architecturehintlist = StringCol(dbName='architecturehintlist')
-    homepage = StringCol(dbName='homepage')
+        name="urgency",
+        enum=SourcePackageUrgency,
+        default=SourcePackageUrgency.LOW,
+        allow_none=True,
+    )
+    dateuploaded = UtcDateTimeCol(
+        dbName="dateuploaded", notNull=True, default=UTC_NOW
+    )
+    dsc = StringCol(dbName="dsc")
+    version = StringCol(dbName="version", notNull=True)
+    changelog = ForeignKey(foreignKey="LibraryFileAlias", dbName="changelog")
+    changelog_entry = StringCol(dbName="changelog_entry")
+    buildinfo = ForeignKey(foreignKey="LibraryFileAlias", dbName="buildinfo")
+    builddepends = StringCol(dbName="builddepends")
+    builddependsindep = StringCol(dbName="builddependsindep")
+    build_conflicts = StringCol(dbName="build_conflicts")
+    build_conflicts_indep = StringCol(dbName="build_conflicts_indep")
+    architecturehintlist = StringCol(dbName="architecturehintlist")
+    homepage = StringCol(dbName="homepage")
     format = DBEnum(
-        name='format', enum=SourcePackageType,
-        default=SourcePackageType.DPKG, allow_none=False)
-    upload_distroseries = ForeignKey(foreignKey='DistroSeries',
-        dbName='upload_distroseries')
+        name="format",
+        enum=SourcePackageType,
+        default=SourcePackageType.DPKG,
+        allow_none=False,
+    )
+    upload_distroseries = ForeignKey(
+        foreignKey="DistroSeries", dbName="upload_distroseries"
+    )
     upload_archive = ForeignKey(
-        foreignKey='Archive', dbName='upload_archive', notNull=True)
+        foreignKey="Archive", dbName="upload_archive", notNull=True
+    )
 
     # DB constraint: at most one of source_package_recipe_build and ci_build
     # is non-NULL.
     source_package_recipe_build_id = Int(
-        name='sourcepackage_recipe_build', allow_none=True)
+        name="sourcepackage_recipe_build", allow_none=True
+    )
     source_package_recipe_build = Reference(
-        source_package_recipe_build_id, 'SourcePackageRecipeBuild.id')
-    ci_build_id = Int(name='ci_build', allow_none=True)
-    ci_build = Reference(ci_build_id, 'CIBuild.id')
+        source_package_recipe_build_id, "SourcePackageRecipeBuild.id"
+    )
+    ci_build_id = Int(name="ci_build", allow_none=True)
+    ci_build = Reference(ci_build_id, "CIBuild.id")
 
     # XXX cprov 2006-09-26: Those fields are set as notNull and required in
     # ISourcePackageRelease, however they can't be not NULL in DB since old
     # records doesn't satisfy this condition. We will sort it before using
     # 'NoMoreAptFtparchive' implementation for PRIMARY archive. For PPA
     # (primary target) we don't need to populate old records.
-    dsc_maintainer_rfc822 = StringCol(dbName='dsc_maintainer_rfc822')
-    dsc_standards_version = StringCol(dbName='dsc_standards_version')
+    dsc_maintainer_rfc822 = StringCol(dbName="dsc_maintainer_rfc822")
+    dsc_standards_version = StringCol(dbName="dsc_standards_version")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    dsc_format = StringCol(dbName='dsc_format')
-    dsc_binaries = StringCol(dbName='dsc_binaries')
+    dsc_format = StringCol(dbName="dsc_format")
+    dsc_binaries = StringCol(dbName="dsc_binaries")
 
     # MultipleJoins
-    publishings = SQLMultipleJoin('SourcePackagePublishingHistory',
-        joinColumn='sourcepackagerelease', orderBy="-datecreated")
+    publishings = SQLMultipleJoin(
+        "SourcePackagePublishingHistory",
+        joinColumn="sourcepackagerelease",
+        orderBy="-datecreated",
+    )
 
-    _user_defined_fields = StringCol(dbName='user_defined_fields')
+    _user_defined_fields = StringCol(dbName="user_defined_fields")
 
     def __init__(self, *args, **kwargs):
-        if 'user_defined_fields' in kwargs:
-            kwargs['_user_defined_fields'] = json.dumps(
-                kwargs['user_defined_fields'])
-            del kwargs['user_defined_fields']
+        if "user_defined_fields" in kwargs:
+            kwargs["_user_defined_fields"] = json.dumps(
+                kwargs["user_defined_fields"]
+            )
+            del kwargs["user_defined_fields"]
         # copyright isn't on the Storm class, since we don't want it
         # loaded every time. Set it separately.
-        if 'copyright' in kwargs:
-            copyright = kwargs.pop('copyright')
+        if "copyright" in kwargs:
+            copyright = kwargs.pop("copyright")
         super().__init__(*args, **kwargs)
         # PostgresSQL text columns can't contain null
         # characters, so remove them as this is only
@@ -165,9 +171,12 @@ class SourcePackageRelease(SQLBase):
 
     def __repr__(self):
         """Returns an informative representation of a SourcePackageRelease."""
-        return '<{cls} {pkg_name} (id: {id}, version: {version})>'.format(
-            cls=self.__class__.__name__, pkg_name=self.name,
-            id=self.id, version=self.version)
+        return "<{cls} {pkg_name} (id: {id}, version: {version})>".format(
+            cls=self.__class__.__name__,
+            pkg_name=self.name,
+            id=self.id,
+            version=self.version,
+        )
 
     @property
     def copyright(self):
@@ -176,7 +185,8 @@ class SourcePackageRelease(SQLBase):
         store.flush()
         return store.execute(
             "SELECT copyright FROM sourcepackagerelease WHERE id=%s",
-            (self.id,)).get_one()[0]
+            (self.id,),
+        ).get_one()[0]
 
     @copyright.setter
     def copyright(self, content):
@@ -187,7 +197,8 @@ class SourcePackageRelease(SQLBase):
             content = six.ensure_text(content)
         store.execute(
             "UPDATE sourcepackagerelease SET copyright=%s WHERE id=%s",
-            (content, self.id))
+            (content, self.id),
+        )
 
     @property
     def user_defined_fields(self):
@@ -206,9 +217,11 @@ class SourcePackageRelease(SQLBase):
 
     @cachedproperty
     def package_diffs(self):
-        return list(Store.of(self).find(
-            PackageDiff, to_source=self).order_by(
-                Desc(PackageDiff.date_requested)))
+        return list(
+            Store.of(self)
+            .find(PackageDiff, to_source=self)
+            .order_by(Desc(PackageDiff.date_requested))
+        )
 
     @property
     def builds(self):
@@ -217,30 +230,38 @@ class SourcePackageRelease(SQLBase):
         # since Archive.copyPackage can copy packages across archives, a
         # build may well have a different archive to the corresponding
         # sourcepackagerelease.
-        return BinaryPackageBuild.select("""
+        return BinaryPackageBuild.select(
+            """
             source_package_release = %s AND
             archive.id = binarypackagebuild.archive AND
             archive.purpose IN %s
-            """ % sqlvalues(self.id, MAIN_ARCHIVE_PURPOSES),
-            orderBy=['-date_created', 'id'],
-            clauseTables=['Archive'])
+            """
+            % sqlvalues(self.id, MAIN_ARCHIVE_PURPOSES),
+            orderBy=["-date_created", "id"],
+            clauseTables=["Archive"],
+        )
 
     @property
     def age(self):
         """See ISourcePackageRelease."""
-        now = datetime.datetime.now(pytz.timezone('UTC'))
+        now = datetime.datetime.now(pytz.timezone("UTC"))
         return now - self.dateuploaded
 
     def failed_builds(self):
-        return [build for build in self._cached_builds
-                if build.buildstate == BuildStatus.FAILEDTOBUILD]
+        return [
+            build
+            for build in self._cached_builds
+            if build.buildstate == BuildStatus.FAILEDTOBUILD
+        ]
 
     @property
     def needs_building(self):
         for build in self._cached_builds:
-            if build.status in [BuildStatus.NEEDSBUILD,
-                                    BuildStatus.MANUALDEPWAIT,
-                                    BuildStatus.CHROOTWAIT]:
+            if build.status in [
+                BuildStatus.NEEDSBUILD,
+                BuildStatus.MANUALDEPWAIT,
+                BuildStatus.CHROOTWAIT,
+            ]:
                 return True
         return False
 
@@ -257,37 +278,46 @@ class SourcePackageRelease(SQLBase):
 
     @property
     def title(self):
-        return '%s - %s' % (self.sourcepackagename.name, self.version)
+        return "%s - %s" % (self.sourcepackagename.name, self.version)
 
     @cachedproperty
     def published_archives(self):
         archives = {
-            pub.archive for pub in self.publishings.prejoin(['archive'])}
-        return sorted(archives, key=operator.attrgetter('id'))
+            pub.archive for pub in self.publishings.prejoin(["archive"])
+        }
+        return sorted(archives, key=operator.attrgetter("id"))
 
     def addFile(self, file, filetype=None):
         """See ISourcePackageRelease."""
         if filetype is None:
             filetype = determine_source_file_type(file.filename)
         sprf = SourcePackageReleaseFile(
-            sourcepackagerelease=self, filetype=filetype, libraryfile=file)
+            sourcepackagerelease=self, filetype=filetype, libraryfile=file
+        )
         del get_property_cache(self).files
         return sprf
 
     @cachedproperty
     def files(self):
         """See `ISourcePackageRelease`."""
-        return list(Store.of(self).find(
-            SourcePackageReleaseFile, sourcepackagerelease=self).order_by(
-                SourcePackageReleaseFile.libraryfileID))
+        return list(
+            Store.of(self)
+            .find(SourcePackageReleaseFile, sourcepackagerelease=self)
+            .order_by(SourcePackageReleaseFile.libraryfileID)
+        )
 
     def getFileByName(self, filename):
         """See `ISourcePackageRelease`."""
-        sprf = Store.of(self).find(
-            SourcePackageReleaseFile,
-            SourcePackageReleaseFile.sourcepackagerelease == self.id,
-            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
-            LibraryFileAlias.filename == filename).one()
+        sprf = (
+            Store.of(self)
+            .find(
+                SourcePackageReleaseFile,
+                SourcePackageReleaseFile.sourcepackagerelease == self.id,
+                LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+                LibraryFileAlias.filename == filename,
+            )
+            .one()
+        )
         if sprf:
             return sprf.libraryfile
         else:
@@ -310,7 +340,9 @@ class SourcePackageRelease(SQLBase):
                     LibraryFileAlias.content = LibraryFileContent.id
             WHERE
                 SourcePackageRelease.id = %s
-            """ % sqlvalues(self)
+            """ % sqlvalues(
+            self
+        )
 
         cur = cursor()
         cur.execute(size_query)
@@ -332,7 +364,8 @@ class SourcePackageRelease(SQLBase):
                 self.upload_archive = new_archive
             else:
                 raise QueueInconsistentStateError(
-                    "New component '%s' requires a non-existent archive.")
+                    "New component '%s' requires a non-existent archive."
+                )
         if section is not None:
             self.section = section
         if urgency is not None:
@@ -357,18 +390,25 @@ class SourcePackageRelease(SQLBase):
         # extra query.
         origin = [
             PackageUploadSource,
-            Join(PackageUpload,
-                 PackageUploadSource.packageupload == PackageUpload.id),
-            Join(LibraryFileAlias,
-                 LibraryFileAlias.id == PackageUpload.changes_file_id),
-            Join(LibraryFileContent,
-                 LibraryFileContent.id == LibraryFileAlias.contentID),
-            ]
+            Join(
+                PackageUpload,
+                PackageUploadSource.packageupload == PackageUpload.id,
+            ),
+            Join(
+                LibraryFileAlias,
+                LibraryFileAlias.id == PackageUpload.changes_file_id,
+            ),
+            Join(
+                LibraryFileContent,
+                LibraryFileContent.id == LibraryFileAlias.contentID,
+            ),
+        ]
         results = store.using(*origin).find(
             (PackageUpload, LibraryFileAlias, LibraryFileContent),
             PackageUploadSource.sourcepackagerelease == self,
             PackageUpload.archive == self.upload_archive,
-            PackageUpload.distroseries == self.upload_distroseries)
+            PackageUpload.distroseries == self.upload_distroseries,
+        )
 
         # Return the unique `PackageUpload` record that corresponds to the
         # upload of this `SourcePackageRelease`, load the `LibraryFileAlias`
@@ -390,9 +430,10 @@ class SourcePackageRelease(SQLBase):
         """See ISourcePackageRelease"""
         # this regex is copied from apt-listchanges.py courtesy of MDZ
         new_stanza_line = re.compile(
-            r'^\S+ \((?P<version>.*)\) .*;.*urgency=(?P<urgency>\w+).*')
+            r"^\S+ \((?P<version>.*)\) .*;.*urgency=(?P<urgency>\w+).*"
+        )
         logfile = io.StringIO(self.changelog_entry)
-        change = ''
+        change = ""
         top_stanza = False
         for line in logfile.readlines():
             match = new_stanza_line.match(line)
@@ -406,9 +447,15 @@ class SourcePackageRelease(SQLBase):
 
     def getDiffTo(self, to_sourcepackagerelease):
         """See ISourcePackageRelease."""
-        return IStore(PackageDiff).find(
-            PackageDiff,
-            from_source=self, to_source=to_sourcepackagerelease).one()
+        return (
+            IStore(PackageDiff)
+            .find(
+                PackageDiff,
+                from_source=self,
+                to_source=to_sourcepackagerelease,
+            )
+            .one()
+        )
 
     def requestDiffTo(self, requester, to_sourcepackagerelease):
         """See ISourcePackageRelease."""
@@ -416,13 +463,16 @@ class SourcePackageRelease(SQLBase):
 
         if candidate is not None:
             raise PackageDiffAlreadyRequested(
-                "%s has already been requested" % candidate.title)
+                "%s has already been requested" % candidate.title
+            )
 
         Store.of(to_sourcepackagerelease).flush()
         del get_property_cache(to_sourcepackagerelease).package_diffs
         packagediff = PackageDiff(
-            from_source=self, to_source=to_sourcepackagerelease,
-            requester=requester)
+            from_source=self,
+            to_source=to_sourcepackagerelease,
+            requester=requester,
+        )
         IStore(packagediff).flush()
         getUtility(IPackageDiffJobSource).create(packagediff)
         return packagediff
@@ -442,8 +492,10 @@ class SourcePackageRelease(SQLBase):
             changelog_text = changelog.read().decode("UTF-8", "replace")
             for block in Changelog(changelog_text):
                 version = block._raw_version
-                if (since_version and
-                    apt_pkg.version_compare(version, since_version) <= 0):
+                if (
+                    since_version
+                    and apt_pkg.version_compare(version, since_version) <= 0
+                ):
                     break
                 # Poking in private attributes is not nice but again the
                 # API is terrible.  We want to ensure that the name/date

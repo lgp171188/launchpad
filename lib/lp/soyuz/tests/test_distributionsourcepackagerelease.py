@@ -4,21 +4,15 @@
 """Tests of DistributionSourcePackageRelease."""
 
 from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    LessThan,
-    )
+from testtools.matchers import Equals, LessThan
 
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
-    )
+)
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -32,29 +26,37 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
         super().setUp()
         self.sourcepackagerelease = self.factory.makeSourcePackageRelease()
         self.distroarchseries = self.factory.makeDistroArchSeries(
-            distroseries=self.sourcepackagerelease.upload_distroseries)
+            distroseries=self.sourcepackagerelease.upload_distroseries
+        )
         distribution = self.distroarchseries.distroseries.distribution
         self.dsp_release = DistributionSourcePackageRelease(
-            distribution, self.sourcepackagerelease)
+            distribution, self.sourcepackagerelease
+        )
 
     def makeBinaryPackageRelease(self, name=None):
         if name is None:
             name = self.factory.makeBinaryPackageName()
         bp_build = self.factory.makeBinaryPackageBuild(
             source_package_release=self.sourcepackagerelease,
-            distroarchseries=self.distroarchseries)
+            distroarchseries=self.distroarchseries,
+        )
         bp_release = self.factory.makeBinaryPackageRelease(
-            build=bp_build, binarypackagename=name, architecturespecific=True,
-            version=self.factory.getUniqueString())
+            build=bp_build,
+            binarypackagename=name,
+            architecturespecific=True,
+            version=self.factory.getUniqueString(),
+        )
         sourcepackagename = self.sourcepackagerelease.sourcepackagename
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=sourcepackagename,
             sourcepackagerelease=self.sourcepackagerelease,
             distroseries=self.distroarchseries.distroseries,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         self.factory.makeBinaryPackagePublishingHistory(
             binarypackagerelease=bp_release,
-            distroarchseries=self.distroarchseries)
+            distroarchseries=self.distroarchseries,
+        )
 
     def test_sample_binary_packages__no_releases(self):
         # If no binary releases exist,
@@ -66,36 +68,48 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
         # DistributionSourcePackageRelease.sample_binary_packages
         # returns it.
         self.makeBinaryPackageRelease(
-            self.factory.makeBinaryPackageName(name='binary-package'))
+            self.factory.makeBinaryPackageName(name="binary-package")
+        )
         self.assertEqual(
-            ['binary-package'],
-            [release.name
-             for release in self.dsp_release.sample_binary_packages])
+            ["binary-package"],
+            [
+                release.name
+                for release in self.dsp_release.sample_binary_packages
+            ],
+        )
 
     def test_sample_binary_packages__two_releases_one_binary_package(self):
         # If two binary releases with the same name exist,
         # DistributionSourcePackageRelease.sample_binary_packages
         # returns only one.
-        name = self.factory.makeBinaryPackageName(name='binary-package')
+        name = self.factory.makeBinaryPackageName(name="binary-package")
         self.makeBinaryPackageRelease(name)
         self.makeBinaryPackageRelease(name)
         self.assertEqual(
-            ['binary-package'],
-            [release.name
-             for release in self.dsp_release.sample_binary_packages])
+            ["binary-package"],
+            [
+                release.name
+                for release in self.dsp_release.sample_binary_packages
+            ],
+        )
 
     def test_sample_binary_packages__two_release_two_binary_packages(self):
         # If a two binary releases with different names exist,
         # DistributionSourcePackageRelease.sample_binary_packages
         # returns both.
         self.makeBinaryPackageRelease(
-            self.factory.makeBinaryPackageName(name='binary-package'))
+            self.factory.makeBinaryPackageName(name="binary-package")
+        )
         self.makeBinaryPackageRelease(
-            self.factory.makeBinaryPackageName(name='binary-package-2'))
+            self.factory.makeBinaryPackageName(name="binary-package-2")
+        )
         self.assertEqual(
-            ['binary-package', 'binary-package-2'],
-            [release.name
-             for release in self.dsp_release.sample_binary_packages])
+            ["binary-package", "binary-package-2"],
+            [
+                release.name
+                for release in self.dsp_release.sample_binary_packages
+            ],
+        )
 
     def updatePackageCache(self):
         # Create package cache records for new binary packages.
@@ -162,29 +176,36 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
         super().setUp()
         self.sourcepackagerelease = self.factory.makeSourcePackageRelease()
         self.distroarchseries = self.factory.makeDistroArchSeries(
-            distroseries=self.sourcepackagerelease.upload_distroseries)
+            distroseries=self.sourcepackagerelease.upload_distroseries
+        )
         self.dspr = DistributionSourcePackageRelease(
             self.distroarchseries.distroseries.distribution,
-            self.sourcepackagerelease)
+            self.sourcepackagerelease,
+        )
 
     def makeBinaryPackageRelease(self, name=None):
         if name is None:
             name = self.factory.makeBinaryPackageName()
         bp_build = self.factory.makeBinaryPackageBuild(
             source_package_release=self.sourcepackagerelease,
-            distroarchseries=self.distroarchseries)
+            distroarchseries=self.distroarchseries,
+        )
         bp_release = self.factory.makeBinaryPackageRelease(
-            build=bp_build, binarypackagename=name,
-            version=self.factory.getUniqueString())
+            build=bp_build,
+            binarypackagename=name,
+            version=self.factory.getUniqueString(),
+        )
         sourcepackagename = self.sourcepackagerelease.sourcepackagename
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=sourcepackagename,
             sourcepackagerelease=self.sourcepackagerelease,
             distroseries=self.distroarchseries.distroseries,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         self.factory.makeBinaryPackagePublishingHistory(
             binarypackagerelease=bp_release,
-            distroarchseries=self.distroarchseries)
+            distroarchseries=self.distroarchseries,
+        )
         return bp_release
 
     def test_binaries__no_releases(self):
@@ -193,7 +214,9 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
         self.assertEqual(
             0,
             self.dspr.getBinariesForSeries(
-                self.distroarchseries.distroseries).count())
+                self.distroarchseries.distroseries
+            ).count(),
+        )
 
     def test_binaries__one_release_for_source_package(self):
         # If a binary release exists, it is returned by
@@ -201,8 +224,12 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
         bp_release = self.makeBinaryPackageRelease()
         self.assertEqual(
             [bp_release],
-            list(self.dspr.getBinariesForSeries(
-                self.distroarchseries.distroseries)))
+            list(
+                self.dspr.getBinariesForSeries(
+                    self.distroarchseries.distroseries
+                )
+            ),
+        )
 
     def test_binaries__two_releases_for_source_package(self):
         # If two binary releases with the sam name exist, both
@@ -212,8 +239,12 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
         bp_release_two = self.makeBinaryPackageRelease(name)
         self.assertEqual(
             [bp_release_two, bp_release_one],
-            list(self.dspr.getBinariesForSeries(
-                self.distroarchseries.distroseries)))
+            list(
+                self.dspr.getBinariesForSeries(
+                    self.distroarchseries.distroseries
+                )
+            ),
+        )
 
     def test_prejoins(self):
         # The properties BinaryPackageRelease.build and
@@ -228,8 +259,9 @@ class TestGetBinariesForSeries(TestCaseWithFactory):
         # bp_release.binarypackagename will never cause an
         # SQL query to be issued.
         Store.of(self.distroarchseries).invalidate()
-        [bp_release] = list(self.dspr.getBinariesForSeries(
-            self.distroarchseries.distroseries))
+        [bp_release] = list(
+            self.dspr.getBinariesForSeries(self.distroarchseries.distroseries)
+        )
         with StormStatementRecorder() as recorder:
             bp_release.build
             bp_release.binarypackagename

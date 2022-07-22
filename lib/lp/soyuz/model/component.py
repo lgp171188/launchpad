@@ -1,32 +1,25 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    'Component',
-    'ComponentSelection',
-    'ComponentSet'
-    ]
+__all__ = ["Component", "ComponentSelection", "ComponentSet"]
 
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.soyuz.interfaces.component import (
     IComponent,
     IComponentSelection,
     IComponentSet,
-    )
+)
 
 
 @implementer(IComponent)
 class Component(SQLBase):
     """See IComponent."""
 
-    _defaultOrder = ['id']
+    _defaultOrder = ["id"]
 
     name = StringCol(notNull=True, alternateID=True)
 
@@ -38,12 +31,14 @@ class Component(SQLBase):
 class ComponentSelection(SQLBase):
     """See IComponentSelection."""
 
-    _defaultOrder = ['id']
+    _defaultOrder = ["id"]
 
-    distroseries = ForeignKey(dbName='distroseries',
-                               foreignKey='DistroSeries', notNull=True)
-    component = ForeignKey(dbName='component',
-                           foreignKey='Component', notNull=True)
+    distroseries = ForeignKey(
+        dbName="distroseries", foreignKey="DistroSeries", notNull=True
+    )
+    component = ForeignKey(
+        dbName="component", foreignKey="Component", notNull=True
+    )
 
 
 @implementer(IComponentSet)

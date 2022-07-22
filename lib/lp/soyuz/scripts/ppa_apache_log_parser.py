@@ -1,19 +1,18 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['DBUSER', 'get_ppa_file_key']
+__all__ = ["DBUSER", "get_ppa_file_key"]
 
 import os.path
 from urllib.parse import unquote
 
 from lp.archiveuploader.utils import re_isadeb
 
-
-DBUSER = 'ppa-apache-log-parser'
+DBUSER = "ppa-apache-log-parser"
 
 
 def get_ppa_file_key(path):
-    split_path = os.path.normpath(unquote(path)).split('/')
+    split_path = os.path.normpath(unquote(path)).split("/")
     if len(split_path) != 9:
         return None
 

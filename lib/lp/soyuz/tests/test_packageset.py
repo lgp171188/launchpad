@@ -16,18 +16,15 @@ from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackagesetSet,
     NoSuchPackageSet,
-    )
+)
 from lp.soyuz.model.packagesetgroup import PackagesetGroup
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
 class TestPackagesetSet(TestCaseWithFactory):
@@ -40,19 +37,24 @@ class TestPackagesetSet(TestCaseWithFactory):
 
     def getUbuntu(self):
         """Get the Ubuntu `Distribution`."""
-        return getUtility(IDistributionSet).getByName('ubuntu')
+        return getUtility(IDistributionSet).getByName("ubuntu")
 
     def makeExperimentalSeries(self):
         """Create an experimental Ubuntu `DistroSeries`."""
         return self.factory.makeDistroSeries(
-            distribution=self.getUbuntu(), name="experimental",
-            status=SeriesStatus.EXPERIMENTAL)
+            distribution=self.getUbuntu(),
+            name="experimental",
+            status=SeriesStatus.EXPERIMENTAL,
+        )
 
     def test_new(self):
         experimental_series = self.makeExperimentalSeries()
         packageset = self.ps_set.new(
-            self.factory.getUniqueUnicode(), self.factory.getUniqueUnicode(),
-            self.factory.makePerson(), distroseries=experimental_series)
+            self.factory.getUniqueUnicode(),
+            self.factory.getUniqueUnicode(),
+            self.factory.makePerson(),
+            distroseries=experimental_series,
+        )
         self.assertEqual(experimental_series, packageset.distroseries)
 
     def test_new_creates_new_packageset_group(self):
@@ -61,8 +63,11 @@ class TestPackagesetSet(TestCaseWithFactory):
         owner = self.factory.makePerson()
         experimental_series = self.makeExperimentalSeries()
         packageset = self.ps_set.new(
-            self.factory.getUniqueUnicode(), self.factory.getUniqueUnicode(),
-            owner, distroseries=experimental_series)
+            self.factory.getUniqueUnicode(),
+            self.factory.getUniqueUnicode(),
+            owner,
+            distroseries=experimental_series,
+        )
         self.assertEqual(owner, packageset.packagesetgroup.owner)
 
     def test_new_duplicate_name_for_same_distroseries(self):
@@ -72,9 +77,13 @@ class TestPackagesetSet(TestCaseWithFactory):
         name = self.factory.getUniqueUnicode()
         self.factory.makePackageset(name, distroseries=distroseries)
         self.assertRaises(
-            DuplicatePackagesetName, self.ps_set.new,
-            name, self.factory.getUniqueUnicode(), self.factory.makePerson(),
-            distroseries=distroseries)
+            DuplicatePackagesetName,
+            self.ps_set.new,
+            name,
+            self.factory.getUniqueUnicode(),
+            self.factory.makePerson(),
+            distroseries=distroseries,
+        )
 
     def test_new_duplicate_name_for_different_distroseries(self):
         # Creating a packageset with a duplicate name but for a different
@@ -82,8 +91,11 @@ class TestPackagesetSet(TestCaseWithFactory):
         name = self.factory.getUniqueUnicode()
         packageset1 = self.factory.makePackageset(name)
         packageset2 = self.ps_set.new(
-            name, self.factory.getUniqueUnicode(), self.factory.makePerson(),
-            distroseries=self.factory.makeDistroSeries())
+            name,
+            self.factory.getUniqueUnicode(),
+            self.factory.makePerson(),
+            distroseries=self.factory.makeDistroSeries(),
+        )
         self.assertEqual(packageset1.name, packageset2.name)
 
     def test_new_related_packageset(self):
@@ -93,8 +105,8 @@ class TestPackagesetSet(TestCaseWithFactory):
         name = self.factory.getUniqueUnicode()
         pset1 = self.factory.makePackageset(name)
         pset2 = self.factory.makePackageset(
-            name, distroseries=self.makeExperimentalSeries(),
-            related_set=pset1)
+            name, distroseries=self.makeExperimentalSeries(), related_set=pset1
+        )
         self.assertEqual(pset1.packagesetgroup, pset2.packagesetgroup)
 
     def test_get_by_name(self):
@@ -104,7 +116,8 @@ class TestPackagesetSet(TestCaseWithFactory):
         experimental_series = self.makeExperimentalSeries()
         pset1 = self.factory.makePackageset(name)
         pset2 = self.factory.makePackageset(
-            name, distroseries=experimental_series, related_set=pset1)
+            name, distroseries=experimental_series, related_set=pset1
+        )
         pset_found = self.ps_set.getByName(experimental_series, name)
         self.assertEqual(pset2, pset_found)
 
@@ -112,12 +125,13 @@ class TestPackagesetSet(TestCaseWithFactory):
         # IPackagesetSet.getBySeries() will return those package sets
         # associated with the given distroseries.
         package_sets_for_current_ubuntu = [
-            self.factory.makePackageset() for counter in range(2)]
-        self.factory.makePackageset(
-            distroseries=self.makeExperimentalSeries())
+            self.factory.makePackageset() for counter in range(2)
+        ]
+        self.factory.makePackageset(distroseries=self.makeExperimentalSeries())
         self.assertContentEqual(
             package_sets_for_current_ubuntu,
-            self.ps_set.getBySeries(self.getUbuntu().currentseries))
+            self.ps_set.getBySeries(self.getUbuntu().currentseries),
+        )
 
     def test_getForPackages_returns_packagesets(self):
         # getForPackages finds package sets for given source package
@@ -129,7 +143,8 @@ class TestPackagesetSet(TestCaseWithFactory):
         packageset.addSources([package.name])
         self.assertEqual(
             {package.id: [packageset]},
-            self.ps_set.getForPackages(series, [package.id]))
+            self.ps_set.getForPackages(series, [package.id]),
+        )
 
     def test_getForPackages_filters_by_distroseries(self):
         # getForPackages does not return packagesets for different
@@ -140,7 +155,8 @@ class TestPackagesetSet(TestCaseWithFactory):
         package = self.factory.makeSourcePackageName()
         packageset.addSources([package.name])
         self.assertEqual(
-            {}, self.ps_set.getForPackages(other_series, [package.id]))
+            {}, self.ps_set.getForPackages(other_series, [package.id])
+        )
 
     def test_getForPackages_filters_by_sourcepackagename(self):
         # getForPackages does not return packagesets for different
@@ -151,7 +167,8 @@ class TestPackagesetSet(TestCaseWithFactory):
         other_package = self.factory.makeSourcePackageName()
         packageset.addSources([package.name])
         self.assertEqual(
-            {}, self.ps_set.getForPackages(series, [other_package.id]))
+            {}, self.ps_set.getForPackages(series, [other_package.id])
+        )
 
     def test_getByOwner(self):
         # Sets can be looked up by owner
@@ -179,12 +196,13 @@ class TestPackagesetSet(TestCaseWithFactory):
         # Returns the list of sets including a source package
         parent, child, package = self.buildSimpleHierarchy()
         self.assertContentEqual(
-            self.ps_set.setsIncludingSource(package),
-            (parent, child))
+            self.ps_set.setsIncludingSource(package), (parent, child)
+        )
 
         # And can be limited to direct inclusion
         result = self.ps_set.setsIncludingSource(
-            package, direct_inclusion=True)
+            package, direct_inclusion=True
+        )
         self.assertEqual(list(result), [child])
 
     def test_sets_including_source_same_series(self):
@@ -192,30 +210,30 @@ class TestPackagesetSet(TestCaseWithFactory):
         # series can be specified
         series = self.factory.makeDistroSeries()
         parent, child, package = self.buildSimpleHierarchy(series)
-        result = self.ps_set.setsIncludingSource(
-            package, distroseries=series)
+        result = self.ps_set.setsIncludingSource(package, distroseries=series)
         self.assertContentEqual(result, [parent, child])
 
     def test_sets_including_source_different_series(self):
         # searches are limited to one series
         parent, child, package = self.buildSimpleHierarchy()
         series = self.factory.makeDistroSeries()
-        result = self.ps_set.setsIncludingSource(
-            package, distroseries=series)
+        result = self.ps_set.setsIncludingSource(package, distroseries=series)
         self.assertTrue(result.is_empty())
 
     def test_sets_including_source_by_name(self):
         # Returns the list osf sets including a source package
         parent, child, package = self.buildSimpleHierarchy()
         self.assertContentEqual(
-            self.ps_set.setsIncludingSource(package.name),
-            [parent, child])
+            self.ps_set.setsIncludingSource(package.name), [parent, child]
+        )
 
     def test_sets_including_source_unknown_name(self):
         # A non-existent package name will throw an exception
         self.assertRaises(
             NoSuchSourcePackageName,
-            self.ps_set.setsIncludingSource, 'this-will-fail')
+            self.ps_set.setsIncludingSource,
+            "this-will-fail",
+        )
 
 
 class TestPackagesetSetPermissions(TestCaseWithFactory):
@@ -229,16 +247,17 @@ class TestPackagesetSetPermissions(TestCaseWithFactory):
     def test_create_packageset_as_user(self):
         # Normal users can't create packagesets
         with person_logged_in(self.factory.makePerson()):
-            self.assertRaises(Unauthorized, getattr, self.ps_set, 'new')
+            self.assertRaises(Unauthorized, getattr, self.ps_set, "new")
 
     def test_create_packageset_as_techboard(self):
         # Ubuntu techboard members can create packagesets
-        with celebrity_logged_in('ubuntu_techboard'):
+        with celebrity_logged_in("ubuntu_techboard"):
             self.ps_set.new(
                 self.factory.getUniqueUnicode(),
                 self.factory.getUniqueUnicode(),
                 self.factory.makePerson(),
-                self.factory.makeDistroSeries())
+                self.factory.makeDistroSeries(),
+            )
 
     def test_create_packageset_as_admin(self):
         # Admins can create packagesets
@@ -247,7 +266,8 @@ class TestPackagesetSetPermissions(TestCaseWithFactory):
                 self.factory.getUniqueUnicode(),
                 self.factory.getUniqueUnicode(),
                 self.factory.makePerson(),
-                self.factory.makeDistroSeries())
+                self.factory.makeDistroSeries(),
+            )
 
 
 class TestPackageset(TestCaseWithFactory):
@@ -257,18 +277,22 @@ class TestPackageset(TestCaseWithFactory):
     def setUp(self):
         """Setup a distribution with multiple distroseries."""
         super().setUp()
-        self.distribution = getUtility(IDistributionSet).getByName(
-            'ubuntu')
+        self.distribution = getUtility(IDistributionSet).getByName("ubuntu")
         self.distroseries_current = self.distribution.currentseries
         self.distroseries_experimental = self.factory.makeDistroSeries(
-            distribution=self.distribution, name="experimental",
-            status=SeriesStatus.EXPERIMENTAL)
+            distribution=self.distribution,
+            name="experimental",
+            status=SeriesStatus.EXPERIMENTAL,
+        )
         self.distroseries_experimental2 = self.factory.makeDistroSeries(
-            distribution=self.distribution, name="experimental2",
-            status=SeriesStatus.EXPERIMENTAL)
+            distribution=self.distribution,
+            name="experimental2",
+            status=SeriesStatus.EXPERIMENTAL,
+        )
 
         self.person1 = self.factory.makePerson(
-            name='hacker', displayname='Happy Hacker')
+            name="hacker", displayname="Happy Hacker"
+        )
 
         self.packageset_set = getUtility(IPackagesetSet)
 
@@ -276,8 +300,11 @@ class TestPackageset(TestCaseWithFactory):
         # If the package set is the only one in the group the result set
         # returned by relatedSets() is empty.
         packageset = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            self.distroseries_current)
+            "kernel",
+            "Contains all OS kernel packages",
+            self.person1,
+            self.distroseries_current,
+        )
 
         self.assertEqual(packageset.relatedSets().count(), 0)
 
@@ -288,19 +315,29 @@ class TestPackageset(TestCaseWithFactory):
 
         # The original package set.
         pset1 = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            distroseries=self.distroseries_current)
+            "kernel",
+            "Contains all OS kernel packages",
+            self.person1,
+            distroseries=self.distroseries_current,
+        )
 
         # A related package set.
         pset2 = self.packageset_set.new(
-            'kernel', 'A related package set.', self.person1,
-            distroseries=self.distroseries_experimental, related_set=pset1)
+            "kernel",
+            "A related package set.",
+            self.person1,
+            distroseries=self.distroseries_experimental,
+            related_set=pset1,
+        )
         self.assertEqual(pset1.packagesetgroup, pset2.packagesetgroup)
 
         # An unrelated package set with the same name.
         pset3 = self.packageset_set.new(
-            'kernel', 'Unrelated package set.', self.person1,
-            distroseries=self.distroseries_experimental2)
+            "kernel",
+            "Unrelated package set.",
+            self.person1,
+            distroseries=self.distroseries_experimental2,
+        )
         self.assertNotEqual(pset2.packagesetgroup, pset3.packagesetgroup)
 
         # Make sure 'pset2' is related to 'pset1'.
@@ -320,12 +357,12 @@ class TestPackageset(TestCaseWithFactory):
     def test_destroy(self):
         series = self.factory.makeDistroSeries()
         pset = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            series)
+            "kernel", "Contains all OS kernel packages", self.person1, series
+        )
         pset.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName, series,
-            'kernel')
+            NoSuchPackageSet, self.packageset_set.getByName, series, "kernel"
+        )
 
         # Did we clean up the single packagesetgroup?
         store = IStore(PackagesetGroup)
@@ -334,58 +371,69 @@ class TestPackageset(TestCaseWithFactory):
 
     def test_destroy_with_ancestor(self):
         ancestor = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            distroseries=self.distroseries_current)
+            "kernel",
+            "Contains all OS kernel packages",
+            self.person1,
+            distroseries=self.distroseries_current,
+        )
         pset = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            distroseries=self.distroseries_experimental, related_set=ancestor)
+            "kernel",
+            "Contains all OS kernel packages",
+            self.person1,
+            distroseries=self.distroseries_experimental,
+            related_set=ancestor,
+        )
         pset.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName,
-            self.distroseries_experimental, 'kernel')
+            NoSuchPackageSet,
+            self.packageset_set.getByName,
+            self.distroseries_experimental,
+            "kernel",
+        )
 
     def test_destroy_with_packages(self):
         series = self.factory.makeDistroSeries()
         pset = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            series)
+            "kernel", "Contains all OS kernel packages", self.person1, series
+        )
         package = self.factory.makeSourcePackageName()
         pset.addSources([package.name])
 
         pset.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName, series,
-            'kernel')
+            NoSuchPackageSet, self.packageset_set.getByName, series, "kernel"
+        )
 
     def test_destroy_child(self):
         series = self.factory.makeDistroSeries()
         parent = self.packageset_set.new(
-            'core', 'Contains all the important packages', self.person1,
-            series)
+            "core", "Contains all the important packages", self.person1, series
+        )
         child = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            series)
+            "kernel", "Contains all OS kernel packages", self.person1, series
+        )
         parent.add((child,))
 
         child.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName, series,
-            'kernel')
+            NoSuchPackageSet, self.packageset_set.getByName, series, "kernel"
+        )
         self.assertTrue(parent.setsIncluded(direct_inclusion=True).is_empty())
 
     def test_destroy_parent(self):
         series = self.factory.makeDistroSeries()
         parent = self.packageset_set.new(
-            'core', 'Contains all the important packages', self.person1,
-            series)
+            "core", "Contains all the important packages", self.person1, series
+        )
         child = self.packageset_set.new(
-            'kernel', 'Contains all OS kernel packages', self.person1,
-            series)
+            "kernel", "Contains all OS kernel packages", self.person1, series
+        )
         parent.add((child,))
 
         parent.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName, series, 'core')
+            NoSuchPackageSet, self.packageset_set.getByName, series, "core"
+        )
         self.assertTrue(child.setsIncludedBy(direct_inclusion=True).is_empty())
 
     def test_destroy_intermidate(self):
@@ -400,8 +448,8 @@ class TestPackageset(TestCaseWithFactory):
 
         child.destroySelf()
         self.assertRaises(
-            NoSuchPackageSet, self.packageset_set.getByName, series,
-            child.name)
+            NoSuchPackageSet, self.packageset_set.getByName, series, child.name
+        )
         self.assertTrue(parent.setsIncluded().is_empty())
 
     def buildSet(self, size=5):
@@ -419,7 +467,8 @@ class TestPackageset(TestCaseWithFactory):
         # Lists the names of source packages included in a set
         packageset, packages = self.buildSet()
         self.assertContentEqual(
-            packageset.getSourcesIncluded(), [p.name for p in packages])
+            packageset.getSourcesIncluded(), [p.name for p in packages]
+        )
 
     def test_sources_included_indirect(self):
         # sourcesIncluded traverses the set tree, by default
@@ -427,11 +476,13 @@ class TestPackageset(TestCaseWithFactory):
         packageset2, packages2 = self.buildSet()
         packageset1.add((packageset2,))
         self.assertContentEqual(
-            packageset1.sourcesIncluded(), packages1 + packages2)
+            packageset1.sourcesIncluded(), packages1 + packages2
+        )
 
         # direct_inclusion disables traversal
         self.assertContentEqual(
-            packageset1.sourcesIncluded(direct_inclusion=True), packages1)
+            packageset1.sourcesIncluded(direct_inclusion=True), packages1
+        )
 
     def test_sources_multiply_included(self):
         # Source packages included in multiple packagesets in a tree are only
@@ -442,9 +493,11 @@ class TestPackageset(TestCaseWithFactory):
         packageset1.add((packageset2,))
         self.assertContentEqual(
             packageset1.sourcesIncluded(direct_inclusion=True),
-            packages1 + packages2[:2])
+            packages1 + packages2[:2],
+        )
         self.assertContentEqual(
-            packageset1.sourcesIncluded(), packages1 + packages2)
+            packageset1.sourcesIncluded(), packages1 + packages2
+        )
 
     def test_is_source_included(self):
         # Test if a source package name is included in a set
@@ -452,7 +505,8 @@ class TestPackageset(TestCaseWithFactory):
         for spn in packages:
             self.assertTrue(packageset.isSourceIncluded(spn))
         self.assertFalse(
-            packageset.isSourceIncluded(self.factory.makeSourcePackageName()))
+            packageset.isSourceIncluded(self.factory.makeSourcePackageName())
+        )
 
     def test_is_source_included_indirect(self):
         # isSourceIncluded traverses the set tree, by default
@@ -465,10 +519,12 @@ class TestPackageset(TestCaseWithFactory):
         # direct_inclusion disables traversal
         for spn in packages1:
             self.assertTrue(
-                packageset1.isSourceIncluded(spn, direct_inclusion=True))
+                packageset1.isSourceIncluded(spn, direct_inclusion=True)
+            )
         for spn in packages2:
             self.assertFalse(
-                packageset1.isSourceIncluded(spn, direct_inclusion=True))
+                packageset1.isSourceIncluded(spn, direct_inclusion=True)
+            )
 
     def test_add_already_included_sources(self):
         # Adding source packages to a package set repeatedly has no effect
@@ -498,7 +554,8 @@ class TestPackageset(TestCaseWithFactory):
         child.add((grandchild,))
         self.assertContentEqual(parent.setsIncluded(), [child, grandchild])
         self.assertEqual(
-            list(parent.setsIncluded(direct_inclusion=True)), [child])
+            list(parent.setsIncluded(direct_inclusion=True)), [child]
+        )
 
     def test_sets_included_multipath(self):
         # A set can be included by multiple paths, but will only appear once in
@@ -511,7 +568,8 @@ class TestPackageset(TestCaseWithFactory):
         child.add((grandchild,))
         child2.add((grandchild,))
         self.assertContentEqual(
-            parent.setsIncluded(), [child, child2, grandchild])
+            parent.setsIncluded(), [child, child2, grandchild]
+        )
 
     def test_sets_included_by(self):
         # Returns the set of sets including a set
@@ -522,7 +580,8 @@ class TestPackageset(TestCaseWithFactory):
         child.add((grandchild,))
         self.assertContentEqual(grandchild.setsIncludedBy(), [child, parent])
         self.assertEqual(
-            list(grandchild.setsIncludedBy(direct_inclusion=True)), [child])
+            list(grandchild.setsIncludedBy(direct_inclusion=True)), [child]
+        )
 
     def test_remove_subset(self):
         # A set can be removed from another set
@@ -554,7 +613,8 @@ class TestPackageset(TestCaseWithFactory):
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
         self.assertContentEqual(
-            pset1.sourcesSharedBy(pset2), pkgs1[:2] + pkgs2[:2])
+            pset1.sourcesSharedBy(pset2), pkgs1[:2] + pkgs2[:2]
+        )
 
     def test_get_sources_shared_by(self):
         # List the names of source packages shared between two packagesets
@@ -566,7 +626,8 @@ class TestPackageset(TestCaseWithFactory):
         pset2.add(pkgs1[:2])
         self.assertContentEqual(
             pset1.getSourcesSharedBy(pset2),
-            [p.name for p in (pkgs1[:2] + pkgs2[:2])])
+            [p.name for p in (pkgs1[:2] + pkgs2[:2])],
+        )
 
     def test_sources_shared_by_subset(self):
         # sourcesSharedBy takes subsets into account, unless told not to
@@ -577,7 +638,8 @@ class TestPackageset(TestCaseWithFactory):
         pset1.add((pset2,))
         self.assertContentEqual(pset1.sourcesSharedBy(pset2), pkgs2)
         self.assertTrue(
-            pset1.sourcesSharedBy(pset2, direct_inclusion=True).is_empty())
+            pset1.sourcesSharedBy(pset2, direct_inclusion=True).is_empty()
+        )
 
     def test_sources_shared_by_symmetric(self):
         # sourcesSharedBy is symmetric
@@ -589,11 +651,11 @@ class TestPackageset(TestCaseWithFactory):
         pset1.add(pkgs2[:2] + pkgs3)
         pset2.add(pkgs1[:2] + [pset3])
         self.assertContentEqual(
-            pset1.sourcesSharedBy(pset2),
-            pkgs1[:2] + pkgs2[:2] + pkgs3)
+            pset1.sourcesSharedBy(pset2), pkgs1[:2] + pkgs2[:2] + pkgs3
+        )
         self.assertContentEqual(
-            pset1.sourcesSharedBy(pset2),
-            pset2.sourcesSharedBy(pset1))
+            pset1.sourcesSharedBy(pset2), pset2.sourcesSharedBy(pset1)
+        )
 
     def test_sources_not_shared_by(self):
         # Lists source packages in the first set, but not the second
@@ -610,14 +672,14 @@ class TestPackageset(TestCaseWithFactory):
         pset1, pkgs1 = self.buildSet(5)
         pset2, pkgs2 = self.buildSet(5)
         self.assertContentEqual(
-            pset1.getSourcesNotSharedBy(pset2),
-            [p.name for p in pkgs1])
+            pset1.getSourcesNotSharedBy(pset2), [p.name for p in pkgs1]
+        )
 
         pset1.add(pkgs2[:2])
         pset2.add(pkgs1[:2])
         self.assertContentEqual(
-            pset1.getSourcesNotSharedBy(pset2),
-            [p.name for p in pkgs1[2:]])
+            pset1.getSourcesNotSharedBy(pset2), [p.name for p in pkgs1[2:]]
+        )
 
     def test_sources_not_shared_by_subset(self):
         # sourcesNotSharedBy takes subsets into account, unless told not to
@@ -628,19 +690,22 @@ class TestPackageset(TestCaseWithFactory):
         pset2.add((pset1,))
         self.assertTrue(pset1.sourcesNotSharedBy(pset2).is_empty())
         self.assertContentEqual(
-            pset1.sourcesNotSharedBy(pset2, direct_inclusion=True), pkgs1)
+            pset1.sourcesNotSharedBy(pset2, direct_inclusion=True), pkgs1
+        )
 
     def test_add_unknown_name(self):
         # Adding an unknown package name will raise an error
         pset = self.factory.makePackageset()
         self.assertRaises(
-            AssertionError, pset.add, [self.factory.getUniqueUnicode()])
+            AssertionError, pset.add, [self.factory.getUniqueUnicode()]
+        )
 
     def test_remove_unknown_name(self):
         # Removing an unknown package name will raise an error
         pset = self.factory.makePackageset()
         self.assertRaises(
-            AssertionError, pset.remove, [self.factory.getUniqueUnicode()])
+            AssertionError, pset.remove, [self.factory.getUniqueUnicode()]
+        )
 
     def test_add_cycle(self):
         # Adding cycles to the graph will raise an error
@@ -675,28 +740,36 @@ class TestPackagesetPermissions(TestCaseWithFactory):
         # Normal users may not modify packagesets
         with person_logged_in(self.person2):
             self.assertRaises(
-                Unauthorized, setattr, self.packageset, 'name', 'renamed')
+                Unauthorized, setattr, self.packageset, "name", "renamed"
+            )
             self.assertRaises(
-                Unauthorized, setattr, self.packageset, 'description',
-                'Re-described')
+                Unauthorized,
+                setattr,
+                self.packageset,
+                "description",
+                "Re-described",
+            )
             self.assertRaises(
-                Unauthorized, setattr, self.packageset, 'owner', self.person2)
+                Unauthorized, setattr, self.packageset, "owner", self.person2
+            )
+            self.assertRaises(Unauthorized, getattr, self.packageset, "add")
+            self.assertRaises(Unauthorized, getattr, self.packageset, "remove")
             self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'add')
+                Unauthorized, getattr, self.packageset, "addSources"
+            )
             self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'remove')
+                Unauthorized, getattr, self.packageset, "removeSources"
+            )
             self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'addSources')
+                Unauthorized, getattr, self.packageset, "addSubsets"
+            )
             self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'removeSources')
-            self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'addSubsets')
-            self.assertRaises(
-                Unauthorized, getattr, self.packageset, 'removeSubsets')
+                Unauthorized, getattr, self.packageset, "removeSubsets"
+            )
 
     def modifyPackageset(self):
-        self.packageset.name = 'renamed'
-        self.packageset.description = 'Re-described'
+        self.packageset.name = "renamed"
+        self.packageset.description = "Re-described"
         self.packageset.add((self.package,))
         self.packageset.remove((self.package,))
         self.packageset.addSources((self.package.name,))
@@ -734,12 +807,15 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         # A new archive will have no upload permissions
         self.assertTrue(
             self.ap_set.packagesetsForUploader(
-                self.archive, self.person).is_empty())
+                self.archive, self.person
+            ).is_empty()
+        )
 
     def test_new_packageset_uploader_simple(self):
         # newPackagesetUploader grants upload rights to a packagset
         permission = self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         self.assertEqual(permission.archive, self.archive)
         self.assertEqual(permission.person, self.person)
@@ -753,48 +829,71 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         # Creating the same permission repeatedly should re-use the existing
         # permission.
         permission1 = self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         permission2 = self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         self.assertEqual(permission1.id, permission2.id)
 
     def test_new_packageset_uploader_repeated_explicit(self):
         # Attempting to create an explicit permission when a non-explicit one
         # exists already will fail.
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
-        self.assertRaises(ValueError, self.ap_set.newPackagesetUploader,
-            self.archive, self.person, self.packageset, True)
+            self.archive, self.person, self.packageset
+        )
+        self.assertRaises(
+            ValueError,
+            self.ap_set.newPackagesetUploader,
+            self.archive,
+            self.person,
+            self.packageset,
+            True,
+        )
 
     def test_new_packageset_uploader_repeated_implicit(self):
         # Attempting to create an implicit permission when an explicit one
         # exists already will fail.
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset, True)
-        self.assertRaises(ValueError, self.ap_set.newPackagesetUploader,
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset, True
+        )
+        self.assertRaises(
+            ValueError,
+            self.ap_set.newPackagesetUploader,
+            self.archive,
+            self.person,
+            self.packageset,
+        )
 
     def test_new_packageset_uploader_teammember(self):
         # If a team member already has upload rights through a team, they can
         # be granted again, individually
         team = self.factory.makeTeam(self.person)
+        self.ap_set.newPackagesetUploader(self.archive, team, self.packageset)
         self.ap_set.newPackagesetUploader(
-            self.archive, team, self.packageset)
-        self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         # Unless the explicit flag conflicts
-        self.assertRaises(ValueError, self.ap_set.newPackagesetUploader,
-            self.archive, self.person, self.packageset, True)
+        self.assertRaises(
+            ValueError,
+            self.ap_set.newPackagesetUploader,
+            self.archive,
+            self.person,
+            self.packageset,
+            True,
+        )
 
     def test_packagesets_for_uploader(self):
         # packagesetsForUploader returns the packageset upload archive
         # permissions granted to a person
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         permission = self.ap_set.packagesetsForUploader(
-            self.archive, self.person).one()
+            self.archive, self.person
+        ).one()
         self.assertEqual(permission.archive, self.archive)
         self.assertEqual(permission.person, self.person)
         self.assertEqual(permission.packageset, self.packageset)
@@ -805,12 +904,14 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         # packagesetsForSourceUploader returns the packageset upload archive
         # permissions granted to a person affecting a given package
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
         self.packageset.add((package,))
 
         permission = self.ap_set.packagesetsForSourceUploader(
-            self.archive, package, self.person).one()
+            self.archive, package, self.person
+        ).one()
         self.assertEqual(permission.archive, self.archive)
         self.assertEqual(permission.person, self.person)
         self.assertEqual(permission.packageset, self.packageset)
@@ -820,28 +921,38 @@ class TestArchivePermissionSet(TestCaseWithFactory):
     def test_packagesets_for_source_uploader_by_name(self):
         # packagesetsForSourceUploader can take a package name
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
         self.packageset.add((package,))
 
-        self.assertFalse(self.ap_set.packagesetsForSourceUploader(
-            self.archive, package.name, self.person).is_empty())
+        self.assertFalse(
+            self.ap_set.packagesetsForSourceUploader(
+                self.archive, package.name, self.person
+            ).is_empty()
+        )
 
         # and will raise an exception if the name is invalid
         self.assertRaises(
-            NoSuchSourcePackageName, self.ap_set.packagesetsForSourceUploader,
-            self.archive, self.factory.getUniqueUnicode(), self.person)
+            NoSuchSourcePackageName,
+            self.ap_set.packagesetsForSourceUploader,
+            self.archive,
+            self.factory.getUniqueUnicode(),
+            self.person,
+        )
 
     def test_packagesets_for_source(self):
         # packagesetsForSource returns the packageset upload archive
         # permissions affecting a given package
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
         self.packageset.add((package,))
 
         permission = self.ap_set.packagesetsForSource(
-            self.archive, package).one()
+            self.archive, package
+        ).one()
         self.assertEqual(permission.archive, self.archive)
         self.assertEqual(permission.person, self.person)
         self.assertEqual(permission.packageset, self.packageset)
@@ -852,10 +963,12 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         # uploadersForPackageset returns the people with upload rigts for a
         # packageset in a given archive
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         permission = self.ap_set.uploadersForPackageset(
-            self.archive, self.packageset).one()
+            self.archive, self.packageset
+        ).one()
         self.assertEqual(permission.archive, self.archive)
         self.assertEqual(permission.person, self.person)
         self.assertEqual(permission.packageset, self.packageset)
@@ -868,16 +981,20 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         child = self.factory.makePackageset()
         self.packageset.add((child,))
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         # uploadersForPackageset will not list them:
         self.assertTrue(
-            self.ap_set.uploadersForPackageset(self.archive, child).is_empty())
+            self.ap_set.uploadersForPackageset(self.archive, child).is_empty()
+        )
 
         # unless told to:
         self.assertFalse(
             self.ap_set.uploadersForPackageset(
-                self.archive, child, direct_permissions=False).is_empty())
+                self.archive, child, direct_permissions=False
+            ).is_empty()
+        )
 
     def test_uploaders_for_packageset_explicit(self):
         # people can have both explicit and implicit upload rights to a
@@ -885,47 +1002,63 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         child = self.factory.makePackageset()
         self.packageset.add((child,))
         implicit_parent = self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         explicit_child = self.ap_set.newPackagesetUploader(
-            self.archive, self.person, child, True)
+            self.archive, self.person, child, True
+        )
 
         self.assertContentEqual(
             self.ap_set.uploadersForPackageset(
-                self.archive, child, direct_permissions=False),
-            (implicit_parent, explicit_child))
+                self.archive, child, direct_permissions=False
+            ),
+            (implicit_parent, explicit_child),
+        )
 
     def test_uploaders_for_packageset_subpackagesets_removed(self):
         # archive permissions cease to apply to removed child packagesets
         child = self.factory.makePackageset()
         self.packageset.add((child,))
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         self.assertFalse(
             self.ap_set.uploadersForPackageset(
-                self.archive, child, direct_permissions=False).is_empty())
+                self.archive, child, direct_permissions=False
+            ).is_empty()
+        )
 
         self.packageset.remove((child,))
         self.assertTrue(
             self.ap_set.uploadersForPackageset(
-                self.archive, child, direct_permissions=False).is_empty())
+                self.archive, child, direct_permissions=False
+            ).is_empty()
+        )
 
     def test_archive_permission_per_archive(self):
         # archive permissions are limited to an archive
         archive2 = self.factory.makeArchive()
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         self.assertTrue(
             self.ap_set.packagesetsForUploader(
-                archive2, self.person).is_empty())
+                archive2, self.person
+            ).is_empty()
+        )
 
     def test_check_authenticated_packageset(self):
         # checkAuthenticated is a generic way to look up archive permissions
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         permissions = self.ap_set.checkAuthenticated(
-            self.person, self.archive, ArchivePermissionType.UPLOAD,
-            self.packageset)
+            self.person,
+            self.archive,
+            ArchivePermissionType.UPLOAD,
+            self.packageset,
+        )
 
         self.assertEqual(permissions.count(), 1)
         permission = permissions[0]
@@ -941,71 +1074,106 @@ class TestArchivePermissionSet(TestCaseWithFactory):
         # permissinos granting them upload access to a specific source package
         # (excepting component permissions)
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
         self.packageset.add((package,))
 
-        self.assertTrue(self.ap_set.isSourceUploadAllowed(
-            self.archive, package, self.person, self.distroseries))
+        self.assertTrue(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package, self.person, self.distroseries
+            )
+        )
 
     def test_is_source_upload_allowed_denied(self):
         # isSourceUploadAllowed should return false when a user has no
         # packageset/PPU permission granting upload rights
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
 
-        self.assertFalse(self.ap_set.isSourceUploadAllowed(
-            self.archive, package, self.person, self.distroseries))
+        self.assertFalse(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package, self.person, self.distroseries
+            )
+        )
 
     def test_explicit_packageset_upload_rights(self):
         # If a package is covered by a packageset with explicit upload rights,
         # they disable all implicit upload rights to that package through other
         # packagesets.
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         package = self.factory.makeSourcePackageName()
         package2 = self.factory.makeSourcePackageName()
         self.packageset.add((package, package2))
 
-        self.assertTrue(self.ap_set.isSourceUploadAllowed(
-            self.archive, package, self.person, self.distroseries))
-        self.assertTrue(self.ap_set.isSourceUploadAllowed(
-            self.archive, package2, self.person, self.distroseries))
+        self.assertTrue(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package, self.person, self.distroseries
+            )
+        )
+        self.assertTrue(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package2, self.person, self.distroseries
+            )
+        )
 
         # Create a packageset with explicit rights to package
         special_person = self.factory.makePerson()
         special_packageset = self.factory.makePackageset()
         special_packageset.add((package,))
         self.ap_set.newPackagesetUploader(
-            self.archive, special_person, special_packageset, True)
+            self.archive, special_person, special_packageset, True
+        )
 
-        self.assertFalse(self.ap_set.isSourceUploadAllowed(
-            self.archive, package, self.person, self.distroseries))
-        self.assertTrue(self.ap_set.isSourceUploadAllowed(
-            self.archive, package2, self.person, self.distroseries))
-        self.assertTrue(self.ap_set.isSourceUploadAllowed(
-            self.archive, package, special_person, self.distroseries))
-        self.assertFalse(self.ap_set.isSourceUploadAllowed(
-            self.archive, package2, special_person, self.distroseries))
+        self.assertFalse(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package, self.person, self.distroseries
+            )
+        )
+        self.assertTrue(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package2, self.person, self.distroseries
+            )
+        )
+        self.assertTrue(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package, special_person, self.distroseries
+            )
+        )
+        self.assertFalse(
+            self.ap_set.isSourceUploadAllowed(
+                self.archive, package2, special_person, self.distroseries
+            )
+        )
 
     def test_delete_packageset_uploader(self):
         # deletePackagesetUploader removes upload rights
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         self.assertFalse(
             self.ap_set.packagesetsForUploader(
-                self.archive, self.person).is_empty())
+                self.archive, self.person
+            ).is_empty()
+        )
 
         self.ap_set.deletePackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
         self.assertTrue(
             self.ap_set.packagesetsForUploader(
-                self.archive, self.person).is_empty())
+                self.archive, self.person
+            ).is_empty()
+        )
 
     def test_delete_packageset(self):
         # Packagesets can't be deleted as long as they have uploaders
         self.ap_set.newPackagesetUploader(
-            self.archive, self.person, self.packageset)
+            self.archive, self.person, self.packageset
+        )
 
         self.assertRaises(Exception, self.packageset.destroySelf)

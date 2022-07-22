@@ -8,8 +8,8 @@ series based on the latest uploads from its preceding series.
 """
 
 __all__ = [
-    'CustomUploadsCopier',
-    ]
+    "CustomUploadsCopier",
+]
 
 from operator import attrgetter
 
@@ -17,10 +17,7 @@ from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.debian_installer import DebianInstallerUpload
 from lp.archivepublisher.dist_upgrader import DistUpgraderUpload
 from lp.archivepublisher.rosetta_translations import RosettaTranslationsUpload
-from lp.archivepublisher.signing import (
-    SigningUpload,
-    UefiUpload,
-    )
+from lp.archivepublisher.signing import SigningUpload, UefiUpload
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.bulk import load_referencing
 from lp.soyuz.enums import PackageUploadCustomFormat
@@ -40,15 +37,19 @@ class CustomUploadsCopier:
         PackageUploadCustomFormat.DEBIAN_INSTALLER: DebianInstallerUpload,
         PackageUploadCustomFormat.DIST_UPGRADER: DistUpgraderUpload,
         PackageUploadCustomFormat.DDTP_TARBALL: DdtpTarballUpload,
-        PackageUploadCustomFormat.ROSETTA_TRANSLATIONS:
-            RosettaTranslationsUpload,
+        PackageUploadCustomFormat.ROSETTA_TRANSLATIONS: (
+            RosettaTranslationsUpload
+        ),
         PackageUploadCustomFormat.UEFI: UefiUpload,
         PackageUploadCustomFormat.SIGNING: SigningUpload,
-        }
+    }
 
-    def __init__(self, target_series,
-                 target_pocket=PackagePublishingPocket.RELEASE,
-                 target_archive=None):
+    def __init__(
+        self,
+        target_series,
+        target_pocket=PackagePublishingPocket.RELEASE,
+        target_archive=None,
+    ):
         self.target_series = target_series
         self.target_pocket = target_pocket
         self.target_archive = target_archive
@@ -61,26 +62,34 @@ class CustomUploadsCopier:
         """Can `custom` be automatically approved from `source_archive`?"""
         # XXX cjwatson 2012-08-16: This more or less duplicates
         # BuildDaemonUploadPolicy.autoApprove/CustomUploadFile.autoApprove.
-        if (custom.packageupload.archive.is_ppa or
-            custom.packageupload.archive == source_archive):
+        if (
+            custom.packageupload.archive.is_ppa
+            or custom.packageupload.archive == source_archive
+        ):
             return True
         # Signing uploads will be signed, and must therefore be approved
         # by a human.
-        if custom.customformat in (PackageUploadCustomFormat.UEFI,
-                                   PackageUploadCustomFormat.SIGNING):
+        if custom.customformat in (
+            PackageUploadCustomFormat.UEFI,
+            PackageUploadCustomFormat.SIGNING,
+        ):
             return False
         return True
 
-    def getCandidateUploads(self, source_series,
-                            source_pocket=PackagePublishingPocket.RELEASE):
+    def getCandidateUploads(
+        self, source_series, source_pocket=PackagePublishingPocket.RELEASE
+    ):
         """Find custom uploads that may need copying."""
         uploads = source_series.getPackageUploads(
-            pocket=source_pocket, custom_type=list(self.copyable_types))
-        load_referencing(PackageUploadCustom, uploads, ['packageupload_id'])
+            pocket=source_pocket, custom_type=list(self.copyable_types)
+        )
+        load_referencing(PackageUploadCustom, uploads, ["packageupload_id"])
         customs = sum((list(upload.customfiles) for upload in uploads), [])
         return sorted(
             filter(self.isCopyable, customs),
-            key=attrgetter('id'), reverse=True)
+            key=attrgetter("id"),
+            reverse=True,
+        )
 
     def extractSeriesKey(self, custom_type, filename):
         """Get the relevant fields out of `filename` for `custom_type`."""
@@ -91,14 +100,16 @@ class CustomUploadsCopier:
         custom_format = upload.customformat
         series_key = self.extractSeriesKey(
             self.copyable_types[custom_format],
-            upload.libraryfilealias.filename)
+            upload.libraryfilealias.filename,
+        )
         if series_key is None:
             return None
         else:
             return (custom_format, series_key)
 
-    def getLatestUploads(self, source_series,
-                         source_pocket=PackagePublishingPocket.RELEASE):
+    def getLatestUploads(
+        self, source_series, source_pocket=PackagePublishingPocket.RELEASE
+    ):
         """Find the latest uploads.
 
         :param source_series: The `DistroSeries` whose uploads to get.
@@ -107,7 +118,8 @@ class CustomUploadsCopier:
             returned by `getKey`.
         """
         candidate_uploads = self.getCandidateUploads(
-            source_series, source_pocket=source_pocket)
+            source_series, source_pocket=source_pocket
+        )
         latest_uploads = {}
         for upload in candidate_uploads:
             key = self.getKey(upload)
@@ -135,7 +147,8 @@ class CustomUploadsCopier:
             return True
         return concrete.arch in [
             das.architecturetag
-            for das in self.target_series.enabled_architectures]
+            for das in self.target_series.enabled_architectures
+        ]
 
     def copyUpload(self, original_upload):
         """Copy `original_upload` into `self.target_series`."""
@@ -145,24 +158,31 @@ class CustomUploadsCopier:
         else:
             target_archive = self.target_archive
         package_upload = self.target_series.createQueueEntry(
-            self.target_pocket, target_archive,
-            changes_file_alias=original_upload.packageupload.changesfile)
+            self.target_pocket,
+            target_archive,
+            changes_file_alias=original_upload.packageupload.changesfile,
+        )
         custom = package_upload.addCustom(
-            original_upload.libraryfilealias, original_upload.customformat)
+            original_upload.libraryfilealias, original_upload.customformat
+        )
         if self.autoApprove(custom, original_upload.packageupload.archive):
             package_upload.setAccepted()
         else:
             package_upload.setUnapproved()
         return custom
 
-    def copy(self, source_series,
-             source_pocket=PackagePublishingPocket.RELEASE):
+    def copy(
+        self, source_series, source_pocket=PackagePublishingPocket.RELEASE
+    ):
         """Copy uploads from `source_series`-`source_pocket`."""
         target_uploads = self.getLatestUploads(
-            self.target_series, source_pocket=self.target_pocket)
+            self.target_series, source_pocket=self.target_pocket
+        )
         source_uploads = self.getLatestUploads(
-            source_series, source_pocket=source_pocket)
+            source_series, source_pocket=source_pocket
+        )
         for upload in source_uploads.values():
-            if (not self.isObsolete(upload, target_uploads) and
-                self.isForValidDAS(upload)):
+            if not self.isObsolete(
+                upload, target_uploads
+            ) and self.isForValidDAS(upload):
                 self.copyUpload(upload)

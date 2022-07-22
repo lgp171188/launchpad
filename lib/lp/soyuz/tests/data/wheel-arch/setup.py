@@ -1,8 +1,4 @@
-from setuptools import (
-    Extension,
-    setup,
-    )
-
+from setuptools import Extension, setup
 
 setup(
     name="wheel-arch",
@@ -11,4 +7,4 @@ setup(
     long_description="Example long description",
     url="http://example.com/",
     ext_modules=[Extension("_test", sources=["test.c"])],
-    )
+)

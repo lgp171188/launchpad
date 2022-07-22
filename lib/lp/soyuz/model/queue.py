@@ -2,14 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'PackageUpload',
-    'PackageUploadBuild',
-    'PackageUploadCustom',
-    'PackageUploadLog',
-    'PackageUploadQueue',
-    'PackageUploadSet',
-    'PackageUploadSource',
-    ]
+    "PackageUpload",
+    "PackageUploadBuild",
+    "PackageUploadCustom",
+    "PackageUploadLog",
+    "PackageUploadQueue",
+    "PackageUploadSet",
+    "PackageUploadSource",
+]
 
 from collections import defaultdict
 from itertools import chain
@@ -18,6 +18,7 @@ from operator import attrgetter
 import pytz
 from storm.expr import Cast
 from storm.locals import (
+    SQL,
     And,
     Desc,
     Int,
@@ -25,14 +26,10 @@ from storm.locals import (
     List,
     Reference,
     ReferenceSet,
-    SQL,
     Unicode,
-    )
+)
 from storm.properties import DateTime
-from storm.store import (
-    EmptyResultSet,
-    Store,
-    )
+from storm.store import EmptyResultSet, Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -42,54 +39,30 @@ from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.bulk import load_referencing, load_related
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import (
-    Array,
-    ArrayContains,
-    )
+from lp.services.database.stormexpr import Array, ArrayContains
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.mail.signedmessage import strip_pgp_signature
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
-from lp.soyuz.enums import (
-    PackageUploadCustomFormat,
-    PackageUploadStatus,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.soyuz.enums import PackageUploadCustomFormat, PackageUploadStatus
 from lp.soyuz.interfaces.archive import (
     ComponentNotFound,
     PriorityNotFound,
     SectionNotFound,
-    )
+)
 from lp.soyuz.interfaces.archivejob import IPackageUploadNotificationJobSource
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJobSource
 from lp.soyuz.interfaces.packagediff import IPackageDiffSet
-from lp.soyuz.interfaces.publishing import (
-    IPublishingSet,
-    name_priority_map,
-    )
+from lp.soyuz.interfaces.publishing import IPublishingSet, name_priority_map
 from lp.soyuz.interfaces.queue import (
     CustomUploadError,
     ICustomUploadHandler,
@@ -106,7 +79,7 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     QueueSourceAcceptError,
     QueueStateWriteProtectedError,
-    )
+)
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.mail.packageupload import PackageUploadMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -135,13 +108,13 @@ def validate_status(self, attr, value):
         return value.value
 
     raise QueueStateWriteProtectedError(
-        'Directly write on queue status is forbidden use the '
-        'provided methods to set it.')
+        "Directly write on queue status is forbidden use the "
+        "provided methods to set it."
+    )
 
 
 @implementer(IPackageUploadQueue)
 class PackageUploadQueue:
-
     def __init__(self, distroseries, status):
         self.distroseries = distroseries
         self.status = status
@@ -157,9 +130,12 @@ class PackageUpload(StormBase):
     id = Int(primary=True)
 
     status = DBEnum(
-        name='status', allow_none=False,
-        default=PackageUploadStatus.NEW, enum=PackageUploadStatus,
-        validator=validate_status)
+        name="status",
+        allow_none=False,
+        default=PackageUploadStatus.NEW,
+        enum=PackageUploadStatus,
+        validator=validate_status,
+    )
 
     date_created = DateTime(allow_none=True, default=UTC_NOW, tzinfo=pytz.UTC)
 
@@ -167,20 +143,21 @@ class PackageUpload(StormBase):
     distroseries = Reference(distroseries_id, "DistroSeries.id")
 
     pocket = DBEnum(
-        name='pocket', allow_none=False, enum=PackagePublishingPocket)
+        name="pocket", allow_none=False, enum=PackagePublishingPocket
+    )
 
-    changes_file_id = Int(name='changesfile')
-    changesfile = Reference(changes_file_id, 'LibraryFileAlias.id')
+    changes_file_id = Int(name="changesfile")
+    changesfile = Reference(changes_file_id, "LibraryFileAlias.id")
 
     archive_id = Int(name="archive", allow_none=False)
     archive = Reference(archive_id, "Archive.id")
 
     signing_key_owner_id = Int(name="signing_key_owner")
-    signing_key_owner = Reference(signing_key_owner_id, 'Person.id')
+    signing_key_owner = Reference(signing_key_owner_id, "Person.id")
     signing_key_fingerprint = Unicode()
 
-    package_copy_job_id = Int(name='package_copy_job', allow_none=True)
-    package_copy_job = Reference(package_copy_job_id, 'PackageCopyJob.id')
+    package_copy_job_id = Int(name="package_copy_job", allow_none=True)
+    package_copy_job = Reference(package_copy_job_id, "PackageCopyJob.id")
 
     searchable_names = Unicode(name="searchable_names", default="")
     searchable_versions = List(type=Unicode(), default_factory=list)
@@ -195,10 +172,17 @@ class PackageUpload(StormBase):
     # Does not include source builds.
     _builds = ReferenceSet("id", "PackageUploadBuild.packageupload_id")
 
-    def __init__(self, distroseries, pocket, archive,
-                 status=PackageUploadStatus.NEW, changesfile=None,
-                 signing_key_owner=None, signing_key_fingerprint=None,
-                 package_copy_job=None):
+    def __init__(
+        self,
+        distroseries,
+        pocket,
+        archive,
+        status=PackageUploadStatus.NEW,
+        changesfile=None,
+        signing_key_owner=None,
+        signing_key_fingerprint=None,
+        package_copy_job=None,
+    ):
         super().__init__()
         self.distroseries = distroseries
         self.pocket = pocket
@@ -217,19 +201,21 @@ class PackageUpload(StormBase):
     @cachedproperty
     def logs(self):
         logs = Store.of(self).find(
-            PackageUploadLog,
-            PackageUploadLog.package_upload == self)
-        return list(logs.order_by(Desc('date_created')))
+            PackageUploadLog, PackageUploadLog.package_upload == self
+        )
+        return list(logs.order_by(Desc("date_created")))
 
     def _addLog(self, reviewer, new_status, comment=None):
         del get_property_cache(self).logs  # clean cache
-        return Store.of(self).add(PackageUploadLog(
-            package_upload=self,
-            reviewer=reviewer,
-            old_status=self.status,
-            new_status=new_status,
-            comment=comment
-        ))
+        return Store.of(self).add(
+            PackageUploadLog(
+                package_upload=self,
+                reviewer=reviewer,
+                old_status=self.status,
+                new_status=new_status,
+                comment=comment,
+            )
+        )
 
     @cachedproperty
     def sources(self):
@@ -240,7 +226,8 @@ class PackageUpload(StormBase):
         if self.contains_source:
             return [
                 ProxiedLibraryFileAlias(file.libraryfile, self).http_url
-                for file in self.sourcepackagerelease.files]
+                for file in self.sourcepackagerelease.files
+            ]
         else:
             return []
 
@@ -254,7 +241,8 @@ class PackageUpload(StormBase):
             ProxiedLibraryFileAlias(file.libraryfile, build.build).http_url
             for build in self.builds
             for bpr in build.build.binarypackages
-            for file in bpr.files]
+            for file in bpr.files
+        ]
 
     @property
     def changes_file_url(self):
@@ -264,18 +252,24 @@ class PackageUpload(StormBase):
             return None
 
     def getSourceBuild(self):
-        #avoid circular import
+        # avoid circular import
         from lp.code.model.sourcepackagerecipebuild import (
             SourcePackageRecipeBuild,
-            )
+        )
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-        return Store.of(self).find(
-            SourcePackageRecipeBuild,
-            SourcePackageRecipeBuild.id ==
-                SourcePackageRelease.source_package_recipe_build_id,
-            PackageUploadSource.sourcepackagerelease ==
-                SourcePackageRelease.id,
-            PackageUploadSource.packageupload == self.id).one()
+
+        return (
+            Store.of(self)
+            .find(
+                SourcePackageRecipeBuild,
+                SourcePackageRecipeBuild.id
+                == SourcePackageRelease.source_package_recipe_build_id,
+                PackageUploadSource.sourcepackagerelease
+                == SourcePackageRelease.id,
+                PackageUploadSource.packageupload == self.id,
+            )
+            .one()
+        )
 
     # Also the custom files associated with the build.
     _customfiles = ReferenceSet("id", "PackageUploadCustom.packageupload_id")
@@ -289,7 +283,8 @@ class PackageUpload(StormBase):
         """See `IPackageUpload`."""
         return tuple(
             ProxiedLibraryFileAlias(file.libraryfilealias, self).http_url
-            for file in self.customfiles)
+            for file in self.customfiles
+        )
 
     def customFileUrls(self):
         """See `IPackageUpload`."""
@@ -297,20 +292,24 @@ class PackageUpload(StormBase):
 
     def getBinaryProperties(self):
         """See `IPackageUpload`."""
-        properties = list(chain.from_iterable(
-            build.binaries for build in self.builds))
+        properties = list(
+            chain.from_iterable(build.binaries for build in self.builds)
+        )
         for file in self.customfiles:
-            properties.append({
-                "name": file.libraryfilealias.filename,
-                "customformat": file.customformat.title,
-                })
+            properties.append(
+                {
+                    "name": file.libraryfilealias.filename,
+                    "customformat": file.customformat.title,
+                }
+            )
         return properties
 
     @cachedproperty
     def signing_key(self):
         if self.signing_key_fingerprint is not None:
             return getUtility(IGPGKeySet).getByFingerprint(
-                self.signing_key_fingerprint)
+                self.signing_key_fingerprint
+            )
 
     @property
     def copy_source_archive(self):
@@ -322,8 +321,10 @@ class PackageUpload(StormBase):
 
     def getFileByName(self, filename):
         """See `IPackageUpload`."""
-        if (self.changesfile is not None and
-            self.changesfile.filename == filename):
+        if (
+            self.changesfile is not None
+            and self.changesfile.filename == filename
+        ):
             return self.changesfile
 
         if self.sourcepackagerelease is not None:
@@ -338,11 +339,16 @@ class PackageUpload(StormBase):
             except NotFoundError:
                 pass
 
-        custom = Store.of(self).find(
-            PackageUploadCustom,
-            PackageUploadCustom.packageupload == self.id,
-            PackageUploadCustom.libraryfilealias == LibraryFileAlias.id,
-            LibraryFileAlias.filename == filename).one()
+        custom = (
+            Store.of(self)
+            .find(
+                PackageUploadCustom,
+                PackageUploadCustom.packageupload == self.id,
+                PackageUploadCustom.libraryfilealias == LibraryFileAlias.id,
+                LibraryFileAlias.filename == filename,
+            )
+            .one()
+        )
         if custom is not None:
             return custom.libraryfilealias
 
@@ -352,7 +358,8 @@ class PackageUpload(StormBase):
         """See `IPackageUpload`."""
         if self.status != PackageUploadStatus.NEW:
             raise QueueInconsistentStateError(
-                'Can not set modified queue items to UNAPPROVED.')
+                "Can not set modified queue items to UNAPPROVED."
+            )
         self.status = PassthroughStatusValue(PackageUploadStatus.UNAPPROVED)
 
     def setAccepted(self):
@@ -361,14 +368,18 @@ class PackageUpload(StormBase):
         # NascentUpload/UploadPolicies checks for 'ubuntu' main distro.
         assert self.archive.canModifySuite(self.distroseries, self.pocket), (
             "Not permitted acceptance in the %s pocket in a "
-            "series in the '%s' state." % (
-            self.pocket.name, self.distroseries.status.name))
+            "series in the '%s' state."
+            % (self.pocket.name, self.distroseries.status.name)
+        )
 
         if self.status not in (
-                PackageUploadStatus.NEW, PackageUploadStatus.UNAPPROVED,
-                PackageUploadStatus.REJECTED):
+            PackageUploadStatus.NEW,
+            PackageUploadStatus.UNAPPROVED,
+            PackageUploadStatus.REJECTED,
+        ):
             raise QueueInconsistentStateError(
-                'Unable to accept queue item due to status.')
+                "Unable to accept queue item due to status."
+            )
 
         for source in self.sources:
             source.verifyBeforeAccept()
@@ -381,7 +392,8 @@ class PackageUpload(StormBase):
                 raise QueueInconsistentStateError(info)
 
         self._checkForBinariesinDestinationArchive(
-            [queue_build.build for queue_build in self.builds])
+            [queue_build.build for queue_build in self.builds]
+        )
         for queue_build in self.builds:
             try:
                 queue_build.checkComponentAndSection()
@@ -416,7 +428,9 @@ class PackageUpload(StormBase):
                 bpr.build IN %s
                 AND bpf.binarypackagerelease = bpr.id
                 AND bpf.libraryfile = lfa.id
-        """ % sqlvalues([build.id for build in builds])
+        """ % sqlvalues(
+            [build.id for build in builds]
+        )
 
         # Check whether any of the binary file names have already been
         # published in the destination archive.
@@ -434,7 +448,9 @@ class PackageUpload(StormBase):
                 AND bpph.binarypackagerelease = bpf.binarypackagerelease
                 AND bpf.libraryfile = lfa.id
                 AND lfa.filename IN (%%s)
-        """ % sqlvalues(self.archive, self.distroseries.distribution)
+        """ % sqlvalues(
+            self.archive, self.distroseries.distribution
+        )
         # Inject the inner query.
         query %= inner_query
 
@@ -446,24 +462,29 @@ class PackageUpload(StormBase):
         # archive?
         if len(known_filenames) > 0:
             filename_list = "\n\t".join(
-                [filename for filename in known_filenames])
+                [filename for filename in known_filenames]
+            )
             raise QueueInconsistentStateError(
-                'The following files are already published in %s:\n%s' % (
-                    self.archive.displayname, filename_list))
+                "The following files are already published in %s:\n%s"
+                % (self.archive.displayname, filename_list)
+            )
 
     def setDone(self):
         """See `IPackageUpload`."""
         if self.status == PackageUploadStatus.DONE:
-            raise QueueInconsistentStateError('Queue item already done')
+            raise QueueInconsistentStateError("Queue item already done")
         self.status = PassthroughStatusValue(PackageUploadStatus.DONE)
 
     def setRejected(self):
         """See `IPackageUpload`."""
         if self.status not in (
-                PackageUploadStatus.NEW, PackageUploadStatus.UNAPPROVED,
-                PackageUploadStatus.ACCEPTED):
+            PackageUploadStatus.NEW,
+            PackageUploadStatus.UNAPPROVED,
+            PackageUploadStatus.ACCEPTED,
+        ):
             raise QueueInconsistentStateError(
-                'Unable to reject queue item due to status.')
+                "Unable to reject queue item due to status."
+            )
         self.status = PassthroughStatusValue(PackageUploadStatus.REJECTED)
 
     def _validateBuildsForSource(self, sourcepackagerelease, builds):
@@ -474,8 +495,9 @@ class PackageUpload(StormBase):
         """
         if len(builds) == 0 and self.isPPA():
             raise NonBuildableSourceUploadError(
-                "Cannot build any of the architectures requested: %s" %
-                sourcepackagerelease.architecturehintlist)
+                "Cannot build any of the architectures requested: %s"
+                % sourcepackagerelease.architecturehintlist
+            )
 
     def _giveKarma(self):
         """Assign karma as appropriate for an accepted upload."""
@@ -490,18 +512,21 @@ class PackageUpload(StormBase):
             uploader = None
 
         if self.archive.is_ppa:
-            main_karma_action = 'ppauploadaccepted'
+            main_karma_action = "ppauploadaccepted"
         else:
-            main_karma_action = 'distributionuploadaccepted'
+            main_karma_action = "distributionuploadaccepted"
 
         distribution = self.distroseries.distribution
         sourcepackagename = self.sources[
-            0].sourcepackagerelease.sourcepackagename
+            0
+        ].sourcepackagerelease.sourcepackagename
 
         # The package creator always gets their karma.
         changed_by.assignKarma(
-            main_karma_action, distribution=distribution,
-            sourcepackagename=sourcepackagename)
+            main_karma_action,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+        )
 
         if self.archive.is_ppa:
             return
@@ -509,14 +534,17 @@ class PackageUpload(StormBase):
         # If a sponsor was involved, give them some too.
         if uploader is not None and changed_by != uploader:
             uploader.assignKarma(
-                'sponsoruploadaccepted', distribution=distribution,
-                sourcepackagename=sourcepackagename)
+                "sponsoruploadaccepted",
+                distribution=distribution,
+                sourcepackagename=sourcepackagename,
+            )
 
     def acceptFromUploader(self, changesfile_path, logger=None):
         """See `IPackageUpload`."""
         from lp.soyuz.model.processacceptedbugsjob import (
             close_bugs_for_queue_item,
-            )
+        )
+
         debug(logger, "Setting it to ACCEPTED")
         self.setAccepted()
 
@@ -531,9 +559,10 @@ class PackageUpload(StormBase):
         [pub_source] = self.realiseUpload()
         builds = pub_source.createMissingBuilds(logger=logger)
         self._validateBuildsForSource(pub_source.sourcepackagerelease, builds)
-        with open(changesfile_path, 'rb') as changesfile_object:
+        with open(changesfile_path, "rb") as changesfile_object:
             close_bugs_for_queue_item(
-                self, changesfile_object=changesfile_object)
+                self, changesfile_object=changesfile_object
+            )
         self._giveKarma()
 
     def _acceptSyncFromQueue(self):
@@ -541,12 +570,12 @@ class PackageUpload(StormBase):
         # Circular imports :(
         from lp.soyuz.model.packagecopyjob import PlainPackageCopyJob
 
-        assert self.package_copy_job is not None, (
-            "This method is for copy-job uploads only.")
+        assert (
+            self.package_copy_job is not None
+        ), "This method is for copy-job uploads only."
 
         if self.status == PackageUploadStatus.REJECTED:
-            raise QueueInconsistentStateError(
-                "Can't resurrect rejected syncs")
+            raise QueueInconsistentStateError("Can't resurrect rejected syncs")
 
         # Release the job hounds, Smithers.
         self.setAccepted()
@@ -566,12 +595,15 @@ class PackageUpload(StormBase):
         """
         from lp.soyuz.model.processacceptedbugsjob import (
             close_bugs_for_queue_item,
-            )
-        assert self.package_copy_job is None, (
-            "This method is not for copy-job uploads.")
+        )
+
+        assert (
+            self.package_copy_job is None
+        ), "This method is not for copy-job uploads."
         assert self.changesfile is not None, (
             "Obsolete delayed copies can no longer be accepted. Repeat the "
-            "copy operation instead.")
+            "copy operation instead."
+        )
 
         self.setAccepted()
 
@@ -586,7 +618,8 @@ class PackageUpload(StormBase):
             [pub_source] = self.realiseUpload()
             builds = pub_source.createMissingBuilds()
             self._validateBuildsForSource(
-                pub_source.sourcepackagerelease, builds)
+                pub_source.sourcepackagerelease, builds
+            )
 
         # When accepting packages, we must also check the changes file
         # for bugs to close automatically.
@@ -613,6 +646,7 @@ class PackageUpload(StormBase):
         if self.package_copy_job is not None:
             # Circular imports :(
             from lp.soyuz.model.packagecopyjob import PlainPackageCopyJob
+
             job = PlainPackageCopyJob.get(self.package_copy_job_id)
             # Do the state transition dance.
             job.queue()
@@ -627,14 +661,17 @@ class PackageUpload(StormBase):
         else:
             summary_text = "Rejected by %s." % user.displayname
         getUtility(IPackageUploadNotificationJobSource).create(
-            self, summary_text=summary_text)
+            self, summary_text=summary_text
+        )
         IStore(self).flush()
 
     def _isSingleSourceUpload(self):
         """Return True if this upload contains only a single source."""
-        return ((len(self.sources) == 1) and
-                (not bool(self.builds)) and
-                (not bool(self.customfiles)))
+        return (
+            (len(self.sources) == 1)
+            and (not bool(self.builds))
+            and (not bool(self.customfiles))
+        )
 
     # XXX cprov 2006-03-14: Following properties should be redesigned to
     # reduce the duplicated code.
@@ -672,14 +709,17 @@ class PackageUpload(StormBase):
     @cachedproperty
     def contains_installer(self):
         """See `IPackageUpload`."""
-        return (PackageUploadCustomFormat.DEBIAN_INSTALLER
-                in self._customFormats)
+        return (
+            PackageUploadCustomFormat.DEBIAN_INSTALLER in self._customFormats
+        )
 
     @cachedproperty
     def contains_translation(self):
         """See `IPackageUpload`."""
-        return (PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
-                in self._customFormats)
+        return (
+            PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
+            in self._customFormats
+        )
 
     @cachedproperty
     def contains_upgrader(self):
@@ -760,9 +800,9 @@ class PackageUpload(StormBase):
         """See `IPackageUpload`"""
         archs = []
         if self.package_copy_job_id is not None:
-            archs.append('sync')
+            archs.append("sync")
         if self.contains_source:
-            archs.append('source')
+            archs.append("source")
         for queue_build in self.builds:
             archs.append(queue_build.build.distro_arch_series.architecturetag)
         for queue_custom in self.customfiles:
@@ -776,7 +816,7 @@ class PackageUpload(StormBase):
         if package_version is not None:
             return package_version
         elif self.customfiles:
-            return '-'
+            return "-"
         else:
             return None
 
@@ -801,13 +841,15 @@ class PackageUpload(StormBase):
             # setDone().
             return
         assert self.status == PackageUploadStatus.ACCEPTED, (
-            "Can not publish a non-ACCEPTED queue record (%s)" % self.id)
+            "Can not publish a non-ACCEPTED queue record (%s)" % self.id
+        )
         # Explode if something wrong like warty/RELEASE pass through
         # NascentUpload/UploadPolicies checks
         assert self.archive.canModifySuite(self.distroseries, self.pocket), (
             "Not permitted to publish to the %s pocket in a "
-            "series in the '%s' state." % (
-            self.pocket.name, self.distroseries.status.name))
+            "series in the '%s' state."
+            % (self.pocket.name, self.distroseries.status.name)
+        )
 
         publishing_records = []
         # In realising an upload we first load all the sources into
@@ -834,12 +876,14 @@ class PackageUpload(StormBase):
         return sorted(filter(None, set(existing) | set(new)))
 
     def addSearchableNames(self, names):
-        self.searchable_names = ' '.join(
-            self._appendSearchables(self.searchable_names.split(' '), names))
+        self.searchable_names = " ".join(
+            self._appendSearchables(self.searchable_names.split(" "), names)
+        )
 
     def addSearchableVersions(self, versions):
         self.searchable_versions = self._appendSearchables(
-            self.searchable_versions, versions)
+            self.searchable_versions, versions
+        )
 
     def addSource(self, spr):
         """See `IPackageUpload`."""
@@ -868,8 +912,10 @@ class PackageUpload(StormBase):
         """See `IPackageUpload`."""
         self.addSearchableNames([library_file.filename])
         puc = PackageUploadCustom(
-            packageupload=self, libraryfilealias=library_file,
-            customformat=custom_type)
+            packageupload=self,
+            libraryfilealias=library_file,
+            customformat=custom_type,
+        )
         Store.of(self).flush()
         del get_property_cache(self).customfiles
         return puc
@@ -882,7 +928,7 @@ class PackageUpload(StormBase):
         """Return a dictionary with changes file tags in it."""
         if changes_file_object is None:
             if self.changesfile is None:
-                return {}, ''
+                return {}, ""
             changes_file_object = self.changesfile
         changes_content = changes_file_object.read()
 
@@ -920,33 +966,48 @@ class PackageUpload(StormBase):
         else:
             return None
 
-    def notify(self, status=None, summary_text=None, changes_file_object=None,
-               logger=None):
+    def notify(
+        self,
+        status=None,
+        summary_text=None,
+        changes_file_object=None,
+        logger=None,
+    ):
         """See `IPackageUpload`."""
         if status is None:
             status = self.status
         status_action = {
-            PackageUploadStatus.NEW: 'new',
-            PackageUploadStatus.UNAPPROVED: 'unapproved',
-            PackageUploadStatus.REJECTED: 'rejected',
-            PackageUploadStatus.ACCEPTED: 'accepted',
-            PackageUploadStatus.DONE: 'accepted',
-            }
+            PackageUploadStatus.NEW: "new",
+            PackageUploadStatus.UNAPPROVED: "unapproved",
+            PackageUploadStatus.REJECTED: "rejected",
+            PackageUploadStatus.ACCEPTED: "accepted",
+            PackageUploadStatus.DONE: "accepted",
+        }
         changes = self._getChangesDict(changes_file_object)
         if changes_file_object is not None:
             # Strip any PGP signature so that the .changes file attached to
             # the notification can't be used to reupload to another archive.
             changesfile_content = strip_pgp_signature(
-                changes_file_object.read())
+                changes_file_object.read()
+            )
         else:
-            changesfile_content = 'No changes file content available.'
+            changesfile_content = "No changes file content available."
         blamee = self.findPersonToNotify()
         mailer = PackageUploadMailer.forAction(
-            status_action[status], blamee, self.sourcepackagerelease,
-            self.builds, self.customfiles, self.archive, self.distroseries,
-            self.pocket, summary_text=summary_text, changes=changes,
+            status_action[status],
+            blamee,
+            self.sourcepackagerelease,
+            self.builds,
+            self.customfiles,
+            self.archive,
+            self.distroseries,
+            self.pocket,
+            summary_text=summary_text,
+            changes=changes,
             changesfile_content=changesfile_content,
-            changesfile_object=changes_file_object, logger=logger)
+            changesfile_object=changes_file_object,
+            logger=logger,
+        )
         mailer.sendAll()
 
     @property
@@ -995,8 +1056,9 @@ class PackageUpload(StormBase):
         except KeyError:
             raise PriorityNotFound(priority)
 
-    def _overrideSyncSource(self, new_component, new_section,
-                            allowed_components):
+    def _overrideSyncSource(
+        self, new_component, new_section, allowed_components
+    ):
         """Override source on the upload's `PackageCopyJob`, if any."""
         from lp.soyuz.adapters.overrides import SourceOverride
 
@@ -1005,16 +1067,19 @@ class PackageUpload(StormBase):
 
         copy_job = self.concrete_package_copy_job
         allowed_component_names = [
-            component.name for component in allowed_components]
+            component.name for component in allowed_components
+        ]
         if copy_job.component_name not in allowed_component_names:
             raise QueueAdminUnauthorizedError(
-                "No rights to override from %s" % copy_job.component_name)
+                "No rights to override from %s" % copy_job.component_name
+            )
         copy_job.addSourceOverride(SourceOverride(new_component, new_section))
 
         return True
 
-    def _overrideNonSyncSource(self, new_component, new_section,
-                               allowed_components):
+    def _overrideNonSyncSource(
+        self, new_component, new_section, allowed_components
+    ):
         """Override sources on a source upload."""
         made_changes = False
 
@@ -1024,9 +1089,11 @@ class PackageUpload(StormBase):
                 # The old component is not in the list of allowed components
                 # to override.
                 raise QueueAdminUnauthorizedError(
-                    "No rights to override from %s" % old_component.name)
+                    "No rights to override from %s" % old_component.name
+                )
             source.sourcepackagerelease.override(
-                component=new_component, section=new_section)
+                component=new_component, section=new_section
+            )
             made_changes = True
 
         # We override our own archive too, as it is used to create
@@ -1034,12 +1101,18 @@ class PackageUpload(StormBase):
         if new_component is not None:
             distribution = self.distroseries.distribution
             self.archive = distribution.getArchiveByComponent(
-                new_component.name)
+                new_component.name
+            )
 
         return made_changes
 
-    def overrideSource(self, new_component=None, new_section=None,
-                       allowed_components=None, user=None):
+    def overrideSource(
+        self,
+        new_component=None,
+        new_section=None,
+        allowed_components=None,
+        user=None,
+    ):
         """See `IPackageUpload`."""
         if new_component is None and new_section is None:
             # Nothing needs overriding, bail out.
@@ -1053,21 +1126,25 @@ class PackageUpload(StormBase):
             # override to or from.
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
-                self.distroseries.main_archive, user)
+                self.distroseries.main_archive, user
+            )
             allowed_components = {
-                permission.component for permission in permissions}
-        assert allowed_components is not None, (
-            "Must provide allowed_components for non-webservice calls.")
+                permission.component for permission in permissions
+            }
+        assert (
+            allowed_components is not None
+        ), "Must provide allowed_components for non-webservice calls."
 
         if new_component not in list(allowed_components) + [None]:
             raise QueueAdminUnauthorizedError(
-                "No rights to override to %s" % new_component.name)
+                "No rights to override to %s" % new_component.name
+            )
 
-        return (
-            self._overrideSyncSource(
-                new_component, new_section, allowed_components) or
-            self._overrideNonSyncSource(
-                new_component, new_section, allowed_components))
+        return self._overrideSyncSource(
+            new_component, new_section, allowed_components
+        ) or self._overrideNonSyncSource(
+            new_component, new_section, allowed_components
+        )
 
     def _filterBinaryChanges(self, changes):
         """Process a binary changes mapping into a more convenient form."""
@@ -1078,13 +1155,16 @@ class PackageUpload(StormBase):
             filtered_change = {}
             if change.get("component") is not None:
                 filtered_change["component"] = self._nameToComponent(
-                    change.get("component"))
+                    change.get("component")
+                )
             if change.get("section") is not None:
                 filtered_change["section"] = self._nameToSection(
-                    change.get("section"))
+                    change.get("section")
+                )
             if change.get("priority") is not None:
                 filtered_change["priority"] = self._nameToPriority(
-                    change.get("priority"))
+                    change.get("priority")
+                )
 
             if "name" in change:
                 changes_by_name[change["name"]] = filtered_change
@@ -1109,11 +1189,14 @@ class PackageUpload(StormBase):
             # override to or from.
             permission_set = getUtility(IArchivePermissionSet)
             permissions = permission_set.componentsForQueueAdmin(
-                self.distroseries.main_archive, user)
+                self.distroseries.main_archive, user
+            )
             allowed_components = {
-                permission.component for permission in permissions}
-        assert allowed_components is not None, (
-            "Must provide allowed_components for non-webservice calls.")
+                permission.component for permission in permissions
+            }
+        assert (
+            allowed_components is not None
+        ), "Must provide allowed_components for non-webservice calls."
 
         changes_by_name, changes_for_all = self._filterBinaryChanges(changes)
 
@@ -1126,11 +1209,13 @@ class PackageUpload(StormBase):
         new_components.discard(None)
         disallowed_components = sorted(
             component.name
-            for component in new_components.difference(allowed_components))
+            for component in new_components.difference(allowed_components)
+        )
         if disallowed_components:
             raise QueueAdminUnauthorizedError(
-                "No rights to override to %s" %
-                ", ".join(disallowed_components))
+                "No rights to override to %s"
+                % ", ".join(disallowed_components)
+            )
 
         made_changes = False
         for build in self.builds:
@@ -1139,22 +1224,26 @@ class PackageUpload(StormBase):
                 distroarchseries = build.build.distro_arch_series
                 distribution = distroarchseries.distroseries.distribution
                 new_archive = distribution.getArchiveByComponent(
-                    component.name)
+                    component.name
+                )
                 if new_archive != build.build.archive:
                     raise QueueInconsistentStateError(
                         "Overriding component to '%s' failed because it "
-                        "would require a new archive." % component.name)
+                        "would require a new archive." % component.name
+                    )
 
             for binarypackage in build.build.binarypackages:
                 change = changes_by_name.get(
-                    binarypackage.name, changes_for_all)
+                    binarypackage.name, changes_for_all
+                )
                 if change:
                     if binarypackage.component not in allowed_components:
                         # The old component is not in the list of allowed
                         # components to override.
                         raise QueueAdminUnauthorizedError(
-                            "No rights to override from %s" %
-                            binarypackage.component.name)
+                            "No rights to override from %s"
+                            % binarypackage.component.name
+                        )
                     binarypackage.override(**change)
                     made_changes = True
 
@@ -1168,7 +1257,8 @@ def get_properties_for_binary(bpr):
     # PackageUploadBuild.
     das = bpr.build.distro_arch_series
     distroarchseries_binary_package = das.getBinaryPackage(
-        bpr.binarypackagename)
+        bpr.binarypackagename
+    )
     is_new = distroarchseries_binary_package.currentrelease is None
 
     return {
@@ -1179,7 +1269,7 @@ def get_properties_for_binary(bpr):
         "component": bpr.component.name,
         "section": bpr.section.name,
         "priority": bpr.priority.name,
-        }
+    }
 
 
 @implementer(IPackageUploadLog)
@@ -1190,14 +1280,13 @@ class PackageUploadLog(StormBase):
 
     id = Int(primary=True)
 
-    package_upload_id = Int(name='package_upload')
+    package_upload_id = Int(name="package_upload")
     package_upload = Reference(package_upload_id, PackageUpload.id)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
-                            default=UTC_NOW)
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
 
-    reviewer_id = Int(name='reviewer', allow_none=False)
-    reviewer = Reference(reviewer_id, 'Person.id')
+    reviewer_id = Int(name="reviewer", allow_none=False)
+    reviewer = Reference(reviewer_id, "Person.id")
 
     old_status = DBEnum(enum=PackageUploadStatus, allow_none=False)
 
@@ -1205,8 +1294,15 @@ class PackageUploadLog(StormBase):
 
     comment = Unicode(allow_none=True)
 
-    def __init__(self, package_upload, reviewer, old_status, new_status,
-                 comment=None, date_created=DEFAULT):
+    def __init__(
+        self,
+        package_upload,
+        reviewer,
+        old_status,
+        new_status,
+        comment=None,
+        date_created=DEFAULT,
+    ):
         self.package_upload = package_upload
         self.reviewer = reviewer
         self.old_status = old_status
@@ -1218,7 +1314,8 @@ class PackageUploadLog(StormBase):
         return (
             "<{self.__class__.__name__} ~{self.reviewer.name} "
             "changed {self.package_upload} to {self.new_status} "
-            "on {self.date_created}>").format(self=self)
+            "on {self.date_created}>"
+        ).format(self=self)
 
 
 @implementer(IPackageUploadBuild)
@@ -1253,12 +1350,15 @@ class PackageUploadBuild(StormBase):
         is_ppa = self.packageupload.archive.is_ppa
 
         for binary in self.build.binarypackages:
-            if (not is_ppa and
-                binary.component not in distroseries.upload_components):
+            if (
+                not is_ppa
+                and binary.component not in distroseries.upload_components
+            ):
                 # Only complain about non-PPA uploads.
                 raise QueueBuildAcceptError(
                     'Component "%s" is not allowed in %s'
-                    % (binary.component.name, distroseries.name))
+                    % (binary.component.name, distroseries.name)
+                )
             # At this point (uploads are already processed) sections are
             # guaranteed to exist in the DB. We don't care if sections are
             # not official.
@@ -1269,24 +1369,42 @@ class PackageUploadBuild(StormBase):
         # Determine the build's architecturetag
         build_archtag = self.build.distro_arch_series.architecturetag
         distroseries = self.packageupload.distroseries
-        debug(logger, "Publishing build to %s/%s/%s" % (
-            distroseries.distribution.name, distroseries.name,
-            build_archtag))
+        debug(
+            logger,
+            "Publishing build to %s/%s/%s"
+            % (
+                distroseries.distribution.name,
+                distroseries.name,
+                build_archtag,
+            ),
+        )
 
         # Publish all of the build's binaries.
         bins = {}
         for binary in self.build.binarypackages:
             debug(
-                logger, "... %s/%s (Arch %s)" % (
-                binary.binarypackagename.name,
-                binary.version,
-                'Specific' if binary.architecturespecific else 'Independent',
-                ))
+                logger,
+                "... %s/%s (Arch %s)"
+                % (
+                    binary.binarypackagename.name,
+                    binary.version,
+                    "Specific"
+                    if binary.architecturespecific
+                    else "Independent",
+                ),
+            )
             bins[binary] = (
-                binary.component, binary.section, binary.priority, None)
+                binary.component,
+                binary.section,
+                binary.priority,
+                None,
+            )
         return getUtility(IPublishingSet).publishBinaries(
-            self.packageupload.archive, distroseries,
-            self.packageupload.pocket, bins)
+            self.packageupload.archive,
+            distroseries,
+            self.packageupload.pocket,
+            bins,
+        )
 
 
 @implementer(IPackageUploadSource)
@@ -1302,9 +1420,11 @@ class PackageUploadSource(StormBase):
     packageupload = Reference(packageupload_id, "PackageUpload.id")
 
     sourcepackagerelease_id = Int(
-        name="sourcepackagerelease", allow_none=False)
+        name="sourcepackagerelease", allow_none=False
+    )
     sourcepackagerelease = Reference(
-        sourcepackagerelease_id, "SourcePackageRelease.id")
+        sourcepackagerelease_id, "SourcePackageRelease.id"
+    )
 
     def __init__(self, packageupload, sourcepackagerelease):
         super().__init__()
@@ -1317,17 +1437,22 @@ class PackageUploadSource(StormBase):
         release_pocket = PackagePublishingPocket.RELEASE
         current_distroseries = self.packageupload.distroseries
         ancestry_locations = [
-            (self.packageupload.archive, current_distroseries,
-             self.packageupload.pocket),
+            (
+                self.packageupload.archive,
+                current_distroseries,
+                self.packageupload.pocket,
+            ),
             (primary_archive, current_distroseries, release_pocket),
             (primary_archive, None, release_pocket),
-            ]
+        ]
 
         for archive, distroseries, pocket in ancestry_locations:
             ancestries = archive.getPublishedSources(
                 name=self.sourcepackagerelease.name,
-                distroseries=distroseries, pocket=pocket,
-                exact_match=True)
+                distroseries=distroseries,
+                pocket=pocket,
+                exact_match=True,
+            )
             try:
                 return ancestries[0]
             except IndexError:
@@ -1342,17 +1467,21 @@ class PackageUploadSource(StormBase):
             self.sourcepackagerelease.name,
             self.sourcepackagerelease.version,
             self.packageupload.archive,
-            self.packageupload.distroseries.distribution)
+            self.packageupload.distroseries.distribution,
+        )
 
         if conflict is not None:
             raise QueueInconsistentStateError(
                 "The source %s is already accepted in %s/%s and you "
                 "cannot upload the same version within the same "
                 "distribution. You have to modify the source version "
-                "and re-upload." % (
+                "and re-upload."
+                % (
                     self.sourcepackagerelease.title,
                     conflict.distroseries.distribution.name,
-                    conflict.distroseries.name))
+                    conflict.distroseries.name,
+                )
+            )
 
     def verifyBeforePublish(self):
         """See `IPackageUploadSource`."""
@@ -1360,7 +1489,8 @@ class PackageUploadSource(StormBase):
         for source_file in self.sourcepackagerelease.files:
             try:
                 published_file = self.packageupload.archive.getFileByName(
-                    source_file.libraryfile.filename)
+                    source_file.libraryfile.filename
+                )
             except NotFoundError:
                 # NEW files are *OK*.
                 continue
@@ -1374,28 +1504,37 @@ class PackageUploadSource(StormBase):
                 if proposed_sha1 == published_sha1:
                     continue
                 raise QueueInconsistentStateError(
-                    '%s is already published in archive for %s with a '
-                    'different SHA1 hash (%s != %s)' % (
-                    filename, self.packageupload.distroseries.name,
-                    proposed_sha1, published_sha1))
+                    "%s is already published in archive for %s with a "
+                    "different SHA1 hash (%s != %s)"
+                    % (
+                        filename,
+                        self.packageupload.distroseries.name,
+                        proposed_sha1,
+                        published_sha1,
+                    )
+                )
 
             # Any dsc(s), targz(s) and diff(s) already present
             # are a very big problem.
             raise QueueInconsistentStateError(
-                '%s is already published in archive for %s' % (
-                filename, self.packageupload.distroseries.name))
+                "%s is already published in archive for %s"
+                % (filename, self.packageupload.distroseries.name)
+            )
 
     def checkComponentAndSection(self):
         """See `IPackageUploadSource`."""
         distroseries = self.packageupload.distroseries
         component = self.sourcepackagerelease.component
 
-        if (not self.packageupload.archive.is_ppa and
-            component not in distroseries.upload_components):
+        if (
+            not self.packageupload.archive.is_ppa
+            and component not in distroseries.upload_components
+        ):
             # Only complain about non-PPA uploads.
             raise QueueSourceAcceptError(
-                'Component "%s" is not allowed in %s' % (component.name,
-                                                         distroseries.name))
+                'Component "%s" is not allowed in %s'
+                % (component.name, distroseries.name)
+            )
 
         # At this point (uploads are already processed) sections are
         # guaranteed to exist in the DB. We don't care if sections are
@@ -1405,12 +1544,17 @@ class PackageUploadSource(StormBase):
     def publish(self, logger=None):
         """See `IPackageUploadSource`."""
         # Publish myself in the distroseries pointed at by my queue item.
-        debug(logger, "Publishing source %s/%s to %s/%s in %s" % (
-            self.sourcepackagerelease.name,
-            self.sourcepackagerelease.version,
-            self.packageupload.distroseries.distribution.name,
-            self.packageupload.distroseries.name,
-            self.packageupload.archive.reference))
+        debug(
+            logger,
+            "Publishing source %s/%s to %s/%s in %s"
+            % (
+                self.sourcepackagerelease.name,
+                self.sourcepackagerelease.version,
+                self.packageupload.distroseries.distribution.name,
+                self.packageupload.distroseries.name,
+                self.packageupload.archive.reference,
+            ),
+        )
 
         return getUtility(IPublishingSet).newSourcePublication(
             archive=self.packageupload.archive,
@@ -1419,7 +1563,8 @@ class PackageUploadSource(StormBase):
             pocket=self.packageupload.pocket,
             component=self.sourcepackagerelease.component,
             section=self.sourcepackagerelease.section,
-            packageupload=self.packageupload)
+            packageupload=self.packageupload,
+        )
 
 
 @implementer(IPackageUploadCustom)
@@ -1435,7 +1580,8 @@ class PackageUploadCustom(StormBase):
     packageupload = Reference(packageupload_id, "PackageUpload.id")
 
     customformat = DBEnum(
-        name='customformat', allow_none=False, enum=PackageUploadCustomFormat)
+        name="customformat", allow_none=False, enum=PackageUploadCustomFormat
+    )
 
     libraryfilealias_id = Int(name="libraryfilealias", allow_none=False)
     libraryfilealias = Reference(libraryfilealias_id, "LibraryFileAlias.id")
@@ -1448,15 +1594,22 @@ class PackageUploadCustom(StormBase):
 
     def publish(self, logger=None):
         """See `IPackageUploadCustom`."""
-        debug(logger, "Publishing custom %s to %s/%s" % (
-            self.packageupload.displayname,
-            self.packageupload.distroseries.distribution.name,
-            self.packageupload.distroseries.name))
+        debug(
+            logger,
+            "Publishing custom %s to %s/%s"
+            % (
+                self.packageupload.displayname,
+                self.packageupload.distroseries.distribution.name,
+                self.packageupload.distroseries.name,
+            ),
+        )
         handler = getUtility(ICustomUploadHandler, self.customformat.name)
         handler.publish(
-            self.packageupload, self.libraryfilealias, logger=logger)
+            self.packageupload, self.libraryfilealias, logger=logger
+        )
         self.packageupload.archive.markSuiteDirty(
-            self.packageupload.distroseries, self.packageupload.pocket)
+            self.packageupload.distroseries, self.packageupload.pocket
+        )
 
 
 @implementer(IPackageUploadSet)
@@ -1485,34 +1638,41 @@ class PackageUploadSet:
         store = IMasterStore(PackageUpload)
         origin = (
             PackageUpload,
-            Join(DistroSeries,
-                 PackageUpload.distroseries == DistroSeries.id),
-            Join(PackageUploadSource,
-                 PackageUploadSource.packageupload == PackageUpload.id),
-            Join(SourcePackageRelease,
-                 PackageUploadSource.sourcepackagerelease ==
-                     SourcePackageRelease.id),
-            Join(SourcePackageName,
-                 SourcePackageName.id ==
-                     SourcePackageRelease.sourcepackagenameID),
-            )
+            Join(DistroSeries, PackageUpload.distroseries == DistroSeries.id),
+            Join(
+                PackageUploadSource,
+                PackageUploadSource.packageupload == PackageUpload.id,
+            ),
+            Join(
+                SourcePackageRelease,
+                PackageUploadSource.sourcepackagerelease
+                == SourcePackageRelease.id,
+            ),
+            Join(
+                SourcePackageName,
+                SourcePackageName.id
+                == SourcePackageRelease.sourcepackagenameID,
+            ),
+        )
 
         approved_status = (
             PackageUploadStatus.ACCEPTED,
             PackageUploadStatus.DONE,
-            )
+        )
         conflicts = store.using(*origin).find(
             PackageUpload,
             PackageUpload.status.is_in(approved_status),
             PackageUpload.archive == archive,
             DistroSeries.distribution == distribution,
             Cast(SourcePackageRelease.version, "text") == version,
-            SourcePackageName.name == name)
+            SourcePackageName.name == name,
+        )
 
         return conflicts.one()
 
-    def getBuildsForSources(self, distroseries, status=None, pockets=None,
-                            names=None):
+    def getBuildsForSources(
+        self, distroseries, status=None, pockets=None, names=None
+    ):
         """See `IPackageUploadSet`."""
         # Avoiding circular imports.
         from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
@@ -1522,18 +1682,21 @@ class PackageUploadSet:
             PackageUpload.distroseries == distroseries,
             PackageUpload.archive_id.is_in(archives),
             PackageUploadBuild.packageupload == PackageUpload.id,
-            ]
+        ]
 
         if status is not None:
             clauses.append(PackageUpload.status.is_in(status))
         if pockets is not None:
             clauses.append(PackageUpload.pocket.is_in(pockets))
         if names is not None:
-            clauses.extend([
-                PackageUploadBuild.build == BinaryPackageBuild.id,
-                BinaryPackageBuild.source_package_name == SourcePackageName.id,
-                SourcePackageName.name.is_in(names),
-                ])
+            clauses.extend(
+                [
+                    PackageUploadBuild.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_name
+                    == SourcePackageName.id,
+                    SourcePackageName.name.is_in(names),
+                ]
+            )
 
         store = IStore(PackageUpload)
         return store.find(PackageUpload, *clauses)
@@ -1552,9 +1715,18 @@ class PackageUploadSet:
 
         return IStore(PackageUpload).find(PackageUpload, *clauses).count()
 
-    def getAll(self, distroseries, created_since_date=None, status=None,
-               archive=None, pocket=None, custom_type=None, name=None,
-               version=None, exact_match=False):
+    def getAll(
+        self,
+        distroseries,
+        created_since_date=None,
+        status=None,
+        archive=None,
+        pocket=None,
+        custom_type=None,
+        name=None,
+        version=None,
+        exact_match=False,
+    ):
         """See `IPackageUploadSet`."""
         store = Store.of(distroseries)
 
@@ -1583,38 +1755,58 @@ class PackageUploadSet:
 
         if custom_type is not None:
             custom_type = dbitem_tuple(custom_type)
-            joins.append(Join(PackageUploadCustom, And(
-                PackageUploadCustom.packageupload == PackageUpload.id,
-                PackageUploadCustom.customformat.is_in(custom_type))))
+            joins.append(
+                Join(
+                    PackageUploadCustom,
+                    And(
+                        PackageUploadCustom.packageupload == PackageUpload.id,
+                        PackageUploadCustom.customformat.is_in(custom_type),
+                    ),
+                )
+            )
 
         if name:
             # Escape special characters, namely backslashes and single quotes.
-            name = name.replace('\\', '\\\\')
+            name = name.replace("\\", "\\\\")
             name = name.replace("'", "\\'")
             name = "'%s'" % name
             if not exact_match:
-                name += ':*'
+                name += ":*"
             conditions.append(
-                SQL("searchable_names::tsvector @@ ?", params=(name,)))
+                SQL("searchable_names::tsvector @@ ?", params=(name,))
+            )
 
         if version:
             conditions.append(
-                ArrayContains(PackageUpload.searchable_versions,
-                    Array(version)))
+                ArrayContains(
+                    PackageUpload.searchable_versions, Array(version)
+                )
+            )
 
-        query = store.using(*joins).find(
-            PackageUpload, PackageUpload.distroseries == distroseries,
-            *conditions).order_by(Desc(PackageUpload.id)).config(distinct=True)
+        query = (
+            store.using(*joins)
+            .find(
+                PackageUpload,
+                PackageUpload.distroseries == distroseries,
+                *conditions,
+            )
+            .order_by(Desc(PackageUpload.id))
+            .config(distinct=True)
+        )
 
         def preload_hook(rows):
             puses = load_referencing(
-                PackageUploadSource, rows, ["packageupload_id"])
+                PackageUploadSource, rows, ["packageupload_id"]
+            )
             pubs = load_referencing(
-                PackageUploadBuild, rows, ["packageupload_id"])
+                PackageUploadBuild, rows, ["packageupload_id"]
+            )
             pucs = load_referencing(
-                PackageUploadCustom, rows, ["packageupload_id"])
+                PackageUploadCustom, rows, ["packageupload_id"]
+            )
             logs = load_referencing(
-                PackageUploadLog, rows, ["package_upload_id"])
+                PackageUploadLog, rows, ["package_upload_id"]
+            )
 
             prefill_packageupload_caches(rows, puses, pubs, pucs, logs)
 
@@ -1625,7 +1817,8 @@ class PackageUploadSet:
         if build_ids is None or len(build_ids) == 0:
             return []
         return IStore(PackageUploadBuild).find(
-            PackageUploadBuild, PackageUploadBuild.build_id.is_in(build_ids))
+            PackageUploadBuild, PackageUploadBuild.build_id.is_in(build_ids)
+        )
 
     def getByPackageCopyJobIDs(self, pcj_ids):
         """See `IPackageUploadSet`."""
@@ -1633,8 +1826,8 @@ class PackageUploadSet:
             return EmptyResultSet()
 
         return IStore(PackageUpload).find(
-            PackageUpload,
-            PackageUpload.package_copy_job_id.is_in(pcj_ids))
+            PackageUpload, PackageUpload.package_copy_job_id.is_in(pcj_ids)
+        )
 
 
 def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
@@ -1655,8 +1848,11 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     # Preload reviewers of the logs.
     # We are not using `need_icon` here because reviewers are persons,
     # and icons are only available for teams.
-    list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-        reviewer_ids, need_validity=True))
+    list(
+        getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            reviewer_ids, need_validity=True
+        )
+    )
 
     for pu in uploads:
         cache = get_property_cache(pu)
@@ -1664,7 +1860,8 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         cache.builds = []
         cache.customfiles = []
         cache.logs = sorted(
-            logs_per_pu[pu.id], key=attrgetter("date_created"), reverse=True)
+            logs_per_pu[pu.id], key=attrgetter("date_created"), reverse=True
+        )
 
     for pus in puses:
         get_property_cache(pus.packageupload).sources.append(pus)
@@ -1674,27 +1871,31 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         get_property_cache(puc.packageupload).customfiles.append(puc)
 
     source_sprs = load_related(
-        SourcePackageRelease, puses, ['sourcepackagerelease_id'])
-    bpbs = load_related(BinaryPackageBuild, pubs, ['build_id'])
-    load_related(DistroArchSeries, bpbs, ['distro_arch_series_id'])
+        SourcePackageRelease, puses, ["sourcepackagerelease_id"]
+    )
+    bpbs = load_related(BinaryPackageBuild, pubs, ["build_id"])
+    load_related(DistroArchSeries, bpbs, ["distro_arch_series_id"])
     binary_sprs = load_related(
-        SourcePackageRelease, bpbs, ['source_package_release_id'])
-    bprs = load_referencing(BinaryPackageRelease, bpbs, ['buildID'])
-    load_related(BinaryPackageName, bprs, ['binarypackagenameID'])
+        SourcePackageRelease, bpbs, ["source_package_release_id"]
+    )
+    bprs = load_referencing(BinaryPackageRelease, bpbs, ["buildID"])
+    load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
     sprs = source_sprs + binary_sprs
 
-    load_related(SourcePackageName, sprs, ['sourcepackagenameID'])
-    load_related(Section, sprs + bprs, ['sectionID'])
-    load_related(Component, sprs, ['componentID'])
-    load_related(LibraryFileAlias, uploads, ['changes_file_id'])
+    load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+    load_related(Section, sprs + bprs, ["sectionID"])
+    load_related(Component, sprs, ["componentID"])
+    load_related(LibraryFileAlias, uploads, ["changes_file_id"])
     publications = load_referencing(
-        SourcePackagePublishingHistory, sprs, ['sourcepackagereleaseID'])
-    load_related(Archive, publications, ['archiveID'])
+        SourcePackagePublishingHistory, sprs, ["sourcepackagereleaseID"]
+    )
+    load_related(Archive, publications, ["archiveID"])
     diffs = getUtility(IPackageDiffSet).getDiffsToReleases(
-        sprs, preload_for_display=True)
+        sprs, preload_for_display=True
+    )
 
-    puc_lfas = load_related(LibraryFileAlias, pucs, ['libraryfilealias_id'])
-    load_related(LibraryFileContent, puc_lfas, ['contentID'])
+    puc_lfas = load_related(LibraryFileAlias, pucs, ["libraryfilealias_id"])
+    load_related(LibraryFileContent, puc_lfas, ["contentID"])
 
     for spr_cache in sprs:
         get_property_cache(spr_cache).published_archives = []
@@ -1706,9 +1907,7 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         get_property_cache(diff.to_source).package_diffs.append(diff)
 
     package_copy_jobs = load_related(
-        PackageCopyJob, uploads, ['package_copy_job_id']
+        PackageCopyJob, uploads, ["package_copy_job_id"]
     )
-    archives = load_related(
-        Archive, package_copy_jobs, ['source_archive_id']
-    )
-    load_related(Distribution, archives, ['distributionID'])
+    archives = load_related(Archive, package_copy_jobs, ["source_archive_id"])
+    load_related(Distribution, archives, ["distributionID"])

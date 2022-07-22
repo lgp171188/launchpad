@@ -16,11 +16,8 @@ from lp.archivepublisher.dist_upgrader import DistUpgraderBadVersion
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
     NascentUpload,
-    )
-from lp.archiveuploader.tests import (
-    datadir,
-    getPolicy,
-    )
+)
+from lp.archiveuploader.tests import datadir, getPolicy
 from lp.services.config import config
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.tests.test_publishing import TestNativePublishingBase
@@ -28,7 +25,6 @@ from lp.testing.gpgkeys import import_public_test_keys
 
 
 class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
-
     def setUp(self):
         super().setUp()
         import_public_test_keys()
@@ -36,9 +32,11 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
         self.anything_policy = getPolicy(
-            name="anything", distro="ubuntutest", distroseries=None)
+            name="anything", distro="ubuntutest", distroseries=None
+        )
         self.absolutely_anything_policy = getPolicy(
-            name="absolutely-anything", distro="ubuntutest", distroseries=None)
+            name="absolutely-anything", distro="ubuntutest", distroseries=None
+        )
         self.logger = DevNullLogger()
 
     def tearDown(self):
@@ -49,13 +47,17 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
     def test_rejects_misspelled_changesfile_name(self):
         upload = NascentUpload.from_changesfile_path(
             datadir("dist-upgrader/dist-upgrader_20060302.0120.changes"),
-            self.absolutely_anything_policy, self.logger)
+            self.absolutely_anything_policy,
+            self.logger,
+        )
         self.assertRaises(EarlyReturnUploadError, upload.process)
 
     def uploadTestData(self, version):
         upload = NascentUpload.from_changesfile_path(
             datadir("dist-upgrader/dist-upgrader_%s_all.changes" % version),
-            self.anything_policy, self.logger)
+            self.anything_policy,
+            self.logger,
+        )
         upload.process()
         self.assertFalse(upload.is_rejected)
         self.assertTrue(upload.do_accept())
@@ -86,8 +88,10 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         self.assertFalse(upload.queue_root.realiseUpload(self.logger))
         self.assertEqual(1, len(upload.queue_root.customfiles))
         self.assertRaises(
-            DistUpgraderBadVersion, upload.queue_root.customfiles[0].publish,
-            self.logger)
+            DistUpgraderBadVersion,
+            upload.queue_root.customfiles[0].publish,
+            self.logger,
+        )
         self.assertEqual("ACCEPTED", upload.queue_root.status.name)
 
     def test_ppa_publishing_location(self):
@@ -97,7 +101,9 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         ppa_upload = self.uploadTestData("20060302.0120")
         ppa_upload = NascentUpload.from_changesfile_path(
             datadir("dist-upgrader/dist-upgrader_20060302.0120_all.changes"),
-            self.anything_policy, self.logger)
+            self.anything_policy,
+            self.logger,
+        )
         ppa_upload.process()
         self.assertTrue(ppa_upload.do_accept())
         transaction.commit()
@@ -105,6 +111,8 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         ppa_root = config.personalpackagearchive.root
         ppa_dir = os.path.join(ppa_root, archive.owner.name, archive.name)
         target_dir = os.path.join(
-            ppa_dir, "ubuntutest/dists/breezy-autotest/main/dist-upgrader-all")
+            ppa_dir, "ubuntutest/dists/breezy-autotest/main/dist-upgrader-all"
+        )
         self.assertContentEqual(
-            ["20060302.0120", "current"], os.listdir(target_dir))
+            ["20060302.0120", "current"], os.listdir(target_dir)
+        )

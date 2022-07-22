@@ -3,10 +3,7 @@
 
 """Test the expire-archive-files.py script. """
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.component import getUtility
@@ -23,6 +20,7 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 class ArchiveExpiryTestBase(TestCaseWithFactory):
     """base class for the expire-archive-files.py script tests."""
+
     layer = LaunchpadZopelessLayer
     dbuser = config.binaryfile_expire.dbuser
 
@@ -43,7 +41,7 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
         """Return a ArchiveExpirer instance."""
         if test_args is None:
             test_args = []
-        test_args.extend(['--expire-after', '30'])
+        test_args.extend(["--expire-after", "30"])
         script = ArchiveExpirer("test expirer", test_args=test_args)
         script.logger = BufferLogger()
         script.txn = self.layer.txn
@@ -60,18 +58,25 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
         if archive is None:
             archive = self.archive
         pkg5 = self.stp.getPubSource(
-            sourcename="pkg5", architecturehintlist="i386", archive=archive,
-            dateremoved=self.over_threshold_date)
+            sourcename="pkg5",
+            architecturehintlist="i386",
+            archive=archive,
+            dateremoved=self.over_threshold_date,
+        )
         other_source = pkg5.copyTo(
-            self.archive2.distribution.currentseries, pkg5.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries,
+            pkg5.pocket,
+            self.archive2,
+        )
         other_source.dateremoved = self.over_threshold_date
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg5, dateremoved=self.over_threshold_date,
-            archive=archive)
+            pub_source=pkg5,
+            dateremoved=self.over_threshold_date,
+            archive=archive,
+        )
         [other_binary] = pub.copyTo(
-            self.archive2.distribution.currentseries, pub.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries, pub.pocket, self.archive2
+        )
         other_binary.dateremoved = self.over_threshold_date
         return pkg5, pub
 
@@ -79,25 +84,29 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
         self.assertNotEqual(
             publication.binarypackagerelease.files[0].libraryfile.expires,
             None,
-            "lfa.expires should be set, but it's not.")
+            "lfa.expires should be set, but it's not.",
+        )
 
     def assertBinaryNotExpired(self, publication):
         self.assertEqual(
             publication.binarypackagerelease.files[0].libraryfile.expires,
             None,
-            "lfa.expires should be None, but it's not.")
+            "lfa.expires should be None, but it's not.",
+        )
 
     def assertSourceExpired(self, publication):
         self.assertNotEqual(
             publication.sourcepackagerelease.files[0].libraryfile.expires,
             None,
-            "lfa.expires should be set, but it's not.")
+            "lfa.expires should be set, but it's not.",
+        )
 
     def assertSourceNotExpired(self, publication):
         self.assertEqual(
             publication.sourcepackagerelease.files[0].libraryfile.expires,
             None,
-            "lfa.expires should be None, but it's not.")
+            "lfa.expires should be None, but it's not.",
+        )
 
 
 class ArchiveExpiryCommonTests:
@@ -109,10 +118,14 @@ class ArchiveExpiryCommonTests:
     def testNoExpirationWithNoDateremoved(self):
         """Test that no expiring happens if no dateremoved set."""
         pkg1 = self.stp.getPubSource(
-            sourcename="pkg1", architecturehintlist="i386",
-            archive=self.archive, dateremoved=None)
+            sourcename="pkg1",
+            architecturehintlist="i386",
+            archive=self.archive,
+            dateremoved=None,
+        )
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg1, dateremoved=None, archive=self.archive)
+            pub_source=pkg1, dateremoved=None, archive=self.archive
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg1)
@@ -121,11 +134,16 @@ class ArchiveExpiryCommonTests:
     def testNoExpirationWithDateUnderThreshold(self):
         """Test no expiring if dateremoved too recent."""
         pkg2 = self.stp.getPubSource(
-            sourcename="pkg2", architecturehintlist="i386",
-            archive=self.archive, dateremoved=self.under_threshold_date)
+            sourcename="pkg2",
+            architecturehintlist="i386",
+            archive=self.archive,
+            dateremoved=self.under_threshold_date,
+        )
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg2, dateremoved=self.under_threshold_date,
-            archive=self.archive)
+            pub_source=pkg2,
+            dateremoved=self.under_threshold_date,
+            archive=self.archive,
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg2)
@@ -134,11 +152,16 @@ class ArchiveExpiryCommonTests:
     def testExpirationWithDateOverThreshold(self):
         """Test expiring works if dateremoved old enough."""
         pkg3 = self.stp.getPubSource(
-            sourcename="pkg3", architecturehintlist="i386",
-            archive=self.archive, dateremoved=self.over_threshold_date)
+            sourcename="pkg3",
+            architecturehintlist="i386",
+            archive=self.archive,
+            dateremoved=self.over_threshold_date,
+        )
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg3, dateremoved=self.over_threshold_date,
-            archive=self.archive)
+            pub_source=pkg3,
+            dateremoved=self.over_threshold_date,
+            archive=self.archive,
+        )
 
         self.runScript()
         self.assertSourceExpired(pkg3)
@@ -147,18 +170,25 @@ class ArchiveExpiryCommonTests:
     def testNoExpirationWithDateOverThresholdAndOtherValidPublication(self):
         """Test no expiry if dateremoved old enough but other publication."""
         pkg4 = self.stp.getPubSource(
-            sourcename="pkg4", architecturehintlist="i386",
-            archive=self.archive, dateremoved=self.over_threshold_date)
+            sourcename="pkg4",
+            architecturehintlist="i386",
+            archive=self.archive,
+            dateremoved=self.over_threshold_date,
+        )
         other_source = pkg4.copyTo(
-            self.archive2.distribution.currentseries, pkg4.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries,
+            pkg4.pocket,
+            self.archive2,
+        )
         other_source.dateremoved = None
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg4, dateremoved=self.over_threshold_date,
-            archive=self.archive)
+            pub_source=pkg4,
+            dateremoved=self.over_threshold_date,
+            archive=self.archive,
+        )
         [other_binary] = pub.copyTo(
-            self.archive2.distribution.currentseries, pub.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries, pub.pocket, self.archive2
+        )
         other_binary.dateremoved = None
 
         self.runScript()
@@ -172,18 +202,25 @@ class ArchiveExpiryCommonTests:
         not over date threshold.
         """
         pkg5 = self.stp.getPubSource(
-            sourcename="pkg5", architecturehintlist="i386",
-            archive=self.archive, dateremoved=self.over_threshold_date)
+            sourcename="pkg5",
+            architecturehintlist="i386",
+            archive=self.archive,
+            dateremoved=self.over_threshold_date,
+        )
         other_source = pkg5.copyTo(
-            self.archive2.distribution.currentseries, pkg5.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries,
+            pkg5.pocket,
+            self.archive2,
+        )
         other_source.dateremoved = self.under_threshold_date
         [pub] = self.stp.getPubBinaries(
-            pub_source=pkg5, dateremoved=self.over_threshold_date,
-            archive=self.archive)
+            pub_source=pkg5,
+            dateremoved=self.over_threshold_date,
+            archive=self.archive,
+        )
         [other_binary] = pub.copyTo(
-            self.archive2.distribution.currentseries, pub.pocket,
-            self.archive2)
+            self.archive2.distribution.currentseries, pub.pocket, self.archive2
+        )
         other_binary.dateremoved = self.under_threshold_date
 
         self.runScript()
@@ -207,7 +244,7 @@ class ArchiveExpiryCommonTests:
         # We have to commit here otherwise when the script aborts it
         # will remove the test publications we just created.
         self.layer.txn.commit()
-        script = self.getScript(['--dry-run'])
+        script = self.getScript(["--dry-run"])
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceNotExpired(source)
@@ -215,8 +252,9 @@ class ArchiveExpiryCommonTests:
 
     def testDoesNotAffectPrimary(self):
         """Test that expiry does not happen for non-PPA publications."""
-        primary_archive = (
-            getUtility(IDistributionSet)['ubuntutest'].main_archive)
+        primary_archive = getUtility(IDistributionSet)[
+            "ubuntutest"
+        ].main_archive
         source, binary = self._setUpExpirablePublications(primary_archive)
         self.runScript()
         self.assertSourceNotExpired(source)
@@ -236,15 +274,17 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         super().setUp()
         # Prepare two PPAs for the tests to use.
         self.archive = self.factory.makeArchive(
-            distribution=getUtility(IDistributionSet)['ubuntutest'])
+            distribution=getUtility(IDistributionSet)["ubuntutest"]
+        )
         self.archive2 = self.factory.makeArchive()
 
     def testNeverExpireWorks(self):
         """Test that never-expiring PPA owners are not expired."""
-        source, binary = self._setUpExpirablePublications(
-            archive=self.archive)
+        source, binary = self._setUpExpirablePublications(archive=self.archive)
         script = self.getScript()
-        script.never_expire = [self.archive.owner.name, ]
+        script.never_expire = [
+            self.archive.owner.name,
+        ]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceNotExpired(source)
@@ -252,11 +292,11 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
 
     def testNeverExpireArchivesWorks(self):
         """Test that never-expiring individual PPAs are not expired."""
-        source, binary = self._setUpExpirablePublications(
-            archive=self.archive)
+        source, binary = self._setUpExpirablePublications(archive=self.archive)
         script = self.getScript()
         script.never_expire = [
-            '%s/%s' % (self.archive.owner.name, self.archive.name)]
+            "%s/%s" % (self.archive.owner.name, self.archive.name)
+        ]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceNotExpired(source)
@@ -267,7 +307,7 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         p3a = self.factory.makeArchive(private=True)
         source, binary = self._setUpExpirablePublications(archive=p3a)
         script = self.getScript()
-        script.always_expire = ['%s/%s' % (p3a.owner.name, p3a.name)]
+        script.always_expire = ["%s/%s" % (p3a.owner.name, p3a.name)]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceExpired(source)
@@ -290,6 +330,8 @@ class TestPartnerExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         super().setUp()
         # Prepare two partner archives for the tests to use.
         self.archive = getUtility(IDistributionSet)[
-            'ubuntutest'].getArchiveByComponent('partner')
+            "ubuntutest"
+        ].getArchiveByComponent("partner")
         self.archive2 = getUtility(IDistributionSet)[
-            'ubuntu'].getArchiveByComponent('partner')
+            "ubuntu"
+        ].getArchiveByComponent("partner")

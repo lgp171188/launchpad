@@ -4,24 +4,13 @@
 """ArchiveDependency interface."""
 
 __all__ = [
-    'IArchiveDependency',
-    ]
+    "IArchiveDependency",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -37,45 +26,67 @@ class IArchiveDependency(Interface):
     date_created = exported(
         Datetime(
             title=_("Instant when the dependency was created."),
-            required=False, readonly=True))
+            required=False,
+            readonly=True,
+        )
+    )
 
     # The object that has the dependency: exactly one of archive or
     # snap_base is required (enforced by DB constraints).
 
     archive = exported(
         Reference(
-            schema=IArchive, required=False, readonly=True,
-            title=_('Target archive'),
-            description=_("The archive that has this dependency.")))
+            schema=IArchive,
+            required=False,
+            readonly=True,
+            title=_("Target archive"),
+            description=_("The archive that has this dependency."),
+        )
+    )
 
     snap_base = exported(
         Reference(
             # Really ISnapBase, patched in lp.soyuz.interfaces.webservice.
-            schema=Interface, required=False, readonly=True,
-            title=_('Target snap base'),
-            description=_("The snap base that has this dependency.")))
+            schema=Interface,
+            required=False,
+            readonly=True,
+            title=_("Target snap base"),
+            description=_("The snap base that has this dependency."),
+        )
+    )
 
     parent = Attribute("The object that has this dependency.")
 
     dependency = exported(
         Reference(
-            schema=IArchive, required=False, readonly=True,
-            title=_("The archive set as a dependency.")))
+            schema=IArchive,
+            required=False,
+            readonly=True,
+            title=_("The archive set as a dependency."),
+        )
+    )
 
     pocket = exported(
         Choice(
-            title=_("Pocket"), required=True, readonly=True,
-            vocabulary=PackagePublishingPocket))
+            title=_("Pocket"),
+            required=True,
+            readonly=True,
+            vocabulary=PackagePublishingPocket,
+        )
+    )
 
     component = Choice(
-        title=_("Component"), required=False, readonly=True,
-        vocabulary='Component')
+        title=_("Component"),
+        required=False,
+        readonly=True,
+        vocabulary="Component",
+    )
 
     # We don't want to export IComponent, so the name is exported specially.
     component_name = exported(
-        TextLine(
-            title=_("Component name"),
-            required=False, readonly=True))
+        TextLine(title=_("Component name"), required=False, readonly=True)
+    )
 
     title = exported(
-        TextLine(title=_("Archive dependency title."), readonly=True))
+        TextLine(title=_("Archive dependency title."), readonly=True)
+    )

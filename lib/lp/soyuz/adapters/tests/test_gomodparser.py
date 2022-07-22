@@ -3,10 +3,7 @@
 
 """go.mod parser tests."""
 
-from lp.soyuz.adapters.gomodparser import (
-    GoModParserException,
-    parse_go_mod,
-    )
+from lp.soyuz.adapters.gomodparser import GoModParserException, parse_go_mod
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
 

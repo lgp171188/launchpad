@@ -2,16 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os.path
-from pathlib import Path
 import shutil
+from pathlib import Path
 
+import transaction
 from debian.deb822 import Changes
-from fixtures import (
-    FakeLogger,
-    MockPatch,
-    MockPatchObject,
-    TempDir,
-    )
+from fixtures import FakeLogger, MockPatch, MockPatchObject, TempDir
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -19,8 +15,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesSetwise,
     MatchesStructure,
-    )
-import transaction
+)
 
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.model.revisionstatus import RevisionStatusArtifact
@@ -28,16 +23,13 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import (
     SourcePackageFileType,
     SourcePackageType,
-    )
+)
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
-from lp.services.job.tests import (
-    block_on_job,
-    pop_remote_notifications,
-    )
+from lp.services.job.tests import block_on_job, pop_remote_notifications
 from lp.services.librarian.interfaces.client import LibrarianServerError
 from lp.services.mail.sendmail import format_address_for_person
 from lp.soyuz.enums import (
@@ -46,25 +38,21 @@ from lp.soyuz.enums import (
     BinaryPackageFileType,
     BinaryPackageFormat,
     PackageUploadStatus,
-    )
+)
 from lp.soyuz.model.archivejob import (
     ArchiveJob,
     ArchiveJobDerived,
     CIBuildUploadJob,
     PackageUploadNotificationJob,
-    )
+)
 from lp.soyuz.tests import datadir
-from lp.testing import (
-    admin_logged_in,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     CeleryJobLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
-    )
+)
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -76,19 +64,21 @@ class TestArchiveJob(TestCaseWithFactory):
         # ArchiveJob.__init__() instantiates a ArchiveJob instance.
         archive = self.factory.makeArchive()
 
-        metadata = ('some', 'arbitrary', 'metadata')
+        metadata = ("some", "arbitrary", "metadata")
         archive_job = ArchiveJob(
-            archive, ArchiveJobType.PACKAGE_UPLOAD_NOTIFICATION, metadata)
+            archive, ArchiveJobType.PACKAGE_UPLOAD_NOTIFICATION, metadata
+        )
 
         self.assertEqual(archive, archive_job.archive)
         self.assertEqual(
-            ArchiveJobType.PACKAGE_UPLOAD_NOTIFICATION, archive_job.job_type)
+            ArchiveJobType.PACKAGE_UPLOAD_NOTIFICATION, archive_job.job_type
+        )
 
         # When we actually access the ArchiveJob's metadata it gets
         # deserialized from JSON, so the representation returned by
         # archive_job.metadata will be different from what we originally
         # passed in.
-        metadata_expected = ('some', 'arbitrary', 'metadata')
+        metadata_expected = ("some", "arbitrary", "metadata")
         self.assertEqual(metadata_expected, archive_job.metadata)
 
 
@@ -100,8 +90,7 @@ class TestArchiveJobDerived(TestCaseWithFactory):
         # ArchiveJobDerived.create() will blow up because it needs to be
         # subclassed to work properly.
         archive = self.factory.makeArchive()
-        self.assertRaises(
-            AttributeError, ArchiveJobDerived.create, archive)
+        self.assertRaises(AttributeError, ArchiveJobDerived.create, archive)
 
 
 class TestPackageUploadNotificationJob(TestCaseWithFactory):
@@ -110,35 +99,40 @@ class TestPackageUploadNotificationJob(TestCaseWithFactory):
 
     def test_getOopsVars(self):
         upload = self.factory.makePackageUpload(
-            status=PackageUploadStatus.ACCEPTED)
+            status=PackageUploadStatus.ACCEPTED
+        )
         job = PackageUploadNotificationJob.create(
-            upload, summary_text='Fake summary')
+            upload, summary_text="Fake summary"
+        )
         expected = [
-            ('job_id', job.context.job.id),
-            ('archive_id', upload.archive.id),
-            ('archive_job_id', job.context.id),
-            ('archive_job_type', 'Package upload notification'),
-            ('packageupload_id', upload.id),
-            ('packageupload_status', 'Accepted'),
-            ('summary_text', 'Fake summary'),
-            ]
+            ("job_id", job.context.job.id),
+            ("archive_id", upload.archive.id),
+            ("archive_job_id", job.context.id),
+            ("archive_job_type", "Package upload notification"),
+            ("packageupload_id", upload.id),
+            ("packageupload_status", "Accepted"),
+            ("summary_text", "Fake summary"),
+        ]
         self.assertEqual(expected, job.getOopsVars())
 
     def test_metadata(self):
         upload = self.factory.makePackageUpload(
-            status=PackageUploadStatus.ACCEPTED)
+            status=PackageUploadStatus.ACCEPTED
+        )
         job = PackageUploadNotificationJob.create(
-            upload, summary_text='Fake summary')
+            upload, summary_text="Fake summary"
+        )
         expected = {
-            'packageupload_id': upload.id,
-            'packageupload_status': 'Accepted',
-            'summary_text': 'Fake summary',
-            }
+            "packageupload_id": upload.id,
+            "packageupload_status": "Accepted",
+            "summary_text": "Fake summary",
+        }
         self.assertEqual(expected, job.metadata)
         self.assertEqual(upload, job.packageupload)
         self.assertEqual(
-            PackageUploadStatus.ACCEPTED, job.packageupload_status)
-        self.assertEqual('Fake summary', job.summary_text)
+            PackageUploadStatus.ACCEPTED, job.packageupload_status
+        )
+        self.assertEqual("Fake summary", job.summary_text)
 
     def test_run(self):
         # Running a job produces a notification.  Detailed tests of which
@@ -148,20 +142,24 @@ class TestPackageUploadNotificationJob(TestCaseWithFactory):
         creator = self.factory.makePerson()
         changes = Changes({"Changed-By": format_address_for_person(creator)})
         upload = self.factory.makePackageUpload(
-            distroseries=distroseries, archive=distroseries.main_archive,
-            changes_file_content=changes.dump().encode("UTF-8"))
+            distroseries=distroseries,
+            archive=distroseries.main_archive,
+            changes_file_content=changes.dump().encode("UTF-8"),
+        )
         upload.addSource(self.factory.makeSourcePackageRelease())
         self.factory.makeComponentSelection(
-            upload.distroseries, upload.sourcepackagerelease.component)
+            upload.distroseries, upload.sourcepackagerelease.component
+        )
         upload.setAccepted()
         job = PackageUploadNotificationJob.create(
-            upload, summary_text='Fake summary')
+            upload, summary_text="Fake summary"
+        )
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
         [email] = pop_notifications()
-        self.assertEqual(format_address_for_person(creator), email['To'])
-        self.assertIn('(Accepted)', email['Subject'])
-        self.assertIn('Fake summary', email.get_payload()[0].get_payload())
+        self.assertEqual(format_address_for_person(creator), email["To"])
+        self.assertIn("(Accepted)", email["Subject"])
+        self.assertIn("Fake summary", email.get_payload()[0].get_payload())
 
 
 class TestCIBuildUploadJob(TestCaseWithFactory):
@@ -172,44 +170,64 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # CIBuilds must be in a package namespace in order to be uploaded to
         # an archive.
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         repository = self.factory.makeGitRepository(target=dsp)
         return self.factory.makeCIBuild(git_repository=repository, **kwargs)
 
     def test_repr_no_channel(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE)
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+        )
         self.assertEqual(
-            "<CIBuildUploadJob to upload %r to %s %s>" % (
-                build, archive.reference, distroseries.name),
-            repr(job))
+            "<CIBuildUploadJob to upload %r to %s %s>"
+            % (build, archive.reference, distroseries.name),
+            repr(job),
+        )
 
     def test_repr_channel(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         self.assertEqual(
-            "<CIBuildUploadJob to upload %r to %s %s {edge}>" % (
-                build, archive.reference, distroseries.name),
-            repr(job))
+            "<CIBuildUploadJob to upload %r to %s %s {edge}>"
+            % (build, archive.reference, distroseries.name),
+            repr(job),
+        )
 
     def test_getOopsVars(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         expected = [
             ("job_id", job.context.job.id),
             ("archive_id", archive.id),
@@ -219,23 +237,29 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             ("target_distroseries_id", distroseries.id),
             ("target_pocket", "Release"),
             ("target_channel", "edge"),
-            ]
+        ]
         self.assertEqual(expected, job.getOopsVars())
 
     def test_metadata(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         expected = {
             "ci_build_id": build.id,
             "target_distroseries_id": distroseries.id,
             "target_pocket": "Release",
             "target_channel": "edge",
-            }
+        }
         self.assertEqual(expected, job.metadata)
         self.assertEqual(build, job.ci_build)
         self.assertEqual(distroseries, job.target_distroseries)
@@ -245,195 +269,265 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
     def test__scanFiles_wheel_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.WHL),
-                    name=Equals("wheel-indep"),
-                    version=Equals("0.0.1"),
-                    summary=Equals("Example description"),
-                    description=Equals("Example long description\n"),
-                    architecturespecific=Is(False),
-                    homepage=Equals(""),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.WHL),
+                        name=Equals("wheel-indep"),
+                        version=Equals("0.0.1"),
+                        summary=Equals("Example description"),
+                        description=Equals("Example long description\n"),
+                        architecturespecific=Is(False),
+                        homepage=Equals(""),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_wheel_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path(
-            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl")
+            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl"
+        )
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.WHL),
-                    name=Equals("wheel-arch"),
-                    version=Equals("0.0.1"),
-                    summary=Equals("Example description"),
-                    description=Equals("Example long description\n"),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.WHL),
+                        name=Equals("wheel-arch"),
+                        version=Equals("0.0.1"),
+                        summary=Equals("Example description"),
+                        description=Equals("Example long description\n"),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_sdist(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("wheel-arch/dist/wheel-arch-0.0.1.tar.gz")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure.byEquality(
-                    format=SourcePackageFileType.SDIST,
-                    name="wheel-arch",
-                    version="0.0.1",
+            MatchesDict(
+                {
+                    path.name: MatchesStructure.byEquality(
+                        format=SourcePackageFileType.SDIST,
+                        name="wheel-arch",
+                        version="0.0.1",
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_conda_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.CONDA_V1),
-                    name=Equals("conda-indep"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    architecturespecific=Is(False),
-                    homepage=Equals(""),
-                    user_defined_fields=Equals([("subdir", "noarch")]),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.CONDA_V1),
+                        name=Equals("conda-indep"),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        architecturespecific=Is(False),
+                        homepage=Equals(""),
+                        user_defined_fields=Equals([("subdir", "noarch")]),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_conda_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.CONDA_V1),
-                    name=Equals("conda-arch"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
-                    user_defined_fields=Equals([("subdir", "linux-64")]),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.CONDA_V1),
+                        name=Equals("conda-arch"),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
+                        user_defined_fields=Equals([("subdir", "linux-64")]),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_conda_v2_indep(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.CONDA_V2),
-                    name=Equals("conda-v2-indep"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    architecturespecific=Is(False),
-                    homepage=Equals(""),
-                    user_defined_fields=Equals([("subdir", "noarch")]),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.CONDA_V2),
+                        name=Equals("conda-v2-indep"),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        architecturespecific=Is(False),
+                        homepage=Equals(""),
+                        user_defined_fields=Equals([("subdir", "noarch")]),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_conda_v2_arch(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         path = Path("conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                path.name: MatchesStructure(
-                    format=Equals(BinaryPackageFormat.CONDA_V2),
-                    name=Equals("conda-v2-arch"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
-                    user_defined_fields=Equals([("subdir", "linux-64")]),
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.CONDA_V2),
+                        name=Equals("conda-v2-arch"),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
+                        user_defined_fields=Equals([("subdir", "linux-64")]),
                     ),
-                }))
+                }
+            ),
+        )
 
     def test__scanFiles_go(self):
         self.useFixture(FakeLogger())
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         build = self.makeCIBuild(archive.distribution)
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         info_path = Path("go/dist/v0.0.1.info")
         mod_path = Path("go/dist/v0.0.1.mod")
         zip_path = Path("go/dist/v0.0.1.zip")
@@ -444,298 +538,438 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         all_metadata = job._scanFiles(tmpdir)
         self.assertThat(
             all_metadata,
-            MatchesDict({
-                info_path.name: MatchesStructure.byEquality(
-                    format=SourcePackageFileType.GO_MODULE_INFO,
-                    name="example.com/t",
-                    version="v0.0.1",
-                    user_defined_fields=[("module-path", "example.com/t")],
+            MatchesDict(
+                {
+                    info_path.name: MatchesStructure.byEquality(
+                        format=SourcePackageFileType.GO_MODULE_INFO,
+                        name="example.com/t",
+                        version="v0.0.1",
+                        user_defined_fields=[("module-path", "example.com/t")],
                     ),
-                mod_path.name: MatchesStructure.byEquality(
-                    format=SourcePackageFileType.GO_MODULE_MOD,
-                    name="example.com/t",
-                    version="v0.0.1",
-                    user_defined_fields=[("module-path", "example.com/t")],
+                    mod_path.name: MatchesStructure.byEquality(
+                        format=SourcePackageFileType.GO_MODULE_MOD,
+                        name="example.com/t",
+                        version="v0.0.1",
+                        user_defined_fields=[("module-path", "example.com/t")],
                     ),
-                zip_path.name: MatchesStructure.byEquality(
-                    format=SourcePackageFileType.GO_MODULE_ZIP,
-                    name="example.com/t",
-                    version="v0.0.1",
-                    user_defined_fields=[("module-path", "example.com/t")],
+                    zip_path.name: MatchesStructure.byEquality(
+                        format=SourcePackageFileType.GO_MODULE_ZIP,
+                        name="example.com/t",
+                        version="v0.0.1",
+                        user_defined_fields=[("module-path", "example.com/t")],
                     ),
-                }))
+                }
+            ),
+        )
 
     def test_run_indep(self):
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build = self.makeCIBuild(
-            archive.distribution, distro_arch_series=dases[0])
+            archive.distribution, distro_arch_series=dases[0]
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
             report.attach(name=os.path.basename(path), data=f.read())
-        artifact = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        artifact = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .one()
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
                     sourcepackagename=MatchesStructure.byEquality(
-                        name=build.git_repository.target.name),
-                    version=Equals("0.0.1"),
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("0.0.1"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=Equals([]),
+                    ),
                     format=Equals(SourcePackageType.CI_BUILD),
-                    architecturehintlist=Equals(""),
-                    creator=Equals(build.git_repository.owner),
-                    files=Equals([])),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries))))
-        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(*(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="wheel-indep"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
-                    binarypackagename=MatchesStructure.byEquality(
-                        name="wheel-indep"),
-                    version=Equals("0.0.1"),
-                    summary=Equals("Example description"),
-                    description=Equals("Example long description\n"),
-                    binpackageformat=Equals(BinaryPackageFormat.WHL),
-                    architecturespecific=Is(False),
-                    homepage=Equals(""),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifact.library_file,
-                            filetype=BinaryPackageFileType.WHL))),
-                binarypackageformat=Equals(BinaryPackageFormat.WHL),
-                distroarchseries=Equals(das))
-            for das in dases)))
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-indep"
+                        ),
+                        binarypackagerelease=MatchesStructure(
+                            ci_build=Equals(build),
+                            binarypackagename=MatchesStructure.byEquality(
+                                name="wheel-indep"
+                            ),
+                            version=Equals("0.0.1"),
+                            summary=Equals("Example description"),
+                            description=Equals("Example long description\n"),
+                            binpackageformat=Equals(BinaryPackageFormat.WHL),
+                            architecturespecific=Is(False),
+                            homepage=Equals(""),
+                            files=MatchesSetwise(
+                                MatchesStructure.byEquality(
+                                    libraryfile=artifact.library_file,
+                                    filetype=BinaryPackageFileType.WHL,
+                                )
+                            ),
+                        ),
+                        binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                        distroarchseries=Equals(das),
+                    )
+                    for das in dases
+                )
+            ),
+        )
 
     def test_run_arch(self):
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build = self.makeCIBuild(
-            archive.distribution, distro_arch_series=dases[0])
+            archive.distribution, distro_arch_series=dases[0]
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         sdist_path = "wheel-arch/dist/wheel-arch-0.0.1.tar.gz"
         wheel_path = (
-            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl")
+            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl"
+        )
         with open(datadir(sdist_path), mode="rb") as f:
             report.attach(name=os.path.basename(sdist_path), data=f.read())
         with open(datadir(wheel_path), mode="rb") as f:
             report.attach(name=os.path.basename(wheel_path), data=f.read())
-        artifacts = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        artifacts = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .order_by("id")
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
                     sourcepackagename=MatchesStructure.byEquality(
-                        name=build.git_repository.target.name),
-                    version=Equals("0.0.1"),
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("0.0.1"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[0].library_file,
+                                filetype=SourcePackageFileType.SDIST,
+                            )
+                        ),
+                    ),
                     format=Equals(SourcePackageType.CI_BUILD),
-                    architecturehintlist=Equals(""),
-                    creator=Equals(build.git_repository.owner),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[0].library_file,
-                            filetype=SourcePackageFileType.SDIST))),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries))))
-        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="wheel-arch"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
                     binarypackagename=MatchesStructure.byEquality(
-                        name="wheel-arch"),
-                    version=Equals("0.0.1"),
-                    summary=Equals("Example description"),
-                    description=Equals("Example long description\n"),
-                    binpackageformat=Equals(BinaryPackageFormat.WHL),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[1].library_file,
-                            filetype=BinaryPackageFileType.WHL))),
-                binarypackageformat=Equals(BinaryPackageFormat.WHL),
-                distroarchseries=Equals(dases[0]))))
+                        name="wheel-arch"
+                    ),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-arch"
+                        ),
+                        version=Equals("0.0.1"),
+                        summary=Equals("Example description"),
+                        description=Equals("Example long description\n"),
+                        binpackageformat=Equals(BinaryPackageFormat.WHL),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[1].library_file,
+                                filetype=BinaryPackageFileType.WHL,
+                            )
+                        ),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                    distroarchseries=Equals(dases[0]),
+                )
+            ),
+        )
 
     def test_run_conda(self):
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.CONDA)
+            repository_format=ArchiveRepositoryFormat.CONDA
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build = self.makeCIBuild(
-            archive.distribution, distro_arch_series=dases[0])
+            archive.distribution, distro_arch_series=dases[0]
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2"
         with open(datadir(path), mode="rb") as f:
             report.attach(name=os.path.basename(path), data=f.read())
-        artifact = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        artifact = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .one()
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
                     sourcepackagename=MatchesStructure.byEquality(
-                        name=build.git_repository.target.name),
-                    version=Equals("0.1"),
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("0.1"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=Equals([]),
+                    ),
                     format=Equals(SourcePackageType.CI_BUILD),
-                    architecturehintlist=Equals(""),
-                    creator=Equals(build.git_repository.owner),
-                    files=Equals([])),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries))))
-        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="conda-arch"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
                     binarypackagename=MatchesStructure.byEquality(
-                        name="conda-arch"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    binpackageformat=Equals(BinaryPackageFormat.CONDA_V1),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifact.library_file,
-                            filetype=BinaryPackageFileType.CONDA_V1))),
-                binarypackageformat=Equals(BinaryPackageFormat.CONDA_V1),
-                distroarchseries=Equals(dases[0]))))
+                        name="conda-arch"
+                    ),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="conda-arch"
+                        ),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        binpackageformat=Equals(BinaryPackageFormat.CONDA_V1),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifact.library_file,
+                                filetype=BinaryPackageFileType.CONDA_V1,
+                            )
+                        ),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.CONDA_V1),
+                    distroarchseries=Equals(dases[0]),
+                )
+            ),
+        )
 
     def test_run_conda_v2(self):
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.CONDA)
+            repository_format=ArchiveRepositoryFormat.CONDA
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build = self.makeCIBuild(
-            archive.distribution, distro_arch_series=dases[0])
+            archive.distribution, distro_arch_series=dases[0]
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
         with open(datadir(path), mode="rb") as f:
             report.attach(name=os.path.basename(path), data=f.read())
-        artifact = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).one()
+        artifact = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .one()
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
                     sourcepackagename=MatchesStructure.byEquality(
-                        name=build.git_repository.target.name),
-                    version=Equals("0.1"),
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("0.1"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=Equals([]),
+                    ),
                     format=Equals(SourcePackageType.CI_BUILD),
-                    architecturehintlist=Equals(""),
-                    creator=Equals(build.git_repository.owner),
-                    files=Equals([])),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries))))
-        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="conda-v2-arch"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
                     binarypackagename=MatchesStructure.byEquality(
-                        name="conda-v2-arch"),
-                    version=Equals("0.1"),
-                    summary=Equals("Example summary"),
-                    description=Equals("Example description"),
-                    binpackageformat=Equals(BinaryPackageFormat.CONDA_V2),
-                    architecturespecific=Is(True),
-                    homepage=Equals("http://example.com/"),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifact.library_file,
-                            filetype=BinaryPackageFileType.CONDA_V2))),
-                binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
-                distroarchseries=Equals(dases[0]))))
+                        name="conda-v2-arch"
+                    ),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="conda-v2-arch"
+                        ),
+                        version=Equals("0.1"),
+                        summary=Equals("Example summary"),
+                        description=Equals("Example description"),
+                        binpackageformat=Equals(BinaryPackageFormat.CONDA_V2),
+                        architecturespecific=Is(True),
+                        homepage=Equals("http://example.com/"),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifact.library_file,
+                                filetype=BinaryPackageFileType.CONDA_V2,
+                            )
+                        ),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.CONDA_V2),
+                    distroarchseries=Equals(dases[0]),
+                )
+            ),
+        )
 
     def test_run_go(self):
         self.useFixture(FakeLogger())
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.GO_PROXY)
+            repository_format=ArchiveRepositoryFormat.GO_PROXY
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         dases = [
             self.factory.makeDistroArchSeries(distroseries=distroseries)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         build = self.makeCIBuild(
-            archive.distribution, distro_arch_series=dases[0])
+            archive.distribution, distro_arch_series=dases[0]
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         report.setLog(b"log data")
         info_path = "go/dist/v0.0.1.info"
@@ -744,44 +978,67 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         for path in (info_path, mod_path, zip_path):
             with open(datadir(path), mode="rb") as f:
                 report.attach(name=os.path.basename(path), data=f.read())
-        artifacts = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        artifacts = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .order_by("id")
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
                     sourcepackagename=MatchesStructure.byEquality(
-                        name=build.git_repository.target.name),
-                    version=Equals("v0.0.1"),
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("v0.0.1"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[0].library_file,
+                                filetype=SourcePackageFileType.GO_MODULE_INFO,
+                            ),
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[1].library_file,
+                                filetype=SourcePackageFileType.GO_MODULE_MOD,
+                            ),
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[2].library_file,
+                                filetype=SourcePackageFileType.GO_MODULE_ZIP,
+                            ),
+                        ),
+                        user_defined_fields=Equals(
+                            [["module-path", "example.com/t"]]
+                        ),
+                    ),
                     format=Equals(SourcePackageType.CI_BUILD),
-                    architecturehintlist=Equals(""),
-                    creator=Equals(build.git_repository.owner),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[0].library_file,
-                            filetype=SourcePackageFileType.GO_MODULE_INFO),
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[1].library_file,
-                            filetype=SourcePackageFileType.GO_MODULE_MOD),
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[2].library_file,
-                            filetype=SourcePackageFileType.GO_MODULE_ZIP)),
-                    user_defined_fields=Equals(
-                        [["module-path", "example.com/t"]])),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries))))
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
         self.assertContentEqual([], archive.getAllPublishedBinaries())
 
     def test_existing_source_and_binary_releases(self):
@@ -789,9 +1046,11 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # already uploaded somewhere, and in that case may add publications
         # in other locations for the same package.
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
@@ -801,19 +1060,34 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         wheel_path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(wheel_path), mode="rb") as f:
             report.attach(name=os.path.basename(wheel_path), data=f.read())
-        artifacts = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        artifacts = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .order_by("id")
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="0.0.1/edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
@@ -824,39 +1098,61 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # which has a single file attached to it.
         self.assertEqual(1, len({spph.sourcepackagename for spph in spphs}))
         self.assertEqual(1, len({spph.sourcepackagerelease for spph in spphs}))
-        self.assertThat(spphs, MatchesSetwise(*(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[0].library_file,
-                            filetype=SourcePackageFileType.SDIST))),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries),
-                channel=Equals(channel))
-            for channel in ("edge", "0.0.1/edge"))))
+        self.assertThat(
+            spphs,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        sourcepackagerelease=MatchesStructure(
+                            ci_build=Equals(build),
+                            files=MatchesSetwise(
+                                MatchesStructure.byEquality(
+                                    libraryfile=artifacts[0].library_file,
+                                    filetype=SourcePackageFileType.SDIST,
+                                )
+                            ),
+                        ),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        distroseries=Equals(distroseries),
+                        channel=Equals(channel),
+                    )
+                    for channel in ("edge", "0.0.1/edge")
+                )
+            ),
+        )
         bpphs = archive.getAllPublishedBinaries()
         # The binary publications are for the same binary package release,
         # which has a single file attached to it.
         self.assertEqual(1, len({bpph.binarypackagename for bpph in bpphs}))
         self.assertEqual(1, len({bpph.binarypackagerelease for bpph in bpphs}))
-        self.assertThat(bpphs, MatchesSetwise(*(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="wheel-indep"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[1].library_file,
-                            filetype=BinaryPackageFileType.WHL))),
-                binarypackageformat=Equals(BinaryPackageFormat.WHL),
-                distroarchseries=Equals(das),
-                channel=Equals(channel))
-            for channel in ("edge", "0.0.1/edge"))))
+        self.assertThat(
+            bpphs,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-indep"
+                        ),
+                        binarypackagerelease=MatchesStructure(
+                            ci_build=Equals(build),
+                            files=MatchesSetwise(
+                                MatchesStructure.byEquality(
+                                    libraryfile=artifacts[1].library_file,
+                                    filetype=BinaryPackageFileType.WHL,
+                                )
+                            ),
+                        ),
+                        binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                        distroarchseries=Equals(das),
+                        channel=Equals(channel),
+                    )
+                    for channel in ("edge", "0.0.1/edge")
+                )
+            ),
+        )
 
     def test_existing_binary_release_no_existing_source_release(self):
         # A `CIBuildUploadJob` can be run even if the build in question was
@@ -865,9 +1161,11 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # was no existing source package release (because
         # `CIBuildUploadJob`s didn't always create one).
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
@@ -877,67 +1175,104 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         wheel_path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(wheel_path), mode="rb") as f:
             report.attach(name=os.path.basename(wheel_path), data=f.read())
-        artifacts = IStore(RevisionStatusArtifact).find(
-            RevisionStatusArtifact,
-            report=report,
-            artifact_type=RevisionStatusArtifactType.BINARY).order_by("id")
+        artifacts = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                report=report,
+                artifact_type=RevisionStatusArtifactType.BINARY,
+            )
+            .order_by("id")
+        )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
         with MockPatchObject(CIBuildUploadJob, "_uploadSources"):
             with dbuser(job.config.dbuser):
                 JobRunner([job]).runAll()
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="0.0.1/edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
         # There is a source publication for a new source package release.
-        self.assertThat(archive.getPublishedSources(), MatchesSetwise(
-            MatchesStructure(
-                sourcepackagename=MatchesStructure.byEquality(
-                    name=build.git_repository.target.name),
-                sourcepackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[0].library_file,
-                            filetype=SourcePackageFileType.SDIST))),
-                format=Equals(SourcePackageType.CI_BUILD),
-                distroseries=Equals(distroseries),
-                channel=Equals("0.0.1/edge"))))
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
+                    sourcepackagename=MatchesStructure.byEquality(
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[0].library_file,
+                                filetype=SourcePackageFileType.SDIST,
+                            )
+                        ),
+                    ),
+                    format=Equals(SourcePackageType.CI_BUILD),
+                    distroseries=Equals(distroseries),
+                    channel=Equals("0.0.1/edge"),
+                )
+            ),
+        )
         bpphs = archive.getAllPublishedBinaries()
         # The binary publications are for the same binary package release,
         # which has a single file attached to it.
         self.assertEqual(1, len({bpph.binarypackagename for bpph in bpphs}))
         self.assertEqual(1, len({bpph.binarypackagerelease for bpph in bpphs}))
-        self.assertThat(bpphs, MatchesSetwise(*(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="wheel-indep"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
-                    files=MatchesSetwise(
-                        MatchesStructure.byEquality(
-                            libraryfile=artifacts[1].library_file,
-                            filetype=BinaryPackageFileType.WHL))),
-                binarypackageformat=Equals(BinaryPackageFormat.WHL),
-                distroarchseries=Equals(das),
-                channel=Equals(channel))
-            for channel in ("edge", "0.0.1/edge"))))
+        self.assertThat(
+            bpphs,
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-indep"
+                        ),
+                        binarypackagerelease=MatchesStructure(
+                            ci_build=Equals(build),
+                            files=MatchesSetwise(
+                                MatchesStructure.byEquality(
+                                    libraryfile=artifacts[1].library_file,
+                                    filetype=BinaryPackageFileType.WHL,
+                                )
+                            ),
+                        ),
+                        binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                        distroarchseries=Equals(das),
+                        channel=Equals(channel),
+                    )
+                    for channel in ("edge", "0.0.1/edge")
+                )
+            ),
+        )
 
     def test_skips_disallowed_binary_formats(self):
         # A CI job might build multiple types of packages, of which only
         # some are interesting to upload to archives with a given repository
         # format.  Others are skipped.
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         wheel_report = build.getOrCreateRevisionStatusReport("build-wheel:0")
@@ -945,39 +1280,56 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         conda_path = "conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda"
         with open(datadir(wheel_path), mode="rb") as f:
             wheel_report.attach(
-                name=os.path.basename(wheel_path), data=f.read())
+                name=os.path.basename(wheel_path), data=f.read()
+            )
         conda_report = build.getOrCreateRevisionStatusReport("build-conda:0")
         with open(datadir(conda_path), mode="rb") as f:
             conda_report.attach(
-                name=os.path.basename(conda_path), data=f.read())
+                name=os.path.basename(conda_path), data=f.read()
+            )
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
             JobRunner([job]).runAll()
 
-        self.assertThat(archive.getAllPublishedBinaries(), MatchesSetwise(
-            MatchesStructure(
-                binarypackagename=MatchesStructure.byEquality(
-                    name="wheel-indep"),
-                binarypackagerelease=MatchesStructure(
-                    ci_build=Equals(build),
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
                     binarypackagename=MatchesStructure.byEquality(
-                        name="wheel-indep"),
-                    version=Equals("0.0.1"),
-                    binpackageformat=Equals(BinaryPackageFormat.WHL)),
-                binarypackageformat=Equals(BinaryPackageFormat.WHL),
-                distroarchseries=Equals(das))))
+                        name="wheel-indep"
+                    ),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-indep"
+                        ),
+                        version=Equals("0.0.1"),
+                        binpackageformat=Equals(BinaryPackageFormat.WHL),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                    distroarchseries=Equals(das),
+                )
+            ),
+        )
 
     def test_librarian_server_error_retries(self):
         # A run that gets an error from the librarian server schedules
         # itself to be retried.
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
@@ -985,8 +1337,13 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         with open(datadir(path), mode="rb") as f:
             report.attach(name=os.path.basename(path), data=f.read())
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="0.0.1/edge",
+        )
         transaction.commit()
 
         def fake_open(*args):
@@ -1011,9 +1368,11 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # requester.
         logger = self.useFixture(FakeLogger())
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.makeCIBuild(archive.distribution, distro_arch_series=das)
         report = build.getOrCreateRevisionStatusReport("build:0")
@@ -1022,8 +1381,13 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             # Use an invalid file name to force a scan failure.
             report.attach(name="_invalid.whl", data=f.read())
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="0.0.1/edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="0.0.1/edge",
+        )
         transaction.commit()
 
         with dbuser(job.config.dbuser):
@@ -1034,25 +1398,33 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "Running %r (ID %d) in status Waiting" % (job, job.job_id),
             "Failed to scan _invalid.whl as a Python wheel: Invalid wheel "
             "filename: '_invalid.whl'",
-            "%r (ID %d) failed with user error ScanException(\"Could not find "
+            '%r (ID %d) failed with user error ScanException("Could not find '
             "any usable files in ['_invalid.whl']\",)." % (job, job.job_id),
-            ]
+        ]
         self.assertEqual(expected_logs, logger.output.splitlines())
         [notification] = self.assertEmailQueueLength(1)
-        self.assertThat(dict(notification), ContainsDict({
-            "From": Equals(config.canonical.noreply_from_address),
-            "To": Equals(
-                format_address_for_person(build.git_repository.owner)),
-            "Subject": Equals(
-                "Launchpad error while uploading %s to %s" %
-                (build.title, archive.reference)),
-            }))
+        self.assertThat(
+            dict(notification),
+            ContainsDict(
+                {
+                    "From": Equals(config.canonical.noreply_from_address),
+                    "To": Equals(
+                        format_address_for_person(build.git_repository.owner)
+                    ),
+                    "Subject": Equals(
+                        "Launchpad error while uploading %s to %s"
+                        % (build.title, archive.reference)
+                    ),
+                }
+            ),
+        )
         self.assertEqual(
             "Launchpad encountered an error during the following operation: "
             "uploading %s to %s.  "
-            "Could not find any usable files in ['_invalid.whl']" % (
-                build.title, archive.reference),
-            notification.get_payload(decode=True).decode())
+            "Could not find any usable files in ['_invalid.whl']"
+            % (build.title, archive.reference),
+            notification.get_payload(decode=True).decode(),
+        )
 
 
 class TestViaCelery(TestCaseWithFactory):
@@ -1061,16 +1433,21 @@ class TestViaCelery(TestCaseWithFactory):
 
     def test_PackageUploadNotificationJob(self):
         # PackageUploadNotificationJob runs under Celery.
-        self.useFixture(FeatureFixture(
-            {"jobs.celery.enabled_classes": "PackageUploadNotificationJob"}))
+        self.useFixture(
+            FeatureFixture(
+                {"jobs.celery.enabled_classes": "PackageUploadNotificationJob"}
+            )
+        )
         creator = self.factory.makePerson()
         changes = Changes({"Changed-By": format_address_for_person(creator)})
         upload = self.factory.makePackageUpload(
-            changes_file_content=changes.dump().encode())
+            changes_file_content=changes.dump().encode()
+        )
         with admin_logged_in():
             upload.addSource(self.factory.makeSourcePackageRelease())
             self.factory.makeComponentSelection(
-                upload.distroseries, upload.sourcepackagerelease.component)
+                upload.distroseries, upload.sourcepackagerelease.component
+            )
             upload.setAccepted()
         job = PackageUploadNotificationJob.create(upload)
 
@@ -1082,26 +1459,36 @@ class TestViaCelery(TestCaseWithFactory):
 
     def test_CIBuildUploadJob(self):
         # CIBuildUploadJob runs under Celery.
-        self.useFixture(FeatureFixture(
-            {"jobs.celery.enabled_classes": "CIBuildUploadJob"}))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "CIBuildUploadJob"})
+        )
         archive = self.factory.makeArchive(
-            repository_format=ArchiveRepositoryFormat.PYTHON)
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=archive.distribution)
+            distribution=archive.distribution
+        )
         repository = self.factory.makeGitRepository(target=dsp)
         build = self.factory.makeCIBuild(
-            git_repository=repository, distro_arch_series=das)
+            git_repository=repository, distro_arch_series=das
+        )
         report = build.getOrCreateRevisionStatusReport("build:0")
         path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
         with open(datadir(path), mode="rb") as f:
             with person_logged_in(build.git_repository.owner):
                 report.attach(name=os.path.basename(path), data=f.read())
         job = CIBuildUploadJob.create(
-            build, build.git_repository.owner, archive, das.distroseries,
-            PackagePublishingPocket.RELEASE, target_channel="edge")
+            build,
+            build.git_repository.owner,
+            archive,
+            das.distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
 
         with block_on_job():
             transaction.commit()

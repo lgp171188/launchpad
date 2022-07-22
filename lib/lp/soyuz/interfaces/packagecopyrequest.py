@@ -4,19 +4,12 @@
 """PackageCopyRequest interfaces."""
 
 __all__ = [
-    'IPackageCopyRequest',
-    'IPackageCopyRequestSet',
-    ]
+    "IPackageCopyRequest",
+    "IPackageCopyRequestSet",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Object,
-    Text,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, Object, Text
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -30,77 +23,118 @@ from lp.soyuz.interfaces.component import IComponent
 class IPackageCopyRequest(Interface):
     """A Build interface"""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     target_archive = Object(
-        title=_("Target archive"), schema=IArchive,
-        required=True, readonly=True,
-        description=_("The archive to which packages will be copied."))
+        title=_("Target archive"),
+        schema=IArchive,
+        required=True,
+        readonly=True,
+        description=_("The archive to which packages will be copied."),
+    )
 
     target_distroseries = Object(
-        title=_("Target distroseries"), schema=IDistroSeries,
-        required=False, readonly=True,
-        description=_("The target DistroSeries."))
+        title=_("Target distroseries"),
+        schema=IDistroSeries,
+        required=False,
+        readonly=True,
+        description=_("The target DistroSeries."),
+    )
 
     target_component = Object(
-        title=_("Target component"), schema=IComponent,
-        required=False, readonly=True,
-        description=_("The target component."))
+        title=_("Target component"),
+        schema=IComponent,
+        required=False,
+        readonly=True,
+        description=_("The target component."),
+    )
 
     target_pocket = Choice(
-        title=_('Target pocket'), required=False,
+        title=_("Target pocket"),
+        required=False,
         vocabulary=PackagePublishingPocket,
-        description=_("The target pocket."))
+        description=_("The target pocket."),
+    )
 
     copy_binaries = Bool(
-        title=_('Copy binaries'), required=True, default=False,
-        description=_("Whether binary packages should be copied as well."))
+        title=_("Copy binaries"),
+        required=True,
+        default=False,
+        description=_("Whether binary packages should be copied as well."),
+    )
 
     source_archive = Object(
-        title=_("Source archive"), schema=IArchive,
-        required=True, readonly=True,
-        description=_("The archive from which packages will be copied."))
+        title=_("Source archive"),
+        schema=IArchive,
+        required=True,
+        readonly=True,
+        description=_("The archive from which packages will be copied."),
+    )
 
     source_distroseries = Object(
-        title=_("Source distroseries"), schema=IDistroSeries,
-        required=False, readonly=True,
-        description=_("The source DistroSeries."))
+        title=_("Source distroseries"),
+        schema=IDistroSeries,
+        required=False,
+        readonly=True,
+        description=_("The source DistroSeries."),
+    )
 
     source_component = Object(
-        title=_("Source component"), schema=IComponent,
-        required=False, readonly=True,
-        description=_("The source component."))
+        title=_("Source component"),
+        schema=IComponent,
+        required=False,
+        readonly=True,
+        description=_("The source component."),
+    )
 
     source_pocket = Choice(
-        title=_('Source pocket'), required=False,
+        title=_("Source pocket"),
+        required=False,
         vocabulary=PackagePublishingPocket,
-        description=_("The source pocket."))
+        description=_("The source pocket."),
+    )
 
     requester = Object(
-        title=_("Requester"), schema=IPerson,
-        required=True, readonly=True,
-        description=_("The person who requested the package copy operation."))
+        title=_("Requester"),
+        schema=IPerson,
+        required=True,
+        readonly=True,
+        description=_("The person who requested the package copy operation."),
+    )
 
     status = Choice(
-        title=_('Copy status'), required=True,
+        title=_("Copy status"),
+        required=True,
         vocabulary=PackageCopyStatus,
-        description=_("The current status of the copy operation."))
+        description=_("The current status of the copy operation."),
+    )
 
     reason = Text(
-        title=_('Reason'), required=False,
-        description=_("The reason for this package copy operation."))
+        title=_("Reason"),
+        required=False,
+        description=_("The reason for this package copy operation."),
+    )
 
     date_created = Datetime(
-        title=_('Date created'), required=True, readonly=True,
-        description=_("The time when the package copy request was created."))
+        title=_("Date created"),
+        required=True,
+        readonly=True,
+        description=_("The time when the package copy request was created."),
+    )
 
     date_started = Datetime(
-        title=_('Date started'), required=False, readonly=False,
-        description=_("The time when the copy request processing started."))
+        title=_("Date started"),
+        required=False,
+        readonly=False,
+        description=_("The time when the copy request processing started."),
+    )
 
     date_completed = Datetime(
-        title=_('Date completed'), required=False, readonly=False,
-        description=_("The time when the copy request processing completed."))
+        title=_("Date completed"),
+        required=False,
+        readonly=False,
+        description=_("The time when the copy request processing completed."),
+    )
 
     def __str__():
         """Return a textual representation of the package copy request."""
@@ -138,6 +172,7 @@ class IPackageCopyRequest(Interface):
 
 class IPackageCopyRequestSet(Interface):
     """Interface for package copy requests."""
+
     def new(source, target, requester, copy_binaries=False, reason=None):
         """Create a new copy request using the package locations passed.
 
