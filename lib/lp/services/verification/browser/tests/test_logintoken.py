@@ -11,18 +11,12 @@ from lp.services.verification.browser.logintoken import (
     MergePeopleView,
     ValidateEmailView,
     ValidateGPGKeyView,
-    )
+)
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.deprecated import LaunchpadFormHarness
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
 
 
@@ -33,40 +27,51 @@ class TestCancelActionOnLoginTokenViews(TestCaseWithFactory):
     token to be consumed (so it can't be used again) when the user hits
     Cancel.
     """
+
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
         TestCaseWithFactory.setUp(self)
-        self.person = self.factory.makePerson(name='test-user')
+        self.person = self.factory.makePerson(name="test-user")
         self.email = removeSecurityProxy(self.person).preferredemail.email
-        self.expected_next_url = 'http://127.0.0.1/~test-user'
+        self.expected_next_url = "http://127.0.0.1/~test-user"
 
     def test_ClaimTeamView(self):
         token = getUtility(ILoginTokenSet).new(
-            self.person, self.email, self.email, LoginTokenType.TEAMCLAIM)
+            self.person, self.email, self.email, LoginTokenType.TEAMCLAIM
+        )
         self._testCancelAction(ClaimTeamView, token)
 
     def test_ValidateGPGKeyView(self):
         self.gpg_key = self.factory.makeGPGKey(self.person)
         token = getUtility(ILoginTokenSet).new(
-            self.person, self.email, self.email, LoginTokenType.VALIDATEGPG,
-            fingerprint=self.gpg_key.fingerprint)
+            self.person,
+            self.email,
+            self.email,
+            LoginTokenType.VALIDATEGPG,
+            fingerprint=self.gpg_key.fingerprint,
+        )
         self._testCancelAction(ValidateGPGKeyView, token)
 
     def test_ValidateEmailView(self):
         with person_logged_in(self.person):
             token = getUtility(ILoginTokenSet).new(
-                self.person, self.email, 'foo@example.com',
-                LoginTokenType.VALIDATEEMAIL)
+                self.person,
+                self.email,
+                "foo@example.com",
+                LoginTokenType.VALIDATEEMAIL,
+            )
             self._testCancelAction(ValidateEmailView, token)
 
     def test_MergePeopleView(self):
         dupe = self.factory.makePerson()
         with person_logged_in(self.person):
             token = getUtility(ILoginTokenSet).new(
-                self.person, self.email,
+                self.person,
+                self.email,
                 email=removeSecurityProxy(dupe).preferredemail.email,
-                tokentype=LoginTokenType.ACCOUNTMERGE)
+                tokentype=LoginTokenType.ACCOUNTMERGE,
+            )
             self._testCancelAction(MergePeopleView, token)
 
     def _testCancelAction(self, view_class, token):
@@ -77,10 +82,10 @@ class TestCancelActionOnLoginTokenViews(TestCaseWithFactory):
         next_url is what we expect.
         """
         harness = LaunchpadFormHarness(token, view_class)
-        harness.submit('cancel', {})
+        harness.submit("cancel", {})
         actions = harness.view.actions.byname
-        self.assertIn('field.actions.cancel', actions)
-        self.assertEqual(actions['field.actions.cancel'].submitted(), True)
+        self.assertIn("field.actions.cancel", actions)
+        self.assertEqual(actions["field.actions.cancel"].submitted(), True)
         self.assertEqual(harness.view.errors, [])
         self.assertEqual(harness.view.next_url, self.expected_next_url)
 
@@ -92,29 +97,38 @@ class TestClaimTeamView(TestCaseWithFactory):
 
     def setUp(self):
         TestCaseWithFactory.setUp(self)
-        self.claimer = self.factory.makePerson(name='claimer')
-        self.claimee_email = 'claimee@example.com'
+        self.claimer = self.factory.makePerson(name="claimer")
+        self.claimee_email = "claimee@example.com"
         self.claimee = self.factory.makePerson(
-            name='claimee', email=self.claimee_email,
-            email_address_status=EmailAddressStatus.NEW)
+            name="claimee",
+            email=self.claimee_email,
+            email_address_status=EmailAddressStatus.NEW,
+        )
 
     def _claimToken(self, token):
         harness = LaunchpadFormHarness(token, ClaimTeamView)
-        harness.submit('confirm', {})
+        harness.submit("confirm", {})
         return [n.message for n in harness.request.notifications]
 
     def test_CannotClaimTwice(self):
         token1 = getUtility(ILoginTokenSet).new(
-            requester=self.claimer, requesteremail=None,
-            email=self.claimee_email, tokentype=LoginTokenType.TEAMCLAIM)
+            requester=self.claimer,
+            requesteremail=None,
+            email=self.claimee_email,
+            tokentype=LoginTokenType.TEAMCLAIM,
+        )
         token2 = getUtility(ILoginTokenSet).new(
-            requester=self.claimer, requesteremail=None,
-            email=self.claimee_email, tokentype=LoginTokenType.TEAMCLAIM)
+            requester=self.claimer,
+            requesteremail=None,
+            email=self.claimee_email,
+            tokentype=LoginTokenType.TEAMCLAIM,
+        )
         msgs = self._claimToken(token1)
-        self.assertEqual(['Team claimed successfully'], msgs)
+        self.assertEqual(["Team claimed successfully"], msgs)
         msgs = self._claimToken(token2)
         self.assertEqual(
-            ['claimee has already been converted to a team.'], msgs)
+            ["claimee has already been converted to a team."], msgs
+        )
 
 
 class MergePeopleViewTestCase(TestCaseWithFactory):
@@ -124,39 +138,52 @@ class MergePeopleViewTestCase(TestCaseWithFactory):
 
     def assertWorkflow(self, claimer, dupe):
         token = getUtility(ILoginTokenSet).new(
-            requester=claimer, requesteremail='me@example.com',
-            email="him@example.com", tokentype=LoginTokenType.ACCOUNTMERGE)
+            requester=claimer,
+            requesteremail="me@example.com",
+            email="him@example.com",
+            tokentype=LoginTokenType.ACCOUNTMERGE,
+        )
         view = create_initialized_view(token, name="+accountmerge")
         self.assertIs(False, view.mergeCompleted)
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*to merge the Launchpad account named.*claimer', view.render())
+            ".*to merge the Launchpad account named.*claimer", view.render()
+        )
         with person_logged_in(claimer):
             view = create_initialized_view(
-                token, name="+accountmerge", principal=claimer,
-                form={'field.actions.confirm': 'Confirm'}, method='POST')
+                token,
+                name="+accountmerge",
+                principal=claimer,
+                form={"field.actions.confirm": "Confirm"},
+                method="POST",
+            )
             view.render()
         self.assertIs(True, view.mergeCompleted)
         notifications = view.request.notifications
         self.assertEqual(2, len(notifications))
         text = notifications[0].message
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            "A merge is queued.*", text)
+            "A merge is queued.*", text
+        )
 
     def test_confirm_email_for_active_account(self):
         # Users can confirm they control an email address to merge a duplicate
         # profile.
         claimer = self.factory.makePerson(
-            email='me@example.com', name='claimer')
-        dupe = self.factory.makePerson(email='him@example.com', name='dupe')
+            email="me@example.com", name="claimer"
+        )
+        dupe = self.factory.makePerson(email="him@example.com", name="dupe")
         self.assertWorkflow(claimer, dupe)
 
     def test_confirm_email_for_non_active_account(self):
         # Users can confirm they control an email address to merge a
         # non-active duplicate profile.
         claimer = self.factory.makePerson(
-            email='me@example.com', name='claimer')
+            email="me@example.com", name="claimer"
+        )
         dupe = self.factory.makePerson(
-            email='him@example.com', name='dupe',
+            email="him@example.com",
+            name="dupe",
             email_address_status=EmailAddressStatus.NEW,
-            account_status=AccountStatus.NOACCOUNT)
+            account_status=AccountStatus.NOACCOUNT,
+        )
         self.assertWorkflow(claimer, dupe)

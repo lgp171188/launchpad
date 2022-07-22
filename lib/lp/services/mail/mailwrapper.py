@@ -4,8 +4,8 @@
 """The MailWrapper class."""
 
 __all__ = [
-    'MailWrapper',
-    ]
+    "MailWrapper",
+]
 
 
 import textwrap
@@ -24,12 +24,15 @@ class MailWrapper:
     emails. See textformatting.rst for more information.
     """
 
-    def __init__(self, width=72, indent='', indent_first_line=True):
+    def __init__(self, width=72, indent="", indent_first_line=True):
         self.indent = indent
         self.indent_first_line = indent_first_line
         self._text_wrapper = textwrap.TextWrapper(
-            width=width, subsequent_indent=indent,
-            replace_whitespace=False, break_long_words=False)
+            width=width,
+            subsequent_indent=indent,
+            replace_whitespace=False,
+            break_long_words=False,
+        )
 
     def format(self, text, force_wrap=False, wrap_func=None):
         """Format the text to be included in an email.
@@ -48,23 +51,23 @@ class MailWrapper:
         if self.indent_first_line:
             indentation = self.indent
         else:
-            indentation = ''
+            indentation = ""
 
         # We don't care about trailing whitespace.
         text = text.rstrip()
 
         # Normalize dos-style line endings to unix-style.
-        text = text.replace('\r\n', '\n')
+        text = text.replace("\r\n", "\n")
 
-        for paragraph in text.split('\n\n'):
-            lines = paragraph.split('\n')
+        for paragraph in text.split("\n\n"):
+            lines = paragraph.split("\n")
 
             if wrap_func is not None and not wrap_func(paragraph):
                 # The user's callback function has indicated that the
                 # paragraph should not be wrapped.
-                wrapped_lines += (
-                    [indentation + lines[0]] +
-                    [self.indent + line for line in lines[1:]])
+                wrapped_lines += [indentation + lines[0]] + [
+                    self.indent + line for line in lines[1:]
+                ]
             elif len(lines) == 1:
                 # We use TextWrapper only if the paragraph consists of a
                 # single line, like in the case where a person enters a
@@ -79,9 +82,9 @@ class MailWrapper:
             else:
                 # If the user has gone through the trouble of wrapping
                 # the lines, we shouldn't re-wrap them for them.
-                wrapped_lines += (
-                    [indentation + lines[0]] +
-                    [self.indent + line for line in lines[1:]])
+                wrapped_lines += [indentation + lines[0]] + [
+                    self.indent + line for line in lines[1:]
+                ]
 
             if not self.indent_first_line:
                 # 'indentation' was temporarily set to '' in order to
@@ -92,8 +95,8 @@ class MailWrapper:
 
             # Add an empty line so that the paragraphs get separated by
             # a blank line when they are joined together again.
-            wrapped_lines.append('')
+            wrapped_lines.append("")
 
         # We added one line too much, remove it.
         wrapped_lines = wrapped_lines[:-1]
-        return '\n'.join(wrapped_lines)
+        return "\n".join(wrapped_lines)

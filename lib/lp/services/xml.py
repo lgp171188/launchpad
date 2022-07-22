@@ -4,8 +4,8 @@
 """Validate XML documents against a schema."""
 
 __all__ = [
-    'XMLValidator',
-    ]
+    "XMLValidator",
+]
 
 
 import os
@@ -16,7 +16,7 @@ from tempfile import NamedTemporaryFile
 class XMLValidator:
     """A validator for XML files against a schema."""
 
-    SCHEMA_ARGUMENT = 'schema'
+    SCHEMA_ARGUMENT = "schema"
 
     def __init__(self, schema_filename):
         """Create a validator instance.
@@ -24,7 +24,7 @@ class XMLValidator:
         :param schema_filename: The name of a file containing the schema.
         """
         self.schema_filename = schema_filename
-        self._errors = ''
+        self._errors = ""
 
     def validate(self, xml):
         """Validate the string xml
@@ -49,39 +49,54 @@ class XMLValidator:
         xml_file = NamedTemporaryFile()
         xml_file.write(xml)
         xml_file.flush()
-        command = ['xmllint', '--noout', '--nonet',
-                   '--%s' % self.SCHEMA_ARGUMENT,
-                   self.schema_filename, xml_file.name]
+        command = [
+            "xmllint",
+            "--noout",
+            "--nonet",
+            "--%s" % self.SCHEMA_ARGUMENT,
+            self.schema_filename,
+            xml_file.name,
+        ]
         local_catalog_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "tests", "testfiles",
-                         "catalog", "catalog"))
-        catalogs = " ".join(
-            [local_catalog_path, "/etc/xml/catalog"])
+            os.path.join(
+                os.path.dirname(__file__),
+                "tests",
+                "testfiles",
+                "catalog",
+                "catalog",
+            )
+        )
+        catalogs = " ".join([local_catalog_path, "/etc/xml/catalog"])
         env = {"XML_CATALOG_FILES": catalogs}
         xmllint = subprocess.Popen(
-            command, env=env,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, universal_newlines=True)
-        result, _ = xmllint.communicate('')
+            command,
+            env=env,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+        result, _ = xmllint.communicate("")
         result = result.strip()
 
         # The output consists of lines describing possible errors; the
         # last line is either "(file) fails to validate" or
         # "(file) validates".
-        parts = result.rsplit('\n', 1)
+        parts = result.rsplit("\n", 1)
         if len(parts) > 1:
             self._errors = parts[0]
             status = parts[1]
         else:
-            self._errors = ''
+            self._errors = ""
             status = parts[0]
-        if status == xml_file.name + ' fails to validate':
+        if status == xml_file.name + " fails to validate":
             return False
-        elif status == xml_file.name + ' validates':
+        elif status == xml_file.name + " validates":
             return True
         else:
             raise AssertionError(
-                'Unexpected result of running xmllint: %s' % result)
+                "Unexpected result of running xmllint: %s" % result
+            )
 
     @property
     def error_log(self):

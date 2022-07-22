@@ -7,7 +7,6 @@ from lp.services.tokens import create_token
 
 
 class Test_create_token(testtools.TestCase):
-
     def test_length(self):
         token = create_token(99)
         self.assertEqual(len(token), 99)

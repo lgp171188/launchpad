@@ -4,15 +4,15 @@
 """Fixtures related to configs."""
 
 __all__ = [
-    'ConfigFixture',
-    'ConfigMismatchError',
-    'ConfigUseFixture',
-    ]
+    "ConfigFixture",
+    "ConfigMismatchError",
+    "ConfigUseFixture",
+]
 
-from configparser import RawConfigParser
 import io
 import os.path
 import shutil
+from configparser import RawConfigParser
 from textwrap import dedent
 
 from fixtures import Fixture
@@ -27,10 +27,12 @@ class ConfigMismatchError(Exception):
 class ConfigFixture(Fixture):
     """Create a unique launchpad config."""
 
-    _extend_str = dedent("""\
+    _extend_str = dedent(
+        """\
         [meta]
         extends: ../%s/launchpad-lazr.conf
-        """)
+        """
+    )
 
     def __init__(self, instance_name, copy_from_instance):
         """Create a ConfigFixture.
@@ -54,19 +56,20 @@ class ConfigFixture(Fixture):
             with open(conf_filename) as conf_file:
                 conf_data = conf_file.read()
         else:
-            conf_data = ''
+            conf_data = ""
         return self._parseConfigData(conf_data, conf_filename)
 
     def _writeConfigFile(self, parser, conf_filename):
         """Write a parsed config to a file."""
-        with open(conf_filename, 'w') as conf_file:
+        with open(conf_filename, "w") as conf_file:
             for i, section in enumerate(parser.sections()):
                 if i:
-                    conf_file.write('\n')
-                conf_file.write('[%s]\n' % section)
+                    conf_file.write("\n")
+                conf_file.write("[%s]\n" % section)
                 for key, value in parser.items(section):
                     conf_file.write(
-                        '%s: %s\n' % (key, str(value).replace('\n', '\n\t')))
+                        "%s: %s\n" % (key, str(value).replace("\n", "\n\t"))
+                    )
 
     def _refresh(self):
         """Trigger a config refresh if necessary.
@@ -79,10 +82,11 @@ class ConfigFixture(Fixture):
 
     def add_section(self, sectioncontent):
         """Add sectioncontent to the lazr config."""
-        conf_filename = os.path.join(self.absroot, 'launchpad-lazr.conf')
+        conf_filename = os.path.join(self.absroot, "launchpad-lazr.conf")
         parser = self._parseConfigFile(conf_filename)
         add_parser = self._parseConfigData(
-            sectioncontent, '<configuration to add>')
+            sectioncontent, "<configuration to add>"
+        )
         for section in add_parser.sections():
             if not parser.has_section(section):
                 parser.add_section(section)
@@ -93,10 +97,11 @@ class ConfigFixture(Fixture):
 
     def remove_section(self, sectioncontent):
         """Remove sectioncontent from the lazr config."""
-        conf_filename = os.path.join(self.absroot, 'launchpad-lazr.conf')
+        conf_filename = os.path.join(self.absroot, "launchpad-lazr.conf")
         parser = self._parseConfigFile(conf_filename)
         remove_parser = self._parseConfigData(
-            sectioncontent, '<configuration to remove>')
+            sectioncontent, "<configuration to remove>"
+        )
         for section in remove_parser.sections():
             if not parser.has_section(section):
                 continue
@@ -107,9 +112,9 @@ class ConfigFixture(Fixture):
                 if value != current_value:
                     raise ConfigMismatchError(
                         "Can't remove %s.%s option from %s: "
-                        "expected value '%s', current value '%s'" % (
-                            section, name, conf_filename,
-                            value, current_value))
+                        "expected value '%s', current value '%s'"
+                        % (section, name, conf_filename, value, current_value)
+                    )
                 parser.remove_option(section, name)
             if not parser.options(section):
                 parser.remove_section(section)
@@ -117,17 +122,17 @@ class ConfigFixture(Fixture):
         self._refresh()
 
     def _setUp(self):
-        root = os.path.join(config.root, 'configs', self.instance_name)
+        root = os.path.join(config.root, "configs", self.instance_name)
         os.mkdir(root)
         self.absroot = os.path.abspath(root)
         self.addCleanup(shutil.rmtree, self.absroot)
-        source = os.path.join(config.root, 'configs', self.copy_from_instance)
+        source = os.path.join(config.root, "configs", self.copy_from_instance)
         for entry in os.scandir(source):
-            if entry.name == 'launchpad-lazr.conf':
+            if entry.name == "launchpad-lazr.conf":
                 self.add_section(self._extend_str % self.copy_from_instance)
                 continue
             with open(entry.path) as input:
-                with open(os.path.join(root, entry.name), 'w') as out:
+                with open(os.path.join(root, entry.name), "w") as out:
                     out.write(input.read())
 
 

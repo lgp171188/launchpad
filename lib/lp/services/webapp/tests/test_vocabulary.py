@@ -7,23 +7,22 @@ from lp.services.webapp.vocabulary import (
     FilteredVocabularyBase,
     IHugeVocabulary,
     VocabularyFilter,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessLayer
 
 
 @implementer(IHugeVocabulary)
 class TestVocabulary(FilteredVocabularyBase):
-
     def search(self, query=None, vocab_filter=None):
-        assert(isinstance(vocab_filter, VocabularyFilter))
-        assert(vocab_filter.name == "ALL")
-        assert(vocab_filter.title == "All")
+        assert isinstance(vocab_filter, VocabularyFilter)
+        assert vocab_filter.name == "ALL"
+        assert vocab_filter.title == "All"
 
     def searchForTerms(self, query=None, vocab_filter=None):
-        assert(isinstance(vocab_filter, VocabularyFilter))
-        assert(vocab_filter.name == "ALL")
-        assert(vocab_filter.title == "All")
+        assert isinstance(vocab_filter, VocabularyFilter)
+        assert vocab_filter.name == "ALL"
+        assert vocab_filter.title == "All"
 
     def supportedFilters(self):
         return [FilteredVocabularyBase.ALL_FILTER]
@@ -50,7 +49,8 @@ class FilteredVocabularyBaseTestCase(TestCaseWithFactory):
         # the string is not a valid filter name, an exception is raised.
         vocab = TestVocabulary()
         self.assertRaises(
-            ValueError, vocab.searchForTerms, vocab_filter="invalid")
+            ValueError, vocab.searchForTerms, vocab_filter="invalid"
+        )
 
     def test_search_filter_parameter_as_string(self):
         # If the vocab filter parameter is passed in as a string (name), it is
@@ -68,5 +68,4 @@ class FilteredVocabularyBaseTestCase(TestCaseWithFactory):
         # If the vocab filter parameter is passed in as a string (name), and
         # the string is not a valid filter name, an exception is raised.
         vocab = TestVocabulary()
-        self.assertRaises(
-            ValueError, vocab.search, vocab_filter="invalid")
+        self.assertRaises(ValueError, vocab.search, vocab_filter="invalid")

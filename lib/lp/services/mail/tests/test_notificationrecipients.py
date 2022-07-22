@@ -4,10 +4,10 @@
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -20,10 +20,11 @@ class TestNotificationRecipientSet(TestCaseWithFactory):
         # protected preferred emails fine.
         email = self.factory.getUniqueEmailAddress()
         notified_team = self.factory.makeTeam(
-            email=email, visibility=PersonVisibility.PRIVATE)
+            email=email, visibility=PersonVisibility.PRIVATE
+        )
         recipients = NotificationRecipientSet()
         notifier = self.factory.makePerson()
         with person_logged_in(notifier):
-            recipients.add([notified_team], 'some reason', 'some header')
+            recipients.add([notified_team], "some reason", "some header")
         with celebrity_logged_in("admin"):
             self.assertEqual([notified_team], recipients.getRecipients())

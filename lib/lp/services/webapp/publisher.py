@@ -6,79 +6,60 @@
 """
 
 __all__ = [
-    'DataDownloadView',
-    'get_raw_form_value_from_current_request',
-    'LaunchpadContainer',
-    'LaunchpadView',
-    'LaunchpadXMLRPCView',
-    'canonical_name',
-    'canonical_url',
-    'canonical_url_iterator',
-    'nearest',
-    'Navigation',
-    'redirection',
-    'rootObject',
-    'stepthrough',
-    'stepto',
-    'RedirectionView',
-    'RenamedView',
-    'UserAttributeCache',
-    ]
+    "DataDownloadView",
+    "get_raw_form_value_from_current_request",
+    "LaunchpadContainer",
+    "LaunchpadView",
+    "LaunchpadXMLRPCView",
+    "canonical_name",
+    "canonical_url",
+    "canonical_url_iterator",
+    "nearest",
+    "Navigation",
+    "redirection",
+    "rootObject",
+    "stepthrough",
+    "stepto",
+    "RedirectionView",
+    "RenamedView",
+    "UserAttributeCache",
+]
 
-from cgi import FieldStorage
 import http.client
 import json
 import re
+from cgi import FieldStorage
 from urllib.parse import urlparse
 from wsgiref.headers import Headers
 
-from lazr.restful import (
-    EntryResource,
-    ResourceJSONEncoder,
-    )
+import six
+from lazr.restful import EntryResource, ResourceJSONEncoder
 from lazr.restful.declarations import error_status
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.marshallers import URLDereferencingMixin
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
-import six
 from zope.app.publisher.xmlrpc import IMethodPublisher
-from zope.component import (
-    getUtility,
-    queryMultiAdapter,
-    )
-from zope.interface import (
-    directlyProvides,
-    implementer,
-    )
+from zope.component import getUtility, queryMultiAdapter
+from zope.interface import directlyProvides, implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.publisher.defaultview import getDefaultViewName
 from zope.publisher.interfaces import NotFound
 from zope.publisher.interfaces.browser import (
     IBrowserPublisher,
     IDefaultBrowserLayer,
-    )
+)
 from zope.publisher.interfaces.xmlrpc import IXMLRPCView
-from zope.security.checker import (
-    NamesChecker,
-    ProxyFactory,
-    )
+from zope.security.checker import NamesChecker, ProxyFactory
 from zope.traversing.browser.interfaces import IAbsoluteURL
 
 from lp.app import versioninfo
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
-from lp.layers import (
-    LaunchpadLayer,
-    setFirstLayer,
-    WebServiceLayer,
-    )
+from lp.layers import LaunchpadLayer, WebServiceLayer, setFirstLayer
 from lp.services.encoding import is_ascii_only
-from lp.services.features import (
-    defaultFlagValue,
-    getFeatureFlag,
-    )
+from lp.services.features import defaultFlagValue, getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import obfuscate_structure
 from lp.services.webapp.interfaces import (
@@ -90,17 +71,16 @@ from lp.services.webapp.interfaces import (
     IOpenLaunchBag,
     IStructuredString,
     NoCanonicalUrl,
-    )
+)
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
-
 
 # Monkeypatch NotFound to always avoid generating OOPS
 # from NotFound in web service calls.
 error_status(http.client.NOT_FOUND)(NotFound)
 
 # Used to match zope namespaces eg ++model++.
-RESERVED_NAMESPACE = re.compile('\\+\\+.*\\+\\+')
+RESERVED_NAMESPACE = re.compile("\\+\\+.*\\+\\+")
 
 
 class DecoratorAnnotator:
@@ -118,7 +98,7 @@ class DecoratorAnnotator:
 
     def __call__(self, fn):
         if self.magic_attribute is None:
-            raise AssertionError('You must provide the magic_attribute to use')
+            raise AssertionError("You must provide the magic_attribute to use")
         annotations = getattr(fn, self.magic_attribute, None)
         if annotations is None:
             annotations = []
@@ -151,7 +131,7 @@ class stepthrough(DecoratorAnnotator):
       decorated.__stepthrough_traversals__.append(argument)
     """
 
-    magic_attribute = '__stepthrough_traversals__'
+    magic_attribute = "__stepthrough_traversals__"
 
 
 class stepto(DecoratorAnnotator):
@@ -178,7 +158,7 @@ class stepto(DecoratorAnnotator):
       decorated.__stepto_traversals__.append(argument)
     """
 
-    magic_attribute = '__stepto_traversals__'
+    magic_attribute = "__stepto_traversals__"
 
 
 class redirection:
@@ -201,10 +181,10 @@ class redirection:
 
     def __call__(self, fn):
         # We are being used as a function decorator.
-        redirections = getattr(fn, '__redirections__', None)
+        redirections = getattr(fn, "__redirections__", None)
         if redirections is None:
             redirections = {}
-            setattr(fn, '__redirections__', redirections)
+            setattr(fn, "__redirections__", redirections)
         redirections[self.name] = self.status
         return fn
 
@@ -231,11 +211,13 @@ class DataDownloadView:
         headers = Headers([])
         content_type_params = {}
         if self.charset is not None:
-            content_type_params['charset'] = self.charset
+            content_type_params["charset"] = self.charset
         headers.add_header(
-            'Content-Type', self.content_type, **content_type_params)
+            "Content-Type", self.content_type, **content_type_params
+        )
         headers.add_header(
-            'Content-Disposition', 'attachment', filename=self.filename)
+            "Content-Disposition", "attachment", filename=self.filename
+        )
         for key, value in headers.items():
             self.request.response.setHeader(key, value)
         return self.getBody()
@@ -323,7 +305,7 @@ class LaunchpadView(UserAttributeCache):
         cache = self._get_json_cache()
         if cache is None:
             return
-        related_features = cache.setdefault('related_features', {})
+        related_features = cache.setdefault("related_features", {})
         related_features.update(self.related_feature_info)
 
     def _get_json_cache(self):
@@ -333,7 +315,7 @@ class LaunchpadView(UserAttributeCache):
         try:
             cache = IJSONRequestCache(self.request).objects
         except TypeError as error:
-            if error.args[0] == 'Could not adapt':
+            if error.args[0] == "Could not adapt":
                 cache = None
         return cache
 
@@ -342,8 +324,8 @@ class LaunchpadView(UserAttributeCache):
         cache = self._get_json_cache()
         if cache is None:
             return []
-        related_features = cache.setdefault('related_features', {}).values()
-        return [f for f in related_features if f['is_beta']]
+        related_features = cache.setdefault("related_features", {}).values()
+        return [f for f in related_features if f["is_beta"]]
 
     def initialize(self):
         """Override this in subclasses.
@@ -369,7 +351,7 @@ class LaunchpadView(UserAttributeCache):
         Do not write eg "This is a page about...", just directly describe the
         object on the page.
         """
-        return getattr(self.context, 'description', None)
+        return getattr(self.context, "description", None)
 
     @property
     def opengraph_description(self):
@@ -390,9 +372,9 @@ class LaunchpadView(UserAttributeCache):
     @property
     def yui_version(self):
         """The version of YUI we are using."""
-        value = getFeatureFlag('js.yui_version')
+        value = getFeatureFlag("js.yui_version")
         if not value:
-            return 'yui'
+            return "yui"
         else:
             return value
 
@@ -402,16 +384,18 @@ class LaunchpadView(UserAttributeCache):
         # We need to import here otherwise sitecustomize can't get imported,
         # likely due to some non-obvious circular import issues.
         from lp.services.config import config
-        return 'true' if config.launchpad.devmode else 'false'
+
+        return "true" if config.launchpad.devmode else "false"
 
     @property
     def combo_url(self):
         """Return the URL for the combo loader."""
         # Circular imports, natch.
         from lp.services.config import config
-        combo_url = '/+combo'
+
+        combo_url = "/+combo"
         if not config.launchpad.devmode:
-            combo_url += '/rev%s' % versioninfo.revision
+            combo_url += "/rev%s" % versioninfo.revision
         return combo_url
 
     def render(self):
@@ -438,7 +422,7 @@ class LaunchpadView(UserAttributeCache):
         self.initialize()
         if self._isRedirected():
             # Don't render the page on redirects.
-            return ''
+            return ""
         else:
             return self.render()
 
@@ -453,16 +437,18 @@ class LaunchpadView(UserAttributeCache):
         implement IStructuredString.
         """
         if error_message != self._error_message:
-            if (error_message is None or
-                IStructuredString.providedBy(error_message)):
+            if error_message is None or IStructuredString.providedBy(
+                error_message
+            ):
                 # The supplied value is of a compatible type,
                 # assign it to property backing variable.
                 self._error_message = error_message
             else:
                 raise ValueError(
-                    '%s is not a valid value for error_message, only '
-                    'None and IStructuredString are allowed.' %
-                    type(error_message))
+                    "%s is not a valid value for error_message, only "
+                    "None and IStructuredString are allowed."
+                    % type(error_message)
+                )
 
     error_message = property(_getErrorMessage, _setErrorMessage)
 
@@ -477,28 +463,30 @@ class LaunchpadView(UserAttributeCache):
         implement IStructuredString.
         """
         if info_message != self._info_message:
-            if (info_message is None or
-                IStructuredString.providedBy(info_message)):
+            if info_message is None or IStructuredString.providedBy(
+                info_message
+            ):
                 # The supplied value is of a compatible type,
                 # assign it to property backing variable.
                 self._info_message = info_message
             else:
                 raise ValueError(
-                    '%s is not a valid value for info_message, only '
-                    'None and IStructuredString are allowed.' %
-                    type(info_message))
+                    "%s is not a valid value for info_message, only "
+                    "None and IStructuredString are allowed."
+                    % type(info_message)
+                )
 
     info_message = property(_getInfoMessage, _setInfoMessage)
 
     def getCacheJSON(self):
         cache = dict(IJSONRequestCache(self.request).objects)
         if WebLayerAPI(self.context).is_entry:
-            cache['context'] = self.context
+            cache["context"] = self.context
         if self.user is None:
             cache = obfuscate_structure(cache)
         return json.dumps(
-            cache, cls=ResourceJSONEncoder,
-            media_type=EntryResource.JSON_TYPE)
+            cache, cls=ResourceJSONEncoder, media_type=EntryResource.JSON_TYPE
+        )
 
     def publishTraverse(self, request, name):
         """See IBrowserPublisher."""
@@ -546,22 +534,28 @@ class LaunchpadView(UserAttributeCache):
         from lp.services.features.flags import flag_info
 
         beta_info = {}
-        for (flag_name, value_domain, documentation, default_behaviour, title,
-             url) in flag_info:
+        for (
+            flag_name,
+            value_domain,
+            documentation,
+            default_behaviour,
+            title,
+            url,
+        ) in flag_info:
             if flag_name not in self.related_features:
                 continue
             # A feature is always in beta if it's not enabled for
             # everyone, but the related_features dict can also force it.
             value = getFeatureFlag(flag_name)
-            is_beta = (
-                bool(value) and
-                (self.related_features[flag_name] or
-                 defaultFlagValue(flag_name) != value))
+            is_beta = bool(value) and (
+                self.related_features[flag_name]
+                or defaultFlagValue(flag_name) != value
+            )
             beta_info[flag_name] = {
-                'is_beta': is_beta,
-                'title': title,
-                'url': url,
-                'value': value,
+                "is_beta": is_beta,
+                "title": title,
+                "url": url,
+                "value": value,
             }
         return beta_info
 
@@ -579,7 +573,7 @@ class LaunchpadXMLRPCView(UserAttributeCache):
 class LaunchpadRootUrlData:
     """ICanonicalUrlData for the ILaunchpadRoot object."""
 
-    path = ''
+    path = ""
     inside = None
     rootsite = None
 
@@ -635,7 +629,7 @@ class CanonicalAbsoluteURL:
         return canonical_url(self.context, self.request)
 
     def __repr__(self):
-        """Get a string representation """
+        """Get a string representation"""
         raise NotImplementedError()
 
     __call__ = __str__
@@ -667,8 +661,13 @@ class FakeRequest:
 
 
 def canonical_url(
-    obj, request=None, rootsite=None, path_only_if_possible=False,
-    view_name=None, force_local_path=False):
+    obj,
+    request=None,
+    rootsite=None,
+    path_only_if_possible=False,
+    view_name=None,
+    force_local_path=False,
+):
     """Return the canonical URL string for the object.
 
     If the canonical url configuration for the given object binds it to a
@@ -696,9 +695,11 @@ def canonical_url(
     :param force_local_path: Strip off the site no matter what.
     :raises: NoCanonicalUrl if a canonical url is not available.
     """
-    urlparts = [urldata.path
-                for urldata in canonical_urldata_iterator(obj)
-                if urldata.path]
+    urlparts = [
+        urldata.path
+        for urldata in canonical_urldata_iterator(obj)
+        if urldata.path
+    ]
 
     if rootsite is None:
         obj_urldata = ICanonicalUrlData(obj, None)
@@ -708,11 +709,12 @@ def canonical_url(
 
     # The app.mainsite_only.canonical_url feature flag forces facet
     # vhost links to mainsite.
-    facet_rootsites = (
-        'answers', 'blueprints', 'code', 'bugs', 'translations')
-    if (getFeatureFlag('app.mainsite_only.canonical_url')
-            and rootsite in facet_rootsites):
-        rootsite = 'mainsite'
+    facet_rootsites = ("answers", "blueprints", "code", "bugs", "translations")
+    if (
+        getFeatureFlag("app.mainsite_only.canonical_url")
+        and rootsite in facet_rootsites
+    ):
+        rootsite = "mainsite"
 
     # The request is needed when there's no rootsite specified.
     if request is None:
@@ -722,17 +724,19 @@ def canonical_url(
             if WebServiceLayer.providedBy(current_request):
                 from lp.services.webapp.publication import (
                     LaunchpadBrowserPublication,
-                    )
+                )
                 from lp.services.webapp.servers import LaunchpadBrowserRequest
+
                 current_request = LaunchpadBrowserRequest(
                     current_request.bodyStream.getCacheStream(),
-                    dict(current_request.environment))
+                    dict(current_request.environment),
+                )
                 current_request.setPublication(
-                    LaunchpadBrowserPublication(None))
+                    LaunchpadBrowserPublication(None)
+                )
                 current_request.setVirtualHostRoot(names=[])
-                main_root_url = current_request.getRootURL(
-                    'mainsite')
-                current_request._app_server = main_root_url.rstrip('/')
+                main_root_url = current_request.getRootURL("mainsite")
+                current_request._app_server = main_root_url.rstrip("/")
 
             request = current_request
 
@@ -744,7 +748,8 @@ def canonical_url(
         if queryMultiAdapter((obj, fake_request), name=view_name) is None:
             # Look if this is a special name defined by Navigation.
             navigation = queryMultiAdapter(
-                (obj, fake_request), IBrowserPublisher)
+                (obj, fake_request), IBrowserPublisher
+            )
             if isinstance(navigation, Navigation):
                 all_names = navigation.all_traversal_and_redirection_names
             else:
@@ -752,25 +757,27 @@ def canonical_url(
             if view_name not in all_names:
                 raise AssertionError(
                     'Name "%s" is not registered as a view or navigation '
-                    'step for "%s" on "%s".' % (
-                        view_name, obj.__class__.__name__, rootsite))
+                    'step for "%s" on "%s".'
+                    % (view_name, obj.__class__.__name__, rootsite)
+                )
         urlparts.insert(0, view_name)
 
     if request is None:
         # Yes this really does need to be here, as rootsite can be None, and
         # we don't want to make the getRootURL from the request break.
         if rootsite is None:
-            rootsite = 'mainsite'
+            rootsite = "mainsite"
         root_url = allvhosts.configs[rootsite].rooturl
     else:
         root_url = request.getRootURL(rootsite)
 
-    path = '/'.join(reversed(urlparts))
-    if ((path_only_if_possible and
-         request is not None and
-         root_url.startswith(request.getApplicationURL()))
-        or force_local_path):
-        return '/' + path
+    path = "/".join(reversed(urlparts))
+    if (
+        path_only_if_possible
+        and request is not None
+        and root_url.startswith(request.getApplicationURL())
+    ) or force_local_path:
+        return "/" + path
     return six.ensure_text(root_url + path)
 
 
@@ -815,13 +822,17 @@ def get_raw_form_value_from_current_request(field, field_name):
     # wrongly encoded.
     # Circular imports.
     from lp.services.webapp.servers import WebServiceClientRequest
+
     request = get_current_browser_request()
     assert isinstance(request, WebServiceClientRequest)
     # Zope wrongly encodes any form element that doesn't look like a file,
     # so re-fetch the file content if it has been encoded.
-    if request and field_name in request.form and isinstance(
-            request.form[field_name], str):
-        request._environ['wsgi.input'].seek(0)
+    if (
+        request
+        and field_name in request.form
+        and isinstance(request.form[field_name], str)
+    ):
+        request._environ["wsgi.input"].seek(0)
         fs = FieldStorage(fp=request._body_instream, environ=request._environ)
         return fs[field_name].value
     else:
@@ -838,7 +849,6 @@ rootObject = ProxyFactory(RootObject(), NamesChecker(["__class__"]))
 
 @implementer(ILaunchpadContainer)
 class LaunchpadContainer:
-
     def __init__(self, context):
         self.context = context
 
@@ -858,6 +868,7 @@ class LaunchpadContainer:
         """
         # Circular import.
         from lp.services.webapp.canonicalurl import nearest_adapter
+
         urldata = ICanonicalUrlData(self.context, None)
         if urldata is not None and urldata.inside is not None:
             container = nearest_adapter(urldata.inside, ILaunchpadContainer)
@@ -870,8 +881,8 @@ class LaunchpadContainer:
         if self._context_url == scope_url:
             return True
         return any(
-            parent.isWithin(scope_url)
-            for parent in self.getParentContainers())
+            parent.isWithin(scope_url) for parent in self.getParentContainers()
+        )
 
 
 @implementer(IBrowserPublisher)
@@ -905,9 +916,9 @@ class Navigation:
                 break
             target = urlappend(target, nextstep)
 
-        query_string = self.request.get('QUERY_STRING')
+        query_string = self.request.get("QUERY_STRING")
         if query_string:
-            target = target + '?' + query_string
+            target = target + "?" + query_string
 
         return RedirectionView(target, self.request, status)
 
@@ -966,13 +977,14 @@ class Navigation:
             raise NotFound(self.context, name)
         elif isinstance(nextobj, redirection):
             return RedirectionView(
-                nextobj.name, request, status=nextobj.status)
+                nextobj.name, request, status=nextobj.status
+            )
         else:
             return nextobj
 
     @property
     def all_traversal_and_redirection_names(self):
-        """Return the names of all the traversals and redirections defined."""
+        """Return the names of all the defined traversals and redirections."""
         all_names = set()
         all_names.update(self.stepto_traversals.keys())
         all_names.update(self.stepthrough_traversals.keys())
@@ -981,23 +993,22 @@ class Navigation:
 
     @property
     def stepto_traversals(self):
-        """Return a dictionary containing all the stepto names defined."""
-        return self._combined_method_annotations('__stepto_traversals__')
+        """Return a dictionary with all the defined stepto names."""
+        return self._combined_method_annotations("__stepto_traversals__")
 
     @property
     def stepthrough_traversals(self):
-        """Return a dictionary containing all the stepthrough names defined.
-        """
-        return self._combined_method_annotations('__stepthrough_traversals__')
+        """Return a dictionary with all the defined stepthrough names."""
+        return self._combined_method_annotations("__stepthrough_traversals__")
 
     @property
     def redirections(self):
-        """Return a dictionary containing all the redirections names defined.
-        """
+        """Return a dictionary with all the defined redirections names."""
         redirections = {}
         for method in self._all_methods():
             for fromname, status in getattr(
-                    method, '__redirections__', {}).items():
+                method, "__redirections__", {}
+            ).items():
                 redirections[fromname] = (method, status)
         return redirections
 
@@ -1044,8 +1055,9 @@ class Navigation:
                             nextobj = handler(self, nextstep)
                         except NotFoundError:
                             nextobj = None
-                        return self._handle_next_object(nextobj, request,
-                            nextstep)
+                        return self._handle_next_object(
+                            nextobj, request, nextstep
+                        )
 
         # Next, look up views on the context object.  If a view exists,
         # use it.
@@ -1073,12 +1085,11 @@ class Navigation:
 
     def browserDefault(self, request):
         view_name = getDefaultViewName(self.context, request)
-        return self.context, (view_name, )
+        return self.context, (view_name,)
 
 
 @implementer(IBrowserPublisher)
 class RedirectionView(URLDereferencingMixin):
-
     def __init__(self, target, request, status=None, cache_view=None):
         self.target = target
         self.request = request
@@ -1097,7 +1108,7 @@ class RedirectionView(URLDereferencingMixin):
 
     def __call__(self):
         self.request.response.redirect(self.target, status=self.status)
-        return ''
+        return ""
 
     def browserDefault(self, request):
         return self, ()
@@ -1123,15 +1134,19 @@ class RedirectionView(URLDereferencingMixin):
             # other approaches.
             raise AttributeError(
                 "RedirectionView.context is only supported for webservice "
-                "requests.")
+                "requests."
+            )
         parsed_target = urlparse(self.target)
         if parsed_target.query:
             raise AttributeError(
                 "RedirectionView.context is not supported for URLs with "
-                "query strings.")
+                "query strings."
+            )
         # Normalize default ports.
         if (parsed_target.scheme, parsed_target.port) in {
-                ("http", 80), ("https", 443)}:
+            ("http", 80),
+            ("https", 443),
+        }:
             target_root = (parsed_target.scheme, parsed_target.hostname)
         else:
             target_root = (parsed_target.scheme, parsed_target.netloc)
@@ -1140,11 +1155,13 @@ class RedirectionView(URLDereferencingMixin):
         # redirections always use the canonical hostname/port.
         supported_roots = {
             urlparse(section.rooturl)[:2]
-            for section in allvhosts.configs.values()}
+            for section in allvhosts.configs.values()
+        }
         if target_root not in supported_roots:
             raise AttributeError(
                 "RedirectionView.context is only supported for URLs served "
-                "by the main Launchpad application, not '%s'." % self.target)
+                "by the main Launchpad application, not '%s'." % self.target
+            )
         return self.dereference_url_as_object(self.target)
 
 
@@ -1168,18 +1185,18 @@ class RenamedView:
     def __call__(self):
         context_url = canonical_url(self.context, rootsite=self.rootsite)
         # Prevents double slashes on the root object.
-        if context_url.endswith('/'):
+        if context_url.endswith("/"):
             target_url = "%s%s" % (context_url, self.new_name)
         else:
             target_url = "%s/%s" % (context_url, self.new_name)
 
-        query_string = self.request.get('QUERY_STRING', '')
+        query_string = self.request.get("QUERY_STRING", "")
         if query_string:
-            target_url += '?' + query_string
+            target_url += "?" + query_string
 
         self.request.response.redirect(target_url, status=301)
 
-        return ''
+        return ""
 
     def publishTraverse(self, request, name):
         """See zope.publisher.interfaces.browser.IBrowserPublisher."""

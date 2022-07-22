@@ -4,13 +4,10 @@
 """Interfaces for signing keys stored at the signing service."""
 
 __all__ = [
-    'ISigningServiceClient',
-    ]
+    "ISigningServiceClient",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 from lp import _
 
@@ -20,11 +17,11 @@ class ISigningServiceClient(Interface):
     private_key = Attribute(_("This client's private key."))
 
     def getNonce():
-        """Get nonce, to be used when sending messages.
-        """
+        """Get nonce, to be used when sending messages."""
 
-    def generate(key_type, description,
-                 openpgp_key_algorithm=None, length=None):
+    def generate(
+        key_type, description, openpgp_key_algorithm=None, length=None
+    ):
         """Generate a key to be used when signing.
 
         :param key_type: One of available key types at SigningKeyType

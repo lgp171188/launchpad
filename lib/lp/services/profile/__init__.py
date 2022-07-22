@@ -4,18 +4,14 @@
 """Profiling for Python and Zope applications.
 """
 
-__all__ = ['profiling',
-           'start',
-           'stop',
-          ]
+__all__ = [
+    "profiling",
+    "start",
+    "stop",
+]
 
 # Re-export for convenience.
-from lp.services.profile.profile import (
-    profiling,
-    start,
-    stop,
-    )
-
+from lp.services.profile.profile import profiling, start, stop
 
 # Quiet the linter.
 (profiling, start, stop)

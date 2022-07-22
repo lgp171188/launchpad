@@ -2,12 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FeatureController',
-    'flag_info',
-    'NullFeatureController',
-    'undocumented_flags',
-    'value_domain_info',
-    ]
+    "FeatureController",
+    "flag_info",
+    "NullFeatureController",
+    "undocumented_flags",
+    "value_domain_info",
+]
 
 
 import logging
@@ -15,23 +15,19 @@ import logging
 from lp.services.features.rulesource import (
     NullFeatureRuleSource,
     StormFeatureRuleSource,
-    )
+)
 
+logger = logging.getLogger("lp.services.features")
 
-logger = logging.getLogger('lp.services.features')
-
-value_domain_info = sorted([
-    ('boolean',
-     'Any non-empty value is true; an empty value is false.'),
-    ('float',
-     'The flag value is set to the given floating point number.'),
-    ('int',
-     "An integer."),
-    ('space delimited',
-     'Space-delimited strings.'),
-    ('datetime',
-     'ISO 8601 datetime'),
-    ])
+value_domain_info = sorted(
+    [
+        ("boolean", "Any non-empty value is true; an empty value is false."),
+        ("float", "The flag value is set to the given floating point number."),
+        ("int", "An integer."),
+        ("space delimited", "Space-delimited strings."),
+        ("datetime", "ISO 8601 datetime"),
+    ]
+)
 
 # Data for generating web-visible feature flag documentation.
 #
@@ -47,190 +43,268 @@ value_domain_info = sorted([
 #
 # NOTE: "default behaviour" does not specify a default value.  It
 # merely documents the code's behaviour if no value is specified.
-flag_info = sorted([
-    ('baselayout.careers_link.disabled',
-     'boolean',
-     'Hide the link to the Canonical Careers site.',
-     '',
-     '',
-     ''),
-    ('bugs.affected_count_includes_dupes.disabled',
-     'boolean',
-     ("Disable adding up affected users across all duplicate bugs."),
-     '',
-     '',
-     'https://bugs.launchpad.net/launchpad/+bug/678090'),
-    ('bugs.bugtracker_components.enabled',
-     'boolean',
-     ('Enables the display of bugtracker components.'),
-     '',
-     '',
-     ''),
-    ('bugs.dynamic_bug_listings.pre_fetch',
-     'boolean',
-     ('Enables pre-fetching bug listing results.'),
-     '',
-     'Listing pre-fetching',
-     'https://bugs.launchpad.net/launchpad/+bug/888756'),
-    ('bugs.heat_updates.cutoff',
-     'timestamp',
-     ('Set the oldest that a bug\'s heat can be before it is '
-      'considered outdated.'),
-     '',
-     '',
-     ''),
-    ('code.ajax_revision_diffs.enabled',
-     'boolean',
-     ("Offer expandable inline diffs for branch revisions."),
-     '',
-     '',
-     ''),
-    ('code.incremental_diffs.enabled',
-     'boolean',
-     'Shows incremental diffs on merge proposals.',
-     '',
-     '',
-     ''),
-    ('hard_timeout',
-     'float',
-     'Sets the hard request timeout in milliseconds.',
-     '',
-     '',
-     ''),
-    ('jobs.celery.enabled_classes',
-     'space delimited',
-     'Names of Job classes that should be run via celery',
-     'No jobs run via celery',
-     'Celery-enabled job classes',
-     'https://dev.launchpad.net/CeleryJobRunner'),
-    ('js.yui_version',
-     'space delimited',
-     'Allows us to change the YUI version we run against, e.g. yui-3.4.',
-     'As speficied in versions.cfg',
-     '',
-     ''),
-    ('mail.dkim_authentication.disabled',
-     'boolean',
-     'Disable DKIM authentication checks on incoming mail.',
-     '',
-     '',
-     ''),
-    ('markdown.enabled',
-     'boolean',
-     'Interpret selected user content as Markdown.',
-     'disabled',
-     'Markdown',
-     'https://launchpad.net/bugs/391780'),
-    ('memcache',
-     'boolean',
-     'Enables use of memcached where it is supported.',
-     'enabled',
-     '',
-     ''),
-    ('profiling.enabled',
-     'boolean',
-     'Overrides config.profiling.profiling_allowed to permit profiling.',
-     '',
-     '',
-     ''),
-    ('soyuz.derived_series_upgrade.enabled',
-     'boolean',
-     'Enables mass-upgrade of packages on derivative distributions pages.',
-     '',
-     '',
-     ''),
-    ('visible_render_time',
-     'boolean',
-     'Shows the server-side page render time in the login widget.',
-     '',
-     '',
-     ''),
-    ('disclosure.dsp_picker.enabled',
-     'boolean',
-     'Enables the use of the new DistributionSourcePackage vocabulary for '
-     'the source and binary package name pickers.',
-     '',
-     '',
-     ''),
-    ('bugs.autoconfirm.enabled_distribution_names',
-     'space delimited',
-     ('Enables auto-confirming bugtasks for distributions (and their '
-      'series and packages).  Use the default domain.  Specify a single '
-      'asterisk ("*") to enable for all distributions.'),
-     'None are enabled',
-     '',
-     ''),
-    ('bugs.autoconfirm.enabled_product_names',
-     'space delimited',
-     ('Enables auto-confirming bugtasks for products (and their '
-      'series).  Use the default domain.  Specify a single '
-      'asterisk ("*") to enable for all products.'),
-     'None are enabled',
-     '',
-     ''),
-    ('ajax.batch_navigator.enabled',
-     'boolean',
-     ('If true, batch navigators which have been wired to do so use ajax '
-     'calls to load the next batch of data.'),
-     '',
-     '',
-     ''),
-    ('registry.upcoming_work_view.enabled',
-     'boolean',
-     ('If true, the new upcoming work view of teams is available.'),
-     '',
-     '',
-     ''),
-    ('soyuz.gina.skip_source_versions',
-     'space delimited',
-     ('List of source versions for gina to skip when importing into a '
-      'distribution, formatted as distro/package/version.'),
-     '',
-     '',
-     ''),
-    ('app.root_blog.enabled',
-     'boolean',
-     'If true, load posts from the Launchpad blog to show on the root page.',
-     '',
-     '',
-     ''),
-    ('twisted.flags.refresh',
-     'float',
-     'Number of seconds between feature flag refreshes.',
-     '30',
-     '',
-     ''),
-    ('librarian.swift.enabled',
-     'boolean',
-     'If true, attempt to serve files from Swift.',
-     'disabled',
-     '',
-     ''),
-    ('soyuz.ppa.separate_long_descriptions',
-     'boolean',
-     'If true, PPAs will create an i18n/Translations-en file',
-     'disabled',
-     'PPA Separate Long Descriptions',
-     ''),
-    ('soyuz.named_auth_token.allow_new',
-     'boolean',
-     'If true, allow creation of named authorization tokens for archives.',
-     'disabled',
-     'Named authorization tokens for archives',
-     ''),
-    ('sitesearch.engine.name',
-     'space delimited',
-     'Name of the site search engine backend (only "bing" is available).',
-     'bing',
-     'Site search engine',
-     ''),
-    ('archivepublisher.signing_service.enabled',
-     'boolean',
-     'If true, sign packages using signing service instead of local files.',
-     '',
-     '',
-     ''),
-    ])
+flag_info = sorted(
+    [
+        (
+            "baselayout.careers_link.disabled",
+            "boolean",
+            "Hide the link to the Canonical Careers site.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "bugs.affected_count_includes_dupes.disabled",
+            "boolean",
+            ("Disable adding up affected users across all duplicate bugs."),
+            "",
+            "",
+            "https://bugs.launchpad.net/launchpad/+bug/678090",
+        ),
+        (
+            "bugs.bugtracker_components.enabled",
+            "boolean",
+            ("Enables the display of bugtracker components."),
+            "",
+            "",
+            "",
+        ),
+        (
+            "bugs.dynamic_bug_listings.pre_fetch",
+            "boolean",
+            ("Enables pre-fetching bug listing results."),
+            "",
+            "Listing pre-fetching",
+            "https://bugs.launchpad.net/launchpad/+bug/888756",
+        ),
+        (
+            "bugs.heat_updates.cutoff",
+            "timestamp",
+            (
+                "Set the oldest that a bug's heat can be before it is "
+                "considered outdated."
+            ),
+            "",
+            "",
+            "",
+        ),
+        (
+            "code.ajax_revision_diffs.enabled",
+            "boolean",
+            ("Offer expandable inline diffs for branch revisions."),
+            "",
+            "",
+            "",
+        ),
+        (
+            "code.incremental_diffs.enabled",
+            "boolean",
+            "Shows incremental diffs on merge proposals.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "hard_timeout",
+            "float",
+            "Sets the hard request timeout in milliseconds.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "jobs.celery.enabled_classes",
+            "space delimited",
+            "Names of Job classes that should be run via celery",
+            "No jobs run via celery",
+            "Celery-enabled job classes",
+            "https://dev.launchpad.net/CeleryJobRunner",
+        ),
+        (
+            "js.yui_version",
+            "space delimited",
+            "Allows us to change the YUI version we run against, e.g. "
+            "yui-3.4.",
+            "As speficied in versions.cfg",
+            "",
+            "",
+        ),
+        (
+            "mail.dkim_authentication.disabled",
+            "boolean",
+            "Disable DKIM authentication checks on incoming mail.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "markdown.enabled",
+            "boolean",
+            "Interpret selected user content as Markdown.",
+            "disabled",
+            "Markdown",
+            "https://launchpad.net/bugs/391780",
+        ),
+        (
+            "memcache",
+            "boolean",
+            "Enables use of memcached where it is supported.",
+            "enabled",
+            "",
+            "",
+        ),
+        (
+            "profiling.enabled",
+            "boolean",
+            "Overrides config.profiling.profiling_allowed to permit "
+            "profiling.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "soyuz.derived_series_upgrade.enabled",
+            "boolean",
+            "Enables mass-upgrade of packages on derivative distributions "
+            "pages.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "visible_render_time",
+            "boolean",
+            "Shows the server-side page render time in the login widget.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "disclosure.dsp_picker.enabled",
+            "boolean",
+            "Enables the use of the new DistributionSourcePackage vocabulary "
+            "for the source and binary package name pickers.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "bugs.autoconfirm.enabled_distribution_names",
+            "space delimited",
+            (
+                "Enables auto-confirming bugtasks for distributions (and "
+                "their series and packages).  Use the default domain.  "
+                'Specify a single asterisk ("*") to enable for all '
+                "distributions."
+            ),
+            "None are enabled",
+            "",
+            "",
+        ),
+        (
+            "bugs.autoconfirm.enabled_product_names",
+            "space delimited",
+            (
+                "Enables auto-confirming bugtasks for products (and their "
+                "series).  Use the default domain.  Specify a single "
+                'asterisk ("*") to enable for all products.'
+            ),
+            "None are enabled",
+            "",
+            "",
+        ),
+        (
+            "ajax.batch_navigator.enabled",
+            "boolean",
+            (
+                "If true, batch navigators which have been wired to do so use "
+                "ajax calls to load the next batch of data."
+            ),
+            "",
+            "",
+            "",
+        ),
+        (
+            "registry.upcoming_work_view.enabled",
+            "boolean",
+            ("If true, the new upcoming work view of teams is available."),
+            "",
+            "",
+            "",
+        ),
+        (
+            "soyuz.gina.skip_source_versions",
+            "space delimited",
+            (
+                "List of source versions for gina to skip when importing into "
+                "a distribution, formatted as distro/package/version."
+            ),
+            "",
+            "",
+            "",
+        ),
+        (
+            "app.root_blog.enabled",
+            "boolean",
+            "If true, load posts from the Launchpad blog to show on the root "
+            "page.",
+            "",
+            "",
+            "",
+        ),
+        (
+            "twisted.flags.refresh",
+            "float",
+            "Number of seconds between feature flag refreshes.",
+            "30",
+            "",
+            "",
+        ),
+        (
+            "librarian.swift.enabled",
+            "boolean",
+            "If true, attempt to serve files from Swift.",
+            "disabled",
+            "",
+            "",
+        ),
+        (
+            "soyuz.ppa.separate_long_descriptions",
+            "boolean",
+            "If true, PPAs will create an i18n/Translations-en file",
+            "disabled",
+            "PPA Separate Long Descriptions",
+            "",
+        ),
+        (
+            "soyuz.named_auth_token.allow_new",
+            "boolean",
+            "If true, allow creation of named authorization tokens for "
+            "archives.",
+            "disabled",
+            "Named authorization tokens for archives",
+            "",
+        ),
+        (
+            "sitesearch.engine.name",
+            "space delimited",
+            'Name of the site search engine backend (only "bing" is '
+            "available).",
+            "bing",
+            "Site search engine",
+            "",
+        ),
+        (
+            "archivepublisher.signing_service.enabled",
+            "boolean",
+            "If true, sign packages using signing service instead of local "
+            "files.",
+            "",
+            "",
+            "",
+        ),
+    ]
+)
 
 # The set of all flag names that are documented.
 documented_flags = {info[0] for info in flag_info}
@@ -239,8 +313,7 @@ documented_flags = {info[0] for info in flag_info}
 undocumented_flags = set()
 
 
-class Memoize():
-
+class Memoize:
     def __init__(self, calc):
         self._known = {}
         self._calc = calc
@@ -253,7 +326,7 @@ class Memoize():
         return v
 
 
-class ScopeDict():
+class ScopeDict:
     """Allow scopes to be looked up by getitem"""
 
     def __init__(self, features):
@@ -263,7 +336,7 @@ class ScopeDict():
         return self.features.isInScope(scope_name)
 
 
-class FeatureController():
+class FeatureController:
     """A FeatureController tells application code what features are active.
 
     It does this by meshing together two sources of data:
@@ -338,13 +411,14 @@ class FeatureController():
             for scope, priority, value in self._rules[flag]:
                 if self._known_scopes.lookup(scope):
                     self._debugMessage(
-                        'feature match flag=%r value=%r scope=%r' %
-                        (flag, value, scope))
+                        "feature match flag=%r value=%r scope=%r"
+                        % (flag, value, scope)
+                    )
                     return (value, scope)
             else:
-                self._debugMessage('no rules matched for %r' % flag)
+                self._debugMessage("no rules matched for %r" % flag)
         else:
-            self._debugMessage('no rules relevant to %r' % flag)
+            self._debugMessage("no rules relevant to %r" % flag)
         return (None, None)
 
     def _debugMessage(self, message):
@@ -358,7 +432,9 @@ class FeatureController():
         return self._current_scopes.lookup(flag)
 
     def _findCurrentScope(self, flag):
-        """Lookup method for self._current_scopes. See also `currentScope()`.
+        """Lookup method for self._current_scopes.
+
+        See also `currentScope()`.
         """
         return self._currentValueAndScope(flag)[1]
 
@@ -405,7 +481,7 @@ class FeatureController():
         self._needRules()
         if flag in self._rules:
             for scope, priority, value in self._rules[flag]:
-                if scope == 'default':
+                if scope == "default":
                     return value
         return None
 
@@ -414,5 +490,6 @@ class NullFeatureController(FeatureController):
     """For use in testing: everything is turned off"""
 
     def __init__(self):
-        FeatureController.__init__(self, lambda scope: None,
-            NullFeatureRuleSource())
+        FeatureController.__init__(
+            self, lambda scope: None, NullFeatureRuleSource()
+        )

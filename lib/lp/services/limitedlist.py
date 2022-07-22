@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LimitedList',
-    ]
+    "LimitedList",
+]
 
 
 class LimitedList(list):
@@ -21,9 +21,7 @@ class LimitedList(list):
         self.max_length = max_length
 
     def __repr__(self):
-        return (
-            '<LimitedList(%s, %s)>'
-            % (self.max_length, super().__repr__()))
+        return "<LimitedList(%s, %s)>" % (self.max_length, super().__repr__())
 
     def _ensureLength(self):
         """Ensure that the maximum length is not exceeded."""

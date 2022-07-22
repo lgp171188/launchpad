@@ -9,30 +9,29 @@ run from cron scripts and potentially also other places.
 """
 
 __all__ = [
-    'DefaultScope',
-    'default_scopes',
-    'FixedScope',
-    'HANDLERS',
-    'MultiScopeHandler',
-    'ScopesForScript',
-    'ScopesFromRequest',
-    'TeamScope',
-    'UserSliceScope',
-    'undocumented_scopes',
-    ]
+    "DefaultScope",
+    "default_scopes",
+    "FixedScope",
+    "HANDLERS",
+    "MultiScopeHandler",
+    "ScopesForScript",
+    "ScopesFromRequest",
+    "TeamScope",
+    "UserSliceScope",
+    "undocumented_scopes",
+]
 
-from itertools import zip_longest
 import re
+from itertools import zip_longest
 
-from lp.registry.interfaces.person import IPerson
 import lp.services.config
+from lp.registry.interfaces.person import IPerson
 from lp.services.propertycache import cachedproperty
-
 
 undocumented_scopes = set()
 
 
-class BaseScope():
+class BaseScope:
     """A base class for scope handlers.
 
     The docstring of subclasses is used on the +feature-info page as
@@ -50,14 +49,15 @@ class BaseScope():
 
     def lookup(self, scope_name):
         """Returns true if the given scope name is "active"."""
-        raise NotImplementedError('Subclasses of BaseScope must implement '
-            'lookup.')
+        raise NotImplementedError(
+            "Subclasses of BaseScope must implement " "lookup."
+        )
 
 
 class DefaultScope(BaseScope):
     """The default scope.  Always active."""
 
-    pattern = r'default$'
+    pattern = r"default$"
 
     def lookup(self, scope_name):
         return True
@@ -75,18 +75,19 @@ class PageScope(BaseScope):
         Foo#quux
     """
 
-    pattern = r'pageid:'
+    pattern = r"pageid:"
 
     def __init__(self, request):
         self._request = request
 
     def lookup(self, scope_name):
         """Is the given scope match the current pageid?"""
-        pageid_scope = scope_name[len('pageid:'):]
+        pageid_scope = scope_name[len("pageid:") :]
         scope_segments = self._pageid_to_namespace(pageid_scope)
         request_segments = self._request_pageid_namespace
         for scope_segment, request_segment in zip_longest(
-                scope_segments, request_segments):
+            scope_segments, request_segments
+        ):
             if scope_segment is None:
                 break
             if scope_segment != request_segment:
@@ -97,14 +98,17 @@ class PageScope(BaseScope):
     def _pageid_to_namespace(pageid):
         """Return a list of namespace elements for pageid."""
         # Normalise delimiters.
-        pageid = pageid.replace('#', ':')
+        pageid = pageid.replace("#", ":")
         # Create a list to walk, empty namespaces are elided.
-        return [name for name in pageid.split(':') if name]
+        return [name for name in pageid.split(":") if name]
 
     @cachedproperty
     def _request_pageid_namespace(self):
-        return tuple(self._pageid_to_namespace(
-            self._request._orig_env.get('launchpad.pageid', '')))
+        return tuple(
+            self._pageid_to_namespace(
+                self._request._orig_env.get("launchpad.pageid", "")
+            )
+        )
 
 
 class ScopeWithPerson(BaseScope):
@@ -134,7 +138,7 @@ class TeamScope(ScopeWithPerson):
     process -- in particular, before authentication has happened.
     """
 
-    pattern = r'team:'
+    pattern = r"team:"
 
     def lookup(self, scope_name):
         """Is the given scope a team membership?
@@ -144,7 +148,7 @@ class TeamScope(ScopeWithPerson):
         fixed to reduce this to one query).
         """
         if self.person is not None:
-            team_name = scope_name[len('team:'):]
+            team_name = scope_name[len("team:") :]
             return self.person.inTeam(team_name)
 
 
@@ -163,7 +167,7 @@ class UserSliceScope(ScopeWithPerson):
     some users don't have all the fun by being in eg 0,100.
     """
 
-    pattern = r'userslice:(\d+),(\d+)'
+    pattern = r"userslice:(\d+),(\d+)"
 
     def lookup(self, scope_name):
         match = self.compiled_pattern.match(scope_name)
@@ -185,13 +189,13 @@ class ServerScope(BaseScope):
     in the Launchpad configuration.
     """
 
-    pattern = r'server\.'
+    pattern = r"server\."
 
     def lookup(self, scope_name):
         """Match the current server as a scope."""
-        server_name = scope_name.split('.', 1)[1]
+        server_name = scope_name.split(".", 1)[1]
         try:
-            return lp.services.config.config['launchpad']['is_' + server_name]
+            return lp.services.config.config["launchpad"]["is_" + server_name]
         except KeyError:
             pass
         return False
@@ -204,7 +208,7 @@ class ScriptScope(BaseScope):
     "embroider."
     """
 
-    pattern = r'script:'
+    pattern = r"script:"
 
     def __init__(self, script_name):
         self.script_scope = self.pattern + script_name
@@ -222,7 +226,7 @@ class FixedScope(BaseScope):
     """
 
     def __init__(self, scope):
-        self.pattern = re.escape(scope) + '$'
+        self.pattern = re.escape(scope) + "$"
 
     def lookup(self, scope_name):
         return True
@@ -235,7 +239,7 @@ class FixedScope(BaseScope):
 HANDLERS = {DefaultScope, PageScope, TeamScope, ServerScope, ScriptScope}
 
 
-class MultiScopeHandler():
+class MultiScopeHandler:
     """A scope handler that combines multiple `BaseScope`s.
 
     The ordering in which they're added is arbitrary, because precedence is
@@ -250,7 +254,8 @@ class MultiScopeHandler():
         return [
             handler
             for handler in self.handlers
-                if handler.compiled_pattern.match(scope_name)]
+            if handler.compiled_pattern.match(scope_name)
+        ]
 
     def lookup(self, scope_name):
         """Determine if scope_name applies.
@@ -286,13 +291,16 @@ class ScopesFromRequest(MultiScopeHandler):
     def __init__(self, request):
         def person_from_request():
             return IPerson(request.principal, None)
+
         scopes = list(default_scopes)
-        scopes.extend([
-            PageScope(request),
-            ServerScope(),
-            TeamScope(person_from_request),
-            UserSliceScope(person_from_request),
-            ])
+        scopes.extend(
+            [
+                PageScope(request),
+                ServerScope(),
+                TeamScope(person_from_request),
+                UserSliceScope(person_from_request),
+            ]
+        )
         super().__init__(scopes)
 
 

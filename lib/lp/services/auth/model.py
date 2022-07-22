@@ -6,30 +6,15 @@
 __all__ = [
     "AccessToken",
     "AccessTokenTargetMixin",
-    ]
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import hashlib
+from datetime import datetime, timedelta
 
 import pytz
 from storm.databases.postgres import JSON
-from storm.expr import (
-    And,
-    Cast,
-    Or,
-    Select,
-    SQL,
-    Update,
-    )
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.expr import SQL, And, Cast, Or, Select, Update
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -38,15 +23,9 @@ from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.auth.enums import AccessTokenScope
-from lp.services.auth.interfaces import (
-    IAccessToken,
-    IAccessTokenSet,
-    )
+from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -59,7 +38,8 @@ class AccessToken(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
 
     _token_sha256 = Unicode(name="token_sha256", allow_none=False)
 
@@ -74,17 +54,20 @@ class AccessToken(StormBase):
     _scopes = JSON(name="scopes", allow_none=False)
 
     date_last_used = DateTime(
-        name="date_last_used", tzinfo=pytz.UTC, allow_none=True)
+        name="date_last_used", tzinfo=pytz.UTC, allow_none=True
+    )
     date_expires = DateTime(
-        name="date_expires", tzinfo=pytz.UTC, allow_none=True)
+        name="date_expires", tzinfo=pytz.UTC, allow_none=True
+    )
 
     revoked_by_id = Int(name="revoked_by", allow_none=True)
     revoked_by = Reference(revoked_by_id, "Person.id")
 
     resolution = timedelta(minutes=10)
 
-    def __init__(self, secret, owner, description, target, scopes,
-                 date_expires=None):
+    def __init__(
+        self, secret, owner, description, target, scopes, date_expires=None
+    ):
         """Construct an `AccessToken`."""
         self._token_sha256 = hashlib.sha256(secret.encode()).hexdigest()
         self.owner = owner
@@ -107,7 +90,8 @@ class AccessToken(StormBase):
         """See `IAccessToken`."""
         return [
             AccessTokenScope.getTermByToken(scope).value
-            for scope in self._scopes]
+            for scope in self._scopes
+        ]
 
     @scopes.setter
     def scopes(self, scopes):
@@ -117,21 +101,30 @@ class AccessToken(StormBase):
     def updateLastUsed(self):
         """See `IAccessToken`."""
         store = IMasterStore(AccessToken)
-        store.execute(Update(
-            {AccessToken.date_last_used: UTC_NOW},
-            where=And(
-                # Skip the update if the AccessToken row is already locked,
-                # for example by a concurrent request using the same token.
-                AccessToken.id.is_in(SQL(
-                    "SELECT id FROM AccessToken WHERE id = ? "
-                    "FOR UPDATE SKIP LOCKED", params=(self.id,))),
-                # Only update the last-used date every so often, to avoid
-                # bloat.
-                Or(
-                    AccessToken.date_last_used == None,
-                    AccessToken.date_last_used <
-                        UTC_NOW - Cast(self.resolution, 'interval'))),
-            table=AccessToken))
+        store.execute(
+            Update(
+                {AccessToken.date_last_used: UTC_NOW},
+                where=And(
+                    # Skip the update if the AccessToken row is already locked,
+                    # for example by a concurrent request using the same token.
+                    AccessToken.id.is_in(
+                        SQL(
+                            "SELECT id FROM AccessToken WHERE id = ? "
+                            "FOR UPDATE SKIP LOCKED",
+                            params=(self.id,),
+                        )
+                    ),
+                    # Only update the last-used date every so often, to avoid
+                    # bloat.
+                    Or(
+                        AccessToken.date_last_used == None,
+                        AccessToken.date_last_used
+                        < UTC_NOW - Cast(self.resolution, "interval"),
+                    ),
+                ),
+                table=AccessToken,
+            )
+        )
         store.invalidate(self)
 
     @property
@@ -147,22 +140,32 @@ class AccessToken(StormBase):
 
 @implementer(IAccessTokenSet)
 class AccessTokenSet:
-
-    def new(self, secret, owner, description, target, scopes,
-            date_expires=None):
+    def new(
+        self, secret, owner, description, target, scopes, date_expires=None
+    ):
         """See `IAccessTokenSet`."""
         store = IStore(AccessToken)
         token = AccessToken(
-            secret, owner, description, target, scopes,
-            date_expires=date_expires)
+            secret,
+            owner,
+            description,
+            target,
+            scopes,
+            date_expires=date_expires,
+        )
         store.add(token)
         return token
 
     def getBySecret(self, secret):
         """See `IAccessTokenSet`."""
-        return IStore(AccessToken).find(
-            AccessToken,
-            _token_sha256=hashlib.sha256(secret.encode()).hexdigest()).one()
+        return (
+            IStore(AccessToken)
+            .find(
+                AccessToken,
+                _token_sha256=hashlib.sha256(secret.encode()).hexdigest(),
+            )
+            .one()
+        )
 
     def findByOwner(self, owner):
         """See `IAccessTokenSet`."""
@@ -174,27 +177,47 @@ class AccessTokenSet:
         if IGitRepository.providedBy(target):
             clauses.append(AccessToken.git_repository == target)
             if visible_by_user is not None:
-                collection = getUtility(IAllGitRepositories).visibleByUser(
-                    visible_by_user).ownedByTeamMember(visible_by_user)
+                collection = (
+                    getUtility(IAllGitRepositories)
+                    .visibleByUser(visible_by_user)
+                    .ownedByTeamMember(visible_by_user)
+                )
                 ids = collection.getRepositoryIds()
-                clauses.append(Or(
-                    AccessToken.owner_id.is_in(Select(
-                        TeamParticipation.teamID,
-                        where=TeamParticipation.person == visible_by_user.id)),
-                    AccessToken.git_repository_id.is_in(
-                        removeSecurityProxy(ids)._get_select())))
+                clauses.append(
+                    Or(
+                        AccessToken.owner_id.is_in(
+                            Select(
+                                TeamParticipation.teamID,
+                                where=TeamParticipation.person
+                                == visible_by_user.id,
+                            )
+                        ),
+                        AccessToken.git_repository_id.is_in(
+                            removeSecurityProxy(ids)._get_select()
+                        ),
+                    )
+                )
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
-        clauses.append(Or(
-            AccessToken.date_expires == None,
-            AccessToken.date_expires > UTC_NOW))
-        return IStore(AccessToken).find(AccessToken, *clauses).order_by(
-            AccessToken.date_created)
+        clauses.append(
+            Or(
+                AccessToken.date_expires == None,
+                AccessToken.date_expires > UTC_NOW,
+            )
+        )
+        return (
+            IStore(AccessToken)
+            .find(AccessToken, *clauses)
+            .order_by(AccessToken.date_created)
+        )
 
     def getByTargetAndID(self, target, token_id, visible_by_user=None):
         """See `IAccessTokenSet`."""
-        return self.findByTarget(target, visible_by_user=visible_by_user).find(
-            id=token_id).one()
+        return (
+            self.findByTarget(target, visible_by_user=visible_by_user)
+            .find(id=token_id)
+            .one()
+        )
 
 
 class AccessTokenTargetMixin:
@@ -203,4 +226,5 @@ class AccessTokenTargetMixin:
     def getAccessTokens(self, visible_by_user=None):
         """See `IAccessTokenTarget`."""
         return getUtility(IAccessTokenSet).findByTarget(
-            self, visible_by_user=visible_by_user)
+            self, visible_by_user=visible_by_user
+        )

@@ -3,7 +3,7 @@
 
 """Session interfaces."""
 
-__all__ = ['IUseSessionStore']
+__all__ = ["IUseSessionStore"]
 
 
 from zope.interface import Interface
@@ -11,4 +11,5 @@ from zope.interface import Interface
 
 class IUseSessionStore(Interface):
     """Marker interface for Session Storm database classes and instances."""
+
     pass

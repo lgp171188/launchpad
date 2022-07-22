@@ -7,13 +7,12 @@ __all__ = [
     "CHANNEL_COMPONENTS_DELIMITER",
     "channel_list_to_string",
     "channel_string_to_list",
-    ]
+]
 
 from lp.registry.enums import StoreRisk
 
-
 # delimiter separating channel components
-CHANNEL_COMPONENTS_DELIMITER = '/'
+CHANNEL_COMPONENTS_DELIMITER = "/"
 
 
 def _is_risk(component):
@@ -42,7 +41,8 @@ def channel_string_to_list(channel):
         if _is_risk(components[0]):
             if _is_risk(components[1]):
                 raise ValueError(
-                    "Branch name cannot match a risk name: %r" % channel)
+                    "Branch name cannot match a risk name: %r" % channel
+                )
             track = None
             risk, branch = components
         elif _is_risk(components[1]):
@@ -70,4 +70,5 @@ def channel_list_to_string(track, risk, branch):
     if track == "latest":
         track = None
     return CHANNEL_COMPONENTS_DELIMITER.join(
-        [c for c in (track, risk, branch) if c is not None])
+        [c for c in (track, risk, branch) if c is not None]
+    )

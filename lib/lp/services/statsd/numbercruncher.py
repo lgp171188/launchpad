@@ -3,22 +3,16 @@
 
 """Out of process statsd reporting."""
 
-__all__ = ['NumberCruncher']
+__all__ = ["NumberCruncher"]
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 import pytz
-from storm.expr import (
-    Count,
-    Sum,
-    )
 import transaction
+from storm.expr import Count, Sum
 from twisted.application import service
-from twisted.internet import (
-    defer,
-    reactor,
-    )
+from twisted.internet import defer, reactor
 from twisted.internet.task import LoopingCall
 from twisted.python import log
 from zope.component import getUtility
@@ -32,7 +26,6 @@ from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.soyuz.model.archive import Archive
-
 
 NUMBER_CRUNCHER_LOG_NAME = "number-cruncher"
 
@@ -55,8 +48,7 @@ class NumberCruncher(service.Service):
         self.statsd_client = getUtility(IStatsdClient)
 
     def _setupLogger(self):
-        """Set up a 'number-cruncher' logger that redirects to twisted.
-        """
+        """Set up a 'number-cruncher' logger that redirects to twisted."""
         level = logging.DEBUG
         logger = logging.getLogger(NUMBER_CRUNCHER_LOG_NAME)
         logger.propagate = False
@@ -64,7 +56,7 @@ class NumberCruncher(service.Service):
         # Redirect the output to the twisted log module.
         channel = logging.StreamHandler(log.StdioOnnaStick())
         channel.setLevel(level)
-        channel.setFormatter(logging.Formatter('%(message)s'))
+        channel.setFormatter(logging.Formatter("%(message)s"))
 
         logger.addHandler(channel)
         logger.setLevel(level)
@@ -78,8 +70,11 @@ class NumberCruncher(service.Service):
         return loop, stopping_deferred
 
     def _sendGauge(self, gauge_name, value, labels=None):
-        self.logger.debug("{}: {}".format(
-            self.statsd_client.composeMetric(gauge_name, labels), value))
+        self.logger.debug(
+            "{}: {}".format(
+                self.statsd_client.composeMetric(gauge_name, labels), value
+            )
+        )
         self.statsd_client.gauge(gauge_name, value, labels=labels)
 
     def updateBuilderQueues(self):
@@ -91,11 +86,13 @@ class NumberCruncher(service.Service):
         try:
             queue_details = getUtility(IBuilderSet).getBuildQueueSizes()
             for queue_type, contents in queue_details.items():
-                virt = queue_type == 'virt'
+                virt = queue_type == "virt"
                 for arch, value in contents.items():
                     self._sendGauge(
-                        "buildqueue", value[0],
-                        labels={"virtualized": virt, "arch": arch})
+                        "buildqueue",
+                        value[0],
+                        labels={"virtualized": virt, "arch": arch},
+                    )
             self.logger.debug("Build queue stats update complete.")
         except Exception:
             self.logger.exception("Failure while updating build queue stats:")
@@ -114,27 +111,32 @@ class NumberCruncher(service.Service):
             for processor_name in builder.processor_names:
                 counts = counts_by_processor.setdefault(
                     (processor_name, builder.virtualized),
-                    {'cleaning': 0, 'idle': 0, 'disabled': 0, 'building': 0})
+                    {"cleaning": 0, "idle": 0, "disabled": 0, "building": 0},
+                )
                 if not builder.builderok:
-                    counts['disabled'] += 1
+                    counts["disabled"] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEANING:
-                    counts['cleaning'] += 1
+                    counts["cleaning"] += 1
                 elif builder.build_queue:
-                    counts['building'] += 1
+                    counts["building"] += 1
                 elif builder.clean_status == BuilderCleanStatus.CLEAN:
-                    counts['idle'] += 1
+                    counts["idle"] += 1
             self._sendGauge(
-                "builders.failure_count", builder.failure_count,
-                labels={"builder_name": builder.name})
+                "builders.failure_count",
+                builder.failure_count,
+                labels={"builder_name": builder.name},
+            )
         for (processor, virtualized), counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 self._sendGauge(
-                    "builders", count_value,
+                    "builders",
+                    count_value,
                     labels={
                         "status": count_name,
                         "arch": processor,
                         "virtualized": virtualized,
-                        })
+                    },
+                )
         self.logger.debug("Builder stats update complete.")
 
     def updateBuilderStats(self):
@@ -158,7 +160,8 @@ class NumberCruncher(service.Service):
             self.logger.debug("Updating librarian stats.")
             store = IStore(LibraryFileContent)
             total_files, total_filesize = store.find(
-                (Count(), Sum(LibraryFileContent.filesize))).one()
+                (Count(), Sum(LibraryFileContent.filesize))
+            ).one()
             self._sendGauge("librarian.total_files", total_files)
             self._sendGauge("librarian.total_filesize", total_filesize)
             self.logger.debug("Librarian stats update complete.")
@@ -176,10 +179,11 @@ class NumberCruncher(service.Service):
             store = IStore(CodeImportJob)
             pending = store.find(
                 CodeImportJob,
-                CodeImportJob.state == CodeImportJobState.PENDING).count()
+                CodeImportJob.state == CodeImportJobState.PENDING,
+            ).count()
             overdue = store.find(
-                CodeImportJob,
-                CodeImportJob.date_due < datetime.now(pytz.UTC)).count()
+                CodeImportJob, CodeImportJob.date_due < datetime.now(pytz.UTC)
+            ).count()
             self._sendGauge("codeimport.pending", pending)
             self._sendGauge("codeimport.overdue", overdue)
             self.logger.debug("Code import stats update complete")
@@ -195,7 +199,8 @@ class NumberCruncher(service.Service):
 
         try:
             self.logger.debug("Update PPA build latency stats.")
-            query = """
+            query = (
+                """
             SELECT
                 avg(extract(
                     epoch FROM bpb.date_first_dispatched - bpb.date_created)
@@ -219,7 +224,9 @@ class NumberCruncher(service.Service):
                 AND bpr.build = bpb.id
                 AND bpb.distro_arch_series = bpph.distroarchseries
                 AND bpph.datepublished >= %s
-            """ % "(NOW() at time zone 'UTC' - interval '1 hour')"
+            """
+                % "(NOW() at time zone 'UTC' - interval '1 hour')"
+            )
             results = IStore(Archive).execute(query).get_one()
             self._sendGauge("ppa.startdelay", results[0])
             self._sendGauge("ppa.uploaddelay", results[1])
@@ -228,7 +235,8 @@ class NumberCruncher(service.Service):
             self.logger.debug("PPA build latency stats update complete.")
         except Exception:
             self.logger.exception(
-                "Failure while update PPA build latency stats.")
+                "Failure while update PPA build latency stats."
+            )
         transaction.abort()
 
     def startService(self):
@@ -236,12 +244,12 @@ class NumberCruncher(service.Service):
         self.loops = []
         self.stopping_deferreds = []
         for interval, callback in (
-                (self.QUEUE_INTERVAL, self.updateBuilderQueues),
-                (self.BUILDER_INTERVAL, self.updateBuilderStats),
-                (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
-                (self.CODE_IMPORT_INTERVAL, self.updateCodeImportStats),
-                (self.PPA_LATENCY_INTERVAL, self.updatePPABuildLatencyStats),
-                ):
+            (self.QUEUE_INTERVAL, self.updateBuilderQueues),
+            (self.BUILDER_INTERVAL, self.updateBuilderStats),
+            (self.LIBRARIAN_INTERVAL, self.updateLibrarianStats),
+            (self.CODE_IMPORT_INTERVAL, self.updateCodeImportStats),
+            (self.PPA_LATENCY_INTERVAL, self.updatePPABuildLatencyStats),
+        ):
             loop, stopping_deferred = self._startLoop(interval, callback)
             self.loops.append(loop)
             self.stopping_deferreds.append(stopping_deferred)

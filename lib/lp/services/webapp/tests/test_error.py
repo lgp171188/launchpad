@@ -9,20 +9,12 @@ import socket
 import time
 from urllib.error import HTTPError
 
-from fixtures import FakeLogger
 import psycopg2
-from storm.exceptions import (
-    DisconnectionError,
-    OperationalError,
-    )
-from testtools.content import text_content
-from testtools.matchers import (
-    AllMatch,
-    Equals,
-    MatchesAny,
-    MatchesListwise,
-    )
 import transaction
+from fixtures import FakeLogger
+from storm.exceptions import DisconnectionError, OperationalError
+from testtools.content import text_content
+from testtools.matchers import AllMatch, Equals, MatchesAny, MatchesListwise
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.testbrowser.wsgi import Browser
@@ -31,18 +23,15 @@ from lp.services.webapp.error import (
     DisconnectionErrorView,
     OperationalErrorView,
     SystemErrorView,
-    )
+)
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
 from lp.testing.fixture import (
     CaptureOops,
     PGBouncerFixture,
     ZopeAdapterFixture,
-    )
-from lp.testing.layers import (
-    DatabaseLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import Contains
 
 
@@ -59,16 +48,18 @@ class TestSystemErrorView(TestCase):
         SystemErrorView(Exception(), request)
         self.assertEqual(500, request.response.getStatus())
         self.assertIsNone(
-            request.response.getHeader('X-Lazr-OopsId', literal=True))
+            request.response.getHeader("X-Lazr-OopsId", literal=True)
+        )
 
     def test_with_oops_id(self):
         request = LaunchpadTestRequest()
-        request.oopsid = 'OOPS-1X1'
+        request.oopsid = "OOPS-1X1"
         SystemErrorView(Exception(), request)
         self.assertEqual(500, request.response.getStatus())
         self.assertEqual(
-            'OOPS-1X1',
-            request.response.getHeader('X-Lazr-OopsId', literal=True))
+            "OOPS-1X1",
+            request.response.getHeader("X-Lazr-OopsId", literal=True),
+        )
 
 
 class TestDatabaseErrorViews(TestCase):
@@ -91,14 +82,17 @@ class TestDatabaseErrorViews(TestCase):
         # First we figure out if pgbouncer is listening on the port it is
         # supposed to be listening on.  connect_ex returns 0 on success or an
         # errno otherwise.
-        pg_port_status = str(socket.socket().connect_ex(('localhost', 5432)))
+        pg_port_status = str(socket.socket().connect_ex(("localhost", 5432)))
         self.addDetail(
-            'postgres socket.connect_ex result', text_content(pg_port_status))
+            "postgres socket.connect_ex result", text_content(pg_port_status)
+        )
         bouncer_port_status = str(
-            socket.socket().connect_ex(('localhost', bouncer.port)))
+            socket.socket().connect_ex(("localhost", bouncer.port))
+        )
         self.addDetail(
-            'pgbouncer socket.connect_ex result',
-            text_content(bouncer_port_status))
+            "pgbouncer socket.connect_ex result",
+            text_content(bouncer_port_status),
+        )
 
     def retryConnection(self, url, bouncer, retries=60):
         """Retry to connect to *url* for *retries* times.
@@ -117,12 +111,12 @@ class TestDatabaseErrorViews(TestCase):
         else:
             self.add_retry_failure_details(bouncer)
             raise TimeoutException(
-                "Launchpad did not come up after {} attempts."
-                    .format(retries))
+                "Launchpad did not come up after {} attempts.".format(retries)
+            )
 
     def test_disconnectionerror_view_integration(self):
         # Test setup.
-        self.useFixture(FakeLogger('SiteError', level=logging.CRITICAL))
+        self.useFixture(FakeLogger("SiteError", level=logging.CRITICAL))
         bouncer = PGBouncerFixture()
         # XXX gary bug=974617, bug=1011847, bug=504291 2011-07-03:
         # In parallel tests, we are rarely encountering instances of
@@ -136,7 +130,7 @@ class TestDatabaseErrorViews(TestCase):
         self.useFixture(bouncer)
         transaction.abort()
         # Verify things are working initially.
-        url = 'http://launchpad.test/'
+        url = "http://launchpad.test/"
         self.retryConnection(url, bouncer)
         # Now break the database, and we get an exception, along with
         # our view and several OOPSes from the retries.
@@ -144,42 +138,63 @@ class TestDatabaseErrorViews(TestCase):
 
         class Disconnects(Equals):
             def __init__(self, message):
-                super().__init__(('DisconnectionError', message))
+                super().__init__(("DisconnectionError", message))
 
         browser = Browser()
         browser.raiseHttpErrors = False
         with CaptureOops() as oopses:
             browser.open(url)
-        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertEqual(503, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertThat(
-            browser.contents, Contains(DisconnectionErrorView.reason))
+            browser.contents, Contains(DisconnectionErrorView.reason)
+        )
         self.assertThat(
-            [(oops['type'], oops['value'].split('\n')[0])
-             for oops in oopses.oopses],
+            [
+                (oops["type"], oops["value"].split("\n")[0])
+                for oops in oopses.oopses
+            ],
             MatchesListwise(
-                [MatchesAny(
-                    # libpq < 9.5.
-                    Disconnects('error with no message from the libpq'),
-                    # libpq >= 9.5.
-                    Disconnects('server closed the connection unexpectedly'))]
-                * 2 +
-                [Disconnects(
-                    'could not connect to server: Connection refused')]
-                * 6))
+                [
+                    MatchesAny(
+                        # libpq < 9.5.
+                        Disconnects("error with no message from the libpq"),
+                        # libpq >= 9.5.
+                        Disconnects(
+                            "server closed the connection unexpectedly"
+                        ),
+                    )
+                ]
+                * 2
+                + [
+                    Disconnects(
+                        "could not connect to server: Connection refused"
+                    )
+                ]
+                * 6
+            ),
+        )
 
         # We keep seeing the correct exception on subsequent requests.
         with CaptureOops() as oopses:
             browser.open(url)
-        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertEqual(503, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertThat(
-            browser.contents, Contains(DisconnectionErrorView.reason))
+            browser.contents, Contains(DisconnectionErrorView.reason)
+        )
         self.assertThat(
-            [(oops['type'], oops['value'].split('\n')[0])
-             for oops in oopses.oopses],
+            [
+                (oops["type"], oops["value"].split("\n")[0])
+                for oops in oopses.oopses
+            ],
             MatchesListwise(
-                [Disconnects(
-                    'could not connect to server: Connection refused')]
-                * 8))
+                [
+                    Disconnects(
+                        "could not connect to server: Connection refused"
+                    )
+                ]
+                * 8
+            ),
+        )
 
         # When the database is available again, requests succeed.
         bouncer.start()
@@ -200,26 +215,33 @@ class TestDatabaseErrorViews(TestCase):
 
         with CaptureOops() as oopses:
             browser.open(url)
-        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertEqual(503, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertThat(
-            browser.contents, Contains(DisconnectionErrorView.reason))
+            browser.contents, Contains(DisconnectionErrorView.reason)
+        )
         disconnection_oopses = [
-            (oops['type'], oops['value'].split('\n')[0])
-            for oops in oopses.oopses]
+            (oops["type"], oops["value"].split("\n")[0])
+            for oops in oopses.oopses
+        ]
         self.assertNotEqual([], disconnection_oopses)
         self.assertThat(
-            disconnection_oopses, AllMatch(Disconnects('database removed')))
+            disconnection_oopses, AllMatch(Disconnects("database removed"))
+        )
 
         # A second request doesn't log any OOPSes.
         with CaptureOops() as oopses:
             browser.open(url)
-        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertEqual(503, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertThat(
-            browser.contents, Contains(DisconnectionErrorView.reason))
+            browser.contents, Contains(DisconnectionErrorView.reason)
+        )
         self.assertEqual(
             [],
-            [(oops['type'], oops['value'].split('\n')[0])
-             for oops in oopses.oopses])
+            [
+                (oops["type"], oops["value"].split("\n")[0])
+                for oops in oopses.oopses
+            ],
+        )
 
         # When the database is available again, requests succeed.
         cur.execute("ENABLE %s" % DatabaseLayer._db_fixture.dbname)
@@ -232,25 +254,34 @@ class TestDatabaseErrorViews(TestCase):
 
     def test_operationalerror_view_integration(self):
         # Test setup.
-        self.useFixture(FakeLogger('SiteError', level=logging.CRITICAL))
+        self.useFixture(FakeLogger("SiteError", level=logging.CRITICAL))
 
         class BrokenView:
             """A view that raises an OperationalError"""
+
             def __call__(self, *args, **kw):
                 raise OperationalError()
-        self.useFixture(ZopeAdapterFixture(
-            BrokenView(), (None, IDefaultBrowserLayer), Interface,
-            "error-test"))
 
-        url = 'http://launchpad.test/error-test'
+        self.useFixture(
+            ZopeAdapterFixture(
+                BrokenView(),
+                (None, IDefaultBrowserLayer),
+                Interface,
+                "error-test",
+            )
+        )
+
+        url = "http://launchpad.test/error-test"
         browser = Browser()
         browser.raiseHttpErrors = False
         browser.open(url)
         self.assertEqual(
             http.client.SERVICE_UNAVAILABLE,
-            int(browser.headers['Status'].split(' ', 1)[0]))
+            int(browser.headers["Status"].split(" ", 1)[0]),
+        )
         self.assertThat(
-            browser.contents, Contains(OperationalErrorView.reason))
+            browser.contents, Contains(OperationalErrorView.reason)
+        )
 
     def test_operationalerror_view(self):
         request = LaunchpadTestRequest()

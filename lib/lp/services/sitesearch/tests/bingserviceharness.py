@@ -5,7 +5,7 @@
 Fixtures for running the Bing test webservice.
 """
 
-__all__ = ['BingServiceTestSetup']
+__all__ = ["BingServiceTestSetup"]
 
 
 import errno
@@ -16,8 +16,7 @@ from lp.services.sitesearch import bingtestservice
 
 
 class BingServiceTestSetup:
-    """Set up the Bing web service stub for use in functional tests.
-    """
+    """Set up the Bing web service stub for use in functional tests."""
 
     # XXX gary 2008-12-06 bug=305858: Spurious test failures discovered on
     # buildbot, builds 40 and 43. The locations of the failures are marked

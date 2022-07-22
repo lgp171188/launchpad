@@ -6,10 +6,7 @@
 from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import (
-    formatdate,
-    make_msgid,
-    )
+from email.utils import formatdate, make_msgid
 from textwrap import dedent
 
 import gpgme
@@ -22,15 +19,12 @@ from lp.services.mail.helpers import IncomingEmailError
 from lp.services.mail.incoming import (
     authenticateEmail,
     canonicalise_line_endings,
-    )
+)
 from lp.services.mail.interfaces import IWeaklyAuthenticatedPrincipal
 from lp.services.mail.signedmessage import signed_message_from_bytes
 from lp.testing import TestCaseWithFactory
 from lp.testing.factory import GPGSigningContext
-from lp.testing.gpgkeys import (
-    import_public_test_keys,
-    import_secret_test_key,
-    )
+from lp.testing.gpgkeys import import_public_test_keys, import_secret_test_key
 from lp.testing.keyserver import KeyServerTac
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -42,7 +36,7 @@ class TestSignedMessage(TestCaseWithFactory):
 
     def setUp(self):
         # Login with admin roles as we aren't testing access here.
-        TestCaseWithFactory.setUp(self, 'admin@canonical.com')
+        TestCaseWithFactory.setUp(self, "admin@canonical.com")
         import_public_test_keys()
         # Ensure that tests will try to fetch keys from the keyserver.
         self.useFixture(KeyServerTac())
@@ -65,17 +59,21 @@ class TestSignedMessage(TestCaseWithFactory):
         # Create a signed message for the sender specified with the test
         # secret key.
         key = import_secret_test_key()
-        signing_context = GPGSigningContext(key, password='test')
+        signing_context = GPGSigningContext(key, password="test")
         if body is None:
-            body = dedent("""\
+            body = dedent(
+                """\
                 This is a multi-line body.
 
                 Sincerely,
                 Your friendly tester.
-                """)
+                """
+            )
         msg = self.factory.makeSignedMessage(
             email_address=sender.preferredemail.email,
-            body=body, signing_context=signing_context)
+            body=body,
+            signing_context=signing_context,
+        )
         getUtility(IGPGHandler).resetLocalState()
         self.assertFalse(msg.is_multipart())
         return signed_message_from_bytes(message_as_bytes(msg))
@@ -92,7 +90,7 @@ class TestSignedMessage(TestCaseWithFactory):
 
     def test_clearsigned_message(self):
         # The test keys belong to Sample Person.
-        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
+        sender = getUtility(IPersonSet).getByEmail("test@canonical.com")
         msg = self._get_clearsigned_for_person(sender)
         principal = authenticateEmail(msg)
         self.assertIsNot(None, msg.signature)
@@ -102,11 +100,12 @@ class TestSignedMessage(TestCaseWithFactory):
     def test_trailing_whitespace(self):
         # Trailing whitespace should be ignored when verifying a message's
         # signature.
-        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
+        sender = getUtility(IPersonSet).getByEmail("test@canonical.com")
         body = (
-            'A message with trailing spaces.   \n'
-            'And tabs\t\t\n'
-            'Also mixed. \t ')
+            "A message with trailing spaces.   \n"
+            "And tabs\t\t\n"
+            "Also mixed. \t "
+        )
         msg = self._get_clearsigned_for_person(sender, body)
         principal = authenticateEmail(msg)
         self.assertIsNot(None, msg.signature)
@@ -115,19 +114,21 @@ class TestSignedMessage(TestCaseWithFactory):
 
     def _get_detached_message_for_person(self, sender):
         # Return a signed message that contains a detached signature.
-        body = dedent("""\
+        body = dedent(
+            """\
             This is a multi-line body.
 
             Sincerely,
-            Your friendly tester.""")
+            Your friendly tester."""
+        )
         to = self.factory.getUniqueEmailAddress()
 
         msg = MIMEMultipart()
-        msg['Message-Id'] = make_msgid('launchpad')
-        msg['Date'] = formatdate()
-        msg['To'] = to
-        msg['From'] = sender.preferredemail.email
-        msg['Subject'] = 'Sample'
+        msg["Message-Id"] = make_msgid("launchpad")
+        msg["Date"] = formatdate()
+        msg["To"] = to
+        msg["From"] = sender.preferredemail.email
+        msg["Subject"] = "Sample"
 
         body_text = MIMEText(body)
         msg.attach(body_text)
@@ -137,12 +138,15 @@ class TestSignedMessage(TestCaseWithFactory):
         gpghandler = getUtility(IGPGHandler)
         signature = gpghandler.signContent(
             canonicalise_line_endings(message_as_bytes(body_text)),
-            key, 'test', gpgme.SIG_MODE_DETACH)
+            key,
+            "test",
+            gpgme.SIG_MODE_DETACH,
+        )
         gpghandler.resetLocalState()
 
         attachment = Message()
         attachment.set_payload(signature)
-        attachment['Content-Type'] = 'application/pgp-signature'
+        attachment["Content-Type"] = "application/pgp-signature"
         msg.attach(attachment)
         self.assertTrue(msg.is_multipart())
         return signed_message_from_bytes(message_as_bytes(msg))
@@ -159,7 +163,7 @@ class TestSignedMessage(TestCaseWithFactory):
 
     def test_detached_signature_message(self):
         # Test a detached correct signature.
-        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
+        sender = getUtility(IPersonSet).getByEmail("test@canonical.com")
         msg = self._get_detached_message_for_person(sender)
         principal = authenticateEmail(msg)
         self.assertIsNot(None, msg.signature)
@@ -167,7 +171,7 @@ class TestSignedMessage(TestCaseWithFactory):
         self.assertFalse(IWeaklyAuthenticatedPrincipal.providedBy(principal))
 
     def test_require_strong_email_authentication_and_signed(self):
-        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
+        sender = getUtility(IPersonSet).getByEmail("test@canonical.com")
         sender.require_strong_email_authentication = True
         msg = self._get_clearsigned_for_person(sender)
         principal = authenticateEmail(msg)
@@ -176,7 +180,7 @@ class TestSignedMessage(TestCaseWithFactory):
         self.assertFalse(IWeaklyAuthenticatedPrincipal.providedBy(principal))
 
     def test_require_strong_email_authentication_and_unsigned(self):
-        sender = getUtility(IPersonSet).getByEmail('test@canonical.com')
+        sender = getUtility(IPersonSet).getByEmail("test@canonical.com")
         sender.require_strong_email_authentication = True
         email_message = self.factory.makeEmailMessage(sender=sender)
         msg = signed_message_from_bytes(message_as_bytes(email_message))
@@ -193,5 +197,6 @@ class TestSignedMessage(TestCaseWithFactory):
             "forging messages as if they were sent from your address, perhaps "
             "due to\n"
             "a compromised address book, and you can safely ignore this "
-            "message.\n" % sender.name)
+            "message.\n" % sender.name
+        )
         self.assertEqual(expected_message, error.message)

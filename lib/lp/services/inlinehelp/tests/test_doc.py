@@ -5,11 +5,8 @@
 Run the doctests.
 """
 
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setGlobs,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setGlobs
 
 
 def test_suite():
-    return LayeredDocFileSuite('../README.rst', setUp=setGlobs)
+    return LayeredDocFileSuite("../README.rst", setUp=setGlobs)

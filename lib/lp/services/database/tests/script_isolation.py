@@ -10,12 +10,8 @@ __all__ = []
 import transaction
 
 from lp.services.config import dbconfig
-from lp.services.database.sqlbase import (
-    cursor,
-    disconnect_stores,
-    )
+from lp.services.database.sqlbase import cursor, disconnect_stores
 from lp.services.scripts import execute_zcml_for_scripts
-
 
 execute_zcml_for_scripts()
 
@@ -34,10 +30,11 @@ def check():
     cur.execute("SHOW transaction_isolation")
     print(cur.fetchone()[0])
 
-dbconfig.override(dbuser='launchpad_main', isolation_level='read_committed')
+
+dbconfig.override(dbuser="launchpad_main", isolation_level="read_committed")
 disconnect_stores()
 check()
 
-dbconfig.override(isolation_level='repeatable_read')
+dbconfig.override(isolation_level="repeatable_read")
 disconnect_stores()
 check()

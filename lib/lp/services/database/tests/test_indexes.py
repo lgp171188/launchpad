@@ -3,15 +3,9 @@
 
 """Test database index correctness."""
 
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 
-from lp.services.database.postgresql import (
-    listIndexes,
-    listReferences,
-    )
+from lp.services.database.postgresql import listIndexes, listReferences
 from lp.services.database.sqlbase import cursor
 from lp.testing import TestCase
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -28,13 +22,14 @@ class TestIndexedReferences(WithScenarios, TestCase):
     scenarios = [
         ("Archive", {"table": "archive", "column": "id"}),
         ("Job", {"table": "job", "column": "id"}),
-        ]
+    ]
 
     def test_references_are_indexed(self):
         cur = cursor()
         self.addCleanup(cur.close)
         references = list(
-            listReferences(cur, self.table, self.column, indirect=False))
+            listReferences(cur, self.table, self.column, indirect=False)
+        )
         missing = []
         for src_tab, src_col, _, _, _, _ in references:
             for index in listIndexes(cur, src_tab, src_col):

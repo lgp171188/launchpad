@@ -5,10 +5,7 @@
 
 __all__ = []
 
-from lp.testing import (
-    build_yui_unittest_suite,
-    YUIUnitTestCase,
-    )
+from lp.testing import YUIUnitTestCase, build_yui_unittest_suite
 from lp.testing.layers import YUITestLayer
 
 

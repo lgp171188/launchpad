@@ -13,7 +13,6 @@ from lp.services.webapp.errorlog import globalErrorUtility
 
 
 class CrashScript(LaunchpadCronScript):
-
     def main(self):
         self.oopses = []
 

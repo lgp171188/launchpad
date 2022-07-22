@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['Country', 'CountrySet', 'Continent']
+__all__ = ["Country", "CountrySet", "Continent"]
 
 from zope.interface import implementer
 
@@ -13,36 +13,38 @@ from lp.services.database.sqlobject import (
     ForeignKey,
     SQLRelatedJoin,
     StringCol,
-    )
+)
 from lp.services.worlddata.interfaces.country import (
     IContinent,
     ICountry,
     ICountrySet,
-    )
+)
 
 
 @implementer(ICountry)
 class Country(SQLBase):
     """A country."""
 
-    _table = 'Country'
+    _table = "Country"
 
     # default to listing newest first
-    _defaultOrder = 'name'
+    _defaultOrder = "name"
 
     # db field names
-    name = StringCol(dbName='name', unique=True, notNull=True)
-    iso3166code2 = StringCol(dbName='iso3166code2', unique=True,
-                             notNull=True)
-    iso3166code3 = StringCol(dbName='iso3166code3', unique=True,
-                             notNull=True)
-    title = StringCol(dbName='title', notNull=False, default=DEFAULT)
-    description = StringCol(dbName='description')
+    name = StringCol(dbName="name", unique=True, notNull=True)
+    iso3166code2 = StringCol(dbName="iso3166code2", unique=True, notNull=True)
+    iso3166code3 = StringCol(dbName="iso3166code3", unique=True, notNull=True)
+    title = StringCol(dbName="title", notNull=False, default=DEFAULT)
+    description = StringCol(dbName="description")
     continent = ForeignKey(
-        dbName='continent', foreignKey='Continent', default=None)
+        dbName="continent", foreignKey="Continent", default=None
+    )
     languages = SQLRelatedJoin(
-        'Language', joinColumn='country',
-        otherColumn='language', intermediateTable='SpokenIn')
+        "Language",
+        joinColumn="country",
+        otherColumn="language",
+        intermediateTable="SpokenIn",
+    )
 
 
 @implementer(ICountrySet)
@@ -75,8 +77,8 @@ class CountrySet:
 class Continent(SQLBase):
     """See IContinent."""
 
-    _table = 'Continent'
-    _defaultOrder = ['name', 'id']
+    _table = "Continent"
+    _defaultOrder = ["name", "id"]
 
     name = StringCol(unique=True, notNull=True)
     code = StringCol(unique=True, notNull=True)

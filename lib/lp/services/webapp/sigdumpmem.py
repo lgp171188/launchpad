@@ -5,9 +5,8 @@ import signal
 
 from meliae import scanner
 
-
 SIGDUMPMEM = signal.SIGRTMIN + 10
-DUMP_FILE = '/tmp/launchpad-memory.dump'
+DUMP_FILE = "/tmp/launchpad-memory.dump"
 
 
 def sigdumpmem_handler(signum, frame):

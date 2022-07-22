@@ -9,23 +9,16 @@ from zope.security.interfaces import Unauthorized
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.features.flags import (
+    NullFeatureController,
     documented_flags,
     flag_info,
-    NullFeatureController,
     undocumented_flags,
     value_domain_info,
-    )
-from lp.services.features.scopes import (
-    HANDLERS,
-    undocumented_scopes,
-    )
+)
+from lp.services.features.scopes import HANDLERS, undocumented_scopes
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import ILaunchpadRoot
-from lp.testing import (
-    BrowserTestCase,
-    person_logged_in,
-    TestCase,
-    )
+from lp.testing import BrowserTestCase, TestCase, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import Contains
 
@@ -37,7 +30,7 @@ class TestFeatureControlPage(BrowserTestCase):
     def getFeatureInfoUrl(self):
         """Find the URL to the feature info page."""
         root = getUtility(ILaunchpadRoot)
-        return canonical_url(root, view_name='+feature-info')
+        return canonical_url(root, view_name="+feature-info")
 
     def getUserBrowserAsAdmin(self):
         """Make a new TestBrowser logged in as an admin user."""
@@ -81,14 +74,14 @@ class TestFeatureControlPage(BrowserTestCase):
         # Stash away any already encountered undocumented flags.
         saved_undocumented = undocumented_flags.copy()
         undocumented_flags.clear()
-        undocumented_flags.update(['first', 'second'])
+        undocumented_flags.update(["first", "second"])
         browser.open(self.getFeatureInfoUrl())
         # Put the saved undocumented flags back.
         undocumented_flags.clear()
         undocumented_flags.update(saved_undocumented)
         # Are the (injected) undocumented flags shown in the page?
-        self.assertThat(browser.contents, Contains('first'))
-        self.assertThat(browser.contents, Contains('second'))
+        self.assertThat(browser.contents, Contains("first"))
+        self.assertThat(browser.contents, Contains("second"))
 
     def test_undocumented_scope_displayed(self):
         """The undocumented scope names are displayed on the page."""
@@ -96,28 +89,24 @@ class TestFeatureControlPage(BrowserTestCase):
         # Stash away any already encountered undocumented scopes.
         saved_undocumented = undocumented_scopes.copy()
         undocumented_scopes.clear()
-        undocumented_scopes.update(['first', 'second'])
+        undocumented_scopes.update(["first", "second"])
         browser.open(self.getFeatureInfoUrl())
         # Put the saved undocumented scopes back.
         undocumented_scopes.clear()
         undocumented_scopes.update(saved_undocumented)
         # Are the (injected) undocumented scopes shown in the page?
-        self.assertThat(browser.contents, Contains('first'))
-        self.assertThat(browser.contents, Contains('second'))
+        self.assertThat(browser.contents, Contains("first"))
+        self.assertThat(browser.contents, Contains("second"))
 
     def test_feature_info_anonymous_unauthorized(self):
         """Anonymous users can not view the feature flag info page."""
         browser = self.getUserBrowser()
-        self.assertRaises(Unauthorized,
-            browser.open,
-            self.getFeatureInfoUrl())
+        self.assertRaises(Unauthorized, browser.open, self.getFeatureInfoUrl())
 
     def test_feature_rules_plebian_unauthorized(self):
         """Unauthorized logged-in users can't view the info page."""
         browser = self.getUserBrowserAsTeamMember([])
-        self.assertRaises(Unauthorized,
-            browser.open,
-            self.getFeatureInfoUrl())
+        self.assertRaises(Unauthorized, browser.open, self.getFeatureInfoUrl())
 
 
 class TestUndocumentedFeatureFlags(TestCase):
@@ -144,18 +133,18 @@ class TestUndocumentedFeatureFlags(TestCase):
         """Reading undocumented feature flags records them as undocumented."""
         controller = NullFeatureController()
         # This test assumes there is no flag named "does-not-exist".
-        assert 'does-not-exist' not in documented_flags
-        controller.getFlag('does-not-exist')
-        self.assertThat(undocumented_flags, Contains('does-not-exist'))
+        assert "does-not-exist" not in documented_flags
+        controller.getFlag("does-not-exist")
+        self.assertThat(undocumented_flags, Contains("does-not-exist"))
 
     def test_reading_documented_feature_flags(self):
         """Reading documented flags does not record them as undocumented."""
         controller = NullFeatureController()
         # Make sure there is no flag named "documented-flag-name" before we
         # start testing.
-        assert 'documented-flag-name' not in documented_flags
-        documented_flags.update(['documented-flag-name'])
-        controller.getFlag('documented-flag-name')
+        assert "documented-flag-name" not in documented_flags
+        documented_flags.update(["documented-flag-name"])
+        controller.getFlag("documented-flag-name")
         self.assertThat(
-            undocumented_flags,
-            Not(Contains('documented-flag-name')))
+            undocumented_flags, Not(Contains("documented-flag-name"))
+        )

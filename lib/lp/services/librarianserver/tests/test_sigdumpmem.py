@@ -6,10 +6,7 @@
 import os
 import time
 
-from lp.services.librarian.interfaces.client import (
-    DUMP_FILE,
-    SIGDUMPMEM,
-    )
+from lp.services.librarian.interfaces.client import DUMP_FILE, SIGDUMPMEM
 from lp.testing import TestCase
 from lp.testing.layers import LibrarianLayer
 

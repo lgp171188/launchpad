@@ -4,21 +4,15 @@
 """A class for the top-level link to the authenticated user's account."""
 
 __all__ = [
-    'IMeLink',
-    'MeLink',
-    ]
+    "IMeLink",
+    "MeLink",
+]
 
-from lazr.restful.interfaces import (
-    IJSONRequestCache,
-    ITopLevelEntryLink,
-    )
+from lazr.restful.interfaces import IJSONRequestCache, ITopLevelEntryLink
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    )
+from lp.registry.interfaces.person import IPerson, IPersonSet
 from lp.services.webapp.interfaces import ICanonicalUrlData
 
 
@@ -30,15 +24,16 @@ class IMeLink(ITopLevelEntryLink, ICanonicalUrlData):
 class MeLink:
     """The top-level link to the authenticated user's account."""
 
-    link_name = 'me'
+    link_name = "me"
     entry_type = IPerson
 
     @property
     def inside(self):
         """The +me link is beneath /people/."""
         return getUtility(IPersonSet)
-    path = '+me'
-    rootsite = 'api'
+
+    path = "+me"
+    rootsite = "api"
 
 
 def cache_me_link_when_principal_identified(event):
@@ -56,4 +51,4 @@ def cache_me_link_when_principal_identified(event):
     if cache is not None:
         person = IPerson(event.principal, None)
         if person is not None:
-            cache.links['me'] = person
+            cache.links["me"] = person

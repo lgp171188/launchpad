@@ -3,12 +3,12 @@
 
 """Base class for sending out emails."""
 
-__all__ = ['BaseMailer', 'RecipientReason']
+__all__ = ["BaseMailer", "RecipientReason"]
 
-from collections import OrderedDict
 import logging
-from smtplib import SMTPException
 import sys
+from collections import OrderedDict
+from smtplib import SMTPException
 
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -18,10 +18,10 @@ from lp.services.mail.helpers import get_email_template
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
 from lp.services.mail.sendmail import (
+    MailController,
     append_footer,
     format_address,
-    MailController,
-    )
+)
 from lp.services.utils import text_delta
 from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
 
@@ -38,10 +38,20 @@ class BaseMailer:
 
     app = None
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 delta=None, message_id=None, notification_type=None,
-                 mail_controller_class=None, request=None, wrap=False,
-                 force_wrap=False):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        delta=None,
+        message_id=None,
+        notification_type=None,
+        mail_controller_class=None,
+        request=None,
+        wrap=False,
+        force_wrap=False,
+    ):
         """Constructor.
 
         :param subject: A Python dict-replacement template for the subject
@@ -71,8 +81,9 @@ class BaseMailer:
         # necessary to move notifications into jobs, to move unit tests to a
         # Zopeless-based layer, or to use the permissive_security_policy
         # context manager.
-        assert getSecurityPolicy() == LaunchpadPermissiveSecurityPolicy, (
-            "BaseMailer may only be used with a permissive security policy.")
+        assert (
+            getSecurityPolicy() == LaunchpadPermissiveSecurityPolicy
+        ), "BaseMailer may only be used with a permissive security policy."
 
         self._subject_template = subject
         self._template_name = template_name
@@ -83,7 +94,7 @@ class BaseMailer:
         self.delta = delta
         self.message_id = message_id
         self.notification_type = notification_type
-        self.logger = logging.getLogger('lp.services.mail.basemailer')
+        self.logger = logging.getLogger("lp.services.mail.basemailer")
         if mail_controller_class is None:
             mail_controller_class = MailController
         self._mail_controller_class = mail_controller_class
@@ -113,20 +124,28 @@ class BaseMailer:
         if expanded_footer:
             body = append_footer(body, expanded_footer)
         ctrl = self._mail_controller_class(
-            from_address, to_addresses, subject, body, headers,
-            envelope_to=[email])
+            from_address,
+            to_addresses,
+            subject,
+            body,
+            headers,
+            envelope_to=[email],
+        )
         if force_no_attachments:
             ctrl.addAttachment(
-                'Excessively large attachments removed.',
-                content_type='text/plain', inline=True)
+                "Excessively large attachments removed.",
+                content_type="text/plain",
+                inline=True,
+            )
         else:
             self._addAttachments(ctrl, email)
         return ctrl
 
     def _getSubject(self, email, recipient):
         """The subject template expanded with the template params."""
-        return (self._subject_template %
-                    self._getTemplateParams(email, recipient))
+        return self._subject_template % self._getTemplateParams(
+            email, recipient
+        )
 
     def _getReplyToAddress(self, email, recipient):
         """Return the address to use for the reply-to header."""
@@ -136,16 +155,16 @@ class BaseMailer:
         """Return the mail headers to use."""
         reason, rationale = self._recipients.getReason(email)
         headers = OrderedDict()
-        headers['X-Launchpad-Message-Rationale'] = reason.mail_header
+        headers["X-Launchpad-Message-Rationale"] = reason.mail_header
         if reason.subscriber.name is not None:
-            headers['X-Launchpad-Message-For'] = reason.subscriber.name
+            headers["X-Launchpad-Message-For"] = reason.subscriber.name
         if self.notification_type is not None:
-            headers['X-Launchpad-Notification-Type'] = self.notification_type
+            headers["X-Launchpad-Notification-Type"] = self.notification_type
         reply_to = self._getReplyToAddress(email, recipient)
         if reply_to is not None:
-            headers['Reply-To'] = reply_to
+            headers["Reply-To"] = reply_to
         if self.message_id is not None:
-            headers['Message-Id'] = self.message_id
+            headers["Message-Id"] = self.message_id
         return headers
 
     def _addAttachments(self, ctrl, email):
@@ -164,25 +183,31 @@ class BaseMailer:
     def _getTemplateParams(self, email, recipient):
         """Return a dict of values to use in the body and subject."""
         reason, rationale = self._recipients.getReason(email)
-        params = {'reason': reason.getReason()}
+        params = {"reason": reason.getReason()}
         if self.delta is not None:
-            params['delta'] = self.textDelta()
+            params["delta"] = self.textDelta()
         return params
 
     def textDelta(self):
         """Return a textual version of the class delta."""
-        return text_delta(self.delta, self.delta.delta_values,
-            self.delta.new_values, self.delta.interface)
+        return text_delta(
+            self.delta,
+            self.delta.delta_values,
+            self.delta.new_values,
+            self.delta.interface,
+        )
 
     def _getBody(self, email, recipient):
         """Return the complete body to use for this email."""
         template = get_email_template(
-            self._getTemplateName(email, recipient), app=self.app)
+            self._getTemplateName(email, recipient), app=self.app
+        )
         params = self._getTemplateParams(email, recipient)
         body = template % params
         if self._wrap:
-            body = MailWrapper().format(
-                body, force_wrap=self._force_wrap) + "\n"
+            body = (
+                MailWrapper().format(body, force_wrap=self._force_wrap) + "\n"
+            )
         footer = self._getFooter(email, recipient, params)
         if footer is not None:
             body = append_footer(body, footer)
@@ -198,9 +223,9 @@ class BaseMailer:
             return None
         lines = []
         for key, value in headers.items():
-            if key.startswith('X-Launchpad-'):
-                lines.append('%s: %s\n' % (key[2:], value))
-        return ''.join(lines)
+            if key.startswith("X-Launchpad-"):
+                lines.append("%s: %s\n" % (key[2:], value))
+        return "".join(lines)
 
     def sendOne(self, email, recipient):
         """Send notification to one recipient."""
@@ -212,7 +237,8 @@ class BaseMailer:
             # If the initial sending failed, try again without
             # attachments.
             ctrl = self.generateEmail(
-                email, recipient, force_no_attachments=True)
+                email, recipient, force_no_attachments=True
+            )
             try:
                 ctrl.send()
             except SMTPException:
@@ -222,7 +248,7 @@ class BaseMailer:
                     "notification_type": self.notification_type,
                     "recipient": ", ".join(ctrl.to_addrs),
                     "subject": ctrl.subject,
-                    }
+                }
                 with error_utility.oopsMessage(oops_vars):
                     oops = error_utility.raising(sys.exc_info(), self.request)
                 self.logger.info("Mail resulted in OOPS: %s" % oops.get("id"))
@@ -245,32 +271,37 @@ class RecipientReason:
     @staticmethod
     def makeRationale(rationale_base, person):
         if person.is_team:
-            return '%s @%s' % (rationale_base, person.name)
+            return "%s @%s" % (rationale_base, person.name)
         else:
             return rationale_base
 
     def _getTemplateValues(self):
         template_values = {
-            'entity_is': 'You are',
-            'lc_entity_is': 'you are',
-            }
+            "entity_is": "You are",
+            "lc_entity_is": "you are",
+        }
         if self.recipient != self.subscriber:
-            assert self.recipient.hasParticipationEntryFor(self.subscriber), (
-                '%s does not participate in team %s.' %
-                (self.recipient.displayname, self.subscriber.displayname))
+            assert self.recipient.hasParticipationEntryFor(
+                self.subscriber
+            ), "%s does not participate in team %s." % (
+                self.recipient.displayname,
+                self.subscriber.displayname,
+            )
         if self.recipient != self.subscriber or self.subscriber.is_team:
-            template_values['entity_is'] = (
-                'Your team %s is' % self.subscriber.displayname)
-            template_values['lc_entity_is'] = (
-                'your team %s is' % self.subscriber.displayname)
+            template_values["entity_is"] = (
+                "Your team %s is" % self.subscriber.displayname
+            )
+            template_values["lc_entity_is"] = (
+                "your team %s is" % self.subscriber.displayname
+            )
         return template_values
 
     def getReason(self):
         """Return a string explaining why the recipient is a recipient."""
-        return (self.reason_template % self._getTemplateValues())
+        return self.reason_template % self._getTemplateValues()
 
     @classmethod
     def forBuildRequester(cls, requester):
-        header = cls.makeRationale('Requester', requester)
-        reason = '%(entity_is)s the requester of the build.'
+        header = cls.makeRationale("Requester", requester)
+        reason = "%(entity_is)s the requester of the build."
         return cls(requester, requester, header, reason)

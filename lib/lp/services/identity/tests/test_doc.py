@@ -10,7 +10,6 @@ import os
 from lp.services.testing import build_test_suite
 from lp.testing.layers import DatabaseFunctionalLayer
 
-
 here = os.path.dirname(os.path.realpath(__file__))
 
 

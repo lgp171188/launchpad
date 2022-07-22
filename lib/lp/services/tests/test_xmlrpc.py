@@ -17,7 +17,7 @@ class TestTransport(TestCase):
 
     def test_default_initialization(self):
         transport = Transport()
-        conn = http.client.HTTPConnection('localhost')
+        conn = http.client.HTTPConnection("localhost")
         self.assertEqual(conn.timeout, transport.timeout)
 
     def test_custom_initialization(self):
@@ -26,7 +26,7 @@ class TestTransport(TestCase):
 
     def test_timeout_passed_to_connection(self):
         transport = Transport(timeout=25)
-        http = transport.make_connection('localhost')
+        http = transport.make_connection("localhost")
         # See logic in lp.services.xmlrpc.Transport.make_connection
         http = getattr(http, "_conn", http)
         self.assertEqual(25, http.timeout)

@@ -2,57 +2,43 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FileDownloadClient',
-    'FileUploadClient',
-    'get_libraryfilealias_download_path',
-    'LibrarianClient',
-    'RestrictedLibrarianClient',
-    'url_path_quote',
-    ]
+    "FileDownloadClient",
+    "FileUploadClient",
+    "get_libraryfilealias_download_path",
+    "LibrarianClient",
+    "RestrictedLibrarianClient",
+    "url_path_quote",
+]
 
 
 import hashlib
 import http.client
 import select
 import socket
-from socket import (
-    AF_INET,
-    SOCK_STREAM,
-    )
 import threading
 import time
-from urllib.error import (
-    HTTPError,
-    URLError,
-    )
-from urllib.parse import (
-    quote,
-    urljoin,
-    urlparse,
-    urlunparse,
-    )
+from socket import AF_INET, SOCK_STREAM
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urljoin, urlparse, urlunparse
 from urllib.request import urlopen
 
-from lazr.restful.utils import get_current_browser_request
 import six
+from lazr.restful.utils import get_current_browser_request
 from storm.store import Store
 from zope.interface import implementer
 
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
+from lp.services.config import config, dbconfig
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.postgresql import ConnectionString
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
+    LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
     DownloadFailed,
     ILibrarianClient,
     IRestrictedLibrarianClient,
-    LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
     LibrarianServerError,
     UploadFailed,
-    )
+)
 from lp.services.timeline.requesttimeline import get_request_timeline
 
 
@@ -63,12 +49,12 @@ def url_path_quote(filename):
     # frequently used in Debian versions, so leave it alone.
     #
     # This needs to match Library.getAlias' TimeLimitedToken handling.
-    return quote(filename, safe='/~+')
+    return quote(filename, safe="/~+")
 
 
 def get_libraryfilealias_download_path(aliasID, filename):
     """Download path for a given `LibraryFileAlias` id and filename."""
-    return '/%d/%s' % (int(aliasID), url_path_quote(filename))
+    return "/%d/%s" % (int(aliasID), url_path_quote(filename))
 
 
 def compose_url(base_url, alias_path):
@@ -98,14 +84,15 @@ class FileUploadClient:
         try:
             self.state.s = socket.socket(AF_INET, SOCK_STREAM)
             self.state.s.connect((self.upload_host, self.upload_port))
-            self.state.f = self.state.s.makefile('rwb', 0)
+            self.state.f = self.state.s.makefile("rwb", 0)
 
             # Register epoll for the socket.
             self.state.s_poll = select.epoll()
             self.state.s_poll.register(self.state.s.fileno(), select.EPOLLIN)
         except OSError as x:
             raise UploadFailed(
-                '[%s:%s]: %s' % (self.upload_host, self.upload_port, x))
+                "[%s:%s]: %s" % (self.upload_host, self.upload_port, x)
+            )
 
     def _close(self):
         """Close connection"""
@@ -129,19 +116,28 @@ class FileUploadClient:
             if fileno != self.state.s.fileno() or not (event & select.EPOLLIN):
                 return
             response = six.ensure_str(
-                self.state.f.readline().strip(), errors='replace')
-            raise UploadFailed('Server said early: ' + response)
+                self.state.f.readline().strip(), errors="replace"
+            )
+            raise UploadFailed("Server said early: " + response)
 
     def _sendLine(self, line, check_for_error_responses=True):
-        self.state.f.write(line + b'\r\n')
+        self.state.f.write(line + b"\r\n")
         if check_for_error_responses:
             self._checkError()
 
     def _sendHeader(self, name, value):
-        self._sendLine(six.ensure_binary('%s: %s' % (name, value)))
+        self._sendLine(six.ensure_binary("%s: %s" % (name, value)))
 
-    def addFile(self, name, size, file, contentType, expires=None,
-                debugID=None, allow_zero_length=False):
+    def addFile(
+        self,
+        name,
+        size,
+        file,
+        contentType,
+        expires=None,
+        debugID=None,
+        allow_zero_length=False,
+    ):
         """Add a file to the librarian.
 
         :param name: Name to store the file as
@@ -159,13 +155,13 @@ class FileUploadClient:
             reason.
         """
         if file is None:
-            raise TypeError('Bad File Descriptor: %s' % repr(file))
+            raise TypeError("Bad File Descriptor: %s" % repr(file))
         if allow_zero_length:
             min_size = -1
         else:
             min_size = 0
         if size <= min_size:
-            raise UploadFailed('Invalid length: %d' % size)
+            raise UploadFailed("Invalid length: %d" % size)
 
         name = six.ensure_binary(name)
 
@@ -173,7 +169,7 @@ class FileUploadClient:
         from lp.services.librarian.model import (
             LibraryFileAlias,
             LibraryFileContent,
-            )
+        )
 
         self._connect()
         try:
@@ -186,26 +182,28 @@ class FileUploadClient:
             # Generate new content and alias IDs.
             # (we'll create rows with these IDs later, but not yet)
             contentID = store.execute(
-                "SELECT nextval('libraryfilecontent_id_seq')").get_one()[0]
+                "SELECT nextval('libraryfilecontent_id_seq')"
+            ).get_one()[0]
             aliasID = store.execute(
-                "SELECT nextval('libraryfilealias_id_seq')").get_one()[0]
+                "SELECT nextval('libraryfilealias_id_seq')"
+            ).get_one()[0]
 
             # Send command
-            self._sendLine(b'STORE %d %s' % (size, name))
+            self._sendLine(b"STORE %d %s" % (size, name))
 
             # Send headers
-            self._sendHeader('Database-Name', databaseName)
-            self._sendHeader('File-Content-ID', contentID)
-            self._sendHeader('File-Alias-ID', aliasID)
+            self._sendHeader("Database-Name", databaseName)
+            self._sendHeader("File-Content-ID", contentID)
+            self._sendHeader("File-Alias-ID", aliasID)
 
             if debugID is not None:
-                self._sendHeader('Debug-ID', debugID)
+                self._sendHeader("Debug-ID", debugID)
 
             # Send blank line. Do not check for a response from the
             # server when no data will be sent. Otherwise
             # _checkError() might consume the "200" response which
             # is supposed to be read below in this method.
-            self._sendLine(b'', check_for_error_responses=(size > 0))
+            self._sendLine(b"", check_for_error_responses=(size > 0))
 
             # Prepare to the upload the file
             md5_digester = hashlib.md5()
@@ -216,39 +214,50 @@ class FileUploadClient:
             # Read in and upload the file 64kb at a time, by using the two-arg
             # form of iter (see
             # /usr/share/doc/python/html/library/functions.html#iter).
-            for chunk in iter(lambda: file.read(1024 * 64), b''):
+            for chunk in iter(lambda: file.read(1024 * 64), b""):
                 self.state.f.write(chunk)
                 bytesWritten += len(chunk)
                 md5_digester.update(chunk)
                 sha1_digester.update(chunk)
                 sha256_digester.update(chunk)
 
-            assert bytesWritten == size, (
-                'size is %d, but %d were read from the file'
-                % (size, bytesWritten))
+            assert (
+                bytesWritten == size
+            ), "size is %d, but %d were read from the file" % (
+                size,
+                bytesWritten,
+            )
             self.state.f.flush()
 
             # Read response
             response = six.ensure_str(
-                self.state.f.readline().strip(), errors='replace')
-            if response != '200':
-                raise UploadFailed('Server said: ' + response)
+                self.state.f.readline().strip(), errors="replace"
+            )
+            if response != "200":
+                raise UploadFailed("Server said: " + response)
 
             # Add rows to DB
             content = LibraryFileContent(
-                id=contentID, filesize=size,
+                id=contentID,
+                filesize=size,
                 sha256=sha256_digester.hexdigest(),
                 sha1=sha1_digester.hexdigest(),
-                md5=md5_digester.hexdigest())
+                md5=md5_digester.hexdigest(),
+            )
             LibraryFileAlias(
-                id=aliasID, content=content, filename=name.decode('UTF-8'),
-                mimetype=contentType, expires=expires,
-                restricted=self.restricted)
+                id=aliasID,
+                content=content,
+                filename=name.decode("UTF-8"),
+                mimetype=contentType,
+                expires=expires,
+                restricted=self.restricted,
+            )
 
             Store.of(content).flush()
 
-            assert isinstance(aliasID, int), \
-                    "aliasID %r not an integer" % (aliasID, )
+            assert isinstance(aliasID, int), "aliasID %r not an integer" % (
+                aliasID,
+            )
             return aliasID
         finally:
             self._close()
@@ -259,22 +268,22 @@ class FileUploadClient:
     def remoteAddFile(self, name, size, file, contentType, expires=None):
         """See `IFileUploadClient`."""
         if file is None:
-            raise TypeError('No data')
+            raise TypeError("No data")
         if size <= 0:
-            raise UploadFailed('No data')
+            raise UploadFailed("No data")
         name = six.ensure_binary(name)
         self._connect()
         try:
             database_name = ConnectionString(dbconfig.main_master).dbname
-            self._sendLine(b'STORE %d %s' % (size, name))
-            self._sendHeader('Database-Name', database_name)
-            self._sendHeader('Content-Type', str(contentType))
+            self._sendLine(b"STORE %d %s" % (size, name))
+            self._sendHeader("Database-Name", database_name)
+            self._sendHeader("Content-Type", str(contentType))
             if expires is not None:
                 epoch = time.mktime(expires.utctimetuple())
-                self._sendHeader('File-Expires', str(int(epoch)))
+                self._sendHeader("File-Expires", str(int(epoch)))
 
             # Send blank line
-            self._sendLine(b'')
+            self._sendLine(b"")
 
             # Prepare to the upload the file
             bytesWritten = 0
@@ -282,24 +291,29 @@ class FileUploadClient:
             # Read in and upload the file 64kb at a time, by using the two-arg
             # form of iter (see
             # /usr/share/doc/python/html/library/functions.html#iter).
-            for chunk in iter(lambda: file.read(1024 * 64), b''):
+            for chunk in iter(lambda: file.read(1024 * 64), b""):
                 self.state.f.write(chunk)
                 bytesWritten += len(chunk)
 
-            assert bytesWritten == size, (
-                'size is %d, but %d were read from the file'
-                % (size, bytesWritten))
+            assert (
+                bytesWritten == size
+            ), "size is %d, but %d were read from the file" % (
+                size,
+                bytesWritten,
+            )
             self.state.f.flush()
 
             # Read response
             response = six.ensure_str(
-                self.state.f.readline().strip(), errors='replace')
-            if not response.startswith('200'):
+                self.state.f.readline().strip(), errors="replace"
+            )
+            if not response.startswith("200"):
                 raise UploadFailed(
-                    'Could not upload %s. Server said: %s' % (name, response))
+                    "Could not upload %s. Server said: %s" % (name, response)
+                )
 
             status, ids = response.split()
-            contentID, aliasID = ids.split('/', 1)
+            contentID, aliasID = ids.split("/", 1)
 
             path = get_libraryfilealias_download_path(aliasID, name)
             return urljoin(self.download_url, path)
@@ -314,7 +328,7 @@ class _File:
         self.file = file
         self.url = url
         headers = file.info()
-        chunked = (headers.get("Transfer-Encoding") == "chunked")
+        chunked = headers.get("Transfer-Encoding") == "chunked"
         if not chunked and "Content-Length" in headers:
             try:
                 self.length = int(headers["Content-Length"])
@@ -393,7 +407,7 @@ class FileDownloadClient:
             lfa = None
 
         if lfa is None:
-            raise DownloadFailed('Alias %d not found' % aliasID)
+            raise DownloadFailed("Alias %d not found" % aliasID)
         self._checkAliasAccess(lfa, secure=secure)
 
         return lfa
@@ -409,7 +423,8 @@ class FileDownloadClient:
         """
         if not secure and alias.restricted != self.restricted:
             raise DownloadFailed(
-                'Alias %d cannot be downloaded from this client.' % alias.id)
+                "Alias %d cannot be downloaded from this client." % alias.id
+            )
 
     def _getPathForAlias(self, aliasID, secure=False):
         """Returns the path inside the librarian to talk about the given
@@ -426,14 +441,16 @@ class FileDownloadClient:
         :raises: DownloadFailed if the alias is invalid
         """
         return self._getPathForAliasObject(
-            self._getAlias(int(aliasID), secure=secure))
+            self._getAlias(int(aliasID), secure=secure)
+        )
 
     def _getPathForAliasObject(self, alias):
         """Returns the Librarian path for a `LibraryFileAlias`."""
         if alias.deleted:
             return None
         return get_libraryfilealias_download_path(
-            alias.id, alias.filename.encode('utf-8'))
+            alias.id, alias.filename.encode("utf-8")
+        )
 
     def _getBaseURL(self, alias, secure=False):
         """Get the base URL to use for `alias`.
@@ -455,10 +472,10 @@ class FileDownloadClient:
         download_url = config.librarian.download_url
         parsed = list(urlparse(download_url))
         # Force the scheme to https
-        parsed[0] = 'https'
+        parsed[0] = "https"
         # Insert the alias id (which is a unique key, thus unique) in the
         # netloc
-        parsed[1] = ('i%d.restricted.' % alias.id) + parsed[1]
+        parsed[1] = ("i%d.restricted." % alias.id) + parsed[1]
         return urlunparse(parsed)
 
     def getURLForAlias(self, aliasID, secure=False):
@@ -506,10 +523,12 @@ class FileDownloadClient:
             deleted.
         """
         return compose_url(
-            self._internal_download_url, self._getPathForAlias(aliasID))
+            self._internal_download_url, self._getPathForAlias(aliasID)
+        )
 
     def getFileByAlias(
-        self, aliasID, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
+        self, aliasID, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT
+    ):
         """See `IFileDownloadClient`."""
         url = self._getURLForDownload(aliasID)
         if url is None:
@@ -539,11 +558,13 @@ class FileDownloadClient:
                 # HTTPErrors with a 5xx error code ("server problem")
                 # are a reason to retry the access again, as well as
                 # generic, non-HTTP, URLErrors like "connection refused".
-                if (isinstance(error, HTTPError)
+                if (
+                    isinstance(error, HTTPError)
                     and 500 <= error.code <= 599
-                    or isinstance(error, URLError) and
-                        not isinstance(error, HTTPError)):
-                    if  time.time() <= try_until:
+                    or isinstance(error, URLError)
+                    and not isinstance(error, HTTPError)
+                ):
+                    if time.time() <= try_until:
                         time.sleep(1)
                     else:
                         # There's a test (in
@@ -577,10 +598,10 @@ class LibrarianClient(FileUploadClient, FileDownloadClient):
     @property
     def _internal_download_url(self):
         """Used by `_getURLForDownload`."""
-        return 'http://%s:%s/' % (
+        return "http://%s:%s/" % (
             config.librarian.download_host,
             config.librarian.download_port,
-            )
+        )
 
 
 @implementer(IRestrictedLibrarianClient)
@@ -604,7 +625,7 @@ class RestrictedLibrarianClient(LibrarianClient):
     @property
     def _internal_download_url(self):
         """Used by `_getURLForDownload`."""
-        return 'http://%s:%s/' % (
+        return "http://%s:%s/" % (
             config.librarian.restricted_download_host,
             config.librarian.restricted_download_port,
-            )
+        )

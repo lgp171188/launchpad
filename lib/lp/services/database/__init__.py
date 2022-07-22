@@ -4,28 +4,24 @@
 """The lp.services.database package."""
 
 __all__ = [
-    'activity_cols',
-    'read_transaction',
-    'write_transaction',
-    ]
+    "activity_cols",
+    "read_transaction",
+    "write_transaction",
+]
 
-from psycopg2.extensions import TransactionRollbackError
-from storm.exceptions import (
-    DisconnectionError,
-    IntegrityError,
-    )
 import transaction
+from psycopg2.extensions import TransactionRollbackError
+from storm.exceptions import DisconnectionError, IntegrityError
 from twisted.python.util import mergeFunctionMetadata
 
 from lp.services.database.sqlbase import reset_store
-
 
 RETRY_ATTEMPTS = 3
 
 
 def activity_cols(cur):
     """Adapt pg_stat_activity column names for the current DB server."""
-    return {'query': 'query', 'pid': 'pid'}
+    return {"query": "query", "pid": "pid"}
 
 
 def retry_transaction(func):
@@ -34,16 +30,21 @@ def retry_transaction(func):
     The function being decorated should not have side effects outside
     of the transaction.
     """
+
     def retry_transaction_decorator(*args, **kwargs):
         attempt = 0
         while True:
             attempt += 1
             try:
                 return func(*args, **kwargs)
-            except (DisconnectionError, IntegrityError,
-                    TransactionRollbackError):
+            except (
+                DisconnectionError,
+                IntegrityError,
+                TransactionRollbackError,
+            ):
                 if attempt >= RETRY_ATTEMPTS:
                     raise  # tried too many times
+
     return mergeFunctionMetadata(func, retry_transaction_decorator)
 
 
@@ -53,6 +54,7 @@ def read_transaction(func):
     The transaction will be aborted on successful completion of the
     function.  The transaction will be retried if appropriate.
     """
+
     @reset_store
     def read_transaction_decorator(*args, **kwargs):
         transaction.begin()
@@ -60,8 +62,10 @@ def read_transaction(func):
             return func(*args, **kwargs)
         finally:
             transaction.abort()
-    return retry_transaction(mergeFunctionMetadata(
-        func, read_transaction_decorator))
+
+    return retry_transaction(
+        mergeFunctionMetadata(func, read_transaction_decorator)
+    )
 
 
 def write_transaction(func):
@@ -71,6 +75,7 @@ def write_transaction(func):
     function, and aborted on failure.  The transaction will be retried
     if appropriate.
     """
+
     @reset_store
     def write_transaction_decorator(*args, **kwargs):
         transaction.begin()
@@ -81,5 +86,7 @@ def write_transaction(func):
             raise
         transaction.commit()
         return ret
-    return retry_transaction(mergeFunctionMetadata(
-        func, write_transaction_decorator))
+
+    return retry_transaction(
+        mergeFunctionMetadata(func, write_transaction_decorator)
+    )

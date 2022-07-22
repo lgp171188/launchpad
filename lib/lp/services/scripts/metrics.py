@@ -5,7 +5,7 @@
 
 __all__ = [
     "emit_script_activity_metric",
-    ]
+]
 
 from datetime import timedelta
 
@@ -21,4 +21,5 @@ def emit_script_activity_metric(name: str, duration: timedelta):
     getUtility(IStatsdClient).timing(
         "script_activity",
         duration.total_seconds() * 1000,
-        labels={"name": name})
+        labels={"name": name},
+    )

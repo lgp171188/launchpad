@@ -3,15 +3,15 @@
 
 """Test `TransactionPolicy`."""
 
-from psycopg2 import InternalError
 import transaction
+from psycopg2 import InternalError
 
 from lp.registry.model.person import Person
 from lp.services.database.interfaces import IStore
 from lp.services.database.isolation import (
-    check_no_transaction,
     TransactionInProgress,
-    )
+    check_no_transaction,
+)
 from lp.services.database.transaction_policy import DatabaseTransactionPolicy
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -154,13 +154,15 @@ class TestTransactionPolicy(TestCaseWithFactory):
         # Only the nested policy (the second element of the key tuple)
         # determines whether writes are allowed (the value associated
         # with the key).
-        self.assertEqual({
-            (False, False): False,
-            (False, True): True,
-            (True, False): False,
-            (True, True): True,
+        self.assertEqual(
+            {
+                (False, False): False,
+                (False, True): True,
+                (True, False): False,
+                (True, True): True,
             },
-            effects)
+            effects,
+        )
 
     def test_policy_restores_previous_policy_on_success(self):
         # A transaction policy, once exited, restores the previously
@@ -169,10 +171,10 @@ class TestTransactionPolicy(TestCaseWithFactory):
             with DatabaseTransactionPolicy(read_only=True):
                 self.readFromDatabase()
             self.assertTrue(
-                self.hasDatabaseBeenWrittenTo(self.writeToDatabase()))
+                self.hasDatabaseBeenWrittenTo(self.writeToDatabase())
+            )
             transaction.commit()
-        self.assertTrue(
-            self.hasDatabaseBeenWrittenTo(self.writeToDatabase()))
+        self.assertTrue(self.hasDatabaseBeenWrittenTo(self.writeToDatabase()))
 
     def test_propagates_failure(self):
         # Exceptions raised inside a transaction policy are not
@@ -198,8 +200,7 @@ class TestTransactionPolicy(TestCaseWithFactory):
         except HorribleFailure:
             pass
 
-        self.assertTrue(
-            self.hasDatabaseBeenWrittenTo(self.writeToDatabase()))
+        self.assertTrue(self.hasDatabaseBeenWrittenTo(self.writeToDatabase()))
 
     def test_policy_can_span_transactions(self):
         # It's okay to commit within a policy; the policy will still

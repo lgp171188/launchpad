@@ -11,12 +11,9 @@ from zope.interface import Interface
 from zope.publisher.interfaces.browser import (
     IBrowserPublisher,
     IBrowserRequest,
-    )
+)
 from zope.schema import TextLine
-from zope.security.checker import (
-    defineChecker,
-    NamesChecker,
-    )
+from zope.security.checker import NamesChecker, defineChecker
 
 from lp.services.inlinehelp.browser import HelpFolder
 from lp.services.webapp.interfaces import ILaunchpadApplication
@@ -24,30 +21,36 @@ from lp.services.webapp.interfaces import ILaunchpadApplication
 
 class IHelpFolderDirective(Interface):
     """Directive to register an help folder."""
-    folder = Path(
-        title='The path to the help folder.',
-        required=True)
+
+    folder = Path(title="The path to the help folder.", required=True)
     name = TextLine(
-        title='The name to register the help folder under.',
-        required=True)
+        title="The name to register the help folder under.", required=True
+    )
 
 
 def register_help_folder(context, folder, name):
     """Create a help folder subclass and register it with the ZCA."""
 
     help_folder = type(
-        str('%s for %s' % (name, folder)), (HelpFolder, ),
-        {'folder': folder, '__name__': name})
+        str("%s for %s" % (name, folder)),
+        (HelpFolder,),
+        {"folder": folder, "__name__": name},
+    )
 
     defineChecker(
         help_folder,
-        NamesChecker(list(IBrowserPublisher.names(True)) + ['__call__']))
+        NamesChecker(list(IBrowserPublisher.names(True)) + ["__call__"]),
+    )
 
     context.action(
-        discriminator=(
-            'view', (ILaunchpadApplication, IBrowserRequest), name),
+        discriminator=("view", (ILaunchpadApplication, IBrowserRequest), name),
         callable=handler,
-        args=('registerAdapter',
-              help_folder, (ILaunchpadApplication, IBrowserRequest),
-              Interface, name, context.info),
-        )
+        args=(
+            "registerAdapter",
+            help_folder,
+            (ILaunchpadApplication, IBrowserRequest),
+            Interface,
+            name,
+            context.info,
+        ),
+    )

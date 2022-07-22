@@ -4,22 +4,22 @@
 """View support classes for feeds."""
 
 __all__ = [
-    'AnnouncementsFeedLink',
-    'BranchFeedLink',
-    'BugFeedLink',
-    'BugTargetLatestBugsFeedLink',
-    'FeedLinkBase',
-    'FeedsMixin',
-    'FeedsNavigation',
-    'FeedsRootUrlData',
-    'PersonBranchesFeedLink',
-    'PersonRevisionsFeedLink',
-    'ProductBranchesFeedLink',
-    'ProductRevisionsFeedLink',
-    'ProjectBranchesFeedLink',
-    'ProjectRevisionsFeedLink',
-    'RootAnnouncementsFeedLink',
-    ]
+    "AnnouncementsFeedLink",
+    "BranchFeedLink",
+    "BugFeedLink",
+    "BugTargetLatestBugsFeedLink",
+    "FeedLinkBase",
+    "FeedsMixin",
+    "FeedsNavigation",
+    "FeedsRootUrlData",
+    "PersonBranchesFeedLink",
+    "PersonRevisionsFeedLink",
+    "ProductBranchesFeedLink",
+    "ProductRevisionsFeedLink",
+    "ProjectBranchesFeedLink",
+    "ProjectRevisionsFeedLink",
+    "RootAnnouncementsFeedLink",
+]
 
 from zope.component import getUtility
 from zope.interface import implementer
@@ -29,36 +29,27 @@ from zope.security.interfaces import Unauthorized
 from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.interfaces.bugtarget import IHasBugs
-from lp.bugs.interfaces.bugtask import (
-    IBugTask,
-    IBugTaskSet,
-    )
+from lp.bugs.interfaces.bugtask import IBugTask, IBugTaskSet
 from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.code.interfaces.branch import IBranch
 from lp.layers import FeedsLayer
 from lp.registry.interfaces.announcement import (
     IAnnouncementSet,
     IHasAnnouncements,
-    )
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    )
+)
+from lp.registry.interfaces.person import IPerson, IPersonSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.config import config
 from lp.services.feeds.interfaces.application import IFeedsApplication
 from lp.services.webapp import (
+    Navigation,
     canonical_name,
     canonical_url,
-    Navigation,
     stepto,
-    )
-from lp.services.webapp.interfaces import (
-    ICanonicalUrlData,
-    ILaunchpadRoot,
-    )
+)
+from lp.services.webapp.interfaces import ICanonicalUrlData, ILaunchpadRoot
 from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
@@ -68,9 +59,9 @@ from lp.services.webapp.vhosts import allvhosts
 class FeedsRootUrlData:
     """`ICanonicalUrlData` for Feeds."""
 
-    path = ''
+    path = ""
     inside = None
-    rootsite = 'feeds'
+    rootsite = "feeds"
 
     def __init__(self, context):
         self.context = context
@@ -83,7 +74,7 @@ class FeedsNavigation(Navigation):
 
     newlayer = FeedsLayer
 
-    @stepto('+index')
+    @stepto("+index")
     def redirect_index(self):
         """Redirect /+index to help.launchpad.net/Feeds site.
 
@@ -93,7 +84,8 @@ class FeedsNavigation(Navigation):
         to the default site.
         """
         return self.redirectSubTree(
-            'https://help.launchpad.net/Feeds', status=301)
+            "https://help.launchpad.net/Feeds", status=301
+        )
 
     def traverse(self, name):
         """Traverse the paths of a feed.
@@ -107,16 +99,18 @@ class FeedsNavigation(Navigation):
         # XXX bac 20071019, we would like to normalize with respect to case
         # too but cannot due to a problem with the bug search requiring status
         # values to be of a particular case.  See bug 154562.
-        query_string = self.request.get('QUERY_STRING', '')
-        fields = sorted(query_string.split('&'))
-        normalized_query_string = '&'.join(fields)
+        query_string = self.request.get("QUERY_STRING", "")
+        fields = sorted(query_string.split("&"))
+        normalized_query_string = "&".join(fields)
         if query_string != normalized_query_string:
             # We must empty the traversal stack to prevent an error
             # when calling RedirectionView.publishTraverse().
             self.request.setTraversalStack([])
-            target = "%s%s?%s" % (self.request.getApplicationURL(),
-                                  self.request['PATH_INFO'],
-                                  normalized_query_string)
+            target = "%s%s?%s" % (
+                self.request.getApplicationURL(),
+                self.request["PATH_INFO"],
+                normalized_query_string,
+            )
             redirect = RedirectionView(target, self.request, 301)
             return redirect
 
@@ -124,17 +118,17 @@ class FeedsNavigation(Navigation):
         # http://feeds.launchpad.net/bugs/latest-bugs.atom
         # http://feeds.launchpad.net/bugs/+bugs.atom?...
         # http://feeds.launchpad.net/bugs/1/bug.atom
-        if name == 'bugs':
+        if name == "bugs":
             stack = self.request.getTraversalStack()
             if len(stack) == 0:
-                raise NotFound(self, '', self.request)
+                raise NotFound(self, "", self.request)
             bug_id = stack.pop()
-            if bug_id.startswith('+'):
+            if bug_id.startswith("+"):
                 if config.launchpad.is_bug_search_feed_active:
                     return getUtility(IBugTaskSet)
                 else:
                     raise Unauthorized("Bug search feed deactivated")
-            elif bug_id.startswith('latest-bugs.'):
+            elif bug_id.startswith("latest-bugs."):
                 return getUtility(IMaloneApplication)
             else:
                 self.request.stepstogo.consume()
@@ -143,11 +137,11 @@ class FeedsNavigation(Navigation):
         # Redirect to the canonical name before doing the lookup.
         if canonical_name(name) != name:
             return self.redirectSubTree(
-                canonical_url(self.context) + canonical_name(name),
-                status=301)
+                canonical_url(self.context) + canonical_name(name), status=301
+            )
 
         try:
-            if name.startswith('~'):
+            if name.startswith("~"):
                 # Handle persons and teams.
                 # http://feeds.launchpad.net/~salgado/latest-bugs.html
                 person = getUtility(IPersonSet).getByName(name[1:])
@@ -168,15 +162,16 @@ class FeedLinkBase:
     Subclasses can override:
         title: The name of the feed as it appears in a browser.
     """
-    title = 'Atom Feed'
+
+    title = "Atom Feed"
     href = None
-    rooturl = allvhosts.configs['feeds'].rooturl
+    rooturl = allvhosts.configs["feeds"].rooturl
 
     def __init__(self, context):
         self.context = context
-        assert self.usedfor.providedBy(context), (
-            "Context %r does not provide interface %r"
-            % (context, self.usedfor))
+        assert self.usedfor.providedBy(
+            context
+        ), "Context %r does not provide interface %r" % (context, self.usedfor)
 
     @classmethod
     def allowFeed(cls, context):
@@ -192,12 +187,13 @@ class BugFeedLink(FeedLinkBase):
 
     @property
     def title(self):
-        return 'Bug %s Feed' % self.context.bug.id
+        return "Bug %s Feed" % self.context.bug.id
 
     @property
     def href(self):
-        return urlappend(self.rooturl,
-                         'bugs/' + str(self.context.bug.id) + '/bug.atom')
+        return urlappend(
+            self.rooturl, "bugs/" + str(self.context.bug.id) + "/bug.atom"
+        )
 
     @classmethod
     def allowFeed(cls, context):
@@ -212,14 +208,15 @@ class BugTargetLatestBugsFeedLink(FeedLinkBase):
     @property
     def title(self):
         if IMaloneApplication.providedBy(self.context):
-            return 'Latest Bugs'
+            return "Latest Bugs"
         else:
-            return 'Latest Bugs for %s' % self.context.displayname
+            return "Latest Bugs for %s" % self.context.displayname
 
     @property
     def href(self):
-        return urlappend(canonical_url(self.context, rootsite='feeds'),
-                         'latest-bugs.atom')
+        return urlappend(
+            canonical_url(self.context, rootsite="feeds"), "latest-bugs.atom"
+        )
 
 
 class AnnouncementsFeedLink(FeedLinkBase):
@@ -228,17 +225,19 @@ class AnnouncementsFeedLink(FeedLinkBase):
     @property
     def title(self):
         if IAnnouncementSet.providedBy(self.context):
-            return 'All Announcements'
+            return "All Announcements"
         else:
-            return 'Announcements for %s' % self.context.displayname
+            return "Announcements for %s" % self.context.displayname
 
     @property
     def href(self):
         if IAnnouncementSet.providedBy(self.context):
-            return urlappend(self.rooturl, 'announcements.atom')
+            return urlappend(self.rooturl, "announcements.atom")
         else:
-            return urlappend(canonical_url(self.context, rootsite='feeds'),
-                             'announcements.atom')
+            return urlappend(
+                canonical_url(self.context, rootsite="feeds"),
+                "announcements.atom",
+            )
 
 
 class RootAnnouncementsFeedLink(AnnouncementsFeedLink):
@@ -246,11 +245,11 @@ class RootAnnouncementsFeedLink(AnnouncementsFeedLink):
 
     @property
     def title(self):
-        return 'All Announcements'
+        return "All Announcements"
 
     @property
     def href(self):
-        return urlappend(self.rooturl, 'announcements.atom')
+        return urlappend(self.rooturl, "announcements.atom")
 
 
 class BranchesFeedLinkBase(FeedLinkBase):
@@ -258,26 +257,30 @@ class BranchesFeedLinkBase(FeedLinkBase):
 
     @property
     def title(self):
-        return 'Latest Branches for %s' % self.context.displayname
+        return "Latest Branches for %s" % self.context.displayname
 
     @property
     def href(self):
-        return urlappend(canonical_url(self.context, rootsite='feeds'),
-                         'branches.atom')
+        return urlappend(
+            canonical_url(self.context, rootsite="feeds"), "branches.atom"
+        )
 
 
 class ProjectBranchesFeedLink(BranchesFeedLinkBase):
     """Feed links for branches on a project."""
+
     usedfor = IProjectGroup
 
 
 class ProductBranchesFeedLink(BranchesFeedLinkBase):
     """Feed links for branches on a product."""
+
     usedfor = IProduct
 
 
 class PersonBranchesFeedLink(BranchesFeedLinkBase):
     """Feed links for branches on a person."""
+
     usedfor = IPerson
 
 
@@ -286,7 +289,7 @@ class RevisionsFeedLinkBase(FeedLinkBase):
 
     @property
     def title(self):
-        return 'Latest Revisions for %s' % self.context.displayname
+        return "Latest Revisions for %s" % self.context.displayname
 
     @property
     def href(self):
@@ -294,32 +297,37 @@ class RevisionsFeedLinkBase(FeedLinkBase):
 
         E.g.  http://feeds.launchpad.net/firefox/revisions.atom
         """
-        return urlappend(canonical_url(self.context, rootsite='feeds'),
-                         'revisions.atom')
+        return urlappend(
+            canonical_url(self.context, rootsite="feeds"), "revisions.atom"
+        )
 
 
 class ProjectRevisionsFeedLink(RevisionsFeedLinkBase):
     """Feed links for revisions on a project."""
+
     usedfor = IProjectGroup
 
 
 class ProductRevisionsFeedLink(RevisionsFeedLinkBase):
     """Feed links for revisions on a product."""
+
     usedfor = IProduct
 
 
 class BranchFeedLink(FeedLinkBase):
     """Feed links for revisions on a branch."""
+
     usedfor = IBranch
 
     @property
     def title(self):
-        return 'Latest Revisions for Branch %s' % self.context.displayname
+        return "Latest Revisions for Branch %s" % self.context.displayname
 
     @property
     def href(self):
-        return urlappend(canonical_url(self.context, rootsite="feeds"),
-                         'branch.atom')
+        return urlappend(
+            canonical_url(self.context, rootsite="feeds"), "branch.atom"
+        )
 
     @classmethod
     def allowFeed(cls, context):
@@ -330,20 +338,23 @@ class BranchFeedLink(FeedLinkBase):
 
 class PersonRevisionsFeedLink(FeedLinkBase):
     """Feed links for revisions created by a person."""
+
     usedfor = IPerson
 
     @property
     def title(self):
         if self.context.is_team:
-            return 'Latest Revisions by members of %s' % (
-                self.context.displayname)
+            return "Latest Revisions by members of %s" % (
+                self.context.displayname
+            )
         else:
-            return 'Latest Revisions by %s' % self.context.displayname
+            return "Latest Revisions by %s" % self.context.displayname
 
     @property
     def href(self):
-        return urlappend(canonical_url(self.context, rootsite="feeds"),
-                         'revisions.atom')
+        return urlappend(
+            canonical_url(self.context, rootsite="feeds"), "revisions.atom"
+        )
 
 
 class FeedsMixin:
@@ -354,6 +365,7 @@ class FeedsMixin:
 
     feed_links: Returns a list of objects subclassed from FeedLinkBase.
     """
+
     feed_types = (
         AnnouncementsFeedLink,
         BranchFeedLink,
@@ -366,15 +378,17 @@ class FeedsMixin:
         ProjectBranchesFeedLink,
         ProjectRevisionsFeedLink,
         RootAnnouncementsFeedLink,
-        )
+    )
 
     @property
     def feed_links(self):
-
         def allowFeed(feed_type, context):
-            return (feed_type.usedfor.providedBy(context) and
-                feed_type.allowFeed(context))
+            return feed_type.usedfor.providedBy(
+                context
+            ) and feed_type.allowFeed(context)
 
-        return [feed_type(self.context)
+        return [
+            feed_type(self.context)
             for feed_type in self.feed_types
-            if allowFeed(feed_type, self.context)]
+            if allowFeed(feed_type, self.context)
+        ]

@@ -3,7 +3,7 @@
 
 """Utility mixins for testing statsd handling"""
 
-__all__ = ['StatsMixin']
+__all__ = ["StatsMixin"]
 
 from unittest import mock
 
@@ -14,7 +14,6 @@ from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 
 class StatsMixin:
-
     def setUpStats(self):
         # Install a mock statsd client so we can assert against the call
         # counts and args.
@@ -22,4 +21,5 @@ class StatsMixin:
         statsd_client = getUtility(IStatsdClient)
         self.stats_client = mock.Mock()
         self.useFixture(
-            MockPatchObject(statsd_client, "_client", self.stats_client))
+            MockPatchObject(statsd_client, "_client", self.stats_client)
+        )

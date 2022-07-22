@@ -8,7 +8,7 @@ in Launchpad configuration files.  The private key should only be stored in
 secret overlays on systems that need it.
 """
 
-__all__ = ['main']
+__all__ = ["main"]
 
 import argparse
 import base64
@@ -17,15 +17,16 @@ from nacl.public import PrivateKey
 
 
 def encode_key(key):
-    return base64.b64encode(key.encode()).decode('ASCII')
+    return base64.b64encode(key.encode()).decode("ASCII")
 
 
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.parse_args()
 
     key = PrivateKey.generate()
-    print('Private: ' + encode_key(key))
-    print('Public:  ' + encode_key(key.public_key))
+    print("Private: " + encode_key(key))
+    print("Public:  " + encode_key(key.public_key))

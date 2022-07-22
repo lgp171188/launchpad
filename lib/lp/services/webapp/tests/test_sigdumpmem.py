@@ -8,10 +8,7 @@ import time
 
 from lp.services.config import config
 from lp.services.pidfile import get_pid
-from lp.services.webapp.sigdumpmem import (
-    DUMP_FILE,
-    SIGDUMPMEM,
-    )
+from lp.services.webapp.sigdumpmem import DUMP_FILE, SIGDUMPMEM
 from lp.testing import TestCase
 from lp.testing.layers import AppServerLayer
 
@@ -30,8 +27,8 @@ class SIGDUMPMEMTestCase(TestCase):
         # Get the pid for the process spawned by the AppServerLayer, which is
         # the one we'll be sending the signal to.
         orig_instance_name = config.instance_name
-        config.setInstance('testrunner-appserver')
-        pid = get_pid('launchpad')
+        config.setInstance("testrunner-appserver")
+        pid = get_pid("launchpad")
         config.setInstance(orig_instance_name)
 
         # Send the signal and ensure the dump file is created.

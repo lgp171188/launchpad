@@ -2,34 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Stuff to do with logging in and logging out."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
-from openid.consumer.consumer import (
-    CANCEL,
-    Consumer,
-    FAILURE,
-    SUCCESS,
-    )
-from openid.extensions import (
-    pape,
-    sreg,
-    )
-from paste.httpexceptions import (
-    HTTPBadRequest,
-    HTTPException,
-    )
 import six
 import transaction
+from openid.consumer.consumer import CANCEL, FAILURE, SUCCESS, Consumer
+from openid.extensions import pape, sreg
+from paste.httpexceptions import HTTPBadRequest, HTTPException
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
-from zope.component import (
-    getSiteManager,
-    getUtility,
-    )
+from zope.component import getSiteManager, getUtility
 from zope.event import notify
 from zope.interface import Interface
 from zope.publisher.browser import BrowserPage
@@ -41,13 +24,13 @@ from lp.registry.interfaces.person import (
     IPersonSet,
     PersonCreationRationale,
     TeamEmailAddressError,
-    )
+)
 from lp.services.config import config
 from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.identity.interfaces.account import (
     AccountDeceasedError,
     AccountSuspendedError,
-    )
+)
 from lp.services.openid.extensions import macaroon
 from lp.services.openid.interfaces.openidconsumer import IOpenIDConsumerStore
 from lp.services.propertycache import cachedproperty
@@ -62,7 +45,7 @@ from lp.services.webapp.interfaces import (
     IPlacelessLoginSource,
     ISession,
     LoggedOutEvent,
-    )
+)
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
@@ -71,15 +54,15 @@ from lp.services.webapp.vhosts import allvhosts
 class UnauthorizedView(SystemErrorView):
 
     response_code = None
-    page_title = 'Forbidden'
+    page_title = "Forbidden"
 
     def __call__(self):
         if IUnauthenticatedPrincipal.providedBy(self.request.principal):
-            if 'loggingout' in self.request.form:
-                target = '%s?loggingout=1' % self.request.URL[-2]
+            if "loggingout" in self.request.form:
+                target = "%s?loggingout=1" % self.request.URL[-2]
                 self.request.response.redirect(target)
-                return ''
-            if self.request.method == 'POST':
+                return ""
+            if self.request.method == "POST":
                 # If we got a POST then that's a problem.  We can only
                 # redirect with a GET, so when we redirect after a successful
                 # login, the wrong method would be used.
@@ -88,9 +71,11 @@ class UnauthorizedView(SystemErrorView):
                 # as the pages that process those forms.  So, we should never
                 # need to newly authenticate on a POST.
                 self.request.response.setStatus(500)  # Internal Server Error
-                self.request.response.setHeader('Content-type', 'text/plain')
-                return ('Application error.  Unauthenticated user POSTing to '
-                        'page that requires authentication.')
+                self.request.response.setHeader("Content-type", "text/plain")
+                return (
+                    "Application error.  Unauthenticated user POSTing to "
+                    "page that requires authentication."
+                )
             # If we got any query parameters, then preserve them in the
             # new URL. Except for the BrowserNotifications
             current_url = self.request.getURL()
@@ -99,9 +84,9 @@ class UnauthorizedView(SystemErrorView):
                 if nextstep is None:
                     break
                 current_url = urlappend(current_url, nextstep)
-            query_string = self.request.get('QUERY_STRING', '')
+            query_string = self.request.get("QUERY_STRING", "")
             if query_string:
-                query_string = '?' + query_string
+                query_string = "?" + query_string
             target = self.getRedirectURL(current_url, query_string)
             # A dance to assert that we want to break the rules about no
             # unauthenticated sessions. Only after this next line is it safe
@@ -109,7 +94,7 @@ class UnauthorizedView(SystemErrorView):
             allowUnauthenticatedSession(self.request)
             self.request.response.redirect(target)
             # Maybe render page with a link to the redirection?
-            return ''
+            return ""
         else:
             self.request.response.setStatus(403)  # Forbidden
             return self.template()
@@ -120,27 +105,26 @@ class UnauthorizedView(SystemErrorView):
         :param query_string: The string that should be appended to the current
             url.
         """
-        return urlappend(current_url, '+login' + query_string)
+        return urlappend(current_url, "+login" + query_string)
 
 
 class BasicLoginPage(BrowserPage):
-
     def isSameHost(self, url):
-        """Returns True if the url appears to be from the same host as we are.
-        """
+        """Returns True if the url appears to be from the same host as us."""
         return url.startswith(self.request.getApplicationURL())
 
     def __call__(self):
         if IUnauthenticatedPrincipal.providedBy(self.request.principal):
             self.request.principal.__parent__.unauthorized(
-                self.request.principal.id, self.request)
-            return 'Launchpad basic auth login page'
-        referer = self.request.getHeader('referer')  # Traditional w3c speling
+                self.request.principal.id, self.request
+            )
+            return "Launchpad basic auth login page"
+        referer = self.request.getHeader("referer")  # Traditional w3c speling
         if referer and self.isSameHost(referer):
             self.request.response.redirect(referer)
         else:
             self.request.response.redirect(self.request.getURL(1))
-        return ''
+        return ""
 
 
 def register_basiclogin(event):
@@ -153,12 +137,14 @@ def register_basiclogin(event):
             BasicLoginPage,
             required=(ILaunchpadApplication, IHTTPApplicationRequest),
             provided=Interface,
-            name='+basiclogin')
+            name="+basiclogin",
+        )
 
 
 class OpenIDLogin(LaunchpadView):
     """A view which initiates the OpenID handshake with our provider."""
-    _openid_session_ns = 'OPENID'
+
+    _openid_session_ns = "OPENID"
 
     def _getConsumer(self):
         session = ISession(self.request)[self._openid_session_ns]
@@ -168,10 +154,13 @@ class OpenIDLogin(LaunchpadView):
     def render(self):
         # Reauthentication and discharge macaroon issuing are called for by
         # parameters, usually passed in the query string.
-        do_reauth = int(self.request.form.get('reauth', '0'))
-        macaroon_caveat_id = self.request.form.get('macaroon_caveat_id', None)
-        if (self.account is not None and not do_reauth and
-                macaroon_caveat_id is None):
+        do_reauth = int(self.request.form.get("reauth", "0"))
+        macaroon_caveat_id = self.request.form.get("macaroon_caveat_id", None)
+        if (
+            self.account is not None
+            and not do_reauth
+            and macaroon_caveat_id is None
+        ):
             return AlreadyLoggedInView(self.context, self.request)()
 
         # Allow unauthenticated users to have sessions for the OpenID
@@ -182,44 +171,52 @@ class OpenIDLogin(LaunchpadView):
         timeline_action = get_request_timeline(self.request).start(
             "openid-association-begin",
             config.launchpad.openid_provider_root,
-            allow_nested=True)
+            allow_nested=True,
+        )
         try:
             self.openid_request = consumer.begin(
-                config.launchpad.openid_provider_root)
+                config.launchpad.openid_provider_root
+            )
         finally:
             timeline_action.finish()
         self.openid_request.addExtension(
-            sreg.SRegRequest(required=['email', 'fullname']))
+            sreg.SRegRequest(required=["email", "fullname"])
+        )
         if macaroon_caveat_id is not None:
             self.openid_request.addExtension(
-                macaroon.MacaroonRequest(macaroon_caveat_id))
+                macaroon.MacaroonRequest(macaroon_caveat_id)
+            )
 
         # Force the Open ID handshake to re-authenticate, using
         # pape extension's max_auth_age, if the URL indicates it.
         if do_reauth:
             self.openid_request.addExtension(pape.Request(max_auth_age=0))
 
-        assert not self.openid_request.shouldSendRedirect(), (
-            "Our fixed OpenID server should not need us to redirect.")
+        assert (
+            not self.openid_request.shouldSendRedirect()
+        ), "Our fixed OpenID server should not need us to redirect."
         # Once the user authenticates with the OpenID provider they will be
         # sent to the /+openid-callback page, where we log them in, but
         # once that's done they must be sent back to the URL they were when
         # they started the login process (i.e. the current URL without the
         # '+login' bit). To do that we encode that URL as a query arg in the
         # return_to URL passed to the OpenID Provider
-        starting_data = [('starting_url', self.starting_url.encode('utf-8'))]
+        starting_data = [("starting_url", self.starting_url.encode("utf-8"))]
         for passthrough_name in (
-                'discharge_macaroon_action', 'discharge_macaroon_field'):
+            "discharge_macaroon_action",
+            "discharge_macaroon_field",
+        ):
             passthrough_field = self.request.form.get(passthrough_name, None)
             if passthrough_field is not None:
                 starting_data.append((passthrough_name, passthrough_field))
         starting_url = urlencode(starting_data)
-        trust_root = allvhosts.configs['mainsite'].rooturl
-        return_to = urlappend(trust_root, '+openid-callback')
+        trust_root = allvhosts.configs["mainsite"].rooturl
+        return_to = urlappend(trust_root, "+openid-callback")
         return_to = "%s?%s" % (return_to, starting_url)
         form_html = self.openid_request.htmlMarkup(trust_root, return_to)
         self.request.response.setHeader(
-            'Content-Type', 'text/html; charset="utf-8"')
+            "Content-Type", 'text/html; charset="utf-8"'
+        )
 
         # The consumer.begin() call above will insert rows into the
         # OpenIDAssociations table, but since this will be a GET request, the
@@ -247,11 +244,15 @@ class OpenIDLogin(LaunchpadView):
         All keys and values are UTF-8-encoded.
         """
         for name, value in self.request.form.items():
-            if name in ('loggingout', 'reauth',
-                        'macaroon_caveat_id', 'discharge_macaroon_action',
-                        'discharge_macaroon_field'):
+            if name in (
+                "loggingout",
+                "reauth",
+                "macaroon_caveat_id",
+                "discharge_macaroon_action",
+                "discharge_macaroon_field",
+            ):
                 continue
-            if name.startswith('openid.'):
+            if name.startswith("openid."):
                 continue
             if isinstance(value, list):
                 value_list = value
@@ -262,7 +263,8 @@ class OpenIDLogin(LaunchpadView):
             # purposes, we can be a little more liberal and allow UTF-8.
             yield (
                 six.ensure_binary(name),
-                [six.ensure_binary(value) for value in value_list])
+                [six.ensure_binary(value) for value in value_list],
+            )
 
 
 class OpenIDCallbackView(OpenIDLogin):
@@ -273,32 +275,35 @@ class OpenIDCallbackView(OpenIDLogin):
     """
 
     suspended_account_template = ViewPageTemplateFile(
-        'templates/login-suspended-account.pt')
+        "templates/login-suspended-account.pt"
+    )
 
     deceased_account_template = ViewPageTemplateFile(
-        'templates/login-deceased-account.pt')
+        "templates/login-deceased-account.pt"
+    )
 
     team_email_address_template = ViewPageTemplateFile(
-        'templates/login-team-email-address.pt')
+        "templates/login-team-email-address.pt"
+    )
 
     discharge_macaroon_template = ViewPageTemplateFile(
-        'templates/login-discharge-macaroon.pt')
+        "templates/login-discharge-macaroon.pt"
+    )
 
     def _gather_params(self, request):
         params = dict(request.form)
         for key, value in request.query_string_params.items():
             if len(value) > 1:
-                raise ValueError(
-                    'Did not expect multi-valued fields.')
+                raise ValueError("Did not expect multi-valued fields.")
             params[key] = value[0]
 
         return params
 
     def _get_requested_url(self, request):
         requested_url = request.getURL()
-        query_string = request.get('QUERY_STRING')
+        query_string = request.get("QUERY_STRING")
         if query_string is not None:
-            requested_url += '?' + query_string
+            requested_url += "?" + query_string
         return requested_url
 
     def initialize(self):
@@ -306,10 +311,12 @@ class OpenIDCallbackView(OpenIDLogin):
         requested_url = self._get_requested_url(self.request)
         consumer = self._getConsumer()
         timeline_action = get_request_timeline(self.request).start(
-            "openid-association-complete", '', allow_nested=True)
+            "openid-association-complete", "", allow_nested=True
+        )
         try:
             self.openid_response = consumer.complete(
-                self.params, requested_url)
+                self.params, requested_url
+            )
         finally:
             timeline_action.finish()
         self.discharge_macaroon_raw = None
@@ -320,7 +327,8 @@ class OpenIDCallbackView(OpenIDLogin):
         # proxy of the account's preferred email.
         email = removeSecurityProxy(person.preferredemail).email
         logInPrincipal(
-            self.request, loginsource.getPrincipalByLogin(email), email, when)
+            self.request, loginsource.getPrincipalByLogin(email), email, when
+        )
 
     @cachedproperty
     def sreg_response(self):
@@ -329,7 +337,8 @@ class OpenIDCallbackView(OpenIDLogin):
     @cachedproperty
     def macaroon_response(self):
         return macaroon.MacaroonResponse.fromSuccessResponse(
-            self.openid_response)
+            self.openid_response
+        )
 
     def _getEmailAddressAndFullName(self):
         # Here we assume the OP sent us the user's email address and
@@ -341,12 +350,14 @@ class OpenIDCallbackView(OpenIDLogin):
         # want in the response.
         if self.sreg_response is None:
             raise HTTPBadRequest(
-                "OP didn't include an sreg extension in the response.")
-        email_address = self.sreg_response.get('email')
-        full_name = self.sreg_response.get('fullname')
+                "OP didn't include an sreg extension in the response."
+            )
+        email_address = self.sreg_response.get("email")
+        full_name = self.sreg_response.get("fullname")
         if email_address is None or full_name is None:
             raise HTTPBadRequest(
-                "No email address or full name found in sreg response.")
+                "No email address or full name found in sreg response."
+            )
         return email_address, full_name
 
     def processPositiveAssertion(self):
@@ -362,8 +373,8 @@ class OpenIDCallbackView(OpenIDLogin):
         DB writes, to ensure subsequent requests use the primary DB and see
         the changes we just did.
         """
-        identifier = self.openid_response.identity_url.split('/')[-1]
-        identifier = six.ensure_text(identifier, encoding='ascii')
+        identifier = self.openid_response.identity_url.split("/")[-1]
+        identifier = six.ensure_text(identifier, encoding="ascii")
         should_update_last_write = False
         # Force the use of the primary database to make sure a lagged
         # standby doesn't fool us into creating a Person/Account when one
@@ -372,10 +383,14 @@ class OpenIDCallbackView(OpenIDLogin):
         email_address, full_name = self._getEmailAddressAndFullName()
         try:
             person, db_updated = person_set.getOrCreateByOpenIDIdentifier(
-                identifier, email_address, full_name,
-                comment='when logging in to Launchpad.',
+                identifier,
+                email_address,
+                full_name,
+                comment="when logging in to Launchpad.",
                 creation_rationale=(
-                    PersonCreationRationale.OWNER_CREATED_LAUNCHPAD))
+                    PersonCreationRationale.OWNER_CREATED_LAUNCHPAD
+                ),
+            )
             should_update_last_write = db_updated
         except AccountSuspendedError:
             return self.suspended_account_template()
@@ -384,25 +399,27 @@ class OpenIDCallbackView(OpenIDLogin):
         except TeamEmailAddressError:
             return self.team_email_address_template()
 
-        if self.params.get('discharge_macaroon_field'):
+        if self.params.get("discharge_macaroon_field"):
             if self.macaroon_response.discharge_macaroon_raw is None:
                 raise HTTPBadRequest(
-                    "OP didn't include a macaroon extension in the response.")
+                    "OP didn't include a macaroon extension in the response."
+                )
             self.discharge_macaroon_raw = (
-                self.macaroon_response.discharge_macaroon_raw)
+                self.macaroon_response.discharge_macaroon_raw
+            )
 
         with PrimaryDatabasePolicy():
             self.login(person)
 
-        if self.params.get('discharge_macaroon_field'):
+        if self.params.get("discharge_macaroon_field"):
             return self.discharge_macaroon_template()
 
         if should_update_last_write:
             # This is a GET request but we changed the database, so update
             # session_data['last_write'] to make sure further requests use
             # the primary DB and thus see the changes we've just made.
-            session_data = ISession(self.request)['lp.dbpolicy']
-            session_data['last_write'] = datetime.utcnow()
+            session_data = ISession(self.request)["lp.dbpolicy"]
+            session_data["last_write"] = datetime.utcnow()
         self._redirect()
         # No need to return anything as we redirect above.
         return None
@@ -413,21 +430,26 @@ class OpenIDCallbackView(OpenIDLogin):
                 return self.processPositiveAssertion()
             except HTTPException as error:
                 return OpenIDLoginErrorView(
-                    self.context, self.request, login_error=str(error))()
+                    self.context, self.request, login_error=str(error)
+                )()
 
         if self.account is not None:
             # The authentication failed (or was canceled), but the user is
             # already logged in, so we just add a notification message and
             # redirect.
             self.request.response.addInfoNotification(
-                _('Your authentication failed but you were already '
-                   'logged into Launchpad.'))
+                _(
+                    "Your authentication failed but you were already "
+                    "logged into Launchpad."
+                )
+            )
             self._redirect()
             # No need to return anything as we redirect above.
             return None
         else:
             return OpenIDLoginErrorView(
-                self.context, self.request, self.openid_response)()
+                self.context, self.request, self.openid_response
+            )()
 
     def __call__(self):
         retval = super().__call__()
@@ -439,7 +461,7 @@ class OpenIDCallbackView(OpenIDLogin):
         return retval
 
     def _redirect(self):
-        target = self.params.get('starting_url')
+        target = self.params.get("starting_url")
         if target is None:
             target = self.request.getApplicationURL()
         self.request.response.redirect(target, temporary_if_possible=True)
@@ -447,14 +469,16 @@ class OpenIDCallbackView(OpenIDLogin):
 
 class OpenIDLoginErrorView(LaunchpadView):
 
-    page_title = 'Error logging in'
+    page_title = "Error logging in"
     template = ViewPageTemplateFile("templates/login-error.pt")
 
-    def __init__(self, context, request, openid_response=None,
-                 login_error=None):
+    def __init__(
+        self, context, request, openid_response=None, login_error=None
+    ):
         super().__init__(context, request)
-        assert self.account is None, (
-            "Don't try to render this page when the user is logged in.")
+        assert (
+            self.account is None
+        ), "Don't try to render this page when the user is logged in."
         if login_error:
             self.login_error = login_error
             return
@@ -468,17 +492,17 @@ class OpenIDLoginErrorView(LaunchpadView):
 
 class AlreadyLoggedInView(LaunchpadView):
 
-    page_title = 'Already logged in'
+    page_title = "Already logged in"
     template = ViewPageTemplateFile("templates/login-already.pt")
 
 
 def isFreshLogin(request):
     """Return True if the principal login happened in the last 120 seconds."""
-    if getattr(request, 'force_fresh_login_for_testing', False):
+    if getattr(request, "force_fresh_login_for_testing", False):
         return True
     session = ISession(request)
-    authdata = session['launchpad.authenticateduser']
-    logintime = authdata.get('logintime', None)
+    authdata = session["launchpad.authenticateduser"]
+    logintime = authdata.get("logintime", None)
     if logintime is not None:
         now = datetime.utcnow()
         return logintime > now - timedelta(seconds=120)
@@ -488,9 +512,9 @@ def isFreshLogin(request):
 def require_fresh_login(request, context, view_name):
     """Redirect request to login if the request is not recently logged in."""
     if not isFreshLogin(request):
-        reauth_query = '+login?reauth=1'
+        reauth_query = "+login?reauth=1"
         base_url = canonical_url(context, view_name=view_name)
-        login_url = '%s/%s' % (base_url, reauth_query)
+        login_url = "%s/%s" % (base_url, reauth_query)
         request.response.redirect(login_url)
 
 
@@ -504,27 +528,28 @@ def logInPrincipal(request, principal, email, when=None):
     new_client_id = client_id_manager.generateUniqueId()
     client_id_manager.setRequestId(request, new_client_id)
     session = ISession(request)
-    authdata = session['launchpad.authenticateduser']
-    assert principal.id is not None, 'principal.id is None!'
+    authdata = session["launchpad.authenticateduser"]
+    assert principal.id is not None, "principal.id is None!"
     request.setPrincipal(principal)
     if when is None:
         when = datetime.utcnow()
-    authdata['accountid'] = int(principal.id)
-    authdata['logintime'] = when
-    authdata['login'] = email
+    authdata["accountid"] = int(principal.id)
+    authdata["logintime"] = when
+    authdata["login"] = email
     notify(CookieAuthLoggedInEvent(request, email))
 
 
-def expireSessionCookie(request, client_id_manager=None,
-                        delta=timedelta(minutes=10)):
+def expireSessionCookie(
+    request, client_id_manager=None, delta=timedelta(minutes=10)
+):
     if client_id_manager is None:
         client_id_manager = getUtility(IClientIdManager)
     session_cookiename = client_id_manager.namespace
-    value = request.response.getCookie(session_cookiename)['value']
+    value = request.response.getCookie(session_cookiename)["value"]
     expiration = (datetime.utcnow() + delta).strftime(
-        '%a, %d %b %Y %H:%M:%S GMT')
-    request.response.setCookie(
-        session_cookiename, value, expires=expiration)
+        "%a, %d %b %Y %H:%M:%S GMT"
+    )
+    request.response.setCookie(session_cookiename, value, expires=expiration)
 
 
 def allowUnauthenticatedSession(request, duration=timedelta(minutes=10)):
@@ -542,7 +567,8 @@ def allowUnauthenticatedSession(request, duration=timedelta(minutes=10)):
     client_id_manager = getUtility(IClientIdManager)
     if request.response.getCookie(client_id_manager.namespace) is None:
         client_id_manager.setRequestId(
-            request, client_id_manager.getClientId(request))
+            request, client_id_manager.getClientId(request)
+        )
         expireSessionCookie(request, client_id_manager, duration)
 
 
@@ -552,17 +578,17 @@ def allowUnauthenticatedSession(request, duration=timedelta(minutes=10)):
 def logoutPerson(request):
     """Log the user out."""
     session = ISession(request)
-    authdata = session['launchpad.authenticateduser']
-    account_variable_name = 'accountid'
+    authdata = session["launchpad.authenticateduser"]
+    account_variable_name = "accountid"
     previous_login = authdata.get(account_variable_name)
     if previous_login is None:
         # This is for backwards compatibility, when we used to store the
         # person's ID in the 'personid' session variable.
-        account_variable_name = 'personid'
+        account_variable_name = "personid"
         previous_login = authdata.get(account_variable_name)
     if previous_login is not None:
         authdata[account_variable_name] = None
-        authdata['logintime'] = datetime.utcnow()
+        authdata["logintime"] = datetime.utcnow()
         auth_utility = getUtility(IPlacelessAuthUtility)
         principal = auth_utility.unauthenticatedPrincipal()
         request.setPrincipal(principal)
@@ -582,22 +608,23 @@ def logoutPerson(request):
 
 
 class CookieLogoutPage:
-
     def logout(self):
         logoutPerson(self.request)
         openid_root = config.launchpad.openid_provider_root
-        target = '%s+logout?%s' % (
+        target = "%s+logout?%s" % (
             config.codehosting.secure_codebrowse_root,
-            urlencode(dict(next_to='%s+logout' % (openid_root, ))))
+            urlencode(dict(next_to="%s+logout" % (openid_root,))),
+        )
         self.request.response.redirect(target)
-        return ''
+        return ""
 
 
 class FeedsUnauthorizedView(UnauthorizedView):
     """All users of feeds are anonymous, so don't redirect to login."""
 
     def __call__(self):
-        assert IUnauthenticatedPrincipal.providedBy(self.request.principal), (
-            "Feeds user should always be anonymous.")
+        assert IUnauthenticatedPrincipal.providedBy(
+            self.request.principal
+        ), "Feeds user should always be anonymous."
         self.request.response.setStatus(403)  # Forbidden
         return self.template()

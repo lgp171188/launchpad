@@ -181,15 +181,14 @@ other environments that have no explicit setup and teardown::
 
 import threading
 
-
 __all__ = [
-    'currentScope',
-    'defaultFlagValue',
-    'get_relevant_feature_controller',
-    'getFeatureFlag',
-    'install_feature_controller',
-    'make_script_feature_controller',
-    ]
+    "currentScope",
+    "defaultFlagValue",
+    "get_relevant_feature_controller",
+    "getFeatureFlag",
+    "install_feature_controller",
+    "make_script_feature_controller",
+]
 
 
 per_thread = threading.local()
@@ -210,7 +209,7 @@ def uninstall_feature_controller():
 
     This function is used to create a pristine environment in tests.
     """
-    if hasattr(per_thread, 'features'):
+    if hasattr(per_thread, "features"):
         del per_thread.features
 
 
@@ -219,7 +218,7 @@ def get_relevant_feature_controller():
     # The noncommittal name "relevant" is because this function may change to
     # look things up from the current request or some other mechanism in
     # future.
-    return getattr(per_thread, 'features', None)
+    return getattr(per_thread, "features", None)
 
 
 def getFeatureFlag(flag):
@@ -261,4 +260,5 @@ def make_script_feature_controller(script_name):
     from lp.services.features.scopes import ScopesForScript
 
     return FeatureController(
-        ScopesForScript(script_name).lookup, StormFeatureRuleSource())
+        ScopesForScript(script_name).lookup, StormFeatureRuleSource()
+    )

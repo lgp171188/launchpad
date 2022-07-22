@@ -2,20 +2,20 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IDirectEmailAuthorization',
-    'IIndexedMessage',
-    'IMessage',
-    'IMessageChunk',
-    'IMessageCommon',
-    'IMessageEdit',
-    'IMessageSet',
-    'IMessageView',
-    'IUserToUserEmail',
-    'IndexedMessage',
-    'InvalidEmailMessage',
-    'QuotaReachedError',
-    'UnknownSender',
-    ]
+    "IDirectEmailAuthorization",
+    "IIndexedMessage",
+    "IMessage",
+    "IMessageChunk",
+    "IMessageCommon",
+    "IMessageEdit",
+    "IMessageSet",
+    "IMessageView",
+    "IUserToUserEmail",
+    "IndexedMessage",
+    "InvalidEmailMessage",
+    "QuotaReachedError",
+    "UnknownSender",
+]
 
 
 from lazr.delegates import delegate_to
@@ -27,24 +27,10 @@ from lazr.restful.declarations import (
     exported_as_webservice_entry,
     operation_for_version,
     operation_parameters,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    Object,
-    Text,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface, implementer
+from zope.schema import Bool, Datetime, Int, Object, Text, TextLine
 
 from lp import _
 from lp.app.errors import NotFoundError
@@ -53,13 +39,14 @@ from lp.services.webservice.apihelpers import patch_reference_property
 
 
 class IMessageEdit(Interface):
-
     @export_write_operation()
     @operation_parameters(
         new_content=Text(
             title=_("Message content"),
             description=_("The new message content string"),
-            required=True))
+            required=True,
+        )
+    )
     @operation_for_version("devel")
     def editContent(new_content):
         """Edit the content of this message, generating a new message
@@ -75,35 +62,57 @@ class IMessageEdit(Interface):
 class IMessageCommon(Interface):
     """Common public attributes for every IMessage implementation."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
-    chunks = Attribute(_('Message pieces'))
+    chunks = Attribute(_("Message pieces"))
     text_contents = exported(
-        Text(title=_('All the text/plain chunks joined together as a '
-                     'unicode string.'), readonly=True),
-        exported_as='content')
+        Text(
+            title=_(
+                "All the text/plain chunks joined together as a "
+                "unicode string."
+            ),
+            readonly=True,
+        ),
+        exported_as="content",
+    )
     owner = exported(
-        Reference(title=_('Person'), schema=Interface,
-                  required=False, readonly=True))
+        Reference(
+            title=_("Person"), schema=Interface, required=False, readonly=True
+        )
+    )
 
-    revisions = exported(CollectionField(
-        title=_("Message revision history"),
-        description=_(
-            "Revision history of this message, sorted in ascending order."),
-        # Really IMessageRevision, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface),
-        required=False, readonly=True), as_of="devel")
+    revisions = exported(
+        CollectionField(
+            title=_("Message revision history"),
+            description=_(
+                "Revision history of this message, sorted in ascending order."
+            ),
+            # Really IMessageRevision, patched in _schema_circular_imports.
+            value_type=Reference(schema=Interface),
+            required=False,
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     datecreated = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created')
-    date_last_edited = exported(Datetime(
-
-        title=_('When this message was last edited'), required=False,
-        readonly=True))
-    date_deleted = exported(Datetime(
-        title=_('When this message was deleted'), required=False,
-        readonly=True))
+        Datetime(title=_("Date Created"), required=True, readonly=True),
+        exported_as="date_created",
+    )
+    date_last_edited = exported(
+        Datetime(
+            title=_("When this message was last edited"),
+            required=False,
+            readonly=True,
+        )
+    )
+    date_deleted = exported(
+        Datetime(
+            title=_("When this message was deleted"),
+            required=False,
+            readonly=True,
+        )
+    )
 
     def getRevisionByNumber(revision_number):
         """Returns the revision with the given number."""
@@ -117,43 +126,53 @@ class IMessageView(IMessageCommon):
     """
 
     subject = exported(
-        TextLine(title=_('Subject'), required=True, readonly=True))
+        TextLine(title=_("Subject"), required=True, readonly=True)
+    )
 
     content = Text(title=_("Message"), required=True, readonly=True)
 
     # Schema is really IMessage, but this cannot be declared here. It's
     # fixed below after the IMessage definition is complete.
     parent = exported(
-        Reference(title=_('Parent'), schema=Interface,
-                  required=False, readonly=True))
+        Reference(
+            title=_("Parent"), schema=Interface, required=False, readonly=True
+        )
+    )
 
     rfc822msgid = TextLine(
-        title=_('RFC822 Msg ID'), required=True, readonly=True)
-    raw = Reference(title=_('Original unmodified email'),
-                    schema=ILibraryFileAlias, required=False, readonly=True)
+        title=_("RFC822 Msg ID"), required=True, readonly=True
+    )
+    raw = Reference(
+        title=_("Original unmodified email"),
+        schema=ILibraryFileAlias,
+        required=False,
+        readonly=True,
+    )
     bugs = CollectionField(
-        title=_('Bug List'),
-        value_type=Reference(schema=Interface))  # Redefined in bug.py
+        title=_("Bug List"), value_type=Reference(schema=Interface)
+    )  # Redefined in bug.py
 
     title = TextLine(
-        title=_('The message title, usually just the subject.'),
-        readonly=True)
-    visible = Bool(title="This message is visible or not.", required=False,
-        default=True)
+        title=_("The message title, usually just the subject."), readonly=True
+    )
+    visible = Bool(
+        title="This message is visible or not.", required=False, default=True
+    )
 
     bugattachments = exported(
         CollectionField(
-            title=_("A list of BugAttachments connected to this "
-                    "message."),
-            value_type=Reference(Interface)),
-        exported_as='bug_attachments')
+            title=_("A list of BugAttachments connected to this " "message."),
+            value_type=Reference(Interface),
+        ),
+        exported_as="bug_attachments",
+    )
 
     def __iter__():
         """Iterate over all the message chunks."""
 
     @accessor_for(parent)
     @export_read_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def getAPIParent():
         """Return None because messages are not threaded over the API."""
 
@@ -164,7 +183,7 @@ class IMessage(IMessageEdit, IMessageView):
 
 
 # Fix for self-referential schema.
-patch_reference_property(IMessage, 'parent', IMessage)
+patch_reference_property(IMessage, "parent", IMessage)
 
 
 class IMessageSet(Interface):
@@ -176,13 +195,20 @@ class IMessageSet(Interface):
         If no such messages exist, raise NotFoundError.
         """
 
-    def fromText(subject, content, owner=None, datecreated=None,
-        rfc822msgid=None):
+    def fromText(
+        subject, content, owner=None, datecreated=None, rfc822msgid=None
+    ):
         """Construct a Message from a text string and return it."""
 
-    def fromEmail(email_message, owner=None, filealias=None,
-                  parsed_message=None, fallback_parent=None, date_created=None,
-                  restricted=False):
+    def fromEmail(
+        email_message,
+        owner=None,
+        filealias=None,
+        parsed_message=None,
+        fallback_parent=None,
+        date_created=None,
+        restricted=False,
+    ):
         """Construct a Message from an email message and return it.
 
         :param email_message: The original email as a byte string.
@@ -212,13 +238,23 @@ class IMessageSet(Interface):
 
 class IIndexedMessage(Interface):
     """An `IMessage` decorated with its index and context."""
-    inside = Reference(title=_('Inside'), schema=Interface,
-                       description=_("The bug task which is "
-                                     "the context for this message."),
-                       required=True, readonly=True)
-    index = Int(title=_("Index"),
-                description=_("The index of this message in the list "
-                              "of messages in its context."))
+
+    inside = Reference(
+        title=_("Inside"),
+        schema=Interface,
+        description=_(
+            "The bug task which is " "the context for this message."
+        ),
+        required=True,
+        readonly=True,
+    )
+    index = Int(
+        title=_("Index"),
+        description=_(
+            "The index of this message in the list "
+            "of messages in its context."
+        ),
+    )
 
 
 @delegate_to(IMessage)
@@ -238,11 +274,11 @@ class IndexedMessage:
 
 
 class IMessageChunk(Interface):
-    id = Int(title=_('ID'), required=True, readonly=True)
-    message = Int(title=_('Message'), required=True, readonly=True)
-    sequence = Int(title=_('Sequence order'), required=True, readonly=True)
-    content = Text(title=_('Text content'), required=False, readonly=True)
-    blob = Int(title=_('Binary content'), required=False, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
+    message = Int(title=_("Message"), required=True, readonly=True)
+    sequence = Int(title=_("Sequence order"), required=True, readonly=True)
+    content = Text(title=_("Text content"), required=False, readonly=True)
+    blob = Int(title=_("Binary content"), required=False, readonly=True)
 
 
 class QuotaReachedError(Exception):
@@ -260,26 +296,31 @@ class IUserToUserEmail(Interface):
     sender = Object(
         schema=Interface,
         title=_("The message sender"),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     recipient = Object(
         schema=Interface,
         title=_("The message recipient"),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     date_sent = Datetime(
-        title=_('Date sent'),
+        title=_("Date sent"),
         description=_(
-            'The date this message was sent from sender to recipient.'),
-        required=True, readonly=True)
+            "The date this message was sent from sender to recipient."
+        ),
+        required=True,
+        readonly=True,
+    )
 
-    subject = TextLine(
-        title=_('Subject'),
-        required=True, readonly=True)
+    subject = TextLine(title=_("Subject"), required=True, readonly=True)
 
     message_id = TextLine(
-        title=_('RFC 2822 Message-ID'),
-        required=True, readonly=True)
+        title=_("RFC 2822 Message-ID"), required=True, readonly=True
+    )
 
 
 class IDirectEmailAuthorization(Interface):
@@ -287,20 +328,24 @@ class IDirectEmailAuthorization(Interface):
 
     is_allowed = Bool(
         title=_(
-            'Is the sender allowed to send a message to a Launchpad user?'),
+            "Is the sender allowed to send a message to a Launchpad user?"
+        ),
         description=_(
-            'True if the sender allowed to send a message to another '
-            'Launchpad user.'),
-        readonly=True)
+            "True if the sender allowed to send a message to another "
+            "Launchpad user."
+        ),
+        readonly=True,
+    )
 
     throttle_date = Datetime(
-        title=_('The earliest date used to throttle senders.'),
+        title=_("The earliest date used to throttle senders."),
         readonly=True,
-        )
+    )
 
     message_quota = Int(
-        title=_('The maximum number of messages allowed per quota period'),
-        readonly=True)
+        title=_("The maximum number of messages allowed per quota period"),
+        readonly=True,
+    )
 
     def record(message):
         """Record that the message was sent.

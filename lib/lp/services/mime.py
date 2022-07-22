@@ -4,8 +4,8 @@
 """Methods required to customize the mimetypes library."""
 
 __all__ = [
-    'customizeMimetypes',
-    ]
+    "customizeMimetypes",
+]
 
 import mimetypes
 
@@ -21,7 +21,7 @@ def customizeMimetypes():
 
     # Add support for .bzip2 as well as .bz2.  Up to Python 3.2 (at least),
     # only .bz2 is present.
-    mimetypes.encodings_map.setdefault('.bzip2', 'bzip2')
+    mimetypes.encodings_map.setdefault(".bzip2", "bzip2")
 
     # XXX: GavinPanella 2008-07-04 bug=229040: A fix has been requested
     # for Intrepid, to add .debdiff to /etc/mime.types, so we may be able
@@ -29,7 +29,7 @@ def customizeMimetypes():
     # on the app servers. Additionally, Firefox does not display content
     # of type text/x-diff inline, so making this text/plain because
     # viewing .debdiff inline is the most common use-case.
-    mimetypes.add_type('text/plain', '.debdiff')
+    mimetypes.add_type("text/plain", ".debdiff")
 
     # Add support for Launchpad's OWL decription of its RDF metadata.
-    mimetypes.add_type('application/rdf+xml', '.owl')
+    mimetypes.add_type("application/rdf+xml", ".owl")

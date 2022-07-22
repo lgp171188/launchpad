@@ -2,58 +2,37 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LibraryFileAlias',
-    'LibraryFileAliasWithParent',
-    'LibraryFileAliasSet',
-    'LibraryFileContent',
-    'LibraryFileDownloadCount',
-    'TimeLimitedToken',
-    ]
+    "LibraryFileAlias",
+    "LibraryFileAliasWithParent",
+    "LibraryFileAliasSet",
+    "LibraryFileContent",
+    "LibraryFileDownloadCount",
+    "TimeLimitedToken",
+]
 
-from datetime import datetime
 import hashlib
+from datetime import datetime
 from urllib.parse import urlparse
 
-from lazr.delegates import delegate_to
 import pytz
-from storm.locals import (
-    Date,
-    Desc,
-    Int,
-    Reference,
-    Store,
-    )
-from zope.component import (
-    adapter,
-    getUtility,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from lazr.delegates import delegate_to
+from storm.locals import Date, Desc, Int, Reference, Store
+from zope.component import adapter, getUtility
+from zope.interface import Interface, implementer
 
 from lp.registry.errors import InvalidFilename
 from lp.services.config import config
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
-from lp.services.database.sqlbase import (
-    session_store,
-    SQLBase,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.sqlbase import SQLBase, session_store
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
     SQLRelatedJoin,
     StringCol,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import (
     ILibraryFileAlias,
@@ -61,17 +40,14 @@ from lp.services.librarian.interfaces import (
     ILibraryFileAliasWithParent,
     ILibraryFileContent,
     ILibraryFileDownloadCount,
-    )
+)
 from lp.services.librarian.interfaces.client import (
+    LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
     DownloadFailed,
     ILibrarianClient,
     IRestrictedLibrarianClient,
-    LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
-    )
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+)
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.tokens import create_token
 
 
@@ -79,7 +55,7 @@ from lp.services.tokens import create_token
 class LibraryFileContent(SQLBase):
     """A pointer to file content in the librarian."""
 
-    _table = 'LibraryFileContent'
+    _table = "LibraryFileContent"
 
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     filesize = IntCol(notNull=True)
@@ -92,25 +68,32 @@ class LibraryFileContent(SQLBase):
 class LibraryFileAlias(SQLBase):
     """A filename and mimetype that we can serve some given content with."""
 
-    _table = 'LibraryFileAlias'
+    _table = "LibraryFileAlias"
     date_created = UtcDateTimeCol(notNull=False, default=DEFAULT)
     content = ForeignKey(
-        foreignKey='LibraryFileContent', dbName='content', notNull=False,
-        )
+        foreignKey="LibraryFileContent",
+        dbName="content",
+        notNull=False,
+    )
     filename = StringCol(notNull=True)
     mimetype = StringCol(notNull=True)
     expires = UtcDateTimeCol(notNull=False, default=None)
     restricted = BoolCol(notNull=True, default=False)
     hits = IntCol(notNull=True, default=0)
 
-    products = SQLRelatedJoin('ProductRelease', joinColumn='libraryfile',
-                           otherColumn='productrelease',
-                           intermediateTable='ProductReleaseFile')
+    products = SQLRelatedJoin(
+        "ProductRelease",
+        joinColumn="libraryfile",
+        otherColumn="productrelease",
+        intermediateTable="ProductReleaseFile",
+    )
 
-    sourcepackages = SQLRelatedJoin('SourcePackageRelease',
-                                 joinColumn='libraryfile',
-                                 otherColumn='sourcepackagerelease',
-                                 intermediateTable='SourcePackageReleaseFile')
+    sourcepackages = SQLRelatedJoin(
+        "SourcePackageRelease",
+        joinColumn="libraryfile",
+        otherColumn="sourcepackagerelease",
+        intermediateTable="SourcePackageReleaseFile",
+    )
 
     @property
     def client(self):
@@ -131,7 +114,7 @@ class LibraryFileAlias(SQLBase):
         url = self.http_url
         if url is None:
             return url
-        return url.replace('http', 'https', 1)
+        return url.replace("http", "https", 1)
 
     @property
     def private_url(self):
@@ -149,7 +132,7 @@ class LibraryFileAlias(SQLBase):
             url = self.private_url
             if include_token:
                 token = TimeLimitedToken.allocate(url)
-                url += '?token=%s' % token
+                url += "?token=%s" % token
             return url
 
     _datafile = None
@@ -159,7 +142,8 @@ class LibraryFileAlias(SQLBase):
         self._datafile = self.client.getFileByAlias(self.id, timeout)
         if self._datafile is None:
             raise DownloadFailed(
-                "Unable to retrieve LibraryFileAlias %d" % self.id)
+                "Unable to retrieve LibraryFileAlias %d" % self.id
+            )
 
     def read(self, chunksize=None, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         """See ILibraryFileAlias."""
@@ -202,23 +186,32 @@ class LibraryFileAlias(SQLBase):
         """See ILibraryFileAlias."""
         store = Store.of(self)
         entry = store.find(
-            LibraryFileDownloadCount, libraryfilealias=self,
-            day=day, country=country).one()
+            LibraryFileDownloadCount,
+            libraryfilealias=self,
+            day=day,
+            country=country,
+        ).one()
         if entry is None:
             entry = LibraryFileDownloadCount(
-                libraryfilealias=self, day=day, country=country, count=count)
+                libraryfilealias=self, day=day, country=country, count=count
+            )
         else:
             entry.count += count
         self.hits += count
 
-    products = SQLRelatedJoin('ProductRelease', joinColumn='libraryfile',
-                           otherColumn='productrelease',
-                           intermediateTable='ProductReleaseFile')
+    products = SQLRelatedJoin(
+        "ProductRelease",
+        joinColumn="libraryfile",
+        otherColumn="productrelease",
+        intermediateTable="ProductReleaseFile",
+    )
 
-    sourcepackages = SQLRelatedJoin('SourcePackageRelease',
-                                 joinColumn='libraryfile',
-                                 otherColumn='sourcepackagerelease',
-                                 intermediateTable='SourcePackageReleaseFile')
+    sourcepackages = SQLRelatedJoin(
+        "SourcePackageRelease",
+        joinColumn="libraryfile",
+        otherColumn="sourcepackagerelease",
+        intermediateTable="SourcePackageReleaseFile",
+    )
 
     @property
     def deleted(self):
@@ -249,20 +242,38 @@ class LibraryFileAliasWithParent:
 class LibraryFileAliasSet:
     """Create and find LibraryFileAliases."""
 
-    def create(self, name, size, file, contentType, expires=None,
-               debugID=None, restricted=False, allow_zero_length=False):
+    def create(
+        self,
+        name,
+        size,
+        file,
+        contentType,
+        expires=None,
+        debugID=None,
+        restricted=False,
+        allow_zero_length=False,
+    ):
         """See `ILibraryFileAliasSet`"""
         if restricted:
             client = getUtility(IRestrictedLibrarianClient)
         else:
             client = getUtility(ILibrarianClient)
-        if '/' in name:
+        if "/" in name:
             raise InvalidFilename("Filename cannot contain slashes.")
         fid = client.addFile(
-            name, size, file, contentType, expires=expires, debugID=debugID,
-            allow_zero_length=allow_zero_length)
-        lfa = IMasterStore(LibraryFileAlias).find(
-            LibraryFileAlias, LibraryFileAlias.id == fid).one()
+            name,
+            size,
+            file,
+            contentType,
+            expires=expires,
+            debugID=debugID,
+            allow_zero_length=allow_zero_length,
+        )
+        lfa = (
+            IMasterStore(LibraryFileAlias)
+            .find(LibraryFileAlias, LibraryFileAlias.id == fid)
+            .one()
+        )
         assert lfa is not None, "client.addFile didn't!"
         return lfa
 
@@ -272,30 +283,40 @@ class LibraryFileAliasSet:
 
     def findBySHA256(self, sha256):
         """See ILibraryFileAliasSet."""
-        return LibraryFileAlias.select("""
+        return LibraryFileAlias.select(
+            """
             content = LibraryFileContent.id
             AND LibraryFileContent.sha256 = '%s'
-            """ % sha256, clauseTables=['LibraryFileContent'])
+            """
+            % sha256,
+            clauseTables=["LibraryFileContent"],
+        )
 
     def preloadLastDownloaded(self, lfas):
         """See `ILibraryFileAliasSet`."""
         store = IStore(LibraryFileAlias)
         results = store.find(
-            (LibraryFileDownloadCount.libraryfilealias_id,
-             LibraryFileDownloadCount.day),
+            (
+                LibraryFileDownloadCount.libraryfilealias_id,
+                LibraryFileDownloadCount.day,
+            ),
             LibraryFileDownloadCount.libraryfilealias_id.is_in(
-                sorted(lfa.id for lfa in lfas)))
+                sorted(lfa.id for lfa in lfas)
+            ),
+        )
         results.order_by(
             # libraryfilealias doesn't need to be descending for
             # correctness, but this allows the index on
             # LibraryFileDownloadCount (libraryfilealias, day, country) to
             # satisfy this query efficiently.
             Desc(LibraryFileDownloadCount.libraryfilealias_id),
-            Desc(LibraryFileDownloadCount.day))
+            Desc(LibraryFileDownloadCount.day),
+        )
         # Request the first row for each LFA, which corresponds to the most
         # recent day due to the above ordering.
         results.config(
-            distinct=(LibraryFileDownloadCount.libraryfilealias_id,))
+            distinct=(LibraryFileDownloadCount.libraryfilealias_id,)
+        )
         now = datetime.now(pytz.utc).date()
         lfas_by_id = {lfa.id: lfa for lfa in lfas}
         for lfa_id, day in results:
@@ -308,21 +329,22 @@ class LibraryFileAliasSet:
 @implementer(ILibraryFileDownloadCount)
 class LibraryFileDownloadCount(SQLBase):
     """See `ILibraryFileDownloadCount`"""
-    __storm_table__ = 'LibraryFileDownloadCount'
+
+    __storm_table__ = "LibraryFileDownloadCount"
 
     id = Int(primary=True)
-    libraryfilealias_id = Int(name='libraryfilealias', allow_none=False)
-    libraryfilealias = Reference(libraryfilealias_id, 'LibraryFileAlias.id')
+    libraryfilealias_id = Int(name="libraryfilealias", allow_none=False)
+    libraryfilealias = Reference(libraryfilealias_id, "LibraryFileAlias.id")
     day = Date(allow_none=False)
     count = Int(allow_none=False)
-    country_id = Int(name='country', allow_none=True)
-    country = Reference(country_id, 'Country.id')
+    country_id = Int(name="country", allow_none=True)
+    country = Reference(country_id, "Country.id")
 
 
 class TimeLimitedToken(StormBase):
     """A time limited access token for accessing a private file."""
 
-    __storm_table__ = 'TimeLimitedToken'
+    __storm_table__ = "TimeLimitedToken"
 
     created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     path = StringCol(notNull=True)
@@ -351,7 +373,7 @@ class TimeLimitedToken(StormBase):
         store = session_store()
         path = TimeLimitedToken.url_to_token_path(url)
         token = create_token(32)
-        store.add(TimeLimitedToken(path, token.encode('ascii')))
+        store.add(TimeLimitedToken(path, token.encode("ascii")))
         # The session isn't part of the main transaction model, and in fact it
         # has autocommit on. The commit here is belts and bracers: after
         # allocation the external librarian must be able to serve the file

@@ -5,13 +5,12 @@
 
 __all__ = [
     "StatusCheckView",
-    ]
+]
 
 from zope.publisher.interfaces import NotFound
 
 
 class StatusView:
-
     def __init__(self, context, request):
         self.context = context
 

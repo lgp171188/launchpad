@@ -5,32 +5,28 @@
 
 __all__ = []
 
-from lp.app.security import (
-    AuthorizationBase,
-    DelegatedAuthorization,
-    )
-from lp.services.webhooks.interfaces import (
-    IWebhook,
-    IWebhookDeliveryJob,
-    )
+from lp.app.security import AuthorizationBase, DelegatedAuthorization
+from lp.services.webhooks.interfaces import IWebhook, IWebhookDeliveryJob
 
 
 class ViewWebhook(AuthorizationBase):
     """Webhooks can be viewed and edited by someone who can edit the target."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IWebhook
 
     def checkUnauthenticated(self):
         return False
 
     def checkAuthenticated(self, user):
-        yield self.obj.target, 'launchpad.Edit'
+        yield self.obj.target, "launchpad.Edit"
 
 
 class ViewWebhookDeliveryJob(DelegatedAuthorization):
     """Webhooks can be viewed and edited by someone who can edit the target."""
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = IWebhookDeliveryJob
 
     def __init__(self, obj):
-        super().__init__(obj, obj.webhook, 'launchpad.View')
+        super().__init__(obj, obj.webhook, "launchpad.View")

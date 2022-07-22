@@ -17,5 +17,5 @@ class TestBufferLogger(TestCase):
         logger.info("Hello")
         logger.warning("World")
         self.assertEqual(
-            "INFO Hello\nWARNING World\n",
-            "".join(logger.content.iter_text()))
+            "INFO Hello\nWARNING World\n", "".join(logger.content.iter_text())
+        )

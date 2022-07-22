@@ -5,27 +5,18 @@
 
 __all__ = [
     "AccessTokensView",
-    ]
+]
 
-from lazr.restful.interface import (
-    copy_field,
-    use_template,
-    )
+from lazr.restful.interface import copy_field, use_template
 from zope.component import getUtility
 from zope.interface import Interface
 
 from lp import _
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.date import DateTimeWidget
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
-from lp.services.auth.interfaces import (
-    IAccessToken,
-    IAccessTokenSet,
-    )
+from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 
@@ -33,14 +24,18 @@ from lp.services.webapp.publisher import canonical_url
 class IAccessTokenCreateSchema(Interface):
     """Schema for creating a personal access token."""
 
-    use_template(IAccessToken, include=[
-        "description",
-        "scopes",
-        ])
+    use_template(
+        IAccessToken,
+        include=[
+            "description",
+            "scopes",
+        ],
+    )
 
     date_expires = copy_field(
         IAccessToken["date_expires"],
-        description=_("When the token should expire."))
+        description=_("When the token should expire."),
+    )
 
 
 class AccessTokensView(LaunchpadFormView):
@@ -57,8 +52,11 @@ class AccessTokensView(LaunchpadFormView):
 
     @cachedproperty
     def access_tokens(self):
-        return list(getUtility(IAccessTokenSet).findByTarget(
-            self.context, visible_by_user=self.user))
+        return list(
+            getUtility(IAccessTokenSet).findByTarget(
+                self.context, visible_by_user=self.user
+            )
+        )
 
     @action("Revoke", name="revoke")
     def revoke_action(self, action, data):
@@ -71,10 +69,13 @@ class AccessTokensView(LaunchpadFormView):
         except ValueError:
             raise UnexpectedFormData("token_id is not an integer")
         token = getUtility(IAccessTokenSet).getByTargetAndID(
-            self.context, token_id, visible_by_user=self.user)
+            self.context, token_id, visible_by_user=self.user
+        )
         if token is not None:
             token.revoke(self.user)
             self.request.response.addInfoNotification(
-                "Token revoked successfully.")
+                "Token revoked successfully."
+            )
         self.request.response.redirect(
-            canonical_url(self.context, view_name="+access-tokens"))
+            canonical_url(self.context, view_name="+access-tokens")
+        )

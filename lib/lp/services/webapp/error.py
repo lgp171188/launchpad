@@ -2,15 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GoneView',
-    'InvalidBatchSizeView',
-    'NotFoundView',
-    'ProtocolErrorView',
-    'RequestExpiredView',
-    'SystemErrorView',
-    'TranslationUnavailableView',
-    'UnexpectedFormDataView',
-    ]
+    "GoneView",
+    "InvalidBatchSizeView",
+    "NotFoundView",
+    "ProtocolErrorView",
+    "RequestExpiredView",
+    "SystemErrorView",
+    "TranslationUnavailableView",
+    "UnexpectedFormDataView",
+]
 
 import http.client
 import sys
@@ -39,10 +39,9 @@ class SystemErrorView(LaunchpadView):
     Also, sets a 500 response code.
     """
 
-    page_title = 'Error: Launchpad system error'
+    page_title = "Error: Launchpad system error"
 
-    plain_oops_template = ViewPageTemplateFile(
-        'templates/oops-veryplain.pt')
+    plain_oops_template = ViewPageTemplateFile("templates/oops-veryplain.pt")
 
     # Override this in subclasses.  A value of None means "don't set this"
     response_code = http.client.INTERNAL_SERVER_ERROR
@@ -68,9 +67,10 @@ class SystemErrorView(LaunchpadView):
         self.request.response.removeAllNotifications()
         if self.response_code is not None:
             self.request.response.setStatus(self.response_code)
-        if getattr(self.request, 'oopsid') is not None:
+        if getattr(self.request, "oopsid") is not None:
             self.request.response.addHeader(
-                'X-Lazr-OopsId', self.request.oopsid)
+                "X-Lazr-OopsId", self.request.oopsid
+            )
 
         # Need to neuter the feature flags on error output. The base template
         # checks for a feature flag, but they depend on db access which might
@@ -104,21 +104,24 @@ class SystemErrorView(LaunchpadView):
         self.error_type, self.error_object, tb = sys.exc_info()
         try:
             self.traceback_lines = traceback.format_tb(tb)
-            self.htmltext = '\n'.join(
-                format_exception(self.error_type, self.error_object,
-                                 tb, as_html=True)
+            self.htmltext = "\n".join(
+                format_exception(
+                    self.error_type, self.error_object, tb, as_html=True
                 )
+            )
         finally:
             del tb
 
     def inside_div(self, html):
         """Returns the given HTML inside a div of an appropriate class."""
 
-        return ('<div class="highlight" style="'
-                "font-family: monospace;"
-                ' font-size: smaller;">'
-                '%s'
-                '</div>') % html
+        return (
+            '<div class="highlight" style="'
+            "font-family: monospace;"
+            ' font-size: smaller;">'
+            "%s"
+            "</div>"
+        ) % html
 
     def maybeShowTraceback(self):
         """Return a traceback, but only if it is appropriate to do so."""
@@ -127,7 +130,7 @@ class SystemErrorView(LaunchpadView):
         if self.show_tracebacks or self.debugging or self.specialuser:
             return self.inside_div(self.htmltext)
         else:
-            return ''
+            return ""
 
     @property
     def oops_id_text(self):
@@ -138,14 +141,15 @@ class SystemErrorView(LaunchpadView):
         if self.specialuser:
             # The logged-in user is a Launchpad Developer,
             # so linkify the OOPS
-            return '<a href="%s%s">%s</a>' % (
-                oops_root_url, oopsid, oops_code)
+            return '<a href="%s%s">%s</a>' % (oops_root_url, oopsid, oops_code)
         else:
             return oops_code
 
     def __call__(self):
-        if (config.launchpad.restrict_to_team and
-              not self.safe_to_show_in_restricted_mode):
+        if (
+            config.launchpad.restrict_to_team
+            and not self.safe_to_show_in_restricted_mode
+        ):
             return self.plain_oops_template()
         else:
             return self.index()
@@ -153,8 +157,8 @@ class SystemErrorView(LaunchpadView):
     @property
     def layer_help(self):
         if lp.layers.FeedsLayer.providedBy(self.request):
-            return '''<a href="https://help.launchpad.net/Feeds">
-                      Help with Launchpad feeds</a>'''
+            return """<a href="https://help.launchpad.net/Feeds">
+                      Help with Launchpad feeds</a>"""
         else:
             return None
 
@@ -178,12 +182,12 @@ class ProtocolErrorView(SystemErrorView):
 
 class UnexpectedFormDataView(SystemErrorView):
 
-    page_title = 'Error: Unexpected form data'
+    page_title = "Error: Unexpected form data"
 
 
 class NotFoundView(SystemErrorView):
 
-    page_title = 'Error: Page not found'
+    page_title = "Error: Page not found"
 
     response_code = http.client.NOT_FOUND
 
@@ -196,7 +200,7 @@ class NotFoundView(SystemErrorView):
 
         Otherwise return None.
         """
-        referrer = self.request.get('HTTP_REFERER')
+        referrer = self.request.get("HTTP_REFERER")
         if referrer:
             # Since this is going to be included in the page template it will
             # be coerced into unicode.  The byte string representation
@@ -214,14 +218,14 @@ class NotFoundView(SystemErrorView):
 class GoneView(NotFoundView):
     """The page is gone, such as a page belonging to a suspended user."""
 
-    page_title = 'Error: Page gone'
+    page_title = "Error: Page gone"
 
     response_code = http.client.GONE
 
 
 class RequestExpiredView(SystemErrorView):
 
-    page_title = 'Error: Timeout'
+    page_title = "Error: Timeout"
 
     response_code = http.client.SERVICE_UNAVAILABLE
 
@@ -230,7 +234,7 @@ class RequestExpiredView(SystemErrorView):
         # Set Retry-After header to 15 minutes. Hard coded because this
         # is really just a guess and I don't think any clients actually
         # pay attention to it - it is just a hint.
-        request.response.setHeader('Retry-After', 900)
+        request.response.setHeader("Retry-After", 900)
 
 
 class InvalidBatchSizeView(SystemErrorView):
@@ -254,7 +258,7 @@ class InvalidBatchSizeView(SystemErrorView):
 
 class TranslationUnavailableView(SystemErrorView):
 
-    page_title = 'Error: Translation page is not available'
+    page_title = "Error: Translation page is not available"
 
     response_code = http.client.SERVICE_UNAVAILABLE
 
@@ -280,9 +284,9 @@ class OpenIdDiscoveryFailureView(SystemErrorView):
 class DisconnectionErrorView(SystemErrorView):
 
     response_code = http.client.SERVICE_UNAVAILABLE
-    reason = 'our database being temporarily offline'
+    reason = "our database being temporarily offline"
 
 
 class OperationalErrorView(DisconnectionErrorView):
 
-    reason = 'our database having temporary operational issues'
+    reason = "our database having temporary operational issues"

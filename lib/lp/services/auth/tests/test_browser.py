@@ -13,28 +13,28 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesStructure,
     Not,
-    )
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
-from lp.testing import (
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_view
 
-
 breadcrumbs_tag = soupmatchers.Tag(
-    "breadcrumbs", "ol", attrs={"class": "breadcrumbs"})
+    "breadcrumbs", "ol", attrs={"class": "breadcrumbs"}
+)
 tokens_page_crumb_tag = soupmatchers.Tag(
-    "tokens page breadcrumb", "li", text=re.compile(r"Personal access tokens"))
+    "tokens page breadcrumb", "li", text=re.compile(r"Personal access tokens")
+)
 token_listing_constants = soupmatchers.HTMLContains(
-    soupmatchers.Within(breadcrumbs_tag, tokens_page_crumb_tag))
+    soupmatchers.Within(breadcrumbs_tag, tokens_page_crumb_tag)
+)
 token_listing_tag = soupmatchers.Tag(
-    "tokens table", "table", attrs={"class": "listing"})
+    "tokens table", "table", attrs={"class": "listing"}
+)
 
 
 class TestAccessTokenViewBase:
@@ -55,13 +55,19 @@ class TestAccessTokenViewBase:
         # in create_view instead, but that approach needs care to avoid
         # adding an extra query to tests that might be sensitive to that.
         principal = getUtility(IPlacelessAuthUtility).getPrincipal(
-            self.owner.accountID)
+            self.owner.accountID
+        )
         view = create_view(
-            self.target, name, principal=principal, current_request=True,
-            **kwargs)
+            self.target,
+            name,
+            principal=principal,
+            current_request=True,
+            **kwargs,
+        )
         # To test the breadcrumbs we need a correct traversal stack.
-        view.request.traversed_objects = (
-            self.getTraversalStack(self.target) + [view])
+        view.request.traversed_objects = self.getTraversalStack(
+            self.target
+        ) + [view]
         # The navigation menu machinery needs this to find the view from the
         # request.
         view.request._last_obj_traversed = view
@@ -71,7 +77,8 @@ class TestAccessTokenViewBase:
     def test_access_tokens_link(self):
         target_url = canonical_url(self.target, rootsite="code")
         expected_tokens_url = canonical_url(
-            self.target, view_name="+access-tokens", rootsite="code")
+            self.target, view_name="+access-tokens", rootsite="code"
+        )
         browser = self.getUserBrowser(target_url, user=self.owner)
         tokens_link = browser.getLink("Manage access tokens")
         self.assertEqual(expected_tokens_url, tokens_link.url)
@@ -79,23 +86,30 @@ class TestAccessTokenViewBase:
     def makeTokensAndMatchers(self, count):
         tokens = [
             self.factory.makeAccessToken(target=self.target)[1]
-            for _ in range(count)]
+            for _ in range(count)
+        ]
         # There is a row for each token.
         matchers = []
         for token in tokens:
             row_tag = soupmatchers.Tag(
-                "token row", "tr",
-                attrs={"token-id": removeSecurityProxy(token).id})
+                "token row",
+                "tr",
+                attrs={"token-id": removeSecurityProxy(token).id},
+            )
             column_tags = [
+                soupmatchers.Tag("description", "td", text=token.description),
                 soupmatchers.Tag(
-                    "description", "td", text=token.description),
-                soupmatchers.Tag(
-                    "scopes", "td",
-                    text=", ".join(scope.title for scope in token.scopes)),
+                    "scopes",
+                    "td",
+                    text=", ".join(scope.title for scope in token.scopes),
+                ),
+            ]
+            matchers.extend(
+                [
+                    soupmatchers.Within(row_tag, column_tag)
+                    for column_tag in column_tags
                 ]
-            matchers.extend([
-                soupmatchers.Within(row_tag, column_tag)
-                for column_tag in column_tags])
+            )
         return matchers
 
     def test_empty(self):
@@ -103,7 +117,9 @@ class TestAccessTokenViewBase:
             self.makeView("+access-tokens")(),
             MatchesAll(
                 token_listing_constants,
-                soupmatchers.HTMLContains(token_listing_tag)))
+                soupmatchers.HTMLContains(token_listing_tag),
+            ),
+        )
 
     def test_existing_tokens(self):
         token_matchers = self.makeTokensAndMatchers(10)
@@ -111,47 +127,70 @@ class TestAccessTokenViewBase:
             self.makeView("+access-tokens")(),
             MatchesAll(
                 token_listing_constants,
-                soupmatchers.HTMLContains(token_listing_tag, *token_matchers)))
+                soupmatchers.HTMLContains(token_listing_tag, *token_matchers),
+            ),
+        )
 
     def test_revoke(self):
         tokens = [
             self.factory.makeAccessToken(target=self.target)[1]
-            for _ in range(3)]
+            for _ in range(3)
+        ]
         token_ids = [token.id for token in tokens]
         access_tokens_url = canonical_url(
-            self.target, view_name="+access-tokens")
+            self.target, view_name="+access-tokens"
+        )
         browser = self.getUserBrowser(access_tokens_url, user=self.owner)
         for token_id in token_ids:
             self.assertThat(
                 browser.getForm(name="revoke-%s" % token_id).controls,
-                MatchesListwise([
-                    MatchesStructure.byEquality(
-                        type="hidden", name="token_id", value=str(token_id)),
-                    MatchesStructure.byEquality(
-                        type="submit", name="field.actions.revoke",
-                        value="Revoke"),
-                    ]))
+                MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            type="hidden", name="token_id", value=str(token_id)
+                        ),
+                        MatchesStructure.byEquality(
+                            type="submit",
+                            name="field.actions.revoke",
+                            value="Revoke",
+                        ),
+                    ]
+                ),
+            )
         browser.getForm(name="revoke-%s" % token_ids[1]).getControl(
-            "Revoke").click()
+            "Revoke"
+        ).click()
         login_person(self.owner)
         self.assertEqual(access_tokens_url, browser.url)
-        self.assertThat(tokens[0], MatchesStructure(
-            id=Equals(token_ids[0]),
-            date_expires=Is(None),
-            revoked_by=Is(None)))
-        self.assertThat(tokens[1], MatchesStructure(
-            id=Equals(token_ids[1]),
-            date_expires=Not(Is(None)),
-            revoked_by=Equals(self.owner)))
-        self.assertThat(tokens[2], MatchesStructure(
-            id=Equals(token_ids[2]),
-            date_expires=Is(None),
-            revoked_by=Is(None)))
+        self.assertThat(
+            tokens[0],
+            MatchesStructure(
+                id=Equals(token_ids[0]),
+                date_expires=Is(None),
+                revoked_by=Is(None),
+            ),
+        )
+        self.assertThat(
+            tokens[1],
+            MatchesStructure(
+                id=Equals(token_ids[1]),
+                date_expires=Not(Is(None)),
+                revoked_by=Equals(self.owner),
+            ),
+        )
+        self.assertThat(
+            tokens[2],
+            MatchesStructure(
+                id=Equals(token_ids[2]),
+                date_expires=Is(None),
+                revoked_by=Is(None),
+            ),
+        )
 
 
 class TestAccessTokenViewGitRepository(
-        TestAccessTokenViewBase, TestCaseWithFactory):
-
+    TestAccessTokenViewBase, TestCaseWithFactory
+):
     def makeTarget(self):
         return self.factory.makeGitRepository()
 

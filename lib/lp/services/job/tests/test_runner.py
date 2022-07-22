@@ -3,56 +3,35 @@
 
 """Tests for job-running facilities."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import logging
 import re
 import sys
+from datetime import datetime, timedelta
 from textwrap import dedent
 from time import sleep
 
-from lazr.jobrunner.jobrunner import (
-    LeaseHeld,
-    SuspendJobException,
-    )
+import transaction
+from lazr.jobrunner.jobrunner import LeaseHeld, SuspendJobException
 from lazr.restful.utils import get_current_browser_request
 from pytz import UTC
-from storm.locals import (
-    Bool,
-    Int,
-    Reference,
-    )
-from testtools.matchers import (
-    GreaterThan,
-    LessThan,
-    MatchesAll,
-    MatchesRegex,
-    )
+from storm.locals import Bool, Int, Reference
+from testtools.matchers import GreaterThan, LessThan, MatchesAll, MatchesRegex
 from testtools.testcase import ExpectedException
-import transaction
 from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    connect,
-    flush_database_updates,
-    )
+from lp.services.database.sqlbase import connect, flush_database_updates
 from lp.services.database.stormbase import StormBase
 from lp.services.features.testing import FeatureFixture
-from lp.services.job.interfaces.job import (
-    IRunnableJob,
-    JobStatus,
-    )
+from lp.services.job.interfaces.job import IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import (
     BaseRunnableJob,
-    celery_enabled,
     JobRunner,
     TwistedJobRunner,
-    )
+    celery_enabled,
+)
 from lp.services.log.logger import BufferLogger
 from lp.services.scripts.logger import OopsHandler
 from lp.services.statsd.tests import StatsMixin
@@ -60,12 +39,9 @@ from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     get_default_timeout_function,
     set_default_timeout_function,
-    )
+)
 from lp.services.webapp import errorlog
-from lp.testing import (
-    RunIsolatedTest,
-    TestCaseWithFactory,
-    )
+from lp.testing import RunIsolatedTest, TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
@@ -77,8 +53,9 @@ class NullJob(BaseRunnableJob):
 
     JOB_COMPLETIONS = []
 
-    def __init__(self, completion_message, oops_recipients=None,
-                 error_recipients=None):
+    def __init__(
+        self, completion_message, oops_recipients=None, error_recipients=None
+    ):
         self.message = completion_message
         self.job = Job()
         self.oops_recipients = oops_recipients
@@ -95,13 +72,13 @@ class NullJob(BaseRunnableJob):
         return self.oops_recipients
 
     def getOopsVars(self):
-        return [('foo', 'bar')]
+        return [("foo", "bar")]
 
     def getErrorRecipients(self):
         return self.error_recipients
 
     def getOperationDescription(self):
-        return 'appending a string to a list'
+        return "appending a string to a list"
 
 
 class RaisingJobException(Exception):
@@ -120,14 +97,14 @@ class RaisingJobTimelineMessage(NullJob):
 
     def run(self):
         timeline = get_request_timeline(get_current_browser_request())
-        timeline.start('job', self.message).finish()
+        timeline.start("job", self.message).finish()
         raise RaisingJobException(self.message)
 
 
 class RaisingJobUserError(NullJob):
     """A job that raises a user error when it runs."""
 
-    user_error_types = (RaisingJobException, )
+    user_error_types = (RaisingJobException,)
 
     def run(self):
         raise RaisingJobException(self.message)
@@ -140,19 +117,19 @@ class RaisingJobRaisingNotifyOops(NullJob):
         raise RaisingJobException(self.message)
 
     def notifyOops(self, oops):
-        raise RaisingJobException('oops notifying oops')
+        raise RaisingJobException("oops notifying oops")
 
 
 class RaisingJobRaisingNotifyUserError(NullJob):
     """A job that raises when it runs, and when notifying user errors."""
 
-    user_error_types = (RaisingJobException, )
+    user_error_types = (RaisingJobException,)
 
     def run(self):
         raise RaisingJobException(self.message)
 
     def notifyUserError(self, error):
-        raise RaisingJobException('oops notifying users')
+        raise RaisingJobException("oops notifying users")
 
 
 class RetryError(Exception):
@@ -191,10 +168,12 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual([job_1], runner.completed_jobs)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,env=test,type=NullJob',))
+            ("job.start_count,env=test,type=NullJob",),
+        )
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.complete_count,env=test,type=NullJob',))
+            ("job.complete_count,env=test,type=NullJob",),
+        )
 
     def test_runAll(self):
         """Ensure runAll works in the normal case."""
@@ -228,7 +207,8 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         def raiseError():
             # Ensure that jobs which call transaction.abort work, too.
             transaction.abort()
-            raise Exception('Fake exception.  Foobar, I say!')
+            raise Exception("Fake exception.  Foobar, I say!")
+
         job_1.run = raiseError
         runner = JobRunner([job_1, job_2])
         runner.runAll()
@@ -238,14 +218,16 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.assertEqual(JobStatus.FAILED, job_1.job.status)
         self.assertEqual(JobStatus.COMPLETED, job_2.job.status)
         oops = self.oopses[-1]
-        self.assertIn('Fake exception.  Foobar, I say!', oops['tb_text'])
-        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
+        self.assertIn("Fake exception.  Foobar, I say!", oops["tb_text"])
+        self.assertEqual(["{'foo': 'bar'}"], list(oops["req_vars"].values()))
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ('job.start_count,env=test,type=NullJob',))
+            ("job.start_count,env=test,type=NullJob",),
+        )
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ('job.fail_count,env=test,type=NullJob',))
+            ("job.fail_count,env=test,type=NullJob",),
+        )
 
     def test_oops_messages_used_when_handling(self):
         """Oops messages should appear even when exceptions are handled."""
@@ -254,25 +236,25 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         def handleError():
             reporter = errorlog.globalErrorUtility
             try:
-                raise ValueError('Fake exception.  Foobar, I say!')
+                raise ValueError("Fake exception.  Foobar, I say!")
             except ValueError:
                 reporter.raising(sys.exc_info())
+
         job_1.run = handleError
         runner = JobRunner([job_1, job_2])
         runner.runAll()
         oops = self.oopses[-1]
-        self.assertEqual(["{'foo': 'bar'}"], list(oops['req_vars'].values()))
+        self.assertEqual(["{'foo': 'bar'}"], list(oops["req_vars"].values()))
 
     def test_runAll_aborts_transaction_on_error(self):
         """runAll should abort the transaction on oops."""
 
         class DBAlterJob(NullJob):
-
             def __init__(self):
-                super().__init__('')
+                super().__init__("")
 
             def run(self):
-                self.job.log = 'hello'
+                self.job.log = "hello"
                 raise ValueError
 
         job = DBAlterJob()
@@ -289,22 +271,25 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         def raiseError():
             # Ensure that jobs which call transaction.abort work, too.
             transaction.abort()
-            raise Exception('Fake exception.  Foobar, I say!')
+            raise Exception("Fake exception.  Foobar, I say!")
+
         job_1.run = raiseError
-        job_1.oops_recipients = ['jrandom@example.org']
+        job_1.oops_recipients = ["jrandom@example.org"]
         runner = JobRunner([job_1, job_2])
         runner.runAll()
         (notification,) = pop_notifications()
         oops = self.oopses[-1]
         self.assertIn(
-            'Launchpad encountered an internal error during the following'
-            ' operation: appending a string to a list.  It was logged with id'
-            ' %s.  Sorry for the inconvenience.' % oops['id'],
-            notification.get_payload(decode=True).decode('UTF-8'))
+            "Launchpad encountered an internal error during the following"
+            " operation: appending a string to a list.  It was logged with id"
+            " %s.  Sorry for the inconvenience." % oops["id"],
+            notification.get_payload(decode=True).decode("UTF-8"),
+        )
         self.assertNotIn(
-            'Fake exception.  Foobar, I say!',
-            notification.get_payload(decode=True).decode('UTF-8'))
-        self.assertEqual('Launchpad internal error', notification['subject'])
+            "Fake exception.  Foobar, I say!",
+            notification.get_payload(decode=True).decode("UTF-8"),
+        )
+        self.assertEqual("Launchpad internal error", notification["subject"])
 
     def test_runAll_mails_user_errors(self):
         """User errors should be mailed out without oopsing.
@@ -319,23 +304,26 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
             pass
 
         def raiseError():
-            raise ExampleError('Fake exception.  Foobar, I say!')
+            raise ExampleError("Fake exception.  Foobar, I say!")
+
         job_1.run = raiseError
         job_1.user_error_types = (ExampleError,)
-        job_1.error_recipients = ['jrandom@example.org']
+        job_1.error_recipients = ["jrandom@example.org"]
         runner = JobRunner([job_1, job_2])
         runner.runAll()
         self.assertEqual([], self.oopses)
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
-        body = notifications[0].get_payload(decode=True).decode('UTF-8')
+        body = notifications[0].get_payload(decode=True).decode("UTF-8")
         self.assertEqual(
-            'Launchpad encountered an error during the following operation:'
-            ' appending a string to a list.  Fake exception.  Foobar, I say!',
-            body)
+            "Launchpad encountered an error during the following operation:"
+            " appending a string to a list.  Fake exception.  Foobar, I say!",
+            body,
+        )
         self.assertEqual(
-            'Launchpad error while appending a string to a list',
-            notifications[0]['subject'])
+            "Launchpad error while appending a string to a list",
+            notifications[0]["subject"],
+        )
 
     def test_runAll_requires_IRunnable(self):
         """Supplied classes must implement IRunnableJob.
@@ -349,12 +337,13 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         @implementer(IRunnableJob)
         class Runnable:
             pass
+
         runner = JobRunner([Runnable()])
         self.assertRaises(AttributeError, runner.runAll)
 
     def test_runJob_records_failure(self):
         """When a job fails, the failure needs to be recorded."""
-        job = RaisingJob('boom')
+        job = RaisingJob("boom")
         runner = JobRunner([job])
         self.assertRaises(RaisingJobException, runner.runJob, job, None)
         # Abort the transaction to confirm that the update of the job status
@@ -364,7 +353,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
 
     def test_runJobHandleErrors_oops_generated(self):
         """The handle errors method records an oops for raised errors."""
-        job = RaisingJob('boom')
+        job = RaisingJob("boom")
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(1, len(self.oopses))
@@ -372,51 +361,51 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
     def test_runJobHandleErrors_oops_timeline(self):
         """The oops timeline only covers the job itself."""
         timeline = get_request_timeline(get_current_browser_request())
-        timeline.start('test', 'sentinel').finish()
-        job = RaisingJobTimelineMessage('boom')
+        timeline.start("test", "sentinel").finish()
+        job = RaisingJobTimelineMessage("boom")
         flush_database_updates()
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(1, len(self.oopses))
-        actions = [action[2:4] for action in self.oopses[0]['timeline']]
-        self.assertIn(('job', 'boom'), actions)
-        self.assertNotIn(('test', 'sentinel'), actions)
+        actions = [action[2:4] for action in self.oopses[0]["timeline"]]
+        self.assertIn(("job", "boom"), actions)
+        self.assertNotIn(("test", "sentinel"), actions)
 
     def test_runJobHandleErrors_oops_timeline_detail_filter(self):
         """A job can choose to filter oops timeline details."""
-        job = RaisingJobTimelineMessage('boom')
-        job.timeline_detail_filter = lambda _, detail: '<redacted>'
+        job = RaisingJobTimelineMessage("boom")
+        job.timeline_detail_filter = lambda _, detail: "<redacted>"
         flush_database_updates()
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(1, len(self.oopses))
-        actions = [action[2:4] for action in self.oopses[0]['timeline']]
-        self.assertIn(('job', '<redacted>'), actions)
+        actions = [action[2:4] for action in self.oopses[0]["timeline"]]
+        self.assertIn(("job", "<redacted>"), actions)
 
     def test_runJobHandleErrors_user_error_no_oops(self):
         """If the job raises a user error, there is no oops."""
-        logging.getLogger().addHandler(OopsHandler('test_runner'))
-        job = RaisingJobUserError('boom')
+        logging.getLogger().addHandler(OopsHandler("test_runner"))
+        job = RaisingJobUserError("boom")
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(0, len(self.oopses))
 
     def test_runJobHandleErrors_retry_error_no_oops(self):
         """If the job raises a retry error, there is no oops."""
-        logging.getLogger().addHandler(OopsHandler('test_runner'))
-        job = RaisingRetryJob('completion')
+        logging.getLogger().addHandler(OopsHandler("test_runner"))
+        job = RaisingRetryJob("completion")
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(0, len(self.oopses))
 
     def test_runJob_raising_retry_error(self):
         """If a job raises a retry_error, it should be re-queued."""
-        job = RaisingRetryJob('completion')
+        job = RaisingRetryJob("completion")
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
         runner = JobRunner([job], logger=logger)
         self.assertIs(None, job.scheduled_start)
-        self.addCleanup(lambda: self.addDetail('log', logger.content))
+        self.addCleanup(lambda: self.addDetail("log", logger.content))
         runner.runJob(job, None)
         self.assertEqual(JobStatus.WAITING, job.status)
         expected_delay = datetime.now(UTC) + timedelta(minutes=10)
@@ -424,20 +413,23 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
             job.scheduled_start,
             MatchesAll(
                 GreaterThan(expected_delay - timedelta(minutes=1)),
-                LessThan(expected_delay + timedelta(minutes=1))))
+                LessThan(expected_delay + timedelta(minutes=1)),
+            ),
+        )
         self.assertIsNone(job.lease_expires)
         self.assertNotIn(job, runner.completed_jobs)
         self.assertIn(job, runner.incomplete_jobs)
         self.assertIn(
-            'Scheduling retry due to RetryError', logger.getLogBuffer())
+            "Scheduling retry due to RetryError", logger.getLogBuffer()
+        )
 
     def test_runJob_exceeding_max_retries(self):
         """If a job exceeds maximum retries, it should raise normally."""
-        job = RaisingRetryJob('completion')
+        job = RaisingRetryJob("completion")
         JobRunner([job]).runJob(job, None)
         self.assertEqual(JobStatus.WAITING, job.status)
         runner = JobRunner([job])
-        with ExpectedException(RetryError, ''):
+        with ExpectedException(RetryError, ""):
             runner.runJob(job, None)
         self.assertEqual(JobStatus.FAILED, job.status)
         self.assertNotIn(job, runner.completed_jobs)
@@ -445,6 +437,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
 
     def test_runJob_sets_default_timeout_function(self):
         """runJob sets a default timeout function for urlfetch."""
+
         class RecordDefaultTimeoutJob(NullJob):
             def __init__(self):
                 super().__init__("")
@@ -465,7 +458,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
 
     def test_runJobHandleErrors_oops_generated_notify_fails(self):
         """A second oops is logged if the notification of the oops fails."""
-        job = RaisingJobRaisingNotifyOops('boom')
+        job = RaisingJobRaisingNotifyOops("boom")
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(2, len(self.oopses))
@@ -476,14 +469,14 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         In this test case the error is a user expected error, so the
         notifyUserError is called, and in this case the notify raises too.
         """
-        job = RaisingJobRaisingNotifyUserError('boom')
+        job = RaisingJobRaisingNotifyUserError("boom")
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(1, len(self.oopses))
 
     def test_runJob_with_SuspendJobException(self):
         # A job that raises SuspendJobError should end up suspended.
-        job = NullJob('suspended')
+        job = NullJob("suspended")
         job.run = FakeMethod(failure=SuspendJobException())
         runner = JobRunner([job])
         runner.runJob(job, None)
@@ -498,8 +491,9 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         job = NullJob(completion_message="doesn't matter")
         task_id = job.taskId()
         uuid_expr = (
-            '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-        mo = re.search('^NullJob_%s_%s$' % (job.job_id, uuid_expr), task_id)
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+        )
+        mo = re.search("^NullJob_%s_%s$" % (job.job_id, uuid_expr), task_id)
         self.assertIsNot(None, mo)
 
 
@@ -535,13 +529,17 @@ class TestJobRunnerDerivedJob(StatsMixin, TestCaseWithFactory):
         super().setUp()
         con = connect()
         cur = con.cursor()
-        cur.execute(dedent("""
+        cur.execute(
+            dedent(
+                """
             CREATE TABLE DerivedJob (
                 id serial PRIMARY KEY,
                 job integer NOT NULL REFERENCES Job,
                 should_succeed boolean NOT NULL
             )
-            """))
+            """
+            )
+        )
         cur.execute("GRANT ALL ON DerivedJob TO launchpad_main")
         cur.execute("GRANT ALL ON derivedjob_id_seq TO launchpad_main")
         con.commit()
@@ -557,10 +555,12 @@ class TestJobRunnerDerivedJob(StatsMixin, TestCaseWithFactory):
         self.assertEqual([job], runner.completed_jobs)
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ("job.start_count,env=test,type=DerivedJob",))
+            ("job.start_count,env=test,type=DerivedJob",),
+        )
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ("job.complete_count,env=test,type=DerivedJob",))
+            ("job.complete_count,env=test,type=DerivedJob",),
+        )
 
     def test_runAll_reports_oopses(self):
         """When an error is encountered, report an oops and continue."""
@@ -578,14 +578,15 @@ class TestJobRunnerDerivedJob(StatsMixin, TestCaseWithFactory):
         self.assertIn("division by zero", oops["tb_text"])
         self.assertEqual(
             self.stats_client.incr.call_args_list[0][0],
-            ("job.start_count,env=test,type=DerivedJob",))
+            ("job.start_count,env=test,type=DerivedJob",),
+        )
         self.assertEqual(
             self.stats_client.incr.call_args_list[1][0],
-            ("job.fail_count,env=test,type=DerivedJob",))
+            ("job.fail_count,env=test,type=DerivedJob",),
+        )
 
 
 class StaticJobSource(BaseRunnableJob):
-
     @classmethod
     def iterReady(cls):
         if not cls.done:
@@ -613,7 +614,7 @@ class StuckJob(StaticJobSource):
     jobs = [
         (10000, 0),
         (5, 30),
-        ]
+    ]
 
     def __init__(self, id, lease_length, delay):
         self.id = id
@@ -622,8 +623,12 @@ class StuckJob(StaticJobSource):
         self.job = Job()
 
     def __repr__(self):
-        return '<%s(%r, lease_length=%s, delay=%s)>' % (
-            self.__class__.__name__, self.id, self.lease_length, self.delay)
+        return "<%s(%r, lease_length=%s, delay=%s)>" % (
+            self.__class__.__name__,
+            self.id,
+            self.lease_length,
+            self.delay,
+        )
 
     def acquireLease(self):
         return self.job.acquireLease(self.lease_length)
@@ -638,7 +643,7 @@ class ShorterStuckJob(StuckJob):
     jobs = [
         (10000, 0),
         (0.05, 30),
-        ]
+    ]
 
 
 @implementer(IRunnableJob)
@@ -658,10 +663,10 @@ class InitialFailureJob(StaticJobSource):
     def run(self):
         if self.fail:
             InitialFailureJob.has_failed = True
-            raise ValueError('I failed.')
+            raise ValueError("I failed.")
         else:
             if InitialFailureJob.has_failed:
-                raise ValueError('Previous failure.')
+                raise ValueError("Previous failure.")
 
 
 @implementer(IRunnableJob)
@@ -683,7 +688,7 @@ class ProcessSharingJob(StaticJobSource):
             ProcessSharingJob.initial_job_was_here = True
         else:
             if not ProcessSharingJob.initial_job_was_here:
-                raise ValueError('Different process.')
+                raise ValueError("Different process.")
 
 
 @implementer(IRunnableJob)
@@ -700,7 +705,7 @@ class MemoryHogJob(StaticJobSource):
         self.id = id
 
     def run(self):
-        self.x = '*' * (10 ** 6)
+        self.x = "*" * (10**6)
 
 
 class NoJobs(StaticJobSource):
@@ -741,7 +746,7 @@ class TestTwistedJobRunner(TestCaseWithFactory):
             self.addCleanup(sys.path.remove, config.root)
 
     def _attachLog(self, logger):
-        self.addDetail('log', logger.content)
+        self.addDetail("log", logger.content)
 
     def test_timeout_long(self):
         """When a job exceeds its lease, an exception is raised.
@@ -756,21 +761,29 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         # StuckJob is actually a source of two jobs. The first is fast, the
         # second slow.
         runner = TwistedJobRunner.runFromSource(
-            StuckJob, 'branchscanner', logger)
+            StuckJob, "branchscanner", logger
+        )
 
         self.assertEqual(
-            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
         self.oops_capture.sync()
         oops = self.oopses[0]
-        expected_exception = ('TimeoutError', 'Job ran too long.')
-        self.assertEqual(expected_exception, (oops['type'], oops['value']))
-        self.assertThat(logger.getLogBuffer(), MatchesRegex(
-            dedent(r"""
+        expected_exception = ("TimeoutError", "Job ran too long.")
+        self.assertEqual(expected_exception, (oops["type"], oops["value"]))
+        self.assertThat(
+            logger.getLogBuffer(),
+            MatchesRegex(
+                dedent(
+                    r"""
                 INFO Running through Twisted.
                 INFO Running <StuckJob.*?> \(ID .*?\).
                 INFO Running <StuckJob.*?> \(ID .*?\).
                 INFO Job resulted in OOPS: .*
-            """).lstrip("\n")))
+            """
+                ).lstrip("\n")
+            ),
+        )
 
     # XXX: BradCrittenden 2012-05-09 bug=994777: Disabled as a spurious
     # failure.  In isolation this test fails 5% of the time.
@@ -787,21 +800,31 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         # StuckJob is actually a source of two jobs. The first is fast, the
         # second slow.
         runner = TwistedJobRunner.runFromSource(
-            ShorterStuckJob, 'branchscanner', logger)
+            ShorterStuckJob, "branchscanner", logger
+        )
         self.oops_capture.sync()
         oops = self.oopses[0]
         self.assertEqual(
-            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
         self.assertThat(
-            logger.getLogBuffer(), MatchesRegex(
-                dedent(r"""
+            logger.getLogBuffer(),
+            MatchesRegex(
+                dedent(
+                    r"""
                 INFO Running through Twisted.
                 INFO Running <ShorterStuckJob.*?> \(ID .*?\).
                 INFO Running <ShorterStuckJob.*?> \(ID .*?\).
                 INFO Job resulted in OOPS: %s
-                """).lstrip("\n") % oops['id']))
-        self.assertEqual(('TimeoutError', 'Job ran too long.'),
-                         (oops['type'], oops['value']))
+                """
+                ).lstrip("\n")
+                % oops["id"]
+            ),
+        )
+        self.assertEqual(
+            ("TimeoutError", "Job ran too long."),
+            (oops["type"], oops["value"]),
+        )
 
     def test_previous_failure_gives_new_process(self):
         """Failed jobs cause their worker to be terminated.
@@ -812,9 +835,11 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         logger = BufferLogger()
         self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
-            InitialFailureJob, 'branchscanner', logger)
+            InitialFailureJob, "branchscanner", logger
+        )
         self.assertEqual(
-            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (1, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
 
     def test_successful_jobs_share_process(self):
         """Successful jobs allow process reuse.
@@ -825,9 +850,11 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         logger = BufferLogger()
         self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
-            ProcessSharingJob, 'branchscanner', logger)
+            ProcessSharingJob, "branchscanner", logger
+        )
         self.assertEqual(
-            (2, 0), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (2, 0), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
 
     def disable_test_memory_hog_job(self):
         """A job with a memory limit will trigger MemoryError on excess."""
@@ -837,21 +864,25 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         logger.setLevel(logging.INFO)
         self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
-            MemoryHogJob, 'branchscanner', logger)
+            MemoryHogJob, "branchscanner", logger
+        )
         self.assertEqual(
-            (0, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
-        self.assertIn('Job resulted in OOPS', logger.getLogBuffer())
+            (0, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
+        self.assertIn("Job resulted in OOPS", logger.getLogBuffer())
         self.oops_capture.sync()
-        self.assertEqual('MemoryError', self.oopses[0]['type'])
+        self.assertEqual("MemoryError", self.oopses[0]["type"])
 
     def test_no_jobs(self):
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
         self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
-            NoJobs, 'branchscanner', logger)
+            NoJobs, "branchscanner", logger
+        )
         self.assertEqual(
-            (0, 0), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (0, 0), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
 
     def test_lease_held_handled(self):
         """Jobs that raise LeaseHeld are handled correctly."""
@@ -859,10 +890,12 @@ class TestTwistedJobRunner(TestCaseWithFactory):
         logger.setLevel(logging.DEBUG)
         self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
-            LeaseHeldJob, 'branchscanner', logger)
-        self.assertIn('Could not acquire lease', logger.getLogBuffer())
+            LeaseHeldJob, "branchscanner", logger
+        )
+        self.assertIn("Could not acquire lease", logger.getLogBuffer())
         self.assertEqual(
-            (0, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
+            (0, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs))
+        )
 
 
 class TestCeleryEnabled(TestCaseWithFactory):
@@ -871,24 +904,27 @@ class TestCeleryEnabled(TestCaseWithFactory):
 
     def test_no_flag(self):
         """With no flag set, result is False."""
-        self.assertFalse(celery_enabled('foo'))
+        self.assertFalse(celery_enabled("foo"))
 
     def test_matching_flag(self):
         """A matching flag returns True."""
-        self.useFixture(FeatureFixture(
-            {'jobs.celery.enabled_classes': 'foo bar'}))
-        self.assertTrue(celery_enabled('foo'))
-        self.assertTrue(celery_enabled('bar'))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "foo bar"})
+        )
+        self.assertTrue(celery_enabled("foo"))
+        self.assertTrue(celery_enabled("bar"))
 
     def test_non_matching_flag(self):
         """A non-matching flag returns false."""
-        self.useFixture(FeatureFixture(
-            {'jobs.celery.enabled_classes': 'foo bar'}))
-        self.assertFalse(celery_enabled('baz'))
-        self.assertTrue(celery_enabled('bar'))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "foo bar"})
+        )
+        self.assertFalse(celery_enabled("baz"))
+        self.assertTrue(celery_enabled("bar"))
 
     def test_substring(self):
         """A substring of an enabled class does not match."""
-        self.useFixture(FeatureFixture(
-            {'jobs.celery.enabled_classes': 'foobar'}))
-        self.assertFalse(celery_enabled('bar'))
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": "foobar"})
+        )
+        self.assertFalse(celery_enabled("bar"))

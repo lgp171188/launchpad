@@ -4,26 +4,18 @@
 """Database access layer for the Librarian."""
 
 __all__ = [
-    'Library',
-    ]
+    "Library",
+]
 
 import hashlib
-from urllib.parse import (
-    quote,
-    unquote,
-    )
+from urllib.parse import quote, unquote
 from xmlrpc.client import Fault
 
 from pymacaroons import Macaroon
-from storm.expr import (
-    And,
-    SQL,
-    )
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    threads,
-    )
+from storm.expr import SQL, And
+from twisted.internet import defer
+from twisted.internet import reactor as default_reactor
+from twisted.internet import threads
 from twisted.web import xmlrpc
 
 from lp.services.config import config
@@ -33,7 +25,7 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     TimeLimitedToken,
-    )
+)
 from lp.services.twistedsupport import cancel_on_timeout
 from lp.xmlrpc import faults
 
@@ -50,8 +42,9 @@ class Library:
         """
         self.restricted = restricted
         self._authserver = xmlrpc.Proxy(
-            config.librarian.authentication_endpoint.encode('UTF-8'),
-            connectTimeout=config.librarian.authentication_timeout)
+            config.librarian.authentication_endpoint.encode("UTF-8"),
+            connectTimeout=config.librarian.authentication_timeout,
+        )
 
     # The following methods are read-only queries.
 
@@ -73,9 +66,13 @@ class Library:
         try:
             yield cancel_on_timeout(
                 self._authserver.callRemote(
-                    "verifyMacaroon", macaroon.serialize(), "LibraryFileAlias",
-                    aliasid),
-                config.librarian.authentication_timeout)
+                    "verifyMacaroon",
+                    macaroon.serialize(),
+                    "LibraryFileAlias",
+                    aliasid,
+                ),
+                config.librarian.authentication_timeout,
+            )
             return True
         except Fault as fault:
             if fault.faultCode == faults.Unauthorized.error_code:
@@ -106,7 +103,8 @@ class Library:
                 # need to be path-specific; it's simpler and faster to just
                 # check the alias ID.
                 token_ok = threads.blockingCallFromThread(
-                    default_reactor, self._verifyMacaroon, token, aliasid)
+                    default_reactor, self._verifyMacaroon, token, aliasid
+                )
             else:
                 # The URL-encoding of the path may have changed somewhere
                 # along the line, so reencode it canonically. LFA.filename
@@ -116,22 +114,27 @@ class Library:
                 # Chromium forcibly decodes it in any URL that it sees.
                 #
                 # This needs to match url_path_quote.
-                normalised_path = quote(unquote(path), safe='/~+')
+                normalised_path = quote(unquote(path), safe="/~+")
                 store = session_store()
-                token_ok = not store.find(TimeLimitedToken,
+                token_ok = not store.find(
+                    TimeLimitedToken,
                     SQL("age(created) < interval '1 day'"),
-                    TimeLimitedToken.token ==
-                        hashlib.sha256(token).hexdigest(),
-                    TimeLimitedToken.path == normalised_path).is_empty()
+                    TimeLimitedToken.token
+                    == hashlib.sha256(token).hexdigest(),
+                    TimeLimitedToken.path == normalised_path,
+                ).is_empty()
                 store.reset()
             if token_ok:
                 restricted = True
             else:
                 raise LookupError("Token stale/pruned/path mismatch")
-        alias = LibraryFileAlias.selectOne(And(
-            LibraryFileAlias.id == aliasid,
-            LibraryFileAlias.contentID == LibraryFileContent.q.id,
-            LibraryFileAlias.restricted == restricted))
+        alias = LibraryFileAlias.selectOne(
+            And(
+                LibraryFileAlias.id == aliasid,
+                LibraryFileAlias.contentID == LibraryFileContent.q.id,
+                LibraryFileAlias.restricted == restricted,
+            )
+        )
         if alias is None:
             raise LookupError("No file alias with LibraryFileContent")
         return alias
@@ -141,14 +144,16 @@ class Library:
             LibraryFileAlias,
             LibraryFileAlias.contentID == LibraryFileContent.id,
             LibraryFileAlias.restricted == self.restricted,
-            LibraryFileContent.id == fileid)
+            LibraryFileContent.id == fileid,
+        )
         return [(a.id, a.filename, a.mimetype) for a in results]
 
     # the following methods are used for adding to the library
 
     def add(self, digest, size, md5_digest, sha256_digest):
         lfc = LibraryFileContent(
-            filesize=size, sha1=digest, md5=md5_digest, sha256=sha256_digest)
+            filesize=size, sha1=digest, md5=md5_digest, sha256=sha256_digest
+        )
         return lfc.id
 
     def addAlias(self, fileid, filename, mimetype, expires=None):
@@ -157,5 +162,9 @@ class Library:
         If a matching alias already exists, it will return that ID instead.
         """
         return LibraryFileAlias(
-            contentID=fileid, filename=filename, mimetype=mimetype,
-            expires=expires, restricted=self.restricted).id
+            contentID=fileid,
+            filename=filename,
+            mimetype=mimetype,
+            expires=expires,
+            restricted=self.restricted,
+        ).id

@@ -17,4 +17,4 @@ def get_token_url_from_email(email_msg):
 
 def get_token_url_from_bytes(buf):
     """Return the logintoken URL contained in the given byte string."""
-    return six.ensure_str(re.findall(br'http.*/token/.*', buf)[0])
+    return six.ensure_str(re.findall(rb"http.*/token/.*", buf)[0])

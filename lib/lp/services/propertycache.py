@@ -9,22 +9,18 @@ See `doc/propertycache.rst` for documentation.
 """
 
 __all__ = [
-    'cachedproperty',
-    'clear_property_cache',
-    'get_property_cache',
-    ]
+    "cachedproperty",
+    "clear_property_cache",
+    "get_property_cache",
+]
 
 from functools import partial
 
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.security.proxy import removeSecurityProxy
 
 
 class IPropertyCache(Interface):
-
     def __getattr__(name):
         """Return the cached value corresponding to `name`.
 
@@ -118,14 +114,15 @@ class CachedProperty:
     def __set__(self, instance, value):
         raise AttributeError(
             "%s cannot be set here; instead set explicitly with "
-            "get_property_cache(object).%s = %r" % (
-                self.name, self.name, value))
+            "get_property_cache(object).%s = %r"
+            % (self.name, self.name, value)
+        )
 
     def __delete__(self, instance):
         raise AttributeError(
             "%s cannot be deleted here; instead delete explicitly "
-            "with del get_property_cache(object).%s" % (
-                self.name, self.name))
+            "with del get_property_cache(object).%s" % (self.name, self.name)
+        )
 
 
 def cachedproperty(name_or_function):

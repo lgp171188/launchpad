@@ -10,10 +10,7 @@ fail if any part of the process of importing the plugin installs a default
 reactor.
 """
 
-from twisted.plugin import (
-    getPlugins,
-    IPlugin,
-    )
+from twisted.plugin import IPlugin, getPlugins
 
 
 def main():

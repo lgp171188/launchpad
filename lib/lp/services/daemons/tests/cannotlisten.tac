@@ -6,16 +6,12 @@ This TAC is used for the TacTestSetupTestCase.test_couldNotListenTac test case
 in test_tachandler.py.  It fails with a CannotListenError.
 """
 
-from twisted.application import (
-    internet,
-    service,
-    )
+from twisted.application import internet, service
 from twisted.internet import protocol
 
 from lp.services.daemons import readyservice
 
-
-application = service.Application('CannotListen')
+application = service.Application("CannotListen")
 serviceCollection = service.IServiceCollection(application)
 
 # Service that announces when the daemon is ready

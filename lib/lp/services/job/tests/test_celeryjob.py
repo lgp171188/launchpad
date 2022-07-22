@@ -16,7 +16,7 @@ from lp.services.job.tests import (
     celery_worker,
     drain_celery_queues,
     monitor_celery,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import ZopelessAppServerLayer
@@ -31,7 +31,8 @@ class TestRunMissingJobs(TestCaseWithFactory):
         from lp.services.job.celeryjob import (
             find_missing_ready,
             run_missing_ready,
-            )
+        )
+
         self.find_missing_ready = find_missing_ready
         self.run_missing_ready = run_missing_ready
 
@@ -46,13 +47,16 @@ class TestRunMissingJobs(TestCaseWithFactory):
         Fails if the queue never reaches the expected size.
         """
         from lp.services.job.celeryjob import FindMissingReady
+
         for x in range(600):
             find_missing = FindMissingReady(job_source)
             if len(find_missing.queue_contents) == expected_len:
                 return find_missing
             sleep(0.1)
-        self.fail('Queue size did not reach %d; still at %d' %
-                  (expected_len, len(find_missing.queue_contents)))
+        self.fail(
+            "Queue size did not reach %d; still at %d"
+            % (expected_len, len(find_missing.queue_contents))
+        )
 
     def assertQueueSize(self, app, queues, expected_len):
         """Assert the message queue (eventually) reaches the specified size.
@@ -61,13 +65,16 @@ class TestRunMissingJobs(TestCaseWithFactory):
         delivery.
         """
         from lazr.jobrunner.celerytask import list_queued
+
         for x in range(600):
             actual_len = len(list_queued(app, queues))
             if actual_len == expected_len:
                 return
             sleep(0.1)
-        self.fail('Queue size did not reach %d; still at %d' %
-                  (expected_len, actual_len))
+        self.fail(
+            "Queue size did not reach %d; still at %d"
+            % (expected_len, actual_len)
+        )
 
     def addTextDetail(self, name, text):
         self.addDetail(name, text_content(text))
@@ -77,7 +84,8 @@ class TestRunMissingJobs(TestCaseWithFactory):
         job = self.createMissingJob()
         flush_database_updates()
         self.addTextDetail(
-            'job_info', 'job.id: %d, job.job_id: %d' % (job.id, job.job_id))
+            "job_info", "job.id: %d, job.job_id: %d" % (job.id, job.job_id)
+        )
         find_missing_ready_obj = self.getFMR(BranchScanJob, 0)
         self.assertEqual([job], find_missing_ready_obj.find_missing_ready())
         job.extractJobState()
@@ -89,13 +97,17 @@ class TestRunMissingJobs(TestCaseWithFactory):
         except Exception:
             # XXX AaronBentley: 2012-08-01 bug=1031018: Extra diagnostic info
             # to help diagnose this hard-to-reproduce failure.
-            self.addTextDetail('queued_job_ids',
-                               '%r' % (find_missing_ready_obj.queued_job_ids))
-            self.addTextDetail('queue_contents',
-                               repr(find_missing_ready_obj.queue_contents))
             self.addTextDetail(
-                'missing_ready_job_id', repr([missing.job_id for missing in
-                missing_ready]))
+                "queued_job_ids",
+                "%r" % (find_missing_ready_obj.queued_job_ids),
+            )
+            self.addTextDetail(
+                "queue_contents", repr(find_missing_ready_obj.queue_contents)
+            )
+            self.addTextDetail(
+                "missing_ready_job_id",
+                repr([missing.job_id for missing in missing_ready]),
+            )
             raise
         drain_celery_queues()
         find_missing_ready_obj = self.getFMR(BranchScanJob, 0)
@@ -105,7 +117,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
         """run_missing_ready does nothing if the class isn't enabled."""
         self.createMissingJob()
         with monitor_celery() as responses:
-            with dbuser('run_missing_ready'):
+            with dbuser("run_missing_ready"):
                 with TransactionFreeOperation.require():
                     self.run_missing_ready.run(_no_init=True)
         self.assertEqual([], responses)
@@ -114,9 +126,10 @@ class TestRunMissingJobs(TestCaseWithFactory):
         """run_missing_ready requests the job to run if not scheduled."""
         self.createMissingJob()
         self.useFixture(
-            FeatureFixture({'jobs.celery.enabled_classes': 'BranchScanJob'}))
+            FeatureFixture({"jobs.celery.enabled_classes": "BranchScanJob"})
+        )
         with monitor_celery() as responses:
-            with dbuser('run_missing_ready'):
+            with dbuser("run_missing_ready"):
                 with TransactionFreeOperation.require():
                     self.run_missing_ready.run(_no_init=True)
         self.assertEqual(1, len(responses))
@@ -125,11 +138,13 @@ class TestRunMissingJobs(TestCaseWithFactory):
         """The celerybeat task run_missing_ready does not create a
         result queue."""
         from lp.services.job.tests.celery_helpers import noop
-        job_queue_name = 'celerybeat'
+
+        job_queue_name = "celerybeat"
         request = self.run_missing_ready.apply_async(
-            kwargs={'_no_init': True}, queue=job_queue_name)
-        self.assertTrue(request.task_id.startswith('RunMissingReady_'))
-        result_queue_name = request.task_id.replace('-', '')
+            kwargs={"_no_init": True}, queue=job_queue_name
+        )
+        self.assertTrue(request.task_id.startswith("RunMissingReady_"))
+        result_queue_name = request.task_id.replace("-", "")
         # Paranoia check: This test intends to prove that a Celery
         # result queue for the task created above will _not_ be created.
         # This would also happen when "with celery_worker()" would do nothing.
@@ -151,21 +166,29 @@ class TestRunMissingJobs(TestCaseWithFactory):
             sys.stdout = fake_stdout = io.StringIO()
             sys.stderr = fake_stderr = io.StringIO()
             clear_queues(
-                ['script_name', '-c', 'lp.services.job.celeryconfig',
-                 result_queue_name])
+                [
+                    "script_name",
+                    "-c",
+                    "lp.services.job.celeryconfig",
+                    result_queue_name,
+                ]
+            )
         finally:
             sys.stdout = real_stdout
             sys.stderr = real_stderr
         fake_stdout = fake_stdout.getvalue()
         fake_stderr = fake_stderr.getvalue()
         self.assertEqual(
-            '', fake_stdout,
+            "",
+            fake_stdout,
             "Unexpected output from clear_queues:\n"
             "stdout: %r\n"
-            "stderr: %r" % (fake_stdout, fake_stderr))
+            "stderr: %r" % (fake_stdout, fake_stderr),
+        )
         self.assertEqual(
             "NOT_FOUND - no queue '%s' in vhost '/'\n" % result_queue_name,
             fake_stderr,
             "Unexpected output from clear_queues:\n"
             "stdout: %r\n"
-            "stderr: %r" % (fake_stdout, fake_stderr))
+            "stderr: %r" % (fake_stdout, fake_stderr),
+        )

@@ -3,21 +3,15 @@
 
 """Test personal access tokens."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import hashlib
 import os
 import signal
+from datetime import datetime, timedelta
 
 import pytz
-from storm.store import Store
-from testtools.matchers import (
-    Is,
-    MatchesStructure,
-    )
 import transaction
+from storm.store import Store
+from testtools.matchers import Is, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -27,17 +21,17 @@ from lp.services.auth.utils import create_access_token_secret
 from lp.services.database.sqlbase import (
     disconnect_stores,
     get_transaction_timestamp,
-    )
+)
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    TestCaseWithFactory,
     api_url,
     login,
     login_person,
     person_logged_in,
     record_two_runs,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
@@ -151,21 +145,28 @@ class TestAccessToken(TestCaseWithFactory):
         _, current_token = self.factory.makeAccessToken(owner=owner)
         _, expired_token = self.factory.makeAccessToken(
             owner=owner,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+        )
         self.assertFalse(current_token.is_expired)
         self.assertTrue(expired_token.is_expired)
 
     def test_revoke(self):
         owner = self.factory.makePerson()
         _, token = self.factory.makeAccessToken(
-            owner=owner, scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS])
+            owner=owner, scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS]
+        )
         login_person(owner)
-        self.assertThat(token, MatchesStructure(
-            date_expires=Is(None), revoked_by=Is(None)))
+        self.assertThat(
+            token, MatchesStructure(date_expires=Is(None), revoked_by=Is(None))
+        )
         token.revoke(token.owner)
         now = get_transaction_timestamp(Store.of(token))
-        self.assertThat(token, MatchesStructure.byEquality(
-            date_expires=now, revoked_by=token.owner))
+        self.assertThat(
+            token,
+            MatchesStructure.byEquality(
+                date_expires=now, revoked_by=token.owner
+            ),
+        )
 
 
 class TestAccessTokenSet(TestCaseWithFactory):
@@ -180,21 +181,33 @@ class TestAccessTokenSet(TestCaseWithFactory):
         target = self.factory.makeGitRepository()
         scopes = [AccessTokenScope.REPOSITORY_BUILD_STATUS]
         _, token = self.factory.makeAccessToken(
-            secret=secret, owner=owner, description=description, target=target,
-            scopes=scopes)
+            secret=secret,
+            owner=owner,
+            description=description,
+            target=target,
+            scopes=scopes,
+        )
         self.assertThat(
-            removeSecurityProxy(token), MatchesStructure.byEquality(
+            removeSecurityProxy(token),
+            MatchesStructure.byEquality(
                 _token_sha256=hashlib.sha256(secret.encode()).hexdigest(),
-                owner=owner, description=description, target=target,
-                scopes=scopes))
+                owner=owner,
+                description=description,
+                target=target,
+                scopes=scopes,
+            ),
+        )
 
     def test_getBySecret(self):
         secret, token = self.factory.makeAccessToken()
         self.assertEqual(
-            token, getUtility(IAccessTokenSet).getBySecret(secret))
+            token, getUtility(IAccessTokenSet).getBySecret(secret)
+        )
         self.assertIsNone(
             getUtility(IAccessTokenSet).getBySecret(
-                create_access_token_secret()))
+                create_access_token_secret()
+            )
+        )
 
     def test_findByOwner(self):
         owners = [self.factory.makePerson() for _ in range(3)]
@@ -202,13 +215,16 @@ class TestAccessTokenSet(TestCaseWithFactory):
             self.factory.makeAccessToken(owner=owners[0])[1],
             self.factory.makeAccessToken(owner=owners[0])[1],
             self.factory.makeAccessToken(owner=owners[1])[1],
-            ]
+        ]
         self.assertContentEqual(
-            tokens[:2], getUtility(IAccessTokenSet).findByOwner(owners[0]))
+            tokens[:2], getUtility(IAccessTokenSet).findByOwner(owners[0])
+        )
         self.assertContentEqual(
-            [tokens[2]], getUtility(IAccessTokenSet).findByOwner(owners[1]))
+            [tokens[2]], getUtility(IAccessTokenSet).findByOwner(owners[1])
+        )
         self.assertContentEqual(
-            [], getUtility(IAccessTokenSet).findByOwner(owners[2]))
+            [], getUtility(IAccessTokenSet).findByOwner(owners[2])
+        )
 
     def test_findByTarget(self):
         targets = [self.factory.makeGitRepository() for _ in range(3)]
@@ -216,51 +232,65 @@ class TestAccessTokenSet(TestCaseWithFactory):
             self.factory.makeAccessToken(target=targets[0])[1],
             self.factory.makeAccessToken(target=targets[0])[1],
             self.factory.makeAccessToken(target=targets[1])[1],
-            ]
+        ]
         self.assertContentEqual(
-            tokens[:2], getUtility(IAccessTokenSet).findByTarget(targets[0]))
+            tokens[:2], getUtility(IAccessTokenSet).findByTarget(targets[0])
+        )
         self.assertContentEqual(
-            [tokens[2]], getUtility(IAccessTokenSet).findByTarget(targets[1]))
+            [tokens[2]], getUtility(IAccessTokenSet).findByTarget(targets[1])
+        )
         self.assertContentEqual(
-            [], getUtility(IAccessTokenSet).findByTarget(targets[2]))
+            [], getUtility(IAccessTokenSet).findByTarget(targets[2])
+        )
 
     def test_findByTarget_visible_by_user(self):
         targets = [self.factory.makeGitRepository() for _ in range(3)]
         owners = [self.factory.makePerson() for _ in range(3)]
         tokens = [
             self.factory.makeAccessToken(
-                owner=owners[owner_index], target=targets[target_index])[1]
+                owner=owners[owner_index], target=targets[target_index]
+            )[1]
             for owner_index, target_index in (
-                (0, 0), (0, 0), (1, 0), (1, 1), (2, 1))]
+                (0, 0),
+                (0, 0),
+                (1, 0),
+                (1, 1),
+                (2, 1),
+            )
+        ]
         for owner_index, target_index, expected_tokens in (
-                (0, 0, tokens[:2]),
-                (0, 1, []),
-                (0, 2, []),
-                (1, 0, [tokens[2]]),
-                (1, 1, [tokens[3]]),
-                (1, 2, []),
-                (2, 0, []),
-                (2, 1, [tokens[4]]),
-                (2, 2, []),
-                ):
+            (0, 0, tokens[:2]),
+            (0, 1, []),
+            (0, 2, []),
+            (1, 0, [tokens[2]]),
+            (1, 1, [tokens[3]]),
+            (1, 2, []),
+            (2, 0, []),
+            (2, 1, [tokens[4]]),
+            (2, 2, []),
+        ):
             self.assertContentEqual(
                 expected_tokens,
                 getUtility(IAccessTokenSet).findByTarget(
-                    targets[target_index],
-                    visible_by_user=owners[owner_index]))
+                    targets[target_index], visible_by_user=owners[owner_index]
+                ),
+            )
 
     def test_findByTarget_excludes_expired(self):
         target = self.factory.makeGitRepository()
         _, current_token = self.factory.makeAccessToken(target=target)
         _, expires_soon_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1))
+            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1),
+        )
         _, expired_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+        )
         self.assertContentEqual(
             [current_token, expires_soon_token],
-            getUtility(IAccessTokenSet).findByTarget(target))
+            getUtility(IAccessTokenSet).findByTarget(target),
+        )
 
     def test_getByTargetAndID(self):
         targets = [self.factory.makeGitRepository() for _ in range(3)]
@@ -268,42 +298,57 @@ class TestAccessTokenSet(TestCaseWithFactory):
             self.factory.makeAccessToken(target=targets[0])[1],
             self.factory.makeAccessToken(target=targets[0])[1],
             self.factory.makeAccessToken(target=targets[1])[1],
-            ]
+        ]
         self.assertEqual(
             tokens[0],
             getUtility(IAccessTokenSet).getByTargetAndID(
-                targets[0], removeSecurityProxy(tokens[0]).id))
+                targets[0], removeSecurityProxy(tokens[0]).id
+            ),
+        )
         self.assertEqual(
             tokens[1],
             getUtility(IAccessTokenSet).getByTargetAndID(
-                targets[0], removeSecurityProxy(tokens[1]).id))
+                targets[0], removeSecurityProxy(tokens[1]).id
+            ),
+        )
         self.assertIsNone(
             getUtility(IAccessTokenSet).getByTargetAndID(
-                targets[0], removeSecurityProxy(tokens[2]).id))
+                targets[0], removeSecurityProxy(tokens[2]).id
+            )
+        )
 
     def test_getByTargetAndID_visible_by_user(self):
         targets = [self.factory.makeGitRepository() for _ in range(3)]
         owners = [self.factory.makePerson() for _ in range(3)]
         tokens = [
             self.factory.makeAccessToken(
-                owner=owners[owner_index], target=targets[target_index])[1]
+                owner=owners[owner_index], target=targets[target_index]
+            )[1]
             for owner_index, target_index in (
-                (0, 0), (0, 0), (1, 0), (1, 1), (2, 1))]
+                (0, 0),
+                (0, 0),
+                (1, 0),
+                (1, 1),
+                (2, 1),
+            )
+        ]
         for owner_index, target_index, expected_tokens in (
-                (0, 0, tokens[:2]),
-                (0, 1, []),
-                (0, 2, []),
-                (1, 0, [tokens[2]]),
-                (1, 1, [tokens[3]]),
-                (1, 2, []),
-                (2, 0, []),
-                (2, 1, [tokens[4]]),
-                (2, 2, []),
-                ):
+            (0, 0, tokens[:2]),
+            (0, 1, []),
+            (0, 2, []),
+            (1, 0, [tokens[2]]),
+            (1, 1, [tokens[3]]),
+            (1, 2, []),
+            (2, 0, []),
+            (2, 1, [tokens[4]]),
+            (2, 2, []),
+        ):
             for token in tokens:
                 fetched_token = getUtility(IAccessTokenSet).getByTargetAndID(
-                    targets[target_index], removeSecurityProxy(token).id,
-                    visible_by_user=owners[owner_index])
+                    targets[target_index],
+                    removeSecurityProxy(token).id,
+                    visible_by_user=owners[owner_index],
+                )
                 if token in expected_tokens:
                     self.assertEqual(token, fetched_token)
                 else:
@@ -314,21 +359,29 @@ class TestAccessTokenSet(TestCaseWithFactory):
         _, current_token = self.factory.makeAccessToken(target=target)
         _, expires_soon_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1))
+            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1),
+        )
         _, expired_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1))
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+        )
         self.assertEqual(
             current_token,
             getUtility(IAccessTokenSet).getByTargetAndID(
-                target, removeSecurityProxy(current_token).id))
+                target, removeSecurityProxy(current_token).id
+            ),
+        )
         self.assertEqual(
             expires_soon_token,
             getUtility(IAccessTokenSet).getByTargetAndID(
-                target, removeSecurityProxy(expires_soon_token).id))
+                target, removeSecurityProxy(expires_soon_token).id
+            ),
+        )
         self.assertIsNone(
             getUtility(IAccessTokenSet).getByTargetAndID(
-                target, removeSecurityProxy(expired_token).id))
+                target, removeSecurityProxy(expired_token).id
+            )
+        )
 
 
 class TestAccessTokenTargetBase:
@@ -341,39 +394,47 @@ class TestAccessTokenTargetBase:
         self.owner = self.target.owner
         self.target_url = api_url(self.target)
         self.webservice = webservice_for_person(
-            self.owner, permission=OAuthPermission.WRITE_PRIVATE)
+            self.owner, permission=OAuthPermission.WRITE_PRIVATE
+        )
 
     def test_getAccessTokens(self):
         with person_logged_in(self.owner):
             for description in ("Test token 1", "Test token 2"):
                 self.factory.makeAccessToken(
-                    owner=self.owner, description=description,
-                    target=self.target)
+                    owner=self.owner,
+                    description=description,
+                    target=self.target,
+                )
         response = self.webservice.named_get(
-            self.target_url, "getAccessTokens", api_version="devel")
+            self.target_url, "getAccessTokens", api_version="devel"
+        )
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ["Test token 1", "Test token 2"],
-            [entry["description"] for entry in response.jsonBody()["entries"]])
+            [entry["description"] for entry in response.jsonBody()["entries"]],
+        )
 
     def test_getAccessTokens_permissions(self):
         webservice = webservice_for_person(None)
         response = webservice.named_get(
-            self.target_url, "getAccessTokens", api_version="devel")
+            self.target_url, "getAccessTokens", api_version="devel"
+        )
         self.assertEqual(401, response.status)
         self.assertIn(b"launchpad.Edit", response.body)
 
     def test_getAccessTokens_query_count(self):
         def get_tokens():
             response = self.webservice.named_get(
-                self.target_url, "getAccessTokens", api_version="devel")
+                self.target_url, "getAccessTokens", api_version="devel"
+            )
             self.assertEqual(200, response.status)
             self.assertIn(len(response.jsonBody()["entries"]), {0, 2, 4})
 
         def create_token():
             with person_logged_in(self.owner):
                 self.factory.makeAccessToken(
-                    owner=self.owner, target=self.target)
+                    owner=self.owner, target=self.target
+                )
 
         get_tokens()
         recorder1, recorder2 = record_two_runs(get_tokens, create_token, 2)
@@ -381,7 +442,7 @@ class TestAccessTokenTargetBase:
 
 
 class TestAccessTokenTargetGitRepository(
-        TestAccessTokenTargetBase, TestCaseWithFactory):
-
+    TestAccessTokenTargetBase, TestCaseWithFactory
+):
     def makeTarget(self):
         return self.factory.makeGitRepository()

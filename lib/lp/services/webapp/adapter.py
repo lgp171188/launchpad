@@ -1,17 +1,19 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from functools import partial
 import logging
 import os
 import re
 import sys
-from textwrap import dedent
 import threading
-from time import time
 import traceback
 import warnings
+from functools import partial
+from textwrap import dedent
+from time import time
 
+import pytz
+import transaction
 from lazr.restful.utils import get_current_browser_request
 from psycopg2.extensions import (
     ISOLATION_LEVEL_AUTOCOMMIT,
@@ -19,74 +21,56 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_REPEATABLE_READ,
     ISOLATION_LEVEL_SERIALIZABLE,
     QueryCanceledError,
-    )
-import pytz
+)
 from storm.database import register_scheme
-from storm.databases.postgres import (
-    Postgres,
-    PostgresTimeoutTracer,
-    )
+from storm.databases.postgres import Postgres, PostgresTimeoutTracer
 from storm.exceptions import TimeoutError
 from storm.store import Store
 from storm.tracer import install_tracer
 from talisker.logs import logging_context
 from timeline.timeline import Timeline
-import transaction
 from zope.component import getUtility
-from zope.interface import (
-    alsoProvides,
-    classImplements,
-    implementer,
-    provider,
-    )
+from zope.interface import alsoProvides, classImplements, implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services import features
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
+from lp.services.config import config, dbconfig
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
+    MAIN_STORE,
+    PRIMARY_FLAVOR,
+    STANDBY_FLAVOR,
     IMasterObject,
     IMasterStore,
     IRequestExpired,
     IStoreSelector,
-    MAIN_STORE,
-    PRIMARY_FLAVOR,
-    STANDBY_FLAVOR,
-    )
+)
 from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.postgresql import ConnectionString
 from lp.services.log.loglevels import DEBUG2
-from lp.services.stacktrace import (
-    extract_stack,
-    extract_tb,
-    print_list,
-    )
+from lp.services.stacktrace import extract_stack, extract_tb, print_list
 from lp.services.timeline.requesttimeline import (
     get_request_timeline,
     set_request_timeline,
-    )
+)
 from lp.services.timeout import set_default_timeout_function
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.interaction import get_interaction_extras
 
-
 __all__ = [
-    'RequestExpired',
-    'set_request_started',
-    'clear_request_started',
-    'get_request_remaining_seconds',
-    'get_request_statements',
-    'get_request_start_time',
-    'get_request_duration',
-    'print_queries',
-    'soft_timeout_expired',
-    'start_sql_logging',
-    'stop_sql_logging',
-    'StoreSelector',
-    ]
+    "RequestExpired",
+    "set_request_started",
+    "clear_request_started",
+    "get_request_remaining_seconds",
+    "get_request_statements",
+    "get_request_start_time",
+    "get_request_duration",
+    "print_queries",
+    "soft_timeout_expired",
+    "start_sql_logging",
+    "stop_sql_logging",
+    "StoreSelector",
+]
 
 
 UTC = pytz.utc
@@ -95,16 +79,18 @@ classImplements(TimeoutError, IRequestExpired)
 
 
 class LaunchpadTimeoutError(TimeoutError):
-    """A variant of TimeoutError that reports the original PostgreSQL error.
-    """
+    """A variant of TimeoutError that reports the original PostgreSQL error."""
 
     def __init__(self, statement, params, original_error):
         super().__init__(statement, params)
         self.original_error = original_error
 
     def __str__(self):
-        return ('Statement: %r\nParameters:%r\nOriginal error: %r'
-                % (self.statement, self.params, self.original_error))
+        return "Statement: %r\nParameters:%r\nOriginal error: %r" % (
+            self.statement,
+            self.params,
+            self.original_error,
+        )
 
 
 @implementer(IRequestExpired)
@@ -115,12 +101,14 @@ class RequestExpired(RuntimeError):
 def _get_dirty_commit_flags():
     """Return the current dirty commit status"""
     from lp.testing.pgsql import ConnectionWrapper
+
     return (ConnectionWrapper.committed, ConnectionWrapper.dirty)
 
 
 def _reset_dirty_commit_flags(previous_committed, previous_dirty):
     """Set the dirty commit status to False unless previous is True"""
     from lp.testing.pgsql import ConnectionWrapper
+
     if not previous_committed:
         ConnectionWrapper.committed = False
     if not previous_dirty:
@@ -131,7 +119,6 @@ _local = threading.local()
 
 
 class CommitLogger:
-
     def __init__(self, txn):
         self.txn = txn
 
@@ -143,7 +130,8 @@ class CommitLogger:
 
     def afterCompletion(self, txn):
         action = get_request_timeline(get_current_browser_request()).start(
-            "SQL-nostore", 'Transaction completed, status: %s' % txn.status)
+            "SQL-nostore", "Transaction completed, status: %s" % txn.status
+        )
         action.finish()
 
 
@@ -167,8 +155,12 @@ class FilteredTimeline(Timeline):
 
 
 def set_request_started(
-    starttime=None, request_statements=None, txn=None, enable_timeout=True,
-    detail_filter=None):
+    starttime=None,
+    request_statements=None,
+    txn=None,
+    enable_timeout=True,
+    detail_filter=None,
+):
     """Set the start time for the request being served by the current
     thread.
 
@@ -186,9 +178,11 @@ def set_request_started(
         that filters action details.  This may be used when some details are
         expected to be very large.
     """
-    if getattr(_local, 'request_start_time', None) is not None:
-        warnings.warn('set_request_started() called before previous request '
-                      'finished', stacklevel=1)
+    if getattr(_local, "request_start_time", None) is not None:
+        warnings.warn(
+            "set_request_started() called before previous request " "finished",
+            stacklevel=1,
+        )
 
     if starttime is None:
         starttime = time()
@@ -196,7 +190,8 @@ def set_request_started(
     request = get_current_browser_request()
     if detail_filter is not None:
         timeline_factory = partial(
-            FilteredTimeline, detail_filter=detail_filter)
+            FilteredTimeline, detail_filter=detail_filter
+        )
     else:
         timeline_factory = Timeline
     if request_statements is not None:
@@ -216,16 +211,17 @@ def clear_request_started():
     """Clear the request timer.  This function should be called when
     the request completes.
     """
-    if getattr(_local, 'request_start_time', None) is None:
-        warnings.warn('clear_request_started() called outside of a request',
-            stacklevel=2)
+    if getattr(_local, "request_start_time", None) is None:
+        warnings.warn(
+            "clear_request_started() called outside of a request", stacklevel=2
+        )
     _local.request_start_time = None
     _local.sql_logging = None
     _local.sql_logging_start = None
     _local.sql_logging_tracebacks_if = None
     request = get_current_browser_request()
     set_request_timeline(request, Timeline())
-    if getattr(_local, 'commit_logger', None) is not None:
+    if getattr(_local, "commit_logger", None) is not None:
         transaction.manager.unregisterSynch(_local.commit_logger)
         del _local.commit_logger
 
@@ -236,13 +232,17 @@ def summarize_requests():
     request = get_current_browser_request()
     timeline = get_request_timeline(request)
     from lp.services.webapp.errorlog import maybe_record_user_requested_oops
+
     maybe_record_user_requested_oops()
     if request.oopsid is None:
         oops_str = ""
     else:
         oops_str = " %s" % request.oopsid
     log = "%s queries/external actions issued in %.2f seconds%s" % (
-        len(timeline.actions), secs, oops_str)
+        len(timeline.actions),
+        secs,
+        oops_str,
+    )
     return log
 
 
@@ -281,12 +281,12 @@ def get_request_statements():
 
 def get_request_start_time():
     """Get the time at which the request started."""
-    return getattr(_local, 'request_start_time', None)
+    return getattr(_local, "request_start_time", None)
 
 
 def get_request_duration(now=None):
     """Get the duration of the current request in seconds."""
-    starttime = getattr(_local, 'request_start_time', None)
+    starttime = getattr(_local, "request_start_time", None)
     if starttime is None:
         return -1
 
@@ -318,23 +318,25 @@ def _get_request_timeout(timeout=None):
     :param timeout: A custom timeout in ms.
     :return None or a time in ms representing the budget to grant the request.
     """
-    if not getattr(_local, 'enable_timeout', True):
+    if not getattr(_local, "enable_timeout", True):
         return None
     if timeout is None:
         timeout = config.database.db_statement_timeout
         interaction_extras = get_interaction_extras()
-        if (interaction_extras is not None
-            and interaction_extras.permit_timeout_from_features):
+        if (
+            interaction_extras is not None
+            and interaction_extras.permit_timeout_from_features
+        ):
             set_permit_timeout_from_features(False)
             try:
-                timeout_str = features.getFeatureFlag('hard_timeout')
+                timeout_str = features.getFeatureFlag("hard_timeout")
             finally:
                 set_permit_timeout_from_features(True)
             if timeout_str:
                 try:
                     timeout = float(timeout_str)
                 except ValueError:
-                    logging.error('invalid hard timeout flag %r', timeout_str)
+                    logging.error("invalid hard timeout flag %r", timeout_str)
     return timeout
 
 
@@ -360,7 +362,7 @@ def get_request_remaining_seconds(no_exception=False, now=None, timeout=None):
     if remaining <= 0:
         if no_exception:
             return remaining
-        raise RequestExpired('request expired.')
+        raise RequestExpired("request expired.")
     return remaining
 
 
@@ -373,7 +375,8 @@ def soft_timeout_expired():
     """Returns True if the soft request timeout been reached."""
     try:
         get_request_remaining_seconds(
-            timeout=config.database.soft_request_timeout)
+            timeout=config.database.soft_request_timeout
+        )
         return False
     except RequestExpired:
         return True
@@ -381,8 +384,8 @@ def soft_timeout_expired():
 
 def start_sql_logging(tracebacks_if=False):
     """Turn the sql data logging on."""
-    if getattr(_local, 'sql_logging', None) is not None:
-        warnings.warn('SQL logging already started')
+    if getattr(_local, "sql_logging", None) is not None:
+        warnings.warn("SQL logging already started")
         return
     _local.sql_logging_tracebacks_if = tracebacks_if
     result = []
@@ -393,12 +396,12 @@ def start_sql_logging(tracebacks_if=False):
 
 def stop_sql_logging():
     """Turn off the sql data logging and return the result."""
-    result = getattr(_local, 'sql_logging', None)
+    result = getattr(_local, "sql_logging", None)
     _local.sql_logging_tracebacks_if = None
     _local.sql_logging = None
     _local.sql_logging_start = None
     if result is None:
-        warnings.warn('SQL logging not started')
+        warnings.warn("SQL logging not started")
     return result
 
 
@@ -407,40 +410,41 @@ def print_queries(queries, file=None):
         file = sys.stdout
     for query in queries:
         # Note: this could use the sql tb if it exists.
-        stack = query['stack']
+        stack = query["stack"]
         if stack is not None:
-            exception = query['exception']
+            exception = query["exception"]
             if exception is not None:
                 file.write(
-                    'Error when determining whether to generate a '
-                    'stacktrace.\n')
-                file.write('Traceback (most recent call last):\n')
+                    "Error when determining whether to generate a "
+                    "stacktrace.\n"
+                )
+                file.write("Traceback (most recent call last):\n")
             print_list(stack, file)
             if exception is not None:
                 lines = traceback.format_exception_only(*exception)
-                file.write(' '.join(lines))
+                file.write(" ".join(lines))
             file.write("." * 70 + "\n")
-        sql = query['sql']
+        sql = query["sql"]
         if sql is not None:
-            file.write('%d-%d@%s %s\n' % sql[:4])
+            file.write("%d-%d@%s %s\n" % sql[:4])
         else:
-            file.write('(no SQL recorded)\n')
+            file.write("(no SQL recorded)\n")
         file.write("-" * 70 + "\n")
 
 
 # ---- Storm database classes
 
 isolation_level_map = {
-    'autocommit': ISOLATION_LEVEL_AUTOCOMMIT,
-    'read_committed': ISOLATION_LEVEL_READ_COMMITTED,
-    'repeatable_read': ISOLATION_LEVEL_REPEATABLE_READ,
-    'serializable': ISOLATION_LEVEL_SERIALIZABLE,
-    }
+    "autocommit": ISOLATION_LEVEL_AUTOCOMMIT,
+    "read_committed": ISOLATION_LEVEL_READ_COMMITTED,
+    "repeatable_read": ISOLATION_LEVEL_REPEATABLE_READ,
+    "serializable": ISOLATION_LEVEL_SERIALIZABLE,
+}
 
 
 class LaunchpadDatabase(Postgres):
 
-    _dsn_user_re = re.compile('user=[^ ]*')
+    _dsn_user_re = re.compile("user=[^ ]*")
 
     def __init__(self, uri):
         super().__init__(uri)
@@ -450,32 +454,35 @@ class LaunchpadDatabase(Postgres):
     @property
     def dsn_without_user(self):
         """This database's dsn without the 'user=...' bit."""
-        assert self._dsn is not None, (
-            'Must not be called before self._dsn has been set.')
-        return self._dsn_user_re.sub('', self._dsn)
+        assert (
+            self._dsn is not None
+        ), "Must not be called before self._dsn has been set."
+        return self._dsn_user_re.sub("", self._dsn)
 
     def raw_connect(self):
         try:
-            realm, flavor = self._uri.database.split('-')
+            realm, flavor = self._uri.database.split("-")
         except ValueError:
             raise AssertionError(
-                'Connection uri %s does not match realm-flavor format'
-                % repr(self._uri.database))
+                "Connection uri %s does not match realm-flavor format"
+                % repr(self._uri.database)
+            )
 
-        assert realm == 'main', 'Unknown realm %s' % realm
-        assert flavor in ('primary', 'standby'), 'Unknown flavor %s' % flavor
+        assert realm == "main", "Unknown realm %s" % realm
+        assert flavor in ("primary", "standby"), "Unknown flavor %s" % flavor
 
         # We set self._dsn here rather than in __init__ so when the Store
         # is reconnected it pays attention to any config changes.
-        config_entry = '%s_%s' % (realm, flavor)
+        config_entry = "%s_%s" % (realm, flavor)
         connection_string = getattr(dbconfig, config_entry)
-        assert 'user=' not in connection_string, (
-                "Database username should not be specified in "
-                "connection string (%s)." % connection_string)
+        assert "user=" not in connection_string, (
+            "Database username should not be specified in "
+            "connection string (%s)." % connection_string
+        )
 
         # Try to lookup dbuser using the $realm_dbuser key. If this fails,
         # fallback to the dbuser key.
-        dbuser = getattr(dbconfig, '%s_dbuser' % realm, dbconfig.dbuser)
+        dbuser = getattr(dbconfig, "%s_dbuser" % realm, dbconfig.dbuser)
 
         self._dsn = "%s user=%s" % (connection_string, dbuser)
 
@@ -494,26 +501,32 @@ class LaunchpadDatabase(Postgres):
         # of database users we need to maintain ACLs for on production.
         if flavor == STANDBY_FLAVOR:
             raw_connection.cursor().execute(
-                'SET DEFAULT_TRANSACTION_READ_ONLY TO TRUE')
+                "SET DEFAULT_TRANSACTION_READ_ONLY TO TRUE"
+            )
             # Make the altered session setting stick.
             raw_connection.commit()
-        elif not config_entry.endswith(('_master', '_primary')):
+        elif not config_entry.endswith(("_master", "_primary")):
             raise AssertionError(
-                'DB connection URL %s does not meet naming convention.')
+                "DB connection URL %s does not meet naming convention."
+            )
 
         _reset_dirty_commit_flags(*flags)
 
         logging.log(
             DEBUG2,
             "Connected to %s backend %d, as user %s, at isolation level %s.",
-            flavor, raw_connection.get_backend_pid(), dbuser, self._isolation)
+            flavor,
+            raw_connection.get_backend_pid(),
+            dbuser,
+            self._isolation,
+        )
         return raw_connection
 
 
 class LaunchpadSessionDatabase(Postgres):
 
     # A unique name for this database connection.
-    name = 'session'
+    name = "session"
 
     def raw_connect(self):
         if config.launchpad_session.database is not None:
@@ -524,23 +537,24 @@ class LaunchpadSessionDatabase(Postgres):
             # This is fallback code for old config files. It can be
             # removed when all live configs have been updated to use the
             # 'database' setting instead of 'dbname' + 'dbhost' settings.
-            self._dsn = 'dbname=%s user=%s' % (
+            self._dsn = "dbname=%s user=%s" % (
                 config.launchpad_session.dbname,
-                config.launchpad_session.dbuser)
+                config.launchpad_session.dbuser,
+            )
             if config.launchpad_session.dbhost:
-                self._dsn += ' host=%s' % config.launchpad_session.dbhost
+                self._dsn += " host=%s" % config.launchpad_session.dbhost
 
         flags = _get_dirty_commit_flags()
         raw_connection = super().raw_connect()
-        if hasattr(raw_connection, 'auto_close'):
+        if hasattr(raw_connection, "auto_close"):
             raw_connection.auto_close = False
         raw_connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         _reset_dirty_commit_flags(*flags)
         return raw_connection
 
 
-register_scheme('launchpad', LaunchpadDatabase)
-register_scheme('launchpad-session', LaunchpadSessionDatabase)
+register_scheme("launchpad", LaunchpadDatabase)
+register_scheme("launchpad-session", LaunchpadSessionDatabase)
 
 
 class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
@@ -555,8 +569,9 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
     def granularity(self):
         return config.database.db_statement_timeout_precision / 1000.0
 
-    def connection_raw_execute(self, connection, raw_cursor,
-                               statement, params):
+    def connection_raw_execute(
+        self, connection, raw_cursor, statement, params
+    ):
         """See `TimeoutTracer`"""
         # Only perform timeout handling on LaunchpadDatabase
         # connections.
@@ -567,13 +582,14 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
             if self.get_remaining_time() is None:
                 return
             super().connection_raw_execute(
-                connection, raw_cursor, statement, params)
+                connection, raw_cursor, statement, params
+            )
         except (RequestExpired, TimeoutError):
             # XXX bug=636801 Robert Colins 20100914 This is duplicated
             # from the statement tracer, because the tracers are not
             # arranged in a stack rather a queue: the done-code in the
             # statement tracer never runs.
-            action = getattr(connection, '_lp_statement_action', None)
+            action = getattr(connection, "_lp_statement_action", None)
             if action is not None:
                 # action may be None if the tracer was installed after
                 # the statement was submitted.
@@ -587,8 +603,9 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
                 # Avoid traceback reference cycles.
                 del info
 
-    def connection_raw_execute_error(self, connection, raw_cursor,
-                                     statement, params, error):
+    def connection_raw_execute_error(
+        self, connection, raw_cursor, statement, params, error
+    ):
         """See `TimeoutTracer`"""
         # Only perform timeout handling on LaunchpadDatabase
         # connections.
@@ -605,105 +622,116 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
 class LaunchpadStatementTracer:
     """Storm tracer class to log executed statements."""
 
-    _normalize_whitespace = partial(re.compile(r'\s+').sub, ' ')
+    _normalize_whitespace = partial(re.compile(r"\s+").sub, " ")
 
     def __init__(self):
-        self._debug_sql = bool(os.environ.get('LP_DEBUG_SQL'))
-        self._debug_sql_extra = bool(os.environ.get('LP_DEBUG_SQL_EXTRA'))
+        self._debug_sql = bool(os.environ.get("LP_DEBUG_SQL"))
+        self._debug_sql_extra = bool(os.environ.get("LP_DEBUG_SQL_EXTRA"))
 
-    def connection_raw_execute(self, connection, raw_cursor,
-                               statement, params):
+    def connection_raw_execute(
+        self, connection, raw_cursor, statement, params
+    ):
         statement_to_log = statement
         if params:
             statement_to_log = raw_cursor.mogrify(
-                statement, tuple(connection.to_database(params)))
+                statement, tuple(connection.to_database(params))
+            )
         if isinstance(statement_to_log, bytes):
             statement_to_log = statement_to_log.decode(
-                'UTF-8', errors='replace')
+                "UTF-8", errors="replace"
+            )
         # Record traceback to log, if requested.
         print_traceback = self._debug_sql_extra
-        log_sql = getattr(_local, 'sql_logging', None)
+        log_sql = getattr(_local, "sql_logging", None)
         log_traceback = False
         if log_sql is not None:
             log_sql.append(dict(stack=None, sql=None, exception=None))
-            conditional = getattr(_local, 'sql_logging_tracebacks_if', None)
+            conditional = getattr(_local, "sql_logging_tracebacks_if", None)
             if callable(conditional):
                 try:
                     log_traceback = conditional(
                         self._normalize_whitespace(
-                            statement_to_log.strip()).upper())
+                            statement_to_log.strip()
+                        ).upper()
+                    )
                 except MemoryError:
                     raise
                 except (GeneratorExit, Exception):
                     exc_type, exc_value, tb = sys.exc_info()
-                    log_sql[-1]['exception'] = (exc_type, exc_value)
-                    log_sql[-1]['stack'] = extract_tb(tb)
+                    log_sql[-1]["exception"] = (exc_type, exc_value)
+                    log_sql[-1]["stack"] = extract_tb(tb)
             else:
                 log_traceback = bool(conditional)
         if print_traceback or log_traceback:
             stack = extract_stack()
             if log_traceback:
-                log_sql[-1]['stack'] = stack
+                log_sql[-1]["stack"] = stack
             if print_traceback:
                 print_list(stack)
                 sys.stderr.write("." * 70 + "\n")
-        request_starttime = getattr(_local, 'request_start_time', None)
+        request_starttime = getattr(_local, "request_start_time", None)
         if request_starttime is None:
             if print_traceback or self._debug_sql or log_sql is not None:
                 # Stash some information for logging at the end of the
                 # SQL execution.
                 connection._lp_statement_info = (
                     int(time() * 1000),
-                    'SQL-%s' % connection._database.name,
-                    statement_to_log)
+                    "SQL-%s" % connection._database.name,
+                    statement_to_log,
+                )
                 connection._lp_statement_action = None
             return
         action = get_request_timeline(get_current_browser_request()).start(
-            'SQL-%s' % connection._database.name, statement_to_log)
+            "SQL-%s" % connection._database.name, statement_to_log
+        )
         connection._lp_statement_action = action
 
-    def connection_raw_execute_success(self, connection, raw_cursor,
-                                       statement, params):
-        action = getattr(connection, '_lp_statement_action', None)
+    def connection_raw_execute_success(
+        self, connection, raw_cursor, statement, params
+    ):
+        action = getattr(connection, "_lp_statement_action", None)
         if action is not None:
             # action may be None if the tracer was installed after the
             # statement was submitted or if the timeline tracer is not
             # installed.
             action.finish()
             connection._lp_statement_action = None
-        log_sql = getattr(_local, 'sql_logging', None)
+        log_sql = getattr(_local, "sql_logging", None)
         if log_sql is not None or self._debug_sql or self._debug_sql_extra:
             data = None
             if action is not None:
                 data = action.logTuple()
             else:
-                info = getattr(connection, '_lp_statement_info', None)
+                info = getattr(connection, "_lp_statement_info", None)
                 if info is not None:
                     stop = int(time() * 1000)
                     start, dbname, statement = info
                     logging_start = (
-                        getattr(_local, 'sql_logging_start', None) or start)
+                        getattr(_local, "sql_logging_start", None) or start
+                    )
                     # Times are in milliseconds, to mirror actions.
                     start = start - logging_start
                     stop = stop - logging_start
                     data = (start, stop, dbname, statement, None)
                     connection._lp_statement_info = None
             if data is not None:
-                if log_sql and log_sql[-1]['sql'] is None:
-                    log_sql[-1]['sql'] = data
+                if log_sql and log_sql[-1]["sql"] is None:
+                    log_sql[-1]["sql"] = data
                 if self._debug_sql or self._debug_sql_extra:
                     # Don't print the backtrace from the data to stderr - too
                     # messy given that LP_DEBUG_SQL_EXTRA logs that
                     # separately anyhow.
-                    sys.stderr.write('%d-%d@%s %s\n' % data[:4])
+                    sys.stderr.write("%d-%d@%s %s\n" % data[:4])
                     sys.stderr.write("-" * 70 + "\n")
 
-    def connection_raw_execute_error(self, connection, raw_cursor,
-                                     statement, params, error):
+    def connection_raw_execute_error(
+        self, connection, raw_cursor, statement, params, error
+    ):
         # Since we are just logging durations, we execute the same
         # hook code for errors as successes.
         self.connection_raw_execute_success(
-            connection, raw_cursor, statement, params)
+            connection, raw_cursor, statement, params
+        )
 
 
 # The LaunchpadTimeoutTracer needs to be installed last, as it raises
@@ -720,7 +748,7 @@ class StoreSelector:
     @staticmethod
     def push(db_policy):
         """See `IStoreSelector`."""
-        if not hasattr(_local, 'db_policies'):
+        if not hasattr(_local, "db_policies"):
             _local.db_policies = []
         db_policy.install()
         _local.db_policies.append(db_policy)
@@ -754,9 +782,10 @@ class StoreSelector:
 # way for us to declare that a class, and all its subclasses, provides
 # a given interface. This means we need to use an global adapter.
 
+
 def get_store(storm_class, flavor=DEFAULT_FLAVOR):
     """Return a flavored Store for the given database class."""
-    table = getattr(removeSecurityProxy(storm_class), '__storm_table__', None)
+    table = getattr(removeSecurityProxy(storm_class), "__storm_table__", None)
     if table is not None:
         return getUtility(IStoreSelector).get(MAIN_STORE, flavor)
     else:
@@ -796,7 +825,8 @@ class WhichDbView(LaunchpadView):
     def render(self):
         store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         dbname = store.execute("SELECT current_database()").get_one()[0]
-        return dedent("""
+        return dedent(
+            """
                 <html>
                 <body>
                 <span id="dbname">
@@ -807,4 +837,6 @@ class WhichDbView(LaunchpadView):
                 </form>
                 </body>
                 </html>
-                """ % dbname).strip()
+                """
+            % dbname
+        ).strip()

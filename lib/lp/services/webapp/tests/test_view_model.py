@@ -9,23 +9,24 @@ from simplejson import loads
 from testtools.matchers import KeysEqual
 from zope.configuration import xmlconfig
 
+import lp.services.webapp.tests
 from lp.app.browser.launchpadform import LaunchpadFormView
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.namespace import JsonModelNamespaceView
 from lp.services.webapp.publisher import canonical_url
-import lp.services.webapp.tests
 from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
+    TestCaseWithFactory,
     login,
     logout,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class FakeView:
     """A view object that just has a fake context and request."""
+
     def __init__(self):
         self.context = object()
         self.request = object()
@@ -33,6 +34,7 @@ class FakeView:
 
 class TestJsonModelNamespace(TestCaseWithFactory):
     """Test that traversal to ++model++ returns a namespace."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -88,7 +90,7 @@ class TestJsonModelView(BrowserTestCase):
         TestCaseWithFactory.setUp(self)
         login(ANONYMOUS)
         self.product = self.factory.makeProduct(name="test-product")
-        self.url = canonical_url(self.product) + '/+modeltest/++model++'
+        self.url = canonical_url(self.product) + "/+modeltest/++model++"
 
     def tearDown(self):
         logout()
@@ -97,7 +99,8 @@ class TestJsonModelView(BrowserTestCase):
     def configZCML(self):
         # Register the ZCML for our test view.  Note the view class must be
         # registered first.
-        xmlconfig.string("""
+        xmlconfig.string(
+            """
           <configure
               xmlns:browser="http://namespaces.zope.org/browser">
               <include package="zope.browserpage" file="meta.zcml" />
@@ -108,19 +111,20 @@ class TestJsonModelView(BrowserTestCase):
                 class="lp.services.webapp.tests.ProductModelTestView"
                 permission="zope.Public"
                 />
-          </configure>""")
+          </configure>"""
+        )
 
     def test_JsonModel_default_cache(self):
         # If nothing is added to the class by the view, the cache will only
         # have the context.
         class ProductModelTestView(BaseProductModelTestView):
             pass
-        lp.services.webapp.tests.ProductModelTestView = \
-            ProductModelTestView
+
+        lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
         cache = loads(browser.contents)
-        self.assertThat(cache, KeysEqual('related_features', 'context'))
+        self.assertThat(cache, KeysEqual("related_features", "context"))
 
     def test_JsonModel_custom_cache(self):
         # Adding an item to the cache in the initialize method results in it
@@ -129,16 +133,17 @@ class TestJsonModelView(BrowserTestCase):
             def initialize(self):
                 request = get_current_browser_request()
                 target_info = {}
-                target_info['title'] = "The Title"
+                target_info["title"] = "The Title"
                 cache = IJSONRequestCache(request).objects
-                cache['target_info'] = target_info
-        lp.services.webapp.tests.ProductModelTestView = \
-            ProductModelTestView
+                cache["target_info"] = target_info
+
+        lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
         cache = loads(browser.contents)
         self.assertThat(
-            cache, KeysEqual('related_features', 'context', 'target_info'))
+            cache, KeysEqual("related_features", "context", "target_info")
+        )
 
     def test_JsonModel_custom_cache_wrong_method(self):
         # Adding an item to the cache in some other method is not recognized,
@@ -147,20 +152,20 @@ class TestJsonModelView(BrowserTestCase):
             def initialize(self):
                 request = get_current_browser_request()
                 target_info = {}
-                target_info['title'] = "The Title"
+                target_info["title"] = "The Title"
                 cache = IJSONRequestCache(request).objects
-                cache['target_info'] = target_info
+                cache["target_info"] = target_info
 
             def render(self):
                 request = get_current_browser_request()
                 other_info = {}
-                other_info['spaz'] = "Stuff"
-                IJSONRequestCache(request).objects['other_info'] = other_info
+                other_info["spaz"] = "Stuff"
+                IJSONRequestCache(request).objects["other_info"] = other_info
 
-        lp.services.webapp.tests.ProductModelTestView = \
-            ProductModelTestView
+        lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
         cache = loads(browser.contents)
         self.assertThat(
-            cache, KeysEqual('related_features', 'context', 'target_info'))
+            cache, KeysEqual("related_features", "context", "target_info")
+        )

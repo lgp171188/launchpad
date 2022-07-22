@@ -4,21 +4,15 @@
 """Interfaces for signing keys stored at the signing service."""
 
 __all__ = [
-    'IArchiveSigningKey',
-    'IArchiveSigningKeySet',
-    'ISigningKey',
-    'ISigningKeySet',
+    "IArchiveSigningKey",
+    "IArchiveSigningKeySet",
+    "ISigningKey",
+    "ISigningKeySet",
 ]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bytes,
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    )
+from zope.schema import Bytes, Choice, Datetime, Int, Text
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
@@ -29,21 +23,26 @@ from lp.soyuz.interfaces.archive import IArchive
 class ISigningKey(Interface):
     """A key registered to sign uploaded files"""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     key_type = Choice(
         title=_("The signing key type (UEFI, KMOD, etc)."),
-        required=True, readonly=True, vocabulary=SigningKeyType)
+        required=True,
+        readonly=True,
+        vocabulary=SigningKeyType,
+    )
 
     fingerprint = Text(
-        title=_("Fingerprint of the key"), required=True, readonly=True)
+        title=_("Fingerprint of the key"), required=True, readonly=True
+    )
 
     public_key = Bytes(
-        title=_("Public key binary content"), required=False,
-        readonly=True)
+        title=_("Public key binary content"), required=False, readonly=True
+    )
 
     date_created = Datetime(
-        title=_('When this key was created'), required=True, readonly=True)
+        title=_("When this key was created"), required=True, readonly=True
+    )
 
     def sign(message, message_name, mode=None):
         """Sign the given message using this key
@@ -63,8 +62,7 @@ class ISigningKey(Interface):
 
 
 class ISigningKeySet(Interface):
-    """Interface to deal with the collection of signing keys
-    """
+    """Interface to deal with the collection of signing keys"""
 
     def get(key_type, fingerprint):
         """Get a signing key by key type and fingerprint.
@@ -74,8 +72,9 @@ class ISigningKeySet(Interface):
         :return: A `SigningKey`, or None.
         """
 
-    def generate(key_type, description,
-                 openpgp_key_algorithm=None, length=None):
+    def generate(
+        key_type, description, openpgp_key_algorithm=None, length=None
+    ):
         """Generates a new signing key on lp-signing and stores it in LP's
         database.
 
@@ -106,31 +105,45 @@ class ISigningKeySet(Interface):
 class IArchiveSigningKey(Interface):
     """Which signing key should be used by a specific archive"""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     archive = Reference(
-        IArchive, title=_("Archive"), required=True, readonly=True,
-        description=_("The archive that owns this key."))
+        IArchive,
+        title=_("Archive"),
+        required=True,
+        readonly=True,
+        description=_("The archive that owns this key."),
+    )
 
     earliest_distro_series = Reference(
-        IDistroSeries, title=_("Distro series"), required=False, readonly=True,
-        description=_("The minimum series that uses this key, if any."))
+        IDistroSeries,
+        title=_("Distro series"),
+        required=False,
+        readonly=True,
+        description=_("The minimum series that uses this key, if any."),
+    )
 
     key_type = Choice(
         title=_("The signing key type (UEFI, KMOD, etc)."),
-        required=True, readonly=True, vocabulary=SigningKeyType)
+        required=True,
+        readonly=True,
+        vocabulary=SigningKeyType,
+    )
 
     signing_key = Reference(
-        ISigningKey, title=_("Signing key"), required=True, readonly=True,
-        description=_("Which signing key should be used by this archive"))
+        ISigningKey,
+        title=_("Signing key"),
+        required=True,
+        readonly=True,
+        description=_("Which signing key should be used by this archive"),
+    )
 
     def destroySelf():
         """Removes the ArchiveSigningKey from the database."""
 
 
 class IArchiveSigningKeySet(Interface):
-    """Management class to deal with ArchiveSigningKey objects
-    """
+    """Management class to deal with ArchiveSigningKey objects"""
 
     def create(archive, earliest_distro_series, signing_key):
         """Creates a new ArchiveSigningKey for archive/distro_series.
@@ -170,8 +183,15 @@ class IArchiveSigningKeySet(Interface):
         :returns: The generated ArchiveSigningKey
         """
 
-    def inject(key_type, private_key, public_key, description, created_at,
-               archive, earliest_distro_series=None):
+    def inject(
+        key_type,
+        private_key,
+        public_key,
+        description,
+        created_at,
+        archive,
+        earliest_distro_series=None,
+    ):
         """Injects an existing key on signing service, and saves it to db.
 
         :param key_type: One of the SigningKeyType enum's value

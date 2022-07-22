@@ -4,23 +4,16 @@
 """A container for data encrypted at rest using configured keys."""
 
 __all__ = [
-    'NaClEncryptedContainerBase',
-    ]
+    "NaClEncryptedContainerBase",
+]
 
 import base64
 
 from nacl.exceptions import CryptoError as NaClCryptoError
-from nacl.public import (
-    PrivateKey,
-    PublicKey,
-    SealedBox,
-    )
+from nacl.public import PrivateKey, PublicKey, SealedBox
 from zope.interface import implementer
 
-from lp.services.crypto.interfaces import (
-    CryptoError,
-    IEncryptedContainer,
-    )
+from lp.services.crypto.interfaces import CryptoError, IEncryptedContainer
 
 
 @implementer(IEncryptedContainer)
@@ -66,7 +59,8 @@ class NaClEncryptedContainerBase:
             raise CryptoError(str(e)) from e
         return (
             base64.b64encode(self.public_key_bytes).decode("UTF-8"),
-            base64.b64encode(data_encrypted).decode("UTF-8"))
+            base64.b64encode(data_encrypted).decode("UTF-8"),
+        )
 
     @property
     def private_key_bytes(self):
@@ -104,8 +98,9 @@ class NaClEncryptedContainerBase:
             raise CryptoError(str(e)) from e
         if public_key_bytes != self.public_key_bytes:
             raise ValueError(
-                "Public key %r does not match configured public key %r" %
-                (public_key_bytes, self.public_key_bytes))
+                "Public key %r does not match configured public key %r"
+                % (public_key_bytes, self.public_key_bytes)
+            )
         if self.private_key is None:
             raise ValueError("No private key configured")
         try:

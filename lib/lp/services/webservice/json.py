@@ -4,8 +4,8 @@
 """Additional JSON serializer for the web service."""
 
 __all__ = [
-    'StrJSONSerializer',
-    ]
+    "StrJSONSerializer",
+]
 
 
 from lazr.restful.interfaces import IJSONPublishable
@@ -14,7 +14,7 @@ from zope.interface import implementer
 
 @implementer(IJSONPublishable)
 class StrJSONSerializer:
-    """Simple JSON serializer that simply str() it's context. """
+    """Simple JSON serializer that simply str() it's context."""
 
     def __init__(self, context):
         self.context = context

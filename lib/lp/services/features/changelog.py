@@ -4,15 +4,15 @@
 """Classes that manage FeatureFlagChangelogEntry items."""
 
 __all__ = [
-    'ChangeLog',
-    ]
+    "ChangeLog",
+]
 
 from storm.locals import Desc
 
 from lp.services.features.model import (
     FeatureFlagChangelogEntry,
     getFeatureStore,
-    )
+)
 
 
 class ChangeLog:
@@ -30,7 +30,6 @@ class ChangeLog:
     def append(diff, comment, person):
         """Append a FeatureFlagChangelogEntry to the ChangeLog."""
         store = getFeatureStore()
-        feature_flag_change = FeatureFlagChangelogEntry(
-            diff, comment, person)
+        feature_flag_change = FeatureFlagChangelogEntry(diff, comment, person)
         store.add(feature_flag_change)
         return feature_flag_change

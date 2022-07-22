@@ -4,12 +4,12 @@
 """Browser file for LibraryFileAlias."""
 
 __all__ = [
-    'DeletedProxiedLibraryFileAlias',
-    'FileNavigationMixin',
-    'LibraryFileAliasMD5View',
-    'LibraryFileAliasView',
-    'ProxiedLibraryFileAlias',
-    ]
+    "DeletedProxiedLibraryFileAlias",
+    "FileNavigationMixin",
+    "LibraryFileAliasMD5View",
+    "LibraryFileAliasView",
+    "ProxiedLibraryFileAlias",
+]
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebBrowserOriginatingRequest
@@ -23,11 +23,11 @@ from lp.services.librarian.client import url_path_quote
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.publisher import (
-    canonical_url,
     LaunchpadView,
     RedirectionView,
+    canonical_url,
     stepthrough,
-    )
+)
 from lp.services.webapp.url import urlappend
 
 
@@ -55,8 +55,8 @@ class LibraryFileAliasMD5View(LaunchpadView):
 
     def render(self):
         """Return the plain text MD5 signature"""
-        self.request.response.setHeader('Content-type', 'text/plain')
-        return '%s %s' % (self.context.content.md5, self.context.filename)
+        self.request.response.setHeader("Content-type", "text/plain")
+        return "%s %s" % (self.context.content.md5, self.context.filename)
 
 
 class DeletedProxiedLibraryFileAlias(NotFound):
@@ -78,10 +78,10 @@ class FileNavigationMixin:
     with the same filename (product files or bug attachments).
     """
 
-    @stepthrough('+files')
+    @stepthrough("+files")
     def traverse_files(self, filename):
         """Traverse on filename in the archive domain."""
-        if not check_permission('launchpad.View', self.context):
+        if not check_permission("launchpad.View", self.context):
             raise Unauthorized()
         library_file = self.context.getFileByName(filename)
 
@@ -94,8 +94,8 @@ class FileNavigationMixin:
             return None
 
         return RedirectionView(
-            library_file.getURL(include_token=True),
-            self.request)
+            library_file.getURL(include_token=True), self.request
+        )
 
 
 @delegate_to(ILibraryFileAlias)
@@ -143,8 +143,9 @@ class ProxiedLibraryFileAlias:
             return None
 
         parent_url = canonical_url(self.parent, request=self.request)
-        traversal_url = urlappend(parent_url, '+files')
+        traversal_url = urlappend(parent_url, "+files")
         url = urlappend(
             traversal_url,
-            url_path_quote(self.context.filename.encode('utf-8')))
+            url_path_quote(self.context.filename.encode("utf-8")),
+        )
         return url

@@ -8,7 +8,7 @@ from testtools.matchers import (
     Is,
     MatchesListwise,
     Not,
-    )
+)
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import ProxyFactory
 
@@ -19,11 +19,11 @@ from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.messages.tests.scenarios import MessageTypeScenariosMixin
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     api_url,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import webservice_for_person
 
@@ -40,7 +40,7 @@ class TestMessageRevision(TestCaseWithFactory):
     def makeMessageRevision(self):
         msg = self.makeMessage()
         with person_logged_in(msg.owner):
-            msg.editContent('something edited #%s' % len(msg.revisions))
+            msg.editContent("something edited #%s" % len(msg.revisions))
         return msg.revisions[-1]
 
     def test_non_owner_cannot_delete_message_revision_content(self):
@@ -58,7 +58,8 @@ class TestMessageRevision(TestCaseWithFactory):
         self.assertEqual("", rev.content)
         self.assertEqual(0, len(rev.chunks))
         self.assertEqual(
-            get_transaction_timestamp(IStore(rev)), rev.date_deleted)
+            get_transaction_timestamp(IStore(rev)), rev.date_deleted
+        )
 
 
 class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
@@ -68,8 +69,10 @@ class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
 
     def getWebservice(self, person):
         return webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            person,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
 
     def getMessageAPIURL(self, msg):
         with admin_logged_in():
@@ -89,27 +92,48 @@ class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         url = self.getMessageAPIURL(msg)
         ws_message = ws.get(url).jsonBody()
 
-        revisions = ws.get(ws_message['revisions_collection_link']).jsonBody()
-        self.assertThat(revisions, ContainsDict({
-            "start": Equals(0),
-            "total_size": Equals(2)}))
-        self.assertThat(revisions["entries"], MatchesListwise([
-            ContainsDict({
-                "content": Equals("initial content"),
-                "date_created": Equals(dates_created[0].isoformat()),
-                "date_created_display": Equals(
-                    DateTimeFormatterAPI(dates_created[0]).datetime()),
-                "date_deleted": Is(None),
-                "self_link": EndsWith("/revisions/1")
-                }),
-            ContainsDict({
-                "content": Equals("new content 1"),
-                "date_created": Equals(dates_created[1].isoformat()),
-                "date_created_display": Equals(
-                    DateTimeFormatterAPI(dates_created[1]).datetime()),
-                "date_deleted": Is(None),
-                "self_link": EndsWith("/revisions/2")
-                })]))
+        revisions = ws.get(ws_message["revisions_collection_link"]).jsonBody()
+        self.assertThat(
+            revisions,
+            ContainsDict({"start": Equals(0), "total_size": Equals(2)}),
+        )
+        self.assertThat(
+            revisions["entries"],
+            MatchesListwise(
+                [
+                    ContainsDict(
+                        {
+                            "content": Equals("initial content"),
+                            "date_created": Equals(
+                                dates_created[0].isoformat()
+                            ),
+                            "date_created_display": Equals(
+                                DateTimeFormatterAPI(
+                                    dates_created[0]
+                                ).datetime()
+                            ),
+                            "date_deleted": Is(None),
+                            "self_link": EndsWith("/revisions/1"),
+                        }
+                    ),
+                    ContainsDict(
+                        {
+                            "content": Equals("new content 1"),
+                            "date_created": Equals(
+                                dates_created[1].isoformat()
+                            ),
+                            "date_created_display": Equals(
+                                DateTimeFormatterAPI(
+                                    dates_created[1]
+                                ).datetime()
+                            ),
+                            "date_deleted": Is(None),
+                            "self_link": EndsWith("/revisions/2"),
+                        }
+                    ),
+                ]
+            ),
+        )
 
     def test_get_single_revision(self):
         msg = self.makeMessage(content="initial content")
@@ -120,14 +144,20 @@ class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         with person_logged_in(self.person):
             revision_url = api_url(msg.revisions[0])
         revision = ws.get(revision_url).jsonBody()
-        self.assertThat(revision, ContainsDict({
-            "content": Equals("initial content"),
-            "date_created": Equals(date_created.isoformat()),
-            "date_created_display": Equals(
-                DateTimeFormatterAPI(date_created).datetime()),
-            "date_deleted": Is(None),
-            "self_link": EndsWith("/revisions/1")
-            }))
+        self.assertThat(
+            revision,
+            ContainsDict(
+                {
+                    "content": Equals("initial content"),
+                    "date_created": Equals(date_created.isoformat()),
+                    "date_created_display": Equals(
+                        DateTimeFormatterAPI(date_created).datetime()
+                    ),
+                    "date_deleted": Is(None),
+                    "self_link": EndsWith("/revisions/1"),
+                }
+            ),
+        )
 
     def test_delete_revision_content(self):
         msg = self.makeMessage(content="initial content")
@@ -143,14 +173,20 @@ class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual(200, response.status)
 
         revision = ws.get(revision_url).jsonBody()
-        self.assertThat(revision, ContainsDict({
-            "content": Equals(""),
-            "date_created": Equals(dates_created[0].isoformat()),
-            "date_created_display": Equals(
-                DateTimeFormatterAPI(dates_created[0]).datetime()),
-            "date_deleted": Not(Is(None)),
-            "self_link": EndsWith("/revisions/1")
-            }))
+        self.assertThat(
+            revision,
+            ContainsDict(
+                {
+                    "content": Equals(""),
+                    "date_created": Equals(dates_created[0].isoformat()),
+                    "date_created_display": Equals(
+                        DateTimeFormatterAPI(dates_created[0]).datetime()
+                    ),
+                    "date_deleted": Not(Is(None)),
+                    "self_link": EndsWith("/revisions/1"),
+                }
+            ),
+        )
 
     def test_delete_revision_content_denied_for_non_owners(self):
         msg = self.makeMessage(content="initial content")
@@ -167,11 +203,17 @@ class TestMessageRevisionAPI(MessageTypeScenariosMixin, TestCaseWithFactory):
         self.assertEqual(401, response.status)
 
         revision = ws.get(revision_url).jsonBody()
-        self.assertThat(revision, ContainsDict({
-            "content": Equals("initial content"),
-            "date_created": Equals(dates_created[0].isoformat()),
-            "date_created_display": Equals(
-                DateTimeFormatterAPI(dates_created[0]).datetime()),
-            "date_deleted": Is(None),
-            "self_link": EndsWith("/revisions/1")
-            }))
+        self.assertThat(
+            revision,
+            ContainsDict(
+                {
+                    "content": Equals("initial content"),
+                    "date_created": Equals(dates_created[0].isoformat()),
+                    "date_created_display": Equals(
+                        DateTimeFormatterAPI(dates_created[0]).datetime()
+                    ),
+                    "date_deleted": Is(None),
+                    "self_link": EndsWith("/revisions/1"),
+                }
+            ),
+        )

@@ -3,7 +3,7 @@
 
 """Preferred charsets."""
 
-__all__ = ['Utf8PreferredCharsets']
+__all__ = ["Utf8PreferredCharsets"]
 
 from zope.component import adapter
 from zope.i18n.interfaces import IUserPreferredCharsets
@@ -21,4 +21,4 @@ class Utf8PreferredCharsets:
 
     def getPreferredCharsets(self):
         """See IUserPreferredCharsets."""
-        return ['utf-8']
+        return ["utf-8"]

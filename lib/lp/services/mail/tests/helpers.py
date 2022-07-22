@@ -3,14 +3,13 @@
 
 """Functions to accomodate testing of the email system."""
 
-__all__ = ['read_test_message']
+__all__ = ["read_test_message"]
 
 import os.path
 
 from lp.services.mail.signedmessage import signed_message_from_bytes
 
-
-testmails_path = os.path.join(os.path.dirname(__file__), 'emails')
+testmails_path = os.path.join(os.path.dirname(__file__), "emails")
 
 
 def read_test_message(filename):
@@ -18,6 +17,6 @@ def read_test_message(filename):
 
     The test messages are located in lp/services/mail/tests/emails
     """
-    with open(os.path.join(testmails_path, filename), 'rb') as f:
+    with open(os.path.join(testmails_path, filename), "rb") as f:
         message_string = f.read()
     return signed_message_from_bytes(message_string)

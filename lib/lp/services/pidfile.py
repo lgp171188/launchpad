@@ -3,25 +3,22 @@
 
 import atexit
 import os
-from signal import (
-    signal,
-    SIGTERM,
-    )
 import sys
 import tempfile
+from signal import SIGTERM, signal
 
 from lp.services.config import config
 from lp.services.osutils import process_exists
 
 
 def pidfile_path(service_name, use_config=None):
-    """Return the full pidfile path for the given service
-    """
+    """Return the full pidfile path for the given service"""
     if use_config is None:
         use_config = config
-    return os.path.join(use_config.canonical.pid_dir, '%s-%s.pid' % (
-        use_config.instance_name, service_name
-        ))
+    return os.path.join(
+        use_config.canonical.pid_dir,
+        "%s-%s.pid" % (use_config.instance_name, service_name),
+    )
 
 
 def make_pidfile(service_name):
@@ -36,17 +33,19 @@ def make_pidfile(service_name):
     pidfile = pidfile_path(service_name)
     if is_locked(service_name):
         raise RuntimeError(
-            "PID file %s already exists. Already running?" % pidfile)
+            "PID file %s already exists. Already running?" % pidfile
+        )
 
     atexit.register(remove_pidfile, service_name)
 
     def remove_pidfile_handler(*ignored):
         sys.exit(-1 * SIGTERM)
+
     signal(SIGTERM, remove_pidfile_handler)
 
     fd, tempname = tempfile.mkstemp(dir=os.path.dirname(pidfile))
-    outf = os.fdopen(fd, 'w')
-    outf.write(str(os.getpid()) + '\n')
+    outf = os.fdopen(fd, "w")
+    outf.write(str(os.getpid()) + "\n")
     outf.flush()
     outf.close()
     os.rename(tempname, pidfile)

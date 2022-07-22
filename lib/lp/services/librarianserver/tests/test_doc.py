@@ -13,17 +13,13 @@ from lp.services.librarianserver.libraryprotocol import FileUploadProtocol
 from lp.services.librarianserver.storage import WrongDatabaseError
 from lp.services.testing import build_test_suite
 from lp.testing.layers import LaunchpadZopelessLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 class MockTransport:
     disconnecting = False
 
-    bytesWritten = b''
+    bytesWritten = b""
     connectionLost = False
 
     def write(self, bytes):
@@ -43,7 +39,7 @@ class MockLibrary:
 
 
 class MockFile:
-    bytes = b''
+    bytes = b""
     stored = False
     databaseName = None
     debugID = None
@@ -57,8 +53,8 @@ class MockFile:
 
     def store(self):
         databaseName = self.databaseName
-        if databaseName is not None and databaseName != 'right_database':
-            raise WrongDatabaseError(databaseName, 'right_database')
+        if databaseName is not None and databaseName != "right_database":
+            raise WrongDatabaseError(databaseName, "right_database")
         self.stored = True
         return (987, 654)
 
@@ -92,8 +88,8 @@ def upload_request(request):
 
     def log_observer(x):
         print(x, file=sys.stderr)
-        if 'failure' in x:
-            x['failure'].printTraceback(file=sys.stderr)
+        if "failure" in x:
+            x["failure"].printTraceback(file=sys.stderr)
 
     log.addObserver(log_observer)
 
@@ -113,20 +109,27 @@ def upload_request(request):
     server.fileLibrary = MockLibrary()
 
     # Feed in the request
-    server.dataReceived(request.replace(b'\n', b'\r\n'))
+    server.dataReceived(request.replace(b"\n", b"\r\n"))
 
     # Report on what happened
-    print("reply: %r" %
-          six.ensure_str(server.transport.bytesWritten.rstrip(b'\r\n')))
+    print(
+        "reply: %r"
+        % six.ensure_str(server.transport.bytesWritten.rstrip(b"\r\n"))
+    )
 
     if server.transport.connectionLost:
-        print('connection closed')
+        print("connection closed")
 
     mockFile = server.fileLibrary.file
     if mockFile is not None and mockFile.stored:
-        print("file '%s' stored as %s, contents: %r" % (
-                mockFile.name, mockFile.mimetype,
-                six.ensure_str(mockFile.bytes)))
+        print(
+            "file '%s' stored as %s, contents: %r"
+            % (
+                mockFile.name,
+                mockFile.mimetype,
+                six.ensure_str(mockFile.bytes),
+            )
+        )
 
     # Cleanup: remove the observer.
     log.removeObserver(log_observer)
@@ -135,17 +138,19 @@ def upload_request(request):
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    'librarian-report.rst': LayeredDocFileSuite(
-            '../doc/librarian-report.rst',
-            setUp=setUp, tearDown=tearDown,
-            layer=LaunchpadZopelessLayer
-            ),
-    'upload.rst': LayeredDocFileSuite(
-            '../doc/upload.rst',
-            setUp=setUp, tearDown=tearDown,
-            layer=LaunchpadZopelessLayer,
-            globs={'upload_request': upload_request},
-            ),
+    "librarian-report.rst": LayeredDocFileSuite(
+        "../doc/librarian-report.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "upload.rst": LayeredDocFileSuite(
+        "../doc/upload.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+        globs={"upload_request": upload_request},
+    ),
 }
 
 

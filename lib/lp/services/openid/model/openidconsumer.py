@@ -3,7 +3,7 @@
 
 """OpenID Consumer related database classes."""
 
-__all__ = ['OpenIDConsumerNonce']
+__all__ = ["OpenIDConsumerNonce"]
 
 from zope.interface import implementer
 
@@ -12,15 +12,15 @@ from lp.services.openid.model.baseopenidstore import (
     BaseStormOpenIDAssociation,
     BaseStormOpenIDNonce,
     BaseStormOpenIDStore,
-    )
+)
 
 
 class OpenIDConsumerAssociation(BaseStormOpenIDAssociation):
-    __storm_table__ = 'OpenIDConsumerAssociation'
+    __storm_table__ = "OpenIDConsumerAssociation"
 
 
 class OpenIDConsumerNonce(BaseStormOpenIDNonce):
-    __storm_table__ = 'OpenIDConsumerNonce'
+    __storm_table__ = "OpenIDConsumerNonce"
 
 
 @implementer(IOpenIDConsumerStore)

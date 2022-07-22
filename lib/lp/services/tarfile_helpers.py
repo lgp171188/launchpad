@@ -4,15 +4,14 @@
 """Helpers to work with tar files more easily."""
 
 __all__ = [
-    'LaunchpadWriteTarFile',
-    ]
+    "LaunchpadWriteTarFile",
+]
 
 import io
 import os
 import tarfile
 import tempfile
 import time
-
 
 # A note about tarballs, BytesIO and unicode. SQLObject returns unicode
 # values for columns which are declared as StringCol. We have to be careful
@@ -31,8 +30,8 @@ class LaunchpadWriteTarFile:
     This class makes it convenient to generate tar files in various ways.
     """
 
-    def __init__(self, stream, encoding='UTF-8'):
-        self.tarfile = tarfile.open('', 'w:gz', stream, encoding=encoding)
+    def __init__(self, stream, encoding="UTF-8"):
+        self.tarfile = tarfile.open("", "w:gz", stream, encoding=encoding)
         self.closed = False
 
     @classmethod
@@ -54,7 +53,7 @@ class LaunchpadWriteTarFile:
     @classmethod
     def files_to_tarfile(cls, files):
         """Turn a dictionary of files into a tarfile object."""
-        return tarfile.open('', 'r', cls.files_to_stream(files))
+        return tarfile.open("", "r", cls.files_to_stream(files))
 
     def close(self):
         """Close the archive.
@@ -71,8 +70,8 @@ class LaunchpadWriteTarFile:
         """Make a basic TarInfo object to be fleshed out by the caller."""
         tarinfo = tarfile.TarInfo(path)
         tarinfo.mtime = now
-        tarinfo.uname = 'launchpad'
-        tarinfo.gname = 'launchpad'
+        tarinfo.uname = "launchpad"
+        tarinfo.gname = "launchpad"
         return tarinfo
 
     def _ensure_directories(self, path, now):

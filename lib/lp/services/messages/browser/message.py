@@ -13,7 +13,8 @@ from lp.services.webapp.interfaces import ICanonicalUrlData
 @implementer(ICanonicalUrlData)
 class QuestionMessageCanonicalUrlData:
     """Question messages have a canonical_url within the question."""
-    rootsite = 'answers'
+
+    rootsite = "answers"
 
     def __init__(self, question, message):
         self.inside = question
@@ -23,7 +24,8 @@ class QuestionMessageCanonicalUrlData:
 @implementer(ICanonicalUrlData)
 class BugMessageCanonicalUrlData:
     """Bug messages have a canonical_url within the primary bugtask."""
-    rootsite = 'bugs'
+
+    rootsite = "bugs"
 
     def __init__(self, bug, message):
         self.inside = bug.default_bugtask
@@ -40,7 +42,8 @@ class IndexedBugMessageCanonicalUrlData:
     This implementation relies on the message being decorated with
     its index and context.
     """
-    rootsite = 'bugs'
+
+    rootsite = "bugs"
 
     def __init__(self, message):
         self.inside = message.inside
@@ -49,9 +52,9 @@ class IndexedBugMessageCanonicalUrlData:
 
 @implementer(ICanonicalUrlData)
 class CodeReviewCommentCanonicalUrlData:
-    """An optimized bug message canonical_url implementation.
-    """
-    rootsite = 'code'
+    """An optimized bug message canonical_url implementation."""
+
+    rootsite = "code"
 
     def __init__(self, message):
         self.inside = message.branch_merge_proposal
@@ -63,6 +66,7 @@ def message_to_canonical_url_data(message):
     # Circular imports
     from lp.answers.interfaces.questionmessage import IQuestionMessage
     from lp.code.interfaces.codereviewcomment import ICodeReviewComment
+
     if IIndexedMessage.providedBy(message):
         return IndexedBugMessageCanonicalUrlData(message)
     elif IQuestionMessage.providedBy(message):
@@ -71,6 +75,6 @@ def message_to_canonical_url_data(message):
         return CodeReviewCommentCanonicalUrlData(message)
     else:
         if message.bugs.count() == 0:
-        # Will result in a ComponentLookupError
+            # Will result in a ComponentLookupError
             return None
         return BugMessageCanonicalUrlData(message.bugs[0], message)

@@ -4,17 +4,12 @@
 """Message revision history."""
 
 __all__ = [
-    'MessageRevision',
-    'MessageRevisionChunk',
-    ]
+    "MessageRevision",
+    "MessageRevisionChunk",
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.app.browser.tales import DateTimeFormatterAPI
@@ -24,30 +19,29 @@ from lp.services.database.stormbase import StormBase
 from lp.services.messages.interfaces.messagerevision import (
     IMessageRevision,
     IMessageRevisionChunk,
-    )
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+)
+from lp.services.propertycache import cachedproperty, get_property_cache
 
 
 @implementer(IMessageRevision)
 class MessageRevision(StormBase):
     """A historical revision of a IMessage."""
 
-    __storm_table__ = 'MessageRevision'
+    __storm_table__ = "MessageRevision"
 
     id = Int(primary=True)
 
-    message_id = Int(name='message', allow_none=False)
-    message = Reference(message_id, 'Message.id')
+    message_id = Int(name="message", allow_none=False)
+    message = Reference(message_id, "Message.id")
 
-    revision = Int(name='revision', allow_none=False)
+    revision = Int(name="revision", allow_none=False)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
     date_deleted = DateTime(
-        name="date_deleted", tzinfo=pytz.UTC, allow_none=True)
+        name="date_deleted", tzinfo=pytz.UTC, allow_none=True
+    )
 
     def __init__(self, message, revision, date_created, date_deleted=None):
         self.message = message
@@ -62,28 +56,33 @@ class MessageRevision(StormBase):
         from lp.code.model.codereviewcomment import CodeReviewComment
 
         store = IStore(self)
-        (identifier, ) = store.execute("""
+        (identifier,) = store.execute(
+            """
             SELECT 'bug' FROM BugMessage WHERE message = %s
             UNION
             SELECT 'question' FROM QuestionMessage WHERE message = %s
             UNION
             SELECT 'mp' FROM CodeReviewMessage WHERE message = %s;
-        """, params=[self.message_id] * 3).get_one()
+        """,
+            params=[self.message_id] * 3,
+        ).get_one()
         id_to_class = {
             "bug": BugMessage,
             "question": QuestionMessage,
-            "mp": CodeReviewComment}
+            "mp": CodeReviewComment,
+        }
         klass = id_to_class[identifier]
         return store.find(klass, klass.message == self.message_id).one()
 
     @cachedproperty
     def chunks(self):
-        return list(IStore(self).find(
-            MessageRevisionChunk, message_revision=self))
+        return list(
+            IStore(self).find(MessageRevisionChunk, message_revision=self)
+        )
 
     @property
     def content(self):
-        return '\n\n'.join(i.content for i in self.chunks)
+        return "\n\n".join(i.content for i in self.chunks)
 
     @property
     def date_created_display(self):
@@ -98,14 +97,14 @@ class MessageRevision(StormBase):
 
 @implementer(IMessageRevisionChunk)
 class MessageRevisionChunk(StormBase):
-    __storm_table__ = 'MessageRevisionChunk'
+    __storm_table__ = "MessageRevisionChunk"
 
     id = Int(primary=True)
 
-    message_revision_id = Int(name='messagerevision', allow_none=False)
-    message_revision = Reference(message_revision_id, 'MessageRevision.id')
+    message_revision_id = Int(name="messagerevision", allow_none=False)
+    message_revision = Reference(message_revision_id, "MessageRevision.id")
 
-    sequence = Int(name='sequence', allow_none=False)
+    sequence = Int(name="sequence", allow_none=False)
 
     content = Unicode(name="content", allow_none=False)
 

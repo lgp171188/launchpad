@@ -5,16 +5,12 @@
 
 import os
 
-from twisted.application import (
-    service,
-    strports,
-    )
+from twisted.application import service, strports
 from twisted.python.compat import nativeString
 from twisted.web import server
 
 from lp.services.daemons import readyservice
 from lp.services.signing.testing.fakesigning import SigningServiceResource
-
 
 application = service.Application("fakesigning")
 svc = service.IServiceCollection(application)

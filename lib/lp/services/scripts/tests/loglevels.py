@@ -8,19 +8,18 @@ Used by test_logger.rst.
 
 __all__ = []
 
-from optparse import OptionParser
 import time
+from optparse import OptionParser
 
-from lp.services.scripts.logger import (
-    logger,
-    logger_options,
-    )
+from lp.services.scripts.logger import logger, logger_options
 
 
 # Monkey patch time.gmtime to make our tests easier to read.
 def fake_gmtime(ignored_seconds):
     # 1985-12-21 13:45:55
     return (1985, 12, 21, 13, 45, 55, 5, 355, 0)
+
+
 time.gmtime = fake_gmtime
 
 parser = OptionParser()
@@ -31,7 +30,7 @@ options, args = parser.parse_args()
 if len(args) > 0:
     print("Args: %s" % repr(args))
 
-log = logger(options, 'loglevels')
+log = logger(options, "loglevels")
 
 log.error("This is an error")
 log.warning("This is a warning")

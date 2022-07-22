@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LoginRoot',
-    'LaunchpadBrowserPublication',
-    ]
+    "LoginRoot",
+    "LaunchpadBrowserPublication",
+]
 
 import re
 import sys
@@ -13,74 +13,48 @@ import time
 import traceback
 from urllib.parse import quote
 
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
-from psycopg2.extensions import TransactionRollbackError
-from storm.database import STATE_DISCONNECTED
-from storm.exceptions import (
-    DisconnectionError,
-    IntegrityError,
-    TimeoutError,
-    )
-from storm.zope.interfaces import IZStorm
-from talisker.logs import logging_context
 import transaction
 import zope.app.publication.browser
+from lazr.uri import URI, InvalidURIError
+from psycopg2.extensions import TransactionRollbackError
+from storm.database import STATE_DISCONNECTED
+from storm.exceptions import DisconnectionError, IntegrityError, TimeoutError
+from storm.zope.interfaces import IZStorm
+from talisker.logs import logging_context
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
-from zope.component import (
-    getGlobalSiteManager,
-    getUtility,
-    queryMultiAdapter,
-    )
+from zope.component import getGlobalSiteManager, getUtility, queryMultiAdapter
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    providedBy,
-    )
+from zope.interface import implementer, providedBy
 from zope.publisher.interfaces import (
     IPublishTraverse,
     Retry,
     StartRequestEvent,
-    )
-from zope.publisher.interfaces.browser import (
-    IBrowserRequest,
-    IDefaultSkin,
-    )
+)
+from zope.publisher.interfaces.browser import IBrowserRequest, IDefaultSkin
 from zope.publisher.publish import mapply
-from zope.security.management import (
-    endInteraction,
-    newInteraction,
-    )
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.management import endInteraction, newInteraction
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 from zope.traversing.interfaces import BeforeTraverseEvent
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 import lp.layers as layers
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    ITeam,
-    )
+import lp.services.webapp.adapter as da
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.registry.interfaces.person import IPerson, IPersonSet, ITeam
 from lp.services import features
 from lp.services.auth.interfaces import IAccessTokenVerifiedRequest
 from lp.services.config import config
 from lp.services.database.interfaces import (
+    PRIMARY_FLAVOR,
     IDatabasePolicy,
     IStoreSelector,
-    PRIMARY_FLAVOR,
-    )
+)
 from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.osutils import open_for_writing
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
-import lp.services.webapp.adapter as da
 from lp.services.webapp.interfaces import (
     FinishReadOnlyRequestEvent,
     ILaunchpadRoot,
@@ -88,18 +62,20 @@ from lp.services.webapp.interfaces import (
     IPlacelessAuthUtility,
     NoReferrerError,
     OffsiteFormPostError,
-    )
+)
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.vhosts import allvhosts
 
-
 METHOD_WRAPPER_TYPE = type({}.__setitem__)
 
 OFFSITE_POST_WHITELIST = (
-    '/+storeblob', '/+request-token', '/+access-token',
-    '/+openid', '/+candid-callback',
-    )
+    "/+storeblob",
+    "/+request-token",
+    "/+access-token",
+    "/+openid",
+    "/+candid-callback",
+)
 
 
 def maybe_block_offsite_form_post(request):
@@ -113,18 +89,20 @@ def maybe_block_offsite_form_post(request):
       2. a. the HTTP referer header is empty *OR*
          b. the host portion of the referrer is not a registered vhost
     """
-    if request.method != 'POST':
+    if request.method != "POST":
         return
-    if (IOAuthSignedRequest.providedBy(request)
-            or IAccessTokenVerifiedRequest.providedBy(request)
-            or not IBrowserRequest.providedBy(request)):
+    if (
+        IOAuthSignedRequest.providedBy(request)
+        or IAccessTokenVerifiedRequest.providedBy(request)
+        or not IBrowserRequest.providedBy(request)
+    ):
         # We only want to check for the referrer header if we are in the
         # middle of a request initiated by a web browser. A request to the
         # web service (which is necessarily OAuth-signed or verified by an
         # access token) or a request that does not implement IBrowserRequest
         # (such as an XML-RPC request) can do without a Referer.
         return
-    if request['PATH_INFO'] in OFFSITE_POST_WHITELIST:
+    if request["PATH_INFO"] in OFFSITE_POST_WHITELIST:
         # XXX: jamesh 2007-11-23 bug=124421:
         # Allow offsite posts to our TestOpenID endpoint.  Ideally we'd
         # have a better way of marking this URL as allowing offsite
@@ -147,15 +125,15 @@ def maybe_block_offsite_form_post(request):
         # date. We should be able to get rid of the launchpadlib
         # exception after Karmic's end-of-life date.
         return
-    if request['PATH_INFO'].startswith('/+openid-callback'):
+    if request["PATH_INFO"].startswith("/+openid-callback"):
         # If this is a callback from an OpenID provider, we don't require an
         # on-site referer (because the provider may be off-site).  This
         # exception was added as a result of bug 597324 (message #10 in
         # particular).
         return
-    referrer = request.getHeader('referer')  # Match HTTP spec misspelling.
+    referrer = request.getHeader("referer")  # Match HTTP spec misspelling.
     if not referrer:
-        raise NoReferrerError('No value for REFERER header')
+        raise NoReferrerError("No value for REFERER header")
     # Extract the hostname from the referrer URI
     try:
         hostname = URI(referrer).host
@@ -192,19 +170,21 @@ def _get_thread_time():
 
     This requires Python >= 3.3, and otherwise returns None.
     """
-    if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
         return time.clock_gettime(time.CLOCK_THREAD_CPUTIME_ID)
     else:
         return None
 
 
 class LaunchpadBrowserPublication(
-    zope.app.publication.browser.BrowserPublication):
+    zope.app.publication.browser.BrowserPublication
+):
     """Subclass of z.a.publication.BrowserPublication that removes ZODB.
 
     This subclass undoes the ZODB-specific things in ZopePublication, a
     superclass of z.a.publication.BrowserPublication.
     """
+
     # This class does not __init__ its parent or specify exception types
     # so that it can replace its parent class.
     root_object_interface = ILaunchpadRoot
@@ -237,7 +217,7 @@ class LaunchpadBrowserPublication(
 
     def getApplication(self, request):
         end_of_traversal_stack = request.getTraversalStack()[:1]
-        if end_of_traversal_stack == ['+login']:
+        if end_of_traversal_stack == ["+login"]:
             return LoginRoot()
         else:
             return getUtility(self.root_object_interface)
@@ -261,16 +241,17 @@ class LaunchpadBrowserPublication(
         request._traversal_thread_start = _get_thread_time()
         threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
-            'logs/thread-%s.request' % threadid, 'wb')
+            "logs/thread-%s.request" % threadid, "wb"
+        )
         try:
             request_txt = str(request)
         except Exception:
-            request_txt = 'Exception converting request to string\n\n'
+            request_txt = "Exception converting request to string\n\n"
             try:
                 request_txt += traceback.format_exc()
             except Exception:
-                request_txt += 'Unable to render traceback!'
-        threadrequestfile.write(request_txt.encode('UTF-8'))
+                request_txt += "Unable to render traceback!"
+        threadrequestfile.write(request_txt.encode("UTF-8"))
         threadrequestfile.close()
         self.initializeLoggingContext(request)
 
@@ -290,7 +271,7 @@ class LaunchpadBrowserPublication(
 
         # Set the default layer.
         adapters = getGlobalSiteManager().adapters
-        layer = adapters.lookup((providedBy(request),), IDefaultSkin, '')
+        layer = adapters.lookup((providedBy(request),), IDefaultSkin, "")
         if layer is not None:
             layers.setAdditionalLayer(request, layer)
 
@@ -314,7 +295,7 @@ class LaunchpadBrowserPublication(
         # this way.  Even though PATH_INFO is always present in real requests,
         # we need to tread carefully (``get``) because of test requests in our
         # automated tests.
-        if request.get('PATH_INFO') not in ['/+opstats', '/+haproxy']:
+        if request.get("PATH_INFO") not in ["/+opstats", "/+haproxy"]:
             principal = auth_utility.authenticate(request)
         if principal is not None:
             assert principal.person is not None
@@ -329,40 +310,44 @@ class LaunchpadBrowserPublication(
         if not restrict_to_team:
             return
 
-        restrictedlogin = '+restricted-login'
-        restrictedinfo = '+restricted-info'
+        restrictedlogin = "+restricted-login"
+        restrictedinfo = "+restricted-info"
 
         # Always allow access to +restrictedlogin and +restrictedinfo.
         traversal_stack = request.getTraversalStack()
-        if (traversal_stack == [restrictedlogin] or
-            traversal_stack == [restrictedinfo]):
+        if traversal_stack == [restrictedlogin] or traversal_stack == [
+            restrictedinfo
+        ]:
             return
 
         principal = request.principal
         team = getUtility(IPersonSet).getByName(restrict_to_team)
         if team is None:
             raise AssertionError(
-                'restrict_to_team "%s" not found' % restrict_to_team)
+                'restrict_to_team "%s" not found' % restrict_to_team
+            )
         elif not ITeam.providedBy(team):
             raise AssertionError(
-                'restrict_to_team "%s" is not a team' % restrict_to_team)
+                'restrict_to_team "%s" is not a team' % restrict_to_team
+            )
 
         if IUnauthenticatedPrincipal.providedBy(principal):
-            location = '/%s' % restrictedlogin
+            location = "/%s" % restrictedlogin
         else:
             # We have a team we can work with.
             user = IPerson(principal)
-            if (user.inTeam(team) or
-                user.inTeam(getUtility(ILaunchpadCelebrities).admin)):
+            if user.inTeam(team) or user.inTeam(
+                getUtility(ILaunchpadCelebrities).admin
+            ):
                 return
             else:
-                location = '/%s' % restrictedinfo
+                location = "/%s" % restrictedinfo
 
         non_restricted_url = self.getNonRestrictedURL(request)
         if non_restricted_url is not None:
-            location += '?production=%s' % quote(non_restricted_url)
+            location += "?production=%s" % quote(non_restricted_url)
 
-        request.response.setResult(b'')
+        request.response.setResult(b"")
         request.response.redirect(location, temporary_if_possible=True)
         # Quash further traversal.
         request.setTraversalStack([])
@@ -389,9 +374,9 @@ class LaunchpadBrowserPublication(
             return None
 
         # Update the hostname, and complete the URL from the request:
-        new_host = uri.host[:-len(base_host)] + production_host
-        uri = uri.replace(host=new_host, path=request['PATH_INFO'])
-        query_string = request.get('QUERY_STRING')
+        new_host = uri.host[: -len(base_host)] + production_host
+        uri = uri.replace(host=new_host, path=request["PATH_INFO"])
+        query_string = request.get("QUERY_STRING")
         if query_string:
             uri = uri.replace(query=query_string)
         return str(uri)
@@ -402,25 +387,26 @@ class LaunchpadBrowserPublication(
         This provides a hook point for subclasses to override.
         """
         if context is None:
-            pageid = ''
+            pageid = ""
         else:
             # ZCML registration will set the name under which the view
             # is accessible in the instance __name__ attribute. We use
             # that if it's available, otherwise fall back to the class
             # name.
-            if hasattr(view, '__name__'):
+            if hasattr(view, "__name__"):
                 view_name = view.__name__
             else:
                 view_name = view.__class__.__name__
             names = [
-                n for n in [view_name] + list(view_names) if n is not None]
+                n for n in [view_name] + list(view_names) if n is not None
+            ]
             context_name = context.__class__.__name__
             # Is this a view of a generated view class,
             # such as ++model++ view of Product:+bugs. Recurse!
-            if ' ' in context_name and hasattr(context, 'context'):
+            if " " in context_name and hasattr(context, "context"):
                 return self.constructPageID(context, context.context, names)
-            view_names = ':'.join(names)
-            pageid = '%s:%s' % (context_name, view_names)
+            view_names = ":".join(names)
+            pageid = "%s:%s" % (context_name, view_names)
         return pageid
 
     def callObject(self, request, ob):
@@ -435,22 +421,24 @@ class LaunchpadBrowserPublication(
         request._publication_start = time.time()
         request._publication_thread_start = _get_thread_time()
         if request.response.getStatus() in [301, 302, 303, 307]:
-            return ''
+            return ""
 
         logging_context.push(userid=request.principal.id)
 
         # pageid is calculated at `afterTraversal`, but can be missing
         # if callObject is used directly, so either use the one we've got
         # or work it out.
-        pageid = request._orig_env.get('launchpad.pageid')
+        pageid = request._orig_env.get("launchpad.pageid")
         if not pageid:
             pageid = self._setPageIDInEnvironment(request, ob)
 
         # For status URLs, where we really don't want to have any DB access
         # at all, ensure that all flag lookups will stop early.
         if pageid in (
-            'RootObject:OpStats', 'RootObject:+opstats',
-            'RootObject:+haproxy'):
+            "RootObject:OpStats",
+            "RootObject:+opstats",
+            "RootObject:+haproxy",
+        ):
             request.features = NullFeatureController()
             features.install_feature_controller(request.features)
 
@@ -483,39 +471,49 @@ class LaunchpadBrowserPublication(
         Because of this we cannot chain to the superclass and implement
         the whole behaviour here.
         """
-        assert hasattr(request, '_publication_start'), (
-            'request._publication_start, which should have been set by '
-            'callObject(), was not found.')
+        assert hasattr(request, "_publication_start"), (
+            "request._publication_start, which should have been set by "
+            "callObject(), was not found."
+        )
         publication_duration = time.time() - request._publication_start
         if request._publication_thread_start is not None:
             publication_thread_duration = (
-                _get_thread_time() - request._publication_thread_start)
+                _get_thread_time() - request._publication_thread_start
+            )
         else:
             publication_thread_duration = None
         logging_context.push(
-            publication_duration_ms=round(publication_duration * 1000, 3))
+            publication_duration_ms=round(publication_duration * 1000, 3)
+        )
         if publication_thread_duration is not None:
             logging_context.push(
                 publication_thread_duration_ms=round(
-                    publication_thread_duration * 1000, 3))
+                    publication_thread_duration * 1000, 3
+                )
+            )
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'publication_duration', publication_duration * 1000,
+            "publication_duration",
+            publication_duration * 1000,
             labels={
-                'success': True,
-                'pageid': self._prepPageIDForMetrics(
-                    request._orig_env.get('launchpad.pageid')),
-                })
+                "success": True,
+                "pageid": self._prepPageIDForMetrics(
+                    request._orig_env.get("launchpad.pageid")
+                ),
+            },
+        )
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
         sql_milliseconds = sum(
             endtime - starttime
-                for starttime, endtime, id, statement, tb in sql_statements)
+            for starttime, endtime, id, statement, tb in sql_statements
+        )
 
         # Log sql statement count and sql time (in milliseconds).
         logging_context.push(
-            sql_statements=len(sql_statements), sql_ms=sql_milliseconds)
+            sql_statements=len(sql_statements), sql_ms=sql_milliseconds
+        )
 
         # Annotate the transaction with user data. That was done by
         # zope.app.publication.zopepublication.ZopePublication.
@@ -524,7 +522,7 @@ class LaunchpadBrowserPublication(
 
         # Abort the transaction on a read-only request.
         # NOTHING AFTER THIS SHOULD CAUSE A RETRY.
-        if request.method in ['GET', 'HEAD']:
+        if request.method in ["GET", "HEAD"]:
             self.finishReadOnlyRequest(request, ob, txn)
         elif txn.isDoomed():
             # The following sends an abort to the database, even though the
@@ -535,8 +533,8 @@ class LaunchpadBrowserPublication(
 
         # Don't render any content for a HEAD.  This was done
         # by zope.app.publication.browser.BrowserPublication
-        if request.method == 'HEAD':
-            request.response.setResult(b'')
+        if request.method == "HEAD":
+            request.response.setResult(b"")
 
         try:
             getUtility(IStoreSelector).pop()
@@ -557,8 +555,8 @@ class LaunchpadBrowserPublication(
         txn.abort()
 
     def callTraversalHooks(self, request, ob):
-        """ We don't want to call _maybePlacefullyAuthenticate as does
-        zopepublication """
+        """We don't want to call _maybePlacefullyAuthenticate as does
+        zopepublication"""
         # In some cases we seem to be called more than once for a given
         # traversed object, so we need to be careful here and only append an
         # object the first time we see it.
@@ -571,13 +569,13 @@ class LaunchpadBrowserPublication(
         # The view may be security proxied
         view = removeSecurityProxy(view)
         # It's possible that the view is a bound method.
-        view = getattr(view, '__self__', view)
+        view = getattr(view, "__self__", view)
         if zope_isinstance(view, RedirectionView):
             context = None
         else:
-            context = removeSecurityProxy(getattr(view, 'context', None))
+            context = removeSecurityProxy(getattr(view, "context", None))
         pageid = self.constructPageID(view, context)
-        request.setInWSGIEnvironment('launchpad.pageid', pageid)
+        request.setInWSGIEnvironment("launchpad.pageid", pageid)
         logging_context.push(pageid=pageid)
         return pageid
 
@@ -585,7 +583,7 @@ class LaunchpadBrowserPublication(
         """Remove characters from PageID that can't be used in statsd."""
         if not pageid:
             return pageid
-        return re.sub('[^0-9a-zA-Z]+', '-', pageid)
+        return re.sub("[^0-9a-zA-Z]+", "-", pageid)
 
     def afterTraversal(self, request, ob):
         """See zope.publisher.interfaces.IPublication.
@@ -596,30 +594,37 @@ class LaunchpadBrowserPublication(
         """
         pageid = self._setPageIDInEnvironment(request, ob)
 
-        assert hasattr(request, '_traversal_start'), (
-            'request._traversal_start, which should have been set by '
-            'beforeTraversal(), was not found.')
+        assert hasattr(request, "_traversal_start"), (
+            "request._traversal_start, which should have been set by "
+            "beforeTraversal(), was not found."
+        )
         traversal_duration = time.time() - request._traversal_start
         logging_context.push(
-            traversal_duration_ms=round(traversal_duration * 1000, 3))
+            traversal_duration_ms=round(traversal_duration * 1000, 3)
+        )
         if request._traversal_thread_start is not None:
             traversal_thread_duration = (
-                _get_thread_time() - request._traversal_thread_start)
+                _get_thread_time() - request._traversal_thread_start
+            )
             logging_context.push(
                 traversal_thread_duration_ms=round(
-                    traversal_thread_duration * 1000, 3))
+                    traversal_thread_duration * 1000, 3
+                )
+            )
         # Update statsd, timing is in milliseconds
         getUtility(IStatsdClient).timing(
-            'traversal_duration', traversal_duration * 1000,
+            "traversal_duration",
+            traversal_duration * 1000,
             labels={
-                'success': True,
-                'pageid': self._prepPageIDForMetrics(pageid),
-                })
+                "success": True,
+                "pageid": self._prepPageIDForMetrics(pageid),
+            },
+        )
 
     def _maybePlacefullyAuthenticate(self, request, ob):
-        """ This should never be called because we've excised it in
+        """This should never be called because we've excised it in
         favor of dealing with auth in events; if it is called for any
-        reason, raise an error """
+        reason, raise an error"""
         raise NotImplementedError
 
     def handleException(self, object, request, exc_info, retry_allowed=True):
@@ -633,49 +638,68 @@ class LaunchpadBrowserPublication(
         orig_env = request._orig_env
         now = time.time()
         thread_now = _get_thread_time()
-        if (hasattr(request, '_publication_start') and
-                'publication_duration_ms' not in logging_context.flat):
+        if (
+            hasattr(request, "_publication_start")
+            and "publication_duration_ms" not in logging_context.flat
+        ):
             # The traversal process has been started but hasn't completed.
-            assert 'traversal_duration_ms' in logging_context.flat, (
-                'We reached the publication process so we must have finished '
-                'the traversal.')
+            assert "traversal_duration_ms" in logging_context.flat, (
+                "We reached the publication process so we must have finished "
+                "the traversal."
+            )
             publication_duration = now - request._publication_start
             logging_context.push(
-                publication_duration_ms=round(publication_duration * 1000, 3))
+                publication_duration_ms=round(publication_duration * 1000, 3)
+            )
             if thread_now is not None:
                 publication_thread_duration = (
-                    thread_now - request._publication_thread_start)
+                    thread_now - request._publication_thread_start
+                )
                 logging_context.push(
                     publication_thread_duration_ms=round(
-                        publication_thread_duration * 1000, 3))
+                        publication_thread_duration * 1000, 3
+                    )
+                )
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'publication_duration', publication_duration * 1000,
+                "publication_duration",
+                publication_duration * 1000,
                 labels={
-                    'success': False,
-                    'pageid': self._prepPageIDForMetrics(
-                        orig_env.get('launchpad.pageid')),
-                    })
-        elif (hasattr(request, '_traversal_start') and
-              'traversal_duration_ms' not in logging_context.flat):
+                    "success": False,
+                    "pageid": self._prepPageIDForMetrics(
+                        orig_env.get("launchpad.pageid")
+                    ),
+                },
+            )
+        elif (
+            hasattr(request, "_traversal_start")
+            and "traversal_duration_ms" not in logging_context.flat
+        ):
             # The traversal process has been started but hasn't completed.
             traversal_duration = now - request._traversal_start
             logging_context.push(
-                traversal_duration_ms=round(traversal_duration * 1000, 3))
+                traversal_duration_ms=round(traversal_duration * 1000, 3)
+            )
             if thread_now is not None:
                 traversal_thread_duration = (
-                    thread_now - request._traversal_thread_start)
+                    thread_now - request._traversal_thread_start
+                )
                 logging_context.push(
                     traversal_thread_duration_ms=round(
-                        traversal_thread_duration * 1000, 3))
+                        traversal_thread_duration * 1000, 3
+                    )
+                )
             # Update statsd, timing is in milliseconds
             getUtility(IStatsdClient).timing(
-                'traversal_duration', traversal_duration * 1000,
+                "traversal_duration",
+                traversal_duration * 1000,
                 labels={
-                    'success': False,
-                    'pageid': self._prepPageIDForMetrics(
-                        orig_env.get('launchpad.pageid')),
-                    })
+                    "success": False,
+                    "pageid": self._prepPageIDForMetrics(
+                        orig_env.get("launchpad.pageid")
+                    ),
+                },
+            )
         else:
             # The exception wasn't raised in the middle of the traversal nor
             # the publication, so there's nothing we need to do here.
@@ -691,8 +715,8 @@ class LaunchpadBrowserPublication(
             getUtility(IErrorReportingUtility).raising(exc_info, request)
 
         if isinstance(exc_info[1], (da.RequestExpired, TimeoutError)):
-            OpStats.stats['timeouts'] += 1
-            getUtility(IStatsdClient).incr('timeouts.hard')
+            OpStats.stats["timeouts"] += 1
+            getUtility(IStatsdClient).incr("timeouts.hard")
 
         def should_retry(exc_info):
             if not retry_allowed:
@@ -703,8 +727,9 @@ class LaunchpadBrowserPublication(
             # returning the 404 error page. We do this in case the
             # LookupError is caused by replication lag. Our database
             # policy forces the use of the primary database for retries.
-            if (isinstance(exc_info[1], LookupError)
-                and isinstance(db_policy, LaunchpadDatabasePolicy)):
+            if isinstance(exc_info[1], LookupError) and isinstance(
+                db_policy, LaunchpadDatabasePolicy
+            ):
                 if db_policy.default_flavor == PRIMARY_FLAVOR:
                     return False
                 else:
@@ -722,8 +747,15 @@ class LaunchpadBrowserPublication(
             # An IntegrityError may be caused when we insert a row
             # into the database that already exists, such as two requests
             # doing an insert-or-update. It may succeed if we try again.
-            if isinstance(exc_info[1], (Retry, DisconnectionError,
-                IntegrityError, TransactionRollbackError)):
+            if isinstance(
+                exc_info[1],
+                (
+                    Retry,
+                    DisconnectionError,
+                    IntegrityError,
+                    TransactionRollbackError,
+                ),
+            ):
                 return True
 
             return False
@@ -737,9 +769,10 @@ class LaunchpadBrowserPublication(
                 # If we made it as far as beforeTraversal, then unwind the
                 # Talisker logging context to its state on entering that
                 # method.
-                if hasattr(request, '_initial_logging_context_level'):
+                if hasattr(request, "_initial_logging_context_level"):
                     logging_context.unwind(
-                        request._initial_logging_context_level)
+                        request._initial_logging_context_level
+                    )
             # Our endRequest needs to know if a retry is pending or not.
             request._wants_retry = True
             # Abort any in-progress transaction and reset any
@@ -752,15 +785,16 @@ class LaunchpadBrowserPublication(
 
         superclass = zope.app.publication.browser.BrowserPublication
         superclass.handleException(
-            self, object, request, exc_info, retry_allowed)
+            self, object, request, exc_info, retry_allowed
+        )
 
         # If it's a HEAD request, we don't care about the body, regardless of
         # exception.
         # UPSTREAM: Should this be part of zope,
         #           or is it only required because of our customisations?
         #        - Andrew Bennetts, 2005-03-08
-        if request.method == 'HEAD':
-            request.response.setResult(b'')
+        if request.method == "HEAD":
+            request.response.setResult(b"")
 
     def beginErrorHandlingTransaction(self, request, ob, note):
         """Hook for when a new view is started to handle an exception.
@@ -777,8 +811,10 @@ class LaunchpadBrowserPublication(
         # create OOPS reports with the SQL commands that led up to the error.
         # At the moment, we can only distinguish based on the "note" argument:
         # an undocumented argument of this undocumented method.
-        if note in ('application error-handling',
-                    'application error-handling side-effect'):
+        if note in (
+            "application error-handling",
+            "application error-handling side-effect",
+        ):
             da.clear_request_started()
             da.set_request_started()
 
@@ -801,12 +837,12 @@ class LaunchpadBrowserPublication(
         statsd_client = getUtility(IStatsdClient)
 
         # Maintain operational statistics.
-        if getattr(request, '_wants_retry', False):
-            OpStats.stats['retries'] += 1
-            statsd_client.incr('requests.retries')
+        if getattr(request, "_wants_retry", False):
+            OpStats.stats["retries"] += 1
+            statsd_client.incr("requests.retries")
         else:
-            OpStats.stats['requests'] += 1
-            statsd_client.incr('requests.all')
+            OpStats.stats["requests"] += 1
+            statsd_client.incr("requests.all")
 
             # Increment counters for HTTP status codes we track individually
             # NB. We use IBrowserRequest, as other request types such as
@@ -814,42 +850,44 @@ class LaunchpadBrowserPublication(
             # This should be fine as Launchpad only deals with browser
             # and XML-RPC requests.
             if IBrowserRequest.providedBy(request):
-                OpStats.stats['http requests'] += 1
-                statsd_client.incr('requests.http')
+                OpStats.stats["http requests"] += 1
+                statsd_client.incr("requests.http")
                 status = request.response.getStatus()
                 if status == 404:  # Not Found
-                    OpStats.stats['404s'] += 1
-                    statsd_client.incr('errors.404')
+                    OpStats.stats["404s"] += 1
+                    statsd_client.incr("errors.404")
                 elif status == 500:  # Unhandled exceptions
-                    OpStats.stats['500s'] += 1
-                    statsd_client.incr('errors.500')
+                    OpStats.stats["500s"] += 1
+                    statsd_client.incr("errors.500")
                 elif status == 503:  # Timeouts
-                    OpStats.stats['503s'] += 1
-                    statsd_client.incr('errors.503')
+                    OpStats.stats["503s"] += 1
+                    statsd_client.incr("errors.503")
 
                 # Increment counters for status code groups.
-                status_group = str(status)[0] + 'XX'
-                OpStats.stats[status_group + 's'] += 1
-                statsd_client.incr('errors.%s' % status_group)
+                status_group = str(status)[0] + "XX"
+                OpStats.stats[status_group + "s"] += 1
+                statsd_client.incr("errors.%s" % status_group)
 
                 # Increment counter for 5XXs_b.
-                if is_browser(request) and status_group == '5XX':
-                    OpStats.stats['5XXs_b'] += 1
-                    statsd_client.incr('errors.5XX.browser')
+                if is_browser(request) and status_group == "5XX":
+                    OpStats.stats["5XXs_b"] += 1
+                    statsd_client.incr("errors.5XX.browser")
 
         # Make sure our databases are in a sane state for the next request.
         thread_name = threading.current_thread().name
         for name, store in getUtility(IZStorm).iterstores():
             try:
-                assert store._connection._state != STATE_DISCONNECTED, (
-                    "Bug #504291: Store left in a disconnected state.")
+                assert (
+                    store._connection._state != STATE_DISCONNECTED
+                ), "Bug #504291: Store left in a disconnected state."
             except AssertionError:
                 # The Store is in a disconnected state. This should
                 # not happen, as store.rollback() should have been called
                 # by now. Log an OOPS so we know about this. This
                 # is Bug #504291 happening.
                 getUtility(IErrorReportingUtility).raising(
-                    sys.exc_info(), request)
+                    sys.exc_info(), request
+                )
                 # Repair things so the server can remain operational.
                 store.rollback()
             # Reset all Storm stores when not running the test suite.
@@ -857,17 +895,19 @@ class LaunchpadBrowserPublication(
             # that'd make writing tests a much more painful task. We
             # still reset the standby stores though to minimize stale
             # cache issues.
-            if thread_name != 'MainThread' or name.endswith('-standby'):
+            if thread_name != "MainThread" or name.endswith("-standby"):
                 store.reset()
 
 
-_browser_re = re.compile(r"""(?x)^(
+_browser_re = re.compile(
+    r"""(?x)^(
     Mozilla |
     Opera |
     Lynx |
     Links |
     w3m
-    )""")
+    )"""
+)
 
 
 def is_browser(request):
@@ -883,7 +923,7 @@ def is_browser(request):
     We could massage one of the user-agent databases that are
     available into a usable, but we would gain little.
     """
-    user_agent = request.getHeader('User-Agent')
+    user_agent = request.getHeader("User-Agent")
     return (
-        user_agent is not None
-        and _browser_re.search(user_agent) is not None)
+        user_agent is not None and _browser_re.search(user_agent) is not None
+    )

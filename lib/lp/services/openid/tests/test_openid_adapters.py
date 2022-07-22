@@ -3,10 +3,7 @@
 
 from testtools.matchers import StartsWith
 
-from lp.services.config.fixture import (
-    ConfigFixture,
-    ConfigUseFixture,
-    )
+from lp.services.config.fixture import ConfigFixture, ConfigUseFixture
 from lp.services.openid.adapters.openid import IOpenIDPersistentIdentity
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -21,18 +18,21 @@ class OpenIdAdapterTests(TestCaseWithFactory):
         config_fixture = self.useFixture(
             ConfigFixture(
                 config_name,
-                DatabaseFunctionalLayer.config_fixture.instance_name))
-        setting_lines = ['[launchpad]'] + \
-            ['%s: %s' % (k, v) for k, v in kwargs.items()]
-        config_fixture.add_section('\n'.join(setting_lines))
+                DatabaseFunctionalLayer.config_fixture.instance_name,
+            )
+        )
+        setting_lines = ["[launchpad]"] + [
+            "%s: %s" % (k, v) for k, v in kwargs.items()
+        ]
+        config_fixture.add_section("\n".join(setting_lines))
         self.useFixture(ConfigUseFixture(config_name))
 
     def test_openid_adapter_openid_urls_obey_settings(self):
         self.set_launchpad_section_setings(
-            openid_provider_root='https://some.new.provider.com',
+            openid_provider_root="https://some.new.provider.com",
         )
         account = self.factory.makeAccount()
         i = IOpenIDPersistentIdentity(account)
         self.assertThat(
-            i.openid_identity_url,
-            StartsWith('https://some.new.provider.com'))
+            i.openid_identity_url, StartsWith("https://some.new.provider.com")
+        )

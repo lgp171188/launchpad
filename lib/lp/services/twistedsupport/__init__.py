@@ -4,28 +4,22 @@
 """Useful tools for interacting with Twisted."""
 
 __all__ = [
-    'cancel_on_timeout',
-    'extract_result',
-    'gatherResults',
-    'no_traceback_failures',
-    'suppress_stderr',
-    'run_reactor',
-    ]
+    "cancel_on_timeout",
+    "extract_result",
+    "gatherResults",
+    "no_traceback_failures",
+    "suppress_stderr",
+    "run_reactor",
+]
 
 
 import functools
 import io
-from signal import (
-    getsignal,
-    SIGCHLD,
-    signal,
-    )
 import sys
+from signal import SIGCHLD, getsignal, signal
 
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    )
+from twisted.internet import defer
+from twisted.internet import reactor as default_reactor
 from twisted.python.failure import Failure
 
 
@@ -42,6 +36,7 @@ def gatherResults(deferredList):
     :type deferredList:  list of `defer.Deferred`s.
     :return: `defer.Deferred`.
     """
+
     def convert_first_error_to_real(failure):
         failure.trap(defer.FirstError)
         return failure.value.subFailure
@@ -53,8 +48,8 @@ def gatherResults(deferredList):
 
 
 def suppress_stderr(function):
-    """Deferred friendly decorator that suppresses output from a function.
-    """
+    """Deferred friendly decorator that suppresses output from a function."""
+
     def set_stderr(result, stream):
         sys.stderr = stream
         return result
@@ -110,6 +105,7 @@ def cancel_on_timeout(d, timeout, reactor=None):
         if not delayed_call.called:
             delayed_call.cancel()
         return passthrough
+
     return d.addBoth(cancel_timeout)
 
 
@@ -120,6 +116,7 @@ def no_traceback_failures(func):
     Traceback-less failures are much faster than the automatic Failures
     Deferred constructs internally.
     """
+
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         try:

@@ -3,19 +3,9 @@
 
 """Tests for `CommandSpawner`."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from fcntl import (
-    F_GETFL,
-    fcntl,
-    )
-from os import (
-    fdopen,
-    O_NONBLOCK,
-    pipe,
-    )
+from datetime import datetime, timedelta
+from fcntl import F_GETFL, fcntl
+from os import O_NONBLOCK, fdopen, pipe
 
 from pytz import utc
 from testtools.matchers import LessThan
@@ -24,7 +14,7 @@ from lp.services.command_spawner import (
     CommandSpawner,
     OutputLineHandler,
     ReturnCodeReceiver,
-    )
+)
 from lp.testing import TestCase
 from lp.testing.fakemethod import FakeMethod
 
@@ -32,7 +22,7 @@ from lp.testing.fakemethod import FakeMethod
 def make_pipe():
     """Create a pipe of `file` objects."""
     r, w = pipe()
-    return fdopen(r, 'r'), fdopen(w, 'w')
+    return fdopen(r, "r"), fdopen(w, "w")
 
 
 def write_and_flush(pipe, text):
@@ -100,7 +90,7 @@ class TestCommandSpawner(TestCase):
     def test_start_runs_its_command(self):
         spawner, process = self._makeSpawnerAndProcess()
         spawner.start("/bin/true")
-        self.assertEqual([("/bin/true", )], spawner._spawn.extract_args())
+        self.assertEqual([("/bin/true",)], spawner._spawn.extract_args())
 
     def test_output_is_nonblocking(self):
         spawner, process = self._makeSpawnerAndProcess()
@@ -120,7 +110,8 @@ class TestCommandSpawner(TestCase):
         spawner.start(["/bin/echo", "2"])
 
         self.assertContentEqual(
-            [first_process, second_process], spawner.running_processes)
+            [first_process, second_process], spawner.running_processes
+        )
 
     def test_kill_terminates_processes(self):
         spawner, process = self._makeSpawnerAndProcess()
@@ -135,7 +126,7 @@ class TestCommandSpawner(TestCase):
         spawner.start("ls", stdout_handler=stdout_handler)
         write_and_flush(process.stdout_sink, "readme.txt\n")
         spawner.communicate()
-        self.assertEqual([("readme.txt\n", )], stdout_handler.extract_args())
+        self.assertEqual([("readme.txt\n",)], stdout_handler.extract_args())
 
     def test_handles_error_output(self):
         spawner, process = self._makeSpawnerAndProcess()
@@ -144,7 +135,8 @@ class TestCommandSpawner(TestCase):
         write_and_flush(process.stderr_sink, "File not found.\n")
         spawner.communicate()
         self.assertEqual(
-            [("File not found.\n", )], stderr_handler.extract_args())
+            [("File not found.\n",)], stderr_handler.extract_args()
+        )
 
     def test_does_not_call_completion_handler_until_completion(self):
         spawner, process = self._makeSpawnerAndProcess(returncode=None)
@@ -180,16 +172,17 @@ class TestCommandSpawner(TestCase):
         completion_handler = FakeMethod()
         spawner.start("echo", completion_handler=completion_handler)
         spawner.complete()
-        self.assertEqual(((101, ), {}), completion_handler.calls[-1])
+        self.assertEqual(((101,), {}), completion_handler.calls[-1])
 
     def test_handles_output_before_completion(self):
         spawner, process = self._makeSpawnerAndProcess(returncode=0)
         handler = FakeMethod()
         spawner.start(
-            "hello", stdout_handler=handler, completion_handler=handler)
+            "hello", stdout_handler=handler, completion_handler=handler
+        )
         write_and_flush(process.stdout_sink, "Hello\n")
         spawner.complete()
-        self.assertEqual([("Hello\n", ), (0, )], handler.extract_args())
+        self.assertEqual([("Hello\n",), (0,)], handler.extract_args())
 
     def test_handles_multiple_processes(self):
         spawner = CommandSpawner()
@@ -204,7 +197,7 @@ class TestCommandSpawner(TestCase):
         spawner.start(["/bin/echo", "2"], completion_handler=handler)
 
         spawner.complete()
-        self.assertContentEqual([(1, ), (2, )], handler.extract_args())
+        self.assertContentEqual([(1,), (2,)], handler.extract_args())
 
 
 class AcceptOutput:
@@ -300,7 +293,7 @@ class TestCommandSpawnerAcceptance(TestCase):
         handler = OutputLineHandler(FakeMethod())
         spawner.start(["echo", "hello"], stdout_handler=handler)
         spawner.complete()
-        self.assertEqual([("hello", )], handler.line_processor.extract_args())
+        self.assertEqual([("hello",)], handler.line_processor.extract_args())
 
     def test_integrates_with_returncodereceiver(self):
         spawner = self._makeSpawner()
@@ -319,9 +312,7 @@ class TestOutputLineHandler(TestCase):
 
     def _getLines(self):
         """Get the lines that were passed to `handler`'s line processor."""
-        return [
-            line
-            for (line, ) in self.handler.line_processor.extract_args()]
+        return [line for (line,) in self.handler.line_processor.extract_args()]
 
     def test_processes_line(self):
         self.handler("x\n")

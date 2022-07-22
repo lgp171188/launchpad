@@ -4,15 +4,12 @@
 """Test-specific Twisted utilities."""
 
 __all__ = [
-    'TReqFixture',
-    ]
+    "TReqFixture",
+]
 
 from fixtures import Fixture
 from treq.client import HTTPClient
-from twisted.web.client import (
-    Agent,
-    HTTPConnectionPool,
-    )
+from twisted.web.client import Agent, HTTPConnectionPool
 
 
 class TReqFixture(Fixture):

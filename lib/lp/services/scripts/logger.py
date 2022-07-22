@@ -8,42 +8,38 @@ Don't import from this module. Import it from lp.services.scripts.
 
 # Don't import stuff from this module. Import it from lp.services.scripts
 __all__ = [
-    'DEBUG2',
-    'DEBUG3',
-    'DEBUG4',
-    'DEBUG5',
-    'DEBUG6',
-    'DEBUG7',
-    'DEBUG8',
-    'DEBUG9',
-    'dummy_logger_options',
-    'LaunchpadFormatter',
-    'log',
-    'logger',
-    'logger_options',
-    'OopsHandler',
-    ]
+    "DEBUG2",
+    "DEBUG3",
+    "DEBUG4",
+    "DEBUG5",
+    "DEBUG6",
+    "DEBUG7",
+    "DEBUG8",
+    "DEBUG9",
+    "dummy_logger_options",
+    "LaunchpadFormatter",
+    "log",
+    "logger",
+    "logger_options",
+    "OopsHandler",
+]
 
 
-from contextlib import contextmanager
 import logging
-from logging.handlers import WatchedFileHandler
-from optparse import OptionParser
 import os.path
 import re
 import sys
 import time
+from contextlib import contextmanager
+from logging.handlers import WatchedFileHandler
+from optparse import OptionParser
 from traceback import format_exception_only
 
 from zope.exceptions.log import Formatter
 
 from lp.services.config import config
 from lp.services.log import loglevels
-from lp.services.webapp.errorlog import (
-    globalErrorUtility,
-    ScriptRequest,
-    )
-
+from lp.services.webapp.errorlog import ScriptRequest, globalErrorUtility
 
 # Reexport our custom loglevels for old callsites. These callsites
 # should be importing the symbols from lp.services.log.loglevels
@@ -64,7 +60,8 @@ class OopsHandler(logging.Handler):
         logging.Handler.__init__(self, level)
         # Context for OOPS reports.
         self.request = ScriptRequest(
-            [('script_name', script_name), ('path', sys.argv[0])])
+            [("script_name", script_name), ("path", sys.argv[0])]
+        )
         self.setFormatter(LaunchpadFormatter())
         self.logger = logger
 
@@ -90,9 +87,9 @@ class LaunchpadFormatter(Formatter):
         if fmt is None:
             if config.isTestRunner():
                 # Don't output timestamps in the test environment
-                fmt = '%(levelname)-7s %(message)s'
+                fmt = "%(levelname)-7s %(message)s"
             else:
-                fmt = '%(asctime)s %(levelname)-7s %(message)s'
+                fmt = "%(asctime)s %(levelname)-7s %(message)s"
         logging.Formatter.__init__(self, fmt, datefmt)
         # Output should be UTC.
         self.converter = time.gmtime
@@ -133,27 +130,37 @@ class LogLevelNudger:
 
     def __call__(self, option, opt_str, value, parser):
         """Callback for `optparse` to handle --verbose or --quiet option."""
-        current_level = getattr(parser.values, 'loglevel', self.default)
+        current_level = getattr(parser.values, "loglevel", self.default)
         increment = self.getIncrement(current_level)
         parser.values.loglevel = current_level + increment
-        parser.values.verbose = (parser.values.loglevel < self.default)
+        parser.values.verbose = parser.values.loglevel < self.default
         # Reset the global log.
         log._log = _logger(parser.values.loglevel, out_stream=sys.stderr)
 
 
-def define_verbosity_options(parser, default, verbose_callback,
-                             quiet_callback):
+def define_verbosity_options(
+    parser, default, verbose_callback, quiet_callback
+):
     """Define the -v and -q options on `parser`."""
     # Only one of these specifies dest and default.  That's because
     # that's enough to make the parser create the option value; there's
     # no need for the other option to specify them as well.
     parser.add_option(
-        "-v", "--verbose", dest="loglevel", default=default,
-        action="callback", callback=verbose_callback,
-        help="Increase stderr verbosity. May be specified multiple times.")
+        "-v",
+        "--verbose",
+        dest="loglevel",
+        default=default,
+        action="callback",
+        callback=verbose_callback,
+        help="Increase stderr verbosity. May be specified multiple times.",
+    )
     parser.add_option(
-        "-q", "--quiet", action="callback", callback=quiet_callback,
-        help="Decrease stderr verbosity. May be specified multiple times.")
+        "-q",
+        "--quiet",
+        action="callback",
+        callback=quiet_callback,
+        help="Decrease stderr verbosity. May be specified multiple times.",
+    )
 
 
 def do_nothing(*args, **kwargs):
@@ -216,28 +223,36 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
     assert logging.CRITICAL == 50
 
     # Undocumented use of the optparse module
-    parser.defaults['verbose'] = False
+    parser.defaults["verbose"] = False
 
     define_verbosity_options(
-        parser, default,
-        LogLevelNudger(default, False), LogLevelNudger(default, True))
+        parser,
+        default,
+        LogLevelNudger(default, False),
+        LogLevelNudger(default, True),
+    )
 
-    if hasattr(logging, '_levelToName'):
+    if hasattr(logging, "_levelToName"):
         # Python >= 3.4
         name_to_level = dict(logging._nameToLevel)
-        debug_levels = ', '.join(
-            v for k, v in sorted(logging._levelToName.items(), reverse=True))
+        debug_levels = ", ".join(
+            v for k, v in sorted(logging._levelToName.items(), reverse=True)
+        )
     else:
         name_to_level = {
-            k: v for k, v in logging._levelNames.items()
-            if not isinstance(k, int)}
-        debug_levels = ', '.join(
-            v for k, v in sorted(logging._levelNames.items(), reverse=True)
-                if isinstance(k, int))
+            k: v
+            for k, v in logging._levelNames.items()
+            if not isinstance(k, int)
+        }
+        debug_levels = ", ".join(
+            v
+            for k, v in sorted(logging._levelNames.items(), reverse=True)
+            if isinstance(k, int)
+        )
 
     def log_file(option, opt_str, value, parser):
         try:
-            level, path = value.split(':', 1)
+            level, path = value.split(":", 1)
         except ValueError:
             level, path = logging.INFO, value
 
@@ -245,8 +260,9 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
             pass
         elif level.upper() not in name_to_level:
             parser.error(
-                "'%s' is not a valid logging level. Must be one of %s" % (
-                    level, debug_levels))
+                "'%s' is not a valid logging level. Must be one of %s"
+                % (level, debug_levels)
+            )
         else:
             level = name_to_level[level.upper()]
 
@@ -255,7 +271,7 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
 
         path = os.path.abspath(path)
         try:
-            open(path, 'a')
+            open(path, "a")
         except Exception:
             parser.error("Unable to open log file %s" % path)
 
@@ -266,10 +282,15 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
         log._log = _logger(parser.values.loglevel, out_stream=sys.stderr)
 
     parser.add_option(
-        "--log-file", type="string", action="callback", callback=log_file,
-        metavar="LVL:FILE", default=None,
-        help="Send log messages to FILE. LVL is one of %s" % debug_levels)
-    parser.set_default('log_file_level', None)
+        "--log-file",
+        type="string",
+        action="callback",
+        callback=log_file,
+        metavar="LVL:FILE",
+        default=None,
+        help="Send log messages to FILE. LVL is one of %s" % debug_levels,
+    )
+    parser.set_default("log_file_level", None)
 
     def milliseconds_cb(option, opt_str, value, parser):
         if opt_str == "--ms":
@@ -278,20 +299,30 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
             value = False
         parser.values.milliseconds = value
         log._log = _logger(
-            parser.values.loglevel, out_stream=sys.stderr, milliseconds=value)
+            parser.values.loglevel, out_stream=sys.stderr, milliseconds=value
+        )
 
     parser.add_option(
-        "--ms", action="callback", default=milliseconds,
-        dest="milliseconds", callback=milliseconds_cb,
-        help="Include milliseconds in log output timestamps")
+        "--ms",
+        action="callback",
+        default=milliseconds,
+        dest="milliseconds",
+        callback=milliseconds_cb,
+        help="Include milliseconds in log output timestamps",
+    )
     parser.add_option(
-        "--no-ms", action="callback", default=milliseconds,
-        dest="milliseconds", callback=milliseconds_cb,
-        help="Include milliseconds in log output timestamps")
+        "--no-ms",
+        action="callback",
+        default=milliseconds,
+        dest="milliseconds",
+        callback=milliseconds_cb,
+        help="Include milliseconds in log output timestamps",
+    )
 
     # Set the global log
     log._log = _logger(
-        default, out_stream=sys.stderr, milliseconds=milliseconds)
+        default, out_stream=sys.stderr, milliseconds=milliseconds
+    )
 
 
 def logger(options=None, name=None):
@@ -317,13 +348,17 @@ def logger(options=None, name=None):
         logger_options(parser)
         options, args = parser.parse_args()
 
-    log_file = getattr(options, 'log_file', None)
-    log_file_level = getattr(options, 'log_file_level', None)
+    log_file = getattr(options, "log_file", None)
+    log_file_level = getattr(options, "log_file_level", None)
 
     return _logger(
-        options.loglevel, out_stream=sys.stderr, name=name,
-        log_file=log_file, log_file_level=log_file_level,
-        milliseconds=options.milliseconds)
+        options.loglevel,
+        out_stream=sys.stderr,
+        name=name,
+        log_file=log_file,
+        log_file_level=log_file_level,
+        milliseconds=options.milliseconds,
+    )
 
 
 def reset_root_logger():
@@ -337,8 +372,14 @@ def reset_root_logger():
         root_logger.removeHandler(hdlr)
 
 
-def _logger(level, out_stream, name=None, log_file=None,
-            log_file_level=logging.DEBUG, milliseconds=False):
+def _logger(
+    level,
+    out_stream,
+    name=None,
+    log_file=None,
+    log_file_level=logging.DEBUG,
+    milliseconds=False,
+):
     """Create the actual logger instance, logging at the given level
 
     if name is None, it will get args[0] without the extension (e.g. gina).
@@ -347,7 +388,7 @@ def _logger(level, out_stream, name=None, log_file=None,
     if name is None:
         # Determine the logger name from the script name
         name = sys.argv[0]
-        name = re.sub('.py[oc]?$', '', name)
+        name = re.sub(".py[oc]?$", "", name)
 
     # We install our custom handlers and formatters on the root logger.
     # This means that if the root logger is used, we still get correct
@@ -391,8 +432,9 @@ def _logger(level, out_stream, name=None, log_file=None,
     # Inform the user the extra log file is in operation.
     if log_file is not None:
         log.info(
-            "Logging %s and higher messages to %s" % (
-                logging.getLevelName(log_file_level), log_file))
+            "Logging %s and higher messages to %s"
+            % (logging.getLevelName(log_file_level), log_file)
+        )
 
     return logger
 
@@ -412,8 +454,8 @@ class _LogWrapper:
         return getattr(self._log, key)
 
     def __setattr__(self, key, value):
-        if key == '_log':
-            self.__dict__['_log'] = value
+        if key == "_log":
+            self.__dict__["_log"] = value
             return value
         else:
             return setattr(self._log, key, value)
@@ -430,9 +472,9 @@ class _LogWrapper:
     def shortException(self, msg, *args):
         """Like Logger.exception, but does not print a traceback."""
         exctype, value = sys.exc_info()[:2]
-        report = ''.join(format_exception_only(exctype, value))
+        report = "".join(format_exception_only(exctype, value))
         # _log.error interpolates msg, so we need to escape % chars
-        msg += '\n' + report.rstrip('\n').replace('%', '%%')
+        msg += "\n" + report.rstrip("\n").replace("%", "%%")
         self._log.error(msg, *args)
 
 

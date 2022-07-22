@@ -11,10 +11,7 @@ import io
 from zope.interface import implementer
 
 from lp.services.log.logger import FakeLogger
-from lp.services.looptuner import (
-    ITunableLoop,
-    LoopTuner,
-    )
+from lp.services.looptuner import ITunableLoop, LoopTuner
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
 
@@ -29,9 +26,7 @@ class CleanupException(Exception):
 
 @implementer(ITunableLoop)
 class FailingLoop:
-
-    def __init__(
-        self, fail_main=False, fail_cleanup=False):
+    def __init__(self, fail_main=False, fail_cleanup=False):
         self.fail_main = fail_main
         self.fail_cleanup = fail_cleanup
 
@@ -75,5 +70,5 @@ class TestSomething(TestCase):
         tuner = LoopTuner(loop, 5, log=FakeLogger(log_file))
         self.assertRaises(MainException, tuner.run)
         self.assertEqual(
-            log_file.getvalue().strip(),
-            "ERROR Unhandled exception in cleanUp")
+            log_file.getvalue().strip(), "ERROR Unhandled exception in cleanUp"
+        )

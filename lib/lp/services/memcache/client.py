@@ -4,22 +4,19 @@
 """Launchpad Memcache client."""
 
 __all__ = [
-    'MemcacheClient',
-    'memcache_client_factory',
-    ]
+    "MemcacheClient",
+    "memcache_client_factory",
+]
 
 import json
 import re
 
 from pymemcache.client.hash import HashClient
-from pymemcache.exceptions import (
-    MemcacheClientError,
-    MemcacheError,
-    )
+from pymemcache.exceptions import MemcacheClientError, MemcacheError
 from pymemcache.serde import (
     python_memcache_deserializer,
     python_memcache_serializer,
-    )
+)
 
 from lp.services.config import config
 
@@ -58,7 +55,8 @@ class MemcacheClient(HashClient):
         except (MemcacheError, OSError) as e:
             if logger is not None:
                 logger.exception(
-                    "Cannot delete %s from memcached: %s" % (key, e))
+                    "Cannot delete %s from memcached: %s" % (key, e)
+                )
             return False
 
     def get_json(self, key, logger, description, default=None):
@@ -103,17 +101,20 @@ def memcache_client_factory(timeline=True):
     # example value for config.memcache.servers:
     # (127.0.0.1:11242,1)
     servers = [
-        host for host, _ in re.findall(
-            r'\((.+?),(\d+)\)', config.memcache.servers)]
+        host
+        for host, _ in re.findall(r"\((.+?),(\d+)\)", config.memcache.servers)
+    ]
     assert len(servers) > 0, "Invalid memcached server list %r" % (
-        config.memcache.servers,)
+        config.memcache.servers,
+    )
     if timeline:
         from lp.services.memcache.timeline import TimelineRecordingClient
+
         client_factory = TimelineRecordingClient
     else:
         client_factory = MemcacheClient
     return client_factory(
         servers,
         serializer=python_memcache_serializer,
-        deserializer=python_memcache_deserializer
+        deserializer=python_memcache_deserializer,
     )
