@@ -33,16 +33,13 @@ populate the class-level "fields" variable. See MplayerStatusSniffer
 for an example.
 """
 
-from base64 import urlsafe_b64encode
 import csv
 import optparse
-from os import mkdir
-from os.path import (
-    exists,
-    join,
-    )
-from pprint import pprint
 import sys
+from base64 import urlsafe_b64encode
+from os import mkdir
+from os.path import exists, join
+from pprint import pprint
 from time import sleep
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -53,7 +50,7 @@ from lp.services.beautifulsoup import BeautifulSoup
 class RoundupSniffer:
     """Sniffs the meaning of numeric fields in remote Roundups."""
 
-    fields = ('status',)
+    fields = ("status",)
 
     def __init__(self, base_url, cache_dir):
         self.base_url = base_url
@@ -65,23 +62,24 @@ class RoundupSniffer:
         """Fetch the URL, consulting the cache first."""
         filename = join(
             self.cache_dir,
-            urlsafe_b64encode(url.encode('UTF-8')).decode('ASCII'))
+            urlsafe_b64encode(url.encode("UTF-8")).decode("ASCII"),
+        )
         if not exists(filename):
-            open(filename, 'wb').write(urlopen(url).read())
-        return open(filename, 'rb')
+            open(filename, "wb").write(urlopen(url).read())
+        return open(filename, "rb")
 
     def get_all_bugs(self):
-        all_fields = ['id']
+        all_fields = ["id"]
         all_fields.extend(self.fields)
         query = [
-            ('@action', 'export_csv'),
-            ('@columns', ','.join(all_fields)),
-            ('@sort', 'activity'),
-            ('@group', 'priority'),
-            ('@pagesize', '50'),
-            ('@startwith', '0'),
-            ]
-        url = '%s?%s' % (self.base_url, urlencode(query))
+            ("@action", "export_csv"),
+            ("@columns", ",".join(all_fields)),
+            ("@sort", "activity"),
+            ("@group", "priority"),
+            ("@pagesize", "50"),
+            ("@startwith", "0"),
+        ]
+        url = "%s?%s" % (self.base_url, urlencode(query))
         bugs = csv.DictReader(self.fetch(url))
         return list(bugs)
 
@@ -98,19 +96,22 @@ class MplayerStatusSniffer(RoundupSniffer):
     be useful in general.
     """
 
-    fields = ('status', 'substatus')
+    fields = ("status", "substatus")
 
     def get_text_values(self, bug):
         """Returns the text of status and substatus for the given bug.
 
         This is done by downloading the HTML bug page and scraping it.
         """
-        url = '%s%s' % (self.base_url, bug['id'])
+        url = "%s%s" % (self.base_url, bug["id"])
         page = self.fetch(url).read()
         soup = BeautifulSoup(page)
         return tuple(
-            node.string for node in
-            soup.find('th', text='Status').find_next('td').find_all('span'))
+            node.string
+            for node in soup.find("th", text="Status")
+            .find_next("td")
+            .find_all("span")
+        )
 
 
 def get_distinct(things, fields):
@@ -118,8 +119,10 @@ def get_distinct(things, fields):
 
     For each combination also return one example thing.
     """
+
     def key(thing):
         return tuple(thing[field] for field in fields)
+
     return {key(thing): thing for thing in things}
 
 
@@ -135,41 +138,56 @@ def gen_mapping(sniffer):
 def parse_args(args):
     parser = optparse.OptionParser()
     parser.add_option(
-        "--base-url", dest="base_url",
+        "--base-url",
+        dest="base_url",
         help="The base URL at the remote Roundup instance.",
-        metavar="URL")
+        metavar="URL",
+    )
     parser.add_option(
-        "--delay", dest="delay", type="int",
-        help=("The number of seconds to wait between each page "
-              "load [default: %default]."))
+        "--delay",
+        dest="delay",
+        type="int",
+        help=(
+            "The number of seconds to wait between each page "
+            "load [default: %default]."
+        ),
+    )
     parser.add_option(
-        "--cache-dir", dest="cache_dir",
-        help=("A directory in which to cache fetched resources "
-              "[default: %default]."),
-        metavar="DIR")
+        "--cache-dir",
+        dest="cache_dir",
+        help=(
+            "A directory in which to cache fetched resources "
+            "[default: %default]."
+        ),
+        metavar="DIR",
+    )
     parser.add_option(
-        "--sniffer-class", dest="sniffer_class",
+        "--sniffer-class",
+        dest="sniffer_class",
         help="The sniffer class to use [default: %default].",
-        metavar="CLASSNAME")
+        metavar="CLASSNAME",
+    )
     parser.set_defaults(
-        delay=0, cache_dir="roundup_sniffer_cache",
-        sniffer_class="MplayerStatusSniffer")
+        delay=0,
+        cache_dir="roundup_sniffer_cache",
+        sniffer_class="MplayerStatusSniffer",
+    )
 
     options, args = parser.parse_args(args)
 
     if not options.base_url:
         parser.error("Please specify a base URL.")
     if len(args) > 0:
-        parser.error("Positional arguments are not accepted: %s" %
-                     ' '.join(args))
+        parser.error(
+            "Positional arguments are not accepted: %s" % " ".join(args)
+        )
 
     return options
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     options = parse_args(sys.argv[1:])
-    sniffer = eval(options.sniffer_class)(
-        options.base_url, options.cache_dir)
+    sniffer = eval(options.sniffer_class)(options.base_url, options.cache_dir)
     mapping = {}
     for raw, text in gen_mapping(sniffer):
         mapping[raw] = text

@@ -4,34 +4,18 @@
 # Affero General Public License version 3 (see the file LICENSE).
 
 import optparse
-from os import (
-    curdir,
-    listdir,
-    makedirs,
-    symlink,
-    unlink,
-    )
-from os.path import (
-    abspath,
-    basename,
-    exists,
-    islink,
-    join,
-    realpath,
-    relpath,
-    )
 import subprocess
-from sys import (
-    stderr,
-    stdout,
-    )
+from os import curdir, listdir, makedirs, symlink, unlink
+from os.path import abspath, basename, exists, islink, join, realpath, relpath
+from sys import stderr, stdout
 
 
 def get_main_worktree(branch_dir):
     """Return the main worktree directory, otherwise `None`."""
     worktree_list = subprocess.check_output(
-        ['git', 'worktree', 'list', '--porcelain'], universal_newlines=True)
-    main_worktree = worktree_list.splitlines()[0].split(' ', 1)[1]
+        ["git", "worktree", "list", "--porcelain"], universal_newlines=True
+    )
+    main_worktree = worktree_list.splitlines()[0].split(" ", 1)[1]
     if realpath(main_worktree) != realpath(branch_dir):
         return main_worktree
     return None
@@ -60,38 +44,58 @@ def link(source, destination):
         symlink(source, destination)
     except OSError as error:
         stderr.write(
-            '  Error linking %s: %s\n' % (basename(destination), error))
+            "  Error linking %s: %s\n" % (basename(destination), error)
+        )
     else:
         if options.verbose:
-            stdout.write('%s -> %s\n' % (relpath(destination), source))
+            stdout.write("%s -> %s\n" % (relpath(destination), source))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = optparse.OptionParser(
         usage="%prog [options] [parent]",
         description=(
             "Add a symlink in <target>/sourcecode for each corresponding "
-            "file in <parent>/sourcecode."),
+            "file in <parent>/sourcecode."
+        ),
         epilog=(
             "Most of the time this does the right thing if run "
-            "with no arguments."),
-        add_help_option=False)
+            "with no arguments."
+        ),
+        add_help_option=False,
+    )
     parser.add_option(
-        '-p', '--parent', dest='parent', default=None,
-        help=("The directory of the parent tree. If not specified, "
-              "the main Git worktree."),
-        metavar="DIR")
+        "-p",
+        "--parent",
+        dest="parent",
+        default=None,
+        help=(
+            "The directory of the parent tree. If not specified, "
+            "the main Git worktree."
+        ),
+        metavar="DIR",
+    )
     parser.add_option(
-        '-t', '--target', dest='target', default=curdir,
-        help=("The directory of the target tree. If not specified, "
-              "the current working directory."),
-        metavar="DIR")
+        "-t",
+        "--target",
+        dest="target",
+        default=curdir,
+        help=(
+            "The directory of the target tree. If not specified, "
+            "the current working directory."
+        ),
+        metavar="DIR",
+    )
     parser.add_option(
-        '-q', '--quiet', dest='verbose', action='store_false',
-        help="Be less verbose.")
+        "-q",
+        "--quiet",
+        dest="verbose",
+        action="store_false",
+        help="Be less verbose.",
+    )
     parser.add_option(
-        '-h', '--help', action='help',
-        help="Show this help message and exit.")
+        "-h", "--help", action="help", help="Show this help message and exit."
+    )
     parser.set_defaults(verbose=True)
 
     options, args = parser.parse_args()
@@ -101,8 +105,10 @@ if __name__ == '__main__':
         if options.parent is None:
             options.parent = args[0]
         else:
-            parser.error("Cannot specify parent tree as named "
-                         "argument and positional argument.")
+            parser.error(
+                "Cannot specify parent tree as named "
+                "argument and positional argument."
+            )
     elif len(args) >= 2:
         parser.error("Too many arguments.")
 
@@ -113,23 +119,25 @@ if __name__ == '__main__':
     if options.parent is None:
         parser.error("Parent tree not specified.")
 
-    if not exists(join(options.target, 'sourcecode')):
-        makedirs(join(options.target, 'sourcecode'))
+    if not exists(join(options.target, "sourcecode")):
+        makedirs(join(options.target, "sourcecode"))
 
     missing_files = gen_missing_files(
-        abspath(join(options.parent, 'sourcecode')),
-        abspath(join(options.target, 'sourcecode')))
+        abspath(join(options.parent, "sourcecode")),
+        abspath(join(options.target, "sourcecode")),
+    )
 
     for source, destination in missing_files:
         link(source, destination)
 
-    for folder_name in ('download-cache',):
+    for folder_name in ("download-cache",):
         source = abspath(join(options.parent, folder_name))
         destination = abspath(join(options.target, folder_name))
         if not exists(destination):
             if not exists(source):
                 stderr.write(
-                    '  Wanted to link %s to %s but source does not exist\n' %
-                    (source, destination))
+                    "  Wanted to link %s to %s but source does not exist\n"
+                    % (source, destination)
+                )
             else:
                 link(source, destination)

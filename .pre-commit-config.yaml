@@ -67,7 +67,13 @@ repos:
               |xmlrpc
             )
             |scripts
+            |utilities
           )/
+        exclude: |
+          (?x)^(
+            utilities/community-contributions\.py
+            |utilities/update-sourcecode
+          )$
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:
@@ -110,6 +116,7 @@ repos:
               |xmlrpc
             )
             |scripts
+            |utilities
           )/
     -   id: isort
         alias: isort-black
@@ -143,6 +150,7 @@ repos:
               |xmlrpc
             )
             |scripts
+            |utilities
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

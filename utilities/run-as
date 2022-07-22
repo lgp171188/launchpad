@@ -15,7 +15,6 @@ import pwd
 import resource
 import sys
 
-
 user = sys.argv[1]
 pw = pwd.getpwnam(user)
 os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)

@@ -25,8 +25,8 @@ import subprocess
 import sys
 from textwrap import dedent
 
-from storm.store import Store
 import transaction
+from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.lifecycleevent import ObjectCreatedEvent
@@ -38,25 +38,21 @@ from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStandbyStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStandbyStore
 from lp.services.scripts.base import LaunchpadScript
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
-    )
+)
 from lp.soyuz.model.component import ComponentSelection
 from lp.soyuz.model.section import SectionSelection
 from lp.soyuz.scripts.initialize_distroseries import InitializeDistroSeries
 from lp.testing.factory import LaunchpadObjectFactory
 
-
-user_name = 'ppa-user'
-default_email = '%s@example.com' % user_name
+user_name = "ppa-user"
+default_email = "%s@example.com" % user_name
 
 
 class DoNotRunOnProduction(Exception):
@@ -82,19 +78,21 @@ def check_preconditions(options):
 
     # Just a guess, but dev systems aren't likely to have ids this high
     # in this table.  Production data does.
-    real_data = (get_max_id(store, "TranslationMessage") >= 1000000)
+    real_data = get_max_id(store, "TranslationMessage") >= 1000000
     if real_data and not options.force:
         raise DoNotRunOnProduction(
-            "Refusing to delete Ubuntu data unless you --force me.")
+            "Refusing to delete Ubuntu data unless you --force me."
+        )
 
     # For some configs it's just absolutely clear this script shouldn't
     # run.  Don't even accept --force there.
-    forbidden_configs = re.compile('(edge|lpnet|production)')
-    current_config = os.getenv('LPCONFIG', 'an unknown config')
+    forbidden_configs = re.compile("(edge|lpnet|production)")
+    current_config = os.getenv("LPCONFIG", "an unknown config")
     if forbidden_configs.match(current_config):
         raise DoNotRunOnProduction(
             "I won't delete Ubuntu data on %s and you can't --force me."
-            % current_config)
+            % current_config
+        )
 
 
 def get_person_set():
@@ -112,9 +110,11 @@ def retire_active_publishing_histories(histories, requester):
     """Retire all active publishing histories in the given collection."""
     # Avoid circular import.
     from lp.soyuz.interfaces.publishing import active_publishing_status
+
     for history in histories(status=active_publishing_status):
         history.requestDeletion(
-            requester, "Cleaned up because of missing Librarian files.")
+            requester, "Cleaned up because of missing Librarian files."
+        )
 
 
 def retire_distro_archives(distribution, culprit):
@@ -128,9 +128,11 @@ def retire_distro_archives(distribution, culprit):
 
     for archive in distribution.all_distro_archives:
         retire_active_publishing_histories(
-            archive.getPublishedSources, culprit)
+            archive.getPublishedSources, culprit
+        )
         retire_active_publishing_histories(
-            archive.getAllPublishedBinaries, culprit)
+            archive.getAllPublishedBinaries, culprit
+        )
 
 
 def retire_ppas(distribution):
@@ -146,9 +148,12 @@ def add_architecture(distroseries, architecture_name):
 
     processor = getUtility(IProcessorSet).getByName(architecture_name)
     archseries = DistroArchSeries(
-        distroseries=distroseries, processor=processor,
-        owner=distroseries.owner, official=True,
-        architecturetag=architecture_name)
+        distroseries=distroseries,
+        processor=processor,
+        owner=distroseries.owner,
+        official=True,
+        architecturetag=architecture_name,
+    )
     IMasterStore(DistroArchSeries).add(archseries)
 
 
@@ -162,26 +167,75 @@ def create_sections(distroseries):
     for it to be precisely accurate.
     """
     section_names = (
-        'admin', 'cli-mono', 'comm', 'database', 'debug', 'devel', 'doc',
-        'editors', 'education', 'electronics', 'embedded', 'fonts', 'games',
-        'gnome', 'gnu-r', 'gnustep', 'golang', 'graphics', 'hamradio',
-        'haskell', 'httpd', 'interpreters', 'java', 'javascript', 'kde',
-        'kernel', 'libdevel', 'libs', 'lisp', 'localization', 'mail',
-        'math', 'misc', 'net', 'news', 'ocaml', 'oldlibs', 'otherosfs',
-        'perl', 'php', 'python', 'raku', 'ruby', 'rust', 'science',
-        'shells', 'sound', 'tex', 'text', 'utils', 'vcs', 'video', 'web',
-        'x11', 'xfce', 'zope')
+        "admin",
+        "cli-mono",
+        "comm",
+        "database",
+        "debug",
+        "devel",
+        "doc",
+        "editors",
+        "education",
+        "electronics",
+        "embedded",
+        "fonts",
+        "games",
+        "gnome",
+        "gnu-r",
+        "gnustep",
+        "golang",
+        "graphics",
+        "hamradio",
+        "haskell",
+        "httpd",
+        "interpreters",
+        "java",
+        "javascript",
+        "kde",
+        "kernel",
+        "libdevel",
+        "libs",
+        "lisp",
+        "localization",
+        "mail",
+        "math",
+        "misc",
+        "net",
+        "news",
+        "ocaml",
+        "oldlibs",
+        "otherosfs",
+        "perl",
+        "php",
+        "python",
+        "raku",
+        "ruby",
+        "rust",
+        "science",
+        "shells",
+        "sound",
+        "tex",
+        "text",
+        "utils",
+        "vcs",
+        "video",
+        "web",
+        "x11",
+        "xfce",
+        "zope",
+    )
     store = Store.of(distroseries)
     for section_name in section_names:
         section = getUtility(ISectionSet).ensure(section_name)
         if section not in distroseries.sections:
             store.add(
-                SectionSelection(distroseries=distroseries, section=section))
+                SectionSelection(distroseries=distroseries, section=section)
+            )
 
 
 def create_components(distroseries, uploader):
     """Set up some components for `distroseries`."""
-    component_names = ('main', 'restricted', 'universe', 'multiverse')
+    component_names = ("main", "restricted", "universe", "multiverse")
     store = Store.of(distroseries)
     main_archive = distroseries.distribution.main_archive
     for component_name in component_names:
@@ -189,7 +243,9 @@ def create_components(distroseries, uploader):
         if component not in distroseries.components:
             store.add(
                 ComponentSelection(
-                    distroseries=distroseries, component=component))
+                    distroseries=distroseries, component=component
+                )
+            )
         main_archive.newComponentUploader(uploader, component)
         main_archive.newQueueAdmin(uploader, component)
 
@@ -201,10 +257,16 @@ def create_series(parent, full_name, version, status):
     name = full_name.split()[0].lower()
     title = "The " + full_name
     display_name = full_name.split()[0]
-    new_series = distribution.newSeries(name=name, title=title,
-        display_name=display_name, summary='Ubuntu %s is good.' % version,
-        description='%s is awesome.' % version, version=version,
-        previous_series=None, registrant=registrant)
+    new_series = distribution.newSeries(
+        name=name,
+        title=title,
+        display_name=display_name,
+        summary="Ubuntu %s is good." % version,
+        description="%s is awesome." % version,
+        version=version,
+        previous_series=None,
+        registrant=registrant,
+    )
     new_series.status = status
     notify(ObjectCreatedEvent(new_series))
 
@@ -222,48 +284,48 @@ def create_sample_series(original_series, log):
         and so on.
     """
     series_descriptions = [
-        ('Dapper Drake', SeriesStatus.OBSOLETE, '6.06'),
-        ('Edgy Eft', SeriesStatus.OBSOLETE, '6.10'),
-        ('Feisty Fawn', SeriesStatus.OBSOLETE, '7.04'),
-        ('Gutsy Gibbon', SeriesStatus.OBSOLETE, '7.10'),
-        ('Hardy Heron', SeriesStatus.OBSOLETE, '8.04'),
-        ('Intrepid Ibex', SeriesStatus.OBSOLETE, '8.10'),
-        ('Jaunty Jackalope', SeriesStatus.OBSOLETE, '9.04'),
-        ('Karmic Koala', SeriesStatus.OBSOLETE, '9.10'),
-        ('Lucid Lynx', SeriesStatus.OBSOLETE, '10.04'),
-        ('Maverick Meerkat', SeriesStatus.OBSOLETE, '10.10'),
-        ('Natty Narwhal', SeriesStatus.OBSOLETE, '11.04'),
-        ('Oneiric Ocelot', SeriesStatus.OBSOLETE, '11.10'),
-        ('Precise Pangolin', SeriesStatus.OBSOLETE, '12.04'),
-        ('Quantal Quetzal', SeriesStatus.OBSOLETE, '12.10'),
-        ('Raring Ringtail', SeriesStatus.OBSOLETE, '13.04'),
-        ('Saucy Salamander', SeriesStatus.OBSOLETE, '13.10'),
-        ('Trusty Tahr', SeriesStatus.SUPPORTED, '14.04'),
-        ('Utopic Unicorn', SeriesStatus.OBSOLETE, '14.10'),
-        ('Vivid Vervet', SeriesStatus.OBSOLETE, '15.04'),
-        ('Wily Werewolf', SeriesStatus.OBSOLETE, '15.10'),
-        ('Xenial Xerus', SeriesStatus.SUPPORTED, '16.04'),
-        ('Yakkety Yak', SeriesStatus.OBSOLETE, '16.10'),
-        ('Zesty Zapus', SeriesStatus.OBSOLETE, '17.04'),
-        ('Artful Aardvark', SeriesStatus.OBSOLETE, '17.10'),
-        ('Bionic Beaver', SeriesStatus.SUPPORTED, '18.04'),
-        ('Cosmic Cuttlefish', SeriesStatus.OBSOLETE, '18.10'),
-        ('Disco Dingo', SeriesStatus.OBSOLETE, '19.04'),
-        ('Eoan Ermine', SeriesStatus.OBSOLETE, '19.10'),
-        ('Focal Fossa', SeriesStatus.SUPPORTED, '20.04'),
-        ('Groovy Gorilla', SeriesStatus.OBSOLETE, '20.10'),
-        ('Hirsute Hippo', SeriesStatus.OBSOLETE, '21.04'),
-        ('Impish Indri', SeriesStatus.CURRENT, '21.10'),
-        ('Jammy Jellyfish', SeriesStatus.DEVELOPMENT, '22.04'),
-        ]
+        ("Dapper Drake", SeriesStatus.OBSOLETE, "6.06"),
+        ("Edgy Eft", SeriesStatus.OBSOLETE, "6.10"),
+        ("Feisty Fawn", SeriesStatus.OBSOLETE, "7.04"),
+        ("Gutsy Gibbon", SeriesStatus.OBSOLETE, "7.10"),
+        ("Hardy Heron", SeriesStatus.OBSOLETE, "8.04"),
+        ("Intrepid Ibex", SeriesStatus.OBSOLETE, "8.10"),
+        ("Jaunty Jackalope", SeriesStatus.OBSOLETE, "9.04"),
+        ("Karmic Koala", SeriesStatus.OBSOLETE, "9.10"),
+        ("Lucid Lynx", SeriesStatus.OBSOLETE, "10.04"),
+        ("Maverick Meerkat", SeriesStatus.OBSOLETE, "10.10"),
+        ("Natty Narwhal", SeriesStatus.OBSOLETE, "11.04"),
+        ("Oneiric Ocelot", SeriesStatus.OBSOLETE, "11.10"),
+        ("Precise Pangolin", SeriesStatus.OBSOLETE, "12.04"),
+        ("Quantal Quetzal", SeriesStatus.OBSOLETE, "12.10"),
+        ("Raring Ringtail", SeriesStatus.OBSOLETE, "13.04"),
+        ("Saucy Salamander", SeriesStatus.OBSOLETE, "13.10"),
+        ("Trusty Tahr", SeriesStatus.SUPPORTED, "14.04"),
+        ("Utopic Unicorn", SeriesStatus.OBSOLETE, "14.10"),
+        ("Vivid Vervet", SeriesStatus.OBSOLETE, "15.04"),
+        ("Wily Werewolf", SeriesStatus.OBSOLETE, "15.10"),
+        ("Xenial Xerus", SeriesStatus.SUPPORTED, "16.04"),
+        ("Yakkety Yak", SeriesStatus.OBSOLETE, "16.10"),
+        ("Zesty Zapus", SeriesStatus.OBSOLETE, "17.04"),
+        ("Artful Aardvark", SeriesStatus.OBSOLETE, "17.10"),
+        ("Bionic Beaver", SeriesStatus.SUPPORTED, "18.04"),
+        ("Cosmic Cuttlefish", SeriesStatus.OBSOLETE, "18.10"),
+        ("Disco Dingo", SeriesStatus.OBSOLETE, "19.04"),
+        ("Eoan Ermine", SeriesStatus.OBSOLETE, "19.10"),
+        ("Focal Fossa", SeriesStatus.SUPPORTED, "20.04"),
+        ("Groovy Gorilla", SeriesStatus.OBSOLETE, "20.10"),
+        ("Hirsute Hippo", SeriesStatus.OBSOLETE, "21.04"),
+        ("Impish Indri", SeriesStatus.CURRENT, "21.10"),
+        ("Jammy Jellyfish", SeriesStatus.DEVELOPMENT, "22.04"),
+    ]
 
     parent = original_series
     for full_name, status, version in series_descriptions:
-        log.info('Creating %s...' % full_name)
+        log.info("Creating %s..." % full_name)
         parent = create_series(parent, full_name, version, status)
         # Karmic is the first series in which the 3.0 formats are
         # allowed. Subsequent series will inherit them.
-        if version == '9.10':
+        if version == "9.10":
             spfss = getUtility(ISourcePackageFormatSelectionSet)
             spfss.add(parent, SourcePackageFormat.FORMAT_3_0_QUILT)
             spfss.add(parent, SourcePackageFormat.FORMAT_3_0_NATIVE)
@@ -271,9 +333,10 @@ def create_sample_series(original_series, log):
 
 def add_series_component(series):
     """Permit a component in the given series."""
-    component = getUtility(IComponentSet)['main']
+    component = getUtility(IComponentSet)["main"]
     IMasterStore(ComponentSelection).add(
-        ComponentSelection(distroseries=series, component=component))
+        ComponentSelection(distroseries=series, component=component)
+    )
 
 
 def clean_up(distribution, log):
@@ -285,7 +348,7 @@ def clean_up(distribution, log):
     # published binaries without corresponding sources.
 
     log.info("Deleting all items in official archives...")
-    retire_distro_archives(distribution, get_person_set().getByName('name16'))
+    retire_distro_archives(distribution, get_person_set().getByName("name16"))
 
     # Disable publishing of all PPAs, as they probably have broken
     # publishings too.
@@ -295,7 +358,7 @@ def clean_up(distribution, log):
     retire_series(distribution)
 
     # grumpy has no components, which upsets the publisher.
-    add_series_component(distribution['grumpy'])
+    add_series_component(distribution["grumpy"])
 
 
 def set_source_package_format(distroseries):
@@ -312,7 +375,7 @@ def populate(distribution, previous_series_name, uploader_name, options, log):
 
     log.info("Configuring sections...")
     create_sections(previous_series)
-    add_architecture(previous_series, 'amd64')
+    add_architecture(previous_series, "amd64")
 
     log.info("Configuring components and permissions...")
     uploader = get_person_set().getByName(uploader_name)
@@ -333,24 +396,28 @@ def sign_code_of_conduct(person, log):
     signedcocset = getUtility(ISignedCodeOfConductSet)
     if signedcocset.searchByUser(person).count() == 0:
         fake_gpg_key = LaunchpadObjectFactory().makeGPGKey(person)
-        Store.of(person).add(SignedCodeOfConduct(
-            owner=person, signing_key_fingerprint=fake_gpg_key.fingerprint,
-            signedcode="Normally a signed CoC would go here.", active=True))
+        Store.of(person).add(
+            SignedCodeOfConduct(
+                owner=person,
+                signing_key_fingerprint=fake_gpg_key.fingerprint,
+                signedcode="Normally a signed CoC would go here.",
+                active=True,
+            )
+        )
 
 
 def create_ppa_user(username, options, approver, log):
     """Create new user, with password "test," and sign code of conduct."""
     person = get_person_set().getByName(username)
     if person is None:
-        have_email = (options.email != default_email)
-        command_line = [
-            'utilities/make-lp-user', username, 'ubuntu-team']
+        have_email = options.email != default_email
+        command_line = ["utilities/make-lp-user", username, "ubuntu-team"]
         if have_email:
-            command_line += ['--email', options.email]
+            command_line += ["--email", options.email]
 
         pipe = subprocess.Popen(command_line, stderr=subprocess.PIPE)
         stdout, stderr = pipe.communicate()
-        if stderr != '':
+        if stderr != "":
             print(stderr)
         if pipe.returncode != 0:
             sys.exit(2)
@@ -366,11 +433,16 @@ def create_ppa_user(username, options, approver, log):
 def create_ppa(distribution, person, name):
     """Create a PPA for `person`."""
     ppa = LaunchpadObjectFactory().makeArchive(
-        distribution=distribution, owner=person, name=name, virtualized=False,
-        description="Automatically created test PPA.")
+        distribution=distribution,
+        owner=person,
+        name=name,
+        virtualized=False,
+        description="Automatically created test PPA.",
+    )
     ppa.external_dependencies = (
         "deb http://archive.ubuntu.com/ubuntu %(series)s "
-        "main restricted universe multiverse\n")
+        "main restricted universe multiverse\n"
+    )
 
 
 class SoyuzSampledataSetup(LaunchpadScript):
@@ -379,14 +451,23 @@ class SoyuzSampledataSetup(LaunchpadScript):
 
     def add_my_options(self):
         self.parser.add_option(
-            '-f', '--force', action='store_true', dest='force',
-            help="DANGEROUS: run even if the database looks production-like.")
+            "-f",
+            "--force",
+            action="store_true",
+            dest="force",
+            help="DANGEROUS: run even if the database looks production-like.",
+        )
         self.parser.add_option(
-            '-e', '--email', action='store', dest='email',
+            "-e",
+            "--email",
+            action="store",
+            dest="email",
             default=default_email,
             help=(
                 "Email address to use for %s.  Should match your GPG key."
-                % user_name))
+                % user_name
+            ),
+        )
 
     def main(self):
         check_preconditions(self.options.force)
@@ -395,26 +476,30 @@ class SoyuzSampledataSetup(LaunchpadScript):
         clean_up(ubuntu, self.logger)
 
         # Use Hoary as the root, as Breezy and Grumpy are broken.
-        populate(ubuntu, 'hoary', 'ubuntu-team', self.options, self.logger)
+        populate(ubuntu, "hoary", "ubuntu-team", self.options, self.logger)
 
-        admin = get_person_set().getByName('name16')
+        admin = get_person_set().getByName("name16")
         person = create_ppa_user(user_name, self.options, admin, self.logger)
 
-        create_ppa(ubuntu, person, 'test-ppa')
+        create_ppa(ubuntu, person, "test-ppa")
 
         transaction.commit()
         self.logger.info("Done.")
 
-        print(dedent("""
+        print(
+            dedent(
+                """
             Now start your local Launchpad with "make run_codehosting" and log
             into https://launchpad.test/ as "%(email)s" with "test" as the
             password.
             Your user name will be %(user_name)s."""
-            % {
-                'email': self.options.email,
-                'user_name': user_name,
-                }))
+                % {
+                    "email": self.options.email,
+                    "user_name": user_name,
+                }
+            )
+        )
 
 
 if __name__ == "__main__":
-    SoyuzSampledataSetup('soyuz-sampledata-setup').lock_and_run()
+    SoyuzSampledataSetup("soyuz-sampledata-setup").lock_and_run()

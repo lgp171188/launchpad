@@ -7,17 +7,17 @@
 
 import _pythonpath  # noqa: F401
 
-from argparse import ArgumentParser
 import os
+from argparse import ArgumentParser
 
 import iso8601
 import requests
 from swiftclient.service import (
-    get_conn,
-    process_options,
     SwiftService,
     SwiftUploadObject,
-    )
+    get_conn,
+    process_options,
+)
 from swiftclient.shell import add_default_args
 
 
@@ -38,30 +38,42 @@ def get_swift_storage_url(options):
     return get_conn(options).get_auth()[0]
 
 
-def publish_file_to_swift(options, container_name, object_path, local_path,
-                          overwrite=True):
+def publish_file_to_swift(
+    options, container_name, object_path, local_path, overwrite=True
+):
     """Publish a file to a Swift container."""
     storage_url = get_swift_storage_url(options)
 
     with SwiftService(options=options) as swift:
         stat_results = swift.stat(
-            container=container_name, objects=[object_path])
+            container=container_name, objects=[object_path]
+        )
         if stat_results and next(stat_results)["success"]:
-            print("Object {} already published to {}.".format(
-                object_path, container_name))
+            print(
+                "Object {} already published to {}.".format(
+                    object_path, container_name
+                )
+            )
             if not overwrite:
                 return
 
-        print("Publishing {} to {} as {}.".format(
-            local_path, container_name, object_path))
+        print(
+            "Publishing {} to {} as {}.".format(
+                local_path, container_name, object_path
+            )
+        )
         for r in swift.upload(
-                container_name,
-                [SwiftUploadObject(local_path, object_name=object_path)]):
+            container_name,
+            [SwiftUploadObject(local_path, object_name=object_path)],
+        ):
             if not r["success"]:
                 raise r["error"]
 
-        print("Published file: {}/{}/{}".format(
-            storage_url, container_name, object_path))
+        print(
+            "Published file: {}/{}/{}".format(
+                storage_url, container_name, object_path
+            )
+        )
 
 
 def prune_old_files_from_swift(options, container_name, object_dir):
@@ -74,8 +86,9 @@ def prune_old_files_from_swift(options, container_name, object_dir):
         objs = {}
         production_mtime = None
         for stats in swift.list(
-                container=container_name,
-                options={"prefix": "{}/".format(object_dir)}):
+            container=container_name,
+            options={"prefix": "{}/".format(object_dir)},
+        ):
             if not stats["success"]:
                 raise stats["error"]
             for item in stats["listing"]:
@@ -83,20 +96,23 @@ def prune_old_files_from_swift(options, container_name, object_dir):
                     mtime = iso8601.parse_date(item["last_modified"])
                     objs[item["name"]] = mtime
                     if item["name"].startswith(
-                            "{}/{}/".format(object_dir, production_revision)):
+                        "{}/{}/".format(object_dir, production_revision)
+                    ):
                         production_mtime = mtime
 
         if production_mtime is None:
             print(
                 "No file in {} corresponding to production revision {}; "
-                "not pruning.".format(container_name, production_revision))
+                "not pruning.".format(container_name, production_revision)
+            )
             return
 
         for object_name, mtime in sorted(objs.items()):
             if mtime < production_mtime:
                 print("Pruning {} (older than production)".format(object_name))
                 for r in swift.delete(
-                        container=container_name, objects=[object_name]):
+                    container=container_name, objects=[object_name]
+                ):
                     if not r["success"]:
                         raise r["error"]
 
@@ -137,7 +153,7 @@ def main():
             "OS_USER_DOMAIN_ID",
             "OS_USER_DOMAIN_NAME",
             "OS_USER_ID",
-            }
+        }
         for key, value in sorted(os.environ.items()):
             if key.startswith("OS_"):
                 if key not in safe_keys:
@@ -150,10 +166,15 @@ def main():
     overwrite = "FORCE_REBUILD" in os.environ
     ensure_container_privs(options, args.container_name)
     publish_file_to_swift(
-        options, args.container_name, args.swift_object_path, args.local_path,
-        overwrite=overwrite)
+        options,
+        args.container_name,
+        args.swift_object_path,
+        args.local_path,
+        overwrite=overwrite,
+    )
     prune_old_files_from_swift(
-        options, args.container_name, args.swift_object_path.split("/")[0])
+        options, args.container_name, args.swift_object_path.split("/")[0]
+    )
 
 
 if __name__ == "__main__":
