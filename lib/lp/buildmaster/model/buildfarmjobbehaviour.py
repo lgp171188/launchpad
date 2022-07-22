@@ -119,6 +119,10 @@ class BuildFarmJobBehaviourBase:
         """The default behaviour is a no-op."""
         pass
 
+    def redactXmlrpcArguments(self, args):
+        # we do not want to have secrets in logs
+        return sanitise_urls(repr(args))
+
     @defer.inlineCallbacks
     def dispatchBuildToWorker(self, logger):
         """See `IBuildFarmJobBehaviour`."""
@@ -171,7 +175,7 @@ class BuildFarmJobBehaviourBase:
                 cookie,
                 self.build.title,
                 self._builder.url,
-                sanitise_urls(repr(combined_args)),
+                self.redactXmlrpcArguments(combined_args),
             )
         )
 

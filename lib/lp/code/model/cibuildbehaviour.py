@@ -9,6 +9,7 @@ __all__ = [
 
 import json
 from configparser import NoSectionError
+from copy import deepcopy
 
 from twisted.internet import defer
 from zope.component import adapter
@@ -108,6 +109,17 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
     ALLOWED_STATUS_NOTIFICATIONS = []
+
+    def redactXmlrpcArguments(self, args):
+        # we do not want to have secrets in logs
+
+        # we need to copy the input in order to avoid mutating `args` which
+        # will be passed to the builders
+        args = deepcopy(args)
+        if args["args"].get("secrets"):
+            for key in args["args"]["secrets"].keys():
+                args["args"]["secrets"][key] = "<redacted>"
+        return super().redactXmlrpcArguments(args)
 
     def getLogFileName(self):
         return "buildlog_ci_%s_%s_%s.txt" % (
