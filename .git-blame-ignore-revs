@@ -96,3 +96,5 @@ c7dedd4d8a3c642f77570e525be0af9714703eba
 b56a741985ca580c281f142bea589b1ef05d3e93
 # apply black to lp.xmlrpc
 0bf877facbd96ece340dd26a7429ebbf0fb9b65a
+# apply black to {cronscripts,scripts}
+86d834967ddae3eecd13deda5ac9eefea538195d
