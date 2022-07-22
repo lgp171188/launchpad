@@ -3,7 +3,7 @@
 
 """Mock Swift test fixture."""
 
-__all__ = ['SwiftFixture']
+__all__ = ["SwiftFixture"]
 
 import os.path
 import shutil
@@ -11,10 +11,10 @@ import socket
 import tempfile
 from textwrap import dedent
 
-from fixtures import FunctionFixture
-from swiftclient import client as swiftclient
 import testtools.content
 import testtools.content_type
+from fixtures import FunctionFixture
+from swiftclient import client as swiftclient
 from txfixtures.tachandler import TacTestFixture
 
 from lp.services.config import config
@@ -25,7 +25,7 @@ from lp.testing.swift import fakeswift
 
 class SwiftFixture(TacTestFixture):
 
-    tacfile = os.path.join(os.path.dirname(__file__), 'fakeswift.tac')
+    tacfile = os.path.join(os.path.dirname(__file__), "fakeswift.tac")
     pidfile = None
     logfile = None
     root = None
@@ -37,53 +37,65 @@ class SwiftFixture(TacTestFixture):
 
     def _getConfig(self, key):
         return getattr(
-            config.librarian_server,
-            'old_' + key if self.old_instance else key)
+            config.librarian_server, "old_" + key if self.old_instance else key
+        )
 
     def setUp(self, spew=False, umask=None):
         # Pick a random, free port.
         if self.daemon_port is None:
             sock = socket.socket()
-            sock.bind(('', 0))
+            sock.bind(("", 0))
             self.daemon_port = sock.getsockname()[1]
             sock.close()
             self.logfile = os.path.join(
-                config.root, 'logs', 'fakeswift-%s.log' % self.daemon_port)
+                config.root, "logs", "fakeswift-%s.log" % self.daemon_port
+            )
             self.pidfile = os.path.join(
-                config.root, 'logs', 'fakeswift-%s.pid' % self.daemon_port)
+                config.root, "logs", "fakeswift-%s.pid" % self.daemon_port
+            )
         assert self.daemon_port is not None
 
         super().setUp(
-            spew, umask,
-            os.path.join(config.root, 'bin', 'py'),
-            os.path.join(config.root, 'bin', 'twistd'))
+            spew,
+            umask,
+            os.path.join(config.root, "bin", "py"),
+            os.path.join(config.root, "bin", "twistd"),
+        )
 
         logfile = self.logfile
         self.addCleanup(lambda: os.path.exists(logfile) and os.unlink(logfile))
 
         testtools.content.attach_file(
-            self, logfile, 'swift-log', testtools.content_type.UTF8_TEXT,
-            buffer_now=False)
+            self,
+            logfile,
+            "swift-log",
+            testtools.content_type.UTF8_TEXT,
+            buffer_now=False,
+        )
 
         self.addCleanup(swift.reconfigure_connection_pools)
-        service_config = dedent("""\
+        service_config = dedent(
+            """\
             [librarian_server]
             {prefix}os_auth_url: http://localhost:{port}/keystone/v2.0/
             {prefix}os_username: {username}
             {prefix}os_password: {password}
             {prefix}os_tenant_name: {tenant_name}
             """.format(
-                prefix=('old_' if self.old_instance else ''),
+                prefix=("old_" if self.old_instance else ""),
                 port=self.daemon_port,
                 username=fakeswift.DEFAULT_USERNAME,
                 password=fakeswift.DEFAULT_PASSWORD,
-                tenant_name=fakeswift.DEFAULT_TENANT_NAME))
+                tenant_name=fakeswift.DEFAULT_TENANT_NAME,
+            )
+        )
         BaseLayer.config_fixture.add_section(service_config)
         config.reloadConfig()
         self.addCleanup(config.reloadConfig)
         self.addCleanup(
-            BaseLayer.config_fixture.remove_section, service_config)
-        assert self._getConfig('os_tenant_name') == 'test'
+            BaseLayer.config_fixture.remove_section, service_config
+        )
+        assert self._getConfig("os_tenant_name") == "test"
         swift.reconfigure_connection_pools()
 
     def setUpRoot(self):
@@ -96,8 +108,8 @@ class SwiftFixture(TacTestFixture):
         assert os.path.isdir(self.root)
 
         # Pass on options to the daemon.
-        os.environ['SWIFT_ROOT'] = self.root
-        os.environ['SWIFT_PORT'] = str(self.daemon_port)
+        os.environ["SWIFT_ROOT"] = self.root
+        os.environ["SWIFT_PORT"] = str(self.daemon_port)
 
     def connect(self, **kwargs):
         """Return a valid connection to our mock Swift"""
@@ -109,7 +121,7 @@ class SwiftFixture(TacTestFixture):
             "key": self._getConfig("os_password"),
             "retries": 0,
             "insecure": True,
-            }
+        }
         connection_kwargs.update(kwargs)
         return swiftclient.Connection(**connection_kwargs)
 

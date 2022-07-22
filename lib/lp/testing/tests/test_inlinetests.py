@@ -4,10 +4,7 @@
 """Run the doc string tests."""
 
 import doctest
-from doctest import (
-    ELLIPSIS,
-    NORMALIZE_WHITESPACE,
-    )
+from doctest import ELLIPSIS, NORMALIZE_WHITESPACE
 
 from lp import testing
 from lp.testing.layers import BaseLayer
@@ -15,9 +12,10 @@ from lp.testing.systemdocs import LayeredDocFileSuite
 
 
 def test_suite():
-    suite = LayeredDocFileSuite(
-        [],
-        layer=BaseLayer)
-    suite.addTest(doctest.DocTestSuite(
-        testing, optionflags=NORMALIZE_WHITESPACE | ELLIPSIS))
+    suite = LayeredDocFileSuite([], layer=BaseLayer)
+    suite.addTest(
+        doctest.DocTestSuite(
+            testing, optionflags=NORMALIZE_WHITESPACE | ELLIPSIS
+        )
+    )
     return suite

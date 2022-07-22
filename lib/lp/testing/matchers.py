@@ -2,52 +2,49 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BrowsesWithQueryLimit',
-    'Contains',
-    'DocTestMatches',
-    'DoesNotCorrectlyProvide',
-    'DoesNotProvide',
-    'EqualsIgnoringWhitespace',
-    'FileContainsBytes',
-    'HasQueryCount',
-    'IsNotProxied',
-    'IsProxied',
-    'MatchesPickerText',
-    'MatchesTagText',
-    'MissingElement',
-    'MultipleElements',
-    'Provides',
-    'ProvidesAndIsProxied',
-    ]
+    "BrowsesWithQueryLimit",
+    "Contains",
+    "DocTestMatches",
+    "DoesNotCorrectlyProvide",
+    "DoesNotProvide",
+    "EqualsIgnoringWhitespace",
+    "FileContainsBytes",
+    "HasQueryCount",
+    "IsNotProxied",
+    "IsProxied",
+    "MatchesPickerText",
+    "MatchesTagText",
+    "MissingElement",
+    "MultipleElements",
+    "Provides",
+    "ProvidesAndIsProxied",
+]
 
 from lazr.lifecycle.snapshot import Snapshot
 from testtools import matchers
 from testtools.content import text_content
+from testtools.matchers import DocTestMatches as OriginalDocTestMatches
 from testtools.matchers import (
-    DocTestMatches as OriginalDocTestMatches,
     Equals,
     FileContains,
     LessThan,
     Matcher,
     Mismatch,
     PathExists,
-    )
+)
 from testtools.matchers._higherorder import MismatchesAll
 from zope.interface.exceptions import (
     BrokenImplementation,
     BrokenMethodImplementation,
     DoesNotImplement,
-    )
+)
 from zope.interface.verify import verifyObject
 from zope.security.proxy import Proxy
 
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.webapp import canonical_url
 from lp.services.webapp.batching import BatchNavigator
-from lp.testing import (
-    normalize_whitespace,
-    RequestTimelineCollector,
-    )
+from lp.testing import RequestTimelineCollector, normalize_whitespace
 from lp.testing._login import person_logged_in
 
 
@@ -75,9 +72,11 @@ class BrowsesWithQueryLimit(Matcher):
     def match(self, context):
         # circular dependencies.
         from lp.testing.pages import setupBrowserForUser
+
         with person_logged_in(self.user):
             context_url = canonical_url(
-                context, view_name=self.view_name, **self.options)
+                context, view_name=self.view_name, **self.options
+            )
         browser = setupBrowserForUser(self.user)
         flush_database_caches()
         with RequestTimelineCollector() as collector:
@@ -126,8 +125,11 @@ class DoesNotCorrectlyProvide(DoesNotProvide):
             extra = ": %s" % self.extra
         else:
             extra = "."
-        return ("%r claims to provide %r, but does not do so correctly%s"
-                % (self.obj, self.interface, extra))
+        return "%r claims to provide %r, but does not do so correctly%s" % (
+            self.obj,
+            self.interface,
+            extra,
+        )
 
 
 class Provides(Matcher):
@@ -151,13 +153,17 @@ class Provides(Matcher):
         try:
             if not verifyObject(self.interface, matchee):
                 passed = False
-        except (BrokenImplementation, BrokenMethodImplementation,
-                DoesNotImplement) as e:
+        except (
+            BrokenImplementation,
+            BrokenMethodImplementation,
+            DoesNotImplement,
+        ) as e:
             passed = False
             extra = str(e)
         if not passed:
             return DoesNotCorrectlyProvide(
-                matchee, self.interface, extra=extra)
+                matchee, self.interface, extra=extra
+            )
         return None
 
 
@@ -188,8 +194,10 @@ class HasQueryCount(Matcher):
         if mismatch is None:
             return None
         return _MismatchedQueryCount(
-            mismatch, something,
-            other_query_collector=self.other_query_collector)
+            mismatch,
+            something,
+            other_query_collector=self.other_query_collector,
+        )
 
 
 class _MismatchedQueryCount(Mismatch):
@@ -208,20 +216,22 @@ class _MismatchedQueryCount(Mismatch):
         result = []
         for query in collector.queries:
             start, stop, dbname, statement, backtrace = query
-            result.append('%d-%d@%s %s' % (
-                start, stop, dbname, statement.rstrip()))
-            result.append('-' * 70)
+            result.append(
+                "%d-%d@%s %s" % (start, stop, dbname, statement.rstrip())
+            )
+            result.append("-" * 70)
             if backtrace is not None:
                 result.append(backtrace.rstrip())
-                result.append('.' * 70)
-        return text_content('\n'.join(result))
+                result.append("." * 70)
+        return text_content("\n".join(result))
 
     def get_details(self):
         details = {}
-        details['queries'] = self._getQueryDetails(self.query_collector)
+        details["queries"] = self._getQueryDetails(self.query_collector)
         if self.other_query_collector is not None:
-            details['other_queries'] = self._getQueryDetails(
-                self.other_query_collector)
+            details["other_queries"] = self._getQueryDetails(
+                self.other_query_collector
+            )
         return details
 
 
@@ -272,7 +282,6 @@ class ProvidesAndIsProxied(Matcher):
 
 
 class DoesNotContain(Mismatch):
-
     def __init__(self, matchee, expected):
         """Create a DoesNotContain Mismatch.
 
@@ -283,8 +292,7 @@ class DoesNotContain(Mismatch):
         self.expected = expected
 
     def describe(self):
-        return "'%s' does not contain '%s'." % (
-            self.matchee, self.expected)
+        return "'%s' does not contain '%s'." % (self.matchee, self.expected)
 
 
 class Contains(Matcher):
@@ -323,23 +331,28 @@ class IsConfiguredBatchNavigator(Matcher):
         if batch_size:
             self._batch = Equals(batch_size)
         self.matchers = dict(
-            _singular_heading=self._single, _plural_heading=self._plural)
+            _singular_heading=self._single, _plural_heading=self._plural
+        )
         if self._batch:
-            self.matchers['default_size'] = self._batch
+            self.matchers["default_size"] = self._batch
 
     def __str__(self):
         if self._batch:
             batch = ", %r" % self._batch.expected
         else:
-            batch = ''
+            batch = ""
         return "ConfiguredBatchNavigator(%r, %r%s)" % (
-            self._single.expected, self._plural.expected, batch)
+            self._single.expected,
+            self._plural.expected,
+            batch,
+        )
 
     def match(self, matchee):
         if not isinstance(matchee, BatchNavigator):
             # Testtools doesn't have an IsInstanceMismatch yet.
             return matchers._BinaryMismatch(
-                BatchNavigator, 'isinstance', matchee)
+                BatchNavigator, "isinstance", matchee
+            )
         mismatches = []
         for attrname, matcher in self.matchers.items():
             mismatch = matcher.match(getattr(matchee, attrname))
@@ -350,14 +363,15 @@ class IsConfiguredBatchNavigator(Matcher):
 
 
 class WasSnapshotted(Mismatch):
-
     def __init__(self, matchee, attribute):
         self.matchee = matchee
         self.attribute = attribute
 
     def describe(self):
         return "Snapshot of %s should not include %s" % (
-            self.matchee, self.attribute)
+            self.matchee,
+            self.attribute,
+        )
 
 
 class DoesNotSnapshot(Matcher):
@@ -370,7 +384,9 @@ class DoesNotSnapshot(Matcher):
 
     def __str__(self):
         return "Does not include %s when Snapshot is provided %s." % (
-            ', '.join(self.attr_list), self.interface)
+            ", ".join(self.attr_list),
+            self.interface,
+        )
 
     def match(self, matchee):
         snapshot = Snapshot(matchee, providing=self.interface)
@@ -391,29 +407,27 @@ def DocTestMatches(example):
     Uses the default doctest flags used across Launchpad.
     """
     from lp.testing.systemdocs import default_optionflags
+
     return OriginalDocTestMatches(example, default_optionflags)
 
 
 class SoupMismatch(Mismatch):
-
     def __init__(self, widget_id, soup_content):
         self.widget_id = widget_id
         self.soup_content = soup_content
 
     def get_details(self):
-        return {'content': text_content(str(self.soup_content))}
+        return {"content": text_content(str(self.soup_content))}
 
 
 class MissingElement(SoupMismatch):
-
     def describe(self):
-        return 'No HTML element found with id %r' % self.widget_id
+        return "No HTML element found with id %r" % self.widget_id
 
 
 class MultipleElements(SoupMismatch):
-
     def describe(self):
-        return 'HTML id %r found multiple times in document' % self.widget_id
+        return "HTML id %r found multiple times in document" % self.widget_id
 
 
 class MatchesTagText(Matcher):
@@ -430,6 +444,7 @@ class MatchesTagText(Matcher):
     def match(self, matchee):
         # Here to avoid circular dependancies.
         from lp.testing.pages import extract_text
+
         widgets = self.soup_content.find_all(id=self.tag_id)
         if len(widgets) == 0:
             return MissingElement(self.tag_id, self.soup_content)
@@ -454,13 +469,14 @@ class MatchesPickerText(Matcher):
     def match(self, matchee):
         # Here to avoid circular dependancies.
         from lp.testing.pages import extract_text
+
         widgets = self.soup_content.find_all(id=self.widget_id)
         if len(widgets) == 0:
             return MissingElement(self.widget_id, self.soup_content)
         elif len(widgets) > 1:
             return MultipleElements(self.widget_id, self.soup_content)
         widget = widgets[0]
-        text = widget.find_all(attrs={'class': 'yui3-activator-data-box'})[0]
+        text = widget.find_all(attrs={"class": "yui3-activator-data-box"})[0]
         text_matcher = DocTestMatches(extract_text(text))
         return text_matcher.match(matchee)
 

@@ -21,17 +21,19 @@ class BaseBreadcrumbTestCase(TestCaseWithFactory):
         """
         crumbs = self.getBreadcrumbsForObject(obj, view_name, rootsite)
         self.assertEqual(
-            expected,
-            [(crumb.text, crumb.url) for crumb in crumbs])
+            expected, [(crumb.text, crumb.url) for crumb in crumbs]
+        )
 
-    def assertBreadcrumbTexts(self, expected, obj, view_name=None,
-                              rootsite=None):
+    def assertBreadcrumbTexts(
+        self, expected, obj, view_name=None, rootsite=None
+    ):
         """The text of the breadcrumbs for obj match the expected values."""
         crumbs = self.getBreadcrumbsForObject(obj, view_name, rootsite)
         self.assertEqual(expected, [crumb.text for crumb in crumbs])
 
-    def assertBreadcrumbUrls(self, expected, obj, view_name=None,
-                             rootsite=None):
+    def assertBreadcrumbUrls(
+        self, expected, obj, view_name=None, rootsite=None
+    ):
         """The urls of the breadcrumbs for obj match the expected values."""
         crumbs = self.getBreadcrumbsForObject(obj, view_name, rootsite)
         self.assertEqual(expected, [crumb.url for crumb in crumbs])
@@ -50,6 +52,6 @@ class BaseBreadcrumbTestCase(TestCaseWithFactory):
         obj, view, request = test_traverse(url)
         # Sometimes test_traverse returns the __call__, while the template
         # always has access to the instance.
-        view = getattr(removeSecurityProxy(view), '__self__', view)
-        hier = create_initialized_view(view, '+hierarchy', request=request)
+        view = getattr(removeSecurityProxy(view), "__self__", view)
+        hier = create_initialized_view(view, "+hierarchy", request=request)
         return hier.items

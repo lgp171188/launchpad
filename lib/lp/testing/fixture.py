@@ -4,46 +4,39 @@
 """Launchpad test fixtures that have no better home."""
 
 __all__ = [
-    'CapturedOutput',
-    'CaptureOops',
-    'DemoMode',
-    'DisableTriggerFixture',
-    'PGBouncerFixture',
-    'PGNotReadyError',
-    'run_capturing_output',
-    'ZopeAdapterFixture',
-    'ZopeEventHandlerFixture',
-    'ZopeUtilityFixture',
-    'ZopeViewReplacementFixture',
-    ]
+    "CapturedOutput",
+    "CaptureOops",
+    "DemoMode",
+    "DisableTriggerFixture",
+    "PGBouncerFixture",
+    "PGNotReadyError",
+    "run_capturing_output",
+    "ZopeAdapterFixture",
+    "ZopeEventHandlerFixture",
+    "ZopeUtilityFixture",
+    "ZopeViewReplacementFixture",
+]
 
-from configparser import ConfigParser
 import io
 import os.path
 import socket
 import time
+from configparser import ConfigParser
 
 import amqp
-from fixtures import (
-    EnvironmentVariableFixture,
-    Fixture,
-    MonkeyPatch,
-    )
-from lazr.restful.utils import get_current_browser_request
 import oops
 import oops_amqp
 import pgbouncer.fixture
-from zope.component import (
-    adapter,
-    getGlobalSiteManager,
-    )
+from fixtures import EnvironmentVariableFixture, Fixture, MonkeyPatch
+from lazr.restful.utils import get_current_browser_request
+from zope.component import adapter, getGlobalSiteManager
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 from zope.security.checker import (
     defineChecker,
     getCheckerForInstancesOf,
     undefineChecker,
-    )
+)
 
 from lp.services import webapp
 from lp.services.config import config
@@ -72,29 +65,32 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
 
         # Known databases
         from lp.testing.layers import DatabaseLayer
+
         dbnames = [
             DatabaseLayer._db_fixture.dbname,
             DatabaseLayer._db_template_fixture.dbname,
-            'session_ftest',
-            'launchpad_empty',
-            ]
+            "session_ftest",
+            "launchpad_empty",
+        ]
         for dbname in dbnames:
-            self.databases[dbname] = 'dbname=%s port=5432 host=localhost' % (
-                dbname,)
+            self.databases[dbname] = "dbname=%s port=5432 host=localhost" % (
+                dbname,
+            )
 
         # Known users, pulled from security.cfg
         security_cfg_path = os.path.join(
-            config.root, 'database', 'schema', 'security.cfg')
+            config.root, "database", "schema", "security.cfg"
+        )
         security_cfg_config = ConfigParser({})
         security_cfg_config.read([security_cfg_path])
         for section_name in security_cfg_config.sections():
-            self.users[section_name] = 'trusted'
-            self.users[section_name + '_ro'] = 'trusted'
-        self.users[os.environ['USER']] = 'trusted'
-        self.users['pgbouncer'] = 'trusted'
+            self.users[section_name] = "trusted"
+            self.users[section_name + "_ro"] = "trusted"
+        self.users[os.environ["USER"]] = "trusted"
+        self.users["pgbouncer"] = "trusted"
 
         # Administrative access is useful for debugging.
-        self.admin_users = ['launchpad', 'pgbouncer', os.environ['USER']]
+        self.admin_users = ["launchpad", "pgbouncer", os.environ["USER"]]
 
     def setUp(self):
         super().setUp()
@@ -106,9 +102,9 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         # Abuse the PGPORT environment variable to get things connecting
         # via pgbouncer. Otherwise, we would need to temporarily
         # overwrite the database connection strings in the config.
-        self.useFixture(EnvironmentVariableFixture('PGPORT', str(self.port)))
+        self.useFixture(EnvironmentVariableFixture("PGPORT", str(self.port)))
         # Force TCP, as pgbouncer doesn't listen on a UNIX socket.
-        self.useFixture(EnvironmentVariableFixture('PGHOST', 'localhost'))
+        self.useFixture(EnvironmentVariableFixture("PGHOST", "localhost"))
 
         # Reset database connections so they go through pgbouncer.
         self._maybe_reconnect_stores()
@@ -120,16 +116,13 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         as we are using a test layer that doesn't provide database
         connections.
         """
-        from lp.testing.layers import (
-            is_ca_available,
-            reconnect_stores,
-            )
+        from lp.testing.layers import is_ca_available, reconnect_stores
+
         if is_ca_available():
             reconnect_stores()
 
     def start(self, retries=20, sleep=0.5):
-        """Start PGBouncer, waiting for it to accept connections if neccesary.
-        """
+        """Start PGBouncer, waiting for it to accept connections."""
         super().start()
         for i in range(retries):
             try:
@@ -147,8 +140,15 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
 class ZopeAdapterFixture(Fixture):
     """A fixture to register and unregister an adapter."""
 
-    def __init__(self, factory, required=None, provided=None, name="",
-                 info="", event=True):
+    def __init__(
+        self,
+        factory,
+        required=None,
+        provided=None,
+        name="",
+        info="",
+        event=True,
+    ):
         # We use some private functions from here since we need them to work
         # out how to query for existing adapters.  We could copy and paste
         # the code instead, but it doesn't seem worth it.
@@ -166,15 +166,26 @@ class ZopeAdapterFixture(Fixture):
     def _setUp(self):
         site_manager = getGlobalSiteManager()
         original = site_manager.adapters.lookup(
-            self._required, self._provided, self._name)
+            self._required, self._provided, self._name
+        )
         site_manager.registerAdapter(
-            self._factory, required=self._required, provided=self._provided,
-            name=self._name, info=self._info, event=self._event)
+            self._factory,
+            required=self._required,
+            provided=self._provided,
+            name=self._name,
+            info=self._info,
+            event=self._event,
+        )
         # Equivalent to unregisterAdapter if original is None.
         self.addCleanup(
             site_manager.registerAdapter,
-            original, required=self._required, provided=self._provided,
-            name=self._name, info=self._info, event=self._event)
+            original,
+            required=self._required,
+            provided=self._provided,
+            name=self._name,
+            info=self._info,
+            event=self._event,
+        )
 
 
 class ZopeEventHandlerFixture(Fixture):
@@ -189,7 +200,8 @@ class ZopeEventHandlerFixture(Fixture):
         gsm = getGlobalSiteManager()
         gsm.registerHandler(self._handler, required=self._required)
         self.addCleanup(
-            gsm.unregisterHandler, self._handler, required=self._required)
+            gsm.unregisterHandler, self._handler, required=self._required
+        )
 
 
 class ZopeViewReplacementFixture(Fixture):
@@ -198,9 +210,13 @@ class ZopeViewReplacementFixture(Fixture):
     This will not work with the AppServerLayer.
     """
 
-    def __init__(self, name, context_interface,
-                 request_interface=IDefaultBrowserLayer,
-                 replacement=None):
+    def __init__(
+        self,
+        name,
+        context_interface,
+        request_interface=IDefaultBrowserLayer,
+        replacement=None,
+    ):
         super().__init__()
         self.name = name
         self.context_interface = context_interface
@@ -209,33 +225,39 @@ class ZopeViewReplacementFixture(Fixture):
         # It can be convenient--bordering on necessary--to use this original
         # class as a base for the replacement.
         self.original = self.gsm.adapters.registered(
-            (context_interface, request_interface), Interface, name)
+            (context_interface, request_interface), Interface, name
+        )
         self.checker = getCheckerForInstancesOf(self.original)
         if self.original is None:
             # The adapter registry does not provide good methods to introspect
             # it. If it did, we might try harder here.
             raise ValueError(
-                'No existing view to replace.  Wrong request interface?  '
-                'Try a layer.')
+                "No existing view to replace.  Wrong request interface?  "
+                "Try a layer."
+            )
         self.replacement = replacement
 
     def _setUp(self):
         if self.replacement is None:
-            raise ValueError('replacement is not set')
+            raise ValueError("replacement is not set")
         self.gsm.adapters.register(
-            (self.context_interface, self.request_interface), Interface,
-             self.name, self.replacement)
+            (self.context_interface, self.request_interface),
+            Interface,
+            self.name,
+            self.replacement,
+        )
         # The same checker should be sufficient.  If it ever isn't, we
         # can add more flexibility then.
         defineChecker(self.replacement, self.checker)
 
-        self.addCleanup(
-            undefineChecker, self.replacement)
+        self.addCleanup(undefineChecker, self.replacement)
         self.addCleanup(
             self.gsm.adapters.register,
             (self.context_interface, self.request_interface),
             Interface,
-            self.name, self.original)
+            self.name,
+            self.original,
+        )
 
 
 class ZopeUtilityFixture(Fixture):
@@ -260,10 +282,11 @@ class ZopeUtilityFixture(Fixture):
         gsm.registerUtility(self.component, self.intf, self.name)
         if original is not None:
             self.addCleanup(
-                gsm.registerUtility, original, self.intf, self.name)
+                gsm.registerUtility, original, self.intf, self.name
+            )
         self.addCleanup(
-            gsm.unregisterUtility,
-            self.component, self.intf, self.name)
+            gsm.unregisterUtility, self.component, self.intf, self.name
+        )
 
 
 class CapturedOutput(Fixture):
@@ -275,8 +298,8 @@ class CapturedOutput(Fixture):
         self.stderr = io.StringIO()
 
     def _setUp(self):
-        self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
-        self.useFixture(MonkeyPatch('sys.stderr', self.stderr))
+        self.useFixture(MonkeyPatch("sys.stdout", self.stdout))
+        self.useFixture(MonkeyPatch("sys.stderr", self.stderr))
 
 
 def run_capturing_output(function, *args, **kwargs):
@@ -328,27 +351,34 @@ class CaptureOops(Fixture):
         that it will be automatically nuked and must be recreated.
         """
         self.queue_name, _, _ = self.channel.queue_declare(
-            durable=True, auto_delete=False)
+            durable=True, auto_delete=False
+        )
         self.addCleanup(self.channel.queue_delete, self.queue_name)
         # In production the exchange already exists and is durable, but
         # here we make it just-in-time, and tell it to go when the test
         # fixture goes.
-        self.channel.exchange_declare(config.error_reports.error_exchange,
-            "fanout", durable=True, auto_delete=False)
+        self.channel.exchange_declare(
+            config.error_reports.error_exchange,
+            "fanout",
+            durable=True,
+            auto_delete=False,
+        )
         self.addCleanup(
-            self.channel.exchange_delete, config.error_reports.error_exchange)
+            self.channel.exchange_delete, config.error_reports.error_exchange
+        )
         self.channel.queue_bind(
-            self.queue_name, config.error_reports.error_exchange)
+            self.queue_name, config.error_reports.error_exchange
+        )
 
     def _add_oops(self, report):
         """Add an oops if it isn't already recorded.
 
         This is called from both amqp and in-appserver situations.
         """
-        if report['id'] not in self.oops_ids:
+        if report["id"] not in self.oops_ids:
             self.oopses.append(report)
-            self.oops_ids.add(report['id'])
-        return [report['id']]
+            self.oops_ids.add(report["id"])
+        return [report["id"]]
 
     @adapter(ErrorReportEvent)
     def _recordOops(self, event):
@@ -371,14 +401,17 @@ class CaptureOops(Fixture):
             channel = connection.channel()
             try:
                 channel.basic_publish(
-                    message, config.error_reports.error_exchange,
-                    config.error_reports.error_queue_key)
+                    message,
+                    config.error_reports.error_exchange,
+                    config.error_reports.error_queue_key,
+                )
             finally:
                 channel.close()
         finally:
             connection.close()
         receiver = oops_amqp.Receiver(
-            self.oops_config, connect, self.queue_name)
+            self.oops_config, connect, self.queue_name
+        )
         receiver.sentinel = self.AMQP_SENTINEL
         try:
             receiver.run_forever()
@@ -397,8 +430,7 @@ class CaptureTimeline(Fixture):
 
     def _setUp(self):
         webapp.adapter.set_request_started(time.time())
-        self.timeline = get_request_timeline(
-            get_current_browser_request())
+        self.timeline = get_request_timeline(get_current_browser_request())
         self.addCleanup(webapp.adapter.clear_request_started)
 
 
@@ -410,13 +442,16 @@ class DemoMode(Fixture):
     """
 
     def _setUp(self):
-        config.push('demo-fixture', '''
+        config.push(
+            "demo-fixture",
+            """
 [launchpad]
 is_demo: true
 site_message = This is a demo site mmk. \
 <a href="http://example.com">File a bug</a>.
-            ''')
-        self.addCleanup(lambda: config.pop('demo-fixture'))
+            """,
+        )
+        self.addCleanup(lambda: config.pop("demo-fixture"))
 
 
 class DisableTriggerFixture(Fixture):
@@ -430,17 +465,15 @@ class DisableTriggerFixture(Fixture):
         self.addCleanup(self._enable_triggers)
 
     def _process_triggers(self, mode):
-        with dbuser('postgres'):
+        with dbuser("postgres"):
             for table, trigger in self.table_triggers.items():
-                sql = ("ALTER TABLE %(table)s %(mode)s trigger "
-                       "%(trigger)s") % {
-                    'table': table,
-                    'mode': mode,
-                    'trigger': trigger}
+                sql = (
+                    "ALTER TABLE %(table)s %(mode)s trigger " "%(trigger)s"
+                ) % {"table": table, "mode": mode, "trigger": trigger}
                 IStore(LibraryFileAlias).execute(sql)
 
     def _disable_triggers(self):
-        self._process_triggers(mode='DISABLE')
+        self._process_triggers(mode="DISABLE")
 
     def _enable_triggers(self):
-        self._process_triggers(mode='ENABLE')
+        self._process_triggers(mode="ENABLE")

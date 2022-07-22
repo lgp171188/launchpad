@@ -3,7 +3,7 @@
 
 """Fake transaction manager."""
 
-__all__ = ['FakeTransaction']
+__all__ = ["FakeTransaction"]
 
 
 class FakeTransaction:
@@ -14,6 +14,7 @@ class FakeTransaction:
 
     Set `log_calls` to True to enable printing of commits and aborts.
     """
+
     commit_count = 0
 
     def __init__(self, log_calls=False):

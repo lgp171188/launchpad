@@ -4,35 +4,41 @@
 """Functions to help with the testing of views."""
 
 __all__ = [
-    'create_view',
-    'create_initialized_view',
-    ]
+    "create_view",
+    "create_initialized_view",
+]
 
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
-    )
-from zope.security.management import (
-    endInteraction,
-    newInteraction,
-    )
+from zope.component import getMultiAdapter, getUtility
+from zope.security.management import endInteraction, newInteraction
 
 from lp.layers import setFirstLayer
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,
     IPlacelessAuthUtility,
-    )
+)
 from lp.services.webapp.publisher import layer_for_rootsite
 from lp.services.webapp.servers import (
     LaunchpadTestRequest,
     WebServiceTestRequest,
-    )
+)
 
 
-def create_view(context, name, form=None, layer=None, server_url=None,
-                method='GET', principal=None, query_string='', cookie='',
-                request=None, path_info='/', current_request=False,
-                rootsite=None, **kwargs):
+def create_view(
+    context,
+    name,
+    form=None,
+    layer=None,
+    server_url=None,
+    method="GET",
+    principal=None,
+    query_string="",
+    cookie="",
+    request=None,
+    path_info="/",
+    current_request=False,
+    rootsite=None,
+    **kwargs
+):
     """Return a view based on the given arguments.
 
     :param context: The context for the view.
@@ -54,13 +60,20 @@ def create_view(context, name, form=None, layer=None, server_url=None,
     """
     if request is None:
         request = LaunchpadTestRequest(
-            form=form, SERVER_URL=server_url, QUERY_STRING=query_string,
-            HTTP_COOKIE=cookie, method=method, PATH_INFO=path_info, **kwargs)
+            form=form,
+            SERVER_URL=server_url,
+            QUERY_STRING=query_string,
+            HTTP_COOKIE=cookie,
+            method=method,
+            PATH_INFO=path_info,
+            **kwargs,
+        )
     if principal is not None:
         request.setPrincipal(principal)
     else:
         request.setPrincipal(
-            getUtility(IPlacelessAuthUtility).unauthenticatedPrincipal())
+            getUtility(IPlacelessAuthUtility).unauthenticatedPrincipal()
+        )
     if layer is None:
         # If a layer hasn't been specified, try to get the layer for the
         # rootsite.
@@ -79,21 +92,44 @@ def create_view(context, name, form=None, layer=None, server_url=None,
     return getMultiAdapter((context, request), name=name)
 
 
-def create_initialized_view(context, name, form=None, layer=None,
-                            server_url=None, method=None, principal=None,
-                            query_string=None, cookie=None, request=None,
-                            path_info='/', rootsite=None,
-                            current_request=False, **kwargs):
+def create_initialized_view(
+    context,
+    name,
+    form=None,
+    layer=None,
+    server_url=None,
+    method=None,
+    principal=None,
+    query_string=None,
+    cookie=None,
+    request=None,
+    path_info="/",
+    rootsite=None,
+    current_request=False,
+    **kwargs
+):
     """Return a view that has already been initialized."""
     if method is None:
         if form is None:
-            method = 'GET'
+            method = "GET"
         else:
-            method = 'POST'
+            method = "POST"
     view = create_view(
-        context, name, form, layer, server_url, method, principal,
-        query_string, cookie, request, path_info, rootsite=rootsite,
-        current_request=current_request, **kwargs)
+        context,
+        name,
+        form,
+        layer,
+        server_url,
+        method,
+        principal,
+        query_string,
+        cookie,
+        request,
+        path_info,
+        rootsite=rootsite,
+        current_request=current_request,
+        **kwargs,
+    )
     view.initialize()
     return view
 
@@ -101,4 +137,4 @@ def create_initialized_view(context, name, form=None, layer=None,
 def create_webservice_error_view(error):
     """Return a view of the error with a webservice request."""
     request = WebServiceTestRequest()
-    return getMultiAdapter((error, request), name='index.html')
+    return getMultiAdapter((error, request), name="index.html")

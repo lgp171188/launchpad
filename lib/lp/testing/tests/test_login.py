@@ -12,6 +12,7 @@ from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     anonymous_logged_in,
     celebrity_logged_in,
     login,
@@ -21,11 +22,10 @@ from lp.testing import (
     login_team,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
     with_anonymous_login,
     with_celebrity_logged_in,
     with_person_logged_in,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -53,7 +53,8 @@ class TestLoginHelpers(TestCaseWithFactory):
             else:
                 raise ValueError(
                     "Unauthenticated principal, but launchbag thinks "
-                    "%r is logged in." % (by_launchbag,))
+                    "%r is logged in." % (by_launchbag,)
+                )
         else:
             by_principal = principal.person
             self.assertEqual(by_launchbag, by_principal)
@@ -104,7 +105,7 @@ class TestLoginHelpers(TestCaseWithFactory):
 
     def test_login_with_email(self):
         # login() logs a person in by email.
-        email = 'test-email@example.com'
+        email = "test-email@example.com"
         person = self.factory.makePerson(email=email)
         logout()
         login(email)
@@ -169,7 +170,7 @@ class TestLoginHelpers(TestCaseWithFactory):
     def test_login_celebrity(self):
         # login_celebrity logs in a celebrity.
         logout()
-        login_celebrity('vcs_imports')
+        login_celebrity("vcs_imports")
         vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
         person = self.getLoggedInPerson()
         self.assertTrue(person.inTeam(vcs_imports))
@@ -178,7 +179,7 @@ class TestLoginHelpers(TestCaseWithFactory):
         # login_celebrity raises ValueError when called with a non-existent
         # celebrity.
         logout()
-        e = self.assertRaises(ValueError, login_celebrity, 'nonexistent')
+        e = self.assertRaises(ValueError, login_celebrity, "nonexistent")
         self.assertEqual(str(e), "No such celebrity: 'nonexistent'")
 
     def test_person_logged_in(self):
@@ -250,12 +251,12 @@ class TestLoginHelpers(TestCaseWithFactory):
         # celebrity_logged_in runs in a context where a celebrity is logged
         # in.
         vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
-        with celebrity_logged_in('vcs_imports'):
+        with celebrity_logged_in("vcs_imports"):
             person = self.getLoggedInPerson()
         self.assertTrue(person.inTeam(vcs_imports))
 
     def test_celebrity_logged_in_provides_person(self):
-        with celebrity_logged_in('vcs_imports') as p:
+        with celebrity_logged_in("vcs_imports") as p:
             person = self.getLoggedInPerson()
         self.assertEqual(p, person)
 
@@ -264,7 +265,7 @@ class TestLoginHelpers(TestCaseWithFactory):
         # logged-in person is re-logged in.
         person = self.factory.makePerson()
         login_as(person)
-        with celebrity_logged_in('vcs_imports'):
+        with celebrity_logged_in("vcs_imports"):
             pass
         self.assertLoggedIn(person)
 
@@ -273,7 +274,7 @@ class TestLoginHelpers(TestCaseWithFactory):
         # the given person logged in.
         vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
 
-        @with_celebrity_logged_in('vcs_imports')
+        @with_celebrity_logged_in("vcs_imports")
         def f():
             return self.getLoggedInPerson()
 
@@ -297,6 +298,7 @@ class TestLoginHelpers(TestCaseWithFactory):
         @with_anonymous_login
         def f():
             return self.getLoggedInPerson()
+
         person = f()
         self.assertEqual(ANONYMOUS, person)
 

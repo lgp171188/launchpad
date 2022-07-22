@@ -10,14 +10,13 @@ from lp.testing.keyserver.web import GREETING
 
 
 class TestKeyServerTac(TestCase):
-
     def test_url(self):
         # The url is the one that gpghandler is configured to hit.
         fixture = KeyServerTac()
         self.assertEqual(
-            'http://%s:%d' % (
-                config.gpghandler.host, config.gpghandler.port),
-            fixture.url)
+            "http://%s:%d" % (config.gpghandler.host, config.gpghandler.port),
+            fixture.url,
+        )
 
     def test_starts_properly(self):
         # Make sure the tac starts properly and that we can load the page.

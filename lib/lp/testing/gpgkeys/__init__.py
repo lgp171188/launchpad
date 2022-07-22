@@ -16,8 +16,8 @@ Secret keys are also imported into the local key ring, they are used for
 decrypt data in pagetests.
 """
 
-from io import BytesIO
 import os
+from io import BytesIO
 
 import gpgme
 import six
@@ -25,13 +25,9 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.gpg.interfaces import (
-    get_gpgme_context,
-    IGPGHandler,
-    )
+from lp.services.gpg.interfaces import IGPGHandler, get_gpgme_context
 
-
-gpgkeysdir = os.path.join(os.path.dirname(__file__), 'data')
+gpgkeysdir = os.path.join(os.path.dirname(__file__), "data")
 
 
 def import_public_key(email_addr):
@@ -43,10 +39,10 @@ def import_public_key(email_addr):
     key = gpghandler.importPublicKey(pubkey)
 
     # Strip out any '-passwordless' annotation from the email addresses.
-    email_addr = email_addr.replace('-passwordless', '')
+    email_addr = email_addr.replace("-passwordless", "")
 
     # Some of the keys shouldn't be inserted into the db.
-    if email_addr.endswith('do-not-insert-into-db'):
+    if email_addr.endswith("do-not-insert-into-db"):
         return
 
     person = personset.getByEmail(email_addr)
@@ -69,13 +65,14 @@ def import_public_key(email_addr):
         fingerprint=key.fingerprint,
         keysize=key.keysize,
         algorithm=key.algorithm,
-        active=(not key.revoked))
+        active=(not key.revoked),
+    )
 
 
 def iter_test_key_emails():
     """Iterates over the email addresses for the keys in the gpgkeysdir."""
     for name in sorted(os.listdir(gpgkeysdir), reverse=True):
-        if name.endswith('.pub'):
+        if name.endswith(".pub"):
             yield name[:-4]
 
 
@@ -85,32 +82,32 @@ def import_public_test_keys():
         import_public_key(email)
 
 
-def import_secret_test_key(keyfile='test@canonical.com.sec'):
+def import_secret_test_key(keyfile="test@canonical.com.sec"):
     """Imports the secret key located in gpgkeysdir into local keyring.
 
     :param keyfile: The name of the file to be imported.
     """
     gpghandler = getUtility(IGPGHandler)
-    with open(os.path.join(gpgkeysdir, keyfile), 'rb') as f:
+    with open(os.path.join(gpgkeysdir, keyfile), "rb") as f:
         seckey = f.read()
     return gpghandler.importSecretKey(seckey)
 
 
 def test_pubkey_file_from_email(email_addr):
     """Get the file name for a test pubkey by email address."""
-    return os.path.join(gpgkeysdir, email_addr + '.pub')
+    return os.path.join(gpgkeysdir, email_addr + ".pub")
 
 
 def test_pubkey_from_email(email_addr):
     """Get the on disk content for a test pubkey by email address."""
-    with open(test_pubkey_file_from_email(email_addr), 'rb') as f:
+    with open(test_pubkey_file_from_email(email_addr), "rb") as f:
         return f.read()
 
 
 def test_keyrings():
     """Iterate over the filenames for test keyrings."""
     for entry in os.scandir(gpgkeysdir):
-        if entry.name.endswith('.gpg'):
+        if entry.name.endswith(".gpg"):
             yield entry.path
 
 
@@ -124,10 +121,10 @@ def decrypt_content(content, password):
     :password: password to unlock the secret key in question
     """
     if not isinstance(password, str):
-        raise TypeError('Password must be a str.')
+        raise TypeError("Password must be a str.")
 
     if not isinstance(content, bytes):
-        raise TypeError('Content must be bytes.')
+        raise TypeError("Content must be bytes.")
 
     ctx = get_gpgme_context()
 
@@ -136,7 +133,7 @@ def decrypt_content(content, password):
     plain = BytesIO()
 
     def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
-        os.write(fd, six.ensure_binary('%s\n' % password))
+        os.write(fd, six.ensure_binary("%s\n" % password))
 
     ctx.passphrase_cb = passphrase_cb
 

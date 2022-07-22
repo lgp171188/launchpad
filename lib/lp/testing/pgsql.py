@@ -1,9 +1,9 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-'''
+"""
 Test harness for tests needing a PostgreSQL backend.
-'''
+"""
 
 import atexit
 import os
@@ -11,13 +11,10 @@ import random
 import sys
 import time
 
+import psycopg2
 from breezy.errors import LockContention
 from breezy.lock import WriteLock
-import psycopg2
-from psycopg2.errors import (
-    InvalidCatalogName,
-    ObjectInUse,
-    )
+from psycopg2.errors import InvalidCatalogName, ObjectInUse
 
 from lp.services.config import config
 from lp.services.database import activity_cols
@@ -31,8 +28,9 @@ class ConnectionWrapper:
     auto_close = True
 
     def __init__(self, real_connection):
-        assert not isinstance(real_connection, ConnectionWrapper), \
-                "Wrapped the wrapper!"
+        assert not isinstance(
+            real_connection, ConnectionWrapper
+        ), "Wrapped the wrapper!"
         self.real_connection = real_connection
         # Set to True to stop test cleanup forcing the connection closed.
         PgTestSetup.connections.append(self)
@@ -92,13 +90,15 @@ class CursorWrapper:
     to CursorWrapper.last_executed_sql.  This is useful for tests that want to
     ensure that certain SQL is generated.
     """
+
     real_cursor = None
     last_executed_sql = []
     record_sql = False
 
     def __init__(self, real_cursor):
-        assert not isinstance(real_cursor, CursorWrapper), \
-                "Wrapped the wrapper!"
+        assert not isinstance(
+            real_cursor, CursorWrapper
+        ), "Wrapped the wrapper!"
         self.real_cursor = real_cursor
 
     def execute(self, *args, **kwargs):
@@ -106,9 +106,15 @@ class CursorWrapper:
         # but should be good enough. In particular, it won't notice
         # data modification made by stored procedures.
         mutating_commands = [
-                'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'INTO',
-                'TRUNCATE', 'REPLACE',
-                ]
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "CREATE",
+            "DROP",
+            "INTO",
+            "TRUNCATE",
+            "REPLACE",
+        ]
         for command in mutating_commands:
             if command in args[0].upper():
                 ConnectionWrapper.dirty = True
@@ -160,9 +166,9 @@ class PgTestSetup:
     # Use a dynamically generated dbname:
     dynamic = object()
 
-    template = 'template1'
+    template = "template1"
     # Needs to match configs/testrunner*/*:
-    dbname = 'launchpad_ftest'
+    dbname = "launchpad_ftest"
     dbuser = None
     host = None
     port = None
@@ -179,20 +185,24 @@ class PgTestSetup:
     # Class attribute. True if we should destroy the DB because changes made.
     _reset_db = True
 
-    def __init__(self, template=None, dbname=dynamic, dbuser=None,
-                 host=None, port=None):
-        '''Construct the PgTestSetup
+    def __init__(
+        self, template=None, dbname=dynamic, dbuser=None, host=None, port=None
+    ):
+        """Construct the PgTestSetup
 
         Note that dbuser is not used for setting up or tearing down
         the database - it is only used by the connect() method
-        '''
+        """
         if template is not None:
             self.template = template
         if dbname is PgTestSetup.dynamic:
             from lp.testing.layers import BaseLayer
-            if os.environ.get('LP_TEST_INSTANCE'):
+
+            if os.environ.get("LP_TEST_INSTANCE"):
                 self.dbname = "%s_%s" % (
-                    self.__class__.dbname, os.environ.get('LP_TEST_INSTANCE'))
+                    self.__class__.dbname,
+                    os.environ.get("LP_TEST_INSTANCE"),
+                )
                 # Stash the name we use in the config if a writable config is
                 # available.
                 # Avoid circular imports
@@ -200,13 +210,18 @@ class PgTestSetup:
 rw_main_primary: dbname=%s
 rw_main_standby: dbname=%s
 
-""" % (self.dbname, self.dbname)
+""" % (
+                    self.dbname,
+                    self.dbname,
+                )
                 if BaseLayer.config_fixture is not None:
                     BaseLayer.config_fixture.add_section(section)
                 if BaseLayer.appserver_config_fixture is not None:
                     BaseLayer.appserver_config_fixture.add_section(section)
             if config.instance_name in (
-                BaseLayer.config_name, BaseLayer.appserver_config_name):
+                BaseLayer.config_name,
+                BaseLayer.appserver_config_name,
+            ):
                 config.reloadConfig()
             else:
                 # Fallback to the class name.
@@ -224,14 +239,14 @@ rw_main_standby: dbname=%s
             self.port = port
 
     def _connectionString(self, dbname, dbuser=None):
-        connection_parameters = ['dbname=%s' % dbname]
+        connection_parameters = ["dbname=%s" % dbname]
         if dbuser is not None:
-            connection_parameters.append('user=%s' % dbuser)
+            connection_parameters.append("user=%s" % dbuser)
         if self.host is not None:
-            connection_parameters.append('host=%s' % self.host)
+            connection_parameters.append("host=%s" % self.host)
         if self.port is not None:
-            connection_parameters.append('port=%s' % self.host)
-        return ' '.join(connection_parameters)
+            connection_parameters.append("port=%s" % self.host)
+        return " ".join(connection_parameters)
 
     def superuser_connection(self, dbname=None):
         if dbname is None:
@@ -239,12 +254,12 @@ rw_main_standby: dbname=%s
         return psycopg2.connect(self._connectionString(dbname))
 
     def setUp(self):
-        '''Create a fresh database (dropping the old if necessary)
+        """Create a fresh database (dropping the old if necessary)
 
         Skips db creation if reset_db is False
-        '''
+        """
         # This is now done globally in test.py
-        #installFakeConnect()
+        # installFakeConnect()
         if (self.template, self.dbname) != PgTestSetup._last_db:
             PgTestSetup._reset_db = True
         if not PgTestSetup._reset_db:
@@ -261,9 +276,15 @@ rw_main_standby: dbname=%s
         # try for up to 10 seconds:
         debug = False
         if debug:
-            sys.stderr.write('%0.2f starting %s\n' % (start, pid,))
+            sys.stderr.write(
+                "%0.2f starting %s\n"
+                % (
+                    start,
+                    pid,
+                )
+            )
         lock = None
-        lockname = '/tmp/lp.createdb.%s' % (self.template,)
+        lockname = "/tmp/lp.createdb.%s" % (self.template,)
         # Wait for the external lock.  Most LP tests use the
         # DatabaseLayer which does a double-indirect: it clones the
         # launchpad_ftest_template into a per-test runner template, so
@@ -277,14 +298,20 @@ rw_main_standby: dbname=%s
         while time.time() - start < 30.0:
             try:
                 if debug:
-                    sys.stderr.write('taking %s\n' % (pid,))
+                    sys.stderr.write("taking %s\n" % (pid,))
                 lock = WriteLock(lockname)
                 if debug:
-                    sys.stderr.write('%0.2f taken %s\n' % (time.time(), pid,))
+                    sys.stderr.write(
+                        "%0.2f taken %s\n"
+                        % (
+                            time.time(),
+                            pid,
+                        )
+                    )
                 break
             except LockContention:
                 if debug:
-                    sys.stderr.write('blocked %s\n' % (pid,))
+                    sys.stderr.write("blocked %s\n" % (pid,))
             time.sleep(random.random())
         if lock is None:
             raise LockContention(lockname)
@@ -297,7 +324,8 @@ rw_main_standby: dbname=%s
                 if debug:
                     sys.stderr.write(
                         "%0.2f connecting %s %s\n"
-                        % (time.time(), pid, self.template))
+                        % (time.time(), pid, self.template)
+                    )
                 con = self.superuser_connection(self.template)
                 try:
                     con.set_isolation_level(0)
@@ -307,44 +335,48 @@ rw_main_standby: dbname=%s
                         try:
                             cur.execute(
                                 "CREATE DATABASE %s TEMPLATE=%s "
-                                "ENCODING='UNICODE'" % (
-                                    self.dbname, self.template))
+                                "ENCODING='UNICODE'"
+                                % (self.dbname, self.template)
+                            )
                             # Try to ensure our cleanup gets invoked, even in
                             # the face of adversity such as the test suite
                             # aborting badly.
                             atexit.register(self.dropDb)
                             if debug:
                                 sys.stderr.write(
-                                    "create db in %0.2fs\n" % (
-                                        time.time() - _start))
+                                    "create db in %0.2fs\n"
+                                    % (time.time() - _start)
+                                )
                             break
                         except psycopg2.DatabaseError as x:
                             if counter == attempts - 1:
                                 raise
                             x = str(x)
-                            if 'being accessed by other users' not in x:
+                            if "being accessed by other users" not in x:
                                 raise
                     finally:
                         cur.close()
                 finally:
                     con.close()
-                duration = (2 ** counter) * random.random()
+                duration = (2**counter) * random.random()
                 if debug:
                     sys.stderr.write(
-                        '%0.2f busy:sleeping (%d retries) %s %s %s\n' % (
-                        time.time(), counter, pid, self.template, duration))
+                        "%0.2f busy:sleeping (%d retries) %s %s %s\n"
+                        % (time.time(), counter, pid, self.template, duration)
+                    )
                 # Let the server wrap up whatever was blocking the copy
                 # of the template.
                 time.sleep(duration)
             end = time.time()
             if debug:
                 sys.stderr.write(
-                    '%0.2f (%0.2f) completed (%d retries) %s %s\n'
-                    % (end, end - start, counter, pid, self.template))
+                    "%0.2f (%0.2f) completed (%d retries) %s %s\n"
+                    % (end, end - start, counter, pid, self.template)
+                )
         finally:
             lock.unlock()
             if debug:
-                sys.stderr.write('released %s\n' % (pid,))
+                sys.stderr.write("released %s\n" % (pid,))
 
         ConnectionWrapper.committed = False
         ConnectionWrapper.dirty = False
@@ -352,34 +384,34 @@ rw_main_standby: dbname=%s
         PgTestSetup._reset_db = False
 
     def tearDown(self):
-        '''Close all outstanding connections and drop the database'''
+        """Close all outstanding connections and drop the database"""
         for con in self.connections[:]:
             if con.auto_close:
                 # Removes itself from self.connections:
                 con.close()
-        if (ConnectionWrapper.committed and ConnectionWrapper.dirty):
+        if ConnectionWrapper.committed and ConnectionWrapper.dirty:
             PgTestSetup._reset_db = True
         ConnectionWrapper.committed = False
         ConnectionWrapper.dirty = False
         if PgTestSetup._reset_db:
             self.dropDb()
-        #uninstallFakeConnect()
+        # uninstallFakeConnect()
 
     def connect(self):
         """Get an open DB-API Connection object to a temporary database"""
         con = psycopg2.connect(
             self._connectionString(self.dbname, self.dbuser)
-            )
+        )
         if isinstance(con, ConnectionWrapper):
             return con
         else:
             return ConnectionWrapper(con)
 
     def dropDb(self):
-        '''Drop the database if it exists.
+        """Drop the database if it exists.
 
         Raises an exception if there are open connections
-        '''
+        """
         attempts = 100
         for i in range(0, attempts):
             try:
@@ -387,7 +419,7 @@ rw_main_standby: dbname=%s
             except psycopg2.OperationalError as x:
                 # At least in psycopg2 2.8.6, this doesn't seem to end up as
                 # a more specific exception type.
-                if 'does not exist' in str(x):
+                if "does not exist" in str(x):
                     return
                 raise
             try:
@@ -398,12 +430,15 @@ rw_main_standby: dbname=%s
                 # always having this is a problem.
                 try:
                     cur = con.cursor()
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT pg_terminate_backend(%(pid)s)
                         FROM pg_stat_activity
                         WHERE %(pid)s <> pg_backend_pid() AND datname=%%s
-                        """ % activity_cols(cur),
-                        [self.dbname])
+                        """
+                        % activity_cols(cur),
+                        [self.dbname],
+                    )
                 except psycopg2.DatabaseError:
                     pass
 
@@ -411,7 +446,7 @@ rw_main_standby: dbname=%s
                 # connections are slow in dropping off.
                 try:
                     cur = con.cursor()
-                    cur.execute('DROP DATABASE %s' % self.dbname)
+                    cur.execute("DROP DATABASE %s" % self.dbname)
                 except InvalidCatalogName:
                     break
                 except ObjectInUse:
@@ -422,9 +457,11 @@ rw_main_standby: dbname=%s
                         # Too many failures - raise an exception
                         raise
                 PgTestSetup._vacuum_shdepend_counter += 1
-                if (PgTestSetup._vacuum_shdepend_counter
-                    % PgTestSetup.vacuum_shdepend_every) == 0:
-                    cur.execute('VACUUM pg_catalog.pg_shdepend')
+                if (
+                    PgTestSetup._vacuum_shdepend_counter
+                    % PgTestSetup.vacuum_shdepend_every
+                ) == 0:
+                    cur.execute("VACUUM pg_catalog.pg_shdepend")
             finally:
                 con.close()
         # Any further setUp's must make a new DB.

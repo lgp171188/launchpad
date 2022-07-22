@@ -14,20 +14,13 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 import amqp
-from fixtures import (
-    EnvironmentVariableFixture,
-    Fixture,
-    TestWithFixtures,
-    )
 import six
+from fixtures import EnvironmentVariableFixture, Fixture, TestWithFixtures
 from zope.component import getUtility
 from zope.interface.interfaces import ComponentLookupError
 
 from lp.services.config import config
-from lp.services.librarian.client import (
-    LibrarianClient,
-    UploadFailed,
-    )
+from lp.services.librarian.client import LibrarianClient, UploadFailed
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.memcache.client import memcache_client_factory
 from lp.services.pidfile import pidfile_path
@@ -49,7 +42,7 @@ from lp.testing.layers import (
     MemcachedLayer,
     RabbitMQLayer,
     ZopelessLayer,
-    )
+)
 
 
 class BaseLayerIsolator(Fixture):
@@ -70,12 +63,15 @@ class BaseLayerIsolator(Fixture):
 
     def _setUp(self):
         if self.with_persistent:
-            env_value = ''
+            env_value = ""
         else:
             env_value = None
-        self.useFixture(EnvironmentVariableFixture(
-            'LP_PERSISTENT_TEST_SERVICES', env_value))
-        self.useFixture(EnvironmentVariableFixture('LP_TEST_INSTANCE'))
+        self.useFixture(
+            EnvironmentVariableFixture(
+                "LP_PERSISTENT_TEST_SERVICES", env_value
+            )
+        )
+        self.useFixture(EnvironmentVariableFixture("LP_TEST_INSTANCE"))
 
 
 class LayerFixture(Fixture):
@@ -100,47 +96,53 @@ class LayerFixture(Fixture):
 
 
 class TestBaseLayer(TestCase):
-
     def test_allocates_LP_TEST_INSTANCE(self):
         self.useFixture(BaseLayerIsolator())
         with LayerFixture(BaseLayer):
-            pid, suffix = os.environ['LP_TEST_INSTANCE'].split('_', 1)
+            pid, suffix = os.environ["LP_TEST_INSTANCE"].split("_", 1)
             self.assertEqual(str(os.getpid()), pid)
             self.assertEqual(24, len(suffix))
-        self.assertEqual(None, os.environ.get('LP_TEST_INSTANCE'))
+        self.assertEqual(None, os.environ.get("LP_TEST_INSTANCE"))
 
     def test_persist_test_services_disables_LP_TEST_INSTANCE(self):
         self.useFixture(BaseLayerIsolator(with_persistent=True))
         with LayerFixture(BaseLayer):
-            self.assertEqual(None, os.environ.get('LP_TEST_INSTANCE'))
-        self.assertEqual(None, os.environ.get('LP_TEST_INSTANCE'))
+            self.assertEqual(None, os.environ.get("LP_TEST_INSTANCE"))
+        self.assertEqual(None, os.environ.get("LP_TEST_INSTANCE"))
 
     def test_generates_unique_config(self):
-        config.setInstance('testrunner')
+        config.setInstance("testrunner")
         orig_instance = config.instance_name
         self.useFixture(
-            EnvironmentVariableFixture('LP_PERSISTENT_TEST_SERVICES'))
-        self.useFixture(EnvironmentVariableFixture('LP_TEST_INSTANCE'))
-        self.useFixture(EnvironmentVariableFixture('LPCONFIG'))
+            EnvironmentVariableFixture("LP_PERSISTENT_TEST_SERVICES")
+        )
+        self.useFixture(EnvironmentVariableFixture("LP_TEST_INSTANCE"))
+        self.useFixture(EnvironmentVariableFixture("LPCONFIG"))
         with LayerFixture(BaseLayer):
             self.assertEqual(
-                'testrunner_%s' % os.environ['LP_TEST_INSTANCE'],
-                config.instance_name)
+                "testrunner_%s" % os.environ["LP_TEST_INSTANCE"],
+                config.instance_name,
+            )
         self.assertEqual(orig_instance, config.instance_name)
 
     def test_generates_unique_config_dirs(self):
         self.useFixture(
-            EnvironmentVariableFixture('LP_PERSISTENT_TEST_SERVICES'))
-        self.useFixture(EnvironmentVariableFixture('LP_TEST_INSTANCE'))
-        self.useFixture(EnvironmentVariableFixture('LPCONFIG'))
+            EnvironmentVariableFixture("LP_PERSISTENT_TEST_SERVICES")
+        )
+        self.useFixture(EnvironmentVariableFixture("LP_TEST_INSTANCE"))
+        self.useFixture(EnvironmentVariableFixture("LPCONFIG"))
         with LayerFixture(BaseLayer):
-            runner_root = 'configs/%s' % config.instance_name
-            runner_appserver_root = 'configs/testrunner-appserver_%s' % \
-                os.environ['LP_TEST_INSTANCE']
-            self.assertTrue(os.path.isfile(
-                runner_root + '/launchpad-lazr.conf'))
-            self.assertTrue(os.path.isfile(
-                runner_appserver_root + '/launchpad-lazr.conf'))
+            runner_root = "configs/%s" % config.instance_name
+            runner_appserver_root = (
+                "configs/testrunner-appserver_%s"
+                % os.environ["LP_TEST_INSTANCE"]
+            )
+            self.assertTrue(
+                os.path.isfile(runner_root + "/launchpad-lazr.conf")
+            )
+            self.assertTrue(
+                os.path.isfile(runner_appserver_root + "/launchpad-lazr.conf")
+            )
         self.assertFalse(os.path.exists(runner_root))
         self.assertFalse(os.path.exists(runner_appserver_root))
 
@@ -149,6 +151,7 @@ class BaseTestCase(TestCase):
     """Both the Base layer tests, as well as the base Test Case
     for all the other Layer tests.
     """
+
     layer = BaseLayer
 
     # These flags will be overridden in subclasses to describe the
@@ -175,14 +178,14 @@ class BaseTestCase(TestCase):
             getUtility(ILibrarianClient)
         except ComponentLookupError:
             self.assertFalse(
-                    self.want_component_architecture,
-                    'Component Architecture should be available.'
-                    )
+                self.want_component_architecture,
+                "Component Architecture should be available.",
+            )
         else:
             self.assertTrue(
-                    self.want_component_architecture,
-                    'Component Architecture should not be available.'
-                    )
+                self.want_component_architecture,
+                "Component Architecture should not be available.",
+            )
 
     def testLibrarianRunning(self):
         # Check that the librarian is running. Note that even if the
@@ -192,47 +195,44 @@ class BaseTestCase(TestCase):
         try:
             urlopen(config.librarian.download_url).read()
             self.assertTrue(
-                    self.want_librarian_running,
-                    'Librarian should not be running.'
-                    )
+                self.want_librarian_running, "Librarian should not be running."
+            )
         except OSError:
             self.assertFalse(
-                    self.want_librarian_running,
-                    'Librarian should be running.'
-                    )
+                self.want_librarian_running, "Librarian should be running."
+            )
 
     def testLibrarianWorking(self):
         # Check that the librian is actually working. This means at
         # a minimum the Librarian service is running and is connected
         # to the Launchpad database.
         want_librarian_working = (
-                self.want_librarian_running and self.want_launchpad_database
-                and self.want_component_architecture
-                )
+            self.want_librarian_running
+            and self.want_launchpad_database
+            and self.want_component_architecture
+        )
         client = LibrarianClient()
-        data = b'Whatever'
+        data = b"Whatever"
         try:
             client.addFile(
-                    'foo.txt', len(data), io.BytesIO(data), 'text/plain'
-                    )
+                "foo.txt", len(data), io.BytesIO(data), "text/plain"
+            )
         except UploadFailed:
             self.assertFalse(
-                    want_librarian_working,
-                    'Librarian should be fully operational'
-                    )
+                want_librarian_working, "Librarian should be fully operational"
+            )
         # Since we use IMasterStore that doesn't throw either AttributeError
         # or ComponentLookupError.
         except TypeError:
             self.assertFalse(
-                    want_librarian_working,
-                    'Librarian not operational as component architecture '
-                    'not loaded'
-                    )
+                want_librarian_working,
+                "Librarian not operational as component architecture "
+                "not loaded",
+            )
         else:
             self.assertTrue(
-                    want_librarian_working,
-                    'Librarian should not be operational'
-                    )
+                want_librarian_working, "Librarian should not be operational"
+            )
 
     def testLaunchpadDbAvailable(self):
         if not self.want_launchpad_database:
@@ -251,10 +251,12 @@ class BaseTestCase(TestCase):
         is_live = client.set(key, "live")
         if self.want_memcached:
             self.assertEqual(
-                is_live, True, "memcached not live when it should be.")
+                is_live, True, "memcached not live when it should be."
+            )
         else:
             self.assertEqual(
-                is_live, False, "memcached is live but should not be.")
+                is_live, False, "memcached is live but should not be."
+            )
 
     def testRabbitWorking(self):
         rabbitmq = config.rabbitmq
@@ -266,7 +268,8 @@ class BaseTestCase(TestCase):
                 host=rabbitmq.host,
                 userid=rabbitmq.userid,
                 password=rabbitmq.password,
-                virtual_host=rabbitmq.virtual_host)
+                virtual_host=rabbitmq.virtual_host,
+            )
             conn.connect()
             conn.close()
 
@@ -288,13 +291,13 @@ class LibrarianTestCase(BaseTestCase):
         # We can test this using remoteAddFile (it does not need the CA
         # loaded)
         client = LibrarianClient()
-        data = b'This is a test'
+        data = b"This is a test"
         client.remoteAddFile(
-            'foo.txt', len(data), io.BytesIO(data), 'text/plain')
+            "foo.txt", len(data), io.BytesIO(data), "text/plain"
+        )
 
 
 class LibrarianLayerTest(TestCase, TestWithFixtures):
-
     def test_makes_unique_instance(self):
         # Capture the original settings
         default_root = config.librarian_server.root
@@ -307,10 +310,12 @@ class LibrarianLayerTest(TestCase, TestWithFixtures):
                 # The config settings have changed:
                 self.assertNotEqual(default_root, active_root)
                 self.assertNotEqual(
-                    download_port, config.librarian.download_port)
+                    download_port, config.librarian.download_port
+                )
                 self.assertNotEqual(
                     restricted_download_port,
-                    config.librarian.restricted_download_port)
+                    config.librarian.restricted_download_port,
+                )
                 self.assertTrue(os.path.exists(active_root))
             # This needs more sophistication in the config system (tearDown on
             # the layer needs to pop the config fragment off of disk - and
@@ -325,21 +330,24 @@ class LibrarianResetTestCase(TestCase):
     """Our page tests need to run multple tests without destroying
     the librarian database in between.
     """
+
     layer = LibrarianLayer
 
-    sample_data = b'This is a test'
+    sample_data = b"This is a test"
 
     def test_librarian_is_reset(self):
         # Add a file. We use remoteAddFile because it does not need the CA
         # loaded to work.
         client = LibrarianClient()
         LibrarianTestCase.url = client.remoteAddFile(
-            six.ensure_str(self.sample_data), len(self.sample_data),
-            io.BytesIO(self.sample_data), 'text/plain'
-            )
+            six.ensure_str(self.sample_data),
+            len(self.sample_data),
+            io.BytesIO(self.sample_data),
+            "text/plain",
+        )
         self.assertEqual(
             urlopen(LibrarianTestCase.url).read(), self.sample_data
-            )
+        )
         # Perform the librarian specific between-test code:
         LibrarianLayer.testTearDown()
         LibrarianLayer.testSetUp()
@@ -353,22 +361,26 @@ class LibrarianHideTestCase(TestCase):
     def testHideLibrarian(self):
         # First perform a successful upload:
         client = LibrarianClient()
-        data = b'foo'
-        client.remoteAddFile(
-            'foo', len(data), io.BytesIO(data), 'text/plain')
+        data = b"foo"
+        client.remoteAddFile("foo", len(data), io.BytesIO(data), "text/plain")
         # The database was committed to, but not by this process, so we need
         # to ensure that it is fully torn down and recreated.
         DatabaseLayer.force_dirty_database()
 
         # Hide the librarian, and show that the upload fails:
         LibrarianLayer.hide()
-        self.assertRaises(UploadFailed, client.remoteAddFile,
-                          b'foo', len(data), io.BytesIO(data), 'text/plain')
+        self.assertRaises(
+            UploadFailed,
+            client.remoteAddFile,
+            b"foo",
+            len(data),
+            io.BytesIO(data),
+            "text/plain",
+        )
 
         # Reveal the librarian again, allowing uploads:
         LibrarianLayer.reveal()
-        client.remoteAddFile(
-            b'foo', len(data), io.BytesIO(data), 'text/plain')
+        client.remoteAddFile(b"foo", len(data), io.BytesIO(data), "text/plain")
 
 
 class RabbitMQTestCase(BaseTestCase):
@@ -478,17 +490,21 @@ class LayerProcessControllerInvariantsTestCase(BaseTestCase):
         mainsite = LayerProcessController.appserver_config.vhost.mainsite
         home_page = six.ensure_text(urlopen(mainsite.rooturl).read())
         self.assertIn(
-            'Is your project registered yet?', home_page,
-            "Home page couldn't be retrieved:\n%s" % home_page)
+            "Is your project registered yet?",
+            home_page,
+            "Home page couldn't be retrieved:\n%s" % home_page,
+        )
 
     def testStartingAppServerTwiceRaisesInvariantError(self):
         # Starting the appserver twice should raise an exception.
-        self.assertRaises(LayerInvariantError,
-                          LayerProcessController.startAppServer)
+        self.assertRaises(
+            LayerInvariantError, LayerProcessController.startAppServer
+        )
 
 
 class LayerProcessControllerTestCase(TestCase):
     """Tests for the `LayerProcessController`."""
+
     # We need the database to be set up, no more.
     layer = DatabaseLayer
 
@@ -503,14 +519,16 @@ class LayerProcessControllerTestCase(TestCase):
         LayerProcessController.setConfig()
         LayerProcessController.startAppServer()
         pid = LayerProcessController.appserver.pid
-        pid_file = pidfile_path('launchpad',
-                                LayerProcessController.appserver_config)
+        pid_file = pidfile_path(
+            "launchpad", LayerProcessController.appserver_config
+        )
         LayerProcessController.stopAppServer()
         self.assertRaises(OSError, os.kill, pid, 0)
         self.assertFalse(os.path.exists(pid_file), "PID file wasn't removed")
         self.assertIsNone(
             LayerProcessController.appserver,
-            "appserver class attribute wasn't reset")
+            "appserver class attribute wasn't reset",
+        )
 
     def test_postTestInvariants(self):
         # A LayerIsolationError should be raised if the app server dies in the
@@ -520,8 +538,9 @@ class LayerProcessControllerTestCase(TestCase):
         pid = LayerProcessController.appserver.pid
         os.kill(pid, signal.SIGTERM)
         LayerProcessController.appserver.wait()
-        self.assertRaises(LayerIsolationError,
-                          LayerProcessController.postTestInvariants)
+        self.assertRaises(
+            LayerIsolationError, LayerProcessController.postTestInvariants
+        )
 
     def test_postTestInvariants_dbIsReset(self):
         # The database should be reset by the test invariants.
@@ -541,4 +560,5 @@ class TestNameTestCase(TestCase):
         self.assertEqual(
             BaseLayer.test_name,
             "lp.testing.tests.test_layers_functional.TestNameTestCase."
-            "testTestName")
+            "testTestName",
+        )

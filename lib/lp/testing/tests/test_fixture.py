@@ -7,47 +7,34 @@ import sys
 
 import oops_amqp
 import psycopg2
-from storm.exceptions import DisconnectionError
 import transaction
-from zope.component import (
-    adapter,
-    getGlobalSiteManager,
-    queryAdapter,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from storm.exceptions import DisconnectionError
+from zope.component import adapter, getGlobalSiteManager, queryAdapter
+from zope.interface import Interface, implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.sendmail.interfaces import IMailDelivery
 
 from lp.registry.model.person import Person
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
+from lp.services.config import config, dbconfig
 from lp.services.database.interfaces import IMasterStore
 from lp.services.messaging import rabbit
-from lp.services.webapp.errorlog import (
-    globalErrorUtility,
-    notify_publisher,
-    )
+from lp.services.webapp.errorlog import globalErrorUtility, notify_publisher
 from lp.testing import TestCase
 from lp.testing.fixture import (
     CaptureOops,
     DisableTriggerFixture,
     PGBouncerFixture,
-    run_capturing_output,
     ZopeAdapterFixture,
     ZopeUtilityFixture,
-    )
+    run_capturing_output,
+)
 from lp.testing.layers import (
     BaseLayer,
     DatabaseLayer,
     LaunchpadLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
-    )
+)
 
 
 class IFoo(Interface):
@@ -71,7 +58,6 @@ class Bar:
 @adapter(IFoo)
 @implementer(IBar)
 class FooToBar:
-
     def __init__(self, foo):
         self.foo = foo
 
@@ -100,7 +86,6 @@ class TestZopeAdapterFixture(TestCase):
         @adapter(IFoo)
         @implementer(IBar)
         class OriginalFooToBar:
-
             def __init__(self, foo):
                 self.foo = foo
 
@@ -133,13 +118,13 @@ class TestZopeUtilityFixture(TestCase):
     layer = BaseLayer
 
     def getMailer(self):
-        return getGlobalSiteManager().getUtility(IMailDelivery, 'Mail')
+        return getGlobalSiteManager().getUtility(IMailDelivery, "Mail")
 
     def test_fixture(self):
         fake = DummyMailer()
         # In BaseLayer there should be no mailer by default.
         self.assertRaises(ComponentLookupError, self.getMailer)
-        with ZopeUtilityFixture(fake, IMailDelivery, 'Mail'):
+        with ZopeUtilityFixture(fake, IMailDelivery, "Mail"):
             self.assertEqual(fake, self.getMailer())
         self.assertRaises(ComponentLookupError, self.getMailer)
 
@@ -148,16 +133,18 @@ class TestZopeUtilityFixture(TestCase):
         # cleanup.
         original_fake = DummyMailer()
         getGlobalSiteManager().registerUtility(
-            original_fake, IMailDelivery, 'Mail')
+            original_fake, IMailDelivery, "Mail"
+        )
         try:
             self.assertEqual(original_fake, self.getMailer())
             fake = DummyMailer()
-            with ZopeUtilityFixture(fake, IMailDelivery, 'Mail'):
+            with ZopeUtilityFixture(fake, IMailDelivery, "Mail"):
                 self.assertEqual(fake, self.getMailer())
             self.assertEqual(original_fake, self.getMailer())
         finally:
             getGlobalSiteManager().unregisterUtility(
-                original_fake, IMailDelivery, 'Mail')
+                original_fake, IMailDelivery, "Mail"
+            )
 
 
 class TestPGBouncerFixtureWithCA(TestCase):
@@ -165,6 +152,7 @@ class TestPGBouncerFixtureWithCA(TestCase):
 
     Registered Storm Stores should be reconnected through pgbouncer.
     """
+
     layer = LaunchpadZopelessLayer
 
     def is_connected(self):
@@ -220,11 +208,12 @@ class TestPGBouncerFixtureWithCA(TestCase):
 
 class TestPGBouncerFixtureWithoutCA(TestCase):
     """PGBouncerFixture tests for non-Component Architecture layers."""
+
     layer = DatabaseLayer
 
     def is_db_available(self):
         # Direct connection to the DB.
-        con_str = dbconfig.rw_main_primary + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_primary + " user=launchpad_main"
         try:
             con = psycopg2.connect(con_str)
             cur = con.cursor()
@@ -268,7 +257,6 @@ class TestRunCapturingOutput(TestCase):
     """Test `run_capturing_output`."""
 
     def test_run_capturing_output(self):
-
         def f(a, b):
             sys.stdout.write(str(a))
             sys.stderr.write(str(b))
@@ -276,8 +264,8 @@ class TestRunCapturingOutput(TestCase):
 
         c, stdout, stderr = run_capturing_output(f, 3, 4)
         self.assertEqual(7, c)
-        self.assertEqual('3', stdout)
-        self.assertEqual('4', stderr)
+        self.assertEqual("3", stdout)
+        self.assertEqual("4", stderr)
 
 
 class TestCaptureOopsNoRabbit(TestCase):
@@ -290,8 +278,8 @@ class TestCaptureOopsNoRabbit(TestCase):
         publisher = globalErrorUtility._oops_config.publisher
         try:
             globalErrorUtility._oops_config.publisher = notify_publisher
-            id = globalErrorUtility.raising(sys.exc_info())['id']
-            self.assertEqual(id, capture.oopses[0]['id'])
+            id = globalErrorUtility.raising(sys.exc_info())["id"]
+            self.assertEqual(id, capture.oopses[0]["id"])
             self.assertEqual(1, len(capture.oopses))
         finally:
             globalErrorUtility._oops_config.publisher = publisher
@@ -312,11 +300,12 @@ class TestCaptureOopsRabbit(TestCase):
         routing_key = config.error_reports.error_queue_key
         capture = self.useFixture(CaptureOops())
         amqp_publisher = oops_amqp.Publisher(
-            factory, exchange, routing_key, inherit_id=True)
-        oops = {'id': 'fnor', 'foo': 'dr'}
-        self.assertEqual(['fnor'], amqp_publisher(oops))
-        oops2 = {'id': 'quux', 'foo': 'strangelove'}
-        self.assertEqual(['quux'], amqp_publisher(oops2))
+            factory, exchange, routing_key, inherit_id=True
+        )
+        oops = {"id": "fnor", "foo": "dr"}
+        self.assertEqual(["fnor"], amqp_publisher(oops))
+        oops2 = {"id": "quux", "foo": "strangelove"}
+        self.assertEqual(["quux"], amqp_publisher(oops2))
         capture.sync()
         self.assertEqual([oops, oops2], capture.oopses)
 
@@ -333,7 +322,7 @@ class TestDisableTriggerFixture(TestCase):
 
     def setUp(self):
         super().setUp()
-        con_str = dbconfig.rw_main_primary + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_primary + " user=launchpad_main"
         con = psycopg2.connect(con_str)
         con.set_isolation_level(0)
         self.cursor = con.cursor()
@@ -357,29 +346,26 @@ class TestDisableTriggerFixture(TestCase):
         self.addCleanup(self._cleanup)
 
     def _cleanup(self):
-        self.cursor.execute('DROP TABLE test_trigger CASCADE;')
+        self.cursor.execute("DROP TABLE test_trigger CASCADE;")
         self.cursor.close()
         self.cursor.connection.close()
 
     def test_triggers_are_disabled(self):
         # Test that the fixture correctly disables specified triggers.
-        with DisableTriggerFixture({'test_trigger': 'test_trigger_t'}):
+        with DisableTriggerFixture({"test_trigger": "test_trigger_t"}):
+            self.cursor.execute("INSERT INTO test_trigger(col_a) values (1)")
             self.cursor.execute(
-                'INSERT INTO test_trigger(col_a) values (1)')
-            self.cursor.execute(
-                'SELECT col_b FROM test_trigger WHERE col_a = 1')
+                "SELECT col_b FROM test_trigger WHERE col_a = 1"
+            )
             [col_b] = self.cursor.fetchone()
             self.assertEqual(None, col_b)
 
     def test_triggers_are_enabled_after(self):
         # Test that the fixture correctly enables the triggers again when it
         # is done.
-        with DisableTriggerFixture({'test_trigger': 'test_trigger_t'}):
-            self.cursor.execute(
-                'INSERT INTO test_trigger(col_a) values (1)')
-        self.cursor.execute(
-            'INSERT INTO test_trigger(col_a) values (2)')
-        self.cursor.execute(
-            'SELECT col_b FROM test_trigger WHERE col_a = 2')
+        with DisableTriggerFixture({"test_trigger": "test_trigger_t"}):
+            self.cursor.execute("INSERT INTO test_trigger(col_a) values (1)")
+        self.cursor.execute("INSERT INTO test_trigger(col_a) values (2)")
+        self.cursor.execute("SELECT col_b FROM test_trigger WHERE col_a = 2")
         [col_b] = self.cursor.fetchone()
         self.assertEqual(2, col_b)

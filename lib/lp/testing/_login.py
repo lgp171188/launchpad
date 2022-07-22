@@ -2,31 +2,28 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'admin_logged_in',
-    'anonymous_logged_in',
-    'celebrity_logged_in',
-    'login',
-    'login_admin',
-    'login_as',
-    'login_celebrity',
-    'login_person',
-    'login_team',
-    'logout',
-    'person_logged_in',
-    'run_with_login',
-    'with_anonymous_login',
-    'with_celebrity_logged_in',
-    'with_person_logged_in',
-    ]
+    "admin_logged_in",
+    "anonymous_logged_in",
+    "celebrity_logged_in",
+    "login",
+    "login_admin",
+    "login_as",
+    "login_celebrity",
+    "login_person",
+    "login_team",
+    "logout",
+    "person_logged_in",
+    "run_with_login",
+    "with_anonymous_login",
+    "with_celebrity_logged_in",
+    "with_person_logged_in",
+]
 
 from contextlib import contextmanager
 
 from zope.component import getUtility
-from zope.security.management import (
-    endInteraction,
-    queryInteraction,
-    thread_local as zope_security_thread_local,
-    )
+from zope.security.management import endInteraction, queryInteraction
+from zope.security.management import thread_local as zope_security_thread_local
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.utils import decorate_with
@@ -34,7 +31,7 @@ from lp.services.webapp.interaction import (
     ANONYMOUS,
     setupInteractionByEmail,
     setupInteractionForPerson,
-    )
+)
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.vhosts import allvhosts
@@ -50,8 +47,11 @@ def _test_login_impl(participation):
         # canonical_url produce a real-looking host name rather than
         # 127.0.0.1.
         participation = LaunchpadTestRequest(
-            environ={'HTTP_HOST': allvhosts.configs['mainsite'].hostname,
-                     'SERVER_URL': allvhosts.configs['mainsite'].rooturl})
+            environ={
+                "HTTP_HOST": allvhosts.configs["mainsite"].hostname,
+                "SERVER_URL": allvhosts.configs["mainsite"].rooturl,
+            }
+        )
     return participation
 
 
@@ -79,7 +79,7 @@ def login_person(person, participation=None):
     if person is not None:
         # The login will fail even without this check, but this gives us a
         # nice error message, which can save time when debugging.
-        if getattr(person, 'is_team', None):
+        if getattr(person, "is_team", None):
             raise ValueError("Got team, expected person: %r" % (person,))
     participation = _test_login_impl(participation)
     setupInteractionForPerson(person, participation)
@@ -90,6 +90,7 @@ def login_team(team, participation=None):
     """Login as a member of 'team'."""
     # Prevent import loop.
     from lp.testing.factory import LaunchpadObjectFactory
+
     if not team.is_team:
         raise ValueError("Got person, expected team: %r" % (team,))
     login(ADMIN_EMAIL)
