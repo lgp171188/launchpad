@@ -17,20 +17,23 @@ from lp.services.scripts.base import LaunchpadScript
 
 
 class ProcessMail(LaunchpadScript):
-    usage = """%prog [options] [MAIL_FILE]
+    usage = (
+        """%prog [options] [MAIL_FILE]
 
     Process one incoming email, read from the specified file or from stdin.
 
     Any mail generated in response is printed to stdout.
 
-    """ + __doc__
+    """
+        + __doc__
+    )
 
     def main(self):
         self.txn.begin()
         # NB: This somewhat duplicates handleMail, but there it's mixed in
         # with handling a mailbox, which we're avoiding here.
         if len(self.args) >= 1:
-            from_file = open(self.args[0], 'rb')
+            from_file = open(self.args[0], "rb")
         else:
             from_file = sys.stdin.buffer
         self.logger.debug("reading message from %r" % (from_file,))
@@ -44,15 +47,18 @@ class ProcessMail(LaunchpadScript):
         # Kinda kludgey way to cause sendmail to just print it.
         config.sendmail_to_stdout = True
         handle_one_mail(
-            self.logger, parsed_mail,
-            file_alias, file_alias.http_url,
-            signature_timestamp_checker=None)
+            self.logger,
+            parsed_mail,
+            file_alias,
+            file_alias.http_url,
+            signature_timestamp_checker=None,
+        )
         self.logger.debug("mail handling complete")
         self.txn.commit()
 
 
-if __name__ == '__main__':
-    script = ProcessMail('process-one-mail', dbuser=config.processmail.dbuser)
+if __name__ == "__main__":
+    script = ProcessMail("process-one-mail", dbuser=config.processmail.dbuser)
     # No need to lock; you can run as many as you want as they use no global
     # resources (like a mailbox).
     script.run(use_web_security=True)

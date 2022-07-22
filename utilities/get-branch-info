@@ -32,18 +32,19 @@ def main(args):
         return
     print(branch.bzr_identity)
     print()
-    print('Unique name:', branch.unique_name)
-    print('ID:', branch.id)
-    print('Private:', branch.private)
-    print('Type:', branch.branch_type)
-    print('URL:', canonical_url(branch))
+    print("Unique name:", branch.unique_name)
+    print("ID:", branch.id)
+    print("Private:", branch.private)
+    print("Type:", branch.branch_type)
+    print("URL:", canonical_url(branch))
     if branch.url is not None:
-        print('External URL:', branch.url)
+        print("External URL:", branch.url)
     branch_path = branch_id_to_path(branch.id)
     mirrored_path = join(
-        config.codehosting.mirrored_branches_root, branch_path)
-    print('Mirrored copy:', mirrored_path)
+        config.codehosting.mirrored_branches_root, branch_path
+    )
+    print("Mirrored copy:", mirrored_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv)

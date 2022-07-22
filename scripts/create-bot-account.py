@@ -7,7 +7,6 @@ import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.createbotaccount import CreateBotAccountScript
 
-
-if __name__ == '__main__':
-    script = CreateBotAccountScript('create-bot-account', dbuser='launchpad')
+if __name__ == "__main__":
+    script = CreateBotAccountScript("create-bot-account", dbuser="launchpad")
     script.run()

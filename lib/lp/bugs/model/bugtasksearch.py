@@ -29,7 +29,6 @@ from storm.expr import (
     Row,
     Select,
     Union,
-    With,
 )
 from storm.info import ClassAlias
 from storm.references import Reference
@@ -86,6 +85,7 @@ from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
     Unnest,
+    WithMaterialized,
     fti_search,
     get_where_for_reference,
     rank_by_fti,
@@ -759,18 +759,21 @@ def _build_query(params):
                 ),
             ),
         )
+        store = IStore(Bug)
         with_clauses.append(
             convert_storm_clause_to_string(
-                With(
+                WithMaterialized(
                     "commented_bug_ids",
+                    store,
                     Union(commented_messages, commented_activities),
                 )
             )
         )
         with_clauses.append(
             convert_storm_clause_to_string(
-                With(
+                WithMaterialized(
                     "commented_bugtask_ids",
+                    store,
                     Select(
                         BugTaskFlat.bugtask_id,
                         tables=[BugTaskFlat],

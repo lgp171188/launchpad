@@ -13,9 +13,8 @@ import _pythonpath  # noqa: F401
 from lp.registry.scripts.standing import UpdatePersonalStanding
 from lp.services.config import config
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = UpdatePersonalStanding(
-        'update-personal-standing',
-        dbuser=config.standingupdater.dbuser)
+        "update-personal-standing", dbuser=config.standingupdater.dbuser
+    )
     script.lock_and_run()

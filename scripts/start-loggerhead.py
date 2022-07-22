@@ -7,6 +7,5 @@ import _pythonpath  # noqa: F401
 
 from launchpad_loggerhead.wsgi import LoggerheadApplication
 
-
 if __name__ == "__main__":
     LoggerheadApplication().run()

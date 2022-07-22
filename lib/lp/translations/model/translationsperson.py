@@ -5,17 +5,7 @@ __all__ = [
     "TranslationsPerson",
 ]
 
-from storm.expr import (
-    SQL,
-    And,
-    Coalesce,
-    Desc,
-    Join,
-    LeftJoin,
-    Or,
-    Select,
-    With,
-)
+from storm.expr import SQL, And, Coalesce, Desc, Join, LeftJoin, Or, Select
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import adapter, getUtility
@@ -32,6 +22,7 @@ from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.projectgroup import ProjectGroup
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import WithMaterialized
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.worlddata.model.language import Language
 from lp.translations.enums import TranslationPermission
@@ -275,8 +266,10 @@ class TranslationsPerson:
         ]
         if no_older_than:
             clause.append(POFileTranslator.date_last_touched >= no_older_than)
-        RecentPOFiles = With(
+        store = IStore(POFile)
+        RecentPOFiles = WithMaterialized(
             "recent_pofiles",
+            store,
             Select(
                 (POFile.id,),
                 tables=[
@@ -286,8 +279,9 @@ class TranslationsPerson:
                 where=And(*clause),
             ),
         )
-        ReviewableGroups = With(
+        ReviewableGroups = WithMaterialized(
             "reviewable_groups",
+            store,
             Select(
                 (TranslationGroup.id, Translator.language_id),
                 tables=[
@@ -307,8 +301,9 @@ class TranslationsPerson:
                 ],
             ),
         )
-        TranslatableDistroSeries = With(
+        TranslatableDistroSeries = WithMaterialized(
             "translatable_distroseries",
+            store,
             Select(
                 (DistroSeries.id, SQL("reviewable_groups.language")),
                 tables=[
@@ -331,8 +326,9 @@ class TranslationsPerson:
                 ],
             ),
         )
-        TranslatableProductSeries = With(
+        TranslatableProductSeries = WithMaterialized(
             "translatable_productseries",
+            store,
             Select(
                 (ProductSeries.id, SQL("reviewable_groups.language")),
                 tables=[

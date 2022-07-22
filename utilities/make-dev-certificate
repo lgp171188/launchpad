@@ -17,7 +17,6 @@ import subprocess
 import sys
 import tempfile
 
-
 vhosts = [
     "launchpad.test",
     "answers.launchpad.test",
@@ -30,7 +29,7 @@ vhosts = [
     "translations.launchpad.test",
     "xmlrpc.launchpad.test",
     "testopenid.test",
-    ]
+]
 
 
 def main():
@@ -43,26 +42,37 @@ def main():
     shutil.copy2("/etc/ssl/openssl.cnf", config)
     with open(config, "a") as f:
         f.write(
-            "\n[subjectAltName]\nsubjectAltName=%s\n" %
-            ",".join("DNS:%s" % vhost for vhost in vhosts))
-    subprocess.check_call([
-        "openssl", "req",
-        "-config", config,
-        "-new",
-        "-newkey", "rsa:4096",
-        "-nodes",
-        "-sha256",
-        "-subj", "/CN=%s/" % vhosts[0],
-        "-extensions", "subjectAltName",
-        "-x509",
-        "-days", "3650",
-        "-keyout", key,
-        "-out", certificate,
-        ])
+            "\n[subjectAltName]\nsubjectAltName=%s\n"
+            % ",".join("DNS:%s" % vhost for vhost in vhosts)
+        )
+    subprocess.check_call(
+        [
+            "openssl",
+            "req",
+            "-config",
+            config,
+            "-new",
+            "-newkey",
+            "rsa:4096",
+            "-nodes",
+            "-sha256",
+            "-subj",
+            "/CN=%s/" % vhosts[0],
+            "-extensions",
+            "subjectAltName",
+            "-x509",
+            "-days",
+            "3650",
+            "-keyout",
+            key,
+            "-out",
+            certificate,
+        ]
+    )
     print("Created new local key and self-signed certificate.")
     subprocess.check_call(["openssl", "x509", "-in", certificate, "-text"])
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

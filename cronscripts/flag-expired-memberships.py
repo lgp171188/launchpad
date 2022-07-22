@@ -15,7 +15,7 @@ from lp.services.config import config
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
-    )
+)
 
 
 class ExpireMemberships(LaunchpadCronScript):
@@ -37,21 +37,26 @@ class ExpireMemberships(LaunchpadCronScript):
         memberships_to_warn = membershipset.getExpiringMembershipsToWarn()
         for membership in memberships_to_warn:
             membership.sendExpirationWarningEmail()
-            self.logger.debug("Sent warning email to %s in %s team."
-                          % (membership.person.name, membership.team.name))
+            self.logger.debug(
+                "Sent warning email to %s in %s team."
+                % (membership.person.name, membership.team.name)
+            )
         self.txn.commit()
 
     def main(self):
         """Flag expired team memberships."""
         if self.args:
             raise LaunchpadScriptFailure(
-                "Unhandled arguments %s" % repr(self.args))
+                "Unhandled arguments %s" % repr(self.args)
+            )
         self.logger.info("Flagging expired team memberships.")
         self.flag_expired_memberships_and_send_warnings()
         self.logger.info("Finished flagging expired team memberships.")
 
 
-if __name__ == '__main__':
-    script = ExpireMemberships('flag-expired-memberships',
-                               dbuser=config.expiredmembershipsflagger.dbuser)
+if __name__ == "__main__":
+    script = ExpireMemberships(
+        "flag-expired-memberships",
+        dbuser=config.expiredmembershipsflagger.dbuser,
+    )
     script.lock_and_run()

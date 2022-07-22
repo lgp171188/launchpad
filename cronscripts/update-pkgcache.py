@@ -11,7 +11,6 @@ import _pythonpath  # noqa: F401
 
 from lp.soyuz.scripts.update_pkgcache import PackageCacheUpdater
 
-
 if __name__ == "__main__":
     script = PackageCacheUpdater("update-cache", dbuser="update-pkg-cache")
     script.lock_and_run()

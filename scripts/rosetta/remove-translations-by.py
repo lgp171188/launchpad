@@ -7,9 +7,8 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.remove_translations import RemoveTranslations
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = RemoveTranslations(
-        'lp.services.scripts.remove-translations',
-        dbuser='rosettaadmin')
+        "lp.services.scripts.remove-translations", dbuser="rosettaadmin"
+    )
     script.run()

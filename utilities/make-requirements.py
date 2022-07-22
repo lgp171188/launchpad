@@ -5,10 +5,10 @@
 
 """Build a pip constraints file from inputs."""
 
+import logging
 from argparse import ArgumentParser
 from collections import defaultdict
 from configparser import ConfigParser
-import logging
 
 from pkg_resources import parse_requirements
 
@@ -29,7 +29,7 @@ def read_buildout_versions(path):
         if section == "versions":
             python_version = None
         elif section.startswith("versions:python"):
-            python_suffix = section[len("versions:python"):]
+            python_suffix = section[len("versions:python") :]
             if len(python_suffix) == 1 and python_suffix.isdigit():
                 python_version = "%s.*" % python_suffix
             elif len(python_suffix) == 2 and python_suffix.isdigit():
@@ -50,15 +50,18 @@ def read_buildout_versions(path):
                 if python_version is None:
                     continue
                 requirements.append(
-                    '%s==%s; python_version == "%s"' %
-                    (name, versions[name][python_version], python_version))
+                    '%s==%s; python_version == "%s"'
+                    % (name, versions[name][python_version], python_version)
+                )
             if None in python_versions:
                 marker = " and ".join(
                     'python_version != "%s"' % python_version
                     for python_version in python_versions
-                    if python_version is not None)
+                    if python_version is not None
+                )
                 requirements.append(
-                    "%s==%s; %s" % (name, versions[name][None], marker))
+                    "%s==%s; %s" % (name, versions[name][None], marker)
+                )
     return list(parse_requirements(requirements))
 
 
@@ -93,19 +96,28 @@ def write_requirements(include_requirements, exclude_requirements):
 def main():
     parser = ArgumentParser()
     parser.add_argument(
-        "--buildout", action="append", metavar="VERSIONS",
-        help="Include requirements from this buildout versions file")
+        "--buildout",
+        action="append",
+        metavar="VERSIONS",
+        help="Include requirements from this buildout versions file",
+    )
     parser.add_argument(
-        "--include", action="append", metavar="REQUIREMENTS",
-        help="Include requirements from this PEP 508 requirements file")
+        "--include",
+        action="append",
+        metavar="REQUIREMENTS",
+        help="Include requirements from this PEP 508 requirements file",
+    )
     parser.add_argument(
-        "--exclude", action="append", metavar="REQUIREMENTS",
-        help="Exclude requirements from this PEP 508 requirements file")
+        "--exclude",
+        action="append",
+        metavar="REQUIREMENTS",
+        help="Exclude requirements from this PEP 508 requirements file",
+    )
     args = parser.parse_args()
 
-    include_requirements = (
-        [read_buildout_versions(path) for path in args.buildout] +
-        [read_requirements(path) for path in args.include])
+    include_requirements = [
+        read_buildout_versions(path) for path in args.buildout
+    ] + [read_requirements(path) for path in args.include]
     exclude_requirements = [read_requirements(path) for path in args.exclude]
 
     write_requirements(include_requirements, exclude_requirements)

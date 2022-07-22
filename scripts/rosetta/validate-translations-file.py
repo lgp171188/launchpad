@@ -8,8 +8,7 @@ import sys
 
 from lp.translations.scripts.validate_translations_file import (
     ValidateTranslationsFile,
-    )
-
+)
 
 if __name__ == "__main__":
     sys.exit(ValidateTranslationsFile().main())

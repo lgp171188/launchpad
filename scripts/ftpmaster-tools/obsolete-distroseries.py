@@ -14,8 +14,8 @@ import _pythonpath  # noqa: F401
 from lp.services.config import config
 from lp.soyuz.scripts.obsolete_distroseries import ObsoleteDistroseries
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ObsoleteDistroseries(
-        'obsolete-distroseries', dbuser=config.archivepublisher.dbuser)
+        "obsolete-distroseries", dbuser=config.archivepublisher.dbuser
+    )
     script.lock_and_run()

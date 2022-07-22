@@ -9,7 +9,6 @@ import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.closeaccount import CloseAccountScript
 
-
-if __name__ == '__main__':
-    script = CloseAccountScript('close-account', dbuser='launchpad')
+if __name__ == "__main__":
+    script = CloseAccountScript("close-account", dbuser="launchpad")
     script.run()

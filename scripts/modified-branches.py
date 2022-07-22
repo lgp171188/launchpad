@@ -12,8 +12,8 @@ import _pythonpath  # noqa: F401
 
 from lp.codehosting.scripts.modifiedbranches import ModifiedBranchesScript
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ModifiedBranchesScript(
-        'modified-branches', dbuser='modified-branches')
+        "modified-branches", dbuser="modified-branches"
+    )
     script.run()

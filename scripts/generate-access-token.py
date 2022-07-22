@@ -18,42 +18,37 @@ from lp.services.oauth.interfaces import IOAuthConsumerSet
 from lp.services.scripts.base import LaunchpadScript
 from lp.services.webapp.interfaces import OAuthPermission
 
-
-LP_API_URL = 'https://api.launchpad.test/devel'
+LP_API_URL = "https://api.launchpad.test/devel"
 
 
 def print_local_settings(user, key, token, secret):
-    print("Access token for {user} generated with the following settings:\n\n"
-          "LP_API_URL = '{url}'\n"
-          "LP_API_CONSUMER_KEY = '{key}'\n"
-          "LP_API_TOKEN = '{token}'\n"
-          "LP_API_TOKEN_SECRET = '{secret}'").format(
-              user=user,
-              url=LP_API_URL,
-              key=key,
-              token=token,
-              secret=secret)
+    print(
+        "Access token for {user} generated with the following settings:\n\n"
+        "LP_API_URL = '{url}'\n"
+        "LP_API_CONSUMER_KEY = '{key}'\n"
+        "LP_API_TOKEN = '{token}'\n"
+        "LP_API_TOKEN_SECRET = '{secret}'"
+    ).format(user=user, url=LP_API_URL, key=key, token=token, secret=secret)
 
 
 class AccessTokenGenerator(LaunchpadScript):
-
     def add_my_options(self):
         self.parser.usage = "%prog username [-n CONSUMER NAME]"
         self.parser.add_option("-n", "--name", dest="consumer_name")
 
     def main(self):
         if len(self.args) < 1:
-            self.parser.error('No username supplied')
+            self.parser.error("No username supplied")
         username = self.args[0]
 
         key = six.ensure_text(self.options.consumer_name)
-        consumer = getUtility(IOAuthConsumerSet).new(key, '')
+        consumer = getUtility(IOAuthConsumerSet).new(key, "")
         request_token, _ = consumer.newRequestToken()
 
         # review by username
         person = getUtility(IPersonSet).getByName(username)
         if not person:
-            print('Error: No account for username %s.' % username)
+            print("Error: No account for username %s." % username)
             sys.exit(1)
         request_token.review(person, OAuthPermission.WRITE_PRIVATE)
 
@@ -62,11 +57,13 @@ class AccessTokenGenerator(LaunchpadScript):
 
         self.txn.commit()
 
-        print_local_settings(person.name,
-                             self.options.consumer_name,
-                             access_token.key,
-                             access_secret)
+        print_local_settings(
+            person.name,
+            self.options.consumer_name,
+            access_token.key,
+            access_secret,
+        )
 
 
-if __name__ == '__main__':
-    AccessTokenGenerator('generate-access-token').lock_and_run()
+if __name__ == "__main__":
+    AccessTokenGenerator("generate-access-token").lock_and_run()

@@ -24,21 +24,30 @@ from lp.soyuz.scripts.gina.runner import run_gina
 
 
 class Gina(LaunchpadCronScript):
-
     def __init__(self):
-        super().__init__(name='gina', dbuser=config.gina.dbuser)
+        super().__init__(name="gina", dbuser=config.gina.dbuser)
 
     @property
     def usage(self):
         return "%s [options] (targets|--all)" % sys.argv[0]
 
     def add_my_options(self):
-        self.parser.add_option("-a", "--all", action="store_true",
+        self.parser.add_option(
+            "-a",
+            "--all",
+            action="store_true",
             help="Run all sections defined in launchpad-lazr.conf (in order)",
-            dest="all", default=False)
-        self.parser.add_option("-l", "--list-targets", action="store_true",
-            help="List configured import targets", dest="list_targets",
-            default=False)
+            dest="all",
+            default=False,
+        )
+        self.parser.add_option(
+            "-l",
+            "--list-targets",
+            action="store_true",
+            help="List configured import targets",
+            dest="list_targets",
+            default=False,
+        )
 
     def getConfiguredTargets(self):
         """Get the configured import targets.
@@ -46,9 +55,8 @@ class Gina(LaunchpadCronScript):
         Gina's targets are configured as "[gina_target.*]" sections in the
         LAZR config.
         """
-        sections = config.getByCategory('gina_target', [])
-        targets = [
-            target.category_and_section_names[1] for target in sections]
+        sections = config.getByCategory("gina_target", [])
+        targets = [target.category_and_section_names[1] for target in sections]
         if len(targets) == 0:
             self.logger.warning("No gina_target entries configured.")
         return targets
@@ -66,11 +74,13 @@ class Gina(LaunchpadCronScript):
         else:
             if not targets:
                 self.parser.error(
-                    "Must specify at least one target to run, or --all")
+                    "Must specify at least one target to run, or --all"
+                )
             for target in targets:
                 if target not in possible_targets:
                     self.parser.error(
-                        "No Gina target %s in config file" % target)
+                        "No Gina target %s in config file" % target
+                    )
             return targets
 
     def main(self):
@@ -81,7 +91,7 @@ class Gina(LaunchpadCronScript):
             return
 
         for target in self.getTargets(possible_targets):
-            target_section = config['gina_target.%s' % target]
+            target_section = config["gina_target.%s" % target]
             run_gina(self.options, self.txn, target_section)
 
 

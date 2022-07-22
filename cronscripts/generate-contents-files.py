@@ -9,10 +9,10 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.generate_contents_files import (
     GenerateContentsFiles,
-    )
+)
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = GenerateContentsFiles(
-        "generate-contents", dbuser='generate_contents_files')
+        "generate-contents", dbuser="generate_contents_files"
+    )
     script.lock_and_run()

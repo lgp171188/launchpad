@@ -16,7 +16,7 @@ class UpdateDatabaseStats(LaunchpadCronScript):
     """Populate the DatabaseTableStats and DatabaseCpuStats tables."""
 
     def main(self):
-        "Run UpdateDatabaseTableStats."""
+        "Run UpdateDatabaseTableStats." ""
         store = IMasterStore(Person)
 
         # The logic is in a stored procedure because we want to run
@@ -32,7 +32,9 @@ class UpdateDatabaseStats(LaunchpadCronScript):
         """Add standard database command line options."""
         db_options(self.parser)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     script = UpdateDatabaseStats(
-        'update-database-stats', dbuser='database_stats_update')
+        "update-database-stats", dbuser="database_stats_update"
+    )
     script.lock_and_run()

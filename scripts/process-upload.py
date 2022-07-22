@@ -13,7 +13,6 @@ import _pythonpath  # noqa: F401
 
 from lp.archiveuploader.scripts.processupload import ProcessUpload
 
-
-if __name__ == '__main__':
-    script = ProcessUpload('process-upload', dbuser='process_upload')
+if __name__ == "__main__":
+    script = ProcessUpload("process-upload", dbuser="process_upload")
     script.lock_and_run()

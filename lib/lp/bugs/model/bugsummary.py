@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 from storm.base import Storm
-from storm.expr import SQL, And, Or, Select, With
+from storm.expr import SQL, And, Or, Select
 from storm.properties import Bool, Int, Unicode
 from storm.references import Reference
 from zope.interface import implementer
@@ -33,6 +33,8 @@ from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import WithMaterialized
 
 
 @implementer(IBugSummary)
@@ -118,17 +120,20 @@ def get_bugsummary_filter_for_user(user):
     elif IPersonRoles(user).in_admin:
         return [], []
     else:
+        store = IStore(TeamParticipation)
         with_clauses = [
-            With(
+            WithMaterialized(
                 "teams",
+                store,
                 Select(
                     TeamParticipation.teamID,
                     tables=[TeamParticipation],
                     where=(TeamParticipation.personID == user.id),
                 ),
             ),
-            With(
+            WithMaterialized(
                 "policies",
+                store,
                 Select(
                     AccessPolicyGrant.policy_id,
                     tables=[AccessPolicyGrant],

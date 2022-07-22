@@ -40,30 +40,40 @@ repos:
     hooks:
       - id: black
         files: |
-          (?x)^lib/lp/(
-            answers
-            |app
-            |archivepublisher
-            |archiveuploader
-            |blueprints
-            |bugs
-            |buildmaster
-            |charms
-            |code
-            |codehosting
-            |coop
-            |oci
-            |registry
+          (?x)^(
+            cronscripts
+            |lib/lp/(
+              answers
+              |app
+              |archivepublisher
+              |archiveuploader
+              |blueprints
+              |bugs
+              |buildmaster
+              |charms
+              |code
+              |codehosting
+              |coop
+              |oci
+              |registry
+              |scripts
+              |services
+              |snappy
+              |soyuz
+              |testing
+              |testopenid
+              |tests
+              |translations
+              |xmlrpc
+            )
             |scripts
-            |services
-            |snappy
-            |soyuz
-            |testing
-            |testopenid
-            |tests
-            |translations
-            |xmlrpc
+            |utilities
           )/
+        exclude: |
+          (?x)^(
+            utilities/community-contributions\.py
+            |utilities/update-sourcecode
+          )$
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:
@@ -79,58 +89,68 @@ repos:
         -   --multi-line=8
         -   --dont-order-by-type
         exclude: |
-          (?x)^lib/lp/(
-            answers
-            |app
-            |archivepublisher
-            |archiveuploader
-            |blueprints
-            |bugs
-            |buildmaster
-            |charms
-            |code
-            |codehosting
-            |coop
-            |oci
-            |registry
+          (?x)^(
+            cronscripts
+            |lib/lp/(
+              answers
+              |app
+              |archivepublisher
+              |archiveuploader
+              |blueprints
+              |bugs
+              |buildmaster
+              |charms
+              |code
+              |codehosting
+              |coop
+              |oci
+              |registry
+              |scripts
+              |services
+              |snappy
+              |soyuz
+              |testing
+              |testopenid
+              |tests
+              |translations
+              |xmlrpc
+            )
             |scripts
-            |services
-            |snappy
-            |soyuz
-            |testing
-            |testopenid
-            |tests
-            |translations
-            |xmlrpc
+            |utilities
           )/
     -   id: isort
         alias: isort-black
         name: isort (black)
         args: [--profile, black]
         files: |
-          (?x)^lib/lp/(
-            answers
-            |app
-            |archivepublisher
-            |archiveuploader
-            |blueprints
-            |bugs
-            |buildmaster
-            |charms
-            |code
-            |codehosting
-            |coop
-            |oci
-            |registry
+          (?x)^(
+            cronscripts
+            |lib/lp/(
+              answers
+              |app
+              |archivepublisher
+              |archiveuploader
+              |blueprints
+              |bugs
+              |buildmaster
+              |charms
+              |code
+              |codehosting
+              |coop
+              |oci
+              |registry
+              |scripts
+              |services
+              |snappy
+              |soyuz
+              |testing
+              |testopenid
+              |tests
+              |translations
+              |xmlrpc
+            )
             |scripts
-            |services
-            |snappy
-            |soyuz
-            |testing
-            |testopenid
-            |tests
-            |translations
-            |xmlrpc
+            |utilities
           )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2

@@ -45,7 +45,6 @@ from storm.expr import (
     Select,
     Sum,
     Union,
-    With,
 )
 from storm.info import ClassAlias
 from storm.locals import Bool, DateTime, Int, Reference, ReferenceSet
@@ -185,6 +184,7 @@ from lp.services.database.sqlobject import (
     StringCol,
 )
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import WithMaterialized
 from lp.services.fields import DuplicateBug
 from lp.services.helpers import shortlist
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -3394,9 +3394,11 @@ class BugMute(StormBase):
 
 
 def generate_subscription_with(bug, person):
+    store = IStore(bug)
     return [
-        With(
+        WithMaterialized(
             "all_bugsubscriptions",
+            store,
             Select(
                 (BugSubscription.id, BugSubscription.person_id),
                 tables=[
@@ -3406,8 +3408,9 @@ def generate_subscription_with(bug, person):
                 where=Or(Bug.id == bug.id, Bug.duplicateofID == bug.id),
             ),
         ),
-        With(
+        WithMaterialized(
             "bugsubscriptions",
+            store,
             Select(
                 SQL("all_bugsubscriptions.id"),
                 tables=[

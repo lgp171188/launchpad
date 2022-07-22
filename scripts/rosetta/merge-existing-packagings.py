@@ -5,13 +5,10 @@
 
 import _pythonpath  # noqa: F401
 
-from lp.translations.utilities.translationmerger import (
-    MergeExistingPackagings,
-    )
+from lp.translations.utilities.translationmerger import MergeExistingPackagings
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = MergeExistingPackagings(
-        'lp.services.scripts.message-sharing-merge',
-        dbuser='rosettaadmin')
+        "lp.services.scripts.message-sharing-merge", dbuser="rosettaadmin"
+    )
     script.run()

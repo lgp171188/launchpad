@@ -8,8 +8,8 @@ import _pythonpath  # noqa: F401
 from lp.services.config import config
 from lp.translations.scripts.po_import import TranslationsImport
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = TranslationsImport(
-        'rosetta-poimport', dbuser=config.poimport.dbuser)
+        "rosetta-poimport", dbuser=config.poimport.dbuser
+    )
     script.lock_and_run()

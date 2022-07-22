@@ -5,15 +5,11 @@
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import sys
+from optparse import OptionParser
 
-from lp.services.osutils import (
-    process_exists,
-    two_stage_kill,
-    )
+from lp.services.osutils import process_exists, two_stage_kill
 from lp.services.pidfile import get_pid
-
 
 parser = OptionParser(description="Stop loggerhead.")
 parser.parse_args()
@@ -25,11 +21,11 @@ if pid is None:
     sys.exit(0)
 
 if not process_exists(pid):
-    print('Stale pid file; server is not running.')
+    print("Stale pid file; server is not running.")
     sys.exit(1)
 
 print()
-print('Shutting down previous server @ pid %d.' % (pid,))
+print("Shutting down previous server @ pid %d." % (pid,))
 print()
 
 # A busy gunicorn can take a while to shut down.

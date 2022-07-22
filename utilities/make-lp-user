@@ -31,32 +31,29 @@ production environments.
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import os
 import re
 import subprocess
 import sys
+from optparse import OptionParser
 
-from storm.store import Store
 import transaction
+from storm.store import Store
 from zope.component import getUtility
 
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.ssh import ISSHKeySet
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
-from lp.services.gpg.interfaces import (
-    get_gpg_path,
-    IGPGHandler,
-    )
+from lp.services.gpg.interfaces import IGPGHandler, get_gpg_path
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.timeout import set_default_timeout_function
 from lp.testing.factory import LaunchpadObjectFactory
 
-
 factory = LaunchpadObjectFactory()
 
 set_default_timeout_function(lambda: 100)
+
 
 def make_person(username, email):
     """Create and return a person with the given username.
@@ -87,10 +84,9 @@ def add_person_to_teams(person, team_names):
         if not team.is_team:
             print("ERROR: %s is not a team." % (team_name,))
             continue
-        team.addMember(
-            person, person, status=TeamMembershipStatus.APPROVED)
+        team.addMember(person, person, status=TeamMembershipStatus.APPROVED)
         teams_joined.append(team_name)
-    print("teams:    %s" % ' '.join(teams_joined))
+    print("teams:    %s" % " ".join(teams_joined))
 
 
 def add_ssh_public_keys(person):
@@ -99,9 +95,9 @@ def add_ssh_public_keys(person):
     This function looks in ~/.ssh/id_rsa.pub and ~/.ssh/id_dsa.pub for SSH
     public keys and registers them as SSH keys for `person`.
     """
-    ssh_dir = os.path.expanduser('~/.ssh')
+    ssh_dir = os.path.expanduser("~/.ssh")
     key_set = getUtility(ISSHKeySet)
-    for filename in ('id_rsa.pub', 'id_dsa.pub'):
+    for filename in ("id_rsa.pub", "id_dsa.pub"):
         try:
             public_key_file = open(os.path.join(ssh_dir, filename))
             try:
@@ -111,10 +107,10 @@ def add_ssh_public_keys(person):
         except OSError:
             continue
         key_set.new(person, public_key)
-        print('Registered SSH key: %s' % (filename,))
+        print("Registered SSH key: %s" % (filename,))
         break
     else:
-        print('No SSH key files found in %s' % ssh_dir)
+        print("No SSH key files found in %s" % ssh_dir)
 
 
 def parse_fingerprints(gpg_output):
@@ -133,28 +129,36 @@ def run_native_gpg(arguments):
     # Need to override GNUPGHOME or we'll get a dummy GPG in a temp
     # directory, which won't find any keys.
     env = os.environ.copy()
-    if 'GNUPGHOME' in env:
-        del env['GNUPGHOME']
+    if "GNUPGHOME" in env:
+        del env["GNUPGHOME"]
 
     command_line = [get_gpg_path()] + arguments
     pipe = subprocess.Popen(
-        command_line, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        universal_newlines=True)
+        command_line,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
     stdout, stderr = pipe.communicate()
-    if stderr != '':
+    if stderr != "":
         print(stderr)
     if pipe.returncode != 0:
-        raise Exception('GPG error during "%s"' % ' '.join(command_line))
+        raise Exception('GPG error during "%s"' % " ".join(command_line))
 
     return stdout
 
 
 def add_gpg_key(person, fingerprint):
     """Add the GPG key with the given fingerprint to `person`."""
-    run_native_gpg([
-        '--keyserver', 'hkp://keyserver.launchpad.test:11371',
-        '--send-key', fingerprint
-        ])
+    run_native_gpg(
+        [
+            "--keyserver",
+            "hkp://keyserver.launchpad.test:11371",
+            "--send-key",
+            fingerprint,
+        ]
+    )
 
     gpghandler = getUtility(IGPGHandler)
     key = gpghandler.retrieveKey(fingerprint)
@@ -166,14 +170,20 @@ def add_gpg_key(person, fingerprint):
 
     can_encrypt = True
     lpkey = gpgkeyset.new(
-        person.id, key.keyid, fingerprint, key.keysize, key.algorithm,
-        active=True, can_encrypt=can_encrypt)
+        person.id,
+        key.keyid,
+        fingerprint,
+        key.keysize,
+        key.algorithm,
+        active=True,
+        can_encrypt=can_encrypt,
+    )
     Store.of(person).add(lpkey)
 
 
 def attach_gpg_keys(email, person):
     """Attach the GPG key(s) for `email` to `person`."""
-    output = run_native_gpg(['--fingerprint', email])
+    output = run_native_gpg(["--fingerprint", email])
 
     fingerprints = parse_fingerprints(output)
     if len(fingerprints) == 0:
@@ -190,11 +200,15 @@ def parse_args(arguments):
     """
     parser = OptionParser(description="Create a local Launchpad user.")
     parser.add_option(
-        '-e', '--email', action='store', dest='email', default=None,
-        help="Email address")
+        "-e",
+        "--email",
+        action="store",
+        dest="email",
+        default=None,
+        help="Email address",
+    )
     parser.add_option(
-        '-g', '--gpg', action='store_true', dest='gpg',
-        help="Use real GPG key"
+        "-g", "--gpg", action="store_true", dest="gpg", help="Use real GPG key"
     )
 
     options, args = parser.parse_args(arguments)
@@ -212,7 +226,7 @@ def main(arguments):
     """Run the script."""
     options = parse_args(arguments)
     if options.email is None:
-        email = '%s@example.com' % options.username
+        email = "%s@example.com" % options.username
     else:
         email = options.email
 
@@ -231,5 +245,5 @@ def main(arguments):
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

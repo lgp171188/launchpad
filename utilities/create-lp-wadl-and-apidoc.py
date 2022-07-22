@@ -13,14 +13,14 @@ Example:
 
 import _pythonpath  # noqa: F401
 
-from multiprocessing import Process
 import optparse
 import os
 import subprocess
 import sys
+from multiprocessing import Process
 
-from lazr.restful.interfaces import IWebServiceConfiguration
 import six
+from lazr.restful.interfaces import IWebServiceConfiguration
 from zope.component import getUtility
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
@@ -29,27 +29,27 @@ from lp.services.webservice.wadl import (
     generate_html,
     generate_json,
     generate_wadl,
-    )
+)
 from lp.systemhomes import WebServiceApplication
 
 
 def write(filename, content, timestamp):
     """Replace the named file with the given string."""
-    with open(filename, 'wb') as f:
+    with open(filename, "wb") as f:
         f.write(six.ensure_binary(content))
     os.utime(filename, (timestamp, timestamp))  # (atime, mtime)
 
 
 def make_files(directory, version, timestamp, force):
     version_directory = os.path.join(directory, version)
-    base_filename = os.path.join(version_directory, os.environ['LPCONFIG'])
-    wadl_filename = base_filename + '.wadl'
-    json_filename = base_filename + '.json'
+    base_filename = os.path.join(version_directory, os.environ["LPCONFIG"])
+    wadl_filename = base_filename + ".wadl"
+    json_filename = base_filename + ".json"
     html_filename = os.path.join(directory, version + ".html")
-    wadl_index = os.path.join(version_directory, 'index.wadl')
-    json_index = os.path.join(version_directory, 'index.json')
-    html_index = os.path.join(version_directory, 'index.html')
-    brokenwadl_index = os.path.join(version_directory, 'index.brokenwadl')
+    wadl_index = os.path.join(version_directory, "index.wadl")
+    json_index = os.path.join(version_directory, "index.json")
+    html_index = os.path.join(version_directory, "index.html")
+    brokenwadl_index = os.path.join(version_directory, "index.brokenwadl")
 
     # Make sure we have our dir.
     if not os.path.exists(version_directory):
@@ -58,16 +58,15 @@ def make_files(directory, version, timestamp, force):
 
     # Make wadl and json files.
     for src, dest, gen, name in (
-        (wadl_filename, wadl_index, generate_wadl, 'WADL'),
-        (json_filename, json_index, generate_json, 'JSON')):
+        (wadl_filename, wadl_index, generate_wadl, "WADL"),
+        (json_filename, json_index, generate_json, "JSON"),
+    ):
         # If the src doesn't exist or we are forced to regenerate it...
-        if (not os.path.exists(src) or force):
-            print("Writing %s for version %s to %s." % (
-                name, version, src))
+        if not os.path.exists(src) or force:
+            print("Writing %s for version %s to %s." % (name, version, src))
             write(src, gen(version), timestamp)
         else:
-            print("Skipping already present %s file: %s" % (
-                name, src))
+            print("Skipping already present %s file: %s" % (name, src))
         # Make "index" symlinks, removing any preexisting ones.
         if os.path.exists(dest):
             os.remove(dest)
@@ -104,11 +103,13 @@ def make_files(directory, version, timestamp, force):
     # put the HTML in the same directory as the WADL.
     # If the HTML file doesn't exist or we're being forced to regenerate
     # it...
-    if (not os.path.exists(html_filename) or force):
-        print("Writing apidoc for version %s to %s" % (
-            version, html_filename))
-        write(html_filename, generate_html(wadl_filename,
-            suppress_stderr=False), timestamp)
+    if not os.path.exists(html_filename) or force:
+        print("Writing apidoc for version %s to %s" % (version, html_filename))
+        write(
+            html_filename,
+            generate_html(wadl_filename, suppress_stderr=False),
+            timestamp,
+        )
     else:
         print("Skipping already present HTML file:", html_filename)
 
@@ -117,7 +118,8 @@ def make_files(directory, version, timestamp, force):
     if not os.path.exists(html_index):
         os.symlink(
             os.path.join(os.path.pardir, os.path.basename(html_filename)),
-            html_index)
+            html_index,
+        )
 
 
 def main(directory, force=False):
@@ -127,25 +129,29 @@ def main(directory, force=False):
 
     # First, create an index.html with links to all the HTML
     # documentation files we're about to generate.
-    template_file = 'apidoc-index.pt'
+    template_file = "apidoc-index.pt"
     template = PageTemplateFile(template_file)
     index_filename = os.path.join(directory, "index.html")
     print("Writing index:", index_filename)
-    f = open(index_filename, 'w')
+    f = open(index_filename, "w")
     f.write(template(config=config))
 
     # Get the time of the last commit.  We will use this as the mtime for the
     # generated files so that we can safely use it as part of Apache's etag
     # generation in the face of multiple servers/filesystems.
-    timestamp = int(subprocess.check_output(
-        ["git", "log", "-1", "--format=%ct", "HEAD"],
-        universal_newlines=True))
+    timestamp = int(
+        subprocess.check_output(
+            ["git", "log", "-1", "--format=%ct", "HEAD"],
+            universal_newlines=True,
+        )
+    )
 
     # Start a process to build each set of WADL and HTML files.
     processes = []
     for version in config.active_versions:
-        p = Process(target=make_files,
-            args=(directory, version, timestamp, force))
+        p = Process(
+            target=make_files, args=(directory, version, timestamp, force)
+        )
         p.start()
         processes.append(p)
 
@@ -160,8 +166,10 @@ def parse_args(args):
     usage = "usage: %prog [options] DIR"
     parser = optparse.OptionParser(usage=usage)
     parser.add_option(
-        "--force", action="store_true",
-        help="Replace any already-existing files.")
+        "--force",
+        action="store_true",
+        help="Replace any already-existing files.",
+    )
     parser.set_defaults(force=False)
     options, args = parser.parse_args(args)
     if len(args) != 2:
@@ -170,6 +178,6 @@ def parse_args(args):
     return options, args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     options, args = parse_args(sys.argv)
     sys.exit(main(args[1], options.force))

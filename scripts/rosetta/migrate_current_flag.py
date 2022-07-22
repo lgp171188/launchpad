@@ -10,7 +10,7 @@ import _pythonpath  # noqa: F401
 from lp.services.scripts.base import LaunchpadScript
 from lp.translations.scripts.migrate_current_flag import (
     MigrateCurrentFlagProcess,
-    )
+)
 
 
 class MigrateTranslationFlags(LaunchpadScript):
@@ -25,7 +25,8 @@ class MigrateTranslationFlags(LaunchpadScript):
         fixer.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = MigrateTranslationFlags(
-        name="migratecurrentflag", dbuser='rosettaadmin')
+        name="migratecurrentflag", dbuser="rosettaadmin"
+    )
     script.lock_and_run()

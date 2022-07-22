@@ -11,13 +11,12 @@ import time
 
 from lp.bugs.scripts.sfremoteproductfinder import (
     SourceForgeRemoteProductFinder,
-    )
+)
 from lp.services.config import config
 from lp.services.scripts.base import LaunchpadCronScript
 
 
 class UpdateRemoteProductsFromSourceForge(LaunchpadCronScript):
-
     def main(self):
         start_time = time.time()
 
@@ -28,8 +27,9 @@ class UpdateRemoteProductsFromSourceForge(LaunchpadCronScript):
         self.logger.info("Time for this run: %.3f seconds." % run_time)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = UpdateRemoteProductsFromSourceForge(
         "updateremoteproduct",
-        dbuser=config.updatesourceforgeremoteproduct.dbuser)
+        dbuser=config.updatesourceforgeremoteproduct.dbuser,
+    )
     script.lock_and_run()

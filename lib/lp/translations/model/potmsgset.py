@@ -21,7 +21,6 @@ from storm.expr import (
     Or,
     Select,
     Table,
-    With,
 )
 from storm.locals import Int, Reference
 from storm.store import EmptyResultSet, Store
@@ -36,7 +35,12 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import StringCol
-from lp.services.database.stormexpr import IsTrue, NullsFirst, NullsLast
+from lp.services.database.stormexpr import (
+    IsTrue,
+    NullsFirst,
+    NullsLast,
+    WithMaterialized,
+)
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
 from lp.translations.interfaces.potmsgset import (
@@ -433,8 +437,10 @@ class POTMsgSet(SQLBase):
             )
 
         SuggestivePOTemplate = Table("SuggestivePOTemplate")
-        msgsets = With(
+        store = IStore(TranslationMessage)
+        msgsets = WithMaterialized(
             "msgsets",
+            store,
             Select(
                 POTMsgSet.id,
                 tables=(
@@ -469,30 +475,26 @@ class POTMsgSet(SQLBase):
             for form in range(TranslationConstants.MAX_PLURAL_FORMS)
         ]
 
-        result = (
-            IStore(TranslationMessage)
-            .with_(msgsets)
-            .find(
-                TranslationMessage,
-                TranslationMessage.id.is_in(
-                    Select(
-                        TranslationMessage.id,
-                        tables=(
-                            TranslationMessage,
-                            Join(
-                                msgsets_table,
-                                TranslationMessage.potmsgset
-                                == Column("id", msgsets_table),
-                            ),
+        result = store.with_(msgsets).find(
+            TranslationMessage,
+            TranslationMessage.id.is_in(
+                Select(
+                    TranslationMessage.id,
+                    tables=(
+                        TranslationMessage,
+                        Join(
+                            msgsets_table,
+                            TranslationMessage.potmsgset
+                            == Column("id", msgsets_table),
                         ),
-                        where=Or(*lang_used),
-                        order_by=(
-                            msgstrs + [Desc(TranslationMessage.date_created)]
-                        ),
-                        distinct=msgstrs,
-                    )
-                ),
-            )
+                    ),
+                    where=Or(*lang_used),
+                    order_by=(
+                        msgstrs + [Desc(TranslationMessage.date_created)]
+                    ),
+                    distinct=msgstrs,
+                )
+            ),
         )
 
         return shortlist(result, longest_expected=100, hardlimit=2000)

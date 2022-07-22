@@ -19,8 +19,8 @@ renamed.
 
 import _pythonpath  # noqa: F401
 
-from collections import namedtuple
 import sys
+from collections import namedtuple
 
 from breezy import errors
 from breezy.branch import UnstackableBranchFormat
@@ -29,14 +29,10 @@ from breezy.config import TransportConfig
 
 from lp.code.interfaces.codehosting import branch_id_alias
 from lp.codehosting.bzrutils import get_branch_stacked_on_url
-from lp.codehosting.vfs import (
-    get_ro_server,
-    get_rw_server,
-    )
+from lp.codehosting.vfs import get_ro_server, get_rw_server
 from lp.services.scripts.base import LaunchpadScript
 
-
-FakeBranch = namedtuple('FakeBranch', 'id')
+FakeBranch = namedtuple("FakeBranch", "id")
 
 
 def set_branch_stacked_on_url(bzrdir, stacked_on_url):
@@ -47,27 +43,38 @@ def set_branch_stacked_on_url(bzrdir, stacked_on_url):
     something we don't yet have.
     """
     branch_transport = bzrdir.get_branch_transport(None)
-    branch_config = TransportConfig(branch_transport, 'branch.conf')
+    branch_config = TransportConfig(branch_transport, "branch.conf")
     stacked_on_url = branch_config.set_option(
-        stacked_on_url, 'stacked_on_location')
+        stacked_on_url, "stacked_on_location"
+    )
 
 
 class UpdateStackedBranches(LaunchpadScript):
     """Update stacked branches so their stacked_on_location matches the db."""
 
     def __init__(self):
-        super().__init__('update-stacked-on')
+        super().__init__("update-stacked-on")
 
     def add_my_options(self):
         self.parser.add_option(
-            '-n', '--dry-run', default=False, action="store_true",
+            "-n",
+            "--dry-run",
+            default=False,
+            action="store_true",
             dest="dry_run",
-            help=("Don't change anything on disk, just go through the "
-                  "motions."))
+            help=(
+                "Don't change anything on disk, just go through the "
+                "motions."
+            ),
+        )
         self.parser.add_option(
-            '-i', '--id', default=False, action="store_true",
+            "-i",
+            "--id",
+            default=False,
+            action="store_true",
             dest="stack_on_id",
-            help=("Stack on the +branch-id alias."))
+            help=("Stack on the +branch-id alias."),
+        )
 
     def main(self):
         if self.options.dry_run:
@@ -76,13 +83,13 @@ class UpdateStackedBranches(LaunchpadScript):
             server = get_rw_server()
         server.start_server()
         if self.options.dry_run:
-            self.logger.debug('Running read-only')
-        self.logger.debug('Beginning processing')
+            self.logger.debug("Running read-only")
+        self.logger.debug("Beginning processing")
         try:
             self.updateBranches(self.parseFromStream(sys.stdin))
         finally:
             server.stop_server()
-        self.logger.info('Done')
+        self.logger.info("Done")
 
     def updateStackedOn(self, branch_id, bzr_branch_url, stacked_on_location):
         """Stack the Bazaar branch at 'bzr_branch_url' on the given URL.
@@ -97,28 +104,37 @@ class UpdateStackedBranches(LaunchpadScript):
             bzrdir = BzrDir.open(bzr_branch_url)
         except errors.NotBranchError:
             self.logger.warning(
-                "No bzrdir for %r at %r" % (branch_id, bzr_branch_url))
+                "No bzrdir for %r at %r" % (branch_id, bzr_branch_url)
+            )
             return
 
         try:
             current_stacked_on_location = get_branch_stacked_on_url(bzrdir)
         except errors.NotBranchError:
             self.logger.warning(
-                "No branch for %r at %r" % (branch_id, bzr_branch_url))
+                "No branch for %r at %r" % (branch_id, bzr_branch_url)
+            )
         except errors.NotStacked:
             self.logger.warning(
                 "Branch for %r at %r is not stacked at all. Giving up."
-                % (branch_id, bzr_branch_url))
+                % (branch_id, bzr_branch_url)
+            )
         except UnstackableBranchFormat:
             self.logger.error(
                 "Branch for %r at %r is unstackable. Giving up."
-                % (branch_id, bzr_branch_url))
+                % (branch_id, bzr_branch_url)
+            )
         else:
             if current_stacked_on_location != stacked_on_location:
                 self.logger.info(
-                    'Branch for %r at %r stacked on %r, should be on %r.'
-                    % (branch_id, bzr_branch_url, current_stacked_on_location,
-                       stacked_on_location))
+                    "Branch for %r at %r stacked on %r, should be on %r."
+                    % (
+                        branch_id,
+                        bzr_branch_url,
+                        current_stacked_on_location,
+                        stacked_on_location,
+                    )
+                )
                 if not self.options.dry_run:
                     set_branch_stacked_on_url(bzrdir, stacked_on_location)
 
@@ -141,17 +157,22 @@ class UpdateStackedBranches(LaunchpadScript):
             unique_name, stacked_on_unique_name).
         """
         for branch_info in branches:
-            (branch_id, branch_type, unique_name,
-             stacked_on_id, stacked_on_name) = branch_info
+            (
+                branch_id,
+                branch_type,
+                unique_name,
+                stacked_on_id,
+                stacked_on_name,
+            ) = branch_info
             if self.options.stack_on_id:
                 branch = FakeBranch(stacked_on_id)
                 stacked_on_location = branch_id_alias(branch)
             else:
-                stacked_on_location = '/' + stacked_on_name
+                stacked_on_location = "/" + stacked_on_name
             self.updateStackedOn(
-                branch_id, 'lp-internal:///' + unique_name,
-                stacked_on_location)
+                branch_id, "lp-internal:///" + unique_name, stacked_on_location
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     UpdateStackedBranches().lock_and_run()

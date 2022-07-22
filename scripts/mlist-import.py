@@ -11,8 +11,8 @@
 # - Import archives.
 
 __all__ = [
-    'MailingListImport',
-    ]
+    "MailingListImport",
+]
 
 
 import _pythonpath  # noqa: F401
@@ -36,7 +36,7 @@ class MailingListImport(LaunchpadScript):
     """
 
     loglevel = logging.INFO
-    description = 'Import data into a Launchpad mailing list.'
+    description = "Import data into a Launchpad mailing list."
 
     def __init__(self, name, dbuser=None):
         self.usage = textwrap.dedent(self.__doc__)
@@ -44,22 +44,30 @@ class MailingListImport(LaunchpadScript):
 
     def add_my_options(self):
         """See `LaunchpadScript`."""
-        self.parser.add_option('-f', '--filename', default='-', help=(
-            'The file name containing the addresses to import, one '
-            "per line.  If '-' is used or this option is not given, "
-            'then addresses are read from standard input.'))
-        self.parser.add_option('--notifications',
-                               default=False, action='store_true',
-                               help=(
-            'Enable team-join notification sending to team admins.'))
+        self.parser.add_option(
+            "-f",
+            "--filename",
+            default="-",
+            help=(
+                "The file name containing the addresses to import, one "
+                "per line.  If '-' is used or this option is not given, "
+                "then addresses are read from standard input."
+            ),
+        )
+        self.parser.add_option(
+            "--notifications",
+            default=False,
+            action="store_true",
+            help=("Enable team-join notification sending to team admins."),
+        )
 
     def main(self):
         """See `LaunchpadScript`."""
         team_name = None
         if len(self.args) == 0:
-            self.parser.error('Missing team name')
+            self.parser.error("Missing team name")
         elif len(self.args) > 1:
-            self.parser.error('Too many arguments')
+            self.parser.error("Too many arguments")
         else:
             team_name = self.args[0]
 
@@ -68,19 +76,22 @@ class MailingListImport(LaunchpadScript):
         # Suppress sending emails based on the (absence) of the --notification
         # switch.  Notifications are disabled by default because they can
         # cause huge amounts to be sent to the team owner.
-        send_email_config = """
+        send_email_config = (
+            """
             [immediate_mail]
             send_email: %s
-            """ % self.options.notifications
-        config.push('send_email_config', send_email_config)
+            """
+            % self.options.notifications
+        )
+        config.push("send_email_config", send_email_config)
 
-        if self.options.filename == '-':
+        if self.options.filename == "-":
             # Read all the addresses from standard input, parse them
             # here, and use the direct interface to the importer.
             addresses = []
             while True:
                 line = sys.stdin.readline()
-                if line == '':
+                if line == "":
                     break
                 addresses.append(line[:-1])
             importer.importAddresses(addresses)
@@ -92,7 +103,7 @@ class MailingListImport(LaunchpadScript):
         return 0
 
 
-if __name__ == '__main__':
-    script = MailingListImport('scripts.mlist-import', 'mlist-import')
+if __name__ == "__main__":
+    script = MailingListImport("scripts.mlist-import", "mlist-import")
     status = script.lock_and_run()
     sys.exit(status)

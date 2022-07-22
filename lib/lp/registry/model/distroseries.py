@@ -16,7 +16,7 @@ from operator import itemgetter
 
 import apt_pkg
 from lazr.delegates import delegate_to
-from storm.expr import SQL, And, Column, Desc, Join, Or, Select, Table, With
+from storm.expr import SQL, And, Column, Desc, Join, Or, Select, Table
 from storm.locals import JSON, Int, Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
@@ -77,7 +77,7 @@ from lp.services.database.sqlobject import (
     SQLRelatedJoin,
     StringCol,
 )
-from lp.services.database.stormexpr import IsTrue, fti_search
+from lp.services.database.stormexpr import IsTrue, WithMaterialized, fti_search
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.mail.signedmessage import signed_message_from_bytes
@@ -1360,8 +1360,9 @@ class DistroSeries(
         # Without this CTE, PostgreSQL sometimes decides to scan the primary
         # key index on PackageUpload instead, which is very slow.
         RelevantUpload = Table("RelevantUpload")
-        relevant_upload_cte = With(
+        relevant_upload_cte = WithMaterialized(
             RelevantUpload.name,
+            IStore(PackageUpload),
             Select(
                 PackageUpload.id,
                 And(

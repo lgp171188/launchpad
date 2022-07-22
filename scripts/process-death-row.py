@@ -25,8 +25,6 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.processdeathrow import DeathRowProcessor
 
-
 if __name__ == "__main__":
-    script = DeathRowProcessor(
-        'process-death-row', dbuser='process_death_row')
+    script = DeathRowProcessor("process-death-row", dbuser="process_death_row")
     script.lock_and_run()

@@ -13,7 +13,7 @@ import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.productreleasefinder.finder import (
     ProductReleaseFinder,
-    )
+)
 from lp.services.config import config
 from lp.services.scripts.base import LaunchpadCronScript
 
@@ -25,6 +25,7 @@ class ReleaseFinderScript(LaunchpadCronScript):
 
 
 if __name__ == "__main__":
-    script = ReleaseFinderScript('productreleasefinder',
-        dbuser=config.productreleasefinder.dbuser)
+    script = ReleaseFinderScript(
+        "productreleasefinder", dbuser=config.productreleasefinder.dbuser
+    )
     script.lock_and_run()
