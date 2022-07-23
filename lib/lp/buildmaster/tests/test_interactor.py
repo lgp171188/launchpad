@@ -13,9 +13,11 @@ import os
 import signal
 import tempfile
 import xmlrpc.client
+from functools import partial
 
 import six
 import treq
+from fixtures import MockPatchObject
 from lpbuildd.builder import BuilderStatus
 from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
@@ -1003,3 +1005,53 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         yield worker.getFiles([(empty_sha1, temp_name)])
         with open(temp_name, "rb") as f:
             self.assertEqual(b"", f.read())
+
+    @defer.inlineCallbacks
+    def test_getFiles_retries(self):
+        # getFiles retries failed download attempts rather than giving up on
+        # the first failure.
+        self.pushConfig("builddmaster", download_attempts=3)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        count = 0
+
+        def fail_twice(original, *args, **kwargs):
+            nonlocal count
+            count += 1
+            if count < 3:
+                raise RuntimeError("Boom")
+            return original(*args, **kwargs)
+
+        self.useFixture(
+            MockPatchObject(
+                worker.process_pool,
+                "doWork",
+                side_effect=partial(fail_twice, worker.process_pool.doWork),
+            )
+        )
+        temp_dir = self.makeTemporaryDirectory()
+        temp_name = os.path.join(temp_dir, "log")
+        sha1 = hashlib.sha1(b"log").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, sha1, contents=b"log")
+        yield worker.getFiles([(sha1, temp_name)])
+        with open(temp_name, "rb") as f:
+            self.assertEqual(b"log", f.read())
+
+    @defer.inlineCallbacks
+    def test_getFiles_limited_retries(self):
+        # getFiles gives up on retrying downloads after the configured
+        # number of attempts.
+        self.pushConfig("builddmaster", download_attempts=3)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        self.useFixture(
+            MockPatchObject(
+                worker.process_pool, "doWork", side_effect=RuntimeError("Boom")
+            )
+        )
+        temp_dir = self.makeTemporaryDirectory()
+        temp_name = os.path.join(temp_dir, "log")
+        sha1 = hashlib.sha1(b"log").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, sha1, contents=b"log")
+        with ExpectedException(RuntimeError, r"^Boom$"):
+            yield worker.getFiles([(sha1, temp_name)])
