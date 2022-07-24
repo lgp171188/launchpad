@@ -365,7 +365,7 @@ class IBugView(Interface):
     # See lp.bugs.model.bug.Bug.attachments for why there are two similar
     # properties here.
     # attachments_unpopulated would more naturally be attachments, and
-    # attachments be attachments_prepopulated, but lazr.resful cannot
+    # attachments be attachments_prepopulated, but lazr.restful cannot
     # export over a non-exported attribute in an interface.
     # https://bugs.launchpad.net/lazr.restful/+bug/625102
     attachments_unpopulated = CollectionField(
