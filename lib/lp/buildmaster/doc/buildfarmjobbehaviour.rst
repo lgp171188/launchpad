@@ -38,7 +38,7 @@ For this documentation, we'll also need a dummy new build farm job.
 
     >>> from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
     >>> class IMyNewBuildFarmJob(IBuildFarmJob):
-    ...     "Normally defines job-type specific database fields."""
+    ...     """Normally defines job-type specific database fields."""
     >>> @implementer(IMyNewBuildFarmJob)
     ... class MyNewBuildFarmJob:
     ...     pass

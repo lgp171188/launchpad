@@ -27,7 +27,7 @@ So, with textwrap:
     ...     "that the edit notification email generator knows how to indent "
     ...     "and wrap descriptions, so this will appear quite nice in the "
     ...     "actual email that gets sent.\n\n"
-    ...     "It's also smart enough to preserve whitespace, finally!""")
+    ...     "It's also smart enough to preserve whitespace, finally!")
     >>> wrapped_description = textwrap.fill(description, width=56)
     >>> print(wrapped_description)  #doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
