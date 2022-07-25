@@ -20,8 +20,7 @@ from lp.services.database.postgresql import resetSequences
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import db_options
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     db_options(parser)
     (options, args) = parser.parse_args()

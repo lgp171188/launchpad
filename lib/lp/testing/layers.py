@@ -77,7 +77,6 @@ from storm.uri import URI
 from talisker.context import Context
 from webob.request import environ_from_url as orig_environ_from_url
 from wsgi_intercept import httplib2_intercept
-from zope.app.wsgi import WSGIPublisherApplication
 from zope.component import getUtility, globalregistry, provideUtility
 from zope.component.testlayer import ZCMLFileLayer
 from zope.event import notify
@@ -118,6 +117,7 @@ from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import (
     register_launchpad_request_publication_factories,
 )
+from lp.services.webapp.wsgi import WSGIPublisherApplication
 from lp.testing import ANONYMOUS, login, logout, reset_logging
 from lp.testing.pgsql import PgTestSetup
 
@@ -1039,11 +1039,6 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
     from the one zope.testrunner expects.
     """
 
-    # A meaningless object passed to publication classes that just require
-    # something other than None.  In Zope this would be a ZODB connection,
-    # but we don't use ZODB in Launchpad.
-    fake_db = object()
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.middlewares = [
@@ -1088,7 +1083,7 @@ class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
 
     def make_wsgi_app(self):
         """See `zope.testbrowser.wsgi.Layer`."""
-        return self.setupMiddleware(WSGIPublisherApplication(self.fake_db))
+        return self.setupMiddleware(WSGIPublisherApplication())
 
 
 class FunctionalLayer(BaseLayer):

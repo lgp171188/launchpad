@@ -18,12 +18,9 @@ Then run it through this filter to create a new baseline::
     ./newbaseline.py < lpraw.sql > newbaseline.sql
 """
 
-from datetime import (
-    datetime,
-    timezone,
-    )
 import re
 import sys
+from datetime import datetime, timezone
 
 
 def main():

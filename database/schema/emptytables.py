@@ -17,22 +17,24 @@ from lp.services.scripts import db_options
 def main(options):
     con = connect()
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT relname FROM pg_class,pg_namespace
         WHERE pg_class.relnamespace = pg_namespace.oid
             AND pg_namespace.nspname='public'
             AND pg_class.relkind = 'r'
         ORDER BY relname
-        """)
+        """
+    )
     for table in (row[0] for row in cur.fetchall()):
         cur.execute(
-                "SELECT TRUE FROM public.%s LIMIT 1" % quote_identifier(table)
-                )
+            "SELECT TRUE FROM public.%s LIMIT 1" % quote_identifier(table)
+        )
         if cur.fetchone() is None:
             print(table)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     db_options(parser)
     (options, args) = parser.parse_args()

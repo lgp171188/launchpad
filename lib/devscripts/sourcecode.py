@@ -3,11 +3,7 @@
 
 """Tools for maintaining the Launchpad source code."""
 
-from __future__ import (
-    absolute_import,
-    print_function,
-    )
-
+from __future__ import absolute_import, print_function
 
 __all__ = [
     'interpret_config',
@@ -22,7 +18,6 @@ import os
 import shutil
 import sys
 
-
 try:
     from breezy import ui
     from breezy.branch import Branch
@@ -30,13 +25,10 @@ try:
         BzrError,
         IncompatibleRepositories,
         NotBranchError,
-        )
+    )
     from breezy.plugin import load_plugins
     from breezy.revisionspec import RevisionSpec
-    from breezy.trace import (
-        enable_default_logging,
-        report_exception,
-        )
+    from breezy.trace import enable_default_logging, report_exception
     from breezy.upgrade import upgrade
     from breezy.workingtree import WorkingTree
 except ImportError:

@@ -1,15 +1,14 @@
-from fnmatch import fnmatch
 import os
-
+from fnmatch import fnmatch
 
 BASE_DIR = os.path.realpath(
-    os.path.join(os.path.dirname(__file__), '..', '..'))
+    os.path.join(os.path.dirname(__file__), "..", "..")
+)
 CONFIG_DIR = os.path.dirname(__file__)
 
 
 def find_files(directory, pattern):
-    """Find files in `directory` matching `pattern`.
-    """
+    """Find files in `directory` matching `pattern`."""
     result = []
     for root, dirs, files in os.walk(directory):
         for basename in files:
@@ -33,4 +32,4 @@ reload = True
 # Watch config files changes from the source tree.
 reload_extra_files = find_files(CONFIG_DIR, "*")
 for pattern in ["*.zcml", "*.conf"]:
-    reload_extra_files += find_files(os.path.join(BASE_DIR, 'lib'), pattern)
+    reload_extra_files += find_files(os.path.join(BASE_DIR, "lib"), pattern)
