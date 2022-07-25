@@ -81,9 +81,6 @@
       provides="zope.i18n.interfaces.IModifiableUserPreferredLanguages"
       />
 
-
-  <include package="zope.app.wsgi" />
-
   <!-- Default XMLRPC pre-marshalling. -->
   <include package="zope.publisher" />
 

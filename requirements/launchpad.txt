@@ -192,10 +192,7 @@ zipp==1.2.0
 zope.app.http==4.0.1
 zope.app.publication==4.3.1
 zope.app.publisher==4.2.0
-zope.app.wsgi==4.3.0
 zope.publisher==6.0.2+lp1
-# lp:~launchpad-committers/zope.session:launchpad
-zope.session==4.3.0+lp1
 zope.testbrowser==5.5.1
 # lp:~launchpad-committers/zope.testrunner:launchpad
 zope.testrunner==5.3.0+lp1
