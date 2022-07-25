@@ -14,15 +14,15 @@ from lp.services.statsd.numbercruncher import NumberCruncher
 from lp.services.twistedsupport.features import setup_feature_controller
 from lp.services.twistedsupport.loggingsupport import RotatableFileLogObserver
 
-
 execute_zcml_for_scripts()
 
 options = ServerOptions()
 options.parseOptions()
 
-application = service.Application('BuilddManager')
+application = service.Application("BuilddManager")
 application.addComponent(
-    RotatableFileLogObserver(options.get('logfile')), ignoreClass=1)
+    RotatableFileLogObserver(options.get("logfile")), ignoreClass=1
+)
 
 # Service that announces when the daemon is ready.
 readyservice.ReadyService().setServiceParent(application)
@@ -33,4 +33,4 @@ service = NumberCruncher()
 service.setServiceParent(application)
 
 # Allow use of feature flags.
-setup_feature_controller('number-cruncher')
+setup_feature_controller("number-cruncher")

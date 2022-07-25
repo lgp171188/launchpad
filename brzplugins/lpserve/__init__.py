@@ -7,28 +7,16 @@ Cribbed from bzrlib.builtins.cmd_serve from Bazaar 0.16.
 """
 
 __all__ = [
-    'cmd_launchpad_server',
-    ]
+    "cmd_launchpad_server",
+]
 
 
 import resource
 
-from breezy import (
-    lockdir,
-    ui,
-    )
-from breezy.commands import (
-    Command,
-    register_command,
-    )
-from breezy.option import (
-    Option,
-    RegistryOption,
-    )
-from breezy.transport import (
-    get_transport,
-    transport_server_registry,
-    )
+from breezy import lockdir, ui
+from breezy.commands import Command, register_command
+from breezy.option import Option, RegistryOption
+from breezy.transport import get_transport, transport_server_registry
 
 
 class cmd_launchpad_server(Command):
@@ -36,44 +24,52 @@ class cmd_launchpad_server(Command):
     file-system format.
     """
 
-    aliases = ['lp-serve']
+    aliases = ["lp-serve"]
 
     takes_options = [
+        Option("inet", help="serve on stdin/out for use from inetd or sshd"),
         Option(
-            'inet',
-            help="serve on stdin/out for use from inetd or sshd"),
-        Option(
-            'port',
+            "port",
             help=(
                 "listen for connections on nominated port of the form "
                 "[hostname:]portnumber. Passing 0 as the port number will "
                 "result in a dynamically allocated port. Default port is "
-                " 4155."),
-            type=str),
+                " 4155."
+            ),
+            type=str,
+        ),
         Option(
-            'upload-directory',
+            "upload-directory",
             help=(
                 "upload branches to this directory. Defaults to "
-                "config.codehosting.hosted_branches_root."),
-            type=str),
+                "config.codehosting.hosted_branches_root."
+            ),
+            type=str,
+        ),
         Option(
-            'mirror-directory',
+            "mirror-directory",
             help=(
                 "serve branches from this directory. Defaults to "
-                "config.codehosting.mirrored_branches_root.")),
+                "config.codehosting.mirrored_branches_root."
+            ),
+        ),
         Option(
-            'codehosting-endpoint',
+            "codehosting-endpoint",
             help=(
                 "the url of the internal XML-RPC server. Defaults to "
-                "config.codehosting.codehosting_endpoint."),
-            type=str),
+                "config.codehosting.codehosting_endpoint."
+            ),
+            type=str,
+        ),
         RegistryOption(
-            'protocol', help="Protocol to serve.",
-            lazy_registry=('breezy.transport', 'transport_server_registry'),
-            value_switches=True),
-        ]
+            "protocol",
+            help="Protocol to serve.",
+            lazy_registry=("breezy.transport", "transport_server_registry"),
+            value_switches=True,
+        ),
+    ]
 
-    takes_args = ['user_id']
+    takes_args = ["user_id"]
 
     def run_server(self, smart_server):
         """Run the given smart server."""
@@ -102,18 +98,23 @@ class cmd_launchpad_server(Command):
         """
         host = None
         if port is not None:
-            if ':' in port:
-                host, port = port.split(':')
+            if ":" in port:
+                host, port = port.split(":")
             port = int(port)
         return host, port
 
-    def run(self, user_id, port=None, branch_directory=None,
-            codehosting_endpoint_url=None, inet=False, protocol=None):
+    def run(
+        self,
+        user_id,
+        port=None,
+        branch_directory=None,
+        codehosting_endpoint_url=None,
+        inet=False,
+        protocol=None,
+    ):
         from lp.codehosting.bzrutils import install_oops_handler
-        from lp.codehosting.vfs import (
-            get_lp_server,
-            hooks,
-            )
+        from lp.codehosting.vfs import get_lp_server, hooks
+
         install_oops_handler(user_id)
         four_gig = int(4e9)
         resource.setrlimit(resource.RLIMIT_AS, (four_gig, four_gig))
@@ -121,8 +122,11 @@ class cmd_launchpad_server(Command):
         if protocol is None:
             protocol = transport_server_registry.get()
         lp_server = get_lp_server(
-            int(user_id), codehosting_endpoint_url, branch_directory,
-            seen_new_branch.seen)
+            int(user_id),
+            codehosting_endpoint_url,
+            branch_directory,
+            seen_new_branch.seen,
+        )
         lp_server.start_server()
         try:
             old_lockdir_timeout = lockdir._DEFAULT_TIMEOUT_SECONDS
@@ -141,8 +145,14 @@ register_command(cmd_launchpad_server)
 
 
 def load_tests(standard_tests, module, loader):
-    standard_tests.addTests(loader.loadTestsFromModuleNames(
-        [__name__ + '.' + x for x in [
-            'test_lpserve',
-        ]]))
+    standard_tests.addTests(
+        loader.loadTestsFromModuleNames(
+            [
+                __name__ + "." + x
+                for x in [
+                    "test_lpserve",
+                ]
+            ]
+        )
+    )
     return standard_tests

@@ -35,7 +35,6 @@ import re
 import string
 import sys
 
-
 # System-dependent imports for locking implementation:
 _windows = (sys.platform == 'win32')
 

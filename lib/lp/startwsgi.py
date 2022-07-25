@@ -5,11 +5,10 @@
 
 __all__ = []
 
-from zope.event import notify
 import zope.processlifetime
+from zope.event import notify
 
 from lp.services.webapp.wsgi import get_wsgi_application
-
 
 application = get_wsgi_application()
 

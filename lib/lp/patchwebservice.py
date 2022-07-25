@@ -13,5 +13,4 @@ which tells `lazr.restful` that it should look for webservice exports here.
 # import bugs.  Break this up into a per-package thing.
 from lp import _schema_circular_imports
 
-
 _schema_circular_imports

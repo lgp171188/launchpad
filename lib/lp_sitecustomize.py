@@ -4,7 +4,6 @@
 # This file is imported by _pythonpath.py and by the standard Launchpad
 # script preamble (see LPScriptWriter in setup.py).
 
-from collections import defaultdict
 import itertools
 import linecache
 import logging
@@ -12,11 +11,9 @@ import os
 import sys
 import traceback
 import warnings
+from collections import defaultdict
 
-from twisted.internet.defer import (
-    Deferred,
-    DeferredList,
-    )
+from twisted.internet.defer import Deferred, DeferredList
 from zope.security import checker
 
 from lp.services.log import loglevels
@@ -33,23 +30,20 @@ def add_custom_loglevels():
     # override. BLATHER is between INFO and DEBUG, so we can leave it.
     # TRACE conflicts with DEBUG6, and since we are not using ZEO, we
     # just overwrite the level string by calling addLevelName.
-    from ZODB.loglevels import (
-        BLATHER,
-        TRACE,
-        )
+    from ZODB.loglevels import BLATHER, TRACE
 
     # Confirm our above assumptions, and silence lint at the same time.
     assert BLATHER == 15
     assert TRACE == loglevels.DEBUG6
 
-    logging.addLevelName(loglevels.DEBUG2, 'DEBUG2')
-    logging.addLevelName(loglevels.DEBUG3, 'DEBUG3')
-    logging.addLevelName(loglevels.DEBUG4, 'DEBUG4')
-    logging.addLevelName(loglevels.DEBUG5, 'DEBUG5')
-    logging.addLevelName(loglevels.DEBUG6, 'DEBUG6')
-    logging.addLevelName(loglevels.DEBUG7, 'DEBUG7')
-    logging.addLevelName(loglevels.DEBUG8, 'DEBUG8')
-    logging.addLevelName(loglevels.DEBUG9, 'DEBUG9')
+    logging.addLevelName(loglevels.DEBUG2, "DEBUG2")
+    logging.addLevelName(loglevels.DEBUG3, "DEBUG3")
+    logging.addLevelName(loglevels.DEBUG4, "DEBUG4")
+    logging.addLevelName(loglevels.DEBUG5, "DEBUG5")
+    logging.addLevelName(loglevels.DEBUG6, "DEBUG6")
+    logging.addLevelName(loglevels.DEBUG7, "DEBUG7")
+    logging.addLevelName(loglevels.DEBUG8, "DEBUG8")
+    logging.addLevelName(loglevels.DEBUG9, "DEBUG9")
 
     # Install our customized Logger that provides easy access to our
     # custom loglevels.
@@ -60,7 +54,7 @@ def add_custom_loglevels():
     # the logging module, so our override does not take effect without
     # this manual effort.
     old_root = logging.root
-    new_root = LaunchpadLogger('root', loglevels.WARNING)
+    new_root = LaunchpadLogger("root", loglevels.WARNING)
 
     # Fix globals.
     logging.root = new_root
@@ -72,20 +66,20 @@ def add_custom_loglevels():
 
     # Fix existing Logger instances.
     for logger in manager.loggerDict.values():
-        if getattr(logger, 'parent', None) is old_root:
+        if getattr(logger, "parent", None) is old_root:
             logger.parent = new_root
 
 
 def silence_amqp_logger():
     """Install the NullHandler on the amqp logger to silence logs."""
-    amqp_logger = logging.getLogger('amqp')
+    amqp_logger = logging.getLogger("amqp")
     amqp_logger.addHandler(logging.NullHandler())
     amqp_logger.propagate = False
 
 
 def silence_bzr_loggers():
     """Install the NullHandler on the bzr/brz loggers to silence logs."""
-    for logger_name in ('bzr', 'brz'):
+    for logger_name in ("bzr", "brz"):
         logger = logging.getLogger(logger_name)
         logger.addHandler(logging.NullHandler())
         logger.propagate = False
@@ -101,18 +95,17 @@ def silence_swiftclient_logger():
 
     keystoneclient logs credentials at DEBUG.
     """
-    if not os.environ.get('LP_SWIFTCLIENT_DEBUG'):
-        swiftclient_logger = logging.getLogger('swiftclient')
+    if not os.environ.get("LP_SWIFTCLIENT_DEBUG"):
+        swiftclient_logger = logging.getLogger("swiftclient")
         swiftclient_logger.setLevel(logging.INFO)
-    keystoneclient_logger = logging.getLogger('keystoneclient')
+    keystoneclient_logger = logging.getLogger("keystoneclient")
     keystoneclient_logger.setLevel(logging.INFO)
 
 
 def silence_zcml_logger():
     """Lower level of ZCML parsing DEBUG messages."""
-    config_filter = MappingFilter(
-        {logging.DEBUG: (7, 'DEBUG4')}, 'config')
-    logging.getLogger('config').addFilter(config_filter)
+    config_filter = MappingFilter({logging.DEBUG: (7, "DEBUG4")}, "config")
+    logging.getLogger("config").addFilter(config_filter)
 
 
 class FilterOnlyHandler(logging.Handler):
@@ -133,10 +126,9 @@ def silence_transaction_logger():
     # the logging records get mutated before being propagated up
     # to higher level loggers.
     txn_handler = FilterOnlyHandler()
-    txn_filter = MappingFilter(
-        {logging.DEBUG: (8, 'DEBUG3')}, 'txn')
+    txn_filter = MappingFilter({logging.DEBUG: (8, "DEBUG3")}, "txn")
     txn_handler.addFilter(txn_filter)
-    logging.getLogger('txn').addHandler(txn_handler)
+    logging.getLogger("txn").addHandler(txn_handler)
 
 
 def silence_warnings():
@@ -145,14 +137,14 @@ def silence_warnings():
     #   DeprecationWarning: the sha module is deprecated; use the hashlib
     #   module instead
     warnings.filterwarnings(
-        "ignore",
-        category=DeprecationWarning,
-        module="Crypto")
+        "ignore", category=DeprecationWarning, module="Crypto"
+    )
     # Filter all deprecation warnings for Zope 3.6, which emanate from
     # the zope package.
-    filter_pattern = '.*(Zope 3.6|provide.*global site manager).*'
+    filter_pattern = ".*(Zope 3.6|provide.*global site manager).*"
     warnings.filterwarnings(
-        'ignore', filter_pattern, category=DeprecationWarning)
+        "ignore", filter_pattern, category=DeprecationWarning
+    )
 
 
 def customize_logger():
@@ -191,13 +183,13 @@ def main(instance_name=None):
     # to setup.py from the Makefile, and then written to env/instance_name.
     # We do all actual initialization here, in a more visible place.
     if instance_name is None:
-        instance_name_path = os.path.join(sys.prefix, 'instance_name')
+        instance_name_path = os.path.join(sys.prefix, "instance_name")
         with open(instance_name_path) as instance_name_file:
-            instance_name = instance_name_file.read().rstrip('\n')
-    if instance_name and instance_name != 'development':
+            instance_name = instance_name_file.read().rstrip("\n")
+    if instance_name and instance_name != "development":
         # See bug 656213 for why we do this carefully.
-        os.environ.setdefault('LPCONFIG', instance_name)
-    os.environ['STORM_CEXTENSIONS'] = '1'
+        os.environ.setdefault("LPCONFIG", instance_name)
+    os.environ["STORM_CEXTENSIONS"] = "1"
     add_custom_loglevels()
     customizeMimetypes()
     silence_warnings()
@@ -223,4 +215,5 @@ def main(instance_name=None):
     # formats anyway, just in a less crude way, as we don't want to use them
     # in practice.)
     import types
-    sys.modules['breezy.git'] = types.ModuleType('breezy.git')
+
+    sys.modules["breezy.git"] = types.ModuleType("breezy.git")

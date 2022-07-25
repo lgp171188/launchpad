@@ -3,17 +3,13 @@
 
 """Module docstring goes here."""
 
-from __future__ import (
-    absolute_import,
-    print_function,
-    )
+from __future__ import absolute_import, print_function
 
 import io
 import os
 import shutil
 import tempfile
 import unittest
-
 
 try:
     from breezy.bzr.bzrdir import BzrDir
@@ -30,7 +26,7 @@ from devscripts.sourcecode import (
     interpret_config,
     parse_config_file,
     plan_update,
-    )
+)
 
 
 class TestParseConfigFile(unittest.TestCase):

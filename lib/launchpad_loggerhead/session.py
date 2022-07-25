@@ -7,10 +7,7 @@ import hashlib
 import pickle
 
 from secure_cookie.cookie import SecureCookie
-from werkzeug.http import (
-    dump_cookie,
-    parse_cookie,
-    )
+from werkzeug.http import dump_cookie, parse_cookie
 
 from lp.services.config import config
 
@@ -22,7 +19,6 @@ class LaunchpadSecureCookie(SecureCookie):
 
     # The OpenID consumer stores non-JSON-encodable objects in the session.
     class serialization_method:
-
         @classmethod
         def dumps(cls, value):
             # Use protocol 2 for Python 2 compatibility.
@@ -70,15 +66,17 @@ class SessionHandler:
                 "path": "/",
                 "httponly": True,
                 "secure": environ["wsgi.url_scheme"] == "https",
-                }
+            }
             if session:
                 cookie = dump_cookie(
-                    self.cookie_name, session.serialize(), **cookie_kwargs)
+                    self.cookie_name, session.serialize(), **cookie_kwargs
+                )
                 response_headers.append(("Set-Cookie", cookie))
             elif existed:
                 # Delete the cookie.
                 cookie = dump_cookie(
-                    self.cookie_name, "", expires=0, **cookie_kwargs)
+                    self.cookie_name, "", expires=0, **cookie_kwargs
+                )
                 response_headers.append(("Set-Cookie", cookie))
             return start_response(status, response_headers, exc_info)
 

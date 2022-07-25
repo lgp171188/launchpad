@@ -4,65 +4,42 @@
 import logging
 import os
 import threading
-from urllib.parse import (
-    urlencode,
-    urljoin,
-    )
 import xmlrpc.client
+from urllib.parse import urlencode, urljoin
 
-from breezy import (
-    errors,
-    lru_cache,
-    urlutils,
-    )
+import oops_wsgi
+from breezy import errors, lru_cache, urlutils
 from breezy.transport import get_transport
 from breezy.url_policy_open import open_only_scheme
-from loggerhead.apps import (
-    favicon_app,
-    static_app,
-    )
+from loggerhead.apps import favicon_app, static_app
 from loggerhead.apps.branch import BranchWSGIApp
-import oops_wsgi
-from openid.consumer.consumer import (
-    CANCEL,
-    Consumer,
-    FAILURE,
-    SUCCESS,
-    )
-from openid.extensions.sreg import (
-    SRegRequest,
-    SRegResponse,
-    )
+from openid.consumer.consumer import CANCEL, FAILURE, SUCCESS, Consumer
+from openid.extensions.sreg import SRegRequest, SRegResponse
 from paste.fileapp import DataApp
 from paste.httpexceptions import (
     HTTPMovedPermanently,
     HTTPNotFound,
     HTTPUnauthorized,
-    )
-from paste.request import (
-    construct_url,
-    parse_querystring,
-    path_info_pop,
-    )
+)
+from paste.request import construct_url, parse_querystring, path_info_pop
 
 from lp.code.interfaces.codehosting import (
     BRANCH_TRANSPORT,
     LAUNCHPAD_ANONYMOUS,
     LAUNCHPAD_SERVICES,
-    )
+)
 from lp.codehosting.vfs import get_lp_server
 from lp.services.config import config
 from lp.services.webapp.errorlog import ErrorReportingUtility
 from lp.services.webapp.vhosts import allvhosts
 from lp.xmlrpc import faults
 
-
-robots_txt = '''\
+robots_txt = """\
 User-agent: *
 Disallow: /
-'''
+"""
 
-robots_app = DataApp(robots_txt, content_type='text/plain')
+robots_app = DataApp(robots_txt, content_type="text/plain")
 
 
 thread_locals = threading.local()
@@ -81,24 +58,25 @@ def check_fault(fault, *fault_classes):
 
 
 class RootApp:
-
     def __init__(self, session_var):
         self.graph_cache = lru_cache.LRUCache(10)
         self.session_var = session_var
-        self.log = logging.getLogger('lp-loggerhead')
+        self.log = logging.getLogger("lp-loggerhead")
 
     def get_transport(self):
-        t = getattr(thread_locals, 'transport', None)
+        t = getattr(thread_locals, "transport", None)
         if t is None:
             thread_locals.transport = get_transport(
-                config.codehosting.internal_branch_by_id_root)
+                config.codehosting.internal_branch_by_id_root
+            )
         return thread_locals.transport
 
     def get_branchfs(self):
-        t = getattr(thread_locals, 'branchfs', None)
+        t = getattr(thread_locals, "branchfs", None)
         if t is None:
             thread_locals.branchfs = xmlrpc.client.ServerProxy(
-                config.codehosting.codehosting_endpoint)
+                config.codehosting.codehosting_endpoint
+            )
         return thread_locals.branchfs
 
     def _make_consumer(self, environ):
@@ -118,13 +96,18 @@ class RootApp:
         username.
         """
         openid_request = self._make_consumer(environ).begin(
-            config.launchpad.openid_provider_root)
-        openid_request.addExtension(SRegRequest(required=['nickname']))
+            config.launchpad.openid_provider_root
+        )
+        openid_request.addExtension(SRegRequest(required=["nickname"]))
         back_to = construct_url(environ)
-        raise HTTPMovedPermanently(openid_request.redirectURL(
-            config.codehosting.secure_codebrowse_root,
-            config.codehosting.secure_codebrowse_root + '+login/?'
-            + urlencode({'back_to': back_to})))
+        raise HTTPMovedPermanently(
+            openid_request.redirectURL(
+                config.codehosting.secure_codebrowse_root,
+                config.codehosting.secure_codebrowse_root
+                + "+login/?"
+                + urlencode({"back_to": back_to}),
+            )
+        )
 
     def _complete_login(self, environ, start_response):
         """Complete the OpenID authentication process.
@@ -139,33 +122,35 @@ class RootApp:
         # Passing query['openid.return_to'] here is massive cheating, but
         # given we control the endpoint who cares.
         response = self._make_consumer(environ).complete(
-            query, query['openid.return_to'])
+            query, query["openid.return_to"]
+        )
         if response.status == SUCCESS:
-            self.log.error('open id response: SUCCESS')
+            self.log.error("open id response: SUCCESS")
             sreg_info = SRegResponse.fromSuccessResponse(response)
             if not sreg_info:
-                self.log.error('sreg_info is None.')
+                self.log.error("sreg_info is None.")
                 exc = HTTPUnauthorized()
                 exc.explanation = (
-                  "You don't have a Launchpad account. Check that you're "
-                  "logged in as the right user, or log into Launchpad and try "
-                  "again.")
+                    "You don't have a Launchpad account. Check that you're "
+                    "logged in as the right user, or log into Launchpad and "
+                    "try again."
+                )
                 raise exc
-            environ[self.session_var]['identity_url'] = response.identity_url
-            environ[self.session_var]['user'] = sreg_info['nickname']
-            raise HTTPMovedPermanently(query['back_to'])
+            environ[self.session_var]["identity_url"] = response.identity_url
+            environ[self.session_var]["user"] = sreg_info["nickname"]
+            raise HTTPMovedPermanently(query["back_to"])
         elif response.status == FAILURE:
-            self.log.error('open id response: FAILURE: %s', response.message)
+            self.log.error("open id response: FAILURE: %s", response.message)
             exc = HTTPUnauthorized()
             exc.explanation = response.message
             raise exc
         elif response.status == CANCEL:
-            self.log.error('open id response: CANCEL')
+            self.log.error("open id response: CANCEL")
             exc = HTTPUnauthorized()
             exc.explanation = "Authentication cancelled."
             raise exc
         else:
-            self.log.error('open id response: UNKNOWN')
+            self.log.error("open id response: UNKNOWN")
             exc = HTTPUnauthorized()
             exc.explanation = "Unknown OpenID response."
             raise exc
@@ -177,29 +162,30 @@ class RootApp:
         """
         environ[self.session_var].clear()
         query = dict(parse_querystring(environ))
-        next_url = query.get('next_to')
+        next_url = query.get("next_to")
         if next_url is None:
-            next_url = allvhosts.configs['mainsite'].rooturl
+            next_url = allvhosts.configs["mainsite"].rooturl
         raise HTTPMovedPermanently(next_url)
 
     def __call__(self, environ, start_response):
-        request_is_private = (
-            environ['SERVER_PORT'] == str(config.codebrowse.private_port))
-        environ['loggerhead.static.url'] = environ['SCRIPT_NAME']
-        if environ['PATH_INFO'].startswith('/static/'):
+        request_is_private = environ["SERVER_PORT"] == str(
+            config.codebrowse.private_port
+        )
+        environ["loggerhead.static.url"] = environ["SCRIPT_NAME"]
+        if environ["PATH_INFO"].startswith("/static/"):
             path_info_pop(environ)
             return static_app(environ, start_response)
-        elif environ['PATH_INFO'] == '/favicon.ico':
+        elif environ["PATH_INFO"] == "/favicon.ico":
             return favicon_app(environ, start_response)
-        elif environ['PATH_INFO'] == '/robots.txt':
+        elif environ["PATH_INFO"] == "/robots.txt":
             return robots_app(environ, start_response)
         elif not request_is_private:
-            if environ['PATH_INFO'].startswith('/+login'):
+            if environ["PATH_INFO"].startswith("/+login"):
                 return self._complete_login(environ, start_response)
-            elif environ['PATH_INFO'].startswith('/+logout'):
+            elif environ["PATH_INFO"].startswith("/+logout"):
                 return self._logout(environ, start_response)
-        path = environ['PATH_INFO']
-        trailingSlashCount = len(path) - len(path.rstrip('/'))
+        path = environ["PATH_INFO"]
+        trailingSlashCount = len(path) - len(path.rstrip("/"))
         if request_is_private:
             # Requests on the private port are internal API requests from
             # something that has already performed security checks.  As
@@ -208,30 +194,33 @@ class RootApp:
             user = LAUNCHPAD_SERVICES
         else:
             identity_url = environ[self.session_var].get(
-                'identity_url', LAUNCHPAD_ANONYMOUS)
-            user = environ[self.session_var].get('user', LAUNCHPAD_ANONYMOUS)
+                "identity_url", LAUNCHPAD_ANONYMOUS
+            )
+            user = environ[self.session_var].get("user", LAUNCHPAD_ANONYMOUS)
         lp_server = get_lp_server(
-            identity_url, branch_transport=self.get_transport())
+            identity_url, branch_transport=self.get_transport()
+        )
         lp_server.start_server()
         try:
 
             try:
                 branchfs = self.get_branchfs()
                 transport_type, info, trail = branchfs.translatePath(
-                    identity_url, urlutils.escape(path))
+                    identity_url, urlutils.escape(path)
+                )
             except xmlrpc.client.Fault as f:
                 if check_fault(f, faults.PathTranslationError):
                     raise HTTPNotFound()
                 elif check_fault(f, faults.PermissionDenied):
                     # If we're not allowed to see the branch...
-                    if environ['wsgi.url_scheme'] != 'https':
+                    if environ["wsgi.url_scheme"] != "https":
                         # ... the request shouldn't have come in over http, as
                         # requests for private branches over http should be
                         # redirected to https by the dynamic rewrite script we
                         # use (which runs before this code is reached), but
                         # just in case...
                         env_copy = environ.copy()
-                        env_copy['wsgi.url_scheme'] = 'https'
+                        env_copy["wsgi.url_scheme"] = "https"
                         raise HTTPMovedPermanently(construct_url(env_copy))
                     elif user != LAUNCHPAD_ANONYMOUS:
                         # ... if the user is already logged in and still can't
@@ -248,24 +237,26 @@ class RootApp:
             if transport_type != BRANCH_TRANSPORT:
                 raise HTTPNotFound()
             trail = urlutils.unescape(trail)
-            trail += trailingSlashCount * '/'
+            trail += trailingSlashCount * "/"
             amount_consumed = len(path) - len(trail)
             consumed = path[:amount_consumed]
-            branch_name = consumed.strip('/')
-            self.log.info('Using branch: %s', branch_name)
-            if trail and not trail.startswith('/'):
-                trail = '/' + trail
-            environ['PATH_INFO'] = trail
-            environ['SCRIPT_NAME'] += consumed.rstrip('/')
+            branch_name = consumed.strip("/")
+            self.log.info("Using branch: %s", branch_name)
+            if trail and not trail.startswith("/"):
+                trail = "/" + trail
+            environ["PATH_INFO"] = trail
+            environ["SCRIPT_NAME"] += consumed.rstrip("/")
             branch_url = lp_server.get_url() + branch_name
             branch_link = urljoin(
-                config.codebrowse.launchpad_root, branch_name)
+                config.codebrowse.launchpad_root, branch_name
+            )
             cachepath = os.path.join(
-                config.codebrowse.cachepath, branch_name[1:])
+                config.codebrowse.cachepath, branch_name[1:]
+            )
             if not os.path.isdir(cachepath):
                 os.makedirs(cachepath)
-            self.log.info('branch_url: %s', branch_url)
-            private = info['private']
+            self.log.info("branch_url: %s", branch_url)
+            private = info["private"]
             if private:
                 self.log.info("Branch is private")
             else:
@@ -273,16 +264,22 @@ class RootApp:
 
             try:
                 bzr_branch = open_only_scheme(
-                    lp_server.get_url().strip(':/'), branch_url)
+                    lp_server.get_url().strip(":/"), branch_url
+                )
             except errors.NotBranchError as err:
-                self.log.warning('Not a branch: %s', err)
+                self.log.warning("Not a branch: %s", err)
                 raise HTTPNotFound()
             bzr_branch.lock_read()
             try:
                 view = BranchWSGIApp(
-                    bzr_branch, branch_name, {'cachepath': cachepath},
-                    self.graph_cache, branch_link=branch_link,
-                    served_url=None, private=private)
+                    bzr_branch,
+                    branch_name,
+                    {"cachepath": cachepath},
+                    self.graph_cache,
+                    branch_link=branch_link,
+                    served_url=None,
+                    private=private,
+                )
                 return view.app(environ, start_response)
             finally:
                 bzr_branch.repository.revisions.clear_cache()
@@ -299,7 +296,7 @@ class RootApp:
 def make_error_utility():
     """Make an error utility for logging errors from codebrowse."""
     error_utility = ErrorReportingUtility()
-    error_utility.configure('codebrowse')
+    error_utility.configure("codebrowse")
     return error_utility
 
 
@@ -307,7 +304,7 @@ def make_error_utility():
 # with the same one that lpnet uses for reporting OOPSes to users, or at
 # least something that looks similar.  But even this is better than the
 # "Internal Server Error" you'd get otherwise.
-_oops_html_template = '''\
+_oops_html_template = """\
 <html>
 <head><title>Oops! %(id)s</title></head>
 <body>
@@ -317,7 +314,7 @@ Please try again in a few minutes, and if the problem persists file a bug at
 <a href="https://bugs.launchpad.net/launchpad"
 >https://bugs.launchpad.net/launchpad</a>
 and quote OOPS-ID <strong>%(id)s</strong>
-</p></body></html>'''
+</p></body></html>"""
 
 
 def oops_middleware(app):
@@ -328,5 +325,9 @@ def oops_middleware(app):
     code 500).
     """
     error_utility = make_error_utility()
-    return oops_wsgi.make_app(app, error_utility._oops_config,
-            template=_oops_html_template, soft_start_timeout=7000)
+    return oops_wsgi.make_app(
+        app,
+        error_utility._oops_config,
+        template=_oops_html_template,
+        soft_start_timeout=7000,
+    )

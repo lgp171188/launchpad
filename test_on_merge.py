@@ -10,24 +10,14 @@ import _pythonpath  # noqa: F401
 import errno
 import os
 import select
-from signal import (
-    SIGHUP,
-    SIGINT,
-    SIGKILL,
-    SIGTERM,
-    )
-from subprocess import (
-    PIPE,
-    Popen,
-    STDOUT,
-    )
 import sys
 import time
+from signal import SIGHUP, SIGINT, SIGKILL, SIGTERM
+from subprocess import PIPE, STDOUT, Popen
 
 import psycopg2
 
 from lp.services.database import activity_cols
-
 
 # The TIMEOUT setting (expressed in seconds) affects how long a test will run
 # before it is deemed to be hung, and then appropriately terminated.
@@ -60,73 +50,80 @@ def setup_test_database():
     """
     # Sanity check PostgreSQL version. No point in trying to create a test
     # database when PostgreSQL is too old.
-    con = psycopg2.connect('dbname=template1')
+    con = psycopg2.connect("dbname=template1")
     if con.server_version < 100000:
-        print('Your PostgreSQL version is too old.  You need at least 10.x')
-        print('You have %s' % con.get_parameter_status('server_version'))
+        print("Your PostgreSQL version is too old.  You need at least 10.x")
+        print("You have %s" % con.get_parameter_status("server_version"))
         return 1
 
     # Drop the template database if it exists - the Makefile does this
     # too, but we can explicity check for errors here
-    con = psycopg2.connect('dbname=template1')
+    con = psycopg2.connect("dbname=template1")
     con.set_isolation_level(0)
     cur = con.cursor()
     try:
-        cur.execute('drop database launchpad_ftest_template')
+        cur.execute("drop database launchpad_ftest_template")
     except psycopg2.ProgrammingError as x:
-        if 'does not exist' not in str(x):
+        if "does not exist" not in str(x):
             raise
 
     # If there are existing database connections, terminate. We have
     # rogue processes still connected to the database.
     for loop in range(2):
-        cur.execute("""
+        cur.execute(
+            """
             SELECT usename, %(query)s
             FROM pg_stat_activity
             WHERE datname IN (
                 'launchpad_dev', 'launchpad_ftest_template', 'launchpad_ftest')
-            """ % activity_cols(cur))
+            """
+            % activity_cols(cur)
+        )
         results = list(cur.fetchall())
         if not results:
             break
         # Rogue processes. Report, sleep for a bit, and try again.
         for usename, query in results:
-            print('!! Open connection %s - %s' % (usename, query))
-        print('Sleeping')
+            print("!! Open connection %s - %s" % (usename, query))
+        print("Sleeping")
         time.sleep(20)
     else:
-        print('Cannot rebuild database. There are open connections.')
+        print("Cannot rebuild database. There are open connections.")
         return 1
 
     cur.close()
     con.close()
 
     # Build the template database. Tests duplicate this.
-    schema_dir = os.path.join(HERE, 'database', 'schema')
-    if os.system('cd %s; make test > /dev/null' % (schema_dir)) != 0:
-        print('Failed to create database or load sampledata.')
+    schema_dir = os.path.join(HERE, "database", "schema")
+    if os.system("cd %s; make test > /dev/null" % (schema_dir)) != 0:
+        print("Failed to create database or load sampledata.")
         return 1
 
     # Sanity check the database. No point running tests if the
     # bedrock is crumbling.
-    con = psycopg2.connect('dbname=launchpad_ftest_template')
+    con = psycopg2.connect("dbname=launchpad_ftest_template")
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         select pg_encoding_to_char(encoding) as encoding from pg_database
         where datname='launchpad_ftest_template'
-        """)
+        """
+    )
     enc = cur.fetchone()[0]
-    if enc not in ('UNICODE', 'UTF8'):
-        print('Database encoding incorrectly set')
+    if enc not in ("UNICODE", "UTF8"):
+        print("Database encoding incorrectly set")
         return 1
-    cur.execute(r"""
+    cur.execute(
+        r"""
         SELECT setting FROM pg_settings
         WHERE context='internal' AND name='lc_ctype'
-        """)
+        """
+    )
     loc = cur.fetchone()[0]
-    #if not (loc.startswith('en_') or loc in ('C', 'en')):
-    if loc != 'C':
-        print('Database locale incorrectly set. Need to rerun initdb.')
+    # if not (loc.startswith('en_') or loc in ('C', 'en')):
+    if loc != "C":
+        print("Database locale incorrectly set. Need to rerun initdb.")
         return 1
 
     # Explicity close our connections - things will fail if we leave open
@@ -141,17 +138,18 @@ def setup_test_database():
 
 def run_test_process():
     """Start the testrunner process and return its exit code."""
-    print('Running tests.')
+    print("Running tests.")
     os.chdir(HERE)
 
     # We run the test suite under a virtual frame buffer server so that the
     # JavaScript integration test suite can run.
     cmd = [
-        '/usr/bin/xvfb-run',
+        "/usr/bin/xvfb-run",
         "--error-file=/var/tmp/xvfb-errors.log",
         "--server-args='-screen 0 1024x768x24'",
-        os.path.join(HERE, 'bin', 'test')] + sys.argv[1:]
-    command_line = ' '.join(cmd)
+        os.path.join(HERE, "bin", "test"),
+    ] + sys.argv[1:]
+    command_line = " ".join(cmd)
     print("Running command:", command_line)
 
     # Run the test suite.  Make the suite the leader of a new process group
@@ -161,7 +159,8 @@ def run_test_process():
         stdout=PIPE,
         stderr=STDOUT,
         preexec_fn=os.setpgrp,
-        shell=True)
+        shell=True,
+    )
 
     # This code is very similar to what takes place in Popen._communicate(),
     # but this code times out if there is no activity on STDOUT for too long.
@@ -194,10 +193,10 @@ def run_test_process():
 
     if rv == 0:
         print()
-        print('Successfully ran all tests.')
+        print("Successfully ran all tests.")
     else:
         print()
-        print('Tests failed (exit code %d)' % rv)
+        print("Tests failed (exit code %d)" % rv)
 
     return rv
 
@@ -206,8 +205,10 @@ def cleanup_hung_testrunner(process):
     """Kill and clean up the testrunner process and its children."""
     print()
     print()
-    print("WARNING: A test appears to be hung. There has been no "
-        "output for %d seconds." % TIMEOUT)
+    print(
+        "WARNING: A test appears to be hung. There has been no "
+        "output for %d seconds." % TIMEOUT
+    )
     print("Forcibly shutting down the test suite")
 
     # This guarantees the process will die.  In rare cases
@@ -249,5 +250,5 @@ def nice_killpg(pgid):
     print("Process group %d is now empty." % pgid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

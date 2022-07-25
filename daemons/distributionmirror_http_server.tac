@@ -4,19 +4,15 @@
 # Twisted Application Configuration file.
 # Use with "twistd2.4 -y <file.tac>", e.g. "twistd -noy server.tac"
 
-from twisted.application import (
-    service,
-    strports,
-    )
+from twisted.application import service, strports
 from twisted.web import server
 
 from lp.registry.tests.distributionmirror_http_server import (
     DistributionMirrorTestHTTPServer,
-    )
+)
 from lp.services.daemons import readyservice
 
-
-application = service.Application('DistributionMirrorTestHTTPServer')
+application = service.Application("DistributionMirrorTestHTTPServer")
 httpserverService = service.IServiceCollection(application)
 
 # Service that announces when the daemon is ready
