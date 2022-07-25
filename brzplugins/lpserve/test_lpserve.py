@@ -4,15 +4,9 @@
 import os
 import subprocess
 
-from breezy import (
-    osutils,
-    tests,
-    )
+from breezy import osutils, tests
 
-from lp.codehosting import (
-    get_brz_path,
-    get_BRZ_PLUGIN_PATH_for_subprocess,
-    )
+from lp.codehosting import get_brz_path, get_BRZ_PLUGIN_PATH_for_subprocess
 
 
 class TestCaseWithSubprocess(tests.TestCaseWithTransport):
@@ -24,8 +18,9 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
     same as the breezy.tests.TestCase version.
     """
 
-    def start_bzr_subprocess(self, process_args, env_changes=None,
-                             working_dir=None):
+    def start_bzr_subprocess(
+        self, process_args, env_changes=None, working_dir=None
+    ):
         """Start bzr in a subprocess for testing.
 
         Copied and modified from `breezy.tests.TestCase.start_bzr_subprocess`.
@@ -38,7 +33,7 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
         """
         if env_changes is None:
             env_changes = {}
-        env_changes['BRZ_PLUGIN_PATH'] = get_BRZ_PLUGIN_PATH_for_subprocess()
+        env_changes["BRZ_PLUGIN_PATH"] = get_BRZ_PLUGIN_PATH_for_subprocess()
         old_env = {}
 
         def cleanup_environment():
@@ -62,8 +57,11 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
             command = [brz_path]
             command.extend(process_args)
             process = self._popen(
-                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         finally:
             restore_environment()
             if cwd is not None:

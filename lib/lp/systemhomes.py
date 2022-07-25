@@ -4,15 +4,15 @@
 """Content classes for the 'home pages' of the subsystems of Launchpad."""
 
 __all__ = [
-    'BazaarApplication',
-    'CodeImportSchedulerApplication',
-    'FeedsApplication',
-    'MailingListApplication',
-    'MaloneApplication',
-    'PrivateMaloneApplication',
-    'RosettaApplication',
-    'TestOpenIDApplication',
-    ]
+    "BazaarApplication",
+    "CodeImportSchedulerApplication",
+    "FeedsApplication",
+    "MailingListApplication",
+    "MaloneApplication",
+    "PrivateMaloneApplication",
+    "RosettaApplication",
+    "TestOpenIDApplication",
+]
 
 import codecs
 import os
@@ -24,10 +24,7 @@ from zope.interface import implementer
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.bugs.adapters.bug import convert_to_information_type
-from lp.bugs.interfaces.bug import (
-    CreateBugParams,
-    IBugSet,
-    )
+from lp.bugs.interfaces.bug import CreateBugParams, IBugSet
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.bugs.interfaces.bugtracker import IBugTrackerSet
@@ -35,16 +32,16 @@ from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.malone import (
     IMaloneApplication,
     IPrivateMaloneApplication,
-    )
+)
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtarget import HasBugsBase
 from lp.code.interfaces.codehosting import (
     IBazaarApplication,
     ICodehostingApplication,
-    )
+)
 from lp.code.interfaces.codeimportscheduler import (
     ICodeImportSchedulerApplication,
-    )
+)
 from lp.code.interfaces.gitapi import IGitApplication
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.mailinglist import IMailingListApplication
@@ -53,10 +50,7 @@ from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.feeds.interfaces.application import IFeedsApplication
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
-from lp.services.webapp.interfaces import (
-    ICanonicalUrlData,
-    ILaunchBag,
-    )
+from lp.services.webapp.interfaces import ICanonicalUrlData, ILaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webservice.interfaces import IWebServiceApplication
 from lp.services.worlddata.interfaces.language import ILanguageSet
@@ -66,7 +60,7 @@ from lp.translations.interfaces.translationgroup import ITranslationGroupSet
 from lp.translations.interfaces.translations import IRosettaApplication
 from lp.translations.interfaces.translationsoverview import (
     ITranslationsOverview,
-    )
+)
 
 
 @implementer(IArchiveApplication)
@@ -114,9 +108,8 @@ class FeedsApplication:
 
 @implementer(IMaloneApplication)
 class MaloneApplication(HasBugsBase):
-
     def __init__(self):
-        self.title = 'Malone: the Launchpad bug tracker'
+        self.title = "Malone: the Launchpad bug tracker"
 
     def _customizeSearchParams(self, search_params):
         """See `HasBugsBase`."""
@@ -136,36 +129,60 @@ class MaloneApplication(HasBugsBase):
         data = []
         for bug in bugs:
             bugtask = bug.default_bugtask
-            different_pillars = related_bug and (
-                set(bug.affected_pillars).isdisjoint(
-                    related_bug.affected_pillars)) or False
-            data.append({
-                'id': bug_id,
-                'information_type': bug.information_type.title,
-                'is_private':
-                    bug.information_type in PRIVATE_INFORMATION_TYPES,
-                'importance': bugtask.importance.title,
-                'importance_class': 'importance' + bugtask.importance.name,
-                'status': bugtask.status.title,
-                'status_class': 'status' + bugtask.status.name,
-                'bug_summary': bug.title,
-                'description': bug.description,
-                'bug_url': canonical_url(bugtask),
-                'different_pillars': different_pillars})
+            different_pillars = (
+                related_bug
+                and (
+                    set(bug.affected_pillars).isdisjoint(
+                        related_bug.affected_pillars
+                    )
+                )
+                or False
+            )
+            data.append(
+                {
+                    "id": bug_id,
+                    "information_type": bug.information_type.title,
+                    "is_private": bug.information_type
+                    in PRIVATE_INFORMATION_TYPES,
+                    "importance": bugtask.importance.title,
+                    "importance_class": "importance" + bugtask.importance.name,
+                    "status": bugtask.status.title,
+                    "status_class": "status" + bugtask.status.name,
+                    "bug_summary": bug.title,
+                    "description": bug.description,
+                    "bug_url": canonical_url(bugtask),
+                    "different_pillars": different_pillars,
+                }
+            )
         return data
 
-    def createBug(self, owner, title, description, target,
-                  information_type=None, tags=None,
-                  security_related=None, private=None):
+    def createBug(
+        self,
+        owner,
+        title,
+        description,
+        target,
+        information_type=None,
+        tags=None,
+        security_related=None,
+        private=None,
+    ):
         """See `IMaloneApplication`."""
-        if (information_type is None
-            and (security_related is not None or private is not None)):
+        if information_type is None and (
+            security_related is not None or private is not None
+        ):
             # Adapt the deprecated args to information_type.
             information_type = convert_to_information_type(
-                private, security_related)
+                private, security_related
+            )
         params = CreateBugParams(
-            title=title, comment=description, owner=owner,
-            information_type=information_type, tags=tags, target=target)
+            title=title,
+            comment=description,
+            owner=owner,
+            information_type=information_type,
+            tags=tags,
+            target=target,
+        )
         return getUtility(IBugSet).createBug(params)
 
     @property
@@ -188,11 +205,11 @@ class MaloneApplication(HasBugsBase):
 
     @property
     def projects_with_bugs_count(self):
-        return getUtility(ILaunchpadStatisticSet).value('projects_with_bugs')
+        return getUtility(ILaunchpadStatisticSet).value("projects_with_bugs")
 
     @property
     def shared_bug_count(self):
-        return getUtility(ILaunchpadStatisticSet).value('shared_bug_count')
+        return getUtility(ILaunchpadStatisticSet).value("shared_bug_count")
 
     @property
     def top_bugtrackers(self):
@@ -205,17 +222,15 @@ class MaloneApplication(HasBugsBase):
 
 @implementer(IBazaarApplication)
 class BazaarApplication:
-
     def __init__(self):
-        self.title = 'The Open Source Bazaar'
+        self.title = "The Open Source Bazaar"
 
 
 @implementer(IRosettaApplication)
 class RosettaApplication:
-
     def __init__(self):
-        self.title = 'Rosetta: Translations in the Launchpad'
-        self.name = 'Rosetta'
+        self.title = "Rosetta: Translations in the Launchpad"
+        self.name = "Rosetta"
 
     @property
     def languages(self):
@@ -226,12 +241,12 @@ class RosettaApplication:
     def language_count(self):
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.value('language_count')
+        return stats.value("language_count")
 
     @property
     def statsdate(self):
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.dateupdated('potemplate_count')
+        return stats.dateupdated("potemplate_count")
 
     @property
     def translation_groups(self):
@@ -248,9 +263,9 @@ class RosettaApplication:
         projects = getUtility(ITranslationsOverview)
         for project in projects.getMostTranslatedPillars():
             yield {
-                'pillar': project['pillar'],
-                'font_size': project['weight'] * 10,
-                }
+                "pillar": project["pillar"],
+                "font_size": project["weight"] * 10,
+            }
 
     def translatable_distroseriess(self):
         """See `IRosettaApplication`."""
@@ -260,22 +275,22 @@ class RosettaApplication:
     def potemplate_count(self):
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.value('potemplate_count')
+        return stats.value("potemplate_count")
 
     def pofile_count(self):
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.value('pofile_count')
+        return stats.value("pofile_count")
 
     def pomsgid_count(self):
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.value('pomsgid_count')
+        return stats.value("pomsgid_count")
 
     def translator_count(self):
         """See `IRosettaApplication`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        return stats.value('translator_count')
+        return stats.value("translator_count")
 
 
 @implementer(IWebServiceApplication, ICanonicalUrlData)
@@ -287,7 +302,7 @@ class WebServiceApplication(ServiceRootResource):
     """
 
     inside = None
-    path = ''
+    path = ""
     rootsite = None
 
     cached_wadl = {}
@@ -299,8 +314,14 @@ class WebServiceApplication(ServiceRootResource):
     def cachedWADLPath(cls, instance_name, version):
         """Helper method to calculate the path to a cached WADL file."""
         return os.path.join(
-            config.root, 'lib', 'canonical', 'launchpad',
-            'apidoc', version, '%s.wadl' % (instance_name,))
+            config.root,
+            "lib",
+            "canonical",
+            "launchpad",
+            "apidoc",
+            version,
+            "%s.wadl" % (instance_name,),
+        )
 
     def toWADL(self):
         """See `IWebServiceApplication`.
@@ -316,13 +337,12 @@ class WebServiceApplication(ServiceRootResource):
             # The cache has been disabled for testing
             # purposes. Generate the WADL.
             return super().toWADL()
-        if  version not in self.__class__.cached_wadl:
+        if version not in self.__class__.cached_wadl:
             # It's not cached. Look for it on disk.
-            _wadl_filename = self.cachedWADLPath(
-                config.instance_name, version)
+            _wadl_filename = self.cachedWADLPath(config.instance_name, version)
             _wadl_fd = None
             try:
-                _wadl_fd = codecs.open(_wadl_filename, encoding='UTF-8')
+                _wadl_fd = codecs.open(_wadl_filename, encoding="UTF-8")
                 try:
                     wadl = _wadl_fd.read()
                 finally:

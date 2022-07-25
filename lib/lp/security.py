@@ -8,19 +8,16 @@ module of the corresponding application package, e.g. `lp.registry.security`.
 """
 
 __all__ = [
-    'AdminByAdminsTeam',
-    'AdminByBuilddAdmin',
-    'AdminByCommercialTeamOrAdmins',
-    'ModerateByRegistryExpertsOrAdmins',
-    'OnlyBazaarExpertsAndAdmins',
-    'OnlyRosettaExpertsAndAdmins',
-    'OnlyVcsImportsAndAdmins',
-    ]
+    "AdminByAdminsTeam",
+    "AdminByBuilddAdmin",
+    "AdminByCommercialTeamOrAdmins",
+    "ModerateByRegistryExpertsOrAdmins",
+    "OnlyBazaarExpertsAndAdmins",
+    "OnlyRosettaExpertsAndAdmins",
+    "OnlyVcsImportsAndAdmins",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.interface import Interface
@@ -35,7 +32,8 @@ class ViewByLoggedInUser(AuthorizationBase):
     By default, any logged-in user can see anything. More restrictive
     rulesets are defined in other IAuthorization implementations.
     """
-    permission = 'launchpad.View'
+
+    permission = "launchpad.View"
     usedfor = Interface
 
     def checkAuthenticated(self, user):
@@ -49,14 +47,15 @@ class AnyAllowedPersonDeferredToView(AuthorizationBase):
     An authenticated user is delegated to the View security adapter. Since
     anonymous users are not logged in, they are denied.
     """
-    permission = 'launchpad.AnyAllowedPerson'
+
+    permission = "launchpad.AnyAllowedPerson"
     usedfor = Interface
 
     def checkUnauthenticated(self):
         return False
 
     def checkAuthenticated(self, user):
-        yield self.obj, 'launchpad.View'
+        yield self.obj, "launchpad.View"
 
 
 class AnyLegitimatePerson(AuthorizationBase):
@@ -65,7 +64,8 @@ class AnyLegitimatePerson(AuthorizationBase):
     Some operations are open to Launchpad users in general, but we still don't
     want drive-by vandalism.
     """
-    permission = 'launchpad.AnyLegitimatePerson'
+
+    permission = "launchpad.AnyLegitimatePerson"
     usedfor = Interface
 
     def checkUnauthenticated(self):
@@ -75,15 +75,18 @@ class AnyLegitimatePerson(AuthorizationBase):
         return user.person.karma >= config.launchpad.min_legitimate_karma
 
     def _isOldEnough(self, user):
-        return (
-            datetime.now(pytz.UTC) - user.person.account.date_created >=
-            timedelta(days=config.launchpad.min_legitimate_account_age))
+        return datetime.now(
+            pytz.UTC
+        ) - user.person.account.date_created >= timedelta(
+            days=config.launchpad.min_legitimate_account_age
+        )
 
     def checkAuthenticated(self, user):
         if not self._hasEnoughKarma(user) and not self._isOldEnough(user):
             return False
         return self.forwardCheckAuthenticated(
-            user, self.obj, 'launchpad.AnyAllowedPerson')
+            user, self.obj, "launchpad.AnyAllowedPerson"
+        )
 
 
 class LimitedViewDeferredToView(AuthorizationBase):
@@ -95,18 +98,19 @@ class LimitedViewDeferredToView(AuthorizationBase):
     private objects must define their own launchpad.LimitedView checker to
     truly check the permission.
     """
-    permission = 'launchpad.LimitedView'
+
+    permission = "launchpad.LimitedView"
     usedfor = Interface
 
     def checkUnauthenticated(self):
-        yield self.obj, 'launchpad.View'
+        yield self.obj, "launchpad.View"
 
     def checkAuthenticated(self, user):
-        yield self.obj, 'launchpad.View'
+        yield self.obj, "launchpad.View"
 
 
 class AdminByAdminsTeam(AuthorizationBase):
-    permission = 'launchpad.Admin'
+    permission = "launchpad.Admin"
     usedfor = Interface
 
     def checkAuthenticated(self, user):
@@ -114,7 +118,7 @@ class AdminByAdminsTeam(AuthorizationBase):
 
 
 class AdminByCommercialTeamOrAdmins(AuthorizationBase):
-    permission = 'launchpad.Commercial'
+    permission = "launchpad.Commercial"
     usedfor = Interface
 
     def checkAuthenticated(self, user):
@@ -122,7 +126,7 @@ class AdminByCommercialTeamOrAdmins(AuthorizationBase):
 
 
 class ModerateByRegistryExpertsOrAdmins(AuthorizationBase):
-    permission = 'launchpad.Moderate'
+    permission = "launchpad.Moderate"
     usedfor = None
 
     def checkAuthenticated(self, user):
@@ -130,8 +134,7 @@ class ModerateByRegistryExpertsOrAdmins(AuthorizationBase):
 
 
 class OnlyRosettaExpertsAndAdmins(AuthorizationBase):
-    """Base class that allow access to Rosetta experts and Launchpad admins.
-    """
+    """Base class that allow access to Rosetta experts and Launchpad admins."""
 
     def checkAuthenticated(self, user):
         """Allow Launchpad's admins and Rosetta experts edit all fields."""
@@ -155,7 +158,7 @@ class OnlyVcsImportsAndAdmins(AuthorizationBase):
 
 
 class AdminByBuilddAdmin(AuthorizationBase):
-    permission = 'launchpad.Admin'
+    permission = "launchpad.Admin"
 
     def checkAuthenticated(self, user):
         """Allow admins and buildd_admins."""

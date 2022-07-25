@@ -3,7 +3,7 @@
 
 """WSGI Middleware to add Launchpad revision headers to loggerhead."""
 
-__all__ = ['RevisionHeaderHandler']
+__all__ = ["RevisionHeaderHandler"]
 
 from lp.app import versioninfo
 
@@ -24,8 +24,11 @@ class RevisionHeaderHandler:
 
         Add the appropriate revision numbers in the response headers.
         """
+
         def response_hook(status, response_headers, exc_info=None):
             response_headers.append(
-                ('X-Launchpad-Revision', versioninfo.revision))
+                ("X-Launchpad-Revision", versioninfo.revision)
+            )
             return start_response(status, response_headers, exc_info)
+
         return self.application(environ, response_hook)

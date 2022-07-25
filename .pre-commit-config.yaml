@@ -39,122 +39,19 @@ repos:
     rev: 22.3.0
     hooks:
       - id: black
-        files: |
-          (?x)^(
-            cronscripts
-            |database
-            |lib/lp/(
-              answers
-              |app
-              |archivepublisher
-              |archiveuploader
-              |blueprints
-              |bugs
-              |buildmaster
-              |charms
-              |code
-              |codehosting
-              |coop
-              |oci
-              |registry
-              |scripts
-              |services
-              |snappy
-              |soyuz
-              |testing
-              |testopenid
-              |tests
-              |translations
-              |xmlrpc
-            )
-            |scripts
-            |utilities
-          )/
         exclude: |
           (?x)^(
-            utilities/community-contributions\.py
+            lib/contrib/.*
+            |lib/devscripts/.*
+            |utilities/community-contributions\.py
             |utilities/update-sourcecode
           )$
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2
     hooks:
     -   id: isort
-        name: isort (old-style)
-        args:
-        -   --combine-as
-        -   --force-grid-wrap=2
-        -   --force-sort-within-sections
-        -   --trailing-comma
-        -   --line-length=78
-        -   --lines-after-imports=2
-        -   --multi-line=8
-        -   --dont-order-by-type
-        exclude: |
-          (?x)^(
-            cronscripts
-            |database
-            |lib/lp/(
-              answers
-              |app
-              |archivepublisher
-              |archiveuploader
-              |blueprints
-              |bugs
-              |buildmaster
-              |charms
-              |code
-              |codehosting
-              |coop
-              |oci
-              |registry
-              |scripts
-              |services
-              |snappy
-              |soyuz
-              |testing
-              |testopenid
-              |tests
-              |translations
-              |xmlrpc
-            )
-            |scripts
-            |utilities
-          )/
-    -   id: isort
-        alias: isort-black
-        name: isort (black)
+        name: isort
         args: [--profile, black]
-        files: |
-          (?x)^(
-            cronscripts
-            |database
-            |lib/lp/(
-              answers
-              |app
-              |archivepublisher
-              |archiveuploader
-              |blueprints
-              |bugs
-              |buildmaster
-              |charms
-              |code
-              |codehosting
-              |coop
-              |oci
-              |registry
-              |scripts
-              |services
-              |snappy
-              |soyuz
-              |testing
-              |testopenid
-              |tests
-              |translations
-              |xmlrpc
-            )
-            |scripts
-            |utilities
-          )/
 -   repo: https://github.com/PyCQA/flake8
     rev: 3.9.2
     hooks:
