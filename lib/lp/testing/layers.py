@@ -119,6 +119,7 @@ from lp.services.webapp.servers import (
 )
 from lp.services.webapp.wsgi import WSGIPublisherApplication
 from lp.testing import ANONYMOUS, login, logout, reset_logging
+from lp.testing.html5browser import Browser
 from lp.testing.pgsql import PgTestSetup
 
 WAIT_INTERVAL = datetime.timedelta(seconds=180)
@@ -1945,15 +1946,19 @@ class ZopelessAppServerLayer(LaunchpadZopelessLayer):
 class YUITestLayer(FunctionalLayer):
     """The layer for all YUITests cases."""
 
+    browser = None
+
     @classmethod
     @profiled
     def setUp(cls):
-        pass
+        cls.browser = Browser()
 
     @classmethod
     @profiled
     def tearDown(cls):
-        pass
+        if cls.browser:
+            cls.browser.close()
+            cls.browser = None
 
     @classmethod
     @profiled
@@ -1969,16 +1974,22 @@ class YUITestLayer(FunctionalLayer):
 class YUIAppServerLayer(MemcachedLayer):
     """The layer for all YUIAppServer test cases."""
 
+    browser = None
+
     @classmethod
     @profiled
     def setUp(cls):
         LayerProcessController.setConfig()
         LayerProcessController.startAppServer("run-testapp")
+        cls.browser = Browser()
 
     @classmethod
     @profiled
     def tearDown(cls):
         LayerProcessController.stopAppServer()
+        if cls.browser:
+            cls.browser.close()
+            cls.browser = None
 
     @classmethod
     @profiled
