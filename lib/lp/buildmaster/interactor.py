@@ -37,7 +37,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 )
 from lp.services.config import config
 from lp.services.job.runner import QuietAMPConnector, VirtualEnvProcessStarter
-from lp.services.twistedsupport import cancel_on_timeout
+from lp.services.twistedsupport import cancel_on_timeout, gatherResults
 from lp.services.twistedsupport.processmonitor import ProcessWithTimeout
 from lp.services.webapp import urlappend
 
@@ -244,32 +244,37 @@ class BuilderWorker:
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
-        try:
-            # Download the file in a subprocess.  We used to download it
-            # asynchronously in Twisted, but in practice this only worked well
-            # up to a bit over a hundred builders; beyond that it struggled to
-            # keep up with incoming packets in time to avoid TCP timeouts
-            # (perhaps because of too much synchronous work being done on the
-            # reactor thread).
-            yield self.process_pool.doWork(
-                DownloadCommand,
-                file_url=file_url,
-                path_to_write=path_to_write,
-                timeout=self.timeout,
-            )
-            if logger is not None:
-                logger.info("Grabbed %s" % file_url)
-        except Exception as e:
-            if logger is not None:
-                logger.info(
-                    "Failed to grab %s: %s\n%s"
-                    % (
-                        file_url,
-                        e,
-                        " ".join(traceback.format_exception(*sys.exc_info())),
-                    )
+        for attempt in range(config.builddmaster.download_attempts):
+            try:
+                # Download the file in a subprocess.  We used to download it
+                # asynchronously in Twisted, but in practice this only
+                # worked well up to a bit over a hundred builders; beyond
+                # that it struggled to keep up with incoming packets in time
+                # to avoid TCP timeouts (perhaps because of too much
+                # synchronous work being done on the reactor thread).
+                yield self.process_pool.doWork(
+                    DownloadCommand,
+                    file_url=file_url,
+                    path_to_write=path_to_write,
+                    timeout=self.timeout,
                 )
-            raise
+                if logger is not None:
+                    logger.info("Grabbed %s" % file_url)
+                break
+            except Exception as e:
+                if logger is not None:
+                    logger.info(
+                        "Failed to grab %s: %s\n%s"
+                        % (
+                            file_url,
+                            e,
+                            " ".join(
+                                traceback.format_exception(*sys.exc_info())
+                            ),
+                        )
+                    )
+                if attempt == config.builddmaster.download_attempts - 1:
+                    raise
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.
@@ -280,7 +285,7 @@ class BuilderWorker:
 
         :return: A DeferredList that calls back when the download is done.
         """
-        dl = defer.gatherResults(
+        dl = gatherResults(
             [
                 self.getFile(builder_file, local_file, logger=logger)
                 for builder_file, local_file in files
