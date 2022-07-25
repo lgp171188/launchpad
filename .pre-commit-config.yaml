@@ -42,6 +42,7 @@ repos:
         files: |
           (?x)^(
             cronscripts
+            |database
             |lib/lp/(
               answers
               |app
@@ -91,6 +92,7 @@ repos:
         exclude: |
           (?x)^(
             cronscripts
+            |database
             |lib/lp/(
               answers
               |app
@@ -125,6 +127,7 @@ repos:
         files: |
           (?x)^(
             cronscripts
+            |database
             |lib/lp/(
               answers
               |app

@@ -11,18 +11,20 @@ import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 
-from lp.services.scripts import (
-    db_options,
-    logger_options,
-    )
+from lp.services.scripts import db_options, logger_options
 from replication.helpers import sync
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option(
-        "-t", "--timeout", dest="timeout", metavar="SECS", type="int",
-        help="Abort if no sync after SECS seconds.", default=0)
+        "-t",
+        "--timeout",
+        dest="timeout",
+        metavar="SECS",
+        type="int",
+        help="Abort if no sync after SECS seconds.",
+        default=0,
+    )
     logger_options(parser)
     db_options(parser)
     options, args = parser.parse_args()

@@ -17,20 +17,13 @@ __all__ = []
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import sys
 import time
+from optparse import OptionParser
 
 from lp.services.database import activity_cols
-from lp.services.database.sqlbase import (
-    connect,
-    ISOLATION_LEVEL_AUTOCOMMIT,
-    )
-from lp.services.scripts import (
-    db_options,
-    logger,
-    logger_options,
-    )
+from lp.services.database.sqlbase import ISOLATION_LEVEL_AUTOCOMMIT, connect
+from lp.services.scripts import db_options, logger, logger_options
 
 
 def main():
@@ -51,30 +44,38 @@ def main():
     cur = con.cursor()
 
     log.debug("Disabling autovacuum on all tables in the database.")
-    cur.execute("""
+    cur.execute(
+        """
         SELECT nspname,relname
         FROM pg_namespace, pg_class
         WHERE relnamespace = pg_namespace.oid
             AND relkind = 'r' AND nspname <> 'pg_catalog'
-        """)
+        """
+    )
     for namespace, table in list(cur.fetchall()):
-        cur.execute("""
+        cur.execute(
+            """
             ALTER TABLE ONLY "%s"."%s" SET (
                 autovacuum_enabled=false,
                 toast.autovacuum_enabled=false)
-            """ % (namespace, table))
+            """
+            % (namespace, table)
+        )
 
     log.debug("Killing existing autovacuum processes")
     num_autovacuums = -1
     while num_autovacuums != 0:
         # Sleep long enough for pg_stat_activity to be updated.
         time.sleep(0.6)
-        cur.execute("""
+        cur.execute(
+            """
             SELECT %(pid)s FROM pg_stat_activity
             WHERE
                 datname=current_database()
                 AND %(query)s LIKE 'autovacuum: %%'
-            """ % activity_cols(cur))
+            """
+            % activity_cols(cur)
+        )
         autovacuums = [row[0] for row in cur.fetchall()]
         num_autovacuums = len(autovacuums)
         for pid in autovacuums:
@@ -82,5 +83,5 @@ def main():
             cur.execute("SELECT pg_cancel_backend(%d)" % pid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
