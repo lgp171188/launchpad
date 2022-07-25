@@ -10,16 +10,15 @@ __all__ = []
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import time
+from optparse import OptionParser
 
+import replication.helpers
 from lp.services import scripts
 from lp.services.config import config
 from lp.services.database.sqlbase import connect
-import replication.helpers
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     scripts.db_options(parser)
     (options, args) = parser.parse_args()
@@ -28,7 +27,7 @@ if __name__ == '__main__':
     scripts.execute_zcml_for_scripts(use_web_security=False)
 
     con = connect()
-    print('# slonik(1) preamble generated %s' % time.ctime())
-    print('# LPCONFIG=%s' % config.instance_name)
+    print("# slonik(1) preamble generated %s" % time.ctime())
+    print("# LPCONFIG=%s" % config.instance_name)
     print()
     print(replication.helpers.preamble(con))

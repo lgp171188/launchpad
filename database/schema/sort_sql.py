@@ -28,10 +28,7 @@ import _pythonpath  # noqa: F401
 
 import sys
 
-from lp.services.database.sort_sql import (
-    Parser,
-    print_lines_sorted,
-    )
+from lp.services.database.sort_sql import Parser, print_lines_sorted
 
 
 def main(argv):
@@ -50,5 +47,5 @@ def main(argv):
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv))

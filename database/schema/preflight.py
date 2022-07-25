@@ -5,40 +5,30 @@
 """Confirm the database systems are ready to be patched as best we can."""
 
 __all__ = [
-    'DatabasePreflight',
-    'KillConnectionsPreflight',
-    'NoConnectionCheckPreflight',
-    'streaming_sync',
-    ]
+    "DatabasePreflight",
+    "KillConnectionsPreflight",
+    "NoConnectionCheckPreflight",
+    "streaming_sync",
+]
 
 import _pythonpath  # noqa: F401
 
-from datetime import timedelta
-from optparse import OptionParser
 import os.path
 import time
+from datetime import timedelta
+from optparse import OptionParser
 
 import psycopg2
 
-from dbcontroller import (
-    DBController,
-    streaming_sync,
-    )
-from lp.services.database import activity_cols
-from lp.services.database.sqlbase import (
-    ISOLATION_LEVEL_AUTOCOMMIT,
-    sqlvalues,
-    )
-from lp.services.scripts import (
-    logger,
-    logger_options,
-    )
-from replication.helpers import Node
 import upgrade
-
+from dbcontroller import DBController, streaming_sync
+from lp.services.database import activity_cols
+from lp.services.database.sqlbase import ISOLATION_LEVEL_AUTOCOMMIT, sqlvalues
+from lp.services.scripts import logger, logger_options
+from replication.helpers import Node
 
 # Ignore connections by these users.
-SYSTEM_USERS = {'postgres', 'slony', 'nagios', 'lagmon'}
+SYSTEM_USERS = {"postgres", "slony", "nagios", "lagmon"}
 
 # Fail checks if these users are connected. If a process should not be
 # interrupted by a rollout, the database user it connects as should be
@@ -48,22 +38,22 @@ SYSTEM_USERS = {'postgres', 'slony', 'nagios', 'lagmon'}
 FRAGILE_USERS = {
     # process_accepted is fragile, but also fast so we likely shouldn't
     # need to ever manually shut it down.
-    'process_accepted',
-    'process_upload',
-    'publish_distro',
-    'publish_ftpmaster',
-    }
+    "process_accepted",
+    "process_upload",
+    "publish_distro",
+    "publish_ftpmaster",
+}
 
 # If these users have long running transactions, just kill 'em. Entries
 # added here must come with a bug number, a if part of Launchpad holds
 # open a long running transaction it is a bug we need to fix.
 BAD_USERS = {
-    'karma',  # Bug #863109
-    'rosettaadmin',  # Bug #863122
-    'update-pkg-cache',  # Bug #912144
-    'process_death_row',  # Bug #912146
-    'langpack',  # Bug #912147
-    }
+    "karma",  # Bug #863109
+    "rosettaadmin",  # Bug #863122
+    "update-pkg-cache",  # Bug #912144
+    "process_death_row",  # Bug #912146
+    "langpack",  # Bug #912147
+}
 
 # How lagged the cluster can be before failing the preflight check.
 # If this is set too low, perfectly normal state will abort rollouts. If
@@ -91,8 +81,7 @@ class DatabasePreflight:
         self._num_standbys = len(standbys)
         for standby in standbys:
             standby_node = Node(None, None, standby, False)
-            standby_node.con = standby_node.connect(
-                ISOLATION_LEVEL_AUTOCOMMIT)
+            standby_node.con = standby_node.connect(ISOLATION_LEVEL_AUTOCOMMIT)
             self.nodes.add(standby_node)
             self.lpmain_nodes.add(standby_node)
 
@@ -106,11 +95,13 @@ class DatabasePreflight:
         if required_standbys != self._num_standbys:
             self.log.fatal(
                 "%d streaming standbys connected, but %d provided on cli"
-                % (required_standbys, self._num_standbys))
+                % (required_standbys, self._num_standbys)
+            )
             return False
         else:
             self.log.debug(
-                "%d streaming standby servers streaming", required_standbys)
+                "%d streaming standby servers streaming", required_standbys
+            )
             return True
 
     def check_is_superuser(self):
@@ -118,11 +109,13 @@ class DatabasePreflight:
         success = True
         for node in self.nodes:
             cur = node.con.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT current_database(), pg_user.usesuper
                 FROM pg_user
                 WHERE usename = current_user
-                """)
+                """
+            )
             dbname, is_super = cur.fetchone()
             if is_super:
                 self.log.debug("Connected to %s as a superuser.", dbname)
@@ -143,23 +136,32 @@ class DatabasePreflight:
         success = True
         for node in self.lpmain_nodes:
             cur = node.con.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT datname, usename, COUNT(*) AS num_connections
                 FROM pg_stat_activity
                 WHERE
                     datname=current_database()
                     AND %(pid)s <> pg_backend_pid()
                 GROUP BY datname, usename
-                """ % activity_cols(cur))
+                """
+                % activity_cols(cur)
+            )
             for datname, usename, num_connections in cur.fetchall():
                 if usename in SYSTEM_USERS:
                     self.log.debug(
                         "%s has %d connections by %s",
-                        datname, num_connections, usename)
+                        datname,
+                        num_connections,
+                        usename,
+                    )
                 else:
                     self.log.fatal(
                         "%s has %d connections by %s",
-                        datname, num_connections, usename)
+                        datname,
+                        num_connections,
+                        usename,
+                    )
                     success = False
         if success:
             self.log.info("Only system users connected to the cluster")
@@ -174,7 +176,9 @@ class DatabasePreflight:
         success = True
         for node in self.lpmain_nodes:
             cur = node.con.cursor()
-            cur.execute(("""
+            cur.execute(
+                (
+                    """
                 SELECT datname, usename, COUNT(*) AS num_connections
                 FROM pg_stat_activity
                 WHERE
@@ -182,17 +186,24 @@ class DatabasePreflight:
                     AND %(pid)s <> pg_backend_pid()
                     AND usename IN %%s
                 GROUP BY datname, usename
-                """ % activity_cols(cur))
-                % sqlvalues(FRAGILE_USERS))
+                """
+                    % activity_cols(cur)
+                )
+                % sqlvalues(FRAGILE_USERS)
+            )
             for datname, usename, num_connections in cur.fetchall():
                 self.log.fatal(
                     "Fragile system %s running. %s has %d connections.",
-                    usename, datname, num_connections)
+                    usename,
+                    datname,
+                    num_connections,
+                )
                 success = False
         if success:
             self.log.debug(
                 "No fragile systems connected to the cluster (%s)"
-                % ', '.join(FRAGILE_USERS))
+                % ", ".join(FRAGILE_USERS)
+            )
         return success
 
     def check_long_running_transactions(self, max_secs=60):
@@ -210,7 +221,8 @@ class DatabasePreflight:
         success = True
         for node in self.nodes:
             cur = node.con.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT
                     datname, usename,
                     age(current_timestamp, xact_start) AS age
@@ -218,16 +230,24 @@ class DatabasePreflight:
                 WHERE
                     age(current_timestamp, xact_start) > interval '%d secs'
                     AND datname=current_database()
-                """ % max_secs)
+                """
+                % max_secs
+            )
             for datname, usename, age in cur.fetchall():
                 if usename in BAD_USERS:
                     self.log.info(
                         "%s has transactions by %s open %s (ignoring)",
-                        datname, usename, age)
+                        datname,
+                        usename,
+                        age,
+                    )
                 else:
                     self.log.fatal(
                         "%s has transaction by %s open %s",
-                        datname, usename, age)
+                        datname,
+                        usename,
+                        age,
+                    )
                     success = False
         if success:
             self.log.debug("No long running transactions detected.")
@@ -238,7 +258,8 @@ class DatabasePreflight:
         # Do something harmless to force changes to be streamed in case
         # system is idle.
         self.lpmain_primary_node.con.cursor().execute(
-            'ANALYZE LaunchpadDatabaseRevision')
+            "ANALYZE LaunchpadDatabaseRevision"
+        )
         start_time = time.time()
         # Keep looking for low lag for 30 seconds, in case the system
         # was idle and streaming needs time to kick in.
@@ -246,14 +267,16 @@ class DatabasePreflight:
             max_lag = timedelta(seconds=-1)
             for node in self.nodes:
                 cur = node.con.cursor()
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT
                         pg_is_in_recovery(),
                         now() - pg_last_xact_replay_timestamp()
-                    """)
+                    """
+                )
                 is_standby, lag = cur.fetchone()
                 if is_standby:
-                    self.log.debug2('streaming lag %s', lag)
+                    self.log.debug2("streaming lag %s", lag)
                     max_lag = max(max_lag, lag)
             if max_lag < MAX_LAG:
                 break
@@ -268,7 +291,8 @@ class DatabasePreflight:
         else:
             streaming_lagged = False
             self.log.debug(
-                "Streaming replication lag is not high (%s)", max_lag)
+                "Streaming replication lag is not high (%s)", max_lag
+            )
 
         return not streaming_lagged
 
@@ -351,7 +375,9 @@ class KillConnectionsPreflight(DatabasePreflight):
             all_clear = True
             for node in nodes:
                 cur = node.con.cursor()
-                cur.execute(("""
+                cur.execute(
+                    (
+                        """
                     SELECT
                         %(pid)s, datname, usename,
                         pg_terminate_backend(%(pid)s)
@@ -360,22 +386,28 @@ class KillConnectionsPreflight(DatabasePreflight):
                         datname=current_database()
                         AND %(pid)s <> pg_backend_pid()
                         AND usename NOT IN %%s
-                    """ % activity_cols(cur))
-                    % sqlvalues(SYSTEM_USERS))
+                    """
+                        % activity_cols(cur)
+                    )
+                    % sqlvalues(SYSTEM_USERS)
+                )
                 for pid, datname, usename, ignored in cur.fetchall():
                     all_clear = False
                     if loop_count == num_tries - 1:
                         self.log.fatal(
                             "Unable to kill %s [%s] on %s.",
-                            usename, pid, datname)
+                            usename,
+                            pid,
+                            datname,
+                        )
                     elif usename in BAD_USERS:
                         self.log.info(
-                            "Killed %s [%s] on %s.",
-                            usename, pid, datname)
+                            "Killed %s [%s] on %s.", usename, pid, datname
+                        )
                     else:
                         self.log.warning(
-                            "Killed %s [%s] on %s.",
-                            usename, pid, datname)
+                            "Killed %s [%s] on %s.", usename, pid, datname
+                        )
             if all_clear:
                 break
 
@@ -389,24 +421,40 @@ def main():
     parser = OptionParser()
     logger_options(parser)
     parser.add_option(
-        "--skip-connection-check", dest='skip_connection_check',
-        default=False, action="store_true",
-        help="Don't check open connections.")
+        "--skip-connection-check",
+        dest="skip_connection_check",
+        default=False,
+        action="store_true",
+        help="Don't check open connections.",
+    )
     parser.add_option(
-        "--kill-connections", dest='kill_connections',
-        default=False, action="store_true",
-        help="Kill non-system connections instead of reporting an error.")
+        "--kill-connections",
+        dest="kill_connections",
+        default=False,
+        action="store_true",
+        help="Kill non-system connections instead of reporting an error.",
+    )
     parser.add_option(
-        '--pgbouncer', dest='pgbouncer',
-        default='host=localhost port=6432 user=pgbouncer',
-        metavar='CONN_STR',
-        help="libpq connection string to administer pgbouncer")
+        "--pgbouncer",
+        dest="pgbouncer",
+        default="host=localhost port=6432 user=pgbouncer",
+        metavar="CONN_STR",
+        help="libpq connection string to administer pgbouncer",
+    )
     parser.add_option(
-        '--dbname', dest='dbname', default='launchpad_prod', metavar='DBNAME',
-        help='Database name we are updating.')
+        "--dbname",
+        dest="dbname",
+        default="launchpad_prod",
+        metavar="DBNAME",
+        help="Database name we are updating.",
+    )
     parser.add_option(
-        '--dbuser', dest='dbuser', default='postgres', metavar='USERNAME',
-        help='Connect as USERNAME to databases')
+        "--dbuser",
+        dest="dbuser",
+        default="postgres",
+        metavar="USERNAME",
+        help="Connect as USERNAME to databases",
+    )
 
     (options, args) = parser.parse_args()
     if args:
@@ -414,12 +462,14 @@ def main():
 
     if options.kill_connections and options.skip_connection_check:
         parser.error(
-            "--skip-connection-check conflicts with --kill-connections")
+            "--skip-connection-check conflicts with --kill-connections"
+        )
 
     log = logger(options)
 
     controller = DBController(
-        log, options.pgbouncer, options.dbname, options.dbuser)
+        log, options.pgbouncer, options.dbname, options.dbuser
+    )
 
     if options.kill_connections:
         preflight_check = KillConnectionsPreflight(log, controller)
@@ -429,12 +479,12 @@ def main():
         preflight_check = DatabasePreflight(log, controller)
 
     if preflight_check.check_all():
-        log.info('Preflight check succeeded. Good to go.')
+        log.info("Preflight check succeeded. Good to go.")
         return 0
     else:
-        log.error('Preflight check failed.')
+        log.error("Preflight check failed.")
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main())
