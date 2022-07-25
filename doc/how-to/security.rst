@@ -49,7 +49,7 @@ To define a security adapter for a given permission on an interface:
 .. code-block:: python
 
     class EditByOwner(AuthorizationBase):
-        permission = 'launchpad.Edit'
+        permission = "launchpad.Edit"
         usedfor = IHasOwner
 
         def checkAuthenticated(self, user):

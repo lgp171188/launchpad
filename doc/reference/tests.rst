@@ -125,14 +125,14 @@ The basic conventions for testable documentation are:
 
     You use the getFoo() method to obtain an IFoo instance by id:
 
-        >>> foo = foobarset.getFoo('aFoo')
+        >>> foo = foobarset.getFoo("aFoo")
         >>> verifyObject(IFoo, foo)
         True
 
     Similarly, you use the getBar() method to retrieve an IBar instance by
     id:
 
-        >>> bar = foobarset.getBar('aBar')
+        >>> bar = foobarset.getBar("aBar")
         >>> verifyObject(IBar, bar)
         True
 
@@ -160,7 +160,7 @@ will be helpful to debug the problem.  Avoid constructs like:
 
 .. code-block:: pycon
 
-    >>> 'Test' in foo.getText()
+    >>> "Test" in foo.getText()
     True
 
 The failure message for this test will be:
@@ -188,16 +188,17 @@ easy to access specific elements in the tree.
 
     The new status is displayed in the portlet.
 
-        >>> details_portlet = find_portlet(browser.contents, 'Question details')
-        >>> print(details_portlet.find('b', text='Status:').next.strip())
+        >>> details_portlet = find_portlet(browser.contents, "Question details")
+        >>> print(details_portlet.find("b", text="Status:").next.strip())
         Needs information
 
 There is also an ``extract_text()`` helper that only renders the HTML text:
 
 .. code-block:: pycon
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'branchtable')))
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "branchtable"))
+    ... )
     main         60 New           firefox
     klingon      30 Experimental  gnome-terminal
     junk.contrib 60 New 2005-10-31 12:03:57 ... weeks ago
@@ -451,13 +452,13 @@ human-readable.  So:
 
 .. code-block:: python
 
-    self.assertTrue('aString' in result)
+    self.assertTrue("aString" in result)
 
 could be replaced by:
 
 .. code-block:: python
 
-    self.assertIn('aString', result)
+    self.assertIn("aString", result)
 
 * Consider using testtools matchers where reasonable.  These can often
   improve failure messages so that they show more information in one go,
@@ -466,16 +467,16 @@ could be replaced by:
 
 .. code-block:: python
 
-    self.assertEqual('expected', obj.foo)
-    self.assertEqual('more expected', obj.bar)
+    self.assertEqual("expected", obj.foo)
+    self.assertEqual("more expected", obj.bar)
 
 prefer this:
 
 .. code-block:: python
 
     self.assertThat(obj, MatchesStructure.byEquality(
-        foo='expected',
-        bar='more expected'))
+        foo="expected",
+        bar="more expected"))
 
 In general, you should follow Launchpad coding conventions (see :doc:`Python
 style guide <python>`), however when naming test methods:
@@ -500,7 +501,7 @@ is available as a class method on ``BaseLayer``.
 
 .. code-block:: python
 
-    def appserver_root_url(self, facet='mainsite', ensureSlash=False):
+    def appserver_root_url(self, facet="mainsite", ensureSlash=False):
         """Return the correct app server root url for the given facet."""
 
 Code snippets for a number of scenarios are as follows.
@@ -522,4 +523,4 @@ Code snippets for a number of scenarios are as follows.
 
         def test_replay_attacks_do_not_succeed(self):
             browser = Browser(mech_browser=MyMechanizeBrowser())
-            browser.open('%s/+login' % self.layer.appserver_root_url())
+            browser.open("%s/+login" % self.layer.appserver_root_url())
