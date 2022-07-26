@@ -18,6 +18,7 @@ For each entry in UCT we:
 import logging
 from datetime import datetime
 from enum import Enum
+from itertools import chain
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
@@ -35,9 +36,11 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     IBugTaskSet,
 )
+from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.cve import ICveSet
 from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
 from lp.bugs.model.bug import Bug as BugModel
+from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.model.vulnerability import Vulnerability
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
@@ -49,14 +52,15 @@ from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackage,
 )
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.services.database.constants import UTC_NOW
-from lp.services.messages.interfaces.message import IMessageSet
 
 __all__ = [
     "CVE",
     "UCTImporter",
     "UCTRecord",
+    "UCTImportError",
 ]
 
 from lp.services.propertycache import cachedproperty
@@ -352,7 +356,7 @@ class CVE:
         series_packages: List[SeriesPackage],
         importance: BugTaskImportance,
         status: VulnerabilityStatus,
-        assigned_to: str,
+        assignee: Optional[Person],
         description: str,
         ubuntu_description: str,
         bug_urls: List[str],
@@ -366,7 +370,7 @@ class CVE:
         self.series_packages = series_packages
         self.importance = importance
         self.status = status
-        self.assigned_to = assigned_to
+        self.assignee = assignee
         self.description = description
         self.ubuntu_description = ubuntu_description
         self.bug_urls = bug_urls
@@ -445,6 +449,15 @@ class CVE:
                     )
                 )
 
+        if uct_record.assigned_to:
+            assignee = getUtility(IPersonSet).getByName(uct_record.assigned_to)
+            if not assignee:
+                logger.warning(
+                    "Could not find the assignee: %s", uct_record.assigned_to
+                )
+        else:
+            assignee = None
+
         return cls(
             sequence=uct_record.candidate,
             date_made_public=uct_record.date_made_public,
@@ -452,7 +465,7 @@ class CVE:
             series_packages=series_packages,
             importance=cls.PRIORITY_MAP[uct_record.priority],
             status=cls.infer_vulnerability_status(uct_record),
-            assigned_to=uct_record.assigned_to,
+            assignee=assignee,
             description=uct_record.description,
             ubuntu_description=uct_record.ubuntu_description,
             bug_urls=uct_record.bugs,
@@ -525,7 +538,14 @@ class CVE:
         return distro_series
 
 
+class UCTImportError(Exception):
+    pass
+
+
 class UCTImporter:
+    def __init__(self):
+        self.bug_importer = getUtility(ILaunchpadCelebrities).bug_importer
+
     def import_cve_from_file(self, cve_path: Path) -> None:
         uct_record = UCTRecord.load(cve_path)
         cve = CVE.make_from_uct_record(uct_record)
@@ -541,124 +561,114 @@ class UCTImporter:
         if lp_cve is None:
             logger.warning("Could not find the CVE in LP: %s", cve.sequence)
             return
-        self.create_bug(cve, lp_cve)
+        bug = self.find_existing_bug(cve, lp_cve)
+        if bug is None:
+            self.create_bug(cve, lp_cve)
+        else:
+            self.update_bug(bug, cve, lp_cve)
 
-    def create_bug(
+    def find_existing_bug(
         self, cve: CVE, lp_cve: CveModel
-    ) -> Tuple[Optional[BugModel], List[Vulnerability]]:
+    ) -> Optional[BugModel]:
+        bug = None
+        for vulnerability in lp_cve.vulnerabilities:
+            if vulnerability.distribution in cve.affected_distributions:
+                bugs = vulnerability.bugs
+                if bugs:
+                    if bug and bugs[0] != bug:
+                        raise UCTImportError(
+                            "Multiple existing bugs are found "
+                            "for CVE {}".format(cve.sequence)
+                        )
+                    else:
+                        bug = bugs[0]
+        return bug
+
+    def create_bug(self, cve: CVE, lp_cve: CveModel) -> Optional[BugModel]:
 
         logger.debug("creating bug...")
 
         if not cve.series_packages:
             logger.warning("Could not find any affected packages")
-            return None, []
+            return None
 
         distro_package = cve.distro_packages[0]
 
         # Create the bug
-        owner = getUtility(ILaunchpadCelebrities).bug_importer
         bug = getUtility(IBugSet).createBug(
             CreateBugParams(
-                description=cve.ubuntu_description,
+                comment=self.make_bug_description(cve),
                 title=cve.sequence,
                 information_type=InformationType.PUBLICSECURITY,
-                owner=owner,
-                msg=getUtility(IMessageSet).fromText(
-                    "", cve.description, owner=owner
-                ),
+                owner=self.bug_importer,
                 target=distro_package.package,
                 importance=distro_package.importance,
+                cve=lp_cve,
             )
         )  # type: BugModel
 
-        # Add links to external bug trackers
-        for external_bug_url in cve.bug_urls:
-            bug.newMessage(owner=owner, content=external_bug_url)
-
-        # Add references
-        for reference in cve.references:
-            bug.newMessage(owner=owner, content=reference)
+        self.update_external_bug_urls(bug, cve.bug_urls)
 
         logger.info("Created bug with ID: %s", bug.id)
 
-        # Create bug tasks for distribution packages
-        bug_task_set = getUtility(IBugTaskSet)
-        for distro_package in cve.distro_packages[1:]:
-            bug_task_set.createTask(
-                bug,
-                owner,
-                distro_package.package,
-                importance=distro_package.importance,
-            )
-
-        # Create bug tasks for distro series by adding nominations
-        # This may create some extra bug tasks which we will delete later
-        for distro_series in cve.affected_distro_series:
-            nomination = bug.addNomination(owner, distro_series)
-            nomination.approve(owner)
-
-        series_packages_importance_and_status = {
-            p.package: (p.importance, p.status, p.status_explanation)
-            for p in cve.series_packages
-        }
-
-        # Set importance and status on distro series bug tasks
-        # If the bug task's package/series isn't listed in the
-        # CVE entry - delete it
-        for bug_task in bug.bugtasks:
-            distro_series = bug_task.distroseries
-            if not distro_series:
-                continue
-            source_package_name = bug_task.sourcepackagename
-            series_package = SourcePackage(
-                sourcepackagename=source_package_name,
-                distroseries=distro_series,
-            )
-            if series_package not in series_packages_importance_and_status:
-                # This combination of package/series is not present in the CVE
-                # Delete it
-                bug_task.delete(owner)
-                continue
-            (
-                importance,
-                status,
-                status_explanation,
-            ) = series_packages_importance_and_status[series_package]
-            bug_task.transitionToImportance(importance, owner)
-            bug_task.transitionToStatus(status, owner)
-            bug_task.status_explanation = status_explanation
-
-        # Assign the bug tasks
-        if cve.assigned_to:
-            assignee = getUtility(IPersonSet).getByName(cve.assigned_to)
-            if assignee is not None:
-                for bug_task in bug.bugtasks:
-                    bug_task.transitionToAssignee(assignee, validate=False)
-            else:
-                logger.warning(
-                    "Could not find the assignee: %s", cve.assigned_to
-                )
-
-        # Link the bug to CVE
-        bug.linkCVE(lp_cve, owner)
+        self.create_bug_tasks(
+            bug, cve.distro_packages[1:], cve.series_packages
+        )
+        self.update_statuses_and_importances(
+            bug, cve.distro_packages[1:], cve.series_packages
+        )
+        self.assign_bug_tasks(bug, cve.assignee)
 
         # Make a note of the import in the activity log:
         getUtility(IBugActivitySet).new(
             bug=bug.id,
             datechanged=UTC_NOW,
-            person=owner,
+            person=self.bug_importer,
             whatchanged="bug",
             message="UCT CVE entry {}".format(cve.sequence),
         )
 
         # Create the Vulnerabilities
-        vulnerabilities = []
         for distribution in cve.affected_distributions:
-            vulnerabilities.append(
-                self.create_vulnerability(bug, cve, lp_cve, distribution)
-            )
+            self.create_vulnerability(bug, cve, lp_cve, distribution)
 
-        return bug, vulnerabilities
+        return bug
+
+    def update_bug(self, bug: BugModel, cve: CVE, lp_cve: CveModel) -> None:
+        bug.description = self.make_bug_description(cve)
+
+        self.create_bug_tasks(bug, cve.distro_packages, cve.series_packages)
+        self.update_statuses_and_importances(
+            bug, cve.distro_packages, cve.series_packages
+        )
+        self.assign_bug_tasks(bug, cve.assignee)
+        self.update_external_bug_urls(bug, cve.bug_urls)
+
+        # Update or add new Vulnerabilities
+        vulnerabilities_by_distro = {
+            v.distribution: v for v in bug.vulnerabilities
+        }
+        for distro in cve.affected_distributions:
+            vulnerability = vulnerabilities_by_distro.get(distro)
+            if vulnerability is None:
+                self.create_vulnerability(bug, cve, lp_cve, distro)
+            else:
+                self.update_vulnerability(vulnerability, cve)
+
+    def create_bug_tasks(
+        self,
+        bug: BugModel,
+        distro_packages: List[CVE.DistroPackage],
+        series_packages: List[CVE.SeriesPackage],
+    ) -> None:
+        bug_tasks = bug.bugtasks  # type: List[BugTask]
+        bug_task_by_target = {t.target: t for t in bug_tasks}
+        bug_task_set = getUtility(IBugTaskSet)
+        for target in (
+            p.package for p in chain(distro_packages, series_packages)
+        ):
+            if target not in bug_task_by_target:
+                bug_task_set.createTask(bug, self.bug_importer, target)
 
     def create_vulnerability(
         self,
@@ -685,3 +695,64 @@ class UCTImporter:
         logger.info("Create vulnerability with ID: %s", vulnerability)
 
         return vulnerability
+
+    def update_vulnerability(
+        self, vulnerability: Vulnerability, cve: CVE
+    ) -> None:
+        vulnerability.status = cve.status
+        vulnerability.description = cve.description
+        vulnerability.notes = cve.notes
+        vulnerability.mitigation = cve.mitigation
+        vulnerability.importance = cve.importance
+        vulnerability.date_made_public = cve.date_made_public
+
+    def assign_bug_tasks(
+        self, bug: BugModel, assignee: Optional[Person]
+    ) -> None:
+        for bug_task in bug.bugtasks:
+            bug_task.transitionToAssignee(assignee, validate=False)
+
+    def update_statuses_and_importances(
+        self,
+        bug: BugModel,
+        distro_packages: List[CVE.DistroPackage],
+        series_packages: List[CVE.SeriesPackage],
+    ) -> None:
+        bug_tasks = bug.bugtasks  # type: List[BugTask]
+        bug_task_by_target = {t.target: t for t in bug_tasks}
+
+        for dp in distro_packages:
+            task = bug_task_by_target[dp.package]
+            if task.importance != dp.importance:
+                task.transitionToImportance(dp.importance, self.bug_importer)
+
+        for sp in series_packages:
+            task = bug_task_by_target[sp.package]
+            if task.importance != sp.importance:
+                task.transitionToImportance(sp.importance, self.bug_importer)
+            if task.status != sp.status:
+                task.transitionToStatus(sp.status, self.bug_importer)
+            if task.status_explanation != sp.status_explanation:
+                task.status_explanation = sp.status_explanation
+
+    def update_external_bug_urls(
+        self, bug: BugModel, bug_urls: List[str]
+    ) -> None:
+        bug_urls = set(bug_urls)
+        for watch in bug.watches:
+            if watch.url in bug_urls:
+                bug_urls.remove(watch.url)
+            else:
+                watch.destroySelf()
+        bug_watch_set = getUtility(IBugWatchSet)
+        for external_bug_url in bug_urls:
+            bug_watch_set.fromText(external_bug_url, bug, self.bug_importer)
+
+    def make_bug_description(self, cve: CVE) -> str:
+        parts = [cve.description]
+        if cve.ubuntu_description:
+            parts.extend(["", "Ubuntu-Description:", cve.ubuntu_description])
+        if cve.references:
+            parts.extend(["", "References:"])
+            parts.extend(cve.references)
+        return "\n".join(parts)

@@ -2,6 +2,7 @@
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 import datetime
 from pathlib import Path
+from typing import List
 
 from zope.component import getUtility
 
@@ -9,9 +10,17 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
-from lp.bugs.scripts.uctimport import CVE, UCTImporter, UCTRecord
+from lp.bugs.model.bug import Bug
+from lp.bugs.model.bugtask import BugTask
+from lp.bugs.scripts.uctimport import (
+    CVE,
+    UCTImporter,
+    UCTImportError,
+    UCTRecord,
+)
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.sourcepackage import SourcePackage
+from lp.services.propertycache import clear_property_cache
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
@@ -21,7 +30,6 @@ class TestUCTRecord(TestCase):
         cve_path = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
         uct_record = UCTRecord.load(cve_path)
         self.assertEqual(
-            uct_record,
             UCTRecord(
                 path=cve_path,
                 assigned_to="",
@@ -138,6 +146,7 @@ class TestUCTRecord(TestCase):
                     ),
                 ],
             ),
+            uct_record,
         )
 
 
@@ -159,10 +168,11 @@ class TextCVE(TestCaseWithFactory):
         )
         dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
         dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        assignee = self.factory.makePerson()
 
         uct_record = UCTRecord(
             path=Path("./active/CVE-2022-23222"),
-            assigned_to="assignee",
+            assigned_to=assignee.name,
             bugs=["https://github.com/mm2/Little-CMS/issues/29"],
             cvss=[],
             candidate="CVE-2022-23222",
@@ -246,15 +256,14 @@ class TextCVE(TestCaseWithFactory):
             ],
         )
         cve = CVE.make_from_uct_record(uct_record)
-        self.assertEqual(cve.sequence, "CVE-2022-23222")
+        self.assertEqual("CVE-2022-23222", cve.sequence)
         self.assertEqual(
-            cve.date_made_public,
             datetime.datetime(
                 2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
             ),
+            cve.date_made_public,
         )
         self.assertEqual(
-            cve.distro_packages,
             [
                 CVE.DistroPackage(
                     package=dsp1,
@@ -265,9 +274,9 @@ class TextCVE(TestCaseWithFactory):
                     importance=BugTaskImportance.HIGH,
                 ),
             ],
+            cve.distro_packages,
         )
         self.assertEqual(
-            cve.series_packages,
             [
                 CVE.SeriesPackage(
                     package=SourcePackage(
@@ -324,20 +333,21 @@ class TextCVE(TestCaseWithFactory):
                     status_explanation="",
                 ),
             ],
+            cve.series_packages,
         )
-        self.assertEqual(cve.importance, BugTaskImportance.CRITICAL)
-        self.assertEqual(cve.status, VulnerabilityStatus.ACTIVE)
-        self.assertEqual(cve.assigned_to, "assignee")
-        self.assertEqual(cve.description, "description")
-        self.assertEqual(cve.ubuntu_description, "ubuntu-description")
+        self.assertEqual(BugTaskImportance.CRITICAL, cve.importance)
+        self.assertEqual(VulnerabilityStatus.ACTIVE, cve.status)
+        self.assertEqual(assignee, cve.assignee)
+        self.assertEqual("description", cve.description)
+        self.assertEqual("ubuntu-description", cve.ubuntu_description)
         self.assertEqual(
-            cve.bug_urls, ["https://github.com/mm2/Little-CMS/issues/29"]
+            ["https://github.com/mm2/Little-CMS/issues/29"], cve.bug_urls
         )
         self.assertEqual(
-            cve.references, ["https://ubuntu.com/security/notices/USN-5368-1"]
+            ["https://ubuntu.com/security/notices/USN-5368-1"], cve.references
         )
-        self.assertEqual(cve.notes, "author> text")
-        self.assertEqual(cve.mitigation, "mitigation")
+        self.assertEqual("author> text", cve.notes)
+        self.assertEqual("mitigation", cve.mitigation)
 
 
 class TestUCTImporter(TestCaseWithFactory):
@@ -346,55 +356,72 @@ class TestUCTImporter(TestCaseWithFactory):
 
     def setUp(self, *args, **kwargs):
         super().setUp(*args, **kwargs)
-        self.importer = UCTImporter()
-
-    def test_create_bug(self):
         celebrities = getUtility(ILaunchpadCelebrities)
-        ubuntu = celebrities.ubuntu
-        owner = celebrities.bug_importer
-        assignee = self.factory.makePerson()
-        supported_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.SUPPORTED
+        self.ubuntu = celebrities.ubuntu
+        self.esm = self.factory.makeDistribution("esm")
+        self.bug_importer = celebrities.bug_importer
+        self.ubuntu_supported_series = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, status=SeriesStatus.SUPPORTED
         )
-        current_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.CURRENT
+        self.ubuntu_current_series = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, status=SeriesStatus.CURRENT
         )
-        devel_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.DEVELOPMENT
+        self.ubuntu_devel_series = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, status=SeriesStatus.DEVELOPMENT
         )
-        dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
-        dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
-        lp_cve = self.factory.makeCVE("2022-23222")
-
-        for package in (dsp1, dsp2):
-            for series in (supported_series, current_series):
-                self.factory.makeSourcePackagePublishingHistory(
+        self.esm_supported_series = self.factory.makeDistroSeries(
+            distribution=self.esm, status=SeriesStatus.SUPPORTED
+        )
+        self.esm_current_series = self.factory.makeDistroSeries(
+            distribution=self.esm, status=SeriesStatus.CURRENT
+        )
+        self.ubuntu_package = self.factory.makeDistributionSourcePackage(
+            distribution=self.ubuntu
+        )
+        self.esm_package = self.factory.makeDistributionSourcePackage(
+            distribution=self.esm
+        )
+        for series in (
+            self.ubuntu_supported_series,
+            self.ubuntu_current_series,
+        ):
+            self.factory.makeSourcePackagePublishingHistory(
+                distroseries=series,
+                sourcepackagerelease=self.factory.makeSourcePackageRelease(
                     distroseries=series,
-                    sourcepackagerelease=self.factory.makeSourcePackageRelease(
-                        distroseries=series,
-                        sourcepackagename=package.sourcepackagename,
-                    ),
-                )
+                    sourcepackagename=self.ubuntu_package.sourcepackagename,
+                ),
+            )
 
-        now = datetime.datetime.now(datetime.timezone.utc)
-        cve = CVE(
+        for series in (self.esm_current_series, self.esm_supported_series):
+            self.factory.makeSourcePackagePublishingHistory(
+                distroseries=series,
+                sourcepackagerelease=self.factory.makeSourcePackageRelease(
+                    distroseries=series,
+                    sourcepackagename=self.esm_package.sourcepackagename,
+                ),
+            )
+
+        self.lp_cve = self.factory.makeCVE("2022-23222")
+        self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.cve = CVE(
             sequence="CVE-2022-23222",
-            date_made_public=now,
+            date_made_public=self.now,
             distro_packages=[
                 CVE.DistroPackage(
-                    package=dsp1,
+                    package=self.ubuntu_package,
                     importance=BugTaskImportance.LOW,
                 ),
                 CVE.DistroPackage(
-                    package=dsp2,
+                    package=self.esm_package,
                     importance=BugTaskImportance.MEDIUM,
                 ),
             ],
             series_packages=[
                 CVE.SeriesPackage(
                     package=SourcePackage(
-                        sourcepackagename=dsp1.sourcepackagename,
-                        distroseries=supported_series,
+                        sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
+                        distroseries=self.ubuntu_supported_series,
                     ),
                     importance=BugTaskImportance.HIGH,
                     status=BugTaskStatus.FIXRELEASED,
@@ -402,8 +429,8 @@ class TestUCTImporter(TestCaseWithFactory):
                 ),
                 CVE.SeriesPackage(
                     package=SourcePackage(
-                        sourcepackagename=dsp1.sourcepackagename,
-                        distroseries=current_series,
+                        sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
+                        distroseries=self.ubuntu_current_series,
                     ),
                     importance=BugTaskImportance.LOW,
                     status=BugTaskStatus.DOESNOTEXIST,
@@ -411,8 +438,8 @@ class TestUCTImporter(TestCaseWithFactory):
                 ),
                 CVE.SeriesPackage(
                     package=SourcePackage(
-                        sourcepackagename=dsp2.sourcepackagename,
-                        distroseries=supported_series,
+                        sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
+                        distroseries=self.ubuntu_devel_series,
                     ),
                     importance=BugTaskImportance.LOW,
                     status=BugTaskStatus.INVALID,
@@ -420,8 +447,8 @@ class TestUCTImporter(TestCaseWithFactory):
                 ),
                 CVE.SeriesPackage(
                     package=SourcePackage(
-                        sourcepackagename=dsp2.sourcepackagename,
-                        distroseries=current_series,
+                        sourcepackagename=self.esm_package.sourcepackagename,
+                        distroseries=self.esm_supported_series,
                     ),
                     importance=BugTaskImportance.MEDIUM,
                     status=BugTaskStatus.WONTFIX,
@@ -429,8 +456,8 @@ class TestUCTImporter(TestCaseWithFactory):
                 ),
                 CVE.SeriesPackage(
                     package=SourcePackage(
-                        sourcepackagename=dsp2.sourcepackagename,
-                        distroseries=devel_series,
+                        sourcepackagename=self.esm_package.sourcepackagename,
+                        distroseries=self.esm_current_series,
                     ),
                     importance=BugTaskImportance.MEDIUM,
                     status=BugTaskStatus.UNKNOWN,
@@ -439,7 +466,7 @@ class TestUCTImporter(TestCaseWithFactory):
             ],
             importance=BugTaskImportance.MEDIUM,
             status=VulnerabilityStatus.ACTIVE,
-            assigned_to=assignee.name,
+            assignee=self.factory.makePerson(),
             description="description",
             ubuntu_description="ubuntu-description",
             bug_urls=["https://github.com/mm2/Little-CMS/issues/29"],
@@ -447,113 +474,326 @@ class TestUCTImporter(TestCaseWithFactory):
             notes="author> text",
             mitigation="mitigation",
         )
+        self.importer = UCTImporter()
 
-        bug, vulnerabilities = self.importer.create_bug(cve, lp_cve)
+    def checkBug(self, bug: Bug, cve: CVE):
+        self.assertEqual(cve.sequence, bug.title)
+        self.assertEqual(self.bug_importer, bug.owner)
+        self.assertEqual(InformationType.PUBLICSECURITY, bug.information_type)
 
-        self.assertEqual(bug.title, "CVE-2022-23222")
-        self.assertEqual(bug.description, "ubuntu-description")
-        self.assertEqual(bug.owner, owner)
-        self.assertEqual(bug.information_type, InformationType.PUBLICSECURITY)
+        expected_description = cve.description
+        if cve.ubuntu_description:
+            expected_description = "{}\n\nUbuntu-Description:\n{}".format(
+                expected_description, cve.ubuntu_description
+            )
+        if cve.references:
+            expected_description = "{}\n\nReferences:\n{}".format(
+                expected_description, "\n".join(cve.references)
+            )
+        self.assertEqual(expected_description, bug.description)
 
-        messages = list(bug.messages)
-        self.assertEqual(len(messages), 3)
+        watches = list(bug.watches)
+        self.assertEqual(len(cve.bug_urls), len(watches))
+        self.assertEqual(sorted(cve.bug_urls), sorted(w.url for w in watches))
 
-        message = messages.pop(0)
-        self.assertEqual(message.owner, owner)
-        self.assertEqual(message.text_contents, "description")
+    def checkBugTasks(self, bug: Bug, cve: CVE):
+        bug_tasks = bug.bugtasks  # type: List[BugTask]
 
-        for external_bug_url in cve.bug_urls:
-            message = messages.pop(0)
-            self.assertEqual(message.text_contents, external_bug_url)
+        self.assertEqual(
+            len(cve.distro_packages) + len(cve.series_packages), len(bug_tasks)
+        )
+        bug_tasks_by_target = {t.target: t for t in bug_tasks}
 
-        for reference in cve.references:
-            message = messages.pop(0)
-            self.assertEqual(message.text_contents, reference)
+        for distro_package in cve.distro_packages:
+            self.assertIn(distro_package.package, bug_tasks_by_target)
+            t = bug_tasks_by_target[distro_package.package]
+            conjoined_primary = t.conjoined_primary
+            if conjoined_primary:
+                expected_importance = conjoined_primary.importance
+                expected_status = conjoined_primary.status
+            else:
+                expected_importance = distro_package.importance
+                expected_status = BugTaskStatus.NEW
+            self.assertEqual(expected_importance, t.importance)
+            self.assertEqual(expected_status, t.status)
+            self.assertIsNone(t.status_explanation)
 
-        bug_tasks = bug.bugtasks
-        # 7 bug tasks are supposed to be created:
-        #   2 for distro packages
-        #   5 for combinations of distroseries/package:
-        #     2 for the first package (2 distro series)
-        #     3 for the second package (3 distro series)
-        self.assertEqual(len(bug_tasks), 7)
+        for series_package in cve.series_packages:
+            self.assertIn(series_package.package, bug_tasks_by_target)
+            t = bug_tasks_by_target[series_package.package]
+            self.assertEqual(series_package.importance, t.importance)
+            self.assertEqual(series_package.status, t.status)
+            self.assertEqual(
+                series_package.status_explanation, t.status_explanation
+            )
 
-        for bug_task in bug_tasks:
-            self.assertEqual(bug_task.assignee, assignee)
+        for t in bug_tasks:
+            self.assertEqual(cve.assignee, t.assignee)
 
-        bug_tasks_by_target = {
-            (t.distribution, t.distroseries, t.sourcepackagename): t
-            for t in bug_tasks
+    def checkVulnerabilities(self, bug: Bug, cve: CVE):
+        vulnerabilities = bug.vulnerabilities
+
+        self.assertEqual(len(cve.affected_distributions), len(vulnerabilities))
+
+        vulnerabilities_by_distro = {
+            v.distribution: v for v in vulnerabilities
         }
-        t = bug_tasks_by_target.pop((ubuntu, None, dsp1.sourcepackagename))
-        self.assertEqual(t.importance, BugTaskImportance.LOW)
-        self.assertEqual(t.status, BugTaskStatus.NEW)
-        self.assertEqual(t.status_explanation, None)
+        for distro in cve.affected_distributions:
+            self.assertIn(distro, vulnerabilities_by_distro)
+            vulnerability = vulnerabilities_by_distro[distro]
 
-        t = bug_tasks_by_target.pop((ubuntu, None, dsp2.sourcepackagename))
-        self.assertEqual(t.importance, BugTaskImportance.MEDIUM)
-        self.assertEqual(t.status, BugTaskStatus.UNKNOWN)
-        self.assertEqual(t.status_explanation, None)
+            self.assertEqual(self.bug_importer, vulnerability.creator)
+            self.assertEqual(self.lp_cve, vulnerability.cve)
+            self.assertEqual(cve.status, vulnerability.status)
+            self.assertEqual(cve.description, vulnerability.description)
+            self.assertEqual(cve.notes, vulnerability.notes)
+            self.assertEqual(cve.mitigation, vulnerability.mitigation)
+            self.assertEqual(cve.importance, vulnerability.importance)
+            self.assertEqual(
+                InformationType.PUBLICSECURITY, vulnerability.information_type
+            )
+            self.assertEqual(
+                cve.date_made_public, vulnerability.date_made_public
+            )
+            self.assertEqual([bug], vulnerability.bugs)
 
-        t = bug_tasks_by_target.pop(
-            (None, supported_series, dsp1.sourcepackagename)
-        )
-        self.assertEqual(t.importance, BugTaskImportance.HIGH)
-        self.assertEqual(t.status, BugTaskStatus.FIXRELEASED)
-        self.assertEqual(t.status_explanation, "released")
+    def test_create_bug(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
 
-        t = bug_tasks_by_target.pop(
-            (None, current_series, dsp1.sourcepackagename)
-        )
-        self.assertEqual(t.importance, BugTaskImportance.LOW)
-        self.assertEqual(t.status, BugTaskStatus.DOESNOTEXIST)
-        self.assertEqual(t.status_explanation, "does not exist")
+        self.checkBug(bug, self.cve)
+        self.checkBugTasks(bug, self.cve)
+        self.checkVulnerabilities(bug, self.cve)
 
-        t = bug_tasks_by_target.pop(
-            (None, supported_series, dsp2.sourcepackagename)
-        )
-        self.assertEqual(t.importance, BugTaskImportance.LOW)
-        self.assertEqual(t.status, BugTaskStatus.INVALID)
-        self.assertEqual(t.status_explanation, "not affected")
-
-        t = bug_tasks_by_target.pop(
-            (None, current_series, dsp2.sourcepackagename)
-        )
-        self.assertEqual(t.importance, BugTaskImportance.MEDIUM)
-        self.assertEqual(t.status, BugTaskStatus.WONTFIX)
-        self.assertEqual(t.status_explanation, "ignored")
-
-        t = bug_tasks_by_target.pop(
-            (None, devel_series, dsp2.sourcepackagename)
-        )
-        self.assertEqual(t.importance, BugTaskImportance.MEDIUM)
-        self.assertEqual(t.status, BugTaskStatus.UNKNOWN)
-        self.assertEqual(t.status_explanation, "needs triage")
-
-        self.assertEqual(bug.cves, [lp_cve])
+        self.assertEqual([self.lp_cve], bug.cves)
 
         activities = list(bug.activity)
-        self.assertEqual(len(activities), 14)
+        self.assertEqual(4, len(activities))
         import_bug_activity = activities[-1]
-        self.assertEqual(import_bug_activity.person, owner)
-        self.assertEqual(import_bug_activity.whatchanged, "bug")
+        self.assertEqual(self.bug_importer, import_bug_activity.person)
+        self.assertEqual("bug", import_bug_activity.whatchanged)
         self.assertEqual(
-            import_bug_activity.message, "UCT CVE entry CVE-2022-23222"
+            "UCT CVE entry CVE-2022-23222", import_bug_activity.message
         )
 
-        self.assertEqual(len(vulnerabilities), 1)
-
-        vulnerability = vulnerabilities[0]
-        self.assertEqual(vulnerability.distribution, ubuntu)
-        self.assertEqual(vulnerability.creator, owner)
-        self.assertEqual(vulnerability.cve, lp_cve)
-        self.assertEqual(vulnerability.status, VulnerabilityStatus.ACTIVE)
-        self.assertEqual(vulnerability.description, "description")
-        self.assertEqual(vulnerability.notes, "author> text")
-        self.assertEqual(vulnerability.mitigation, "mitigation")
-        self.assertEqual(vulnerability.importance, BugTaskImportance.MEDIUM)
-        self.assertEqual(
-            vulnerability.information_type, InformationType.PUBLICSECURITY
+    def test_find_existing_bug(self):
+        self.assertIsNone(
+            self.importer.find_existing_bug(self.cve, self.lp_cve)
         )
-        self.assertEqual(vulnerability.date_made_public, now)
-        self.assertEqual(vulnerability.bugs, [bug])
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        self.assertEqual(
+            self.importer.find_existing_bug(self.cve, self.lp_cve), bug
+        )
+
+    def test_find_existing_bug_multiple_bugs(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        another_bug = self.factory.makeBug(bug.bugtasks[0].target)
+        self.assertGreater(len(bug.vulnerabilities), 1)
+        vulnerability = bug.vulnerabilities[0]
+        vulnerability.unlinkBug(bug)
+        vulnerability.linkBug(another_bug)
+        self.assertRaises(
+            UCTImportError,
+            self.importer.find_existing_bug,
+            self.cve,
+            self.lp_cve,
+        )
+
+    def test_update_bug_new_package(self):
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.ubuntu
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=self.ubuntu_current_series,
+            sourcepackagerelease=self.factory.makeSourcePackageRelease(
+                distroseries=self.ubuntu_current_series,
+                sourcepackagename=package.sourcepackagename,
+            ),
+        )
+
+        cve = self.cve
+        bug = self.importer.create_bug(cve, self.lp_cve)
+
+        cve.distro_packages.append(
+            CVE.DistroPackage(
+                package=package,
+                importance=BugTaskImportance.HIGH,
+            )
+        )
+        cve.series_packages.append(
+            CVE.SeriesPackage(
+                package=SourcePackage(
+                    sourcepackagename=package.sourcepackagename,
+                    distroseries=self.ubuntu_current_series,
+                ),
+                importance=BugTaskImportance.CRITICAL,
+                status=BugTaskStatus.FIXRELEASED,
+                status_explanation="fix released",
+            )
+        )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+
+    def test_update_bug_new_series(self):
+        new_series = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, status=SeriesStatus.SUPPORTED
+        )
+        for package in (self.ubuntu_package, self.esm_package):
+            self.factory.makeSourcePackagePublishingHistory(
+                distroseries=new_series,
+                sourcepackagerelease=self.factory.makeSourcePackageRelease(
+                    distroseries=new_series,
+                    sourcepackagename=package.sourcepackagename,
+                ),
+            )
+
+        cve = self.cve
+        bug = self.importer.create_bug(cve, self.lp_cve)
+
+        cve.series_packages.append(
+            CVE.SeriesPackage(
+                package=SourcePackage(
+                    sourcepackagename=self.ubuntu_package.sourcepackagename,
+                    distroseries=new_series,
+                ),
+                importance=BugTaskImportance.CRITICAL,
+                status=BugTaskStatus.FIXRELEASED,
+                status_explanation="fix released",
+            )
+        )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+
+    def test_update_bug_new_distro(self):
+        new_distro = self.factory.makeDistribution(name="new-distro")
+        new_series = self.factory.makeDistroSeries(
+            distribution=new_distro, status=SeriesStatus.SUPPORTED
+        )
+        new_dsp = self.factory.makeDistributionSourcePackage(
+            self.ubuntu_package.sourcepackagename, distribution=new_distro
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=new_series,
+            sourcepackagerelease=self.factory.makeSourcePackageRelease(
+                distroseries=new_series,
+                sourcepackagename=new_dsp.sourcepackagename,
+            ),
+        )
+
+        cve = self.cve
+        bug = self.importer.create_bug(cve, self.lp_cve)
+
+        cve.distro_packages.append(
+            CVE.DistroPackage(
+                package=new_dsp,
+                importance=BugTaskImportance.HIGH,
+            )
+        )
+        cve.series_packages.append(
+            CVE.SeriesPackage(
+                package=SourcePackage(
+                    sourcepackagename=new_dsp.sourcepackagename,
+                    distroseries=new_series,
+                ),
+                importance=BugTaskImportance.CRITICAL,
+                status=BugTaskStatus.FIXRELEASED,
+                status_explanation="fix released",
+            )
+        )
+        clear_property_cache(cve)
+
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+        self.checkVulnerabilities(bug, cve)
+
+    def test_update_bug_assignee_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+        cve.assignee = self.factory.makePerson()
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+
+    def test_update_bug_cve_importance_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+        self.assertNotEqual(cve.importance, BugTaskImportance.CRITICAL)
+        cve.importance = BugTaskImportance.CRITICAL
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkVulnerabilities(bug, cve)
+
+    def test_update_bug_cve_status_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+        self.assertNotEqual(cve.status, VulnerabilityStatus.IGNORED)
+        cve.status = VulnerabilityStatus.IGNORED
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkVulnerabilities(bug, cve)
+
+    def test_update_bug_package_importance_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+        self.assertNotEqual(
+            cve.distro_packages[0].importance, BugTaskImportance.CRITICAL
+        )
+        self.assertNotEqual(
+            cve.series_packages[0].importance, BugTaskImportance.CRITICAL
+        )
+        cve.distro_packages[0] = cve.distro_packages[0]._replace(
+            importance=BugTaskImportance.CRITICAL,
+        )
+        cve.series_packages[0] = cve.series_packages[0]._replace(
+            importance=BugTaskImportance.CRITICAL,
+        )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+
+    def test_update_bug_package_status_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+        self.assertNotEqual(
+            cve.series_packages[0].status, BugTaskStatus.DOESNOTEXIST
+        )
+        self.assertNotEqual(
+            cve.series_packages[0].status_explanation, "does not exist"
+        )
+        cve.series_packages[0] = cve.series_packages[0]._replace(
+            status=BugTaskStatus.DOESNOTEXIST,
+            status_explanation="does not exist",
+        )
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBugTasks(bug, cve)
+
+    def test_update_bug_external_bugs_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new URL
+        cve.bug_urls.append("https://github.com/mm2/Little-CMS/issues/29123")
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+        # Remove URL
+        cve.bug_urls.pop(0)
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_bug_ubuntu_description_changed(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        cve.ubuntu_description += "new"
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_bug_references(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new URL
+        cve.references.append("https://github.com/mm2/Little-CMS/issues/29123")
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+        # Remove URL
+        cve.references.pop(0)
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
