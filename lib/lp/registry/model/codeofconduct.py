@@ -54,9 +54,9 @@ from lp.services.webapp import canonical_url
 class CodeOfConductConf:
     """Abstract Component to store the current CoC configuration."""
 
-    ## XXX: cprov 2005-02-17
-    ## Integrate this class with LaunchpadCentral configuration
-    ## in the future.
+    # XXX: cprov 2005-02-17
+    # Integrate this class with LaunchpadCentral configuration
+    # in the future.
 
     path = "lib/lp/registry/codesofconduct/"
     prefix = "Ubuntu Code of Conduct - "
@@ -86,8 +86,8 @@ class CodeOfConduct:
     def title(self):
         """Return preformatted title (config_prefix + version)."""
 
-        ## XXX: cprov 2005-02-18
-        ## Missed doctest, problems initing ZopeComponentLookupError.
+        # XXX: cprov 2005-02-18
+        # Missed doctest, problems initing ZopeComponentLookupError.
 
         # Recover the prefix for CoC from a Component
         prefix = getUtility(ICodeOfConductConf).prefix

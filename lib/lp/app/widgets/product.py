@@ -76,8 +76,8 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
         )
 
         # Upstream email address field and widget.
-        ## This is to make email address bug trackers appear
-        ## separately from the main bug tracker list.
+        # This is to make email address bug trackers appear
+        # separately from the main bug tracker list.
         self.upstream_email_address = StrippedTextLine(
             required=False,
             constraint=email_validator,
@@ -95,8 +95,8 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
             value="",
             context=self.upstream_email_address.context,
         )
-        ## Select the corresponding radio option automatically if
-        ## the user starts typing.
+        # Select the corresponding radio option automatically if
+        # the user starts typing.
         if self.upstream_email_address_widget.extra is None:
             self.upstream_email_address_widget.extra = ""
         self.upstream_email_address_widget.extra += (
@@ -210,8 +210,8 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
         )
 
         # External bug tracker.
-        ## The bugtracker widget can't be within the <label> tag,
-        ## since Firefox doesn't cope with it well.
+        # The bugtracker widget can't be within the <label> tag,
+        # since Firefox doesn't cope with it well.
         external_bugtracker_text = "%s %s" % (
             self._renderLabel("In a registered bug tracker:", 2),
             self.bugtracker_widget(),
