@@ -6,7 +6,6 @@
 import email
 import textwrap
 
-import six
 import transaction
 
 from lp.code.enums import (
@@ -50,7 +49,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def test_svn_to_bzr_import(self):
@@ -78,7 +77,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def test_git_to_bzr_import(self):
@@ -106,7 +105,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def test_git_to_git_import(self):
@@ -136,7 +135,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def test_new_source_package_import(self):
@@ -173,7 +172,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
 
@@ -200,7 +199,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 "details": details,
                 "unique_name": unique_name,
             },
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def assertDifferentDetailsEmail(
@@ -229,7 +228,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
                 "new_details": new_details,
                 "unique_name": unique_name,
             },
-            six.ensure_text(msg.get_payload(decode=True)),
+            msg.get_payload(decode=True).decode(),
         )
 
     def test_cvs_to_bzr_import_same_details(self):

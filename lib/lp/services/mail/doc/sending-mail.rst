@@ -27,7 +27,7 @@ Now let's look at the sent email:
     'foo.bar@canonical.com'
     >>> msg['Subject']
     'Subject'
-    >>> print(six.ensure_text(msg.get_payload(decode=True)))
+    >>> print(msg.get_payload(decode=True).decode())
     Content
 
 Make sure bulk headers are set for vacation programs.
@@ -59,7 +59,7 @@ the person's name is encoded properly.
     'Foo Bar <foo.bar@canonical.com>'
     >>> msg['Subject']
     'Subject'
-    >>> print(six.ensure_text(msg.get_payload(decode=True)))
+    >>> print(msg.get_payload(decode=True).decode())
     Content
     >>> msg['Precedence']
     'bulk'
@@ -251,7 +251,7 @@ that the precedence header was not added.
     'feedback@launchpad.net'
     >>> msg['Subject']
     'Forgot password'
-    >>> print(six.ensure_text(msg.get_payload(decode=True)))
+    >>> print(msg.get_payload(decode=True).decode())
     Content
     >>> print(msg['Precedence'])
     None

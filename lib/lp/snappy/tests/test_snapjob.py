@@ -5,7 +5,6 @@
 
 from textwrap import dedent
 
-import six
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -264,7 +263,7 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
         self.assertEqual(
             "Launchpad encountered an error during the following operation: "
             "requesting builds of %s.  Nonsense on stilts" % snap.name,
-            six.ensure_text(notification.get_payload(decode=True)),
+            notification.get_payload(decode=True).decode(),
         )
         self.assertThat(
             job,
@@ -315,7 +314,7 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
             "Launchpad encountered an error during the following operation: "
             "requesting builds of %s.  No such base: "
             "'nonexistent'." % snap.name,
-            six.ensure_text(notification.get_payload(decode=True)),
+            notification.get_payload(decode=True).decode(),
         )
         self.assertThat(
             job,

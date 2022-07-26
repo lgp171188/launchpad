@@ -64,8 +64,8 @@ also sends the email to the list of recipients.
     Subscriber
     >>> print(branch_notification['X-Launchpad-Message-For'])
     name12
-    >>> notification_body = six.ensure_text(
-    ...     branch_notification.get_payload(decode=True))
+    >>> notification_body = (
+    ...     branch_notification.get_payload(decode=True).decode())
     >>> print(notification_body)
     ... # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
@@ -212,8 +212,7 @@ Limiting the size of diff received by email
     ...     else:
     ...         body = email.get_payload(decode=True)
     ...     print('To: %s\n%s%s' % (
-    ...         email['To'], six.ensure_text(body),
-    ...         six.ensure_text(attachment)))
+    ...         email['To'], body.decode(), attachment.decode()))
 
 We need to create some sufficiently large diffs to compare against.
 
