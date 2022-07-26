@@ -88,7 +88,7 @@ def get_unified_diff(old_text, new_text, text_width):
     width.
 
         >>> print(get_unified_diff(
-        ...     'Some text\nAnother line\n',get_un
+        ...     'Some text\nAnother line\n',
         ...     'Some more text\nAnother line\n',
         ...     text_width=72))
         - Some text

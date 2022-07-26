@@ -614,8 +614,9 @@ def print_portlet_links(content, name, base=None):
     if there are no links to be found. Unlike the other functions on this
     page, this looks for "a" instead of "li". Example usage:
     --------------
-    >>> print_portlet_links(admin_browser.contents,'Milestone milestone3 for
-        Ubuntu details')
+    >>> print_portlet_links(
+    ...     admin_browser.contents, "Milestone milestone3 for Ubuntu details"
+    ... )
     Ubuntu: /ubuntu
     Warty: /ubuntu/warty
     --------------
