@@ -269,14 +269,6 @@ flag_info = sorted(
             "",
         ),
         (
-            "soyuz.ppa.separate_long_descriptions",
-            "boolean",
-            "If true, PPAs will create an i18n/Translations-en file",
-            "disabled",
-            "PPA Separate Long Descriptions",
-            "",
-        ),
-        (
             "soyuz.named_auth_token.allow_new",
             "boolean",
             "If true, allow creation of named authorization tokens for "
