@@ -215,7 +215,6 @@ class TestOCIRegistryUploadJob(
         self.useFixture(
             FeatureFixture(
                 {
-                    "webhooks.new.enabled": "true",
                     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                     OCI_RECIPE_ALLOW_CREATE: "on",
                 }
@@ -642,7 +641,6 @@ class TestOCIRegistryUploadJobViaCelery(
         self.useFixture(
             FeatureFixture(
                 {
-                    "webhooks.new.enabled": "true",
                     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                     OCI_RECIPE_ALLOW_CREATE: "on",
                     "jobs.celery.enabled_classes": "OCIRegistryUploadJob",

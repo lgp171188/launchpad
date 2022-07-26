@@ -401,7 +401,6 @@ class TestWebhookTargetBase:
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_newWebhook(self):
-        self.useFixture(FeatureFixture({"webhooks.new.enabled": "true"}))
         response = self.webservice.named_post(
             self.target_url,
             "newWebhook",
@@ -423,7 +422,6 @@ class TestWebhookTargetBase:
         )
 
     def test_newWebhook_secret(self):
-        self.useFixture(FeatureFixture({"webhooks.new.enabled": "true"}))
         response = self.webservice.named_post(
             self.target_url,
             "newWebhook",
@@ -443,7 +441,6 @@ class TestWebhookTargetBase:
         self.assertNotIn("secret", representation["entries"][0])
 
     def test_newWebhook_permissions(self):
-        self.useFixture(FeatureFixture({"webhooks.new.enabled": "true"}))
         webservice = webservice_for_person(None)
         response = webservice.named_post(
             self.target_url,
@@ -454,19 +451,6 @@ class TestWebhookTargetBase:
         )
         self.assertEqual(401, response.status)
         self.assertIn(b"launchpad.Edit", response.body)
-
-    def test_newWebhook_feature_flag_guard(self):
-        response = self.webservice.named_post(
-            self.target_url,
-            "newWebhook",
-            delivery_url="http://example.com/ep",
-            event_types=[self.event_type],
-            api_version="devel",
-        )
-        self.assertEqual(401, response.status)
-        self.assertEqual(
-            b"This webhook feature is not available yet.", response.body
-        )
 
 
 class TestWebhookTargetGitRepository(

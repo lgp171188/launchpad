@@ -255,12 +255,7 @@ class SnapNavigationMenu(NavigationMenu):
 
     @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
-        return Link(
-            "+webhooks",
-            "Manage webhooks",
-            icon="edit",
-            enabled=bool(getFeatureFlag("webhooks.new.enabled")),
-        )
+        return Link("+webhooks", "Manage webhooks", icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
     def authorize(self):

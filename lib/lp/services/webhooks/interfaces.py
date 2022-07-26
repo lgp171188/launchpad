@@ -16,17 +16,13 @@ __all__ = [
     "WEBHOOK_EVENT_TYPES",
     "WebhookDeliveryFailure",
     "WebhookDeliveryRetry",
-    "WebhookFeatureDisabled",
     "ValidWebhookEventTypeVocabulary",
 ]
-
-import http.client
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     REQUEST_USER,
     call_with,
-    error_status,
     export_destructor_operation,
     export_factory_operation,
     export_write_operation,
@@ -60,14 +56,6 @@ WEBHOOK_EVENT_TYPES = {
     "oci-recipe:build:0.1": "OCI recipe build",
     "snap:build:0.1": "Snap build",
 }
-
-
-@error_status(http.client.UNAUTHORIZED)
-class WebhookFeatureDisabled(Exception):
-    """Only certain users can create new webhooks."""
-
-    def __init__(self):
-        Exception.__init__(self, "This webhook feature is not available yet.")
 
 
 class WebhookDeliveryFailure(Exception):
