@@ -49,7 +49,6 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.bulk import load
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.features import getFeatureFlag
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.client import LibrarianClient
 from lp.services.osutils import ensure_directory_exists, open_for_writing
@@ -1020,13 +1019,10 @@ class Publisher:
 
         separate_long_descriptions = False
         # Must match DdtpTarballUpload.shouldInstall.
-        if not distroseries.include_long_descriptions and getFeatureFlag(
-            "soyuz.ppa.separate_long_descriptions"
-        ):
-            # If include_long_descriptions is False and the feature flag is
-            # enabled, create a Translation-en file.
-            # build_binary_stanza_fields will also omit long descriptions
-            # from the Packages.
+        if not distroseries.include_long_descriptions:
+            # If include_long_descriptions is False, create a Translation-en
+            # file.  build_binary_stanza_fields will also omit long
+            # descriptions from the Packages.
             separate_long_descriptions = True
             packages = set()
             translation_en = RepositoryIndexFile(
