@@ -55,3 +55,11 @@ Get the code:
     $ utilities/update-sourcecode
     $ git clone --depth=1 https://git.launchpad.net/lp-source-dependencies download-cache
     $ make
+
+Are there Launchpad packages available?
+---------------------------------------
+
+No, Launchpad is not packaged as a ``.deb`` or a snap or anything like that,
+and there are no plans to do so.  Launchpad deployment is done straight from
+Git branches.  We don't want to increase complexity further by adding a
+packaging method that we wouldn't use ourselves.

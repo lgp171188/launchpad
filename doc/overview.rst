@@ -9,5 +9,4 @@ Overview
    strategy
    scope
    values
-   faq
    historical

@@ -9,6 +9,7 @@ Explanation
    running-details
    framework
    navigating
+   postgresql
    architecture
    pip
    favicon
