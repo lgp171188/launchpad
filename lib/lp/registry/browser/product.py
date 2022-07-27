@@ -368,7 +368,7 @@ class ProductInvolvementView(PillarInvolvementView):
             "configure_bugtracker",
             "configure_translations",
             "configure_answers",
-            #'configure_blueprints',
+            # "configure_blueprints",
         ]
         config_list = []
         config_statuses = self.configuration_states

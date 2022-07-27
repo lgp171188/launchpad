@@ -19,6 +19,7 @@ _sqlStringReplace = [
     ("\t", "\\t"),
 ]
 
+
 # XXX 2007-03-07 jamesh:
 # This is a cut down version of sqlobject's sqlrepr() method.  Ideally
 # we can get rid of this as code is converted to use store.execute().

@@ -6,7 +6,6 @@
 import doctest
 from textwrap import dedent
 
-import six
 from testtools.matchers import DocTestMatches
 from zope.component import getUtility
 
@@ -81,5 +80,5 @@ class TestLoginToken(TestCaseWithFactory):
             expected_message, doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE
         )
         self.assertThat(
-            six.ensure_text(message.get_payload(decode=True)), expected_matcher
+            message.get_payload(decode=True).decode(), expected_matcher
         )

@@ -132,12 +132,12 @@ class KarmaCacheUpdater(LaunchpadCronScript):
         # corresponding rows in the Person table so the bulk insert cannot
         # fail. We don't bother at the moment as this would involve granting
         # UPDATE rights on the Person table to the karmacacheupdater user.
-        ## cur.execute("BEGIN")
-        ## cur.execute("""
-        ##     SELECT * FROM Person
-        ##     WHERE id NOT IN (SELECT person FROM KarmaTotalCache)
-        ##     FOR UPDATE
-        ##     """)
+        #  cur.execute("BEGIN")
+        #  cur.execute("""
+        #      SELECT * FROM Person
+        #      WHERE id NOT IN (SELECT person FROM KarmaTotalCache)
+        #      FOR UPDATE
+        #      """)
 
         self.cur.execute(
             """
@@ -148,7 +148,7 @@ class KarmaCacheUpdater(LaunchpadCronScript):
             """
         )
 
-        ## self.cur.execute("COMMIT")
+        # self.cur.execute("COMMIT")
 
     def C_add_karmacache_sums(self):
         self.logger.info("Step C: Calculating KarmaCache sums")

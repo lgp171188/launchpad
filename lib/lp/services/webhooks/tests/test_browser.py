@@ -100,13 +100,6 @@ class SnapTestHelpers:
     ]
 
     def makeTarget(self):
-        self.useFixture(
-            FeatureFixture(
-                {
-                    "webhooks.new.enabled": "true",
-                }
-            )
-        )
         owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner)
 
@@ -127,7 +120,6 @@ class LiveFSTestHelpers:
         self.useFixture(
             FeatureFixture(
                 {
-                    "webhooks.new.enabled": "true",
                     LIVEFS_FEATURE_FLAG: "on",
                     LIVEFS_WEBHOOKS_FEATURE_FLAG: "on",
                 }
@@ -153,7 +145,6 @@ class OCIRecipeTestHelpers:
         self.useFixture(
             FeatureFixture(
                 {
-                    "webhooks.new.enabled": "true",
                     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                     OCI_RECIPE_ALLOW_CREATE: "on",
                 }
@@ -180,7 +171,6 @@ class CharmRecipeTestHelpers:
         self.useFixture(
             FeatureFixture(
                 {
-                    "webhooks.new.enabled": "true",
                     CHARM_RECIPE_ALLOW_CREATE: "on",
                     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                 }
@@ -196,7 +186,6 @@ class CharmRecipeTestHelpers:
 class WebhookTargetViewTestHelpers:
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({"webhooks.new.enabled": "true"}))
         self.target = self.makeTarget()
         self.owner = self.target.owner
         login_person(self.owner)
@@ -515,7 +504,6 @@ class TestWebhookAddViewCharmRecipe(
 class WebhookViewTestHelpers:
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({"webhooks.new.enabled": "true"}))
         self.target = self.makeTarget()
         self.owner = self.target.owner
         self.webhook = self.factory.makeWebhook(

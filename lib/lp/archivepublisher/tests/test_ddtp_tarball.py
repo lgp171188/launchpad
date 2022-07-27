@@ -14,7 +14,6 @@ from zope.component import getUtility
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.services.features.testing import FeatureFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -129,13 +128,6 @@ class TestDdtpTarball(TestCaseWithFactory):
         # tarballs are not extracted.
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PPA
-        )
-        self.useFixture(
-            FeatureFixture(
-                {
-                    "soyuz.ppa.separate_long_descriptions": "on",
-                }
-            )
         )
         self.distroseries.include_long_descriptions = False
         self.openArchive("20060728")

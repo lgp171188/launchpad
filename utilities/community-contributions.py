@@ -208,7 +208,7 @@ known_canonical_lp_devs = \
         u'ubuntu <ubuntu {_AT_} lp-dev>',
         u'Ursula Junque',
         u'William Grant <william.grant {_AT_} canonical.com>',
-        )]
+    )]
 
 # People known to work for Canonical but not on the Launchpad team.
 # Anyone with "@canonical.com" in their email address is considered to
@@ -310,10 +310,10 @@ merge_names_pairs = (
      u'Kit Randel <kit.randel {_AT_} canonical.com>'),
     (u'william.grant {_AT_} canonical.com',
      u'William Grant <william.grant {_AT_} canonical.com>'),
-    )
+)
 # Then put it in dictionary form with the correct encodings.
 merge_names_map = {wiki_encode(a): wiki_encode(b)
-                       for a, b in merge_names_pairs}
+                   for a, b in merge_names_pairs}
 
 
 class ContainerRevision():
@@ -325,9 +325,11 @@ class ContainerRevision():
         :param top_lr: The top-level LogRevision.
         :param branch_info: The BranchInfo for the containing branch.
         """
-        self.top_rev = top_lr       # e.g. LogRevision for r9371.
-        self.contained_revs = []    # e.g. [ {9369.1.1}, {9206.4.4}, ... ],
-                                    # where "{X}" means "LogRevision for X"
+        # e.g. LogRevision for r9371.
+        self.top_rev = top_lr
+        # e.g. [ {9369.1.1}, {9206.4.4}, ... ],
+        # where "{X}" means "LogRevision for X"
+        self.contained_revs = []
         self.branch_info = branch_info
 
     def add_subrev(self, lr):
@@ -387,7 +389,7 @@ class ContainerRevision():
             " '''Commits:'''\n ",
             commits_block,
             "\n",
-            ]
+        ]
         return ''.join(text)
 
 
@@ -442,7 +444,7 @@ class ExCon():
                                     key=lambda x: x.top_rev.rev.timestamp,
                                     reverse=True))),
             "\n",
-            ]
+        ]
         return ''.join(text)
 
 
@@ -541,7 +543,7 @@ class LogExCons(log.LogFormatter):
         non_canonical_contributors = [x for x in self.all_ex_cons.values()
                                       if not x.is_canonical]
         canonical_contributors = [x for x in self.all_ex_cons.values()
-                                      if x.is_canonical]
+                                  if x.is_canonical]
         # Sort them.
         non_canonical_contributors = sorted(non_canonical_contributors,
                                             key=lambda x: x.num_landings(),
@@ -554,12 +556,12 @@ class LogExCons(log.LogFormatter):
             "-----\n\n",
             "= Who =\n\n"
             "== Contributors (from outside Canonical) ==\n\n",
-            ]
+        ]
         text.extend(self._toc(non_canonical_contributors))
         text.extend([
             "== Contributors (from Canonical, but outside "
             "the Launchpad team) ==\n\n",
-            ])
+        ])
         text.extend(self._toc(canonical_contributors))
         text.extend(["\n-----\n\n",
                      "= What =\n\n",
@@ -692,7 +694,7 @@ def main():
             devel_path, '~launchpad-pqm/launchpad/devel'),
         BranchInfo(
             db_devel_path, '~launchpad-pqm/launchpad/db-devel', 'db-devel'),
-        )
+    )
 
     lec = LogExCons()
 

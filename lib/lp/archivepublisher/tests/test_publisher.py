@@ -75,8 +75,6 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import flush_database_caches
-from lp.services.features import getFeatureFlag
-from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.osutils import open_for_writing
@@ -1552,7 +1550,6 @@ class TestPublisher(TestPublisherBase):
     def setupPPAArchiveIndexTest(
         self,
         long_descriptions=True,
-        feature_flag=False,
         index_compressors=None,
     ):
         # Setup for testPPAArchiveIndex tests
@@ -1593,18 +1590,6 @@ class TestPublisher(TestPublisherBase):
             description="nice udeb",
             format=BinaryPackageFormat.UDEB,
         )[0]
-
-        if feature_flag:
-            # Enabled corresponding feature flag.
-            self.useFixture(
-                FeatureFixture(
-                    {"soyuz.ppa.separate_long_descriptions": "enabled"}
-                )
-            )
-            self.assertEqual(
-                "enabled",
-                getFeatureFlag("soyuz.ppa.separate_long_descriptions"),
-            )
 
         ds = self.ubuntutest.getSeries("breezy-autotest")
         if not long_descriptions:
@@ -1767,41 +1752,11 @@ class TestPublisher(TestPublisherBase):
         # remove PPA root
         shutil.rmtree(config.personalpackagearchive.root)
 
-    def testPPAArchiveIndexLongDescriptionsFalseFeatureFlagDisabled(self):
-        # Building Archive Indexes from PPA publications with
-        # include_long_descriptions = False but the feature flag being disabled
-        archive_publisher = self.setupPPAArchiveIndexTest(
-            long_descriptions=False
-        )
-
-        # Confirm that i18n files are not created
-        i18n_path = os.path.join(
-            archive_publisher._config.distsroot,
-            "breezy-autotest",
-            "main",
-            "i18n",
-        )
-        self.assertFalse(
-            os.path.exists(os.path.join(i18n_path, "Translation-en"))
-        )
-        self.assertFalse(
-            os.path.exists(os.path.join(i18n_path, "Translation-en.gz"))
-        )
-        self.assertFalse(
-            os.path.exists(os.path.join(i18n_path, "Translation-en.bz2"))
-        )
-        self.assertFalse(
-            os.path.exists(os.path.join(i18n_path, "Translation-en.xz"))
-        )
-
-        # remove PPA root
-        shutil.rmtree(config.personalpackagearchive.root)
-
     def testPPAArchiveIndexLongDescriptionsFalse(self):
         # Building Archive Indexes from PPA publications with
         # include_long_descriptions = False.
         archive_publisher = self.setupPPAArchiveIndexTest(
-            long_descriptions=False, feature_flag=True
+            long_descriptions=False
         )
 
         # Various compressed Sources files are written; ensure that they are
@@ -1982,7 +1937,6 @@ class TestPublisher(TestPublisherBase):
         # Archive index generation honours DistroSeries.index_compressors.
         archive_publisher = self.setupPPAArchiveIndexTest(
             long_descriptions=False,
-            feature_flag=True,
             index_compressors=[
                 IndexCompressionType.UNCOMPRESSED,
                 IndexCompressionType.XZ,

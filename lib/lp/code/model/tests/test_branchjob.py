@@ -335,9 +335,7 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         self.assertEqual(
             "Launchpad error while upgrading a branch", mail["subject"]
         )
-        self.assertIn(
-            "Not a branch", six.ensure_text(mail.get_payload(decode=True))
-        )
+        self.assertIn("Not a branch", mail.get_payload(decode=True).decode())
 
 
 class TestRevisionMailJob(TestCaseWithFactory):
@@ -395,7 +393,7 @@ class TestRevisionMailJob(TestCaseWithFactory):
                 "url": canonical_url(branch),
                 "identity": branch.bzr_identity,
             },
-            six.ensure_text(mail.get_payload(decode=True)),
+            mail.get_payload(decode=True).decode(),
         )
 
     def test_revno_string(self):

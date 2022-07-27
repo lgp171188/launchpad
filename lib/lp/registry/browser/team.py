@@ -978,7 +978,7 @@ class TeamMailingListModerationView(MailingListTeamBaseView):
 
         :return: Number of message being held for moderator approval.
         """
-        ## return self.mailing_list.getReviewableMessages().count()
+        # return self.mailing_list.getReviewableMessages().count()
         # This looks like it would be more efficient, but it raises
         # LocationError.
         return self.held_messages.currentBatch().listlength

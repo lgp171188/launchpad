@@ -11,7 +11,6 @@ from functools import partial
 from textwrap import dedent
 
 import pytz
-import six
 import transaction
 from breezy import urlutils
 from fixtures import MockPatch
@@ -1851,9 +1850,13 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
             ).runAll()
         bodies_by_recipient = {}
         for from_addr, to_addrs, message in stub.test_emails:
-            body = email.message_from_bytes(message).get_payload(decode=True)
+            body = (
+                email.message_from_bytes(message)
+                .get_payload(decode=True)
+                .decode()
+            )
             for to_addr in to_addrs:
-                bodies_by_recipient[to_addr] = six.ensure_text(body)
+                bodies_by_recipient[to_addr] = body
         # Both the owner and the unprivileged subscriber receive email.
         self.assertContentEqual(
             [owner_address, subscriber_address], bodies_by_recipient.keys()

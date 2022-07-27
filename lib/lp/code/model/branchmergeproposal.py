@@ -1125,15 +1125,14 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         vote=None,
         review_type=None,
         parent=None,
+        # The date the message was created.  Provided only for testing
+        # purposes, as it can break BranchMergeProposal.root_message.
         _date_created=DEFAULT,
         previewdiff_id=None,
         inline_comments=None,
         _notify_listeners=True,
     ):
         """See `IBranchMergeProposal`."""
-        #:param _date_created: The date the message was created.  Provided
-        #    only for testing purposes, as it can break
-        # BranchMergeProposal.root_message.
         review_type = self._normalizeReviewType(review_type)
         assert owner is not None, "Merge proposal messages need a sender"
         parent_message = None

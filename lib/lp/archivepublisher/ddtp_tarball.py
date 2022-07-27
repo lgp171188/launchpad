@@ -21,7 +21,6 @@ from zope.component import getUtility
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
-from lp.services.features import getFeatureFlag
 from lp.soyuz.enums import ArchivePurpose
 
 
@@ -107,10 +106,7 @@ class DdtpTarballUpload(CustomUpload):
                     return False
             else:
                 # See Publisher._writeComponentIndexes.
-                if (
-                    not self.distro_series.include_long_descriptions
-                    and getFeatureFlag("soyuz.ppa.separate_long_descriptions")
-                ):
+                if not self.distro_series.include_long_descriptions:
                     return False
         return True
 

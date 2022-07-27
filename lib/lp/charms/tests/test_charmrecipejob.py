@@ -5,7 +5,6 @@
 
 from textwrap import dedent
 
-import six
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -265,7 +264,7 @@ class TestCharmRecipeRequestBuildsJob(TestCaseWithFactory):
         self.assertEqual(
             "Launchpad encountered an error during the following operation: "
             "requesting builds of %s.  Nonsense on stilts" % recipe.name,
-            six.ensure_text(notification.get_payload(decode=True)),
+            notification.get_payload(decode=True).decode(),
         )
         self.assertThat(
             job,

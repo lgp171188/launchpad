@@ -196,7 +196,7 @@ of the email with the bug title and URL.
     >>> msg['Subject']
     '[Bug 1] [NEW] Firefox does not support SVG'
 
-    >>> print(six.ensure_text(msg.get_payload(decode=True)))
+    >>> print(msg.get_payload(decode=True).decode())
     You have been subscribed to a public bug:
     <BLANKLINE>
     Firefox needs to support embedded SVG images, now that the standard has

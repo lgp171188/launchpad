@@ -262,7 +262,7 @@ class CustomUploadFile(NascentUploadFile):
     """
 
     # This is a marker as per the comment in lib/lp/soyuz/enums.py:
-    ##CUSTOMFORMAT##
+    # ##CUSTOMFORMAT##
     # Essentially if you change anything to do with custom formats, grep for
     # the marker in the codebase and make sure the same changes are made
     # everywhere which needs them.

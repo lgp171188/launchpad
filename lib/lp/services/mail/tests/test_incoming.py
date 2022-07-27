@@ -10,7 +10,6 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import parseaddr
 from textwrap import dedent
 
-import six
 import transaction
 from testtools.matchers import Equals, Is
 from zope.interface import implementer
@@ -110,9 +109,7 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = six.ensure_text(
-            notification.get_payload()[0].get_payload(decode=True)
-        )
+        body = notification.get_payload()[0].get_payload(decode=True).decode()
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -152,9 +149,7 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = six.ensure_text(
-            notification.get_payload()[0].get_payload(decode=True)
-        )
+        body = notification.get_payload()[0].get_payload(decode=True).decode()
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -196,9 +191,7 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = six.ensure_text(
-            notification.get_payload()[0].get_payload(decode=True)
-        )
+        body = notification.get_payload()[0].get_payload(decode=True).decode()
         self.assertIn(
             "An error occurred while processing a mail you sent to "
             "Launchpad's email\ninterface.\n\n\n"
@@ -226,9 +219,7 @@ class IncomingTestCase(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
-        body = six.ensure_text(
-            notification.get_payload()[0].get_payload(decode=True)
-        )
+        body = notification.get_payload()[0].get_payload(decode=True).decode()
         self.assertIn("The mail you sent to Launchpad is too long.", body)
         self.assertIn("was 55 MB and the limit is 10 MB.", body)
 

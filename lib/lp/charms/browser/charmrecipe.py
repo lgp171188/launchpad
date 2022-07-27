@@ -144,10 +144,7 @@ class CharmRecipeNavigationMenu(NavigationMenu):
             "+webhooks",
             "Manage webhooks",
             icon="edit",
-            enabled=(
-                bool(getFeatureFlag(CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG))
-                and bool(getFeatureFlag("webhooks.new.enabled"))
-            ),
+            enabled=bool(getFeatureFlag(CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG)),
         )
 
     @enabled_with_permission("launchpad.Edit")

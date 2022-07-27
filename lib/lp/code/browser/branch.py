@@ -238,12 +238,7 @@ class BranchEditMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
         text = "Manage webhooks"
-        return Link(
-            "+webhooks",
-            text,
-            icon="edit",
-            enabled=bool(getFeatureFlag("webhooks.new.enabled")),
-        )
+        return Link("+webhooks", text, icon="edit")
 
 
 class BranchContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):

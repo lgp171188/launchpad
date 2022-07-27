@@ -65,7 +65,7 @@ followed by ASCII armored encrypted confirmation instructions.  Ensure that
 the clear text instructions contain the expected URLs pointing to more help.
 
     >>> cipher_body = msg.get_payload(decode=True)
-    >>> print(six.ensure_text(cipher_body))  # noqa
+    >>> print(cipher_body.decode())  # noqa
     Hello,
     <BLANKLINE>
     This message contains the instructions for confirming registration of an
@@ -192,7 +192,7 @@ ability to decrypt text with this key.
 The email does contain some information about the key, and a token URL
 Sample Person should visit to verify their ownership of the key.
 
-    >>> print(six.ensure_text(body))
+    >>> print(body.decode())
     <BLANKLINE>
     Hello,
     ...
@@ -629,7 +629,7 @@ Test if the advertisement email was sent:
     >>> from lp.services.mail import stub
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = email.message_from_bytes(raw_msg)
-    >>> print(six.ensure_text(msg.get_payload(decode=True)))
+    >>> print(msg.get_payload(decode=True).decode())
     <BLANKLINE>
     ...
     User: 'Mark Shuttleworth'

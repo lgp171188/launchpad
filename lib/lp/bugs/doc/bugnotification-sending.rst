@@ -31,7 +31,7 @@ easier.
     ...     print_notification_headers(
     ...         email_notification, extra_headers=extra_headers)
     ...     print()
-    ...     print(six.ensure_str(email_notification.get_payload(decode=True)))
+    ...     print(email_notification.get_payload(decode=True).decode())
     ...     print("-" * 70)
 
 We'll also import a helper function to help us with database users.
@@ -273,7 +273,7 @@ lp/bugs/tests/test_bugnotification.py), and not demonstrated here.
 Another thing worth noting is that there's a blank line before the
 signature, and the signature marker has a trailing space.
 
-    >>> six.ensure_str(message.get_payload(decode=True)).splitlines()  # noqa
+    >>> message.get_payload(decode=True).decode().splitlines()  # noqa
     [...,
      '',
      '-- ',
@@ -1063,7 +1063,7 @@ It's important to note that the bug title and description are wrapped
 and indented correctly in verbose notifications.
 
     >>> message = collated_messages['conciseteam@example.com'][0]
-    >>> payload = six.ensure_str(message.get_payload(decode=True))
+    >>> payload = message.get_payload(decode=True).decode()
     >>> print(payload.splitlines())
     [...
      'Title:',
@@ -1077,7 +1077,7 @@ and indented correctly in verbose notifications.
 The title is also wrapped and indented in normal notifications.
 
     >>> message = collated_messages['verboseteam@example.com'][0]
-    >>> payload = six.ensure_str(message.get_payload(decode=True))
+    >>> payload = message.get_payload(decode=True).decode()
     >>> print(payload.strip().splitlines())
     [...
      'Title:',

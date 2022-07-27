@@ -3,7 +3,6 @@
 
 from textwrap import dedent
 
-import six
 from testtools.matchers import Contains, ContainsDict, Equals
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -50,7 +49,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertEqual(2, len(notifications))
         msg = notifications[1].get_payload(0)
-        body = six.ensure_text(msg.get_payload(decode=True))
+        body = msg.get_payload(decode=True).decode()
         self.assertIn("Changed-By: Loïc", body)
         self.assertIn("Signed-By: Stéphane", body)
 
@@ -263,7 +262,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         )
         mailer.sendAll()
         [notification] = pop_notifications()
-        body = six.ensure_text(notification.get_payload(decode=True))
+        body = notification.get_payload(decode=True).decode()
         self.assertEqual("Blamer <blamer@example.com>", notification["To"])
         expected_body = dedent(
             """\
