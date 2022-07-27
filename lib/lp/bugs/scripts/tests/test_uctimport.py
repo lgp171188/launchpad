@@ -32,6 +32,7 @@ class TestLoadCVEFromFile(TestCase):
         self.assertEqual(
             cve,
             CVE(
+                path=cve_path,
                 assigned_to="",
                 bugs=[
                     "https://github.com/mm2/Little-CMS/issues/29",
@@ -187,6 +188,7 @@ class TestUCTImporter(TestCaseWithFactory):
 
         now = datetime.datetime.now(datetime.timezone.utc)
         cve = CVE(
+            path=Path("./ubuntu-cve-tracker/active/CVE-2022-23222"),
             assigned_to=assignee.name,
             bugs=[
                 "https://github.com/mm2/Little-CMS/issues/29",
@@ -351,9 +353,7 @@ class TestUCTImporter(TestCaseWithFactory):
         self.assertEqual(vulnerability.distribution, ubuntu)
         self.assertEqual(vulnerability.creator, owner)
         self.assertEqual(vulnerability.cve, lp_cve)
-        self.assertEqual(
-            vulnerability.status, VulnerabilityStatus.NEEDS_TRIAGE
-        )
+        self.assertEqual(vulnerability.status, VulnerabilityStatus.ACTIVE)
         self.assertEqual(vulnerability.description, "description")
         self.assertEqual(vulnerability.notes, "author> text")
         self.assertEqual(vulnerability.mitigation, "mitigation")
