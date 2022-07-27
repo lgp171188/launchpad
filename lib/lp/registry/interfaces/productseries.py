@@ -132,8 +132,9 @@ class IProductSeriesLimitedView(Interface):
             title=_("Project"),
             required=True,
             vocabulary="Product",
+            # Really IProduct, patched in lp.registry.interfaces.webservice.
             schema=Interface,
-        ),  # really IProduct
+        ),
         exported_as="project",
     )
     productID = Attribute("The product ID.")

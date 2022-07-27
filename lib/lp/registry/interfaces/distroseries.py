@@ -69,7 +69,11 @@ from lp.services.fields import (
     Title,
     UniqueField,
 )
-from lp.services.webservice.apihelpers import patch_plain_parameter_type
+from lp.services.webservice.apihelpers import (
+    patch_collection_return_type,
+    patch_plain_parameter_type,
+    patch_reference_property,
+)
 from lp.soyuz.enums import (
     IndexCompressionType,
     PackageUploadCustomFormat,
@@ -233,7 +237,9 @@ class IDistroSeriesPublic(
     )
     distribution = exported(
         Reference(
-            Interface,  # Really IDistribution, see circular import fix below.
+            # Really IDistribution, patched in
+            # lp.registry.interfaces.webservice.
+            Interface,
             title=_("Distribution"),
             required=True,
             description=_("The distribution for which this is a series."),
@@ -271,7 +277,8 @@ class IDistroSeriesPublic(
             title=_("Parent series"),
             description=_("The series from which this one was branched."),
             required=True,
-            schema=Interface,  # Really IDistroSeries
+            # Really IDistroSeries, patched below.
+            schema=Interface,
             vocabulary="DistroSeries",
         ),
         ("devel", dict(exported_as="previous_series")),
@@ -335,7 +342,9 @@ class IDistroSeriesPublic(
     )
     nominatedarchindep = exported(
         Reference(
-            Interface,  # IDistroArchSeries.
+            # Really IDistroArchSeries, patched in
+            # lp.registry.interfaces.webservice.
+            Interface,
             title=_(
                 "DistroArchSeries designed to build "
                 "architecture-independent packages whithin this "
@@ -556,7 +565,8 @@ class IDistroSeriesPublic(
 
     main_archive = exported(
         Reference(
-            Interface,  # Really IArchive, see below for circular import fix.
+            # Really IArchive, patched in lp.registry.interfaces.webservice.
+            Interface,
             title=_("Distribution Main Archive"),
         )
     )
@@ -596,7 +606,9 @@ class IDistroSeriesPublic(
                     "All architectures in this series with the "
                     "'enabled' flag set."
                 ),
-                value_type=Reference(schema=Interface),  # IDistroArchSeries
+                # Really IDistroArchSeries, patched in
+                # lp.registry.interfaces.webservice.
+                value_type=Reference(schema=Interface),
                 readonly=True,
             )
         ),
@@ -630,6 +642,8 @@ class IDistroSeriesPublic(
     @operation_parameters(
         archtag=TextLine(title=_("The architecture tag"), required=True)
     )
+    # Really IDistroArchSeries, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -697,7 +711,7 @@ class IDistroSeriesPublic(
             required=False,
         ),
         archive=Reference(
-            # Really IArchive, patched in _schema_circular_imports.py
+            # Really IArchive, patched in lp.registry.interfaces.webservice.
             schema=Interface,
             title=_("Archive"),
             description=_("Return only items for this archive."),
@@ -727,7 +741,7 @@ class IDistroSeriesPublic(
             required=False,
         ),
     )
-    # Really IPackageUpload, patched in _schema_circular_imports.py
+    # Really IPackageUpload, patched in lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -971,12 +985,14 @@ class IDistroSeriesPublic(
         :param format: The SourcePackageFormat to check.
         """
 
+    # Really IDistroSeries, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
     def getDerivedSeries():
         """Get all `DistroSeries` derived from this one."""
 
+    # Really IDistroSeries, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -985,7 +1001,8 @@ class IDistroSeriesPublic(
 
     @operation_parameters(
         parent_series=Reference(
-            schema=Interface,  # IDistroSeries
+            # Really IDistroSeries, patched below.
+            schema=Interface,
             title=_("The parent series to consider."),
             required=False,
         ),
@@ -1013,6 +1030,8 @@ class IDistroSeriesPublic(
             required=False,
         ),
     )
+    # Really IDistroSeriesDifference, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1066,6 +1085,8 @@ class IDistroSeriesPublic(
             required=False,
         ),
     )
+    # Really IDistroSeriesDifferenceComment, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -1194,6 +1215,13 @@ class IDistroSeries(
 ):
     """A series of an operating system distribution."""
 
+
+patch_reference_property(IDistroSeries, "previous_series", IDistroSeries)
+patch_collection_return_type(IDistroSeries, "getDerivedSeries", IDistroSeries)
+patch_collection_return_type(IDistroSeries, "getParentSeries", IDistroSeries)
+patch_plain_parameter_type(
+    IDistroSeries, "getDifferencesTo", "parent_series", IDistroSeries
+)
 
 # We assign the schema for an `IHasBugs` method argument here
 # in order to avoid circular dependencies.

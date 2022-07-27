@@ -420,8 +420,8 @@ class IDistributionMirror(Interface):
     distribution = exported(
         Reference(
             Interface,
-            # Really IDistribution, circular import fixed in
-            # _schema_circular_imports.
+            # Really IDistribution, patched in
+            # lp.registry.interfaces.webservice.
             title=_("Distribution"),
             required=True,
             readonly=True,

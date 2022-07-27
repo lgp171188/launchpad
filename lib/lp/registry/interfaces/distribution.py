@@ -240,7 +240,7 @@ class IDistributionLimitedView(IHasIcon, IHasLogo, IHasOwner, ILaunchpadUsage):
     @operation_parameters(
         name=TextLine(title=_("OCI project name"), required=True)
     )
-    # Really returns IOCIProject, see _schema_circular_imports.py.
+    # Really IOCIProject, patched in lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -446,7 +446,8 @@ class IDistributionView(
         doNotSnapshot(
             CollectionField(
                 title=_("DistroSeries inside this Distribution"),
-                # Really IDistroSeries, see _schema_circular_imports.py.
+                # Really IDistroSeries, patched in
+                # lp.registry.interfaces.webservice.
                 value_type=Reference(schema=Interface),
             )
         )
@@ -455,7 +456,8 @@ class IDistributionView(
         doNotSnapshot(
             CollectionField(
                 title=_("This Distribution's derivatives"),
-                # Really IDistroSeries, see _schema_circular_imports.py.
+                # Really IDistroSeries, patched in
+                # lp.registry.interfaces.webservice.
                 value_type=Reference(schema=Interface),
             )
         )
@@ -480,7 +482,8 @@ class IDistributionView(
     # properties
     currentseries = exported(
         Reference(
-            # Really IDistroSeries, see _schema_circular_imports.py.
+            # Really IDistroSeries, patched in
+            # lp.registry.interfaces.webservice.
             Interface,
             title=_("Current series"),
             description=_(
@@ -536,7 +539,7 @@ class IDistributionView(
         Reference(
             title=_("Distribution Main Archive."),
             readonly=True,
-            # Really IArchive, see _schema_circular_imports.py.
+            # Really IArchive, patched in lp.registry.interfaces.webservice.
             schema=Interface,
         )
     )
@@ -550,10 +553,11 @@ class IDistributionView(
                 ),
                 readonly=True,
                 required=False,
+                # Really IArchive, patched in
+                # lp.registry.interfaces.webservice.
                 value_type=Reference(schema=Interface),
             )
         ),
-        # Really IArchive, see _schema_circular_imports.py.
         exported_as="archives",
     )
 
@@ -677,7 +681,8 @@ class IDistributionView(
             CollectionField(
                 description=_("Vulnerabilities in this distribution."),
                 readonly=True,
-                # Really IVulnerability, see _schema_circular_imports.py.
+                # Really IVulnerability, patched in
+                # lp.registry.interfaces.webservice.
                 value_type=Reference(schema=Interface),
             )
         )
@@ -701,6 +706,7 @@ class IDistributionView(
     @operation_parameters(
         name=TextLine(title=_("Archive name"), required=True)
     )
+    # Really IArchive, patched in lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -712,7 +718,7 @@ class IDistributionView(
         :param name: The name of the archive, e.g. 'partner'
         """
 
-    # Really IDistroSeries, see _schema_circular_imports.py.
+    # Really IDistroSeries, patched in lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_operation_as(name="getDevelopmentSeries")
     @export_read_operation()
@@ -733,7 +739,7 @@ class IDistributionView(
     @operation_parameters(
         name_or_version=TextLine(title=_("Name or version"), required=True)
     )
-    # Really IDistroSeries, see _schema_circular_imports.py.
+    # Really IDistroSeries, patched in lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @call_with(follow_aliases=True)
     @export_read_operation()
@@ -838,8 +844,7 @@ class IDistributionView(
     @operation_parameters(
         text=TextLine(title=_("OCI title substring match "), required=False)
     )
-    # Really returns IOCIProject, see
-    # _schema_circular_imports.py.
+    # Really IOCIProject, patched in lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
@@ -849,8 +854,8 @@ class IDistributionView(
     @operation_parameters(
         name=TextLine(title=_("Package name"), required=True)
     )
-    # Really returns IDistributionSourcePackage, see
-    # _schema_circular_imports.py.
+    # Really IDistributionSourcePackage, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -892,8 +897,8 @@ class IDistributionView(
             title=_("Source package name substring match"), required=True
         )
     )
-    # Really returns IDistributionSourcePackage, see
-    # _schema_circular_imports.py.
+    # Really IDistributionSourcePackage, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1025,7 +1030,7 @@ class IDistributionView(
             required=False,
         ),
     )
-    # Interface is actually IOCIProject. Fixed at _schema_circular_imports
+    # Really IOCIProject, patched in lp.registry.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def newOCIProject(registrant, name, description=None):

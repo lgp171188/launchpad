@@ -18,6 +18,7 @@ from lp import _
 from lp.registry.interfaces.distroseriesdifference import (
     IDistroSeriesDifference,
 )
+from lp.registry.interfaces.person import IPerson
 from lp.services.messages.interfaces.message import IMessage
 
 
@@ -56,10 +57,7 @@ class IDistroSeriesDifferenceComment(Interface):
 
     comment_author = exported(
         Reference(
-            # Really IPerson.
-            Interface,
-            title=_("The author of the comment."),
-            readonly=True,
+            IPerson, title=_("The author of the comment."), readonly=True
         )
     )
 

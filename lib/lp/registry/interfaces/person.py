@@ -813,10 +813,12 @@ class IPersonLimitedView(IHasIcon, IHasLogo):
     )
 
     @operation_parameters(
+        # Really IDistribution, patched in lp.registry.interfaces.webservice.
         distribution=Reference(schema=Interface, required=False),
         name=TextLine(required=True, constraint=name_validator),
     )
-    @operation_returns_entry(Interface)  # Really IArchive.
+    # Really IArchive, patched in lp.registry.interfaces.webservice.
+    @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
     def getPPAByName(distribution, name):
@@ -1173,7 +1175,7 @@ class IPersonViewRestricted(
             description=_("The PPA named 'ppa' owned by this person."),
             readonly=True,
             required=False,
-            # Really IArchive, see archive.py
+            # Really IArchive, patched in lp.registry.interfaces.webservice.
             schema=Interface,
         )
     )
@@ -1187,7 +1189,8 @@ class IPersonViewRestricted(
                 ),
                 readonly=True,
                 required=False,
-                # Really IArchive, see archive.py
+                # Really IArchive, patched in
+                # lp.registry.interfaces.webservice.
                 value_type=Reference(schema=Interface),
             )
         )
@@ -1278,12 +1281,16 @@ class IPersonViewRestricted(
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         description=Text(),
+        # Really IDistroSeries, patched in lp.registry.interfaces.webservice.
         distroseries=List(value_type=Reference(schema=Interface)),
         name=TextLine(),
         recipe_text=Text(),
+        # Really IArchive, patched in lp.registry.interfaces.webservice.
         daily_build_archive=Reference(schema=Interface),
         build_daily=Bool(),
     )
+    # Really ISourcePackageRecipe, patched in
+    # lp.registry.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def createRecipe(
@@ -1308,7 +1315,9 @@ class IPersonViewRestricted(
         """
 
     @operation_parameters(name=TextLine(required=True))
-    @operation_returns_entry(Interface)  # Really ISourcePackageRecipe.
+    # Really ISourcePackageRecipe, patched in
+    # lp.registry.interfaces.webservice.
+    @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
     def getRecipe(name):
@@ -1316,7 +1325,8 @@ class IPersonViewRestricted(
 
     @call_with(requester=REQUEST_USER)
     @export_read_operation()
-    @operation_returns_collection_of(Interface)  # Really IArchiveSubscriber
+    # Really IArchiveSubscriber, patched in lp.registry.interfaces.webservice.
+    @operation_returns_collection_of(Interface)
     @operation_for_version("devel")
     def getArchiveSubscriptions(requester):
         """Return (private) archives subscription for this person."""
@@ -1334,8 +1344,9 @@ class IPersonViewRestricted(
 
     @call_with(requester=REQUEST_USER)
     @operation_parameters(
+        # Really IArchive, patched in lp.registry.interfaces.webservice.
         archive=Reference(schema=Interface)
-    )  # Really IArchive
+    )
     @export_write_operation()
     @operation_for_version("beta")
     def getArchiveSubscriptionURL(requester, archive):
@@ -1372,6 +1383,8 @@ class IPersonViewRestricted(
         The results are ordered using Person.sortingColumns.
         """
 
+    # Really IDistributionSourcePackage, patched in
+    # lp.registry.interfaces.webservice.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -1450,7 +1463,8 @@ class IPersonViewRestricted(
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_returns_collection_of(Interface)  # Really IProduct.
+    # Really IProduct, patched in lp.registry.interfaces.webservice.
+    @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
     def getOwnedProjects(match_name=None, transitive=False, user=None):
@@ -2048,6 +2062,7 @@ class IPersonEditRestricted(Interface):
         """
 
     @operation_parameters(
+        # Really IDistribution, patched in lp.registry.interfaces.webservice.
         distribution=Reference(schema=Interface, required=False),
         name=TextLine(required=True, constraint=name_validator),
         displayname=TextLine(required=False),
@@ -2055,7 +2070,8 @@ class IPersonEditRestricted(Interface):
         private=Bool(required=False),
         suppress_subscription_notifications=Bool(required=False),
     )
-    @export_factory_operation(Interface, [])  # Really IArchive.
+    # Really IArchive, patched in lp.registry.interfaces.webservice.
+    @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def createPPA(
         distribution=None,
