@@ -19,5 +19,5 @@ def accountFromPrincipal(principal):
         #
         # When Zope3 interfaces allow returning None for "cannot adapt"
         # we can return None here.
-        ##return None
+        # return None
         raise ComponentLookupError

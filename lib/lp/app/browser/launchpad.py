@@ -901,9 +901,9 @@ class LaunchpadRootNavigation(Navigation):
         "temporary-blobs": ITemporaryStorageManager,
         # These three have been renamed, and no redirects done, as the old
         # urls now point to the product pages.
-        #'bazaar': IBazaarApplication,
-        #'malone': IMaloneApplication,
-        #'rosetta': IRosettaApplication,
+        # "bazaar": IBazaarApplication,
+        # "malone": IMaloneApplication,
+        # "rosetta": IRosettaApplication,
     }
 
     @stepto("products")

@@ -28,7 +28,7 @@ class CustomUploadsCopier:
     """Copy `PackageUploadCustom` objects into a new `DistroSeries`."""
 
     # This is a marker as per the comment in lib/lp/soyuz/enums.py:
-    ##CUSTOMFORMAT##
+    # ##CUSTOMFORMAT##
     # Essentially, if you alter anything to do with what custom formats are,
     # what their tags are, or anything along those lines, you should grep
     # for the marker in the source tree and fix it up in every place so

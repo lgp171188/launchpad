@@ -9,7 +9,7 @@ __all__ = [
     'interpret_config',
     'parse_config_file',
     'plan_update',
-    ]
+]
 
 import errno
 import json
@@ -38,13 +38,10 @@ except ImportError:
         BzrError,
         IncompatibleRepositories,
         NotBranchError,
-        )
+    )
     from bzrlib.plugin import load_plugins
     from bzrlib.revisionspec import RevisionSpec
-    from bzrlib.trace import (
-        enable_default_logging,
-        report_exception,
-        )
+    from bzrlib.trace import enable_default_logging, report_exception
     from bzrlib.upgrade import upgrade
     from bzrlib.workingtree import WorkingTree
 
@@ -212,8 +209,8 @@ def get_branches(sourcecode_directory, new_branches,
         possible_transports.append(
             get_controldir(remote_branch).root_transport)
         if not quiet:
-            print('Getting %s from %s at %s' % (
-                    project, branch_url, _format_revision_name(revision, tip)))
+            print('Getting %s from %s at %s' %
+                  (project, branch_url, _format_revision_name(revision, tip)))
         # If the 'optional' flag is set, then it's a branch that shares
         # history with Launchpad, so we should share repositories. Otherwise,
         # we should avoid sharing repositories to avoid format
@@ -284,8 +281,8 @@ def update_branches(sourcecode_directory, update_branches,
         # Update project from branch_url.
         destination = os.path.join(sourcecode_directory, project)
         if not quiet:
-            print('Updating %s to %s' % (
-                    project, _format_revision_name(revision, tip)))
+            print('Updating %s to %s' %
+                  (project, _format_revision_name(revision, tip)))
         local_tree = WorkingTree.open(destination)
         try:
             remote_branch = Branch.open(
