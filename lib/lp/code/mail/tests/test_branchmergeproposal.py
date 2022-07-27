@@ -8,7 +8,6 @@ import re
 from difflib import unified_diff
 from textwrap import dedent
 
-import six
 import transaction
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -641,9 +640,7 @@ class TestMergeProposalMailing(TestCaseWithFactory):
                 "bmp": canonical_url(bmp),
             }
         )
-        self.assertEqual(
-            expected, six.ensure_text(email.get_payload(decode=True))
-        )
+        self.assertEqual(expected, email.get_payload(decode=True).decode())
 
     def assertRecipientsMatches(self, recipients, mailer):
         """Assert that `mailer` will send to the people in `recipients`."""
@@ -794,9 +791,7 @@ class TestBranchMergeProposalRequestReview(TestCaseWithFactory):
                 "bmp": canonical_url(bmp),
             }
         )
-        self.assertEqual(
-            expected, six.ensure_text(sent_mail.get_payload(decode=True))
-        )
+        self.assertEqual(expected, sent_mail.get_payload(decode=True).decode())
 
     def test_nominateReview_emails_team_address(self):
         # If a review request is made for a team, the members of the team are

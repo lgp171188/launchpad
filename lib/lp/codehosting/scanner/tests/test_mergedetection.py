@@ -333,7 +333,7 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         notifications = pop_notifications()
         self.assertIn(
             "Work in progress => Merged",
-            six.ensure_text(notifications[0].get_payload(decode=True)),
+            notifications[0].get_payload(decode=True).decode(),
         )
         self.assertEqual(proposal.address, notifications[0]["From"])
         recipients = {msg["x-envelope-to"] for msg in notifications}

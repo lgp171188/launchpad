@@ -81,8 +81,8 @@ Note that the generated notification contain the 'extra_info' content:
     >>> build_notification['X-Creator-Recipient']
     'mark@example.com'
 
-    >>> notification_body = six.ensure_text(
-    ...     build_notification.get_payload(decode=True))
+    >>> notification_body = (
+    ...     build_notification.get_payload(decode=True).decode())
     >>> print(notification_body)  # noqa  # doctest: -NORMALIZE_WHITESPACE
     <BLANKLINE>
      * Source Package: cdrkit

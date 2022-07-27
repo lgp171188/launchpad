@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 from urllib.request import urlopen
 
 import pytz
-import six
 from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
@@ -531,9 +530,9 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
         self.assertEqual(
             "FAILEDTOBUILD", notification["X-Launchpad-Build-State"]
         )
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)
-        ).split("\n-- \n")
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
             "http://launchpad.test/~person/charm-project/+charm/charm-1/"

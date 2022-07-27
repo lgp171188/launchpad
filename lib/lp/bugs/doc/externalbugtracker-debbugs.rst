@@ -317,7 +317,7 @@ description as the description.
     >>> print(report['Subject'])
     evolution: Multiple format string vulnerabilities in Evolution
 
-    >>> print(six.ensure_text(report.get_payload(decode=True)))
+    >>> print(report.get_payload(decode=True).decode())
     Package: evolution
     Severity: grave
     Tags: security

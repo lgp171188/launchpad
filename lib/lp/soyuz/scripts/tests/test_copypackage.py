@@ -5,7 +5,6 @@ import datetime
 from textwrap import dedent
 
 import pytz
-import six
 import transaction
 from testtools.content import text_content
 from testtools.matchers import (
@@ -1731,7 +1730,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         self.assertEqual(
             target_archive.reference, notification["X-Launchpad-Archive"]
         )
-        body = six.ensure_text(notification.get_payload(decode=True))
+        body = notification.get_payload(decode=True).decode()
         expected = dedent(
             """\
             Accepted:

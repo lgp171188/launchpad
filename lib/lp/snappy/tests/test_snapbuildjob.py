@@ -5,7 +5,6 @@
 
 from datetime import timedelta
 
-import six
 import transaction
 from fixtures import FakeLogger
 from testtools.matchers import (
@@ -312,9 +311,9 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "snap-build-upload-unauthorized",
             notification["X-Launchpad-Notification-Type"],
         )
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)
-        ).split("\n-- \n")
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn(
             "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
             body,
@@ -440,9 +439,9 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "snap-build-upload-refresh-failed",
             notification["X-Launchpad-Notification-Type"],
         )
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)
-        ).split("\n-- \n")
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn(
             "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
             body,
@@ -510,9 +509,9 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "snap-build-upload-failed",
             notification["X-Launchpad-Notification-Type"],
         )
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)
-        ).split("\n-- \n")
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Failed to upload", body)
         build_url = (
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d"
@@ -653,9 +652,9 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "snap-build-upload-scan-failed",
             notification["X-Launchpad-Notification-Type"],
         )
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)
-        ).split("\n-- \n")
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Scan failed.", body)
         self.assertEqual(
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"

@@ -147,7 +147,7 @@ An email is sent to subscribers of either branch and the default reviewer.
     Subscriber
     >>> print(notification['X-Launchpad-Message-For'])
     source-subscriber
-    >>> print(six.ensure_text(notification.get_payload(decode=True)))
+    >>> print(notification.get_payload(decode=True).decode())
     Eric has proposed merging
     lp://dev/~person-name...into lp://dev/~person-name...
     --
@@ -196,8 +196,7 @@ Fake the update preview diff as done.
     source@example.com, Subscriber, source-subscriber
     target@example.com, Subscriber, target-subscriber
     >>> notification = notifications[0]
-    >>> print(six.ensure_text(
-    ...     notification.get_payload()[0].get_payload(decode=True)))
+    >>> print(notification.get_payload()[0].get_payload(decode=True).decode())
     Eric has proposed merging
     lp://dev/~person-name...into lp://dev/~person-name...
     <BLANKLINE>
