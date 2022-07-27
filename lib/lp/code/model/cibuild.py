@@ -55,6 +55,7 @@ from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -478,7 +479,14 @@ class CIBuild(PackageBuildMixin, StormBase):
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
-        # We don't currently send any notifications.
+        from lp.code.mail.cibuild import CIBuildMailer
+
+        if not config.builddmaster.send_build_notification:
+            return
+        if self.status == BuildStatus.FULLYBUILT:
+            return
+        mailer = CIBuildMailer.forStatus(self)
+        mailer.sendAll()
 
     @property
     def sourcepackages(self):
