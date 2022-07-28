@@ -7,9 +7,6 @@
 # The syntax is based on that of PEP 508 requirements, although only
 # name-based requirements are permitted, possibly with environment markers,
 # and the names are top-level package names rather than distribution names.
-# Lines that begin with "[optional]" are optional, in that
-# link-system-packages will not fail if they are missing; this should be
-# reserved for packages only used by the test suite.
 
 # Used by launchpad-buildd.
 apt
@@ -24,9 +21,6 @@ aptsources
 
 # utilities/js-deps
 convoy
-
-# lp.testing.html5browser
-[optional] gi
 
 # lp.services.fields, lp.services.spriteutils
 PIL
