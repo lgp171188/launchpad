@@ -25,8 +25,5 @@ aptsources
 # utilities/js-deps
 convoy
 
-# lp.testing.html5browser
-[optional] gi
-
 # lp.services.fields, lp.services.spriteutils
 PIL
