@@ -37,6 +37,7 @@ import six
 from breezy.plugins.builder.recipe import BaseRecipeBranch
 from breezy.revision import Revision as BzrRevision
 from cryptography.utils import int_to_bytes
+from launchpadlib.launchpad import Launchpad
 from lazr.jobrunner.jobrunner import SuspendJobException
 from pytz import UTC
 from twisted.conch.ssh.common import MP, NS
@@ -6918,14 +6919,18 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
 
 
-# Some factory methods return simple Python types. We don't add
-# security wrappers for them, as well as for objects created by
-# other Python libraries.
+# Some factory methods return simple Python types. We don't add security
+# wrappers for them, or for objects created by other Python libraries.
 unwrapped_types = frozenset(
     {
         BaseRecipeBranch,
+        BytesIO,
+        BzrRevision,
         DSCFile,
+        Launchpad,
         Message,
+        MIMEMultipart,
+        SignedMessage,
         datetime,
         int,
         str,
