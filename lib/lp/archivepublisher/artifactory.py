@@ -242,17 +242,21 @@ class ArtifactoryPoolEntry:
         # Additional metadata per
         # https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
         # (private).
-        if IBinaryPackageFile.providedBy(self.pub_file):
+        if ISourcePackageReleaseFile.providedBy(self.pub_file):
+            ci_build = self.pub_file.sourcepackagerelease.ci_build
+        elif IBinaryPackageFile.providedBy(self.pub_file):
             ci_build = self.pub_file.binarypackagerelease.ci_build
-            if ci_build is not None:
-                properties.update(
-                    {
-                        "soss.source_url": [
-                            ci_build.git_repository.getCodebrowseUrl()
-                        ],
-                        "soss.commit_id": [ci_build.commit_sha1],
-                    }
-                )
+        else:
+            ci_build = None
+        if ci_build is not None:
+            properties.update(
+                {
+                    "soss.source_url": [
+                        ci_build.git_repository.getCodebrowseUrl()
+                    ],
+                    "soss.commit_id": [ci_build.commit_sha1],
+                }
+            )
         return properties
 
     def addFile(self):
