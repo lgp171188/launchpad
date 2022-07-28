@@ -36,40 +36,15 @@ Related Documents
 * `Launchpad hacking FAQ <https://dev.launchpad.net/LaunchpadHackingFAQ>`_
 * :doc:`Tests style guide <tests>`
 
-Whitespace and Wrapping
-=======================
+Formatting
+==========
 
-(Most of this is likely to be delegated to `black
-<https://github.com/psf/black>`_ in the near future.)
-
-* Code should fit within 78 columns, so as to fit nicely in an 80 column
-  terminal, even when quoted in an email.
-* Indents should be 4 spaces.
-* **No tabs**.  This is not negotiable.
-
-.. _multiline:
-
-Multiline braces
-----------------
-
-There are lots of cases where you might have a list, tuple or dictionary
-literal that spans multiple lines.  In these cases, you should consider
-formatting these literals as follows.  This format makes changes to the list
-clearer to read in a diff.  Note the trailing comma on the last element.
-
-.. code-block:: python
-
-    mydict = {
-        'first': 1,
-        'second': 2,
-        'third': 3,
-        }
-
-    mylist = [
-        'this is the first line',
-        'this is the second line',
-        'this is the third line',
-        ]
+We delegate most formatting decisions to `black
+<https://github.com/psf/black>`_.  All Python code (except for a few files
+specifically excluded in ``.pre-commit-config.yaml``) must be formatted
+using it.  You should be using Launchpad's default :ref:`pre-commit
+<pre-commit>` setup, which automatically formats your code using ``black``
+and ``isort`` before you commit.
 
 Naming
 ======
@@ -148,7 +123,7 @@ Each module should look like this:
 
     __all__ = [
         ...
-        ]
+    ]
 
 The file ``standard_template.py`` has most of this already, so save yourself
 time by copying that when starting a new module.  The "..." should be filled
@@ -182,46 +157,6 @@ tests not to pass if you don't abide by the rules.
 
 Use absolute imports (``from foo.bar import Bar``), not relative imports
 (``from .bar import Bar``).
-
-Multiline imports
------------------
-
-You should be using Launchpad's default `pre-commit
-<https://dev.launchpad.net/Running#pre-commit>`_ setup, which automatically
-formats your imports using ``isort`` before you commit.  The remainder of
-this section is for information.
-
-Sometimes import lines must span multiple lines, either because the package
-path is very long or because there are multiple names inside the module that
-you want to import.
-
-**Never use backslashes in import statements!**  Use parenthesized imports:
-
-.. code-block:: python
-
-    from foo import (
-        That, 
-        TheOther, 
-        This,
-        )
-
-Like other lists, imports should list one item per line.  The exception is
-if only one symbol is being imported from a given module.
-
-.. code-block:: python
-
-    from lp.app.widgets.itemswidgets import CheckBoxMatrixWidget
-
-But if you import two or more, then each item needs to be on a line by
-itself.  Note the trailing comma on the last import and that the closing
-paren is on a line by itself.
-
-.. code-block:: python
-
-    from lp.app.widgets.itemswidgets import (
-        CheckBoxMatrixWidget,
-        LaunchpadRadioWidget,
-        )
 
 Import scope
 ------------
@@ -280,11 +215,11 @@ For example:
     from lp.services.webservice.apihelpers import (
         patch_entry_return_type,
         patch_collection_return_type,
-        )
+    )
     patch_collection_return_type(
-        IArchive, 'getComponentsForQueueAdmin', IArchivePermission)
-    patch_entry_return_type(
-        IArchive, 'newPackageUploader', IArchivePermission)
+        IArchive, "getComponentsForQueueAdmin", IArchivePermission
+    )
+    patch_entry_return_type(IArchive, "newPackageUploader", IArchivePermission)
 
 Properties
 ==========
@@ -363,7 +298,7 @@ queries or fragments, e.g.:
         FROM TeamParticipation
         INNER JOIN Person ON TeamParticipation.team = Person.id
         WHERE TeamParticipation.person = %s
-        """ % sqlvalues(personID)
+    """ % sqlvalues(personID)
 
 This is also easy to cut-and-paste into ``psql`` for interactive testing,
 unlike if you use several lines of single quoted strings.
@@ -395,9 +330,9 @@ Or:
 .. code-block:: python
 
     fd, filename = mkstemp()
-    with os.fdopen(fd, 'w') as temp_file:
+    with os.fdopen(fd, "w") as temp_file:
         ...
-        temp_file.write('foo')
+        temp_file.write("foo")
 
 **Never** use:
 
@@ -405,7 +340,7 @@ Or:
 
     fd, filename = mkstemp()
     with open(filename) as temp_file:
-        temp_file.write('foo')
+        temp_file.write("foo")
     # BOOM! 'fd' leaked.
 
 In tests, you should use the ``TempDir`` fixture instead, which cleans
@@ -420,7 +355,7 @@ itself up automatically:
         def test_foo(self):
             tempdir = self.useFixture(TempDir).path
             ...
-            do_something(os.path.join(tempdir, 'test.log'))
+            do_something(os.path.join(tempdir, "test.log"))
             ...
 
 Configuration hints
