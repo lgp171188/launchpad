@@ -31,6 +31,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities, IPrivacy
 from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.interfaces.cibuild import (
@@ -68,6 +69,7 @@ from lp.testing import (
     login,
     logout,
     person_logged_in,
+    pop_notifications,
 )
 from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
@@ -480,6 +482,88 @@ class TestCIBuild(TestCaseWithFactory):
             ),
         )
         self.assertContentEqual([bpr], build.binarypackages)
+
+    def test_notify_fullybuilt(self):
+        # notify does not send mail when a CIBuild completes normally.
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        build.notify()
+        self.assertEqual(0, len(pop_notifications()))
+
+    def test_notify_packagefail(self):
+        # notify sends mail when a CIBuild fails.
+        person = self.factory.makePerson(name="person")
+        product = self.factory.makeProduct(name="product", owner=person)
+        git_repository = self.factory.makeGitRepository(
+            owner=person, target=product, name="repo"
+        )
+        distribution = self.factory.makeDistribution(name="distro")
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, name="unstable"
+        )
+        processor = getUtility(IProcessorSet).getByName("386")
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
+        build = self.factory.makeCIBuild(
+            git_repository=git_repository,
+            commit_sha1="a39b604dcf9124d61cf94a1f9fffab638ee9a0cd",
+            distro_arch_series=distroarchseries,
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            status=BuildStatus.FAILEDTOBUILD,
+            builder=self.factory.makeBuilder(name="bob"),
+            duration=timedelta(minutes=10),
+        )
+        build.setLog(self.factory.makeLibraryFileAlias())
+        build.notify()
+        [notification] = pop_notifications()
+        self.assertEqual(
+            config.canonical.noreply_from_address, notification["From"]
+        )
+        self.assertEqual(
+            "Person <%s>" % person.preferredemail.email, notification["To"]
+        )
+        subject = notification["Subject"].replace("\n ", " ")
+        expected_subject = (
+            "[CI build #{:d}] i386 CI build of "
+            "~person/product/+git/repo:"
+            "a39b604dcf9124d61cf94a1f9fffab638ee9a0cd"
+        ).format(build.id)
+        self.assertEqual(expected_subject, subject)
+        self.assertEqual(
+            "Owner", notification["X-Launchpad-Message-Rationale"]
+        )
+        self.assertEqual(person.name, notification["X-Launchpad-Message-For"])
+        self.assertEqual(
+            "ci-build-status", notification["X-Launchpad-Notification-Type"]
+        )
+        self.assertEqual(
+            "FAILEDTOBUILD", notification["X-Launchpad-Build-State"]
+        )
+
+        message = notification.get_payload(decode=True).decode()
+        body, footer = message.split("\n-- \n")
+
+        expected_body = (
+            " * Git Repository: ~person/product/+git/repo\n"
+            " * Commit: a39b604dcf9124d61cf94a1f9fffab638ee9a0cd\n"
+            " * Distroseries: distro unstable\n"
+            " * Architecture: i386\n"
+            " * State: Failed to build\n"
+            " * Duration: 10 minutes\n"
+            " * Build Log: {}\n"
+            " * Upload Log: \n"
+            " * Builder: http://launchpad.test/builders/bob\n"
+        ).format(build.log_url)
+
+        self.assertEqual(expected_body, body)
+        self.assertEqual(
+            "http://launchpad.test/~person/product/+git/repo/+build/{:d}\n"
+            "You are receiving this email because you are the owner "
+            "of this repository.\n".format(build.id),
+            footer,
+        )
 
 
 class TestCIBuildSet(TestCaseWithFactory):
