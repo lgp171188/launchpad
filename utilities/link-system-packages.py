@@ -17,15 +17,8 @@ from distutils.sysconfig import get_python_lib
 from pkg_resources.extern.packaging.markers import Marker
 
 
-def link_module(name, virtualenv_libdir, optional=False):
-    try:
-        module = importlib.import_module(name)
-    except ImportError:
-        if optional:
-            print("Skipping missing optional module %s." % name)
-            return
-        else:
-            raise
+def link_module(name, virtualenv_libdir):
+    module = importlib.import_module(name)
     path = module.__file__
     if os.path.basename(path).startswith("__init__."):
         path = os.path.dirname(path)
@@ -53,16 +46,15 @@ def main():
         if not line:
             continue
         match = re.match(
-            r"^(\[optional\])?\s*([A-Za-z_][A-Za-z0-9_]*)(?:\s*;\s*(.*))?",
+            r"^([A-Za-z_][A-Za-z0-9_]*)(?:\s*;\s*(.*))?",
             line,
         )
         if not match:
             raise ValueError("Parse error: %s" % line)
-        optional = bool(match.group(1))
-        name = match.group(2)
-        if match.group(3) and not Marker(match.group(3)).evaluate():
+        name = match.group(1)
+        if match.group(2) and not Marker(match.group(2)).evaluate():
             continue
-        link_module(name, args.virtualenv_libdir, optional=optional)
+        link_module(name, args.virtualenv_libdir)
 
 
 if __name__ == "__main__":
