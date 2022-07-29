@@ -72,6 +72,7 @@ from lp.bugs.interfaces.bugtask import (
 )
 from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.cve import ICve
+from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.code.interfaces.branchlink import IHasLinkedBranches
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import (
@@ -353,6 +354,13 @@ class IBugView(Interface):
         )
     )
     has_cves = Bool(title="True if the bug has cve entries.")
+    vulnerabilities = exported(
+        CollectionField(
+            title=_("Vulnerability instances related to this bug."),
+            value_type=Reference(schema=IVulnerability),
+            readonly=True,
+        )
+    )
     duplicates = exported(
         doNotSnapshot(
             CollectionField(
