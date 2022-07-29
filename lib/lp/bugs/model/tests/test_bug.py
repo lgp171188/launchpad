@@ -648,6 +648,35 @@ class TestBug(TestCaseWithFactory):
             bug.newMessage(owner=bug.owner, send_notifications=False)
             self.assertEqual(0, len(recorder.events))
 
+    def test_vulnerabilities_property(self):
+        vulnerability1 = self.factory.makeVulnerability()
+        vulnerability2 = self.factory.makeVulnerability()
+        vulnerability3 = self.factory.makeVulnerability()
+        bug1 = self.factory.makeBug()
+        bug2 = self.factory.makeBug()
+
+        with admin_logged_in():
+            vulnerability1.linkBug(bug1)
+            vulnerability2.linkBug(bug1)
+            vulnerability3.linkBug(bug1)
+            vulnerability3.linkBug(bug2)
+
+        self.assertEqual(
+            [
+                vulnerability1,
+                vulnerability2,
+                vulnerability3,
+            ],
+            bug1.vulnerabilities,
+        )
+
+        self.assertEqual(
+            [
+                vulnerability3,
+            ],
+            bug2.vulnerabilities,
+        )
+
 
 class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
