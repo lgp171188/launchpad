@@ -55,6 +55,9 @@ class Cve(StormBase, BugLinkTargetMixin):
     references = ReferenceSet(
         id, "CveReference.cve_id", order_by="CveReference.id"
     )
+    vulnerabilities = ReferenceSet(
+        id, "Vulnerability.cve_id", order_by="Vulnerability.id"
+    )
 
     date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
     discoverer_id = Int(name="discoverer", allow_none=True)
