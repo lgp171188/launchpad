@@ -40,9 +40,9 @@ class TestBrowser(TestCase):
                                 results: {"spam": "ham"},
                                 type: "complete"
                             });
-                        }, 200);
-                    }, 200);
-                }, 100);
+                        }, 2000);
+                    }, 2000);
+                }, 1000);
             };
             </script>
             </head><body></body></html>
@@ -55,7 +55,7 @@ class TestBrowser(TestCase):
         self.addCleanup(self.browser.close)
 
     def test_load_test_results(self):
-        results = self.browser.run_tests(self.file_uri, timeout=1000)
+        results = self.browser.run_tests(self.file_uri, timeout=10000)
         self.assertEqual(results.status, results.Status.SUCCESS)
         self.assertEqual(
             results.results,
@@ -66,7 +66,7 @@ class TestBrowser(TestCase):
         )
 
     def test_timeout_error(self):
-        results = self.browser.run_tests(self.file_uri, timeout=150)
+        results = self.browser.run_tests(self.file_uri, timeout=1500)
         self.assertEqual(results.status, results.Status.TIMEOUT)
         self.assertIsNone(results.results)
         self.assertEqual(
@@ -76,7 +76,7 @@ class TestBrowser(TestCase):
 
     def test_incremental_timeout_success(self):
         results = self.browser.run_tests(
-            self.file_uri, timeout=1000, incremental_timeout=300
+            self.file_uri, timeout=10000, incremental_timeout=3000
         )
         self.assertEqual(results.status, results.Status.SUCCESS)
         self.assertEqual(
@@ -89,7 +89,7 @@ class TestBrowser(TestCase):
 
     def test_incremental_timeout_error(self):
         results = self.browser.run_tests(
-            self.file_uri, timeout=1000, incremental_timeout=150
+            self.file_uri, timeout=10000, incremental_timeout=1500
         )
         self.assertEqual(results.status, results.Status.TIMEOUT)
         self.assertIsNone(results.results)
