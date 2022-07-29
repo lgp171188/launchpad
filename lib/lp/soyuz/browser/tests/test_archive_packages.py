@@ -19,12 +19,14 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.utilities.celebrities import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.soyuz.browser.archive import ArchiveNavigationMenu
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.testing import (
     RequestTimelineCollector,
     TestCaseWithFactory,
@@ -36,7 +38,11 @@ from lp.testing import (
 )
 from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import get_feedback_messages
+from lp.testing.pages import (
+    extract_text,
+    find_tag_by_id,
+    get_feedback_messages,
+)
 from lp.testing.sampledata import ADMIN_EMAIL
 from lp.testing.views import create_initialized_view
 
@@ -352,6 +358,53 @@ class TestPPAPackages(TestCaseWithFactory):
             url = canonical_url(ppa) + "/+packages"
         browser.open(url)
         self.assertThat(collector, HasQueryCount(Equals(expected_count)))
+
+    def test_ci_build_python_sdist(self):
+        # Publications for non-dsc/deb package types have no component or
+        # section.
+        ci_build = self.factory.makeCIBuild()
+        ppa = self.factory.makeArchive(
+            distribution=ci_build.distribution,
+            repository_format=ArchiveRepositoryFormat.PYTHON,
+        )
+        spn = self.factory.makeSourcePackageName()
+        spr = ci_build.createSourcePackageRelease(
+            distroseries=ci_build.distro_series,
+            sourcepackagename=spn,
+            version="0.1",
+            creator=ci_build.git_repository.owner,
+            archive=ppa,
+        )
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        spr.addFile(lfa, filetype=SourcePackageFileType.SDIST)
+        spph = getUtility(IPublishingSet).newSourcePublication(
+            archive=ppa,
+            sourcepackagerelease=spr,
+            distroseries=ci_build.distro_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            creator=ci_build.git_repository.owner,
+            channel="edge",
+        )
+        distroseries_name = spph.distroseries.name
+        browser = self.getUserBrowser(
+            canonical_url(ppa, view_name="+packages")
+        )
+        package_table = find_tag_by_id(browser.contents, "packages_list")
+        [row] = package_table.tbody.find_all(
+            "tr", attrs={"class": "archive_package_row"}
+        )
+        self.assertEqual(
+            [
+                spr.title,
+                "",  # changes file
+                "",  # date published
+                "Pending",
+                distroseries_name.capitalize(),
+                "",  # section
+                "",  # build status summary
+            ],
+            [extract_text(cell) for cell in row.find_all("td")],
+        )
 
 
 class TestPPAPackagesJobNotifications(TestCaseWithFactory):
