@@ -51,7 +51,7 @@
     <td tal:content="structure context/datepublished/fmt:approximatedatetitle" />
     <td tal:content="context/status/title">PUBLISHED</td>
     <td tal:content="context/distroseries/name/capitalize">Dapper</td>
-    <td tal:content="context/section/name/capitalize">Web</td>
+    <td tal:content="context/section/name/capitalize|nothing">Web</td>
     <td tal:define="build_status_summary view/build_status_summary/status"
         tal:attributes="class string:build_status ${build_status_summary/name};
                         id string:pubstatus${context/id}">
