@@ -28,14 +28,20 @@ special = {
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
     ),
-    "translationimportqueue.rst": LayeredDocFileSuite(
-        "../doc/translationimportqueue.rst",
+    "rosetta-karma.rst": LayeredDocFileSuite(
+        "../doc/rosetta-karma.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
     ),
-    "rosetta-karma.rst": LayeredDocFileSuite(
-        "../doc/rosetta-karma.rst",
+    "sourcepackagerelease-translations.rst": LayeredDocFileSuite(
+        "../doc/sourcepackagerelease-translations.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "translationimportqueue.rst": LayeredDocFileSuite(
+        "../doc/translationimportqueue.rst",
         setUp=setUp,
         tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
@@ -43,6 +49,12 @@ special = {
     "translationmessage-destroy.rst": LayeredDocFileSuite(
         "../doc/translationmessage-destroy.rst",
         setUp=setGlobs,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "translations-export-to-branch.rst": LayeredDocFileSuite(
+        "../doc/translations-export-to-branch.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
     ),
     "translationsoverview.rst": LayeredDocFileSuite(
