@@ -25,4 +25,12 @@ from lp.buildmaster.interfaces.buildfarmjob import (
     CannotBeRetried,
     IBuildFarmJob,
 )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.processor import IProcessor, IProcessorSet
+from lp.services.webservice.apihelpers import patch_reference_property
+
+# IBuilder
+patch_reference_property(IBuilder, "current_build", IBuildFarmJob)
+
+# IBuildFarmJob
+patch_reference_property(IBuildFarmJob, "buildqueue_record", IBuildQueue)
