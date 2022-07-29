@@ -19,6 +19,7 @@ class TestBrowser(TestCase):
             """
             <html><head>
             <script type="text/javascript">
+            window.onload = function() {
                 // First test
                 setTimeout(function() {
                     window.top.test_results = JSON.stringify({
@@ -42,6 +43,7 @@ class TestBrowser(TestCase):
                         }, 200);
                     }, 200);
                 }, 100);
+            };
             </script>
             </head><body></body></html>
         """
@@ -64,12 +66,12 @@ class TestBrowser(TestCase):
         )
 
     def test_timeout_error(self):
-        results = self.browser.run_tests(self.file_uri, timeout=250)
+        results = self.browser.run_tests(self.file_uri, timeout=150)
         self.assertEqual(results.status, results.Status.TIMEOUT)
         self.assertIsNone(results.results)
         self.assertEqual(
-            results.last_test_message,
             {"testCase": "first", "testName": "first", "type": "passed"},
+            results.last_test_message,
         )
 
     def test_incremental_timeout_success(self):
@@ -78,11 +80,11 @@ class TestBrowser(TestCase):
         )
         self.assertEqual(results.status, results.Status.SUCCESS)
         self.assertEqual(
-            results.results,
             {
                 "type": "complete",
                 "results": {"spam": "ham"},
             },
+            results.results,
         )
 
     def test_incremental_timeout_error(self):
@@ -92,6 +94,6 @@ class TestBrowser(TestCase):
         self.assertEqual(results.status, results.Status.TIMEOUT)
         self.assertIsNone(results.results)
         self.assertEqual(
-            results.last_test_message,
             {"testCase": "first", "testName": "first", "type": "passed"},
+            results.last_test_message,
         )
