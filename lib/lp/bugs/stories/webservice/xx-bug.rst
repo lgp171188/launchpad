@@ -52,6 +52,7 @@ Bugs are indexed by number beneath the top-level collection.
       'http://.../bugs/1/users_affected_with_dupes'
     users_unaffected_collection_link: 'http://.../bugs/1/users_unaffected'
     users_unaffected_count: 0
+    vulnerabilities_collection_link: 'http://.../bugs/1/vulnerabilities'
     web_link: 'http://bugs.../bugs/1'
     who_made_private_link: None
 
