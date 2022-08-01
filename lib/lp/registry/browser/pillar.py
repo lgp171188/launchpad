@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common views for objects that implement `IPillar`."""
@@ -445,9 +445,12 @@ class PillarPersonSharingView(LaunchpadView):
         spec_data = self._build_specification_template_data(
             self.specifications, request
         )
-        snap_data = self._build_ocirecipe_template_data(self.snaps, request)
+        snap_data = self._build_snap_template_data(self.snaps, request)
         ocirecipe_data = self._build_ocirecipe_template_data(
             self.ocirecipes, request
+        )
+        vulnerability_data = self._build_vulnerability_template_data(
+            self.vulnerabilities, request
         )
         grantee_data = {
             "displayname": self.person.displayname,
@@ -462,6 +465,7 @@ class PillarPersonSharingView(LaunchpadView):
         cache.objects["specifications"] = spec_data
         cache.objects["snaps"] = snap_data
         cache.objects["ocirecipes"] = ocirecipe_data
+        cache.objects["vulnerabilities"] = vulnerability_data
 
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
@@ -475,6 +479,7 @@ class PillarPersonSharingView(LaunchpadView):
         self.snaps = artifacts["snaps"]
         self.specifications = artifacts["specifications"]
         self.ocirecipes = artifacts["ocirecipes"]
+        self.vulnerabilities = artifacts["vulnerabilities"]
 
         bug_ids = {bugtask.bug.id for bugtask in self.bugtasks}
         self.shared_bugs_count = len(bug_ids)
@@ -483,6 +488,7 @@ class PillarPersonSharingView(LaunchpadView):
         self.shared_snaps_count = len(self.snaps)
         self.shared_specifications_count = len(self.specifications)
         self.shared_ocirecipe_count = len(self.ocirecipes)
+        self.shared_vulnerabilities_count = len(self.vulnerabilities)
 
     def _build_specification_template_data(self, specs, request):
         spec_data = []
@@ -574,3 +580,19 @@ class PillarPersonSharingView(LaunchpadView):
                 )
             )
         return snap_data
+
+    def _build_vulnerability_template_data(self, vulnerabilities, request):
+        vulnerability_data = []
+        for vulnerability in vulnerabilities:
+            vulnerability_data.append(
+                dict(
+                    self_link=absoluteURL(vulnerability, request),
+                    web_link=canonical_url(
+                        vulnerability, path_only_if_possible=True
+                    ),
+                    name=vulnerability.cve.sequence,
+                    id=vulnerability.id,
+                    information_type=vulnerability.information_type.title,
+                )
+            )
+        return vulnerability_data
