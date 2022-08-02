@@ -77,8 +77,8 @@ installed and configured on your network.
    use your home directory inside the container.  Some developers prefer to
    only mount a subdirectory of their home directory in the container: to do
    that, replace ``$HOME`` with ``$HOME/src`` or similar.  Although it may
-   be tempting, make sure not to call your local user "launchpad", as
-   :ref:`that will break <database-permissions>`.
+   be tempting, make sure not to call your local user "launchpad", as that
+   will break; see :ref:`database-permissions`.
 
 .. code-block:: sh
 
