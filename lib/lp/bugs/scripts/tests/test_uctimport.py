@@ -27,12 +27,12 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestUCTRecord(TestCase):
-    def test_load(self):
-        cve_path = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
-        uct_record = UCTRecord.load(cve_path)
+    def test_load_save(self):
+        load_from = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
+        uct_record = UCTRecord.load(load_from)
         self.assertEqual(
             UCTRecord(
-                path=cve_path,
+                path=load_from,
                 assigned_to="",
                 bugs=[
                     "https://github.com/mm2/Little-CMS/issues/29",
@@ -50,7 +50,11 @@ class TestUCTRecord(TestCase):
                     }
                 ],
                 candidate="CVE-2022-23222",
-                date_made_public=datetime.datetime(
+                crd=None,
+                public_date_at_USN=datetime.datetime(
+                    2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+                ),
+                public_date=datetime.datetime(
                     2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
                 ),
                 description=(
@@ -150,6 +154,11 @@ class TestUCTRecord(TestCase):
             uct_record,
         )
 
+        save_to = Path(self.makeTemporaryDirectory()) / "CVE-2022-23222"
+        uct_record.save(save_to)
+
+        self.assertEqual(load_from.read_text(), save_to.read_text())
+
 
 class TextCVE(TestCaseWithFactory):
 
@@ -177,7 +186,9 @@ class TextCVE(TestCaseWithFactory):
             bugs=["https://github.com/mm2/Little-CMS/issues/29"],
             cvss=[],
             candidate="CVE-2022-23222",
-            date_made_public=datetime.datetime(
+            crd=None,
+            public_date_at_USN=None,
+            public_date=datetime.datetime(
                 2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
             ),
             description="description",

@@ -20,7 +20,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from itertools import chain
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing.io import TextIO
 
 import dateutil.parser
 import transaction
@@ -136,7 +137,9 @@ class UCTRecord:
         bugs: List[str],
         cvss: List[Dict[str, Any]],
         candidate: str,
-        date_made_public: Optional[datetime],
+        crd: Optional[datetime],
+        public_date: Optional[datetime],
+        public_date_at_USN: Optional[datetime],
         description: str,
         discovered_by: str,
         mitigation: Optional[str],
@@ -151,7 +154,9 @@ class UCTRecord:
         self.bugs = bugs
         self.cvss = cvss
         self.candidate = candidate
-        self.date_made_public = date_made_public
+        self.crd = crd
+        self.public_date = public_date
+        self.public_date_at_USN = public_date_at_USN
         self.description = description
         self.discovered_by = discovered_by
         self.mitigation = mitigation
@@ -259,17 +264,19 @@ class UCTRecord:
         if public_date_at_USN == "unknown":
             public_date_at_USN = None
 
-        date_made_public = crd or public_date or public_date_at_USN
-
         entry = UCTRecord(
             path=cve_path,
             assigned_to=cls.pop_cve_property(cve_data, "Assigned-to"),
             bugs=cls.pop_cve_property(cve_data, "Bugs").split("\n"),
             cvss=cls.pop_cve_property(cve_data, "CVSS"),
             candidate=cls.pop_cve_property(cve_data, "Candidate"),
-            date_made_public=(
-                dateutil.parser.parse(date_made_public)
-                if date_made_public
+            crd=dateutil.parser.parse(crd) if crd else None,
+            public_date=(
+                dateutil.parser.parse(public_date) if public_date else None
+            ),
+            public_date_at_USN=(
+                dateutil.parser.parse(public_date_at_USN)
+                if public_date_at_USN
                 else None
             ),
             description=cls.pop_cve_property(cve_data, "Description"),
@@ -298,6 +305,112 @@ class UCTRecord:
             )
 
         return entry
+
+    def save(self, path: Path) -> None:
+        output = open(str(path), "w")
+        if self.public_date_at_USN:
+            self._write_field(
+                "PublicDateAtUSN",
+                self._format_datetime(self.public_date_at_USN),
+                output,
+            )
+        self._write_field("Candidate", self.candidate, output)
+        if self.crd:
+            self._write_field("CRD", self._format_datetime(self.crd), output)
+        if self.public_date:
+            self._write_field(
+                "PublicDate", self._format_datetime(self.public_date), output
+            )
+        self._write_field("References", self.references, output)
+        self._write_field("Description", self.description.split("\n"), output)
+        self._write_field(
+            "Ubuntu-Description", self.ubuntu_description.split("\n"), output
+        )
+        notes = []
+        for note in self.notes:
+            note_lines = note.text.split("\n")
+            notes.append("{}> {}".format(note.author, note_lines[0]))
+            for line in note_lines[1:]:
+                notes.append("  " + line)
+        self._write_field("Notes", notes, output)
+        self._write_field(
+            "Mitigation",
+            self.mitigation.split("\n") if self.mitigation else "",
+            output,
+        )
+        self._write_field("Bugs", self.bugs, output)
+        self._write_field("Priority", self.priority.value, output)
+        self._write_field("Discovered-by", self.discovered_by, output)
+        self._write_field("Assigned-to", self.assigned_to, output)
+        self._write_field(
+            "CVSS",
+            [
+                "{source}: {vector} [{baseScore} {baseSeverity}]".format(**c)
+                for c in self.cvss
+            ],
+            output,
+        )
+        for package in self.packages:
+            output.write("\n")
+            patches = [
+                "{}: {}".format(patch.patch_type, patch.entry)
+                for patch in package.patches
+            ]
+            self._write_field(
+                "Patches_{}".format(package.name), patches, output
+            )
+            for status in package.statuses:
+                self._write_field(
+                    "{}_{}".format(status.distroseries, package.name),
+                    (
+                        "{} ({})".format(status.status.value, status.reason)
+                        if status.reason
+                        else status.status.value
+                    ),
+                    output,
+                )
+            if package.priority:
+                self._write_field(
+                    "Priority_{}".format(package.name),
+                    package.priority.value,
+                    output,
+                )
+            for status in package.statuses:
+                if status.priority:
+                    self._write_field(
+                        "Priority_{}_{}".format(
+                            package.name, status.distroseries
+                        ),
+                        status.priority.value,
+                        output,
+                    )
+
+            if package.tags:
+                self._write_field(
+                    "Tags_{}".format(package.name),
+                    " ".join(package.tags),
+                    output,
+                )
+
+        output.close()
+
+    def _format_datetime(self, dt: datetime) -> str:
+        return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    def _write_field(
+        self, name: str, value: Union[str, List[str]], output: TextIO
+    ) -> None:
+        if isinstance(value, str):
+            if value:
+                output.write("{}: {}\n".format(name, value))
+            else:
+                output.write("{}:\n".format(name))
+        elif isinstance(value, list):
+            output.write("{}:\n".format(name))
+            for line in value:
+                output.write(" {}\n".format(line))
+        else:
+            raise AssertionError()
 
 
 class CVE:
@@ -459,7 +572,11 @@ class CVE:
 
         return cls(
             sequence=uct_record.candidate,
-            date_made_public=uct_record.date_made_public,
+            date_made_public=(
+                uct_record.crd
+                or uct_record.public_date_at_USN
+                or uct_record.public_date
+            ),
             distro_packages=distro_packages,
             series_packages=series_packages,
             importance=cls.PRIORITY_MAP[uct_record.priority],
