@@ -88,10 +88,10 @@ class TestUCTRecord(TestCase):
                         name="linux",
                         statuses=[
                             UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="devel",
-                                status=UCTRecord.PackageStatus.NOT_AFFECTED,
-                                reason="5.15.0-25.25",
-                                priority=UCTRecord.Priority.MEDIUM,
+                                distroseries="upstream",
+                                status=UCTRecord.PackageStatus.RELEASED,
+                                reason="5.17~rc1",
+                                priority=None,
                             ),
                             UCTRecord.DistroSeriesPackageStatus(
                                 distroseries="impish",
@@ -100,10 +100,10 @@ class TestUCTRecord(TestCase):
                                 priority=UCTRecord.Priority.MEDIUM,
                             ),
                             UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="upstream",
-                                status=UCTRecord.PackageStatus.RELEASED,
-                                reason="5.17~rc1",
-                                priority=None,
+                                distroseries="devel",
+                                status=UCTRecord.PackageStatus.NOT_AFFECTED,
+                                reason="5.15.0-25.25",
+                                priority=UCTRecord.Priority.MEDIUM,
                             ),
                         ],
                         priority=None,
@@ -123,9 +123,9 @@ class TestUCTRecord(TestCase):
                         name="linux-hwe",
                         statuses=[
                             UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="devel",
-                                status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
-                                reason="",
+                                distroseries="upstream",
+                                status=UCTRecord.PackageStatus.RELEASED,
+                                reason="5.17~rc1",
                                 priority=None,
                             ),
                             UCTRecord.DistroSeriesPackageStatus(
@@ -135,9 +135,9 @@ class TestUCTRecord(TestCase):
                                 priority=None,
                             ),
                             UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="upstream",
-                                status=UCTRecord.PackageStatus.RELEASED,
-                                reason="5.17~rc1",
+                                distroseries="devel",
+                                status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
+                                reason="",
                                 priority=None,
                             ),
                         ],

@@ -198,13 +198,11 @@ class UCTRecord:
         patches = cls.pop_cve_property(
             cve_data, "patches"
         )  # type: Dict[str, List[Tuple[str, str]]]
-        for package, statuses_dict in sorted(
-            cls.pop_cve_property(cve_data, "pkgs").items()
-        ):
+        for package, statuses_dict in cls.pop_cve_property(
+            cve_data, "pkgs"
+        ).items():
             statuses = []
-            for distroseries, (status, reason) in sorted(
-                statuses_dict.items()
-            ):
+            for distroseries, (status, reason) in statuses_dict.items():
                 distroseries_priority = cls.pop_cve_property(
                     cve_data,
                     "Priority_{package}_{distroseries}".format(
