@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 import dateutil.parser
+import transaction
 from contrib.cve_lib import load_cve
 from zope.component import getUtility
 
@@ -543,7 +544,8 @@ class UCTImportError(Exception):
 
 
 class UCTImporter:
-    def __init__(self):
+    def __init__(self, dry_run=False):
+        self.dry_run = dry_run
         self.bug_importer = getUtility(ILaunchpadCelebrities).bug_importer
 
     def import_cve_from_file(self, cve_path: Path) -> None:
@@ -562,10 +564,20 @@ class UCTImporter:
             logger.warning("Could not find the CVE in LP: %s", cve.sequence)
             return
         bug = self.find_existing_bug(cve, lp_cve)
-        if bug is None:
-            self.create_bug(cve, lp_cve)
+        try:
+            if bug is None:
+                self.create_bug(cve, lp_cve)
+            else:
+                self.update_bug(bug, cve, lp_cve)
+        except Exception:
+            transaction.abort()
+            raise
+
+        if self.dry_run:
+            logger.info("Dry-run mode enabled, all changes are reverted.")
+            transaction.abort()
         else:
-            self.update_bug(bug, cve, lp_cve)
+            transaction.commit()
 
     def find_existing_bug(
         self, cve: CVE, lp_cve: CveModel
