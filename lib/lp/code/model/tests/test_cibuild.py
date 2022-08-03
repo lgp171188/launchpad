@@ -32,6 +32,7 @@ from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.interfaces.cibuild import (
@@ -54,6 +55,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -1158,16 +1160,31 @@ class TestCIBuildSet(TestCaseWithFactory):
             builds.extend(
                 [self.factory.makeCIBuild(repository) for _ in range(2)]
             )
+        build_queue = builds[0].queueBuild()
+        other_build = self.factory.makeCIBuild()
+        other_build.queueBuild()
+        store = Store.of(builds[0])
+        store.flush()
+        build_queue_id = build_queue.id
+        build_farm_job_id = removeSecurityProxy(builds[0]).build_farm_job_id
         ci_build_set = getUtility(ICIBuildSet)
 
         ci_build_set.deleteByGitRepository(repositories[0])
 
+        flush_database_caches()
+        # The deleted CI builds are gone.
         self.assertContentEqual(
             [], ci_build_set.findByGitRepository(repositories[0])
         )
         self.assertContentEqual(
             builds[2:], ci_build_set.findByGitRepository(repositories[1])
         )
+        self.assertIsNone(store.get(BuildQueue, build_queue_id))
+        self.assertIsNone(store.get(BuildFarmJob, build_farm_job_id))
+        # Unrelated CI builds are still present.
+        clear_property_cache(other_build)
+        self.assertEqual(other_build, ci_build_set.getByID(other_build.id))
+        self.assertIsNotNone(other_build.buildqueue_record)
 
 
 class TestDetermineDASesToBuild(TestCaseWithFactory):
