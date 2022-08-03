@@ -2847,7 +2847,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             milestone=milestone,
         )
         work_item.deleted = deleted
-        return work_item
+        return ProxyFactory(work_item)
 
     def makeQuestion(
         self, target=None, title=None, owner=None, description=None, **kwargs
