@@ -8,6 +8,7 @@ from testtools.matchers import Equals, MatchesStructure
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import isinstance as zope_isinstance
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -327,7 +328,7 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
     def assertWorkItemsTextContains(self, spec, items):
         expected_lines = []
         for item in items:
-            if isinstance(item, SpecificationWorkItem):
+            if zope_isinstance(item, SpecificationWorkItem):
                 line = ""
                 if item.assignee is not None:
                     line = "[%s] " % item.assignee.name
@@ -675,6 +676,7 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         work_item = self.factory.makeSpecificationWorkItem()
         spec = work_item.specification
         self.assertEqual(1, len(spec.work_items))
+        login_person(spec.owner)
         spec.updateWorkItems([])
         self.assertEqual(0, len(spec.work_items))
 
