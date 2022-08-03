@@ -9,7 +9,6 @@ __all__ = [
     "TipChanged",
 ]
 
-import six
 from zope.interface import implementer
 from zope.interface.interfaces import IObjectEvent, ObjectEvent
 
@@ -75,7 +74,7 @@ class TipChanged(ScannerEvent):
     @property
     def new_tip_revision_id(self):
         """The new tip revision id from this scan."""
-        return six.ensure_text(self.bzr_branch.last_revision())
+        return self.bzr_branch.last_revision().decode()
 
     @staticmethod
     def composeWebhookPayload(branch, old_revid, new_revid):

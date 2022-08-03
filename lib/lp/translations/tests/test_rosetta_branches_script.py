@@ -7,7 +7,6 @@ This would normally be done in a doctest but TestCaseWithFactory has all the
 provisions to handle Bazaar branches.
 """
 
-import six
 import transaction
 from breezy.revision import NULL_REVISION
 from zope.component import getUtility
@@ -48,8 +47,8 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL="me@example.com"):
             revision_id = tree.commit("first commit")
-        branch.last_scanned_id = six.ensure_text(revision_id)
-        branch.last_mirrored_id = six.ensure_text(revision_id)
+        branch.last_scanned_id = revision_id.decode()
+        branch.last_mirrored_id = revision_id.decode()
         series = self.factory.makeProductSeries()
         series.branch = branch
         series.translations_autoimport_mode = (

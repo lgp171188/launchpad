@@ -7,7 +7,6 @@ import hashlib
 from datetime import datetime, timedelta
 
 import pytz
-import six
 import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -447,7 +446,7 @@ def make_runnable_incremental_diff_job(test_case):
     test_case.factory.makeRevision(rev_id=source_rev_id)
     test_case.factory.makeRevision(rev_id=parent_id)
     return GenerateIncrementalDiffJob.create(
-        bmp, six.ensure_text(parent_id), six.ensure_text(source_rev_id)
+        bmp, parent_id.decode(), source_rev_id.decode()
     )
 
 

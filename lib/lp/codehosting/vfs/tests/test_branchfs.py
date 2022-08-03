@@ -1040,8 +1040,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
         branch.unlock()
         self.assertEqual(1, len(self._branch_changed_log))
         self.assertEqual(
-            six.ensure_text(revid),
-            self._branch_changed_log[0]["last_revision"],
+            revid.decode(), self._branch_changed_log[0]["last_revision"]
         )
 
     def assertStackedOnIsRewritten(self, input, output):

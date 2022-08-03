@@ -1955,8 +1955,10 @@ class LaunchpadObjectFactory(ObjectFactory):
             parent_ids = []
         if rev_id is None:
             rev_id = self.getUniqueUnicode("revision-id")
+        elif isinstance(rev_id, bytes):
+            rev_id = rev_id.decode()
         else:
-            rev_id = six.ensure_text(rev_id)
+            rev_id = rev_id
         if log_body is None:
             log_body = self.getUniqueString("log-body")
         return getUtility(IRevisionSet).new(
