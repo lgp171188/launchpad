@@ -16,7 +16,7 @@ For each entry in UCT we:
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from itertools import chain
 from pathlib import Path
@@ -677,6 +677,9 @@ class UCTImporter:
         lp_cve: CveModel,
         distribution: Distribution,
     ) -> Vulnerability:
+        date_made_public = cve.date_made_public
+        if date_made_public.tzinfo is None:
+            date_made_public = date_made_public.replace(tzinfo=timezone.utc)
         vulnerability = getUtility(IVulnerabilitySet).new(
             distribution=distribution,
             creator=bug.owner,
@@ -687,7 +690,7 @@ class UCTImporter:
             mitigation=cve.mitigation,
             importance=cve.importance,
             information_type=InformationType.PUBLICSECURITY,
-            date_made_public=cve.date_made_public,
+            date_made_public=date_made_public,
         )  # type: Vulnerability
 
         vulnerability.linkBug(bug, bug.owner)

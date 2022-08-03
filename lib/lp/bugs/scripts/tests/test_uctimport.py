@@ -4,6 +4,7 @@ import datetime
 from pathlib import Path
 from typing import List
 
+from pytz import UTC
 from zope.component import getUtility
 
 from lp.app.enums import InformationType
@@ -797,3 +798,12 @@ class TestUCTImporter(TestCaseWithFactory):
         cve.references.pop(0)
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
+
+    def test_naive_date_made_public(self):
+        cve = self.cve
+        cve.date_made_public = cve.date_made_public.replace(tzinfo=None)
+        bug = self.importer.create_bug(cve, self.lp_cve)
+        self.assertEqual(
+            UTC,
+            bug.vulnerabilities[0].date_made_public.tzinfo,
+        )
