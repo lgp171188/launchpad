@@ -13,8 +13,10 @@ from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtask import BugTask
+from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.scripts.uctimport import (
     CVE,
+    CVSS,
     UCTImporter,
     UCTImportError,
     UCTRecord,
@@ -27,10 +29,13 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestUCTRecord(TestCase):
+
+    maxDiff = None
+
     def test_load_save(self):
         load_from = Path(__file__).parent / "sampledata" / "CVE-2022-23222"
         uct_record = UCTRecord.load(load_from)
-        self.assertEqual(
+        self.assertDictEqual(
             UCTRecord(
                 path=load_from,
                 assigned_to="",
@@ -40,14 +45,13 @@ class TestUCTRecord(TestCase):
                     "https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=745471",
                 ],
                 cvss=[
-                    {
-                        "source": "nvd",
-                        "vector": (
-                            "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"
+                    CVSS(
+                        authority="nvd",
+                        vector_string=(
+                            "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H "
+                            "[7.8 HIGH]"
                         ),
-                        "baseScore": "7.8",
-                        "baseSeverity": "HIGH",
-                    }
+                    ),
                 ],
                 candidate="CVE-2022-23222",
                 crd=None,
@@ -150,8 +154,8 @@ class TestUCTRecord(TestCase):
                         patches=[],
                     ),
                 ],
-            ),
-            uct_record,
+            ).__dict__,
+            uct_record.__dict__,
         )
 
         save_to = Path(self.makeTemporaryDirectory()) / "CVE-2022-23222"
@@ -184,7 +188,15 @@ class TextCVE(TestCaseWithFactory):
             path=Path("./active/CVE-2022-23222"),
             assigned_to=assignee.name,
             bugs=["https://github.com/mm2/Little-CMS/issues/29"],
-            cvss=[],
+            cvss=[
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H "
+                        "[7.8 HIGH]"
+                    ),
+                ),
+            ],
             candidate="CVE-2022-23222",
             crd=None,
             public_date_at_USN=None,
@@ -360,6 +372,7 @@ class TextCVE(TestCaseWithFactory):
         )
         self.assertEqual("author> text", cve.notes)
         self.assertEqual("mitigation", cve.mitigation)
+        self.assertEqual(uct_record.cvss, cve.cvss)
 
 
 class TestUCTImporter(TestCaseWithFactory):
@@ -485,6 +498,15 @@ class TestUCTImporter(TestCaseWithFactory):
             references=["https://ubuntu.com/security/notices/USN-5368-1"],
             notes="author> text",
             mitigation="mitigation",
+            cvss=[
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H "
+                        "[7.8 HIGH]"
+                    ),
+                ),
+            ],
         )
         self.importer = UCTImporter()
 
@@ -568,6 +590,12 @@ class TestUCTImporter(TestCaseWithFactory):
                 cve.date_made_public, vulnerability.date_made_public
             )
             self.assertEqual([bug], vulnerability.bugs)
+
+    def checkLaunchpadCve(self, lp_cve: CveModel, cve: CVE):
+        self.assertDictEqual(
+            {cvss.authority: cvss.vector_string for cvss in cve.cvss},
+            lp_cve.cvss,
+        )
 
     def test_create_bug(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
@@ -815,6 +843,7 @@ class TestUCTImporter(TestCaseWithFactory):
         self.assertIsNotNone(
             self.importer.find_existing_bug(self.cve, self.lp_cve)
         )
+        self.checkLaunchpadCve(self.lp_cve, self.cve)
 
     def test_import_cve_dry_run(self):
         importer = UCTImporter(dry_run=True)

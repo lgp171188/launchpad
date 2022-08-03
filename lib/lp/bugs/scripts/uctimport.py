@@ -60,6 +60,7 @@ from lp.services.database.constants import UTC_NOW
 
 __all__ = [
     "CVE",
+    "CVSS",
     "UCTImporter",
     "UCTRecord",
     "UCTImportError",
@@ -68,6 +69,15 @@ __all__ = [
 from lp.services.propertycache import cachedproperty
 
 logger = logging.getLogger("lp.bugs.scripts.import")
+
+
+CVSS = NamedTuple(
+    "CVSS",
+    (
+        ("authority", str),
+        ("vector_string", str),
+    ),
+)
 
 
 class UCTRecord:
@@ -135,7 +145,7 @@ class UCTRecord:
         path: Path,
         assigned_to: str,
         bugs: List[str],
-        cvss: List[Dict[str, Any]],
+        cvss: List[CVSS],
         candidate: str,
         crd: Optional[datetime],
         public_date: Optional[datetime],
@@ -264,11 +274,24 @@ class UCTRecord:
         if public_date_at_USN == "unknown":
             public_date_at_USN = None
 
+        cvss = []
+        for cvss_dict in cls.pop_cve_property(cve_data, "CVSS"):
+            cvss.append(
+                CVSS(
+                    authority=cvss_dict["source"],
+                    vector_string="{} [{} {}]".format(
+                        cvss_dict["vector"],
+                        cvss_dict["baseScore"],
+                        cvss_dict["baseSeverity"],
+                    ),
+                )
+            )
+
         entry = UCTRecord(
             path=cve_path,
             assigned_to=cls.pop_cve_property(cve_data, "Assigned-to"),
             bugs=cls.pop_cve_property(cve_data, "Bugs").split("\n"),
-            cvss=cls.pop_cve_property(cve_data, "CVSS"),
+            cvss=cvss,
             candidate=cls.pop_cve_property(cve_data, "Candidate"),
             crd=dateutil.parser.parse(crd) if crd else None,
             public_date=(
@@ -345,7 +368,7 @@ class UCTRecord:
         self._write_field(
             "CVSS",
             [
-                "{source}: {vector} [{baseScore} {baseSeverity}]".format(**c)
+                "{authority}: {vector_string}".format(**c._asdict())
                 for c in self.cvss
             ],
             output,
@@ -475,6 +498,7 @@ class CVE:
         references: List[str],
         notes: str,
         mitigation: str,
+        cvss: List[CVSS],
     ):
         self.sequence = sequence
         self.date_made_public = date_made_public
@@ -489,6 +513,7 @@ class CVE:
         self.references = references
         self.notes = notes
         self.mitigation = mitigation
+        self.cvss = cvss
 
     @classmethod
     def make_from_uct_record(cls, uct_record: UCTRecord) -> "CVE":
@@ -588,6 +613,7 @@ class CVE:
             references=uct_record.references,
             notes=cls.format_cve_notes(uct_record.notes),
             mitigation=uct_record.mitigation,
+            cvss=uct_record.cvss,
         )
 
     @cachedproperty
@@ -684,6 +710,7 @@ class UCTImporter:
                 self.create_bug(cve, lp_cve)
             else:
                 self.update_bug(bug, cve, lp_cve)
+            self.update_launchpad_cve(lp_cve, cve)
         except Exception:
             transaction.abort()
             raise
@@ -886,3 +913,9 @@ class UCTImporter:
             parts.extend(["", "References:"])
             parts.extend(cve.references)
         return "\n".join(parts)
+
+    def update_launchpad_cve(self, lp_cve: CveModel, cve: CVE):
+        for cvss in cve.cvss:
+            lp_cve.setCVSSVectorForAuthority(
+                cvss.authority, cvss.vector_string
+            )
