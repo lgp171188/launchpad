@@ -18,11 +18,20 @@ class UCTImportScript(LaunchpadScript):
     )
     loglevel = logging.INFO
 
+    def add_my_options(self):
+        self.parser.add_option(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Don't commit changes to the DB.",
+        )
+
     def main(self):
         if len(self.args) != 1:
             self.parser.error("Please specify a CVE file to import")
 
-        importer = UCTImporter()
+        importer = UCTImporter(dry_run=self.options.dry_run)
 
         cve_path = Path(self.args[0])
         importer.import_cve_from_file(cve_path)
