@@ -29,7 +29,11 @@ from lp.buildmaster.enums import (
 )
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
+from lp.buildmaster.model.buildfarmjob import (
+    BuildFarmJob,
+    SpecificBuildFarmJobSourceMixin,
+)
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.interfaces.cibuild import (
@@ -594,11 +598,18 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
         store.flush()
         return cibuild
 
-    def findByGitRepository(self, git_repository, commit_sha1s=None):
-        """See `ICIBuildSet`."""
+    def _findByGitRepositoryClauses(self, git_repository, commit_sha1s=None):
+        """Return a list of Storm clauses to find builds for a repository."""
         clauses = [CIBuild.git_repository == git_repository]
         if commit_sha1s is not None:
             clauses.append(CIBuild.commit_sha1.is_in(commit_sha1s))
+        return clauses
+
+    def findByGitRepository(self, git_repository, commit_sha1s=None):
+        """See `ICIBuildSet`."""
+        clauses = self._findByGitRepositoryClauses(
+            git_repository, commit_sha1s=commit_sha1s
+        )
         return IStore(CIBuild).find(CIBuild, *clauses)
 
     def _isBuildableArchitectureAllowed(self, das):
@@ -759,7 +770,25 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def deleteByGitRepository(self, git_repository):
         """See `ICIBuildSet`."""
+        # Remove build jobs.  There won't be many queued builds, so we can
+        # afford to do this the safe but slow way via BuildQueue.destroySelf
+        # rather than in bulk.
+        build_clauses = self._findByGitRepositoryClauses(git_repository)
+        store = IStore(CIBuild)
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id == CIBuild.build_farm_job_id,
+            *build_clauses,
+        )
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(
+            store.find(CIBuild.build_farm_job_id, *build_clauses)
+        )
         self.findByGitRepository(git_repository).remove()
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
+        ).remove()
 
 
 @implementer(IMacaroonIssuer)
