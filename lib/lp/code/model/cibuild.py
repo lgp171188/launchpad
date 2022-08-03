@@ -786,9 +786,10 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             store.find(CIBuild.build_farm_job_id, *build_clauses)
         )
         self.findByGitRepository(git_repository).remove()
-        store.find(
-            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
-        ).remove()
+        if build_farm_job_ids:
+            store.find(
+                BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)
+            ).remove()
 
 
 @implementer(IMacaroonIssuer)
