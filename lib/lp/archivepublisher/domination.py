@@ -50,6 +50,7 @@ it is performed for each suite using:
 
 __all__ = ["Dominator"]
 
+import json
 from collections import defaultdict
 from datetime import timedelta
 from functools import cmp_to_key
@@ -57,7 +58,7 @@ from itertools import filterfalse
 from operator import attrgetter, itemgetter
 
 import apt_pkg
-from storm.expr import And, Count, Desc, Not, Select
+from storm.expr import And, Cast, Count, Desc, Not, Select
 from zope.component import getUtility
 
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -594,7 +595,9 @@ class Dominator:
                 Not(
                     IsDistinctFrom(
                         BinaryPackagePublishingHistory._channel,
-                        pub_record._channel,
+                        Cast(json.dumps(pub_record._channel), "jsonb")
+                        if pub_record._channel is not None
+                        else None,
                     )
                 ),
             )
