@@ -692,7 +692,7 @@ class UCTImporter:
 
         vulnerability.linkBug(bug, bug.owner)
 
-        logger.info("Create vulnerability with ID: %s", vulnerability)
+        logger.info("Created vulnerability with ID: %s", vulnerability.id)
 
         return vulnerability
 
