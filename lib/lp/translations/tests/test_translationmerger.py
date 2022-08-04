@@ -5,6 +5,7 @@ import gc
 from logging import ERROR
 
 import transaction
+from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -580,14 +581,17 @@ class TestRemoveDuplicates(TestCaseWithFactory, TranslatedProductMixin):
             "snaggle", "snaggle"
         )
         trunk_message.is_current_upstream = False
-        trunk_message.sync()
+        store = Store.of(trunk_message)
+        store.flush()
+        store.autoreload(trunk_message)
 
         potmsgset = trunk_message.potmsgset
 
         stable_message.is_current_ubuntu = True
         stable_message.potemplate = trunk_message.potemplate
         stable_message.potmsgset = potmsgset
-        stable_message.sync()
+        store.flush()
+        store.autoreload(stable_message)
 
         # We've set up a situation where trunk has two identical
         # messages (one of which is current, the other imported) and

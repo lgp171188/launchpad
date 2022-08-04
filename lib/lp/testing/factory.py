@@ -4075,8 +4075,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             potemplate = self.makePOTemplate(owner=owner, side=side)
         else:
             assert side is None, "Cannot specify both side and potemplate."
-        return potemplate.newPOFile(
-            language_code, create_sharing=create_sharing
+        return ProxyFactory(
+            potemplate.newPOFile(language_code, create_sharing=create_sharing)
         )
 
     def makePOTMsgSet(
@@ -4110,7 +4110,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if flagscomment is not None:
             potmsgset.flagscomment = flagscomment
         removeSecurityProxy(potmsgset).sync()
-        return potmsgset
+        return ProxyFactory(potmsgset)
 
     def makePOFileAndPOTMsgSet(
         self, language_code=None, msgid=None, with_plural=False, side=None
@@ -4176,7 +4176,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
             naked_translation_message.date_created = date_created
             naked_translation_message.sync()
-        return translation_message
+        return ProxyFactory(translation_message)
 
     def makeCurrentTranslationMessage(
         self,
@@ -4290,7 +4290,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
         message.markReviewed(reviewer, date_reviewed)
 
-        return message
+        return ProxyFactory(message)
 
     def makeDivergedTranslationMessage(
         self,

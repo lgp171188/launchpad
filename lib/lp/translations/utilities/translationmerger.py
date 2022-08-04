@@ -560,8 +560,6 @@ class TranslationMerger:
                 seen_potmsgsets.add(subordinate.id)
 
                 for message in subordinate.getAllTranslationMessages():
-                    message = removeSecurityProxy(message)
-
                     (
                         clashing_current,
                         clashing_imported,

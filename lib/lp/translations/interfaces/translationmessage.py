@@ -320,6 +320,16 @@ class ITranslationMessage(Interface):
         and self is deleted.
         """
 
+    def findIdenticalMessage(target_potmsgset, target_potemplate):
+        """Find a twin message to this one in a different template.
+
+        This returns the message distinct from this one with the lowest ID
+        that has the given template message (`target_potmsgset`) and
+        template (`target_potemplate`), the same language as this one, and
+        all the same translations as this one.  If there is no such message,
+        it returns None.
+        """
+
     def isHidden(pofile):
         """Whether this is an unused, hidden suggestion in `pofile`.
 
