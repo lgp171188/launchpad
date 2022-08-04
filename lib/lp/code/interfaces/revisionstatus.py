@@ -28,7 +28,7 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
-from zope.schema import Bytes, Choice, Datetime, Int, TextLine
+from zope.schema import Bytes, Choice, Datetime, Dict, Int, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -160,6 +160,17 @@ class IRevisionStatusReportEditableAttributes(Interface):
         )
     )
 
+    properties = exported(
+        Dict(
+            title=_("General-purpose metadata"),
+            description=_("A dictionary of general-purpose metadata."),
+            key_type=TextLine(title=_("ARG name")),
+            value_type=TextLine(title=_("ARG value")),
+            required=False,
+            readonly=False,
+        )
+    )
+
     @mutator_for(result)
     @operation_parameters(result=copy_field(result))
     @export_write_operation()
@@ -223,17 +234,22 @@ class IRevisionStatusReportEdit(Interface):
             title=_("A short summary of the result."), required=False
         ),
         result=Choice(vocabulary=RevisionStatusResult, required=False),
+        properties=Dict(
+            title=_("Properties dictionary"),
+            required=False,
+        ),
     )
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_write_operation()
     @operation_for_version("devel")
-    def update(title, url, result_summary, result):
+    def update(title, url, result_summary, result, properties):
         """Updates a status report.
 
         :param title: A short title for the report.
         :param url: The external url of the report.
         :param result_summary: A short summary of the result.
         :param result: The result of the report.
+        :param properties: A dictionary of general-purpose metadata.
         """
 
 

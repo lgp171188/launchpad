@@ -2180,6 +2180,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         url=None,
         result=None,
         ci_build=None,
+        properties=None,
     ):
         """Create a new RevisionStatusReport."""
         if title is None:
@@ -2198,6 +2199,13 @@ class LaunchpadObjectFactory(ObjectFactory):
                 commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
+        if properties is None:
+            properties = {
+                "launchpad.source-name": "go-module",
+                "launchpad.source-version": "v0.0.1",
+                "soss.source_url": "some url",
+                "soss.commit_id": "some commit id",
+            }
         return getUtility(IRevisionStatusReportSet).new(
             user,
             title,
@@ -2207,6 +2215,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             result_summary,
             result,
             ci_build=ci_build,
+            properties=properties,
         )
 
     def makeRevisionStatusArtifact(

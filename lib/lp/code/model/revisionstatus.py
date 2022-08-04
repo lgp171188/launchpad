@@ -11,6 +11,7 @@ import io
 import os
 
 import pytz
+from storm.databases.postgres import JSON
 from storm.expr import Desc
 from storm.locals import And, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
@@ -70,6 +71,8 @@ class RevisionStatusReport(StormBase):
         name="date_finished", tzinfo=pytz.UTC, allow_none=True
     )
 
+    properties = JSON("properties", allow_none=True)
+
     def __init__(
         self,
         git_repository,
@@ -80,6 +83,7 @@ class RevisionStatusReport(StormBase):
         result_summary,
         result,
         ci_build=None,
+        properties=None,
     ):
         super().__init__()
         self.creator = user
@@ -91,6 +95,7 @@ class RevisionStatusReport(StormBase):
         self.ci_build = ci_build
         self.date_created = UTC_NOW
         self.transitionToNewResult(result)
+        self.properties = properties
 
     def setLog(self, log_data):
         filename = "%s-%s.txt" % (self.title, self.commit_sha1)
@@ -147,7 +152,14 @@ class RevisionStatusReport(StormBase):
             self.date_finished = UTC_NOW
         self.result = result
 
-    def update(self, title=None, url=None, result_summary=None, result=None):
+    def update(
+        self,
+        title=None,
+        url=None,
+        result_summary=None,
+        result=None,
+        properties=None,
+    ):
         if title is not None:
             self.title = title
         if url is not None:
@@ -156,6 +168,8 @@ class RevisionStatusReport(StormBase):
             self.result_summary = result_summary
         if result is not None:
             self.transitionToNewResult(result)
+        if properties is not None:
+            self.properties = properties
 
     def getArtifactURLs(self, artifact_type):
         clauses = [
@@ -200,6 +214,7 @@ class RevisionStatusReportSet:
         date_finished=None,
         log=None,
         ci_build=None,
+        properties=None,
     ):
         """See `IRevisionStatusReportSet`."""
         store = IStore(RevisionStatusReport)
@@ -212,6 +227,7 @@ class RevisionStatusReportSet:
             result_summary,
             result,
             ci_build=ci_build,
+            properties=properties,
         )
         store.add(report)
         return report
