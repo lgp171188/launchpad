@@ -1,4 +1,4 @@
-# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import six
@@ -89,6 +89,13 @@ class PillarScenariosMixin(WithScenarios):
     def _skipUnlessProduct(self):
         if self.pillar_factory_name != "makeProduct":
             self.skipTest("Only relevant for Product.")
+
+    def isPillarADistribution(self):
+        return self.pillar_factory_name == "makeDistribution"
+
+    def _skipUnlessDistribution(self):
+        if not self.isPillarADistribution():
+            self.skipTest("Only relevant for Distribution.")
 
     def _makePillar(self, **kwargs):
         return getattr(self.factory, self.pillar_factory_name)(**kwargs)
@@ -1669,8 +1676,8 @@ class TestSharingService(
         self._assert_updatePillarSharingPoliciesUnauthorized(anyone)
 
     def create_shared_artifacts(self, pillar, grantee, user):
-        # Create some shared bugs, branches, Git repositories, and
-        # specifications.
+        # Create some shared bugs, branches, Git repositories, snaps,
+        # specifications, ocirecipes, and vulnerabilities.
         bugs = []
         bug_tasks = []
         for x in range(0, 10):
@@ -1727,6 +1734,14 @@ class TestSharingService(
                 information_type=InformationType.USERDATA,
             )
             ocirecipes.append(ocirecipe)
+        vulnerabilities = []
+        if self.isPillarADistribution():
+            for _ in range(10):
+                vulnerability = self.factory.makeVulnerability(
+                    distribution=pillar,
+                    information_type=InformationType.PROPRIETARY,
+                )
+                vulnerabilities.append(vulnerability)
 
         # Grant access to grantee as well as the person who will be doing the
         # query. The person who will be doing the query is not granted access
@@ -1761,7 +1776,19 @@ class TestSharingService(
         getUtility(IService, "sharing").ensureAccessGrants(
             [grantee], pillar.owner, ocirecipes=ocirecipes[:9]
         )
-        return bug_tasks, branches, gitrepositories, snaps, specs, ocirecipes
+        if vulnerabilities:
+            getUtility(IService, "sharing").ensureAccessGrants(
+                [grantee], pillar.owner, vulnerabilities=vulnerabilities[:9]
+            )
+        return (
+            bug_tasks,
+            branches,
+            gitrepositories,
+            snaps,
+            specs,
+            ocirecipes,
+            vulnerabilities,
+        )
 
     def test_getSharedArtifacts(self):
         # Test the getSharedArtifacts method.
@@ -1782,6 +1809,7 @@ class TestSharingService(
             snaps,
             specs,
             ocirecipes,
+            vulnerabilities,
         ) = self.create_shared_artifacts(pillar, grantee, user)
 
         # Check the results.
@@ -1792,6 +1820,7 @@ class TestSharingService(
         shared_snaps = artifacts["snaps"]
         shared_specs = artifacts["specifications"]
         shared_ocirecipes = artifacts["ocirecipes"]
+        shared_vulnerabilities = artifacts["vulnerabilities"]
 
         self.assertContentEqual(bug_tasks[:9], shared_bugtasks)
         self.assertContentEqual(branches[:9], shared_branches)
@@ -1799,6 +1828,10 @@ class TestSharingService(
         self.assertContentEqual(snaps[:9], shared_snaps)
         self.assertContentEqual(specs[:9], shared_specs)
         self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
+        if self.isPillarADistribution():
+            self.assertContentEqual(
+                vulnerabilities[:9], shared_vulnerabilities
+            )
 
     def _assert_getSharedPillars(self, pillar, who=None):
         # Test that 'who' can query the shared pillars for a grantee.
@@ -1894,7 +1927,7 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        bug_tasks, _, _, _, _, _ = self.create_shared_artifacts(
+        bug_tasks, _, _, _, _, _, _ = self.create_shared_artifacts(
             pillar, grantee, user
         )
 
@@ -1914,7 +1947,7 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, branches, _, _, _, _ = self.create_shared_artifacts(
+        _, branches, _, _, _, _, _ = self.create_shared_artifacts(
             pillar, grantee, user
         )
 
@@ -1934,7 +1967,7 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, gitrepositories, _, _, _ = self.create_shared_artifacts(
+        _, _, gitrepositories, _, _, _, _ = self.create_shared_artifacts(
             pillar, grantee, user
         )
 
@@ -1957,7 +1990,7 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, _, snaps, _, _ = self.create_shared_artifacts(
+        _, _, _, snaps, _, _, _ = self.create_shared_artifacts(
             pillar, grantee, user
         )
 
@@ -1977,7 +2010,7 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, _, _, specifications, _ = self.create_shared_artifacts(
+        _, _, _, _, specifications, _, _ = self.create_shared_artifacts(
             pillar, grantee, user
         )
 
@@ -1999,15 +2032,50 @@ class TestSharingService(
         login_person(owner)
         grantee = self.factory.makePerson()
         user = self.factory.makePerson()
-        _, _, _, _, _, ocirecipes = self.create_shared_artifacts(
-            pillar, grantee, user
-        )
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            ocirecipes,
+            _,
+        ) = self.create_shared_artifacts(pillar, grantee, user)
 
         # Check the results.
         shared_ocirecipes = self.service.getSharedOCIRecipes(
             pillar, grantee, user
         )
         self.assertContentEqual(ocirecipes[:9], shared_ocirecipes)
+
+    def test_getSharedVulnerabilities(self):
+        # Test the getSharedVulnerabilities method.
+        self._skipUnlessDistribution()
+        owner = self.factory.makePerson()
+        pillar = self._makePillar(
+            owner=owner,
+            specification_sharing_policy=(
+                SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
+            ),
+        )
+        login_person(owner)
+        grantee = self.factory.makePerson()
+        user = self.factory.makePerson()
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            vulnerabilities,
+        ) = self.create_shared_artifacts(pillar, grantee, user)
+
+        # Check the results.
+        shared_vulnerabilities = self.service.getSharedVulnerabilities(
+            pillar, grantee, user
+        )
+        self.assertContentEqual(vulnerabilities[:9], shared_vulnerabilities)
 
     def test_getPeopleWithAccessBugs(self):
         # Test the getPeopleWithoutAccess method with bugs.

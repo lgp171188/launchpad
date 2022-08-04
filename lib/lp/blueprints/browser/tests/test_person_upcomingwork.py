@@ -455,22 +455,22 @@ class TestPersonUpcomingWork(BrowserTestCase):
         public_workitem = self.factory.makeSpecificationWorkItem(
             assignee=person, milestone=today_milestone
         )
+        public_spec_name = public_workitem.specification.name
         proprietary_workitem = self.factory.makeSpecificationWorkItem(
             assignee=person,
             milestone=today_milestone,
             specification=proprietary_spec,
         )
+        proprietary_spec_name = removeSecurityProxy(
+            proprietary_workitem
+        ).specification.name
         browser = self.getViewBrowser(person, view_name="+upcomingwork")
-        self.assertIn(public_workitem.specification.name, browser.contents)
-        self.assertNotIn(
-            proprietary_workitem.specification.name, browser.contents
-        )
+        self.assertIn(public_spec_name, browser.contents)
+        self.assertNotIn(proprietary_spec_name, browser.contents)
         browser = self.getViewBrowser(
             person, view_name="+upcomingwork", user=product.owner
         )
-        self.assertIn(
-            proprietary_workitem.specification.name, browser.contents
-        )
+        self.assertIn(proprietary_spec_name, browser.contents)
 
 
 class TestPersonUpcomingWorkView(TestCaseWithFactory):

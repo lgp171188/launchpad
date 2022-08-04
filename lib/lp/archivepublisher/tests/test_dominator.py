@@ -517,9 +517,76 @@ class TestDominator(TestNativePublishingBase):
         for pub in overrides_2:
             self.assertEqual(PackagePublishingStatus.PUBLISHED, pub.status)
 
-    def test_dominate_by_channel(self):
-        # Publications only dominate other publications in the same channel.
-        # (Currently only tested for binary publications.)
+    def test_dominate_sources_by_channel(self):
+        # Source publications only dominate other publications in the same
+        # channel.
+        with lp_dbuser():
+            archive = self.factory.makeArchive()
+            distroseries = self.factory.makeDistroSeries(
+                distribution=archive.distribution
+            )
+            das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+            repository = self.factory.makeGitRepository(
+                target=self.factory.makeDistributionSourcePackage(
+                    distribution=archive.distribution
+                )
+            )
+            ci_builds = [
+                self.factory.makeCIBuild(
+                    git_repository=repository, distro_arch_series=das
+                )
+                for _ in range(3)
+            ]
+        spn = self.factory.makeSourcePackageName()
+        sprs = [
+            ci_build.createSourcePackageRelease(
+                distroseries=distroseries,
+                sourcepackagename=spn,
+                version=version,
+                creator=ci_build.git_repository.owner,
+                archive=archive,
+            )
+            for version, ci_build in zip(("1.0", "1.1", "1.2"), ci_builds)
+        ]
+        stable_spphs = [
+            self.factory.makeSourcePackagePublishingHistory(
+                distroseries=distroseries,
+                archive=archive,
+                sourcepackagerelease=spr,
+                pocket=PackagePublishingPocket.RELEASE,
+                status=PackagePublishingStatus.PUBLISHED,
+                channel="stable",
+            )
+            for spr in sprs[:2]
+        ]
+        candidate_spph = self.factory.makeSourcePackagePublishingHistory(
+            distroseries=distroseries,
+            archive=archive,
+            sourcepackagerelease=sprs[2],
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED,
+            channel="candidate",
+        )
+
+        dominator = Dominator(self.logger, archive)
+        dominator.judgeAndDominate(
+            distroseries, PackagePublishingPocket.RELEASE
+        )
+
+        # The older of the two stable publications is superseded, while the
+        # current stable publication and the candidate publication are left
+        # alone.
+        self.checkPublication(
+            stable_spphs[0], PackagePublishingStatus.SUPERSEDED
+        )
+        self.checkPublications(
+            (stable_spphs[1], candidate_spph),
+            PackagePublishingStatus.PUBLISHED,
+        )
+
+    def test_dominate_binaries_by_channel(self):
+        # Binary publications only dominate other publications in the same
+        # channel.
         with lp_dbuser():
             archive = self.factory.makeArchive()
             distroseries = self.factory.makeDistroSeries(

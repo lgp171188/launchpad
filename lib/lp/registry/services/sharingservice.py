@@ -1,4 +1,4 @@
-# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes for pillar and artifact sharing service."""
@@ -35,6 +35,8 @@ from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.blueprints.model.specification import Specification
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
+from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
+from lp.bugs.model.vulnerability import Vulnerability
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
@@ -239,6 +241,7 @@ class SharingService:
         include_snaps=True,
         include_specifications=True,
         include_ocirecipes=True,
+        include_vulnerabilities=True,
     ):
         """See `ISharingService`."""
         bug_ids = set()
@@ -247,6 +250,7 @@ class SharingService:
         snap_ids = set()
         specification_ids = set()
         ocirecipe_ids = set()
+        vulnerability_ids = set()
         for artifact in self.getArtifactGrantsForPersonOnPillar(
             pillar, person
         ):
@@ -262,6 +266,8 @@ class SharingService:
                 specification_ids.add(artifact.specification_id)
             elif artifact.ocirecipe_id and include_ocirecipes:
                 ocirecipe_ids.add(artifact.ocirecipe_id)
+            elif artifact.vulnerability_id and include_vulnerabilities:
+                vulnerability_ids.add(artifact.vulnerability_id)
 
         # Load the bugs.
         bugtasks = []
@@ -295,6 +301,9 @@ class SharingService:
         ocirecipes = []
         if ocirecipe_ids:
             ocirecipes = load(OCIRecipe, ocirecipe_ids)
+        vulnerabilities = []
+        if vulnerability_ids:
+            vulnerabilities = load(Vulnerability, vulnerability_ids)
 
         return {
             "bugtasks": bugtasks,
@@ -303,6 +312,7 @@ class SharingService:
             "snaps": snaps,
             "specifications": specifications,
             "ocirecipes": ocirecipes,
+            "vulnerabilities": vulnerabilities,
         }
 
     @available_with_permission("launchpad.Driver", "pillar")
@@ -317,6 +327,7 @@ class SharingService:
             include_specifications=False,
             include_snaps=False,
             include_ocirecipes=False,
+            include_vulnerabilities=False,
         )
         return artifacts["bugtasks"]
 
@@ -332,6 +343,7 @@ class SharingService:
             include_specifications=False,
             include_snaps=False,
             include_ocirecipes=False,
+            include_vulnerabilities=False,
         )
         return artifacts["branches"]
 
@@ -347,6 +359,7 @@ class SharingService:
             include_specifications=False,
             include_snaps=False,
             include_ocirecipes=False,
+            include_vulnerabilities=False,
         )
         return artifacts["gitrepositories"]
 
@@ -362,6 +375,7 @@ class SharingService:
             include_gitrepositories=False,
             include_specifications=False,
             include_ocirecipes=False,
+            include_vulnerabilities=False,
         )
         return artifacts["snaps"]
 
@@ -377,6 +391,7 @@ class SharingService:
             include_gitrepositories=False,
             include_snaps=False,
             include_ocirecipes=False,
+            include_vulnerabilities=False,
         )
         return artifacts["specifications"]
 
@@ -392,8 +407,25 @@ class SharingService:
             include_gitrepositories=False,
             include_snaps=False,
             include_specifications=False,
+            include_vulnerabilities=False,
         )
         return artifacts["ocirecipes"]
+
+    @available_with_permission("launchpad.Driver", "pillar")
+    def getSharedVulnerabilities(self, pillar, person, user):
+        """See `ISharingService`."""
+        artifacts = self.getSharedArtifacts(
+            pillar,
+            person,
+            user,
+            include_bugs=False,
+            include_branches=False,
+            include_gitrepositories=False,
+            include_snaps=False,
+            include_specifications=False,
+            include_ocirecipes=False,
+        )
+        return artifacts["vulnerabilities"]
 
     def _getVisiblePrivateSpecificationIDs(self, person, specifications):
         store = Store.of(specifications[0])
@@ -447,6 +479,7 @@ class SharingService:
         specifications=None,
         ignore_permissions=False,
         ocirecipes=None,
+        vulnerabilities=None,
     ):
         """See `ISharingService`."""
         bug_ids = []
@@ -454,6 +487,7 @@ class SharingService:
         gitrepository_ids = []
         snap_ids = []
         ocirecipes_ids = []
+        vulnerability_ids = []
         for bug in bugs or []:
             if not ignore_permissions and not check_permission(
                 "launchpad.View", bug
@@ -489,6 +523,12 @@ class SharingService:
             ):
                 raise Unauthorized
             ocirecipes_ids.append(ocirecipe.id)
+        for vulnerability in vulnerabilities or []:
+            if not ignore_permissions and not check_permission(
+                "launchpad.View", vulnerability
+            ):
+                raise Unauthorized
+            vulnerability_ids.append(vulnerability.id)
 
         # Load the bugs.
         visible_bugs = []
@@ -547,6 +587,14 @@ class SharingService:
                 )
             )
 
+        visible_vulnerabilities = []
+        if vulnerabilities:
+            visible_vulnerabilities = list(
+                getUtility(IVulnerabilitySet).findByIds(
+                    vulnerability_ids, visible_by_user=person
+                )
+            )
+
         return {
             "bugs": visible_bugs,
             "branches": visible_branches,
@@ -554,6 +602,7 @@ class SharingService:
             "snaps": visible_snaps,
             "specifications": visible_specs,
             "ocirecipes": visible_ocirecipes,
+            "vulnerabilities": visible_vulnerabilities,
         }
 
     def getInvisibleArtifacts(
@@ -1056,6 +1105,7 @@ class SharingService:
         snaps=None,
         specifications=None,
         ocirecipes=None,
+        vulnerabilities=None,
         ignore_permissions=False,
     ):
         """See `ISharingService`."""
@@ -1073,6 +1123,8 @@ class SharingService:
             artifacts.extend(specifications)
         if ocirecipes:
             artifacts.extend(ocirecipes)
+        if vulnerabilities:
+            artifacts.extend(vulnerabilities)
         if not ignore_permissions:
             # The user needs to have launchpad.Edit permission on all supplied
             # bugs and branches or else we raise an Unauthorized exception.

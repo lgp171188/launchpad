@@ -1,4 +1,4 @@
-# Copyright 2012-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for sharing service."""
@@ -26,6 +26,7 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.bugs.interfaces.bug import IBug
+from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
@@ -192,6 +193,14 @@ class ISharingService(IService):
         :return: a collection of OCI recipes.
         """
 
+    def getSharedVulnerabilities(pillar, person, user):
+        """Return the vulnerabilities shared between the pillar and person.
+
+        :param user: the user making the request. Only the vulnerabilities
+            visible to the user will be included in the result.
+        :param: a collection of vulnerabilities.
+        """
+
     def getVisibleArtifacts(
         person,
         bugs=None,
@@ -200,6 +209,7 @@ class ISharingService(IService):
         snaps=None,
         specifications=None,
         ocirecipes=None,
+        vulnerabilities=None,
     ):
         """Return the artifacts shared with person.
 
@@ -215,6 +225,8 @@ class ISharingService(IService):
         :param specifications: the specifications to check for which a
             person has access.
         :param ocirecipes: the OCI recipes to check for which a person
+            has access.
+        :param vulnerabilities: the vulnerabilities to check for which person
             has access.
         :return: a collection of artifacts the person can see.
         """
@@ -375,6 +387,11 @@ class ISharingService(IService):
             title=_("OCI recipes"),
             required=False,
         ),
+        vulnerabilities=List(
+            Reference(schema=IVulnerability),
+            title=_("Vulnerabilities"),
+            required=False,
+        ),
     )
     @operation_for_version("devel")
     def revokeAccessGrants(
@@ -387,6 +404,7 @@ class ISharingService(IService):
         snaps=None,
         specifications=None,
         ocirecipes=None,
+        vulnerabilities=None,
     ):
         """Remove a grantee's access to the specified artifacts.
 
@@ -399,6 +417,7 @@ class ISharingService(IService):
         :param snaps: The snap recipes for which to revoke access
         :param specifications: the specifications for which to revoke access
         :param ocirecipes: The OCI recipes for which to revoke access
+        :param vulnerabilities: The vulnerabilities for which to revoke access
         """
 
     @export_write_operation()
@@ -423,6 +442,11 @@ class ISharingService(IService):
             title=_("OCI recipes"),
             required=False,
         ),
+        vulnerabilities=List(
+            Reference(schema=IVulnerability),
+            title=_("Vulnerabilities"),
+            required=False,
+        ),
     )
     @operation_for_version("devel")
     def ensureAccessGrants(
@@ -434,6 +458,7 @@ class ISharingService(IService):
         snaps=None,
         specifications=None,
         ocirecipes=None,
+        vulnerabilities=None,
     ):
         """Ensure a grantee has an access grant to the specified artifacts.
 
@@ -445,6 +470,7 @@ class ISharingService(IService):
         :param snaps: the snap recipes for which to grant access
         :param specifications: the specifications for which to grant access
         :param ocirecipes: the OCI recipes for which to grant access
+        :param vulnerabilities: the vulnerabilities for which to grant access
         """
 
     @export_write_operation()

@@ -208,11 +208,13 @@ You are now in a newly-cloned Git repository, with one branch ('master'),
 into whose working tree the other source dependencies have been symlinked.
 The source dependencies actually live in ``../lp-sourcedeps``.
 
+.. _pre-commit:
+
 Installing the pre-commit hook
 ==============================
 
 If you intend to make any changes to Launchpad, you should also set up
-`pre-commit <https://pre-commit.com/>`_ now:
+`pre-commit <https://pre-commit.com/>`__ now:
 
 1. Install ``pre-commit`` itself.  If your host system is Ubuntu 20.10 or
    newer, then ``sudo apt install pre-commit`` is enough; otherwise, you can

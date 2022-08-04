@@ -1101,35 +1101,57 @@ class AbstractYUITestCase(TestCase):
         """Return an ID for this test based on the file path."""
         return os.path.relpath(self.test_path, config.root)
 
-    def setUp(self):
-        super().setUp()
-        # html5browser imports from the gir/pygtk stack which causes
-        # twisted tests to break because of gtk's initialize.
-        from lp.testing import html5browser
+    def checkResults(self):
+        """Check the results.
 
-        client = html5browser.Browser()
-        page = client.load_page(
+        The tests are run during `setUp()`, but failures need to be reported
+        from here.
+        """
+        assert self.layer.browser
+        results = self.layer.browser.run_tests(
             self.html_uri,
             timeout=self.suite_timeout,
-            initial_timeout=self.initial_timeout,
             incremental_timeout=self.incremental_timeout,
         )
         report = None
-        if page.content:
-            report = simplejson.loads(page.content)
-        if page.return_code == page.CODE_FAIL:
-            self._yui_results = self.TIMEOUT
-            self._last_test_info = report
-            return
+        if results.results:
+            report = results.results
+
+        if results.status == results.Status.TIMEOUT:
+            msg = "JS timed out."
+            if results.last_test_message is not None:
+                try:
+                    msg += (
+                        " The last test that ran to "
+                        "completion before timing out was "
+                        "{testCase}:{testName}.  The test {type}ed.".format(
+                            **results.last_test_message
+                        )
+                    )
+                except (KeyError, TypeError):
+                    msg += (
+                        " The test runner received an unexpected error "
+                        "when trying to show information about the last "
+                        "test to run.  The data it received was {}.".format(
+                            results.last_test_message
+                        )
+                    )
+            elif (
+                self.incremental_timeout is not None
+                or self.initial_timeout is not None
+            ):
+                msg += "  The test may never have started."
+            self.fail(msg)
+
         # Data['type'] is complete (an event).
         # Data['results'] is a dict (type=report)
         # with 1 or more dicts (type=testcase)
         # with 1 for more dicts (type=test).
         if report.get("type", None) != "complete":
             # Did not get a report back.
-            self._yui_results = self.MISSING_REPORT
-            return
-        self._yui_results = {}
+            self.fail("The data returned by js is not a test report.")
+
+        yui_results = {}
         for key, value in report["results"].items():
             if isinstance(value, dict) and value["type"] == "testcase":
                 testcase_name = key
@@ -1138,51 +1160,22 @@ class AbstractYUITestCase(TestCase):
                     if isinstance(value, dict) and value["type"] == "test":
                         test_name = "%s.%s" % (testcase_name, key)
                         test = value
-                        self._yui_results[test_name] = dict(
+                        yui_results[test_name] = dict(
                             result=test["result"], message=test["message"]
                         )
 
-    def checkResults(self):
-        """Check the results.
-
-        The tests are run during `setUp()`, but failures need to be reported
-        from here.
-        """
-        if self._yui_results == self.TIMEOUT:
-            msg = "JS timed out."
-            if self._last_test_info is not None:
-                try:
-                    msg += (
-                        "  The last test that ran to "
-                        "completion before timing out was "
-                        "%(testCase)s:%(testName)s.  The test %(type)sed."
-                        % self._last_test_info
-                    )
-                except (KeyError, TypeError):
-                    msg += (
-                        "  The test runner received an unexpected error "
-                        "when trying to show information about the last "
-                        "test to run.  The data it received was %r."
-                        % (self._last_test_info,)
-                    )
-            elif (
-                self.incremental_timeout is not None
-                or self.initial_timeout is not None
-            ):
-                msg += "  The test may never have started."
-            self.fail(msg)
-        elif self._yui_results == self.MISSING_REPORT:
-            self.fail("The data returned by js is not a test report.")
-        elif self._yui_results is None or len(self._yui_results) == 0:
+        if not yui_results:
             self.fail("Test harness or js report format changed.")
+
         failures = []
-        for test_name in self._yui_results:
-            result = self._yui_results[test_name]
+        for test_name, result in yui_results.items():
             if result["result"] not in ("pass", "ignore"):
                 failures.append(
-                    "Failure in %s.%s: %s"
-                    % (self.test_path, test_name, result["message"])
+                    "Failure in {}.{}: {}".format(
+                        self.test_path, test_name, result["message"]
+                    )
                 )
+
         self.assertEqual([], failures, "\n".join(failures))
 
 

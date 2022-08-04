@@ -105,8 +105,8 @@ class ISourcePackagePublic(
     distribution = exported(
         Reference(
             Interface,
-            # Really IDistribution, circular import fixed in
-            # _schema_circular_imports.
+            # Really IDistribution, patched in
+            # lp.registry.interfaces.webservice.
             title=_("Distribution"),
             required=True,
             readonly=True,
@@ -118,6 +118,8 @@ class ISourcePackagePublic(
     # cause circular imports. Set in _schema_circular_imports.
     distroseries = exported(
         Reference(
+            # Really IDistroSeries, patched in
+            # lp.registry.interfaces.webservice.
             Interface,
             title=_("Distribution Series"),
             required=True,
@@ -135,6 +137,8 @@ class ISourcePackagePublic(
             required=False,
             vocabulary="ProductSeries",
             readonly=True,
+            # Really IProductSeries, patched in
+            # lp.registry.interfaces.webservice.
             schema=Interface,
             description=_(
                 "The registered project series that this source package "
@@ -277,8 +281,7 @@ class ISourcePackagePublic(
             vocabulary=PackagePublishingPocket,
         )
     )
-    # Actually returns an IBranch, but we say Interface here to avoid circular
-    # imports. Correct interface specified in _schema_circular_imports.
+    # Really IBranch, patched in lp.registry.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
     @operation_for_version("beta")
@@ -340,15 +343,13 @@ class ISourcePackagePublic(
 class ISourcePackageEdit(Interface):
     """SourcePackage attributes requiring launchpad.Edit."""
 
-    # 'branch' should be IBranch, but we use the base class to avoid
-    # circular imports. Correct interface specific in
-    # _schema_circular_imports.
     @operation_parameters(
         pocket=Choice(
             title=_("Pocket"),
             required=True,
             vocabulary=PackagePublishingPocket,
         ),
+        # Really IBranch, patched in lp.registry.interfaces.webservice.
         branch=Reference(Interface, title=_("Branch"), required=False),
     )
     @call_with(registrant=REQUEST_USER)

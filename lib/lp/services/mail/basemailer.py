@@ -9,6 +9,7 @@ import logging
 import sys
 from collections import OrderedDict
 from smtplib import SMTPException
+from typing import Any, Dict, Optional
 
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -180,7 +181,7 @@ class BaseMailer:
         """Return the name of the template to use for this email body."""
         return self._template_name
 
-    def _getTemplateParams(self, email, recipient):
+    def _getTemplateParams(self, email, recipient) -> Dict[str, Any]:
         """Return a dict of values to use in the body and subject."""
         reason, rationale = self._recipients.getReason(email)
         params = {"reason": reason.getReason()}
@@ -197,7 +198,7 @@ class BaseMailer:
             self.delta.interface,
         )
 
-    def _getBody(self, email, recipient):
+    def _getBody(self, email, recipient) -> str:
         """Return the complete body to use for this email."""
         template = get_email_template(
             self._getTemplateName(email, recipient), app=self.app
@@ -213,7 +214,9 @@ class BaseMailer:
             body = append_footer(body, footer)
         return body
 
-    def _getFooter(self, email, recipient, params):
+    def _getFooter(
+        self, email, recipient, params: Dict[str, Any]
+    ) -> Optional[str]:
         """Provide a footer to attach to the body, or None."""
         return None
 

@@ -626,8 +626,18 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             )
             for _ in range(2)
         ]
+        das = self.factory.makeDistroArchSeries(distroseries=dses[0])
+        ci_build = self.factory.makeCIBuild(distro_arch_series=das)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
+            sourcepackagename="foo",
+            version="1.0",
+            format=SourcePackageType.CI_BUILD,
+            ci_build=ci_build,
+        )
         spph = self.factory.makeSourcePackagePublishingHistory(
             archive=pool.archive,
+            sourcepackagerelease=spr,
             distroseries=dses[0],
             pocket=PackagePublishingPocket.RELEASE,
             component="main",
@@ -658,6 +668,10 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
             },
             path.properties,
         )
@@ -670,6 +684,10 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.channel": list(
                     sorted("%s:edge" % ds.name for ds in dses)
                 ),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
             },
             path.properties,
         )
@@ -689,11 +707,27 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             )
             for ds in dses
         ]
+        ci_build = self.factory.makeCIBuild(distro_arch_series=dases[0])
         spr = self.factory.makeSourcePackageRelease(
             archive=pool.archive,
             sourcepackagename="foo",
             version="1.0",
             format=SourcePackageType.CI_BUILD,
+            ci_build=ci_build,
+        )
+        bpn = self.factory.makeBinaryPackageName(name="foo")
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename=bpn,
+            version="1.0",
+            ci_build=ci_build,
+            binpackageformat=BinaryPackageFormat.WHL,
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0-py3-none-any.whl"
+            ),
+            filetype=BinaryPackageFileType.WHL,
         )
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             archive=pool.archive,
@@ -706,14 +740,6 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             architecturespecific=False,
             channel="edge",
         )
-        bpr = bpph.binarypackagerelease
-        bpf = self.factory.makeBinaryPackageFile(
-            binarypackagerelease=bpr,
-            library_file=self.factory.makeLibraryFileAlias(
-                filename="foo-1.0-py3-none-any.whl"
-            ),
-            filetype=BinaryPackageFileType.WHL,
-        )
         bpphs = [bpph]
         bpphs.append(
             getUtility(IPublishingSet).copyBinaries(
@@ -725,9 +751,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             )[0]
         )
         transaction.commit()
-        pool.addFile(
-            None, bpr.sourcepackagename, bpr.sourcepackageversion, bpf
-        )
+        pool.addFile(None, bpph.pool_name, bpph.pool_version, bpf)
         path = pool.rootpath / "foo" / "1.0" / "foo-1.0-py3-none-any.whl"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
@@ -736,12 +760,14 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
             },
             path.properties,
         )
-        pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
-        )
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -750,6 +776,10 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.channel": list(
                     sorted("%s:edge" % ds.name for ds in dses)
                 ),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
             },
             path.properties,
         )

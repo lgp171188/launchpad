@@ -147,6 +147,8 @@ class ICve(Interface):
     )
     references = Attribute("The set of CVE References for this CVE.")
 
+    vulnerabilities = Attribute("Vulnerabilities related to this CVE entry.")
+
     date_made_public = exported(
         Datetime(title=_("Date Made Public"), required=False, readonly=True),
         as_of="devel",

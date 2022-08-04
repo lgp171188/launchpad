@@ -449,6 +449,22 @@ class Bug(SQLBase, InformationTypeMixin):
         )
 
     @property
+    def vulnerabilities(self):
+        from lp.bugs.model.vulnerability import Vulnerability
+
+        ids = [
+            int(vuln_id)
+            for _, vuln_id in getUtility(IXRefSet).findFrom(
+                ("bug", str(self.id)), types=["vulnerability"]
+            )
+        ]
+        return list(
+            sorted(
+                bulk.load(Vulnerability, ids), key=operator.attrgetter("id")
+            )
+        )
+
+    @property
     def questions(self):
         from lp.answers.model.question import Question
 

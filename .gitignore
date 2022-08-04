@@ -75,3 +75,4 @@ yarn/node_modules
 /wheels
 requirements/combined.txt
 .tox/
+/geckodriver.log
