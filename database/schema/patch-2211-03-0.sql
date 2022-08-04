@@ -3,7 +3,7 @@
 
 SET client_min_messages=ERROR;
 
-ALTER TABLE RevisionStatusArtifact
-    ADD COLUMN soss_properties jsonb;
+ALTER TABLE RevisionStatusReport
+    ADD COLUMN properties jsonb;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 03, 0);
