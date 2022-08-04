@@ -16,6 +16,7 @@ For each entry in UCT we:
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 """
 import logging
+from collections import defaultdict
 from datetime import datetime, timezone
 from enum import Enum
 from itertools import chain
@@ -56,6 +57,7 @@ from lp.registry.model.distributionsourcepackage import (
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.registry.model.sourcepackage import SourcePackage
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 
 __all__ = [
@@ -132,17 +134,9 @@ class UCTRecord:
         ),
     )
 
-    Note = NamedTuple(
-        "Note",
-        (
-            ("author", str),
-            ("text", str),
-        ),
-    )
-
     def __init__(
         self,
-        path: Path,
+        parent_dir: str,
         assigned_to: str,
         bugs: List[str],
         cvss: List[CVSS],
@@ -153,13 +147,13 @@ class UCTRecord:
         description: str,
         discovered_by: str,
         mitigation: Optional[str],
-        notes: List[Note],
+        notes: str,
         priority: Priority,
         references: List[str],
         ubuntu_description: str,
         packages: List[Package],
     ):
-        self.path = path
+        self.parent_dir = parent_dir
         self.assigned_to = assigned_to
         self.bugs = bugs
         self.cvss = cvss
@@ -288,7 +282,7 @@ class UCTRecord:
             )
 
         entry = UCTRecord(
-            path=cve_path,
+            parent_dir=cve_path.absolute().parent.name,
             assigned_to=cls.pop_cve_property(cve_data, "Assigned-to"),
             bugs=cls.pop_cve_property(cve_data, "Bugs").split("\n"),
             cvss=cvss,
@@ -307,10 +301,7 @@ class UCTRecord:
             mitigation=cls.pop_cve_property(
                 cve_data, "Mitigation", required=False
             ),
-            notes=[
-                cls.Note(author=author, text=text)
-                for author, text in cls.pop_cve_property(cve_data, "Notes")
-            ],
+            notes=cls._format_notes(cls.pop_cve_property(cve_data, "Notes")),
             priority=cls.Priority(cls.pop_cve_property(cve_data, "Priority")),
             references=cls.pop_cve_property(cve_data, "References").split(
                 "\n"
@@ -349,13 +340,7 @@ class UCTRecord:
         self._write_field(
             "Ubuntu-Description", self.ubuntu_description.split("\n"), output
         )
-        notes = []
-        for note in self.notes:
-            note_lines = note.text.split("\n")
-            notes.append("{}> {}".format(note.author, note_lines[0]))
-            for line in note_lines[1:]:
-                notes.append("  " + line)
-        self._write_field("Notes", notes, output)
+        self._write_field("Notes", self.notes.split("\n"), output)
         self._write_field(
             "Mitigation",
             self.mitigation.split("\n") if self.mitigation else "",
@@ -435,6 +420,16 @@ class UCTRecord:
         else:
             raise AssertionError()
 
+    @classmethod
+    def _format_notes(cls, notes: List[Tuple[str, str]]) -> str:
+        lines = []
+        for author, text in notes:
+            note_lines = text.split("\n")
+            lines.append("{}> {}".format(author, note_lines[0]))
+            for line in note_lines[1:]:
+                lines.append("  " + line)
+        return "\n".join(lines)
+
 
 class CVE:
 
@@ -464,6 +459,7 @@ class CVE:
         UCTRecord.Priority.UNTRIAGED: BugTaskImportance.UNDECIDED,
         UCTRecord.Priority.NEGLIGIBLE: BugTaskImportance.WISHLIST,
     }
+    PRIORITY_MAP_REVERSE = {v: k for k, v in PRIORITY_MAP.items()}
 
     BUG_TASK_STATUS_MAP = {
         UCTRecord.PackageStatus.IGNORED: BugTaskStatus.WONTFIX,
@@ -476,22 +472,31 @@ class CVE:
         UCTRecord.PackageStatus.NEEDED: BugTaskStatus.NEW,
         UCTRecord.PackageStatus.PENDING: BugTaskStatus.FIXCOMMITTED,
     }
+    BUG_TASK_STATUS_MAP_REVERSE = {
+        v: k for k, v in BUG_TASK_STATUS_MAP.items()
+    }
 
     VULNERABILITY_STATUS_MAP = {
         "active": VulnerabilityStatus.ACTIVE,
         "ignored": VulnerabilityStatus.IGNORED,
         "retired": VulnerabilityStatus.RETIRED,
     }
+    VULNERABILITY_STATUS_MAP_REVERSE = {
+        v: k for k, v in VULNERABILITY_STATUS_MAP.items()
+    }
 
     def __init__(
         self,
         sequence: str,
-        date_made_public: Optional[datetime],
+        crd: Optional[datetime],
+        public_date: Optional[datetime],
+        public_date_at_USN: Optional[datetime],
         distro_packages: List[DistroPackage],
         series_packages: List[SeriesPackage],
         importance: BugTaskImportance,
         status: VulnerabilityStatus,
         assignee: Optional[Person],
+        discovered_by: str,
         description: str,
         ubuntu_description: str,
         bug_urls: List[str],
@@ -501,12 +506,15 @@ class CVE:
         cvss: List[CVSS],
     ):
         self.sequence = sequence
-        self.date_made_public = date_made_public
+        self.crd = crd
+        self.public_date = public_date
+        self.public_date_at_USN = public_date_at_USN
         self.distro_packages = distro_packages
         self.series_packages = series_packages
         self.importance = importance
         self.status = status
         self.assignee = assignee
+        self.discovered_by = discovered_by
         self.description = description
         self.ubuntu_description = ubuntu_description
         self.bug_urls = bug_urls
@@ -532,10 +540,9 @@ class CVE:
 
         for uct_package in uct_record.packages:
             source_package_name = spn_set.getOrCreateByName(uct_package.name)
-            package_priority = uct_package.priority or uct_record.priority
             package_importance = (
-                cls.PRIORITY_MAP[package_priority]
-                if package_priority
+                cls.PRIORITY_MAP[uct_package.priority]
+                if uct_package.priority
                 else None
             )
 
@@ -563,12 +570,9 @@ class CVE:
                 if distro_package not in distro_packages:
                     distro_packages.append(distro_package)
 
-                series_package_priority = (
-                    uct_package_status.priority or package_priority
-                )
                 series_package_importance = (
-                    cls.PRIORITY_MAP[series_package_priority]
-                    if series_package_priority
+                    cls.PRIORITY_MAP[uct_package_status.priority]
+                    if uct_package_status.priority
                     else None
                 )
 
@@ -597,24 +601,101 @@ class CVE:
 
         return cls(
             sequence=uct_record.candidate,
-            date_made_public=(
-                uct_record.crd
-                or uct_record.public_date_at_USN
-                or uct_record.public_date
-            ),
+            crd=uct_record.crd,
+            public_date=uct_record.public_date,
+            public_date_at_USN=uct_record.public_date_at_USN,
             distro_packages=distro_packages,
             series_packages=series_packages,
             importance=cls.PRIORITY_MAP[uct_record.priority],
             status=cls.infer_vulnerability_status(uct_record),
             assignee=assignee,
+            discovered_by=uct_record.discovered_by,
             description=uct_record.description,
             ubuntu_description=uct_record.ubuntu_description,
             bug_urls=uct_record.bugs,
             references=uct_record.references,
-            notes=cls.format_cve_notes(uct_record.notes),
+            notes=uct_record.notes,
             mitigation=uct_record.mitigation,
             cvss=uct_record.cvss,
         )
+
+    def to_uct_record(self) -> UCTRecord:
+        series_packages_by_name = defaultdict(
+            list
+        )  # type: Dict[SourcePackageName, List[CVE.SeriesPackage]]
+        for series_package in self.series_packages:
+            series_packages_by_name[
+                series_package.package.sourcepackagename
+            ].append(series_package)
+
+        packages = []  # type: List[UCTRecord.Package]
+        processed_packages = set()  # type: Set[SourcePackageName]
+        for distro_package in self.distro_packages:
+            spn = distro_package.package.sourcepackagename
+            if spn in processed_packages:
+                continue
+            processed_packages.add(spn)
+            statuses = []  # type: List[UCTRecord.DistroSeriesPackageStatus]
+            for series_package in series_packages_by_name[spn]:
+                series = series_package.package.distroseries
+                if series.status == SeriesStatus.DEVELOPMENT:
+                    series_name = "devel"
+                else:
+                    series_name = series.name
+                statuses.append(
+                    UCTRecord.DistroSeriesPackageStatus(
+                        distroseries=series_name,
+                        status=self.BUG_TASK_STATUS_MAP_REVERSE[
+                            series_package.status
+                        ],
+                        reason=series_package.status_explanation,
+                        priority=(
+                            self.PRIORITY_MAP_REVERSE[
+                                series_package.importance
+                            ]
+                            if series_package.importance
+                            else None
+                        ),
+                    )
+                )
+
+            packages.append(
+                UCTRecord.Package(
+                    name=spn.name,
+                    statuses=statuses,
+                    priority=(
+                        self.PRIORITY_MAP_REVERSE[distro_package.importance]
+                        if distro_package.importance
+                        else None
+                    ),
+                    tags=set(),
+                    patches=[],
+                )
+            )
+        return UCTRecord(
+            parent_dir=self.VULNERABILITY_STATUS_MAP_REVERSE.get(
+                self.status, ""
+            ),
+            assigned_to=self.assignee.name if self.assignee else "",
+            bugs=self.bug_urls,
+            cvss=self.cvss,
+            candidate=self.sequence,
+            crd=self.crd,
+            public_date=self.public_date,
+            public_date_at_USN=self.public_date_at_USN,
+            description=self.description,
+            discovered_by=self.discovered_by,
+            mitigation=self.mitigation,
+            notes=self.notes,
+            priority=self.PRIORITY_MAP_REVERSE[self.importance],
+            references=self.references,
+            ubuntu_description=self.ubuntu_description,
+            packages=packages,
+        )
+
+    @property
+    def date_made_public(self):
+        return self.crd or self.public_date_at_USN or self.public_date
 
     @cachedproperty
     def affected_distributions(self) -> Set[Distribution]:
@@ -631,16 +712,8 @@ class CVE:
         """
         Infer vulnerability status based on the parent folder of the CVE file.
         """
-        cve_folder_name = uct_record.path.absolute().parent.name
         return cls.VULNERABILITY_STATUS_MAP.get(
-            cve_folder_name, VulnerabilityStatus.NEEDS_TRIAGE
-        )
-
-    @classmethod
-    def format_cve_notes(cls, notes: List[UCTRecord.Note]) -> str:
-        return "\n".join(
-            "{author}> {text}".format(author=note.author, text=note.text)
-            for note in notes
+            uct_record.parent_dir, VulnerabilityStatus.NEEDS_TRIAGE
         )
 
     @classmethod
@@ -769,7 +842,7 @@ class UCTImporter:
             bug, cve.distro_packages[1:], cve.series_packages
         )
         self.update_statuses_and_importances(
-            bug, cve.distro_packages[1:], cve.series_packages
+            bug, cve.importance, cve.distro_packages, cve.series_packages
         )
         self.assign_bug_tasks(bug, cve.assignee)
 
@@ -793,7 +866,7 @@ class UCTImporter:
 
         self.create_bug_tasks(bug, cve.distro_packages, cve.series_packages)
         self.update_statuses_and_importances(
-            bug, cve.distro_packages, cve.series_packages
+            bug, cve.importance, cve.distro_packages, cve.series_packages
         )
         self.assign_bug_tasks(bug, cve.assignee)
         self.update_external_bug_urls(bug, cve.bug_urls)
@@ -872,21 +945,30 @@ class UCTImporter:
     def update_statuses_and_importances(
         self,
         bug: BugModel,
+        cve_importance: BugTaskImportance,
         distro_packages: List[CVE.DistroPackage],
         series_packages: List[CVE.SeriesPackage],
     ) -> None:
         bug_tasks = bug.bugtasks  # type: List[BugTask]
         bug_task_by_target = {t.target: t for t in bug_tasks}
 
+        package_importances = {}
+
         for dp in distro_packages:
             task = bug_task_by_target[dp.package]
-            if task.importance != dp.importance:
-                task.transitionToImportance(dp.importance, self.bug_importer)
+            dp_importance = dp.importance or cve_importance
+            package_importances[dp.package.sourcepackagename] = dp_importance
+            if task.importance != dp_importance:
+                task.transitionToImportance(dp_importance, self.bug_importer)
 
         for sp in series_packages:
             task = bug_task_by_target[sp.package]
-            if task.importance != sp.importance:
-                task.transitionToImportance(sp.importance, self.bug_importer)
+            package_importance = package_importances[
+                sp.package.sourcepackagename
+            ]
+            sp_importance = sp.importance or package_importance
+            if task.importance != sp_importance:
+                task.transitionToImportance(sp_importance, self.bug_importer)
             if task.status != sp.status:
                 task.transitionToStatus(sp.status, self.bug_importer)
             if task.status_explanation != sp.status_explanation:
