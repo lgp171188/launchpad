@@ -912,7 +912,7 @@ class UCTImporter:
             creator=bug.owner,
             cve=lp_cve,
             status=cve.status,
-            description=cve.description,
+            description=cve.ubuntu_description,
             notes=cve.notes,
             mitigation=cve.mitigation,
             importance=cve.importance,
@@ -930,7 +930,7 @@ class UCTImporter:
         self, vulnerability: Vulnerability, cve: CVE
     ) -> None:
         vulnerability.status = cve.status
-        vulnerability.description = cve.description
+        vulnerability.description = cve.ubuntu_description
         vulnerability.notes = cve.notes
         vulnerability.mitigation = cve.mitigation
         vulnerability.importance = cve.importance
@@ -989,8 +989,6 @@ class UCTImporter:
 
     def make_bug_description(self, cve: CVE) -> str:
         parts = [cve.description]
-        if cve.ubuntu_description:
-            parts.extend(["", "Ubuntu-Description:", cve.ubuntu_description])
         if cve.references:
             parts.extend(["", "References:"])
             parts.extend(cve.references)

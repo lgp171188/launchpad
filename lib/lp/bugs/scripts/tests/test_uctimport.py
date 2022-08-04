@@ -519,10 +519,6 @@ class TestUCTImporter(TestCaseWithFactory):
         self.assertEqual(InformationType.PUBLICSECURITY, bug.information_type)
 
         expected_description = cve.description
-        if cve.ubuntu_description:
-            expected_description = "{}\n\nUbuntu-Description:\n{}".format(
-                expected_description, cve.ubuntu_description
-            )
         if cve.references:
             expected_description = "{}\n\nReferences:\n{}".format(
                 expected_description, "\n".join(cve.references)
@@ -592,7 +588,7 @@ class TestUCTImporter(TestCaseWithFactory):
             self.assertEqual(self.bug_importer, vulnerability.creator)
             self.assertEqual(self.lp_cve, vulnerability.cve)
             self.assertEqual(cve.status, vulnerability.status)
-            self.assertEqual(cve.description, vulnerability.description)
+            self.assertEqual(cve.ubuntu_description, vulnerability.description)
             self.assertEqual(cve.notes, vulnerability.notes)
             self.assertEqual(cve.mitigation, vulnerability.mitigation)
             self.assertEqual(cve.importance, vulnerability.importance)
