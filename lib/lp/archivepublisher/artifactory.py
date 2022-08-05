@@ -18,6 +18,7 @@ from urllib.parse import quote_plus
 import requests
 from artifactory import ArtifactoryPath
 from dohq_artifactory.auth import XJFrogArtApiAuth
+from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
 from lp.services.config import config
@@ -255,20 +256,34 @@ class ArtifactoryPoolEntry:
         # https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
         # (private).
         if ISourcePackageReleaseFile.providedBy(self.pub_file):
-            ci_build = self.pub_file.sourcepackagerelease.ci_build
+            release = self.pub_file.sourcepackagerelease
         elif IBinaryPackageFile.providedBy(self.pub_file):
-            ci_build = self.pub_file.binarypackagerelease.ci_build
+            release = self.pub_file.binarypackagerelease
         else:
-            ci_build = None
-        if ci_build is not None:
+            # There are no other kinds of `IPackageReleaseFile` at the moment.
+            raise AssertionError("Unsupported file: %r" % self.pub_file)
+        if release.ci_build is not None:
             properties.update(
                 {
                     "soss.source_url": [
-                        ci_build.git_repository.getCodebrowseUrl()
+                        release.ci_build.git_repository.getCodebrowseUrl()
                     ],
-                    "soss.commit_id": [ci_build.commit_sha1],
+                    "soss.commit_id": [release.ci_build.commit_sha1],
                 }
             )
+        if "soss.license" not in properties:
+            license_field = release.getUserDefinedField("license")
+            if zope_isinstance(license_field, dict):
+                if "spdx" in license_field:
+                    properties["soss.license"] = [
+                        "spdx:%s" % license_field["spdx"]
+                    ]
+                elif "path" in license_field:
+                    # Not ideal for parsing, but we have precedent for
+                    # putting unadorned paths here, and it doesn't seem very
+                    # likely that a path will begin with "spdx:" so there
+                    # probably won't be significant confusion in practice.
+                    properties["soss.license"] = [license_field["path"]]
         return properties
 
     def addFile(self):
