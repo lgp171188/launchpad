@@ -7,6 +7,7 @@ __all__ = [
     "CIUpload",
 ]
 
+import json
 import os
 
 from lp.archiveuploader.utils import UploadError
@@ -72,6 +73,14 @@ class CIUpload:
                     "log file `%s` for job `%s` not found"
                     % (e.filename, job_id)
                 ) from e
+
+            # attach properties, if available
+            properties_file = os.path.join(upload_path, job_id + ".properties")
+            try:
+                with open(properties_file) as f:
+                    report.update(properties=json.load(f))
+            except FileNotFoundError:
+                pass
 
             # attach artifacts
             for file_path in artifacts.get(job_id, []):
