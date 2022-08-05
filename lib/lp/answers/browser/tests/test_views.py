@@ -3,13 +3,14 @@
 
 """Test harness for Answer Tracker related unit tests."""
 
-__all__ = []
-
 import unittest
+from typing import List
 
 from lp.testing import BrowserTestCase
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
+
+__all__ = []  # type: List[str]
 
 
 class TestEmailObfuscated(BrowserTestCase):

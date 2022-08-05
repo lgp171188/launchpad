@@ -234,6 +234,7 @@ class OfficialBugTag(Storm):
     product_id = Int(name="product")
     product = Reference(product_id, "Product.id")
 
+    @property
     def target(self):
         """See `IOfficialBugTag`."""
         # A database constraint ensures that either distribution or
@@ -243,7 +244,8 @@ class OfficialBugTag(Storm):
         else:
             return self.product
 
-    def _settarget(self, target):
+    @target.setter
+    def target(self, target):
         """See `IOfficialBugTag`."""
         if IDistribution.providedBy(target):
             self.distribution = target
@@ -254,5 +256,3 @@ class OfficialBugTag(Storm):
                 "The target of an OfficialBugTag must be either an "
                 "IDistribution instance or an IProduct instance."
             )
-
-    target = property(target, _settarget, doc=target.__doc__)

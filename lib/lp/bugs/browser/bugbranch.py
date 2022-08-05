@@ -10,6 +10,8 @@ __all__ = [
     "BugBranchView",
 ]
 
+from typing import List
+
 from lazr.restful.interfaces import IWebServiceClientRequest
 from zope.component import adapter, getMultiAdapter
 from zope.interface import Interface, implementer
@@ -56,7 +58,9 @@ class BugBranchAddView(LaunchpadFormView):
     def label(self):
         return "Add a branch to bug #%i" % self.context.bug.id
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugBranchDeleteView(LaunchpadEditFormView):
@@ -64,7 +68,7 @@ class BugBranchDeleteView(LaunchpadEditFormView):
 
     schema = IBugBranch
 
-    field_names = []
+    field_names = []  # type: List[str]
 
     def initialize(self):
         LaunchpadEditFormView.initialize(self)
@@ -73,7 +77,9 @@ class BugBranchDeleteView(LaunchpadEditFormView):
     def next_url(self):
         return canonical_url(self.context.bug)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action("Remove link", name="delete")
     def delete_action(self, action, data):
@@ -124,7 +130,9 @@ class BranchLinkToBugView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action(_("Continue"), name="continue")
     def continue_action(self, action, data):

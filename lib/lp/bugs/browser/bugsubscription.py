@@ -11,6 +11,8 @@ __all__ = [
     "BugSubscriptionListView",
 ]
 
+from typing import List
+
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache, IWebServiceClientRequest
 from simplejson import dumps
@@ -82,7 +84,9 @@ class BugSubscriptionAddView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @property
     def label(self):
@@ -196,7 +200,9 @@ class BugSubscriptionSubscribeSelfView(
             next_url = context_url
         return next_url
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @cachedproperty
     def _subscribers_for_current_user(self):
@@ -706,7 +712,7 @@ class BugMuteSelfView(LaunchpadFormView):
     """A view to mute a user's bug mail for a given bug."""
 
     schema = IBugSubscription
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
@@ -721,7 +727,9 @@ class BugMuteSelfView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     def initialize(self):
         self.is_muted = self.context.bug.isMuted(self.user)

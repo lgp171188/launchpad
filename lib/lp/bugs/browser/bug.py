@@ -28,6 +28,7 @@ import json
 import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Type
 
 from lazr.enum import EnumeratedType, Item
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -188,7 +189,7 @@ class BugSetNavigation(Navigation):
 class BugContextMenu(ContextMenu):
     """Context menu of actions that can be performed upon a Bug."""
 
-    usedfor = IBug
+    usedfor = IBug  # type: Type[Interface]
     links = [
         "editdescription",
         "markduplicate",
@@ -408,10 +409,12 @@ class MaloneView(LaunchpadFormView):
     schema = IFrontPageBugTaskSearch
     field_names = ["searchtext", "scope"]
 
-    # Test: standalone/xx-slash-malone-slash-bugs.rst
-    error_message = None
-
     page_title = "Launchpad Bugs"
+
+    # Test: standalone/xx-slash-malone-slash-bugs.rst
+    @property
+    def error_message(self):
+        return None
 
     @property
     def target_css_class(self):
@@ -790,7 +793,9 @@ class BugEditViewBase(LaunchpadEditFormView):
         """Return the next URL to call when this call completes."""
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugEditView(BugEditViewBase):
@@ -805,7 +810,9 @@ class BugEditView(BugEditViewBase):
         """The form label."""
         return "Edit details for bug #%d" % self.context.bug.id
 
-    page_title = label
+    @property
+    def page_title(self):
+        return self.label
 
     @action("Change", name="change")
     def change_action(self, action, data):
@@ -876,7 +883,9 @@ class BugLockStatusEditView(LaunchpadEditFormView):
             return canonical_url(self.context)
         return None
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugMarkAsDuplicateView(BugEditViewBase):
@@ -999,7 +1008,9 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
             return canonical_url(self.context)
         return None
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @property
     def initial_values(self):

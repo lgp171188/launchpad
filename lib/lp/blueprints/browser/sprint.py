@@ -25,6 +25,7 @@ __all__ = [
 import csv
 import io
 from collections import defaultdict
+from typing import List
 
 import pytz
 from lazr.restful.utils import smartquote
@@ -401,7 +402,7 @@ class SprintDeleteView(LaunchpadFormView):
     """Form for deleting sprints."""
 
     schema = ISprint
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
@@ -430,7 +431,9 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
             'Review discussion topics for "%s" sprint' % self.context.title
         )
 
-    page_title = label
+    @property
+    def page_title(self):
+        return self.label
 
     def initialize(self):
         self.status_message = None
@@ -591,13 +594,13 @@ class SprintSetNavigationMenu(RegistryCollectionActionMenuBase):
     """Action menu for sprints index."""
 
     usedfor = ISprintSet
-    links = (
+    links = [
         "register_team",
         "register_project",
         "register_sprint",
         "create_account",
         "view_all_sprints",
-    )
+    ]
 
     @enabled_with_permission("launchpad.View")
     def register_sprint(self):

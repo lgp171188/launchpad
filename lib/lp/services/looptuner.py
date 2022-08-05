@@ -396,7 +396,7 @@ class TunableLoop:
 
     goal_seconds = 2
     minimum_chunk_size = 1
-    maximum_chunk_size = None  # Override.
+    maximum_chunk_size = None  # type: int
     cooldown_time = 0
 
     def __init__(self, log, abort_time=None):

@@ -25,9 +25,9 @@ from lp.testing.gpgkeys import import_public_test_keys
 class TestStagedBinaryUploadBase(TestUploadProcessorBase):
     name = "baz"
     version = "1.0-1"
-    distribution_name = None
-    distroseries_name = None
-    pocket = None
+    distribution_name = None  # type: str
+    distroseries_name = None  # type: str
+    pocket = None  # type: PackagePublishingPocket
     policy = "buildd"
     no_mails = True
 

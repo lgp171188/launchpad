@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import doctest
+from typing import Any, Type
 
 from lazr.enum import EnumeratedType, Item
 from lazr.enum._enum import DBEnumeratedType, DBItem
@@ -31,7 +32,7 @@ class ItemWidgetTestCase(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    WIDGET_CLASS = None
+    WIDGET_CLASS = None  # type: Type[Any]
     SAFE_TERM = SimpleTerm("object-1", "token-1", "Safe title")
     UNSAFE_TERM = SimpleTerm("object-2", "token-2", "<unsafe> &nbsp; title")
 

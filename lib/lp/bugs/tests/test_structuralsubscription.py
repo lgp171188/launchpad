@@ -148,8 +148,8 @@ class FilteredStructuralSubscriptionTestBase:
     def makeBugTask(self):
         return self.factory.makeBugTask(target=self.target)
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         self.ordinary_subscriber = self.factory.makePerson()
         login_person(self.ordinary_subscriber)
         self.target = self.makeTarget()

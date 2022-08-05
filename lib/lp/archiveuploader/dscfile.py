@@ -394,14 +394,13 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         all exceptions that are generated while processing DSC file checks.
         """
 
-        for error in SourceUploadFile.verify(self):
-            yield error
+        yield from SourceUploadFile.verify(self)
 
         # Check size and checksum of the DSC file itself
         try:
             self.checkSizeAndCheckSum()
-        except UploadError as error:
-            yield error
+        except UploadError as e:
+            yield e
 
         try:
             raw_files = parse_and_merge_file_lists(self._dict, changes=False)
@@ -426,8 +425,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 file_instance = DSCUploadedFile(
                     filepath, hashes, size, self.policy, self.logger
                 )
-            except UploadError as error:
-                yield error
+            except UploadError as e:
+                yield e
             else:
                 files.append(file_instance)
         self.files = files
@@ -463,10 +462,10 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                     with warnings.catch_warnings():
                         warnings.simplefilter("error")
                         PkgRelation.parse_relations(field)
-                except Warning as error:
+                except Warning as e:
                     yield UploadError(
                         "%s: invalid %s field; cannot be parsed by deb822: %s"
-                        % (self.filename, field_name, error)
+                        % (self.filename, field_name, e)
                     )
 
         # Verify if version declared in changesfile is the same than that
@@ -478,8 +477,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 % (self.filename, self.dsc_version, self.version)
             )
 
-        for error in self.checkFiles():
-            yield error
+        yield from self.checkFiles()
 
     def _getFileByName(self, filename):
         """Return the corresponding file reference in the policy context.

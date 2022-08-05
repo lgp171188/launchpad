@@ -69,10 +69,10 @@ class IBugNotificationSet(Interface):
     def getDeferredNotifications():
         """Returns the deferred notifications.
 
-        A deferred noticiation is one that is pending but has no recipients.
+        A deferred notification is one that is pending but has no recipients.
         """
 
-    def addNotification(self, bug, is_comment, message, recipients, activity):
+    def addNotification(bug, is_comment, message, recipients, activity):
         """Create a new `BugNotification`.
 
         Create a new `BugNotification` object and the corresponding

@@ -4,6 +4,7 @@
 """Test vocabulary adapters."""
 
 from datetime import datetime
+from typing import List
 from urllib.parse import urlencode
 
 import pytz
@@ -23,6 +24,7 @@ from lp.app.errors import UnexpectedFormData
 from lp.registry.interfaces.irc import IIrcIDSet
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.person import Person
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.vocabulary import (
     CountableIterator,
@@ -506,16 +508,16 @@ class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
 
 @implementer(IHugeVocabulary)
 class TestPersonVocabulary:
-    test_persons = []
+    test_persons = []  # type: List[Person]
 
     @classmethod
-    def setTestData(cls, person_list):
+    def setTestData(cls, person_list: List[Person]):
         cls.test_persons = person_list
 
     def __init__(self, context):
         self.context = context
 
-    def toTerm(self, person):
+    def toTerm(self, person: Person):
         return SimpleTerm(person, person.name, person.displayname)
 
     def searchForTerms(self, query=None, vocab_filter=None):

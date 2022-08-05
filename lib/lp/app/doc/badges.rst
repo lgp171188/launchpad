@@ -85,7 +85,8 @@ implementation of IHasBadges. HasBadgeBase is also a default adapter
 for Interface, which just provides the privacy badge.
 
     >>> from zope.interface import Interface, Attribute, implementer
-    >>> from lp.app.browser.badge import IHasBadges, HasBadgeBase
+    >>> from lp.app.browser.interfaces import IHasBadges
+    >>> from lp.app.browser.badge import HasBadgeBase
     >>> from lp.testing import verifyObject
     >>> @implementer(Interface)
     ... class PrivateClass:
@@ -196,7 +197,7 @@ IHasBadges.  Here is the sample from the branch.zcml to illustrate.
 
   <adapter
       for="lp.code.interfaces.branch.IBranch"
-      provides="lp.app.browser.badge.IHasBadges"
+      provides="lp.app.browser.interfaces.IHasBadges"
       factory="lp.code.browser.branchlisting.BranchBadges"
       />
 

@@ -8,6 +8,7 @@ __all__ = [
     "StepView",
 ]
 
+from typing import List
 
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory
@@ -148,7 +149,7 @@ class StepView(LaunchpadFormView):
         TextWidget, visible=False
     )
 
-    _field_names = []
+    _field_names = []  # type: List[str]
     step_name = ""
     main_action_label = "Continue"
     next_step = None

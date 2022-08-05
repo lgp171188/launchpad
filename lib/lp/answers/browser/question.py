@@ -801,7 +801,9 @@ class QuestionChangeStatusView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class QuestionTargetWidget(LaunchpadTargetWidget):
@@ -820,7 +822,6 @@ class QuestionEditView(LaunchpadEditFormView):
     """View for editing a Question."""
 
     schema = IQuestion
-    label = "Edit question"
     field_names = [
         "language",
         "title",
@@ -838,7 +839,9 @@ class QuestionEditView(LaunchpadEditFormView):
     def page_title(self):
         return "Edit question #%s details" % self.context.id
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     def setUpFields(self):
         """Select the subset of fields to display.
@@ -874,7 +877,9 @@ class QuestionEditView(LaunchpadEditFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class QuestionRejectView(LaunchpadFormView):
@@ -921,7 +926,9 @@ class QuestionRejectView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class LinkFAQMixin:
@@ -1587,4 +1594,6 @@ class QuestionLinkFAQView(LinkFAQMixin, LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url

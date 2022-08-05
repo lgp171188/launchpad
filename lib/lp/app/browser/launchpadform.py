@@ -14,6 +14,8 @@ __all__ = [
     "safe_action",
 ]
 
+from typing import List, Optional, Type
+
 import simplejson
 import transaction
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -31,7 +33,7 @@ from zope.formlib.widgets import (
     RadioWidget,
     TextAreaWidget,
 )
-from zope.interface import classImplements, implementer, providedBy
+from zope.interface import Interface, classImplements, implementer, providedBy
 from zope.traversing.interfaces import ITraversable, TraversalError
 
 from lp.services.webapp.escaping import html_escape
@@ -60,15 +62,15 @@ class LaunchpadFormView(LaunchpadView):
     prefix = "field"
 
     # The form schema
-    schema = None
+    schema = None  # type: Type[Interface]
     # Subset of fields to use
-    field_names = None
+    field_names = None  # type: Optional[List[str]]
 
     # The next URL to redirect to on successful form submission
-    next_url = None
+    next_url = None  # type: Optional[str]
     # The cancel URL is rendered as a Cancel link in the form
     # macro if set in a derived class.
-    cancel_url = None
+    cancel_url = None  # type: Optional[str]
 
     # The name of the widget that will receive initial focus in the form.
     # By default, the first widget will receive focus.  Set this to None
@@ -87,7 +89,7 @@ class LaunchpadFormView(LaunchpadView):
     # The for_input is passed through to create the fields.  If this value
     # is set to true in derived classes, then fields that are marked
     # read only will have editable widgets created for them.
-    for_input = None
+    for_input = None  # type: Optional[bool]
 
     def __init__(self, context, request):
         LaunchpadView.__init__(self, context, request)
@@ -568,8 +570,13 @@ class ReturnToReferrerMixin:
         else:
             return canonical_url(self.context)
 
-    next_url = _return_url
-    cancel_url = _return_url
+    @property
+    def next_url(self):
+        return self._return_url
+
+    @property
+    def cancel_url(self):
+        return self._return_url
 
 
 def has_structured_doc(field):

@@ -12,18 +12,16 @@ See README.txt for discussion
 from zope.formlib.exception import (
     WidgetInputErrorView as Z3WidgetInputErrorView,
 )
-from zope.formlib.interfaces import IWidgetInputError
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 from zope.schema.interfaces import ValidationError
 
+from lp.app.validators.interfaces import (
+    ILaunchpadValidationError,
+    ILaunchpadWidgetInputErrorView,
+)
 from lp.services.webapp.escaping import html_escape
 
 __all__ = ["LaunchpadValidationError"]
-
-
-class ILaunchpadValidationError(IWidgetInputError):
-    def snippet():
-        """Render as an HTML error message, as per IWidgetInputErrorView"""
 
 
 @implementer(ILaunchpadValidationError)
@@ -67,15 +65,6 @@ class LaunchpadValidationError(ValidationError):
         method.
         """
         return self.snippet()
-
-
-class ILaunchpadWidgetInputErrorView(Interface):
-    def snippet():
-        """Convert a widget input error to an html snippet
-
-        If the error implements provides a snippet() method, just return it.
-        Otherwise, fall back to the default Z3 mechanism
-        """
 
 
 @implementer(ILaunchpadWidgetInputErrorView)

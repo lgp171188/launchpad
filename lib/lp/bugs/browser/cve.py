@@ -105,7 +105,9 @@ class CveLinkView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class CveUnlinkView(CveLinkView):
@@ -123,7 +125,9 @@ class CveUnlinkView(CveLinkView):
     def label(self):
         return "Bug # %s Remove link to CVE report" % self.context.bug.id
 
-    page_title = label
+    @property
+    def page_title(self):
+        return self.label
 
     heading = "Remove links to bug reports"
 

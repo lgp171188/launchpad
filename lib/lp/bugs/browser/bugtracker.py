@@ -521,7 +521,9 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     def next_url(self):
         return canonical_url(self.context.component_group.bug_tracker)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     def updateContextFromData(self, data, context=None):
         """Link component to specified distro source package.
