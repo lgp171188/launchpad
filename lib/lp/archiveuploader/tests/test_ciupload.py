@@ -3,6 +3,7 @@
 
 """Test uploads of CIBuilds."""
 
+import json
 import os
 from urllib.parse import quote
 
@@ -92,6 +93,39 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         # we explicitly provided no log file, which causes a rejected upload
         self.assertEqual(UploadStatusEnum.REJECTED, result)
 
+    def test_properties(self):
+        # If the job produced properties, we update the report with them.
+        removeSecurityProxy(self.build).results = {
+            "build:0": {
+                "log": "test_file_hash",
+                "result": "SUCCEEDED",
+            },
+        }
+        upload_path = os.path.join(
+            self.incoming_folder,
+            "test",
+            str(self.build.archive.id),
+            self.build.distribution.name,
+        )
+        write_file(os.path.join(upload_path, "build:0.log"), b"log content")
+        write_file(
+            os.path.join(upload_path, "build:0.properties"),
+            json.dumps({"key": "value"}).encode(),
+        )
+        report = self.build.getOrCreateRevisionStatusReport("build:0")
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor,
+            self.incoming_folder,
+            "test",
+            self.build,
+        )
+
+        result = handler.processCIResult(self.log)
+
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result)
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        self.assertEqual({"key": "value"}, report.properties)
+
     def test_no_artifacts(self):
         # It is possible for a job to produce no artifacts.
         removeSecurityProxy(self.build).results = {
@@ -119,6 +153,7 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        self.assertIsNone(report.properties)
         log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
         self.assertEqual(
             {quote("build:0-%s.txt" % self.build.commit_sha1)},
@@ -170,7 +205,7 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
-
+        self.assertIsNone(report.properties)
         log_urls = report.getArtifactURLs(RevisionStatusArtifactType.LOG)
         self.assertEqual(
             {quote("build:0-%s.txt" % self.build.commit_sha1)},
@@ -203,6 +238,10 @@ class TestCIBuildUploads(TestUploadProcessorBase):
         content = "some log content"
         write_file(path, content.encode("utf-8"))
 
+        # create properties file
+        path = os.path.join(upload_path, "build:0.properties")
+        write_file(path, json.dumps({"key": "value"}).encode())
+
         # create artifact
         path = os.path.join(upload_path, "build:0", "ci.whl")
         content = b"abc"
@@ -217,11 +256,13 @@ class TestCIBuildUploads(TestUploadProcessorBase):
 
         result = handler.processCIResult(self.log)
 
-        self.assertEqual(
-            self.build,
-            getUtility(IRevisionStatusReportSet)
-            .getByCIBuildAndTitle(self.build, "build:0")
-            .ci_build,
-        )
         self.assertEqual(UploadStatusEnum.ACCEPTED, result)
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        report = getUtility(IRevisionStatusReportSet).getByCIBuildAndTitle(
+            self.build, "build:0"
+        )
+        self.assertEqual(
+            self.build,
+            report.ci_build,
+        )
+        self.assertEqual({"key": "value"}, report.properties)
