@@ -10,62 +10,6 @@ exclude = [
 ]
 
 [[tool.mypy.overrides]]
-module = "zope.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "twisted.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "storm.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "lazr.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "testtools.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "responses"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "transaction"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "soupmatchers"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "defusedxml.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "testscenarios.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "pystache"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "fixtures"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "breezy.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "feedparser"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "apt_inst"
 ignore_missing_imports = true
 
@@ -74,19 +18,19 @@ module = "apt_pkg"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "artifactory"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "breezy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "debian.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "treq"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "gpgme"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "artifactory"
+module = "defusedxml.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -94,9 +38,66 @@ module = "dohq_artifactory.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "pymacaroons"
+module = "feedparser"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fixtures"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "gpgme"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "iso8601"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "lazr.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pymacaroons"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pystache"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "responses"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "soupmatchers"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "storm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "testscenarios.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "testtools.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "transaction"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "treq"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "twisted.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "zope.*"
+ignore_missing_imports = true
+
