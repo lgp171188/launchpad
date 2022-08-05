@@ -159,7 +159,7 @@ class TestRevisionStatusReport(TestCaseWithFactory):
         }
         repo = self.factory.makeGitRepository()
         report = self.factory.makeRevisionStatusReport(
-            git_repository=repo, commit_sha1="123"
+            git_repository=repo, commit_sha1="123", properties=test_properties
         )
         self.assertEqual(test_properties, report.properties)
 
@@ -344,15 +344,15 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
         )
 
     def test_update(self):
-        report = self.factory.makeRevisionStatusReport(
-            result=RevisionStatusResult.FAILED
-        )
         test_properties = {
             "launchpad.source-name": "go-module",
             "launchpad.source-version": "v0.0.1",
             "soss.source_url": "some url",
             "soss.commit_id": "some commit id",
         }
+        report = self.factory.makeRevisionStatusReport(
+            result=RevisionStatusResult.FAILED, properties=test_properties
+        )
         requester = report.creator
         repository = report.git_repository
         initial_commit_sha1 = report.commit_sha1

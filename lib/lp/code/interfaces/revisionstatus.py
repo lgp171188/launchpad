@@ -162,12 +162,11 @@ class IRevisionStatusReportEditableAttributes(Interface):
 
     properties = exported(
         Dict(
-            title=_("General-purpose metadata"),
-            description=_("A dictionary of general-purpose metadata."),
-            key_type=TextLine(title=_("ARG name")),
-            value_type=TextLine(title=_("ARG value")),
+            title=_("Metadata for artifacts attached to this report"),
+            key_type=TextLine(),
+            value_type=TextLine(),
             required=False,
-            readonly=False,
+            readonly=True,
         )
     )
 
@@ -242,7 +241,9 @@ class IRevisionStatusReportEdit(Interface):
     @scoped(AccessTokenScope.REPOSITORY_BUILD_STATUS.title)
     @export_write_operation()
     @operation_for_version("devel")
-    def update(title, url, result_summary, result, properties):
+    def update(
+        title=None, url=None, result_summary=None, result=None, properties=None
+    ):
         """Updates a status report.
 
         :param title: A short title for the report.

@@ -2199,13 +2199,6 @@ class LaunchpadObjectFactory(ObjectFactory):
                 commit_sha1 = hashlib.sha1(self.getUniqueBytes()).hexdigest()
         if result_summary is None:
             result_summary = self.getUniqueUnicode()
-        if properties is None:
-            properties = {
-                "launchpad.source-name": "go-module",
-                "launchpad.source-version": "v0.0.1",
-                "soss.source_url": "some url",
-                "soss.commit_id": "some commit id",
-            }
         return getUtility(IRevisionStatusReportSet).new(
             user,
             title,
