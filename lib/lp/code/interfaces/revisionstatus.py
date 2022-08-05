@@ -164,7 +164,6 @@ class IRevisionStatusReportEditableAttributes(Interface):
         Dict(
             title=_("Metadata for artifacts attached to this report"),
             key_type=TextLine(),
-            value_type=TextLine(),
             required=False,
             readonly=True,
         )
