@@ -434,6 +434,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 format=SourcePackageFileType.SDIST,
                 name=sdist.name,
                 version=sdist.version,
+                # Arrange for this to be explicitly stored in the database.
+                # The source package name will be taken from the namespace
+                # of the originating repository, but we need the true
+                # upstream package name as well in order to publish files to
+                # the correct location.
+                user_defined_fields=[("package-name", sdist.name)],
             )
         return all_metadata
 
@@ -648,9 +654,17 @@ class CIBuildUploadJob(ArchiveJobDerived):
         build_target = self.ci_build.git_repository.target
         spr = releases.get(build_target.sourcepackagename)
         if spr is None:
-            # Arbitrarily pick the first scanned artifact to provide
-            # additional metadata.  (This may need refinement in future.)
-            first_metadata = scanned[0].metadata
+            # Arbitrarily pick the first scanned source artifact to provide
+            # additional metadata, falling back to the first non-source
+            # artifact if there are no source artifacts.  (This may need
+            # refinement in future.)
+            for scanned_artifact in scanned:
+                metadata = scanned_artifact.metadata
+                if isinstance(metadata, SourceArtifactMetadata):
+                    first_metadata = metadata
+                    break
+            else:
+                first_metadata = scanned[0].metadata
             spr = self.ci_build.createSourcePackageRelease(
                 distroseries=distroseries,
                 sourcepackagename=build_target.sourcepackagename,
