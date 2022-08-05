@@ -44,19 +44,27 @@ def _path_for(
     pub_file: IPackageReleaseFile,
 ) -> ArtifactoryPath:
     repository_format = archive.repository_format
+    if ISourcePackageReleaseFile.providedBy(pub_file):
+        release = pub_file.sourcepackagerelease
+    elif IBinaryPackageFile.providedBy(pub_file):
+        release = pub_file.binarypackagerelease
+    else:
+        # There are no other kinds of `IPackageReleaseFile` at the moment.
+        raise AssertionError("Unsupported file: %r" % pub_file)
     if repository_format == ArchiveRepositoryFormat.DEBIAN:
         path = rootpath / poolify(source_name)
     elif repository_format == ArchiveRepositoryFormat.PYTHON:
-        path = rootpath / source_name / source_version
+        package_name = release.getUserDefinedField("package-name")
+        if package_name is None:
+            package_name = source_name
+        path = rootpath / package_name / source_version
     elif repository_format == ArchiveRepositoryFormat.CONDA:
-        subdir = pub_file.binarypackagerelease.getUserDefinedField("subdir")
+        subdir = release.getUserDefinedField("subdir")
         if subdir is None:
             raise ValueError("Cannot publish a Conda package with no subdir")
         path = rootpath / subdir
     elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
-        module_path = pub_file.sourcepackagerelease.getUserDefinedField(
-            "module-path"
-        )
+        module_path = release.getUserDefinedField("module-path")
         if module_path is None:
             raise ValueError("Cannot publish a Go module with no module-path")
         # Base path required by https://go.dev/ref/mod#module-proxy.

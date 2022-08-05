@@ -6,11 +6,11 @@ __all__ = [
     "BinaryPackageReleaseDownloadCount",
 ]
 
+import json
 import re
 from operator import attrgetter
 from typing import Any
 
-import simplejson
 from storm.locals import Date, Int, Reference, Store, Storm
 from zope.component import getUtility
 from zope.interface import implementer
@@ -161,7 +161,7 @@ class BinaryPackageRelease(SQLBase):
 
     def __init__(self, *args, **kwargs):
         if "user_defined_fields" in kwargs:
-            kwargs["_user_defined_fields"] = simplejson.dumps(
+            kwargs["_user_defined_fields"] = json.dumps(
                 kwargs["user_defined_fields"]
             )
             del kwargs["user_defined_fields"]
@@ -189,7 +189,10 @@ class BinaryPackageRelease(SQLBase):
         """See `IBinaryPackageRelease`."""
         if self._user_defined_fields is None:
             return []
-        return simplejson.loads(self._user_defined_fields)
+        user_defined_fields = json.loads(self._user_defined_fields)
+        if user_defined_fields is None:
+            return []
+        return user_defined_fields
 
     def getUserDefinedField(self, name):
         for k, v in self.user_defined_fields:

@@ -630,6 +630,83 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         ci_build = self.factory.makeCIBuild(distro_arch_series=das)
         spr = self.factory.makeSourcePackageRelease(
             archive=pool.archive,
+            sourcepackagename="python-foo",
+            version="1.0",
+            format=SourcePackageType.CI_BUILD,
+            ci_build=ci_build,
+            user_defined_fields=[("package-name", "foo")],
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=pool.archive,
+            sourcepackagerelease=spr,
+            distroseries=dses[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            component="main",
+            sourcepackagename="python-foo",
+            version="1.0",
+            channel="edge",
+            format=SourcePackageType.CI_BUILD,
+        )
+        spr = spph.sourcepackagerelease
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.tar.gz"
+            ),
+            filetype=SourcePackageFileType.SDIST,
+        )
+        spphs = [spph]
+        spphs.append(
+            spph.copyTo(dses[1], PackagePublishingPocket.RELEASE, pool.archive)
+        )
+        transaction.commit()
+        pool.addFile(None, spr.name, spr.version, sprf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0.tar.gz"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["python-foo"],
+                "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["python-foo"],
+                "launchpad.source-version": ["1.0"],
+                "launchpad.channel": list(
+                    sorted("%s:edge" % ds.name for ds in dses)
+                ),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+
+    def test_updateProperties_python_sdist_no_package_name(self):
+        # Older sdist publications don't have package-name in
+        # user_defined_fields.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        dses = [
+            self.factory.makeDistroSeries(
+                distribution=pool.archive.distribution
+            )
+            for _ in range(2)
+        ]
+        das = self.factory.makeDistroArchSeries(distroseries=dses[0])
+        ci_build = self.factory.makeCIBuild(distro_arch_series=das)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
             sourcepackagename="foo",
             version="1.0",
             format=SourcePackageType.CI_BUILD,
