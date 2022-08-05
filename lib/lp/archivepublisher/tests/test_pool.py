@@ -57,7 +57,7 @@ class FakeLibraryFileAlias:
 class FakePackageRelease:
     def __init__(self, release_id, user_defined_fields=None, ci_build=None):
         self.id = release_id
-        self.user_defined_fields = user_defined_fields
+        self.user_defined_fields = user_defined_fields or []
         self.ci_build = ci_build
 
     def getUserDefinedField(self, name):

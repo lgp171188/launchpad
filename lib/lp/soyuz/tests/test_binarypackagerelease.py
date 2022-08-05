@@ -57,6 +57,23 @@ class TestBinaryPackageRelease(TestCaseWithFactory):
             release.user_defined_fields,
         )
 
+    def test_getUserDefinedField_no_fields(self):
+        release = self.factory.makeBinaryPackageRelease()
+        self.assertIsNone(release.getUserDefinedField("Missing"))
+
+    def test_getUserDefinedField_present(self):
+        release = self.factory.makeBinaryPackageRelease(
+            user_defined_fields=[("Key", "value")]
+        )
+        self.assertEqual("value", release.getUserDefinedField("Key"))
+        self.assertEqual("value", release.getUserDefinedField("key"))
+
+    def test_getUserDefinedField_absent(self):
+        release = self.factory.makeBinaryPackageRelease(
+            user_defined_fields=[("Key", "value")]
+        )
+        self.assertIsNone(release.getUserDefinedField("Other-Key"))
+
     def test_homepage_default(self):
         # By default, no homepage is set.
         bpr = self.factory.makeBinaryPackageRelease()
