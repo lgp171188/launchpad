@@ -218,6 +218,10 @@ class PlaceholderTranslationMessage(TranslationMessageMixIn):
     def shareIfPossible(self):
         """See `ITranslationMessage`."""
 
+    def findIdenticalMessage(self, target_potmsgset, target_potemplate):
+        """See `ITranslationMessage`."""
+        return None
+
 
 @implementer(ITranslationMessage)
 class TranslationMessage(SQLBase, TranslationMessageMixIn):
