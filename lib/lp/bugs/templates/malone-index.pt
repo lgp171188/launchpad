@@ -13,7 +13,7 @@
     <div class="top-portlet">
       <p class="error message"
          tal:condition="view/error_message"
-         tal:content="view/error_message">
+         tal:content="structure view/error_message/escapedtext">
         Error message.
       </p>
       <form id="search-all-bugs" class="central" action="/bugs/+bugs" method="get">

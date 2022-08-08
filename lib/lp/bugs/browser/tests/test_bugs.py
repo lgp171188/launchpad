@@ -63,7 +63,9 @@ class TestMaloneView(TestCaseWithFactory):
         view = create_initialized_view(
             self.application, name="+index", form=form
         )
-        self.assertEqual("Bug 'fnord' is not registered.", view.error_message)
+        self.assertEqual(
+            "Bug 'fnord' is not registered.", view.error_message.escapedtext
+        )
         self.assertEqual(None, view.request.response.getHeader("Location"))
 
     def test_redirect_list_of_bug_fail(self):
@@ -74,7 +76,8 @@ class TestMaloneView(TestCaseWithFactory):
             self.application, name="+index", form=form
         )
         self.assertEqual(
-            "Bug ['fnord', 'pting'] is not registered.", view.error_message
+            "Bug '[&#x27;fnord&#x27;, &#x27;pting&#x27;]' is not registered.",
+            view.error_message.escapedtext,
         )
         self.assertEqual(None, view.request.response.getHeader("Location"))
 
