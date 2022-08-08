@@ -674,8 +674,8 @@ class TestBzrSyncRevisions(BzrSyncTestCase):
 
         # Fake revision with negative timestamp.
         fake_rev = BzrRevision(
-            revision_id="rev42",
-            parent_ids=["rev1", "rev2"],
+            revision_id=b"rev42",
+            parent_ids=[b"rev1", b"rev2"],
             committer=self.factory.getUniqueString(),
             message=self.LOG,
             timestamp=old_timestamp,
@@ -690,7 +690,7 @@ class TestBzrSyncRevisions(BzrSyncTestCase):
         # Find the revision we just synced and check that it has the correct
         # date.
         revision = getUtility(IRevisionSet).getByRevisionId(
-            fake_rev.revision_id
+            fake_rev.revision_id.decode()
         )
         self.assertEqual(old_date, revision.revision_date)
 

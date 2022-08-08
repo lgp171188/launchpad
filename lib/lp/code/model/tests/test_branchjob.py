@@ -651,7 +651,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         job = RevisionsAddedJob.create(
             target_branch, "rev2b-id", "rev2b-id", ""
         )
-        self.assertEqual([desired_proposal], job.findRelatedBMP(["rev2a-id"]))
+        self.assertEqual([desired_proposal], job.findRelatedBMP([b"rev2a-id"]))
 
     def test_getAuthors(self):
         """Ensure getAuthors returns the authors for the revisions."""
