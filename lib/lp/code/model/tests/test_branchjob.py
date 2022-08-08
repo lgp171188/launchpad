@@ -630,7 +630,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         job = RevisionsAddedJob.create(
             target_branch, "rev2b-id", "rev2b-id", ""
         )
-        self.assertEqual([desired_proposal], job.findRelatedBMP(["rev2a-id"]))
+        self.assertEqual([desired_proposal], job.findRelatedBMP([b"rev2a-id"]))
 
     def test_findRelatedBMP_one_per_source(self):
         """findRelatedBMP only returns the most recent proposal for any
