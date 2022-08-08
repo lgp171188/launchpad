@@ -411,11 +411,6 @@ class MaloneView(LaunchpadFormView):
 
     page_title = "Launchpad Bugs"
 
-    # Test: standalone/xx-slash-malone-slash-bugs.rst
-    @property
-    def error_message(self):
-        return None
-
     @property
     def target_css_class(self):
         """The CSS class for used in the target widget."""
@@ -441,7 +436,9 @@ class MaloneView(LaunchpadFormView):
     def _redirectToBug(self, bug_id):
         """Redirect to the specified bug id."""
         if not isinstance(bug_id, str):
-            self.error_message = "Bug %r is not registered." % bug_id
+            self.error_message = structured(
+                "Bug %r is not registered.", bug_id
+            )
             return
         if bug_id.startswith("#"):
             # Be nice to users and chop off leading hashes
@@ -449,7 +446,9 @@ class MaloneView(LaunchpadFormView):
         try:
             bug = getUtility(IBugSet).getByNameOrID(bug_id)
         except NotFoundError:
-            self.error_message = "Bug %r is not registered." % bug_id
+            self.error_message = structured(
+                "Bug %r is not registered.", bug_id
+            )
         else:
             return self.request.response.redirect(canonical_url(bug))
 

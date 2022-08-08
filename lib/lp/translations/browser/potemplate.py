@@ -603,10 +603,10 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
         if referrer is None:
             # "referer" is misspelled in the HTTP specification.
             referrer = self.request.getHeader("referer")
-            # If we were looking at the actual template, we want a new
-            # URL constructed.
-            if referrer is not None and "/+pots/" in referrer:
-                returnChanged = True
+        # If we were looking at the actual template, we want a new URL
+        # constructed.
+        if referrer is not None and "/+pots/" in referrer:
+            returnChanged = True
 
         if (
             referrer is not None
@@ -757,11 +757,6 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
                 self.setFieldError(
                     "translation_domain", "Domain is already in use."
                 )
-
-    @property
-    def _return_attribute_name(self):
-        """See 'ReturnToReferrerMixin'."""
-        return "name"
 
 
 class POTemplateAdminView(POTemplateEditView):
