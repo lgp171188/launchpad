@@ -22,6 +22,10 @@ module = "artifactory"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "bleach_allowlist"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "breezy.*"
 ignore_missing_imports = true
 
