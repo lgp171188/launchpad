@@ -28,6 +28,7 @@ import dateutil.parser
 import transaction
 from contrib.cve_lib import load_cve
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -63,6 +64,7 @@ from lp.services.database.constants import UTC_NOW
 __all__ = [
     "CVE",
     "CVSS",
+    "UCTExporter",
     "UCTImporter",
     "UCTRecord",
     "UCTImportError",
@@ -320,8 +322,14 @@ class UCTRecord:
 
         return entry
 
-    def save(self, path: Path) -> None:
-        output = open(str(path), "w")
+    def save(self, output_dir: Path) -> Path:
+        if not output_dir.is_dir():
+            raise ValueError(
+                "{} does not exist or is not a directory", output_dir
+            )
+        output_path = output_dir / self.parent_dir / self.candidate
+        output_path.parent.mkdir(exist_ok=True)
+        output = open(str(output_path), "w")
         if self.public_date_at_USN:
             self._write_field(
                 "PublicDateAtUSN",
@@ -401,6 +409,7 @@ class UCTRecord:
                 )
 
         output.close()
+        return output_path
 
     def _format_datetime(self, dt: datetime) -> str:
         return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -999,3 +1008,137 @@ class UCTImporter:
             lp_cve.setCVSSVectorForAuthority(
                 cvss.authority, cvss.vector_string
             )
+
+
+class UCTExporter:
+
+    ParsedDescription = NamedTuple(
+        "ParsedDescription",
+        (
+            ("description", str),
+            ("references", List[str]),
+        ),
+    )
+
+    def export_bug_to_uct_file(self, bug_id: int, output_dir: Path) -> Path:
+        bug = getUtility(IBugSet).get(bug_id)
+        if not bug:
+            raise ValueError("Could not find bug with ID: {}".format(bug_id))
+        cve = self.make_cve_from_bug(bug)
+        uct_record = cve.to_uct_record()
+        save_to_path = uct_record.save(output_dir)
+        logger.info(
+            "Bug with ID: %s is saved to path: %s", bug_id, str(save_to_path)
+        )
+        return save_to_path
+
+    def make_cve_from_bug(self, bug: BugModel) -> CVE:
+        vulnerabilities = list(bug.vulnerabilities)
+        if not vulnerabilities:
+            raise ValueError(
+                "Bug with ID: {} does not have vulnerabilities".format(bug.id)
+            )
+        vulnerability = vulnerabilities[0]  # type: Vulnerability
+        if not vulnerability.cve:
+            raise ValueError(
+                "Bug with ID: {} - vulnerability "
+                "is not linked to a CVE".format(bug.id)
+            )
+        lp_cve = vulnerability.cve  # type: CveModel
+
+        parsed_description = self._parse_bug_description(bug.description)
+
+        bug_urls = []
+        for bug_watch in bug.watches:
+            bug_urls.append(bug_watch.url)
+
+        bug_tasks = list(bug.bugtasks)  # type: List[BugTask]
+
+        cve_importance = vulnerability.importance
+        package_importances = {}
+
+        distro_packages = []
+        for bug_task in bug_tasks:
+            target = removeSecurityProxy(bug_task.target)
+            if not isinstance(target, DistributionSourcePackage):
+                continue
+            dp_importance = bug_task.importance
+            package_importances[target.sourcepackagename] = dp_importance
+            distro_packages.append(
+                CVE.DistroPackage(
+                    package=target,
+                    importance=(
+                        dp_importance
+                        if dp_importance != cve_importance
+                        else None
+                    ),
+                )
+            )
+
+        series_packages = []
+        for bug_task in bug_tasks:
+            target = removeSecurityProxy(bug_task.target)
+            if not isinstance(target, SourcePackage):
+                continue
+            sp_importance = bug_task.importance
+            package_importance = package_importances[target.sourcepackagename]
+            series_packages.append(
+                CVE.SeriesPackage(
+                    package=target,
+                    importance=(
+                        sp_importance
+                        if sp_importance != package_importance
+                        else None
+                    ),
+                    status=bug_task.status,
+                    status_explanation=bug_task.status_explanation,
+                )
+            )
+
+        return CVE(
+            sequence="CVE-{}".format(lp_cve.sequence),
+            crd=None,  # TODO: fix this
+            public_date=vulnerability.date_made_public,
+            public_date_at_USN=None,  # TODO: fix this
+            distro_packages=distro_packages,
+            series_packages=series_packages,
+            importance=cve_importance,
+            status=vulnerability.status,
+            assignee=bug_tasks[0].assignee,
+            discovered_by="",  # TODO: fix this
+            description=parsed_description.description,
+            ubuntu_description=vulnerability.description,
+            bug_urls=bug_urls,
+            references=parsed_description.references,
+            notes=vulnerability.notes,
+            mitigation=vulnerability.mitigation,
+            cvss=[
+                CVSS(
+                    authority=authority,
+                    vector_string=vector_string,
+                )
+                for authority, vector_string in lp_cve.cvss.items()
+            ],
+        )
+
+    def _parse_bug_description(
+        self, bug_description: str
+    ) -> "ParsedDescription":
+        field_values = defaultdict(list)
+        current_field = "description"
+        known_fields = {
+            "References:": "references",
+        }
+        lines = bug_description.split("\n")
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            if line in known_fields:
+                current_field = known_fields[line]
+                continue
+            field_values[current_field].append(line)
+        return UCTExporter.ParsedDescription(
+            description="\n".join(field_values.get("description", [])),
+            references=field_values.get("references", []),
+        )

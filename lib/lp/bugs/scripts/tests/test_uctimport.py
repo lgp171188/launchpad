@@ -17,6 +17,7 @@ from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.scripts.uctimport import (
     CVE,
     CVSS,
+    UCTExporter,
     UCTImporter,
     UCTImportError,
     UCTRecord,
@@ -153,10 +154,12 @@ class TestUCTRecord(TestCase):
             uct_record.__dict__,
         )
 
-        save_to = Path(self.makeTemporaryDirectory()) / "CVE-2022-23222"
-        uct_record.save(save_to)
-
-        self.assertEqual(load_from.read_text(), save_to.read_text())
+        output_dir = Path(self.makeTemporaryDirectory())
+        saved_to_path = uct_record.save(output_dir)
+        self.assertEqual(
+            output_dir / "sampledata" / "CVE-2022-23222", saved_to_path
+        )
+        self.assertEqual(load_from.read_text(), saved_to_path.read_text())
 
 
 class TextCVE(TestCaseWithFactory):
@@ -377,6 +380,7 @@ class TextCVE(TestCaseWithFactory):
 
 class TestUCTImporter(TestCaseWithFactory):
 
+    maxDiff = None
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
@@ -432,8 +436,8 @@ class TestUCTImporter(TestCaseWithFactory):
         self.cve = CVE(
             sequence="CVE-2022-23222",
             crd=None,
-            public_date=None,
-            public_date_at_USN=self.now,
+            public_date=self.now,
+            public_date_at_USN=None,
             distro_packages=[
                 CVE.DistroPackage(
                     package=self.ubuntu_package,
@@ -459,7 +463,7 @@ class TestUCTImporter(TestCaseWithFactory):
                         sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
                         distroseries=self.ubuntu_current_series,
                     ),
-                    importance=BugTaskImportance.LOW,
+                    importance=None,
                     status=BugTaskStatus.DOESNOTEXIST,
                     status_explanation="does not exist",
                 ),
@@ -468,7 +472,7 @@ class TestUCTImporter(TestCaseWithFactory):
                         sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
                         distroseries=self.ubuntu_devel_series,
                     ),
-                    importance=BugTaskImportance.LOW,
+                    importance=None,
                     status=BugTaskStatus.INVALID,
                     status_explanation="not affected",
                 ),
@@ -477,7 +481,7 @@ class TestUCTImporter(TestCaseWithFactory):
                         sourcepackagename=self.esm_package.sourcepackagename,
                         distroseries=self.esm_supported_series,
                     ),
-                    importance=BugTaskImportance.MEDIUM,
+                    importance=None,
                     status=BugTaskStatus.WONTFIX,
                     status_explanation="ignored",
                 ),
@@ -861,9 +865,32 @@ class TestUCTImporter(TestCaseWithFactory):
 
     def test_naive_date_made_public(self):
         cve = self.cve
-        cve.public_date_at_USN = cve.public_date_at_USN.replace(tzinfo=None)
+        cve.public_date = cve.public_date.replace(tzinfo=None)
         bug = self.importer.create_bug(cve, self.lp_cve)
         self.assertEqual(
             UTC,
             bug.vulnerabilities[0].date_made_public.tzinfo,
         )
+
+    def test_make_cve_from_bug(self):
+        exporter = UCTExporter()
+        self.importer.import_cve(self.cve)
+        bug = self.importer.find_existing_bug(self.cve, self.lp_cve)
+        cve = exporter.make_cve_from_bug(bug)
+        self.assertEqual(self.cve.sequence, cve.sequence)
+        self.assertEqual(self.cve.crd, cve.crd)
+        self.assertEqual(self.cve.public_date, cve.public_date)
+        self.assertEqual(self.cve.public_date_at_USN, cve.public_date_at_USN)
+        self.assertListEqual(self.cve.distro_packages, cve.distro_packages)
+        self.assertListEqual(self.cve.series_packages, cve.series_packages)
+        self.assertEqual(self.cve.importance, cve.importance)
+        self.assertEqual(self.cve.status, cve.status)
+        self.assertEqual(self.cve.assignee, cve.assignee)
+        self.assertEqual(self.cve.discovered_by, cve.discovered_by)
+        self.assertEqual(self.cve.description, cve.description)
+        self.assertEqual(self.cve.ubuntu_description, cve.ubuntu_description)
+        self.assertListEqual(self.cve.bug_urls, cve.bug_urls)
+        self.assertListEqual(self.cve.references, cve.references)
+        self.assertEqual(self.cve.notes, cve.notes)
+        self.assertEqual(self.cve.mitigation, cve.mitigation)
+        self.assertListEqual(self.cve.cvss, cve.cvss)
