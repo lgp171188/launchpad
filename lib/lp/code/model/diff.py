@@ -326,8 +326,8 @@ class Diff(SQLBase):
             diff_ignore_branches(
                 source_branch,
                 ignore_branches,
-                six.ensure_binary(old_revision.revision_id),
-                six.ensure_binary(new_revision.revision_id),
+                old_revision.revision_id.encode(),
+                new_revision.revision_id.encode(),
                 diff_content,
             )
         return cls.fromFileAtEnd(diff_content)

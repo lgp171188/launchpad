@@ -698,7 +698,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
                         LAUNCHPAD_SERVICES,
                         self.db_branch.id,
                         "",
-                        six.ensure_str(revision_id),
+                        revision_id.decode(),
                         control_string,
                         branch_string,
                         repository_string,

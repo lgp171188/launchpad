@@ -8,7 +8,6 @@ __all__ = [
     "auto_merge_proposals",
 ]
 
-import six
 from breezy.revision import NULL_REVISION
 from zope.component import getUtility
 
@@ -168,9 +167,7 @@ def auto_merge_proposals(scan_completed):
     for proposal in db_branch.landing_candidates:
         tip_rev_id = proposal.source_branch.last_scanned_id
         if tip_rev_id in new_ancestry:
-            merged_revno = find_merged_revno(
-                merge_sorted, six.ensure_binary(tip_rev_id)
-            )
+            merged_revno = find_merged_revno(merge_sorted, tip_rev_id.encode())
             # Remember so we can find the merged revision number.
             merge_detected(
                 logger,

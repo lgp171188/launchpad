@@ -8,7 +8,6 @@ import os
 import shutil
 
 import pytz
-import six
 import transaction
 from breezy import errors as bzr_errors
 from breezy.branch import Branch
@@ -455,12 +454,12 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         """
         for bzr_revision in bzr_branch.repository.get_revisions(revision_ids):
             existing = branch.getBranchRevision(
-                revision_id=six.ensure_text(bzr_revision.revision_id)
+                revision_id=bzr_revision.revision_id.decode()
             )
             if existing is None:
                 RevisionSet().newFromBazaarRevisions([bzr_revision])
             revision = RevisionSet().getByRevisionId(
-                six.ensure_text(bzr_revision.revision_id)
+                bzr_revision.revision_id.decode()
             )
             try:
                 revno = bzr_branch.revision_id_to_revno(revision.revision_id)
@@ -1060,7 +1059,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BRZ_EMAIL="me@example.com"):
-            revision_id = six.ensure_text(self.tree.commit(commit_message))
+            revision_id = self.tree.commit(commit_message).decode()
         self.branch.last_scanned_id = revision_id
         self.branch.last_mirrored_id = revision_id
         return revision_id
@@ -1313,7 +1312,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # and last_mirror_id are different.
         self._makeBranchWithTreeAndFiles([])
         # Was not scanned yet.
-        self.branch.last_scanned_id = six.ensure_text(NULL_REVISION)
+        self.branch.last_scanned_id = NULL_REVISION.decode()
         self._makeProductSeries(TranslationsBranchImportMode.IMPORT_TEMPLATES)
         # Put the job in ready state.
         self._makeRosettaUploadJob()

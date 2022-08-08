@@ -8,7 +8,6 @@ __all__ = [
     "queue_tip_changed_email_jobs",
 ]
 
-import six
 from zope.component import getUtility
 
 from lp.code.enums import BranchSubscriptionNotificationLevel
@@ -87,7 +86,7 @@ def queue_tip_changed_email_jobs(tip_changed):
         job = getUtility(IRevisionsAddedJobSource).create(
             tip_changed.db_branch,
             tip_changed.db_branch.last_scanned_id,
-            six.ensure_text(tip_changed.bzr_branch.last_revision()),
+            tip_changed.bzr_branch.last_revision().decode(),
             config.canonical.noreply_from_address,
         )
     job.celeryRunOnCommit()
