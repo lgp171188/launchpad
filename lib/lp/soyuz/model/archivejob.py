@@ -19,6 +19,7 @@ from storm.locals import JSON, Int, Reference
 from wheel_filename import parse_wheel_filename
 from zope.component import getUtility
 from zope.interface import implementer, provider
+from zope.security.proxy import removeSecurityProxy
 
 from lp.code.enums import RevisionStatusArtifactType
 from lp.code.interfaces.cibuild import ICIBuildSet
@@ -262,6 +263,24 @@ class ScannedArtifact:
     ):
         self.artifact = artifact
         self.metadata = metadata
+
+    @property
+    def extra_fields(self) -> Optional[List[Tuple[str, Any]]]:
+        """Extra fields to be stored in user_defined_fields.
+
+        Combine fields from the report's properties (specified by the job)
+        and the scanned metadata (determined by the scanner).  In cases of
+        conflict, the scanner wins.
+        """
+        fields = {}
+        if self.artifact.report.properties is not None:
+            fields.update(removeSecurityProxy(self.artifact.report.properties))
+        if self.metadata.user_defined_fields is not None:
+            fields.update(self.metadata.user_defined_fields)
+        if fields:
+            return sorted(fields.items())
+        else:
+            return None
 
 
 @implementer(ICIBuildUploadJob)
@@ -661,19 +680,19 @@ class CIBuildUploadJob(ArchiveJobDerived):
             for scanned_artifact in scanned:
                 metadata = scanned_artifact.metadata
                 if isinstance(metadata, SourceArtifactMetadata):
-                    first_metadata = metadata
+                    first_scanned_artifact = scanned_artifact
                     break
             else:
-                first_metadata = scanned[0].metadata
+                first_scanned_artifact = scanned[0]
             spr = self.ci_build.createSourcePackageRelease(
                 distroseries=distroseries,
                 sourcepackagename=build_target.sourcepackagename,
                 # We don't have a good concept of source version here, but
                 # the data model demands one.
-                version=first_metadata.version,
+                version=first_scanned_artifact.metadata.version,
                 creator=self.requester,
                 archive=self.archive,
-                user_defined_fields=first_metadata.user_defined_fields,
+                user_defined_fields=first_scanned_artifact.extra_fields,
             )
         for scanned_artifact in scanned:
             metadata = scanned_artifact.metadata
@@ -737,7 +756,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                     binpackageformat=metadata.format,
                     architecturespecific=metadata.architecturespecific,
                     homepage=metadata.homepage,
-                    user_defined_fields=metadata.user_defined_fields,
+                    user_defined_fields=scanned_artifact.extra_fields,
                 )
             for bpf in bpr.files:
                 if (

@@ -1045,6 +1045,89 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         )
         self.assertContentEqual([], archive.getAllPublishedBinaries())
 
+    def test_run_attaches_properties(self):
+        # The upload process attaches properties from the report as
+        # `SourcePackageRelease.user_defined_fields` or
+        # `BinaryPackageRelease.user_defined_fields` as appropriate.
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.PYTHON
+        )
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution
+        )
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)
+        ]
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0]
+        )
+        report = build.getOrCreateRevisionStatusReport("build:0")
+        report.setLog(b"log data")
+        report.update(
+            properties={
+                "license": {"spdx": "MIT"},
+                # The sdist scanner sets this key.  Ensure that the scanner
+                # wins, so that it can't be confused by oddly-written jobs.
+                "package-name": "nonsense",
+            }
+        )
+        sdist_path = "wheel-indep/dist/wheel-indep-0.0.1.tar.gz"
+        with open(datadir(sdist_path), mode="rb") as f:
+            report.attach(name=os.path.basename(sdist_path), data=f.read())
+        wheel_path = "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl"
+        with open(datadir(wheel_path), mode="rb") as f:
+            report.attach(name=os.path.basename(wheel_path), data=f.read())
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
+                    sourcepackagerelease=MatchesStructure(
+                        user_defined_fields=Equals(
+                            [
+                                ["license", {"spdx": "MIT"}],
+                                # The sdist scanner sets this key, and wins.
+                                ["package-name", "wheel-indep"],
+                            ]
+                        ),
+                    ),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                *(
+                    MatchesStructure(
+                        binarypackagerelease=MatchesStructure(
+                            user_defined_fields=Equals(
+                                [
+                                    ["license", {"spdx": "MIT"}],
+                                    # The wheel scanner doesn't set this
+                                    # key, so the job is allowed to do so.
+                                    ["package-name", "nonsense"],
+                                ]
+                            ),
+                        ),
+                    )
+                    for das in dases
+                )
+            ),
+        )
+
     def test_existing_source_and_binary_releases(self):
         # A `CIBuildUploadJob` can be run even if the build in question was
         # already uploaded somewhere, and in that case may add publications
