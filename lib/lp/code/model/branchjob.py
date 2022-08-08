@@ -18,6 +18,7 @@ import operator
 import os
 import shutil
 import tempfile
+from typing import Optional
 
 import six
 import transaction
@@ -845,14 +846,19 @@ class RosettaUploadJob(BranchJobDerived):
         return not productseries.is_empty()
 
     @classmethod
-    def create(cls, branch, from_revision_id, force_translations_upload=False):
+    def create(
+        cls,
+        branch,
+        from_revision_id: Optional[str],
+        force_translations_upload: bool = False,
+    ):
         """See `IRosettaUploadJobSource`."""
         if branch is None:
             return None
 
         if from_revision_id is None:
-            from_revision_id = NULL_REVISION
-        from_revision_id = from_revision_id.decode()
+            from_revision_id = NULL_REVISION.decode()
+        from_revision_id = from_revision_id
 
         if force_translations_upload or cls.providesTranslationFiles(branch):
             metadata = cls.getMetadata(
