@@ -10,6 +10,8 @@ __all__ = [
     "BugNominationTableRowView",
 ]
 
+from typing import List
+
 from zope.component import getUtility
 from zope.interface import Interface
 
@@ -171,7 +173,7 @@ class BugNominationEditView(LaunchpadFormView):
     """Browser view class for approving and declining nominations."""
 
     schema = Interface
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):

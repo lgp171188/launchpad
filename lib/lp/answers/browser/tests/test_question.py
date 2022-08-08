@@ -2,8 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the question module."""
-
-__all__ = []
+from typing import List
 
 from zope.security.proxy import removeSecurityProxy
 
@@ -14,6 +13,8 @@ from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
+
+__all__ = []  # type: List[str]
 
 
 class TestQuestionAddView(TestCaseWithFactory):

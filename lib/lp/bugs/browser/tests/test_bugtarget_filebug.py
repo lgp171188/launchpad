@@ -314,8 +314,8 @@ class FileBugViewMixin:
             # Disable redirects on validation failure.
             pass
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         self.target = self.factory.makeProduct()
         transaction.commit()
         login_person(self.target.owner)

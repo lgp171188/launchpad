@@ -3,12 +3,13 @@
 
 """Test related to ExternalBugtracker test infrastructure."""
 
-__all__ = []
-
 import unittest
+from typing import List
 
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
+
+__all__ = []  # type: List[str]
 
 
 def test_suite():

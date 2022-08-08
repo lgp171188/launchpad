@@ -2,11 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests cronscript for retrieving components from remote Bugzillas."""
-
-__all__ = []
-
 import os
 import re
+from typing import List
 
 import responses
 import transaction
@@ -20,6 +18,8 @@ from lp.services.log.logger import BufferLogger
 from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
+
+__all__ = []  # type: List[str]
 
 
 def read_test_file(name):

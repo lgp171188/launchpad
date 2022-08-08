@@ -19,6 +19,7 @@ from configparser import ConfigParser
 from contextlib import contextmanager
 from cProfile import Profile
 from optparse import OptionParser
+from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
 import pytz
@@ -137,8 +138,8 @@ class LaunchpadScript:
 
     lock = None
     txn = None
-    usage = None
-    description = None
+    usage = None  # type: Optional[str]
+    description = None  # type: Optional[str]
     lockfilepath = None
     loglevel = logging.INFO
 

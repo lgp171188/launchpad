@@ -364,6 +364,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                         format=SourcePackageFileType.SDIST,
                         name="wheel-arch",
                         version="0.0.1",
+                        user_defined_fields=[("package-name", "wheel-arch")],
                     ),
                 }
             ),
@@ -727,6 +728,9 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                                 libraryfile=artifacts[0].library_file,
                                 filetype=SourcePackageFileType.SDIST,
                             )
+                        ),
+                        user_defined_fields=Equals(
+                            [["package-name", "wheel-arch"]]
                         ),
                     ),
                     format=Equals(SourcePackageType.CI_BUILD),

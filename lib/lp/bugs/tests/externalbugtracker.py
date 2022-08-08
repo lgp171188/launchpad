@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timedelta
 from operator import itemgetter
+from typing import Any, Dict, Tuple
 from urllib.parse import parse_qs, urljoin, urlsplit
 
 import responses
@@ -546,7 +547,7 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
         "add_comment",
         "login_required",
         "set_link",
-    )
+    )  # type: Tuple[str, ...]
 
     expired_cookie = None
 
@@ -878,10 +879,10 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
     }
 
     # Methods that require authentication.
-    auth_required_methods = [
+    auth_required_methods = (
         "add_comment",
         "login_required",
-    ]
+    )
 
     # The list of users that can log in.
     users = [
@@ -1362,8 +1363,8 @@ def strip_trac_comment(comment):
 class TestTracXMLRPCTransport(RequestsTransport):
     """An XML-RPC transport to be used when testing Trac."""
 
-    remote_bugs = {}
-    launchpad_bugs = {}
+    remote_bugs = {}  # type: Dict[str, Dict[str, Any]]
+    launchpad_bugs = {}  # type: Dict[str, int]
     seconds_since_epoch = None
     local_timezone = "UTC"
     utc_offset = 0

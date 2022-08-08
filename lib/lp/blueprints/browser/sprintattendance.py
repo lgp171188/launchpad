@@ -133,7 +133,9 @@ class BaseSprintAttendanceAddView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     _local_timeformat = "%H:%M on %A, %Y-%m-%d"
 

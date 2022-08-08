@@ -214,8 +214,8 @@ class CanBeNominatedForTestMixin:
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         login("foo.bar@canonical.com")
         self.eric = self.factory.makePerson(name="eric")
         self.setUpTarget()

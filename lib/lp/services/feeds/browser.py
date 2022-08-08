@@ -21,6 +21,11 @@ __all__ = [
     "RootAnnouncementsFeedLink",
 ]
 
+from typing import (
+    Tuple,
+    Type,
+    )
+
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.publisher.interfaces import NotFound
@@ -378,7 +383,7 @@ class FeedsMixin:
         ProjectBranchesFeedLink,
         ProjectRevisionsFeedLink,
         RootAnnouncementsFeedLink,
-    )
+    )  # type: Tuple[Type[FeedLinkBase, ...]]
 
     @property
     def feed_links(self):

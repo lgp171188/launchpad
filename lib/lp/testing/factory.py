@@ -2180,6 +2180,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         url=None,
         result=None,
         ci_build=None,
+        properties=None,
     ):
         """Create a new RevisionStatusReport."""
         if title is None:
@@ -2207,6 +2208,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             result_summary,
             result,
             ci_build=ci_build,
+            properties=properties,
         )
 
     def makeRevisionStatusArtifact(

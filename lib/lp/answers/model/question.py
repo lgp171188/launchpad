@@ -270,6 +270,7 @@ class Question(StormBase, BugLinkTargetMixin):
         return list(self._messages)
 
     # attributes
+    @property
     def target(self):
         """See `IQuestion`."""
         if self.product:
@@ -279,7 +280,8 @@ class Question(StormBase, BugLinkTargetMixin):
         else:
             return self.distribution
 
-    def _settarget(self, question_target):
+    @target.setter
+    def target(self, question_target):
         """See Question.target."""
         if not IQuestionTarget.providedBy(question_target):
             raise QuestionTargetError("The target must be an IQuestionTarget")
@@ -299,8 +301,6 @@ class Question(StormBase, BugLinkTargetMixin):
             raise AssertionError(
                 "Unknown IQuestionTarget type of %s" % question_target
             )
-
-    target = property(target, _settarget, doc=target.__doc__)
 
     @property
     def followup_subject(self):

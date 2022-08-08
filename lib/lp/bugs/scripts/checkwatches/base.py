@@ -127,7 +127,7 @@ class WorkingBase:
         self._transaction_manager = parent._transaction_manager
         self.logger = parent.logger
 
-    @property
+    @property  # type: ignore
     @contextmanager
     def interaction(self):
         """Context manager for interaction as the given user.
@@ -145,7 +145,7 @@ class WorkingBase:
         else:
             yield
 
-    @property
+    @property  # type: ignore
     @contextmanager
     def transaction(self):
         """Context manager to ring-fence database activity.
@@ -184,7 +184,7 @@ class WorkingBase:
             self._statement_logging_stop()
             self._statement_logging_start()
 
-    @property
+    @property  # type: ignore
     @contextmanager
     def statement_logging(self):
         """Context manager to start and stop SQL statement logging.

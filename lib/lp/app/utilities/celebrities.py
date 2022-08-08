@@ -5,6 +5,8 @@
 
 __all__ = ["LaunchpadCelebrities"]
 
+from typing import Set
+
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -102,7 +104,8 @@ class PersonCelebrityDescriptor(CelebrityDescriptor):
     if a given person is a celebrity for special handling.
     """
 
-    names = set()  # Populated by the constructor.
+    # Populated by the constructor.
+    names = set()  # type: Set[str]
 
     def __init__(self, name):
         PersonCelebrityDescriptor.names.add(name)

@@ -8,6 +8,7 @@ __all__ = [
 ]
 
 from textwrap import dedent
+from typing import Tuple, Type
 
 from lazr.enum import EnumeratedType, Item
 from lazr.lifecycle.event import ObjectCreatedEvent
@@ -212,7 +213,7 @@ class BugTaskCreationStep(AlsoAffectsStep):
 
     initial_focus_widget = "bug_url"
     step_name = "specify_remote_bug_url"
-    target_field_names = ()
+    target_field_names = ()  # type: Tuple[str, ...]
 
     # This is necessary so that other views which dispatch work to this one
     # have access to the newly created task.
@@ -354,7 +355,9 @@ class IAddDistroBugTaskForm(IAddBugTaskForm):
 
 
 class DistroBugTaskCreationStep(BugTaskCreationStep):
-    """Specialized BugTaskCreationStep for reporting a bug in a distro."""
+    """
+    Specialized BugTaskCreationStep for reporting a bug in a distribution.
+    """
 
     @property
     def schema(self):
@@ -755,7 +758,7 @@ class BugTrackerCreationStep(AlsoAffectsStep):
     )
     step_name = "bugtracker_creation"
     main_action_label = "Register Bug Tracker and Add to Bug Report"
-    _next_step = None
+    _next_step = None  # type: Type[StepView]
 
     def main_action(self, data):
         assert (

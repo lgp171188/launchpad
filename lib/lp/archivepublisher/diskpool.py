@@ -12,7 +12,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.services.librarian.utils import copy_and_close, sha1_from_path
@@ -189,9 +189,13 @@ class DiskPoolEntry:
             if component in components:
                 return component
 
+        return
+
     @cachedproperty
     def file_hash(self) -> str:
         """Return the SHA1 sum of this file."""
+        if TYPE_CHECKING:
+            assert self.file_component is not None
         targetpath = self.pathFor(self.file_component)
         return sha1_from_path(str(targetpath))
 
@@ -294,6 +298,8 @@ class DiskPoolEntry:
             # shuffle the symlinks, so that the one we want to delete will
             # just be one of the links, and becomes safe.
             targetcomponent = self.preferredComponent(remove=component)
+            if TYPE_CHECKING:
+                assert targetcomponent is not None
             self._shufflesymlinks(targetcomponent)
 
         return self._reallyRemove(component)
@@ -322,6 +328,9 @@ class DiskPoolEntry:
     def _shufflesymlinks(self, targetcomponent: str) -> None:
         """Shuffle the symlinks for filename so that targetcomponent contains
         the real file and the rest are symlinks to the right place..."""
+        if TYPE_CHECKING:
+            assert self.file_component is not None
+
         if targetcomponent == self.file_component:
             # We're already in the right place.
             return
@@ -391,6 +400,8 @@ class DiskPoolEntry:
         """
         component = self.preferredComponent()
         if not self.file_component == component:
+            if TYPE_CHECKING:
+                assert component is not None
             self._shufflesymlinks(component)
 
 
@@ -413,7 +424,6 @@ class DiskPool:
         self.archive = archive
         self.rootpath = Path(rootpath)
         self.temppath = Path(temppath) if temppath is not None else None
-        self.entries = {}
         self.logger = logger
 
     def _getEntry(
@@ -423,6 +433,8 @@ class DiskPool:
         pub_file: IPackageReleaseFile,
     ) -> DiskPoolEntry:
         """Return a new DiskPoolEntry for the given source and file."""
+        if TYPE_CHECKING:
+            assert self.temppath is not None
         return DiskPoolEntry(
             self.archive,
             self.rootpath,
@@ -443,6 +455,8 @@ class DiskPool:
     ) -> Path:
         """Return the path for the given pool file."""
         if file is None:
+            if TYPE_CHECKING:
+                assert pub_file is not None
             file = pub_file.libraryfile.filename
         if file is None:
             raise AssertionError("Must pass either pub_file or file")

@@ -1,8 +1,8 @@
 # Copyright 2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import namedtuple
 from contextlib import contextmanager
+from typing import Any, NamedTuple
 
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -22,34 +22,35 @@ from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 
-BUGTASKFLAT_COLUMNS = (
-    "bugtask",
-    "bug",
-    "datecreated",
-    "latest_patch_uploaded",
-    "date_closed",
-    "date_last_updated",
-    "duplicateof",
-    "bug_owner",
-    "fti",
-    "information_type",
-    "heat",
-    "product",
-    "productseries",
-    "distribution",
-    "distroseries",
-    "sourcepackagename",
-    "status",
-    "importance",
-    "assignee",
-    "milestone",
-    "owner",
-    "active",
-    "access_policies",
-    "access_grants",
+BugTaskFlat = NamedTuple(
+    "BugTaskFlat",
+    (
+        ("bugtask", Any),
+        ("bug", Any),
+        ("datecreated", Any),
+        ("latest_patch_uploaded", Any),
+        ("date_closed", Any),
+        ("date_last_updated", Any),
+        ("duplicateof", Any),
+        ("bug_owner", Any),
+        ("fti", Any),
+        ("information_type", Any),
+        ("heat", Any),
+        ("product", Any),
+        ("productseries", Any),
+        ("distribution", Any),
+        ("distroseries", Any),
+        ("sourcepackagename", Any),
+        ("status", Any),
+        ("importance", Any),
+        ("assignee", Any),
+        ("milestone", Any),
+        ("owner", Any),
+        ("active", Any),
+        ("access_policies", Any),
+        ("access_grants", Any),
+    ),
 )
-
-BugTaskFlat = namedtuple("BugTaskFlat", BUGTASKFLAT_COLUMNS)
 
 
 class BugTaskFlatTestMixin(TestCaseWithFactory):
@@ -81,7 +82,7 @@ class BugTaskFlatTestMixin(TestCaseWithFactory):
             IStore(Bug)
             .execute(
                 "SELECT %s FROM bugtaskflat WHERE bugtask = ?"
-                % ", ".join(BUGTASKFLAT_COLUMNS),
+                % ", ".join(BugTaskFlat._fields),
                 (bugtask,),
             )
             .get_one()

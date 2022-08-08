@@ -22,9 +22,14 @@ __all__ = [
 ]
 
 from collections import namedtuple
+from typing import (
+    Optional,
+    Union,
+    )
 
 import six
 from storm.base import Storm
+from storm.expr import Expr
 from storm.store import EmptyResultSet
 from zope.interface import Attribute, Interface, implementer
 from zope.schema.interfaces import IVocabulary, IVocabularyTokenized
@@ -279,8 +284,8 @@ class SQLObjectVocabularyBase(FilteredVocabularyBase):
     should derive from SQLObjectVocabularyBase.
     """
 
-    _orderBy = None
-    _filter = None
+    _orderBy = None  # type: Optional[str]
+    _filter = None  # type: Optional[Union[Expr, bool]]
     _clauseTables = None
 
     def __init__(self, context=None):

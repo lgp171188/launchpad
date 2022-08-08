@@ -7,7 +7,31 @@
 import datetime
 
 from storm.expr import SQL
-from storm.sqlobject import *  # noqa: F401,F403
+from storm.sqlobject import (  # noqa: F401
+    AND,
+    CONTAINSSTRING,
+    DESC,
+    IN,
+    LIKE,
+    NOT,
+    OR,
+    BoolCol,
+    DateCol,
+    FloatCol,
+    ForeignKey,
+    IntCol,
+    IntervalCol,
+    SingleJoin,
+    SQLConstant,
+    SQLMultipleJoin,
+    SQLObjectBase,
+    SQLObjectMoreThanOneResultError,
+    SQLObjectNotFound,
+    SQLObjectResultSet,
+    SQLRelatedJoin,
+    StringCol,
+    UtcDateTimeCol,
+)
 
 _sqlStringReplace = [
     ("\\", "\\\\"),

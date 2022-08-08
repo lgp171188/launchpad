@@ -32,8 +32,8 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBugSubscriptionFilterBase:
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         self.owner = self.factory.makePerson(name="foo")
         self.structure = self.factory.makeProduct(owner=self.owner, name="bar")
         with person_logged_in(self.owner):

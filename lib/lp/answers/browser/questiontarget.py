@@ -231,7 +231,9 @@ class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
             else:
                 return _("Questions for ${context}", mapping=replacements)
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def display_target_column(self):
@@ -562,7 +564,9 @@ class QuestionCollectionMyQuestionsView(SearchQuestionsView):
                 mapping={"context": self.context.displayname},
             )
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def empty_listing_message(self):
@@ -615,7 +619,9 @@ class QuestionCollectionNeedAttentionView(SearchQuestionsView):
                 mapping={"context": self.context.displayname},
             )
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def empty_listing_message(self):
@@ -691,7 +697,9 @@ class QuestionCollectionByLanguageView(SearchQuestionsView):
         else:
             return _("${language} questions in ${context}", mapping=mapping)
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def empty_listing_message(self):

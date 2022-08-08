@@ -2,21 +2,22 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for components and component groups (products) in bug trackers."""
-
-__all__ = []
+from typing import List
 
 import transaction
 
 from lp.testing import TestCaseWithFactory, login_person, ws_object
 from lp.testing.layers import AppServerLayer, DatabaseFunctionalLayer
 
+__all__ = []  # type: List[str]
+
 
 class BugTrackerComponentTestCase(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
 
         regular_user = self.factory.makePerson()
         login_person(regular_user)

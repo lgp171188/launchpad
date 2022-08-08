@@ -181,7 +181,9 @@ class BugWatchEditView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(getUtility(ILaunchBag).bug)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugWatchActivityPortletView(LaunchpadFormView):
@@ -212,7 +214,9 @@ class BugWatchActivityPortletView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(getUtility(ILaunchBag).bug)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @property
     def recent_watch_activity(self):

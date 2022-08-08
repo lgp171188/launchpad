@@ -5,6 +5,7 @@
 
 import re
 from datetime import datetime, timedelta
+from typing import List, Optional
 from urllib.parse import urlunsplit
 
 import transaction
@@ -228,16 +229,16 @@ class ExtractBugTrackerAndBugTest(WithScenarios, TestCase):
     layer = LaunchpadFunctionalLayer
 
     # A URL to an unregistered bug tracker.
-    base_url = None
+    base_url = None  # type: str
 
     # The bug tracker type to be tested.
     bugtracker_type = None
 
     # A sample URL to a bug in the bug tracker.
-    bug_url = None
+    bug_url = None  # type: str
 
     # The bug id in the sample bug_url.
-    bug_id = None
+    bug_id = None  # type: Optional[str]
 
     # True if the bug tracker is already registered in sampledata.
     already_registered = False
@@ -379,10 +380,11 @@ class SFExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
 
 
 class EmailAddressExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with email
-    addresses."""
+    """
+    Ensure BugWatchSet.extractBugTrackerAndBug works with email addresses.
+    """
 
-    scenarios = None
+    scenarios = []  # type: List
     bugtracker_type = BugTrackerType.EMAILADDRESS
     bug_url = "mailto:foo.bar@example.com"
     base_url = "mailto:foo.bar@example.com"

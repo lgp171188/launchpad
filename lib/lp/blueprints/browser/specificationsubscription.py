@@ -9,6 +9,8 @@ __all__ = [
     "SpecificationSubscriptionEditView",
 ]
 
+from typing import List
+
 from lazr.delegates import delegate_to
 from simplejson import dumps
 from zope.component import getUtility
@@ -37,10 +39,12 @@ class SpecificationSubscriptionAddView(LaunchpadFormView):
     label = "Subscribe to blueprint"
 
     @property
-    def cancel_url(self):
+    def next_url(self):
         return canonical_url(self.context)
 
-    next_url = cancel_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     def _subscribe(self, person, essential):
         self.context.subscribe(person, self.user, essential)
@@ -75,7 +79,7 @@ class SpecificationSubscriptionDeleteView(LaunchpadFormView):
     """Used to unsubscribe someone from a blueprint."""
 
     schema = ISpecificationSubscription
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
@@ -87,10 +91,12 @@ class SpecificationSubscriptionDeleteView(LaunchpadFormView):
     page_title = label
 
     @property
-    def cancel_url(self):
+    def next_url(self):
         return canonical_url(self.context.specification)
 
-    next_url = cancel_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action("Unsubscribe", name="unsubscribe")
     def unsubscribe_action(self, action, data):
@@ -116,10 +122,12 @@ class SpecificationSubscriptionEditView(LaunchpadEditFormView):
         return "Modify subscription to %s" % self.context.specification.title
 
     @property
-    def cancel_url(self):
+    def next_url(self):
         return canonical_url(self.context.specification)
 
-    next_url = cancel_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     @action(_("Change"), name="change")
     def change_action(self, action, data):

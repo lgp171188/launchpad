@@ -30,6 +30,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import groupby
 from operator import attrgetter
+from typing import List
 from urllib.parse import quote
 
 import transaction
@@ -1731,7 +1732,7 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
     """Used to delete a bugtask."""
 
     schema = IBugTask
-    field_names = []
+    field_names = []  # type: List[str]
 
     label = "Remove bug task"
     page_title = label
@@ -1742,6 +1743,13 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
         if not self.request.is_ajax:
             return self._next_url or self._return_url
         return None
+
+    @property
+    def cancel_url(self):
+        # We have to explicitly define `cancel_url` as a property here
+        # to make `mypy` happy - the base classes both define `cancel_url`
+        # in a non-compatible fashion
+        return super().cancel_url
 
     @action("Delete", name="delete_bugtask")
     def delete_bugtask_action(self, action, data):

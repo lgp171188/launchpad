@@ -1185,7 +1185,7 @@ class TestBugTaskPermissionsToSetAssigneeMixin:
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
+    def setUp(self, *args, **kwargs):
         """Create the test setup.
 
         We need
@@ -1196,7 +1196,7 @@ class TestBugTaskPermissionsToSetAssigneeMixin:
           owners, bug supervisors, drivers
         - bug tasks for the targets
         """
-        super().setUp()
+        super().setUp(*args, **kwargs)
         self.target_owner_member = self.factory.makePerson()
         self.target_owner_team = self.factory.makeTeam(
             owner=self.target_owner_member,

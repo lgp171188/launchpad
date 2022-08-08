@@ -6,6 +6,7 @@ import re
 import unittest
 from datetime import datetime, timedelta
 from smtplib import SMTPException
+from typing import Any, List, Optional, Type
 
 import pytz
 from fixtures import FakeLogger
@@ -66,6 +67,7 @@ from lp.services.mail.helpers import (
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.mail.stub import TestMailer
 from lp.services.messages.interfaces.message import IMessageSet
+from lp.services.messages.model.message import Message
 from lp.services.propertycache import cachedproperty
 from lp.testing import TestCase, TestCaseWithFactory, login, person_logged_in
 from lp.testing.dbuser import lp_dbuser, switch_dbuser
@@ -80,7 +82,7 @@ class MockBug:
 
     duplicateof = None
     information_type = InformationType.PUBLIC
-    messages = []
+    messages = []  # type: List[Message]
 
     def __init__(self, id, owner):
         self.id = id
@@ -725,7 +727,12 @@ class EmailNotificationTestBase(TestCaseWithFactory):
 
 class EmailNotificationsBugMixin:
 
-    change_class = change_name = old = new = alt = unexpected_bytes = None
+    change_class = None  # type: Optional[Type[Any]]
+    change_name = None  # type: Optional[str]
+    old = None  # type: Any
+    new = None  # type: Any
+    alt = None  # type: Any
+    unexpected_bytes = None  # type: Optional[bytes]
 
     def change(self, old, new):
         self.bug.addChange(
@@ -814,7 +821,7 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
 
 class EmailNotificationsAddedRemovedMixin:
 
-    old = new = added_message = removed_message = None
+    old = new = added_message = removed_message = b""
 
     def add(self, item):
         raise NotImplementedError

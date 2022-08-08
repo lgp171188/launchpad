@@ -23,8 +23,8 @@ class AddNominationTestMixin:
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         login("foo.bar@canonical.com")
         self.user = self.factory.makePerson(name="ordinary-user")
         self.bug_supervisor = self.factory.makePerson(name="no-ordinary-user")

@@ -2,8 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the exclude_conjoined_tasks param for BugTaskSearchParams."""
-
-__all__ = []
+from typing import List
 
 from storm.store import Store
 from testtools.matchers import Equals
@@ -20,6 +19,8 @@ from lp.testing import (
 )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
+
+__all__ = []  # type: List[str]
 
 
 class TestSearchBase(TestCaseWithFactory):

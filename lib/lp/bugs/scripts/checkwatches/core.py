@@ -21,6 +21,7 @@ from contextlib import contextmanager
 from copy import copy
 from datetime import datetime, timedelta
 from itertools import chain, islice
+from typing import List
 from xmlrpc.client import ProtocolError
 
 import pytz
@@ -60,7 +61,7 @@ from lp.services.scripts.logger import log as default_log
 LOGIN = "bugwatch@bugs.launchpad.net"
 
 # A list of product names for which comments should be synchronized.
-SYNCABLE_GNOME_PRODUCTS = []
+SYNCABLE_GNOME_PRODUCTS = []  # type: List[str]
 
 # When syncing with a remote bug tracker that reports its idea of the
 # current time, this defined the maximum acceptable skew between the

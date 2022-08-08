@@ -7,9 +7,8 @@ This module will run the interface test against the CVE, Specification,
 Question, and BranchMergeProposal implementations of that interface.
 """
 
-__all__ = []
-
 import unittest
+from typing import List
 
 from zope.component import getUtility
 from zope.security.proxy import ProxyFactory
@@ -20,6 +19,8 @@ from lp.bugs.interfaces.cve import ICveSet
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
+
+__all__ = []  # type: List[str]
 
 
 def questionSetUp(test):

@@ -3,7 +3,7 @@
 
 """Security adapters for the answers package."""
 
-__all__ = []
+from typing import List
 
 from lp.answers.interfaces.faq import IFAQ
 from lp.answers.interfaces.faqtarget import IFAQTarget
@@ -16,6 +16,8 @@ from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
 )
 from lp.registry.security import EditByOwnersOrAdmins
+
+__all__ = []  # type: List[str]
 
 
 class AdminQuestion(AuthorizationBase):

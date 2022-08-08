@@ -301,7 +301,10 @@ class Database:
 
 
 if __name__ == "__main__":
-    for bug in Database("/srv/debzilla.no-name-yet.com/debbugs"):
+    for bug in Database(
+        "/srv/debzilla.no-name-yet.com/debbugs",
+        os.path.join(os.path.dirname(__file__), "debbugs-log.pl"),
+    ):
         try:
             print(bug, bug.subject)
         except Exception as e:
