@@ -26,6 +26,7 @@ from lp.registry.model.milestone import Milestone
 from lp.registry.model.milestonetag import MilestoneTag
 from lp.registry.model.person import Person, PersonSettings
 from lp.registry.model.product import Product
+from lp.registry.model.productrelease import ProductRelease
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database import postgresql
 from lp.services.database.constants import DEFAULT
@@ -480,6 +481,19 @@ def close_account(username, log):
     if count:
         reference_counts.append(("milestonetag.created_by", count))
     skip.add(("milestonetag", "created_by"))
+
+    # Check ProductReleases, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        ProductRelease,
+        ProductRelease.milestone == Milestone.id,
+        Milestone.product == Product.id,
+        Product.active,
+        ProductRelease.owner == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("productrelease.owner", count))
+    skip.add(("productrelease", "owner"))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this
