@@ -139,7 +139,6 @@ from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
-from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
@@ -6449,7 +6448,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             registrant = self.makePerson()
         if oci_project is None:
             oci_project = self.makeOCIProject(**kwargs)
-        return oci_project.newSeries(name, summary, registrant)
+        return ProxyFactory(oci_project.newSeries(name, summary, registrant))
 
     def makeOCIRecipe(
         self,
@@ -6503,14 +6502,6 @@ class LaunchpadObjectFactory(ObjectFactory):
             build_args=build_args,
             information_type=information_type,
         )
-
-    def makeOCIRecipeArch(self, recipe=None, processor=None):
-        """Make a new OCIRecipeArch."""
-        if recipe is None:
-            recipe = self.makeOCIRecipe()
-        if processor is None:
-            processor = self.makeProcessor()
-        return OCIRecipeArch(recipe, processor)
 
     def makeOCIRecipeBuild(
         self,
@@ -6587,10 +6578,12 @@ class LaunchpadObjectFactory(ObjectFactory):
             library_file = self.makeLibraryFileAlias(
                 content=content, filename=filename
             )
-        return OCIFile(
-            build=build,
-            library_file=library_file,
-            layer_file_digest=layer_file_digest,
+        return ProxyFactory(
+            OCIFile(
+                build=build,
+                library_file=library_file,
+                layer_file_digest=layer_file_digest,
+            )
         )
 
     def makeOCIRecipeBuildJob(self, build=None):
@@ -6601,7 +6594,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
         )
         store.add(job)
-        return job
+        return ProxyFactory(job)
 
     def makeOCIRegistryCredentials(
         self, registrant=None, owner=None, url=None, credentials=None
