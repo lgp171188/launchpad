@@ -1,15 +1,3 @@
 includes:
-  - layer:basic
-  - layer:ols
-options:
-  apt:
-    packages:
-      - launchpad-dependencies
-  ols:
-    service_name: launchpad
-    config_filename: service.conf
-    user: launchpad
-    tarball_payload: true
-    symlink_switch_payload: true
-    python_bin: /usr/bin/python3
+  - layer:launchpad-base
 repo: https://git.launchpad.net/launchpad
