@@ -1147,3 +1147,101 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             ["text with special characters: ;=|,\\"],
             path.properties["pypi.summary"],
         )
+
+    def test_updateProperties_sets_soss_license_source_spdx(self):
+        # Set the `soss.license` field appropriately for a source package if
+        # the originating job set the `license` property to an SPDX
+        # expression.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
+            sourcepackagename="foo",
+            version="1.0",
+            format=SourcePackageType.CI_BUILD,
+            user_defined_fields=[
+                ("license", {"spdx": "MIT"}),
+                ("package-name", "foo"),
+            ],
+        )
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.tar.gz"
+            ),
+            filetype=SourcePackageFileType.SDIST,
+        )
+        transaction.commit()
+        pool.addFile(None, "foo", "1.0", sprf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0.tar.gz"
+        self.assertEqual(["spdx:MIT"], path.properties["soss.license"])
+
+    def test_updateProperties_sets_soss_license_binary_spdx(self):
+        # Set the `soss.license` field appropriately for a binary package if
+        # the originating job set the `license` property to an SPDX
+        # expression.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo",
+            version="1.0",
+            binpackageformat=BinaryPackageFormat.WHL,
+            user_defined_fields=[("license", {"spdx": "MIT"})],
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0-py3-none-any.whl"
+            ),
+            filetype=BinaryPackageFileType.WHL,
+        )
+        transaction.commit()
+        pool.addFile(None, "foo", "1.0", bpf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0-py3-none-any.whl"
+        self.assertEqual(["spdx:MIT"], path.properties["soss.license"])
+
+    def test_updateProperties_sets_soss_license_source_path(self):
+        # Set the `soss.license` field appropriately for a source package if
+        # the originating job set the `license` property to a path.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
+            sourcepackagename="foo",
+            version="1.0",
+            format=SourcePackageType.CI_BUILD,
+            user_defined_fields=[
+                ("license", {"path": "LICENSE"}),
+                ("package-name", "foo"),
+            ],
+        )
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.tar.gz"
+            ),
+            filetype=SourcePackageFileType.SDIST,
+        )
+        transaction.commit()
+        pool.addFile(None, "foo", "1.0", sprf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0.tar.gz"
+        self.assertEqual(["LICENSE"], path.properties["soss.license"])
+
+    def test_updateProperties_sets_soss_license_binary_path(self):
+        # Set the `soss.license` field appropriately for a binary package if
+        # the originating job set the `license` property to a path.
+        pool = self.makePool(ArchiveRepositoryFormat.PYTHON)
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename="foo",
+            version="1.0",
+            binpackageformat=BinaryPackageFormat.WHL,
+            user_defined_fields=[("license", {"path": "LICENSE"})],
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0-py3-none-any.whl"
+            ),
+            filetype=BinaryPackageFileType.WHL,
+        )
+        transaction.commit()
+        pool.addFile(None, "foo", "1.0", bpf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0-py3-none-any.whl"
+        self.assertEqual(["LICENSE"], path.properties["soss.license"])
