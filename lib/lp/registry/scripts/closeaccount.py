@@ -22,6 +22,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import PersonCreationRationale
 from lp.registry.model.announcement import Announcement
+from lp.registry.model.milestone import Milestone
+from lp.registry.model.milestonetag import MilestoneTag
 from lp.registry.model.person import Person, PersonSettings
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
@@ -463,6 +465,21 @@ def close_account(username, log):
     if count:
         reference_counts.append(("announcement.registrant", count))
     skip.add(("announcement", "registrant"))
+
+    # Check MilestoneTags, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        MilestoneTag,
+        MilestoneTag.milestone_id == Milestone.id,
+        Or(
+            And(Milestone.product == Product.id, Product.active),
+            Milestone.product == None,
+        ),
+        MilestoneTag.created_by_id == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("milestonetag.created_by", count))
+    skip.add(("milestonetag", "created_by"))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this

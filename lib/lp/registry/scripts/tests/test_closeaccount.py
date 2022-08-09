@@ -1047,3 +1047,44 @@ class TestCloseAccount(TestCaseWithFactory):
                 script,
             )
         self.assertNotRemoved(account_id, person_id)
+
+    def test_skip_milestone_tags_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+            ({"distribution": self.factory.makeDistribution()}, False),
+            ({"distroseries": self.factory.makeDistroSeries()}, False),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            milestone.setTags(["tag"], person)
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
