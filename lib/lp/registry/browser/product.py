@@ -44,7 +44,6 @@ from typing import Type
 from urllib.parse import urlunsplit
 
 from breezy import urlutils
-from breezy.revision import NULL_REVISION
 from lazr.delegates import delegate_to
 from lazr.restful.interface import copy_field, use_template
 from lazr.restful.interfaces import IJSONRequestCache
@@ -2306,7 +2305,7 @@ class ProductSetBranchView(
                 self.series.branch = branch_location
                 # Request an initial upload of translation files.
                 getUtility(IRosettaUploadJobSource).create(
-                    self.series.branch, NULL_REVISION
+                    self.series.branch, None
                 )
                 self.add_update_notification()
         elif branch_type == IMPORT_EXTERNAL:

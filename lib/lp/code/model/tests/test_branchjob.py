@@ -6,6 +6,7 @@
 import datetime
 import os
 import shutil
+from typing import Optional
 
 import pytz
 import transaction
@@ -629,7 +630,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         job = RevisionsAddedJob.create(
             target_branch, "rev2b-id", "rev2b-id", ""
         )
-        self.assertEqual([desired_proposal], job.findRelatedBMP(["rev2a-id"]))
+        self.assertEqual([desired_proposal], job.findRelatedBMP([b"rev2a-id"]))
 
     def test_findRelatedBMP_one_per_source(self):
         """findRelatedBMP only returns the most recent proposal for any
@@ -1027,7 +1028,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         dummy.destroySelf()
 
         # Now create the RosettaUploadJob.
-        return RosettaUploadJob.create(self.branch, NULL_REVISION)
+        return RosettaUploadJob.create(self.branch, None)
 
     def _commitFilesToTree(self, files, commit_message=None):
         """Add files to the tree.
@@ -1077,9 +1078,14 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         self, import_mode, files, do_upload_translations=False
     ):
         self._makeBranchWithTreeAndFiles(files)
-        return self._runJob(import_mode, NULL_REVISION, do_upload_translations)
+        return self._runJob(import_mode, None, do_upload_translations)
 
-    def _runJob(self, import_mode, revision_id, do_upload_translations=False):
+    def _runJob(
+        self,
+        import_mode,
+        revision_id: Optional[str],
+        do_upload_translations=False,
+    ):
         self._makeProductSeries(import_mode)
         job = RosettaUploadJob.create(
             self.branch, revision_id, do_upload_translations
@@ -1132,7 +1138,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
             ((pot_path, pot_content), (po_path, po_content))
         )
         self._makeProductSeries(TranslationsBranchImportMode.NO_IMPORT)
-        job = RosettaUploadJob.create(self.branch, NULL_REVISION, True)
+        job = RosettaUploadJob.create(self.branch, None, True)
         job._init_translation_file_lists()
 
         self.assertEqual([(pot_path, pot_content)], job.template_files_changed)
@@ -1263,7 +1269,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         self._makeBranchWithTreeAndFile("foo.pot")
         self._makeProductSeries(TranslationsBranchImportMode.IMPORT_TEMPLATES)
         potemplate = self.factory.makePOTemplate(self.series)
-        entries = self._runJob(None, NULL_REVISION)
+        entries = self._runJob(None, None)
         self.assertEqual(len(entries), 1)
         entry = entries[0]
         self.assertEqual(potemplate, entry.potemplate)
@@ -1279,7 +1285,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         self._makeProductSeries(TranslationsBranchImportMode.IMPORT_TEMPLATES)
         self.factory.makePOTemplate(self.series, path="foo.pot")
         self.factory.makePOTemplate(self.series, path="bar.pot")
-        entries = self._runJob(None, NULL_REVISION)
+        entries = self._runJob(None, None)
         self.assertEqual(len(entries), 2)
         self.assertEqual(RosettaImportStatus.APPROVED, entries[0].status)
         self.assertEqual(RosettaImportStatus.APPROVED, entries[1].status)
@@ -1392,7 +1398,9 @@ class TestViaCelery(TestCaseWithFactory):
         series = self.factory.makeProductSeries(branch=db_branch)
         with block_on_job(self):
             RosettaUploadJob.create(
-                commit.db_branch, NULL_REVISION, force_translations_upload=True
+                commit.db_branch,
+                None,
+                force_translations_upload=True,
             )
             transaction.commit()
         queue = getUtility(ITranslationImportQueue)

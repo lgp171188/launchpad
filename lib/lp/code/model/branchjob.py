@@ -858,7 +858,6 @@ class RosettaUploadJob(BranchJobDerived):
 
         if from_revision_id is None:
             from_revision_id = NULL_REVISION.decode()
-        from_revision_id = from_revision_id
 
         if force_translations_upload or cls.providesTranslationFiles(branch):
             metadata = cls.getMetadata(

@@ -16,7 +16,6 @@ __all__ = [
 
 import os.path
 
-from breezy.revision import NULL_REVISION
 from zope.component import getUtility
 from zope.publisher.browser import FileUpload
 
@@ -553,7 +552,7 @@ class ProductSeriesTranslationsSettingsView(
             self.updateContextFromData(data)
             # Request an initial upload of translation files.
             getUtility(IRosettaUploadJobSource).create(
-                self.context.branch, NULL_REVISION
+                self.context.branch, None
             )
         else:
             self.updateContextFromData(data)
@@ -588,7 +587,7 @@ class ProductSeriesTranslationsBzrImportView(
     def request_import_action(self, action, data):
         """Request an upload of translation files."""
         job = getUtility(IRosettaUploadJobSource).create(
-            self.context.branch, NULL_REVISION, True
+            self.context.branch, None, True
         )
         if job is None:
             self.addError(_("Your request could not be filed."))
