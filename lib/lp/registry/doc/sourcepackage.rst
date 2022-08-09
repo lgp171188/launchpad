@@ -135,7 +135,7 @@ upload, even though it gets changed in the publishing record.
 
     >>> latest_publishing = IStore(SourcePackagePublishingHistory).get(
     ...     SourcePackagePublishingHistory, publishing_history.last().id)
-    >>> universe = Component.byName('universe')
+    >>> universe = IStore(Component).find(Component, name='universe').one()
     >>> latest_publishing.component = universe
     >>> flush_database_caches()
 

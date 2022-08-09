@@ -233,9 +233,9 @@ other things) the uploader for validating incoming uploads.
     translations
 
     >>> from lp.soyuz.interfaces.section import ISectionSet
+    >>> from lp.soyuz.model.section import SectionSelection
     >>> python = getUtility(ISectionSet).ensure('python')
-
-    >>> hoary.addSection(python)
+    >>> _ = SectionSelection(distroseries=hoary, section=python)
 
     >>> for c in hoary.components:
     ...     print(c.name)

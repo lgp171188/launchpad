@@ -918,9 +918,6 @@ class IDistroSeriesPublic(
         list for this distroseries.
         """
 
-    def addSection(section):
-        """SQLObject provided method to fill a related join key section."""
-
     def searchPackages(text):
         """Search through the package cache for this distroseries and return
         DistroSeriesBinaryPackage objects that match the given text.

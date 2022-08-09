@@ -297,10 +297,11 @@ class FTPArchiveHandler:
             SourcePackagePublishingHistory,
             Join(
                 Component,
-                Component.id == SourcePackagePublishingHistory.componentID,
+                Component.id == SourcePackagePublishingHistory.component_id,
             ),
             Join(
-                Section, Section.id == SourcePackagePublishingHistory.sectionID
+                Section,
+                Section.id == SourcePackagePublishingHistory.section_id,
             ),
             Join(
                 SourcePackageRelease,
@@ -346,10 +347,11 @@ class FTPArchiveHandler:
             BinaryPackagePublishingHistory,
             Join(
                 Component,
-                Component.id == BinaryPackagePublishingHistory.componentID,
+                Component.id == BinaryPackagePublishingHistory.component_id,
             ),
             Join(
-                Section, Section.id == BinaryPackagePublishingHistory.sectionID
+                Section,
+                Section.id == BinaryPackagePublishingHistory.section_id,
             ),
             Join(
                 BinaryPackageRelease,
@@ -674,7 +676,7 @@ class FTPArchiveHandler:
             SourcePackageName.id
             == SourcePackagePublishingHistory.sourcepackagenameID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
-            Component.id == SourcePackagePublishingHistory.componentID,
+            Component.id == SourcePackagePublishingHistory.component_id,
         ]
         select_conditions = [
             SourcePackagePublishingHistory.archive == self.publisher.archive,
@@ -718,7 +720,7 @@ class FTPArchiveHandler:
             LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
             DistroArchSeries.id
             == BinaryPackagePublishingHistory.distroarchseriesID,
-            Component.id == BinaryPackagePublishingHistory.componentID,
+            Component.id == BinaryPackagePublishingHistory.component_id,
         ]
         select_conditions = [
             DistroArchSeries.distroseriesID == distroseries.id,

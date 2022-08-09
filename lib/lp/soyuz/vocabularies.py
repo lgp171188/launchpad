@@ -25,6 +25,7 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     SQLObjectVocabularyBase,
+    StormVocabularyBase,
 )
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
@@ -34,10 +35,10 @@ from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
-class ComponentVocabulary(SQLObjectVocabularyBase):
+class ComponentVocabulary(StormVocabularyBase):
 
     _table = Component
-    _orderBy = "name"
+    _order_by = "name"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
