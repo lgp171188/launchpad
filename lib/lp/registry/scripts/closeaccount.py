@@ -8,9 +8,11 @@ __all__ = [
     "CloseAccountScript",
 ]
 
+from typing import List, Tuple
+
 import six
 from storm.exceptions import IntegrityError
-from storm.expr import LeftJoin, Lower, Or
+from storm.expr import And, LeftJoin, Lower, Or
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -19,6 +21,7 @@ from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import PersonCreationRationale
+from lp.registry.model.announcement import Announcement
 from lp.registry.model.person import Person, PersonSettings
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
@@ -419,7 +422,7 @@ def close_account(username, log):
             "Can't delete non-trivial PPAs for user %s" % person_name
         )
 
-    has_references = False
+    reference_counts = []  # type: List[Tuple[str, int]]
 
     # Check for active related projects, and skip inactive ones.
     for col in "bug_supervisor", "driver", "owner":
@@ -434,11 +437,7 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
-            log.error(
-                "User %s is still referenced by %d product.%s values"
-                % (person_name, count, col)
-            )
-            has_references = True
+            reference_counts.append(("product.{}".format(col), count))
         skip.add(("product", col))
     for col in "driver", "owner":
         count = store.find(
@@ -448,12 +447,22 @@ def close_account(username, log):
             getattr(ProductSeries, col) == person,
         ).count()
         if count:
-            log.error(
-                "User %s is still referenced by %d productseries.%s values"
-                % (person_name, count, col)
-            )
-            has_references = True
+            reference_counts.append(("productseries.{}".format(col), count))
         skip.add(("productseries", col))
+
+    # Check announcements, skipping the ones
+    # that are related to inactive products.
+    count = store.find(
+        Announcement,
+        Or(
+            And(Announcement.product == Product.id, Product.active),
+            Announcement.product == None,
+        ),
+        Announcement.registrant == person,
+    ).count()
+    if count:
+        reference_counts.append(("announcement.registrant", count))
+    skip.add(("announcement", "registrant"))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this
@@ -474,12 +483,14 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
+            reference_counts.append(("{}.{}".format(src_tab, src_col), count))
+
+    if reference_counts:
+        for reference, count in reference_counts:
             log.error(
-                "User %s is still referenced by %d %s.%s values"
-                % (person_name, count, src_tab, src_col)
+                "User %s is still referenced by %d %s values"
+                % (person_name, count, reference)
             )
-            has_references = True
-    if has_references:
         raise LaunchpadScriptFailure(
             "User %s is still referenced" % person_name
         )

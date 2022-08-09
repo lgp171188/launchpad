@@ -1005,3 +1005,45 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertIsNone(store.get(Archive, ppa_id))
         self.assertEqual(other_ppa, store.get(Archive, other_ppa_id))
+
+    def test_skips_announcements_in_deactivated_products(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        product = self.factory.makeProduct()
+        product.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
+
+        product.active = False
+        with dbuser("launchpad"):
+            self.runScript(script)
+
+        self.assertRemoved(account_id, person_id)
+
+    def test_non_product_announcements_are_not_skipped(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        distro = self.factory.makeDistribution()
+        distro.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
