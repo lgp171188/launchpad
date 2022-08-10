@@ -13,6 +13,7 @@ from lp.services.scripts.base import LaunchpadScript
 
 class UCTImportScript(LaunchpadScript):
 
+    usage = "usage: %prog [options] CVE_PATH"
     description = (
         "Import bugs into Launchpad from CVE entries in ubuntu-cve-tracker."
     )
