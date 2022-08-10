@@ -20,6 +20,7 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.model.bugtask import BugTask
+from lp.code.model.branch import Branch
 from lp.registry.interfaces.person import PersonCreationRationale
 from lp.registry.model.announcement import Announcement
 from lp.registry.model.milestone import Milestone
@@ -508,6 +509,23 @@ def close_account(username, log):
     if count:
         reference_counts.append(("productreleasefile.uploader", count))
     skip.add(("productreleasefile", "uploader"))
+
+    # Check Branches, skipping the ones that are related to inactive products.
+    for col_name in "owner", "reviewer":
+        count = store.find(
+            Branch,
+            Or(
+                And(
+                    Branch.product == Product.id,
+                    Product.active,
+                ),
+                Branch.product == None,
+            ),
+            getattr(Branch, col_name) == person.id,
+        ).count()
+        if count:
+            reference_counts.append(("branch.{}".format(col_name), count))
+        skip.add(("branch", col_name))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this

@@ -1174,3 +1174,34 @@ class TestCloseAccount(TestCaseWithFactory):
                 else:
                     self.runScript(script)
                     self.assertRemoved(account_id, person_id)
+
+    def test_skip_branches_from_inactive_products(self):
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        for branch_target, expected_to_be_removed in (
+            (active_product, False),
+            (inactive_product, True),
+            (self.factory.makeSourcePackage(), False),
+        ):
+            for col_name in "owner", "reviewer":
+                person = self.factory.makePerson()
+                self.factory.makeBranch(
+                    target=branch_target, **{col_name: person}
+                )
+                person_id = person.id
+                account_id = person.account.id
+                script = self.makeScript([person.name])
+                with dbuser("launchpad"):
+                    if not expected_to_be_removed:
+                        self.assertRaisesWithContent(
+                            LaunchpadScriptFailure,
+                            "User %s is still referenced" % person.name,
+                            self.runScript,
+                            script,
+                        )
+                        self.assertNotRemoved(account_id, person_id)
+                    else:
+                        self.runScript(script)
+                        self.assertRemoved(account_id, person_id)
