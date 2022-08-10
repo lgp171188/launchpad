@@ -69,9 +69,11 @@ class UCTImporter:
 
         :param cve_path: path to the UCT CVE file
         """
+        logger.info("Importing %s", cve_path)
         uct_record = UCTRecord.load(cve_path)
         cve = CVE.make_from_uct_record(uct_record)
         self.import_cve(cve)
+        logger.info("%s was imported successfully", cve_path)
 
     def import_cve(self, cve: CVE) -> None:
         """
@@ -81,43 +83,61 @@ class UCTImporter:
         """
         if cve.date_made_public is None:
             logger.warning(
-                "The CVE does not have a publication date, is it embargoed?"
+                "%s does not have a publication date, "
+                "is it embargoed? Aborting.",
+                cve.sequence,
+            )
+            return
+        if not cve.series_packages:
+            logger.warning(
+                "%s: could not find any affected packages, aborting.",
+                cve.series_packages,
             )
             return
         lp_cve = getUtility(ICveSet)[cve.sequence]  # type: CveModel
         if lp_cve is None:
-            logger.warning("Could not find the CVE in LP: %s", cve.sequence)
+            logger.warning(
+                "%s: could not find the CVE in LP. Aborting.", cve.sequence
+            )
             return
         bug = self._find_existing_bug(cve, lp_cve)
         try:
             if bug is None:
-                self.create_bug(cve, lp_cve)
+                bug = self.create_bug(cve, lp_cve)
+                logger.info(
+                    "%s: created bug with ID: %s", cve.sequence, bug.id
+                )
             else:
+                logging.info(
+                    "%s: found existing bug with ID: %s",
+                    cve.sequence,
+                    bug.id,
+                )
                 self.update_bug(bug, cve, lp_cve)
+                logger.info(
+                    "%s: updated bug with ID: %s", cve.sequence, bug.id
+                )
             self._update_launchpad_cve(lp_cve, cve)
         except Exception:
             transaction.abort()
             raise
 
         if self.dry_run:
-            logger.info("Dry-run mode enabled, all changes are reverted.")
+            logger.info(
+                "%s: dry-run mode enabled, all changes are reverted.",
+                cve.sequence,
+            )
             transaction.abort()
         else:
             transaction.commit()
 
-    def create_bug(self, cve: CVE, lp_cve: CveModel) -> Optional[BugModel]:
+    def create_bug(self, cve: CVE, lp_cve: CveModel) -> BugModel:
         """
         Create a `Bug` model based on the information contained in a `CVE`.
 
         :param cve: `CVE` with information from UCT
         :param lp_cve: Launchpad `Cve` model
         """
-
-        logger.debug("creating bug...")
-
-        if not cve.series_packages:
-            logger.warning("Could not find any affected packages")
-            return None
 
         distro_package = cve.distro_packages[0]
 
@@ -135,8 +155,6 @@ class UCTImporter:
         )  # type: BugModel
 
         self._update_external_bug_urls(bug, cve.bug_urls)
-
-        logger.info("Created bug with ID: %s", bug.id)
 
         self._create_bug_tasks(
             bug, cve.distro_packages[1:], cve.series_packages
@@ -270,7 +288,12 @@ class UCTImporter:
 
         vulnerability.linkBug(bug, bug.owner)
 
-        logger.info("Created vulnerability with ID: %s", vulnerability.id)
+        logger.info(
+            "%s: created vulnerability with ID: %s for distribution: %s",
+            cve.sequence,
+            vulnerability.id,
+            distribution.name,
+        )
 
         return vulnerability
 

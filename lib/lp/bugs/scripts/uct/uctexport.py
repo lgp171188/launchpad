@@ -4,7 +4,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -43,7 +43,9 @@ class UCTExporter:
         ),
     )
 
-    def export_bug_to_uct_file(self, bug_id: int, output_dir: Path) -> Path:
+    def export_bug_to_uct_file(
+        self, bug_id: int, output_dir: Path
+    ) -> Optional[Path]:
         """
         Export a bug with the given bug_id as a
         UCT CVE record file in the `output_dir`
@@ -54,12 +56,13 @@ class UCTExporter:
         """
         bug = getUtility(IBugSet).get(bug_id)
         if not bug:
-            raise ValueError("Could not find bug with ID: {}".format(bug_id))
+            logger.error("Could not find a bug with ID: %s", bug_id)
+            return
         cve = self._make_cve_from_bug(bug)
         uct_record = cve.to_uct_record()
         save_to_path = uct_record.save(output_dir)
         logger.info(
-            "Bug with ID: %s is saved to path: %s", bug_id, str(save_to_path)
+            "Bug with ID: %s is exported to: %s", bug_id, str(save_to_path)
         )
         return save_to_path
 
