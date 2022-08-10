@@ -7,7 +7,7 @@ import _pythonpath  # noqa: F401
 import logging
 from pathlib import Path
 
-from lp.bugs.scripts.uctimport import UCTImporter
+from lp.bugs.scripts.uct import UCTImporter
 from lp.services.scripts.base import LaunchpadScript
 
 

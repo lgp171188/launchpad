@@ -14,7 +14,7 @@ from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
-from lp.bugs.scripts.uctimport import (
+from lp.bugs.scripts.uct import (
     CVE,
     CVSS,
     UCTExporter,
@@ -172,13 +172,19 @@ class TextCVE(TestCaseWithFactory):
         celebrities = getUtility(ILaunchpadCelebrities)
         ubuntu = celebrities.ubuntu
         supported_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.SUPPORTED
+            distribution=ubuntu,
+            status=SeriesStatus.SUPPORTED,
+            name="focal",
         )
         current_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.CURRENT
+            distribution=ubuntu,
+            status=SeriesStatus.CURRENT,
+            name="jammy",
         )
         devel_series = self.factory.makeDistroSeries(
-            distribution=ubuntu, status=SeriesStatus.DEVELOPMENT
+            distribution=ubuntu,
+            status=SeriesStatus.DEVELOPMENT,
+            name="kinetic",
         )
         dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
         dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
@@ -378,7 +384,7 @@ class TextCVE(TestCaseWithFactory):
         self.assertDictEqual(self.uct_record.__dict__, uct_record.__dict__)
 
 
-class TestUCTImporter(TestCaseWithFactory):
+class TestUCTImporterExporter(TestCaseWithFactory):
 
     maxDiff = None
     layer = ZopelessDatabaseLayer
@@ -390,19 +396,27 @@ class TestUCTImporter(TestCaseWithFactory):
         self.esm = self.factory.makeDistribution("esm")
         self.bug_importer = celebrities.bug_importer
         self.ubuntu_supported_series = self.factory.makeDistroSeries(
-            distribution=self.ubuntu, status=SeriesStatus.SUPPORTED
+            distribution=self.ubuntu,
+            status=SeriesStatus.SUPPORTED,
+            name="focal",
         )
         self.ubuntu_current_series = self.factory.makeDistroSeries(
-            distribution=self.ubuntu, status=SeriesStatus.CURRENT
+            distribution=self.ubuntu, status=SeriesStatus.CURRENT, name="jammy"
         )
         self.ubuntu_devel_series = self.factory.makeDistroSeries(
-            distribution=self.ubuntu, status=SeriesStatus.DEVELOPMENT
+            distribution=self.ubuntu,
+            status=SeriesStatus.DEVELOPMENT,
+            name="kinetic",
         )
         self.esm_supported_series = self.factory.makeDistroSeries(
-            distribution=self.esm, status=SeriesStatus.SUPPORTED
+            distribution=self.esm,
+            status=SeriesStatus.SUPPORTED,
+            name="precise",
         )
         self.esm_current_series = self.factory.makeDistroSeries(
-            distribution=self.esm, status=SeriesStatus.CURRENT
+            distribution=self.esm,
+            status=SeriesStatus.CURRENT,
+            name="trusty",
         )
         self.ubuntu_package = self.factory.makeDistributionSourcePackage(
             distribution=self.ubuntu
@@ -516,6 +530,7 @@ class TestUCTImporter(TestCaseWithFactory):
             ],
         )
         self.importer = UCTImporter()
+        self.exporter = UCTExporter()
 
     def checkBug(self, bug: Bug, cve: CVE):
         self.assertEqual(cve.sequence, bug.title)
@@ -630,11 +645,11 @@ class TestUCTImporter(TestCaseWithFactory):
 
     def test_find_existing_bug(self):
         self.assertIsNone(
-            self.importer.find_existing_bug(self.cve, self.lp_cve)
+            self.importer._find_existing_bug(self.cve, self.lp_cve)
         )
         bug = self.importer.create_bug(self.cve, self.lp_cve)
         self.assertEqual(
-            self.importer.find_existing_bug(self.cve, self.lp_cve), bug
+            self.importer._find_existing_bug(self.cve, self.lp_cve), bug
         )
 
     def test_find_existing_bug_multiple_bugs(self):
@@ -646,7 +661,7 @@ class TestUCTImporter(TestCaseWithFactory):
         vulnerability.linkBug(another_bug)
         self.assertRaises(
             UCTImportError,
-            self.importer.find_existing_bug,
+            self.importer._find_existing_bug,
             self.cve,
             self.lp_cve,
         )
@@ -854,14 +869,14 @@ class TestUCTImporter(TestCaseWithFactory):
     def test_import_cve(self):
         self.importer.import_cve(self.cve)
         self.assertIsNotNone(
-            self.importer.find_existing_bug(self.cve, self.lp_cve)
+            self.importer._find_existing_bug(self.cve, self.lp_cve)
         )
         self.checkLaunchpadCve(self.lp_cve, self.cve)
 
     def test_import_cve_dry_run(self):
         importer = UCTImporter(dry_run=True)
         importer.import_cve(self.cve)
-        self.assertIsNone(importer.find_existing_bug(self.cve, self.lp_cve))
+        self.assertIsNone(importer._find_existing_bug(self.cve, self.lp_cve))
 
     def test_naive_date_made_public(self):
         cve = self.cve
@@ -873,10 +888,9 @@ class TestUCTImporter(TestCaseWithFactory):
         )
 
     def test_make_cve_from_bug(self):
-        exporter = UCTExporter()
         self.importer.import_cve(self.cve)
-        bug = self.importer.find_existing_bug(self.cve, self.lp_cve)
-        cve = exporter.make_cve_from_bug(bug)
+        bug = self.importer._find_existing_bug(self.cve, self.lp_cve)
+        cve = self.exporter._make_cve_from_bug(bug)
         self.assertEqual(self.cve.sequence, cve.sequence)
         self.assertEqual(self.cve.crd, cve.crd)
         self.assertEqual(self.cve.public_date, cve.public_date)

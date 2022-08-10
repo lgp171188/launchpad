@@ -1,52 +1,21 @@
-# Copyright 2022 Canonical Ltd.  This software is licensed under the
-# GNU Affero General Public License version 3 (see the file LICENSE).
+#  Copyright 2022 Canonical Ltd.  This software is licensed under the
+#  GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""A UCT (Ubuntu CVE Tracker) bug importer
-
-This code can import CVE summaries stored in UCT repository to bugs in
-Launchpad.
-
-For each entry in UCT we:
-
-1. Create a Bug instance
-2. Create a Vulnerability instance and link it to the bug (multiple
-    Vulnerabilities may be created if the CVE entry covers multiple
-    distributions)
-3. Create a Bug Task for each package/distro-series in the CVE entry
-4. Update the statuses of Bug Tasks based on the information in the CVE entry
-"""
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
-from itertools import chain
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 from typing.io import TextIO
 
 import dateutil.parser
-import transaction
 from contrib.cve_lib import load_cve
 from zope.component import getUtility
-from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.enums import VulnerabilityStatus
-from lp.bugs.interfaces.bug import CreateBugParams, IBugSet
-from lp.bugs.interfaces.bugactivity import IBugActivitySet
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    IBugTaskSet,
-)
-from lp.bugs.interfaces.bugwatch import IBugWatchSet
-from lp.bugs.interfaces.cve import ICveSet
-from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
-from lp.bugs.model.bug import Bug as BugModel
-from lp.bugs.model.bugtask import BugTask
-from lp.bugs.model.cve import Cve as CveModel
-from lp.bugs.model.vulnerability import Vulnerability
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
@@ -59,20 +28,15 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.constants import UTC_NOW
+from lp.services.propertycache import cachedproperty
 
 __all__ = [
     "CVE",
     "CVSS",
-    "UCTExporter",
-    "UCTImporter",
     "UCTRecord",
-    "UCTImportError",
 ]
 
-from lp.services.propertycache import cachedproperty
-
-logger = logging.getLogger("lp.bugs.scripts.import")
+logger = logging.getLogger(__name__)
 
 
 CVSS = NamedTuple(
@@ -86,7 +50,9 @@ CVSS = NamedTuple(
 
 class UCTRecord:
     """
-    UCTRecord represents a single CVE record in the ubuntu-cve-tracker.
+    UCTRecord represents a single CVE record (file) in the ubuntu-cve-tracker.
+
+    It contains exactly the same information as a UCT CVE record.
     """
 
     class Priority(Enum):
@@ -178,18 +144,6 @@ class UCTRecord:
         return self.__dict__ == other.__dict__
 
     @classmethod
-    def pop_cve_property(
-        cls, cve_data: Dict[str, Any], field_name: str, required=True
-    ) -> Optional[Any]:
-        if required:
-            value = cve_data.pop(field_name)
-        else:
-            value = cve_data.pop(field_name, None)
-        if isinstance(value, str):
-            return value.strip()
-        return value
-
-    @classmethod
     def load(cls, cve_path: Path) -> "UCTRecord":
         """
         Create a `UCTRecord` instance from a file located at `cve_path`.
@@ -203,18 +157,18 @@ class UCTRecord:
         cve_data = load_cve(str(cve_path))  # type: Dict[str, Any]
 
         packages = []
-        tags = cls.pop_cve_property(
+        tags = cls._pop_cve_property(
             cve_data, "tags"
         )  # type: Dict[str, Set[str]]
-        patches = cls.pop_cve_property(
+        patches = cls._pop_cve_property(
             cve_data, "patches"
         )  # type: Dict[str, List[Tuple[str, str]]]
-        for package, statuses_dict in cls.pop_cve_property(
+        for package, statuses_dict in cls._pop_cve_property(
             cve_data, "pkgs"
         ).items():
             statuses = []
             for distroseries, (status, reason) in statuses_dict.items():
-                distroseries_priority = cls.pop_cve_property(
+                distroseries_priority = cls._pop_cve_property(
                     cve_data,
                     "Priority_{package}_{distroseries}".format(
                         package=package,
@@ -234,7 +188,7 @@ class UCTRecord:
                         ),
                     )
                 )
-            package_priority = cls.pop_cve_property(
+            package_priority = cls._pop_cve_property(
                 cve_data,
                 "Priority_{package}".format(package=package),
                 required=False,
@@ -256,22 +210,22 @@ class UCTRecord:
                 )
             )
 
-        crd = cls.pop_cve_property(cve_data, "CRD", required=False)
+        crd = cls._pop_cve_property(cve_data, "CRD", required=False)
         if crd == "unknown":
             crd = None
-        public_date = cls.pop_cve_property(
+        public_date = cls._pop_cve_property(
             cve_data, "PublicDate", required=False
         )
         if public_date == "unknown":
             public_date = None
-        public_date_at_USN = cls.pop_cve_property(
+        public_date_at_USN = cls._pop_cve_property(
             cve_data, "PublicDateAtUSN", required=False
         )
         if public_date_at_USN == "unknown":
             public_date_at_USN = None
 
         cvss = []
-        for cvss_dict in cls.pop_cve_property(cve_data, "CVSS"):
+        for cvss_dict in cls._pop_cve_property(cve_data, "CVSS"):
             cvss.append(
                 CVSS(
                     authority=cvss_dict["source"],
@@ -285,10 +239,10 @@ class UCTRecord:
 
         entry = UCTRecord(
             parent_dir=cve_path.absolute().parent.name,
-            assigned_to=cls.pop_cve_property(cve_data, "Assigned-to"),
-            bugs=cls.pop_cve_property(cve_data, "Bugs").split("\n"),
+            assigned_to=cls._pop_cve_property(cve_data, "Assigned-to"),
+            bugs=cls._pop_cve_property(cve_data, "Bugs").split("\n"),
             cvss=cvss,
-            candidate=cls.pop_cve_property(cve_data, "Candidate"),
+            candidate=cls._pop_cve_property(cve_data, "Candidate"),
             crd=dateutil.parser.parse(crd) if crd else None,
             public_date=(
                 dateutil.parser.parse(public_date) if public_date else None
@@ -298,17 +252,17 @@ class UCTRecord:
                 if public_date_at_USN
                 else None
             ),
-            description=cls.pop_cve_property(cve_data, "Description"),
-            discovered_by=cls.pop_cve_property(cve_data, "Discovered-by"),
-            mitigation=cls.pop_cve_property(
+            description=cls._pop_cve_property(cve_data, "Description"),
+            discovered_by=cls._pop_cve_property(cve_data, "Discovered-by"),
+            mitigation=cls._pop_cve_property(
                 cve_data, "Mitigation", required=False
             ),
-            notes=cls._format_notes(cls.pop_cve_property(cve_data, "Notes")),
-            priority=cls.Priority(cls.pop_cve_property(cve_data, "Priority")),
-            references=cls.pop_cve_property(cve_data, "References").split(
+            notes=cls._format_notes(cls._pop_cve_property(cve_data, "Notes")),
+            priority=cls.Priority(cls._pop_cve_property(cve_data, "Priority")),
+            references=cls._pop_cve_property(cve_data, "References").split(
                 "\n"
             ),
-            ubuntu_description=cls.pop_cve_property(
+            ubuntu_description=cls._pop_cve_property(
                 cve_data, "Ubuntu-Description"
             ),
             packages=packages,
@@ -323,6 +277,9 @@ class UCTRecord:
         return entry
 
     def save(self, output_dir: Path) -> Path:
+        """
+        Save UCTRecord to a file in UCT format.
+        """
         if not output_dir.is_dir():
             raise ValueError(
                 "{} does not exist or is not a directory", output_dir
@@ -411,11 +368,21 @@ class UCTRecord:
         output.close()
         return output_path
 
-    def _format_datetime(self, dt: datetime) -> str:
-        return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
+    @classmethod
+    def _pop_cve_property(
+        cls, cve_data: Dict[str, Any], field_name: str, required=True
+    ) -> Optional[Any]:
+        if required:
+            value = cve_data.pop(field_name)
+        else:
+            value = cve_data.pop(field_name, None)
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
+    @classmethod
     def _write_field(
-        self, name: str, value: Union[str, List[str]], output: TextIO
+        cls, name: str, value: Union[str, List[str]], output: TextIO
     ) -> None:
         if isinstance(value, str):
             if value:
@@ -430,6 +397,10 @@ class UCTRecord:
             raise AssertionError()
 
     @classmethod
+    def _format_datetime(cls, dt: datetime) -> str:
+        return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    @classmethod
     def _format_notes(cls, notes: List[Tuple[str, str]]) -> str:
         lines = []
         for author, text in notes:
@@ -441,6 +412,11 @@ class UCTRecord:
 
 
 class CVE:
+    """
+    `CVE` represents UCT CVE information mapped to Launchpad data structures.
+
+    Do not confuse this with `Cve` database model.
+    """
 
     DistroPackage = NamedTuple(
         "DistroPackage",
@@ -534,13 +510,11 @@ class CVE:
 
     @classmethod
     def make_from_uct_record(cls, uct_record: UCTRecord) -> "CVE":
-        # Some `UCTRecord` fields are not being used at the moment:
-        # - cve.discovered_by: This is supposed to be `Cve.discoverer` but
-        #   there may be a difficulty there since the `Cve` table should only
-        #   be managed by syncing data from MITRE and not from
-        #   ubuntu-cve-tracker
-        # - cve.cvss: `Cve.cvss`, but may have a similar issue to
-        #   `Cve.discoverer` as above.
+        """
+        Create a `CVE` from a `UCTRecord`
+
+        This maps UCT CVE information to Launchpad data structures.
+        """
 
         distro_packages = []
         series_packages = []
@@ -629,6 +603,11 @@ class CVE:
         )
 
     def to_uct_record(self) -> UCTRecord:
+        """
+        Convert a `CVE` to a `UCTRecord`.
+
+        This maps Launchpad data structures to the format that UCT understands.
+        """
         series_packages_by_name = defaultdict(
             list
         )  # type: Dict[SourcePackageName, List[CVE.SeriesPackage]]
@@ -760,385 +739,3 @@ class CVE:
                 "Could not find the distro series: %s", distro_series_name
             )
         return distro_series
-
-
-class UCTImportError(Exception):
-    pass
-
-
-class UCTImporter:
-    def __init__(self, dry_run=False):
-        self.dry_run = dry_run
-        self.bug_importer = getUtility(ILaunchpadCelebrities).bug_importer
-
-    def import_cve_from_file(self, cve_path: Path) -> None:
-        uct_record = UCTRecord.load(cve_path)
-        cve = CVE.make_from_uct_record(uct_record)
-        self.import_cve(cve)
-
-    def import_cve(self, cve: CVE) -> None:
-        if cve.date_made_public is None:
-            logger.warning(
-                "The CVE does not have a publication date, is it embargoed?"
-            )
-            return
-        lp_cve = getUtility(ICveSet)[cve.sequence]  # type: CveModel
-        if lp_cve is None:
-            logger.warning("Could not find the CVE in LP: %s", cve.sequence)
-            return
-        bug = self.find_existing_bug(cve, lp_cve)
-        try:
-            if bug is None:
-                self.create_bug(cve, lp_cve)
-            else:
-                self.update_bug(bug, cve, lp_cve)
-            self.update_launchpad_cve(lp_cve, cve)
-        except Exception:
-            transaction.abort()
-            raise
-
-        if self.dry_run:
-            logger.info("Dry-run mode enabled, all changes are reverted.")
-            transaction.abort()
-        else:
-            transaction.commit()
-
-    def find_existing_bug(
-        self, cve: CVE, lp_cve: CveModel
-    ) -> Optional[BugModel]:
-        bug = None
-        for vulnerability in lp_cve.vulnerabilities:
-            if vulnerability.distribution in cve.affected_distributions:
-                bugs = vulnerability.bugs
-                if bugs:
-                    if bug and bugs[0] != bug:
-                        raise UCTImportError(
-                            "Multiple existing bugs are found "
-                            "for CVE {}".format(cve.sequence)
-                        )
-                    else:
-                        bug = bugs[0]
-        return bug
-
-    def create_bug(self, cve: CVE, lp_cve: CveModel) -> Optional[BugModel]:
-
-        logger.debug("creating bug...")
-
-        if not cve.series_packages:
-            logger.warning("Could not find any affected packages")
-            return None
-
-        distro_package = cve.distro_packages[0]
-
-        # Create the bug
-        bug = getUtility(IBugSet).createBug(
-            CreateBugParams(
-                comment=self.make_bug_description(cve),
-                title=cve.sequence,
-                information_type=InformationType.PUBLICSECURITY,
-                owner=self.bug_importer,
-                target=distro_package.package,
-                importance=distro_package.importance,
-                cve=lp_cve,
-            )
-        )  # type: BugModel
-
-        self.update_external_bug_urls(bug, cve.bug_urls)
-
-        logger.info("Created bug with ID: %s", bug.id)
-
-        self.create_bug_tasks(
-            bug, cve.distro_packages[1:], cve.series_packages
-        )
-        self.update_statuses_and_importances(
-            bug, cve.importance, cve.distro_packages, cve.series_packages
-        )
-        self.assign_bug_tasks(bug, cve.assignee)
-
-        # Make a note of the import in the activity log:
-        getUtility(IBugActivitySet).new(
-            bug=bug.id,
-            datechanged=UTC_NOW,
-            person=self.bug_importer,
-            whatchanged="bug",
-            message="UCT CVE entry {}".format(cve.sequence),
-        )
-
-        # Create the Vulnerabilities
-        for distribution in cve.affected_distributions:
-            self.create_vulnerability(bug, cve, lp_cve, distribution)
-
-        return bug
-
-    def update_bug(self, bug: BugModel, cve: CVE, lp_cve: CveModel) -> None:
-        bug.description = self.make_bug_description(cve)
-
-        self.create_bug_tasks(bug, cve.distro_packages, cve.series_packages)
-        self.update_statuses_and_importances(
-            bug, cve.importance, cve.distro_packages, cve.series_packages
-        )
-        self.assign_bug_tasks(bug, cve.assignee)
-        self.update_external_bug_urls(bug, cve.bug_urls)
-
-        # Update or add new Vulnerabilities
-        vulnerabilities_by_distro = {
-            v.distribution: v for v in bug.vulnerabilities
-        }
-        for distro in cve.affected_distributions:
-            vulnerability = vulnerabilities_by_distro.get(distro)
-            if vulnerability is None:
-                self.create_vulnerability(bug, cve, lp_cve, distro)
-            else:
-                self.update_vulnerability(vulnerability, cve)
-
-    def create_bug_tasks(
-        self,
-        bug: BugModel,
-        distro_packages: List[CVE.DistroPackage],
-        series_packages: List[CVE.SeriesPackage],
-    ) -> None:
-        bug_tasks = bug.bugtasks  # type: List[BugTask]
-        bug_task_by_target = {t.target: t for t in bug_tasks}
-        bug_task_set = getUtility(IBugTaskSet)
-        for target in (
-            p.package for p in chain(distro_packages, series_packages)
-        ):
-            if target not in bug_task_by_target:
-                bug_task_set.createTask(bug, self.bug_importer, target)
-
-    def create_vulnerability(
-        self,
-        bug: BugModel,
-        cve: CVE,
-        lp_cve: CveModel,
-        distribution: Distribution,
-    ) -> Vulnerability:
-        date_made_public = cve.date_made_public
-        if date_made_public.tzinfo is None:
-            date_made_public = date_made_public.replace(tzinfo=timezone.utc)
-        vulnerability = getUtility(IVulnerabilitySet).new(
-            distribution=distribution,
-            creator=bug.owner,
-            cve=lp_cve,
-            status=cve.status,
-            description=cve.ubuntu_description,
-            notes=cve.notes,
-            mitigation=cve.mitigation,
-            importance=cve.importance,
-            information_type=InformationType.PUBLICSECURITY,
-            date_made_public=date_made_public,
-        )  # type: Vulnerability
-
-        vulnerability.linkBug(bug, bug.owner)
-
-        logger.info("Created vulnerability with ID: %s", vulnerability.id)
-
-        return vulnerability
-
-    def update_vulnerability(
-        self, vulnerability: Vulnerability, cve: CVE
-    ) -> None:
-        vulnerability.status = cve.status
-        vulnerability.description = cve.ubuntu_description
-        vulnerability.notes = cve.notes
-        vulnerability.mitigation = cve.mitigation
-        vulnerability.importance = cve.importance
-        vulnerability.date_made_public = cve.date_made_public
-
-    def assign_bug_tasks(
-        self, bug: BugModel, assignee: Optional[Person]
-    ) -> None:
-        for bug_task in bug.bugtasks:
-            bug_task.transitionToAssignee(assignee, validate=False)
-
-    def update_statuses_and_importances(
-        self,
-        bug: BugModel,
-        cve_importance: BugTaskImportance,
-        distro_packages: List[CVE.DistroPackage],
-        series_packages: List[CVE.SeriesPackage],
-    ) -> None:
-        bug_tasks = bug.bugtasks  # type: List[BugTask]
-        bug_task_by_target = {t.target: t for t in bug_tasks}
-
-        package_importances = {}
-
-        for dp in distro_packages:
-            task = bug_task_by_target[dp.package]
-            dp_importance = dp.importance or cve_importance
-            package_importances[dp.package.sourcepackagename] = dp_importance
-            if task.importance != dp_importance:
-                task.transitionToImportance(dp_importance, self.bug_importer)
-
-        for sp in series_packages:
-            task = bug_task_by_target[sp.package]
-            package_importance = package_importances[
-                sp.package.sourcepackagename
-            ]
-            sp_importance = sp.importance or package_importance
-            if task.importance != sp_importance:
-                task.transitionToImportance(sp_importance, self.bug_importer)
-            if task.status != sp.status:
-                task.transitionToStatus(sp.status, self.bug_importer)
-            if task.status_explanation != sp.status_explanation:
-                task.status_explanation = sp.status_explanation
-
-    def update_external_bug_urls(
-        self, bug: BugModel, bug_urls: List[str]
-    ) -> None:
-        bug_urls = set(bug_urls)
-        for watch in bug.watches:
-            if watch.url in bug_urls:
-                bug_urls.remove(watch.url)
-            else:
-                watch.destroySelf()
-        bug_watch_set = getUtility(IBugWatchSet)
-        for external_bug_url in bug_urls:
-            bug_watch_set.fromText(external_bug_url, bug, self.bug_importer)
-
-    def make_bug_description(self, cve: CVE) -> str:
-        parts = [cve.description]
-        if cve.references:
-            parts.extend(["", "References:"])
-            parts.extend(cve.references)
-        return "\n".join(parts)
-
-    def update_launchpad_cve(self, lp_cve: CveModel, cve: CVE):
-        for cvss in cve.cvss:
-            lp_cve.setCVSSVectorForAuthority(
-                cvss.authority, cvss.vector_string
-            )
-
-
-class UCTExporter:
-
-    ParsedDescription = NamedTuple(
-        "ParsedDescription",
-        (
-            ("description", str),
-            ("references", List[str]),
-        ),
-    )
-
-    def export_bug_to_uct_file(self, bug_id: int, output_dir: Path) -> Path:
-        bug = getUtility(IBugSet).get(bug_id)
-        if not bug:
-            raise ValueError("Could not find bug with ID: {}".format(bug_id))
-        cve = self.make_cve_from_bug(bug)
-        uct_record = cve.to_uct_record()
-        save_to_path = uct_record.save(output_dir)
-        logger.info(
-            "Bug with ID: %s is saved to path: %s", bug_id, str(save_to_path)
-        )
-        return save_to_path
-
-    def make_cve_from_bug(self, bug: BugModel) -> CVE:
-        vulnerabilities = list(bug.vulnerabilities)
-        if not vulnerabilities:
-            raise ValueError(
-                "Bug with ID: {} does not have vulnerabilities".format(bug.id)
-            )
-        vulnerability = vulnerabilities[0]  # type: Vulnerability
-        if not vulnerability.cve:
-            raise ValueError(
-                "Bug with ID: {} - vulnerability "
-                "is not linked to a CVE".format(bug.id)
-            )
-        lp_cve = vulnerability.cve  # type: CveModel
-
-        parsed_description = self._parse_bug_description(bug.description)
-
-        bug_urls = []
-        for bug_watch in bug.watches:
-            bug_urls.append(bug_watch.url)
-
-        bug_tasks = list(bug.bugtasks)  # type: List[BugTask]
-
-        cve_importance = vulnerability.importance
-        package_importances = {}
-
-        distro_packages = []
-        for bug_task in bug_tasks:
-            target = removeSecurityProxy(bug_task.target)
-            if not isinstance(target, DistributionSourcePackage):
-                continue
-            dp_importance = bug_task.importance
-            package_importances[target.sourcepackagename] = dp_importance
-            distro_packages.append(
-                CVE.DistroPackage(
-                    package=target,
-                    importance=(
-                        dp_importance
-                        if dp_importance != cve_importance
-                        else None
-                    ),
-                )
-            )
-
-        series_packages = []
-        for bug_task in bug_tasks:
-            target = removeSecurityProxy(bug_task.target)
-            if not isinstance(target, SourcePackage):
-                continue
-            sp_importance = bug_task.importance
-            package_importance = package_importances[target.sourcepackagename]
-            series_packages.append(
-                CVE.SeriesPackage(
-                    package=target,
-                    importance=(
-                        sp_importance
-                        if sp_importance != package_importance
-                        else None
-                    ),
-                    status=bug_task.status,
-                    status_explanation=bug_task.status_explanation,
-                )
-            )
-
-        return CVE(
-            sequence="CVE-{}".format(lp_cve.sequence),
-            crd=None,  # TODO: fix this
-            public_date=vulnerability.date_made_public,
-            public_date_at_USN=None,  # TODO: fix this
-            distro_packages=distro_packages,
-            series_packages=series_packages,
-            importance=cve_importance,
-            status=vulnerability.status,
-            assignee=bug_tasks[0].assignee,
-            discovered_by="",  # TODO: fix this
-            description=parsed_description.description,
-            ubuntu_description=vulnerability.description,
-            bug_urls=bug_urls,
-            references=parsed_description.references,
-            notes=vulnerability.notes,
-            mitigation=vulnerability.mitigation,
-            cvss=[
-                CVSS(
-                    authority=authority,
-                    vector_string=vector_string,
-                )
-                for authority, vector_string in lp_cve.cvss.items()
-            ],
-        )
-
-    def _parse_bug_description(
-        self, bug_description: str
-    ) -> "ParsedDescription":
-        field_values = defaultdict(list)
-        current_field = "description"
-        known_fields = {
-            "References:": "references",
-        }
-        lines = bug_description.split("\n")
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            if line in known_fields:
-                current_field = known_fields[line]
-                continue
-            field_values[current_field].append(line)
-        return UCTExporter.ParsedDescription(
-            description="\n".join(field_values.get("description", [])),
-            references=field_values.get("references", []),
-        )
