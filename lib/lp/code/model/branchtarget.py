@@ -4,10 +4,10 @@
 """Branch targets."""
 
 __all__ = [
-    'PackageBranchTarget',
-    'PersonBranchTarget',
-    'ProductBranchTarget',
-    ]
+    "PackageBranchTarget",
+    "PersonBranchTarget",
+    "ProductBranchTarget",
+]
 
 from operator import attrgetter
 
@@ -18,9 +18,9 @@ from zope.security.proxy import isinstance as zope_isinstance
 from lp.code.errors import NoLinkedBranch
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.branchtarget import (
-    check_default_stacked_on,
     IBranchTarget,
-    )
+    check_default_stacked_on,
+)
 from lp.code.interfaces.linkedbranch import get_linked_to_branch
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -30,7 +30,6 @@ from lp.services.webapp.sorting import sorted_version_numbers
 
 
 class _BaseBranchTarget:
-
     def __eq__(self, other):
         return self.context == other.context
 
@@ -48,7 +47,6 @@ class _BaseBranchTarget:
 
 @implementer(IBranchTarget)
 class PackageBranchTarget(_BaseBranchTarget):
-
     def __init__(self, sourcepackage):
         self.sourcepackage = sourcepackage
 
@@ -64,7 +62,7 @@ class PackageBranchTarget(_BaseBranchTarget):
             self.sourcepackage.distribution,
             self.sourcepackage.distroseries,
             self.sourcepackage,
-            ]
+        ]
 
     @property
     def context(self):
@@ -74,6 +72,7 @@ class PackageBranchTarget(_BaseBranchTarget):
     def getNamespace(self, owner):
         """See `IBranchTarget`."""
         from lp.code.model.branchnamespace import PackageBranchNamespace
+
         return PackageBranchNamespace(owner, self.sourcepackage)
 
     @property
@@ -86,7 +85,9 @@ class PackageBranchTarget(_BaseBranchTarget):
         """See `IBranchTarget`."""
         return check_default_stacked_on(
             self.sourcepackage.development_version.getBranch(
-                PackagePublishingPocket.RELEASE))
+                PackagePublishingPocket.RELEASE
+            )
+        )
 
     @property
     def default_merge_target(self):
@@ -144,7 +145,8 @@ class PackageBranchTarget(_BaseBranchTarget):
             action_name,
             distribution=self.context.distribution,
             sourcepackagename=self.context.sourcepackagename,
-            datecreated=date_created)
+            datecreated=date_created,
+        )
 
     def getBugTask(self, bug):
         """See `IBranchTarget`."""
@@ -169,14 +171,24 @@ class PackageBranchTarget(_BaseBranchTarget):
         linked_branches = self.sourcepackage.linkedBranches()
         distroseries = self.sourcepackage.distroseries
         result.extend(
-                [(branch, distroseries)
-                 for branch in linked_branches.values()
-                 if (check_permission('launchpad.View', branch) and
-                    branch != parent_branch and
-                    distroseries.status != SeriesStatus.OBSOLETE)])
+            [
+                (branch, distroseries)
+                for branch in linked_branches.values()
+                if (
+                    check_permission("launchpad.View", branch)
+                    and branch != parent_branch
+                    and distroseries.status != SeriesStatus.OBSOLETE
+                )
+            ]
+        )
 
-        result = sorted_version_numbers(result, key=lambda branch_info: (
-            getattr(branch_info[1], 'name'), branch_info[0].id))
+        result = sorted_version_numbers(
+            result,
+            key=lambda branch_info: (
+                getattr(branch_info[1], "name"),
+                branch_info[0].id,
+            ),
+        )
 
         if limit_results is not None:
             # We only want the most recent branches
@@ -187,7 +199,7 @@ class PackageBranchTarget(_BaseBranchTarget):
 @implementer(IBranchTarget)
 class PersonBranchTarget(_BaseBranchTarget):
 
-    name = '+junk'
+    name = "+junk"
     default_stacked_on_branch = None
     default_merge_target = None
 
@@ -212,6 +224,7 @@ class PersonBranchTarget(_BaseBranchTarget):
     def getNamespace(self, owner):
         """See `IBranchTarget`."""
         from lp.code.model.branchnamespace import PersonalBranchNamespace
+
         return PersonalBranchNamespace(owner)
 
     @property
@@ -265,7 +278,6 @@ class PersonBranchTarget(_BaseBranchTarget):
 
 @implementer(IBranchTarget)
 class ProductBranchTarget(_BaseBranchTarget):
-
     def __init__(self, product):
         self.product = product
 
@@ -302,6 +314,7 @@ class ProductBranchTarget(_BaseBranchTarget):
     def getNamespace(self, owner):
         """See `IBranchTarget`."""
         from lp.code.model.branchnamespace import ProjectBranchNamespace
+
         return ProjectBranchNamespace(owner, self.product)
 
     @property
@@ -350,7 +363,8 @@ class ProductBranchTarget(_BaseBranchTarget):
     def assignKarma(self, person, action_name, date_created=None):
         """See `IBranchTarget`."""
         return person.assignKarma(
-            action_name, product=self.product, datecreated=date_created)
+            action_name, product=self.product, datecreated=date_created
+        )
 
     def getBugTask(self, bug):
         """See `IBranchTarget`."""
@@ -374,12 +388,15 @@ class ProductBranchTarget(_BaseBranchTarget):
         """See `IBranchTarget`."""
         sorted_series = []
         for series in self.product.series:
-            if (series.status != SeriesStatus.OBSOLETE
-                and series != self.product.development_focus):
+            if (
+                series.status != SeriesStatus.OBSOLETE
+                and series != self.product.development_focus
+            ):
                 sorted_series.append(series)
         # Now sort the list by name with newer versions before older.
-        sorted_series = sorted_version_numbers(sorted_series,
-                                             key=attrgetter('name'))
+        sorted_series = sorted_version_numbers(
+            sorted_series, key=attrgetter("name")
+        )
         # Add the development focus first.
         sorted_series.insert(0, self.product.development_focus)
 
@@ -387,8 +404,11 @@ class ProductBranchTarget(_BaseBranchTarget):
         for series in sorted_series:
             try:
                 branch = get_linked_to_branch(series).branch
-                if (branch not in result and branch != parent_branch and
-                    check_permission('launchpad.View', branch)):
+                if (
+                    branch not in result
+                    and branch != parent_branch
+                    and check_permission("launchpad.View", branch)
+                ):
                     result.append((branch, series))
             except NoLinkedBranch:
                 # If there's no branch for a particular series, we don't care.
@@ -406,16 +426,24 @@ class ProductBranchTarget(_BaseBranchTarget):
             try:
                 branch = get_linked_to_branch(distrosourcepackage).branch
                 series = distrosourcepackage.distribution.currentseries
-                if (branch != parent_branch and series is not None and
-                    check_permission('launchpad.View', branch)):
-                        result.append((branch, series))
+                if (
+                    branch != parent_branch
+                    and series is not None
+                    and check_permission("launchpad.View", branch)
+                ):
+                    result.append((branch, series))
             except NoLinkedBranch:
                 # If there's no branch for a particular source package,
                 # we don't care.
                 pass
 
-        result = sorted_version_numbers(result, key=lambda branch_info: (
-            getattr(branch_info[1], 'name'), branch_info[0].id))
+        result = sorted_version_numbers(
+            result,
+            key=lambda branch_info: (
+                getattr(branch_info[1], "name"),
+                branch_info[0].id,
+            ),
+        )
 
         if limit_results is not None:
             # We only want the most recent branches

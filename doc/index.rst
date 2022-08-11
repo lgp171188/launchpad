@@ -1,8 +1,3 @@
-.. Launchpad documentation master file, created by
-   sphinx-quickstart on Tue Aug 10 16:12:45 2010.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 =================================
 Launchpad developer documentation
 =================================
@@ -10,92 +5,72 @@ Launchpad developer documentation
 Welcome to the Launchpad developer documentation.  This documentation is for
 people who want to hack on Launchpad.
 
+Launchpad is an open source suite of tools that help people and teams to
+work together on software projects.  Unlike many open source projects,
+Launchpad isn't something you install and run yourself (although you are
+welcome to do so), instead, contributors help make `Launchpad
+<https://launchpad.net>`_ better.
+
+If you want help using Launchpad, then please visit our `user documentation
+<https://help.launchpad.net>`_.
+
+If you'd like to contribute to Launchpad, this documentation is for you.
+Alternatively, :doc:`have a poke around in the code <how-to/running>`.
+
+
+Contents
+========
+
+.. list-table::
+
+   * - :doc:`how-to/index`
+     - Step-by-step guides covering key operations and common tasks
+   * - :doc:`explanation/index`
+     - Discussion and clarification of key topics
+   * - :doc:`reference/index`
+     - Technical information - specifications, APIs, architecture
+
 Overview
 ========
 
-.. toctree::
-   :maxdepth: 1
+.. list-table::
 
-   readme
-   strategy
-   scope
-   values
-   faq
-
-How-to Guides
-=============
-
-.. toctree::
-   :maxdepth: 1
-
-   how-to/running
-   how-to/exceptions
-   how-to/security
-   how-to/new-user
-   how-to/avoid-debugging-issues
-   how-to/apply-schema-changes
-   how-to/use-updated-dependency
-   how-to/resurrect-dogfood
-   how-to/preserve-query-count
-   how-to/land-update-for-loggerhead
-   how-to/update-configuration-for-testing
-
-Explanation
-===========
-
-.. toctree::
-   :maxdepth: 1
-
-   explanation/running-details
-   explanation/architecture
-   explanation/pip
-
-Reference
-=========
-
-.. toctree::
-   :maxdepth: 1
-
-   reference/python
-   reference/tests
-
-Possibly out-of-date
---------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   email
-
-Other
-=====
-
-.. toctree::
-   :maxdepth: 1
-
-   historical
+   * - :doc:`strategy`
+     - Why are we making Launchpad, and for whom?
+   * - :doc:`scope`
+     - How do Launchpad's features fit together?
+   * - :doc:`values`
+     - Guidelines for designing Launchpad
+   * - :doc:`faq`
+     -
+   * - :doc:`historical`
+     -
 
 Project and community
 =====================
 
-Launchpad is a member of the Ubuntu family.  It's an open source project
-that warmly welcomes contributions, suggestions, fixes and constructive
-feedback.
+Launchpad is a member of the Ubuntu family, sponsored by `Canonical
+<https://canonical.com/>`_.  It's an open source project that warmly
+welcomes contributions, suggestions, fixes and constructive feedback, and
+has received `many contributions from many wonderful people
+<https://dev.launchpad.net/Contributions>`_.
 
- * `Code of conduct <https://ubuntu.com/community/code-of-conduct>`_
- * `Get help using Launchpad <https://help.launchpad.net/>`_
- * `Get help developing Launchpad <https://dev.launchpad.net/Help>`_
- * Join our `IRC channel <irc://irc.libera.chat/launchpad-dev>`_:
-   #launchpad-dev on `libera.chat <https://libera.chat/>`_
- * `Contribute <https://dev.launchpad.net/PatchSubmission>`_
+* `Code of conduct <https://ubuntu.com/community/code-of-conduct>`_
+* `Get help using Launchpad <https://help.launchpad.net/>`_
+* `Get help developing Launchpad <https://dev.launchpad.net/Help>`_
+* Join our `IRC channel <irc://irc.libera.chat/launchpad-dev>`_:
+  #launchpad-dev on `libera.chat <https://libera.chat/>`_
+* `Contribute <https://dev.launchpad.net/PatchSubmission>`_
 
 Thinking about using Launchpad for your next project?  `Get in touch!
 <https://launchpad.net/~launchpad-users>`_
 
 
-Indices and tables
-==================
+.. toctree::
+   :hidden:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Home <self>
+   how-to/index
+   explanation/index
+   reference/index
+   overview

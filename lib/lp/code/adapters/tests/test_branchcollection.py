@@ -26,6 +26,7 @@ class TestPersonProduct(TestCaseWithFactory):
         self.factory.makeProductBranch(product=product)
         self.factory.makeBranch(owner=person)
         person_product_branch = self.factory.makeProductBranch(
-            owner=person, product=product)
+            owner=person, product=product
+        )
         branches = IBranchCollection(person_product).getBranches()
         self.assertEqual([person_product_branch], [b for b in branches])

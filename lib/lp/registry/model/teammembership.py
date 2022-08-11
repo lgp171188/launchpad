@@ -2,18 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'find_team_participations',
-    'TeamMembership',
-    'TeamMembershipSet',
-    'TeamParticipation',
-    ]
+    "find_team_participations",
+    "TeamMembership",
+    "TeamMembershipSet",
+    "TeamParticipation",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
+from storm.expr import Func
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
@@ -24,74 +22,85 @@ from lp.registry.enums import TeamMembershipRenewalPolicy
 from lp.registry.errors import (
     TeamMembershipTransitionError,
     UserCannotChangeMembershipSilently,
-    )
+)
 from lp.registry.interfaces.person import (
     validate_person,
     validate_public_person,
-    )
+)
 from lp.registry.interfaces.persontransferjob import (
     IExpiringMembershipNotificationJobSource,
     IMembershipNotificationJobSource,
     ISelfRenewalNotificationJobSource,
-    )
+)
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.sharingjob import (
     IRemoveArtifactSubscriptionsJobSource,
-    )
+)
 from lp.registry.interfaces.teammembership import (
     ACTIVE_STATES,
-    CyclicalTeamMembershipError,
     DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT,
+    CyclicalTeamMembershipError,
     ITeamMembership,
     ITeamMembershipSet,
     ITeamParticipation,
     TeamMembershipStatus,
-    )
+)
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
+    SQLBase,
     cursor,
     flush_database_updates,
-    SQLBase,
     sqlvalues,
-    )
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+)
+from lp.services.database.sqlobject import ForeignKey, StringCol
 
 
 @implementer(ITeamMembership)
 class TeamMembership(SQLBase):
     """See `ITeamMembership`."""
 
-    _table = 'TeamMembership'
-    _defaultOrder = 'id'
+    _table = "TeamMembership"
+    _defaultOrder = "id"
 
-    team = ForeignKey(dbName='team', foreignKey='Person', notNull=True)
+    team = ForeignKey(dbName="team", foreignKey="Person", notNull=True)
     person = ForeignKey(
-        dbName='person', foreignKey='Person',
-        storm_validator=validate_person, notNull=True)
+        dbName="person",
+        foreignKey="Person",
+        storm_validator=validate_person,
+        notNull=True,
+    )
     last_changed_by = ForeignKey(
-        dbName='last_changed_by', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        dbName="last_changed_by",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     proposed_by = ForeignKey(
-        dbName='proposed_by', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        dbName="proposed_by",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     acknowledged_by = ForeignKey(
-        dbName='acknowledged_by', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        dbName="acknowledged_by",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     reviewed_by = ForeignKey(
-        dbName='reviewed_by', foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    status = DBEnum(
-        name='status', allow_none=False, enum=TeamMembershipStatus)
+        dbName="reviewed_by",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
+    status = DBEnum(name="status", allow_none=False, enum=TeamMembershipStatus)
     # XXX: salgado, 2008-03-06: Need to rename datejoined and dateexpires to
     # match their db names.
-    datejoined = UtcDateTimeCol(dbName='date_joined', default=None)
-    dateexpires = UtcDateTimeCol(dbName='date_expires', default=None)
+    datejoined = UtcDateTimeCol(dbName="date_joined", default=None)
+    dateexpires = UtcDateTimeCol(dbName="date_expires", default=None)
     date_created = UtcDateTimeCol(default=UTC_NOW)
     date_proposed = UtcDateTimeCol(default=None)
     date_acknowledged = UtcDateTimeCol(default=None)
@@ -112,16 +121,20 @@ class TeamMembership(SQLBase):
         admin = TeamMembershipStatus.APPROVED
         approved = TeamMembershipStatus.ADMIN
         date_limit = datetime.now(pytz.UTC) + timedelta(
-            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT)
-        return (self.status in (admin, approved)
-                and self.team.renewal_policy == ondemand
-                and self.dateexpires is not None
-                and self.dateexpires < date_limit)
+            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT
+        )
+        return (
+            self.status in (admin, approved)
+            and self.team.renewal_policy == ondemand
+            and self.dateexpires is not None
+            and self.dateexpires < date_limit
+        )
 
     def sendSelfRenewalNotification(self):
         """See `ITeamMembership`."""
         getUtility(ISelfRenewalNotificationJobSource).create(
-            self.person, self.team, self.dateexpires)
+            self.person, self.team, self.dateexpires
+        )
 
     def canChangeStatusSilently(self, user):
         """Ensure that the user is in the Launchpad Administrators group.
@@ -141,15 +154,17 @@ class TeamMembership(SQLBase):
         if date == self.dateexpires:
             return
 
-        assert self.canChangeExpirationDate(user), (
-            "This user can't change this membership's expiration date.")
+        assert self.canChangeExpirationDate(
+            user
+        ), "This user can't change this membership's expiration date."
         self._setExpirationDate(date, user)
 
     def _setExpirationDate(self, date, user):
-        UTC = pytz.timezone('UTC')
+        UTC = pytz.timezone("UTC")
         assert date is None or date.date() >= datetime.now(UTC).date(), (
             "The given expiration date must be None or be in the future: %s"
-            % date.strftime('%Y-%m-%d'))
+            % date.strftime("%Y-%m-%d")
+        )
         self.dateexpires = date
         self.last_changed_by = user
 
@@ -157,15 +172,17 @@ class TeamMembership(SQLBase):
         """See `ITeamMembership`."""
         if self.dateexpires is None:
             raise AssertionError(
-                '%s in team %s has no membership expiration date.' %
-                (self.person.name, self.team.name))
-        if self.dateexpires < datetime.now(pytz.timezone('UTC')):
+                "%s in team %s has no membership expiration date."
+                % (self.person.name, self.team.name)
+            )
+        if self.dateexpires < datetime.now(pytz.timezone("UTC")):
             # The membership has reached expiration. Silently return because
             # there is nothing to do. The member will have received emails
             # from previous calls by flag-expired-memberships.py
             return
         getUtility(IExpiringMembershipNotificationJobSource).create(
-            self.person, self.team, self.dateexpires)
+            self.person, self.team, self.dateexpires
+        )
 
     def setStatus(self, status, user, comment=None, silent=False):
         """See `ITeamMembership`."""
@@ -175,7 +192,8 @@ class TeamMembership(SQLBase):
         if silent and not self.canChangeStatusSilently(user):
             raise UserCannotChangeMembershipSilently(
                 "Only Launchpad administrators may change membership "
-                "statuses silently.")
+                "statuses silently."
+            )
 
         approved = TeamMembershipStatus.APPROVED
         admin = TeamMembershipStatus.ADMIN
@@ -198,32 +216,37 @@ class TeamMembership(SQLBase):
             proposed: [approved, admin, declined],
             declined: [proposed, approved, admin, invited],
             invited: [approved, admin, invitation_declined],
-            invitation_declined: [invited, approved, admin]}
+            invitation_declined: [invited, approved, admin],
+        }
 
         if self.status not in state_transition:
             raise TeamMembershipTransitionError(
-                "Unknown status: %s" % self.status.name)
+                "Unknown status: %s" % self.status.name
+            )
         if status not in state_transition[self.status]:
             raise TeamMembershipTransitionError(
                 "Bad state transition from %s to %s"
-                % (self.status.name, status.name))
+                % (self.status.name, status.name)
+            )
 
         if status in ACTIVE_STATES and self.team in self.person.allmembers:
             raise CyclicalTeamMembershipError(
                 "Cannot make %(person)s a member of %(team)s because "
                 "%(team)s is a member of %(person)s."
-                % dict(person=self.person.name, team=self.team.name))
+                % dict(person=self.person.name, team=self.team.name)
+            )
 
         old_status = self.status
         self.status = status
 
-        now = datetime.now(pytz.timezone('UTC'))
+        now = datetime.now(pytz.timezone("UTC"))
         if status in [proposed, invited]:
             self.proposed_by = user
             self.proponent_comment = comment
             self.date_proposed = now
-        elif ((status in ACTIVE_STATES and old_status not in ACTIVE_STATES)
-              or status == declined):
+        elif (
+            status in ACTIVE_STATES and old_status not in ACTIVE_STATES
+        ) or status == declined:
             self.reviewed_by = user
             self.reviewer_comment = comment
             self.date_reviewed = now
@@ -253,7 +276,8 @@ class TeamMembership(SQLBase):
             # to some artifacts shared with the team. We need to run a job
             # to remove any subscriptions to such artifacts.
             getUtility(IRemoveArtifactSubscriptionsJobSource).create(
-                user, grantee=self.person)
+                user, grantee=self.person
+            )
         else:
             # Changed from an inactive state to another inactive one, so no
             # need to fill/clean the TeamParticipation table.
@@ -267,8 +291,9 @@ class TeamMembership(SQLBase):
         # When a member proposes themselves, a more detailed notification is
         # sent to the team admins by a subscriber of JoinTeamEvent; that's
         # why we don't send anything here.
-        if ((self.person != self.last_changed_by or self.status != proposed)
-            and not silent):
+        if (
+            self.person != self.last_changed_by or self.status != proposed
+        ) and not silent:
             self._sendStatusChangeNotification(old_status)
         return True
 
@@ -279,15 +304,20 @@ class TeamMembership(SQLBase):
         reviewer = self.last_changed_by
         new_status = self.status
         getUtility(IMembershipNotificationJobSource).create(
-            self.person, self.team, reviewer, old_status, new_status,
-            self.last_change_comment)
+            self.person,
+            self.team,
+            reviewer,
+            old_status,
+            new_status,
+            self.last_change_comment,
+        )
 
 
 @implementer(ITeamMembershipSet)
 class TeamMembershipSet:
     """See `ITeamMembershipSet`."""
 
-    _defaultOrder = ['Person.displayname', 'Person.name']
+    _defaultOrder = ["Person.displayname", "Person.name"]
 
     def new(self, person, team, status, user, dateexpires=None, comment=None):
         """See `ITeamMembershipSet`."""
@@ -300,9 +330,10 @@ class TeamMembershipSet:
         person.clearInTeamCache()
 
         tm = TeamMembership(
-            person=person, team=team, status=status, dateexpires=dateexpires)
+            person=person, team=team, status=status, dateexpires=dateexpires
+        )
 
-        now = datetime.now(pytz.timezone('UTC'))
+        now = datetime.now(pytz.timezone("UTC"))
         tm.proposed_by = user
         tm.date_proposed = now
         tm.proponent_comment = comment
@@ -322,8 +353,8 @@ class TeamMembershipSet:
             membership.setStatus(TeamMembershipStatus.EXPIRED, reviewer)
             if logger is not None:
                 logger.info(
-                    'The membership for %s in team %s has expired.' %
-                    (membership.person.name, membership.team.name)
+                    "The membership for %s in team %s has expired."
+                    % (membership.person.name, membership.team.name)
                 )
 
     def getByPersonAndTeam(self, person, team):
@@ -333,20 +364,50 @@ class TeamMembershipSet:
     def getMembershipsToExpire(self, when=None):
         """See `ITeamMembershipSet`."""
         if when is None:
-            when = datetime.now(pytz.timezone('UTC'))
+            when = datetime.now(pytz.timezone("UTC"))
         conditions = [
             TeamMembership.dateexpires <= when,
             TeamMembership.status.is_in(
-                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]),
-            ]
+                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
+            ),
+        ]
         return IStore(TeamMembership).find(TeamMembership, *conditions)
+
+    def getExpiringMembershipsToWarn(self):
+        """See `ITeamMembershipSet`,"""
+        now = datetime.now(pytz.UTC)
+        min_date_for_daily_warning = now + timedelta(days=7)
+        memberships_to_warn = set(
+            self.getMembershipsToExpire(min_date_for_daily_warning)
+        )
+        weekly_reminder_dates = [
+            (now + timedelta(days=weeks * 7)).date()
+            for weeks in range(
+                2, DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT // 7 + 1
+            )
+        ]
+        memberships_to_warn.update(
+            list(self.getMembershipsExpiringOnDates(weekly_reminder_dates))
+        )
+        return memberships_to_warn
+
+    def getMembershipsExpiringOnDates(self, dates):
+        """See `ITeamMembershipSet`."""
+        return IStore(TeamMembership).find(
+            TeamMembership,
+            Func("date_trunc", "day", TeamMembership.dateexpires).is_in(dates),
+            TeamMembership.status.is_in(
+                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
+            ),
+        )
 
     def deactivateActiveMemberships(self, team, comment, reviewer):
         """See `ITeamMembershipSet`."""
-        now = datetime.now(pytz.timezone('UTC'))
+        now = datetime.now(pytz.timezone("UTC"))
         cur = cursor()
         all_members = list(team.activemembers)
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE TeamMembership
             SET status=%(status)s,
                 last_changed_by=%(last_changed_by)s,
@@ -362,7 +423,9 @@ class TeamMembershipSet:
                 comment=comment,
                 date_last_changed=now,
                 team=team.id,
-                original_statuses=ACTIVE_STATES))
+                original_statuses=ACTIVE_STATES,
+            ),
+        )
         for member in all_members:
             # store.invalidate() is called for each iteration.
             _cleanTeamParticipation(member, team)
@@ -371,10 +434,10 @@ class TeamMembershipSet:
 @implementer(ITeamParticipation)
 class TeamParticipation(SQLBase):
 
-    _table = 'TeamParticipation'
+    _table = "TeamParticipation"
 
-    team = ForeignKey(dbName='team', foreignKey='Person', notNull=True)
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
+    team = ForeignKey(dbName="team", foreignKey="Person", notNull=True)
+    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
 
 
 def _cleanTeamParticipation(child, parent):
@@ -389,7 +452,8 @@ def _cleanTeamParticipation(child, parent):
     # ancestor teams have another path the child besides the
     # membership that has just been deactivated.
     store = Store.of(parent)
-    store.execute("""
+    store.execute(
+        """
         DELETE FROM TeamParticipation
         USING (
             /* Get all the participation entries that might need to be
@@ -452,9 +516,9 @@ def _cleanTeamParticipation(child, parent):
         ) AS keeping
         WHERE TeamParticipation.person = keeping.person
             AND TeamParticipation.team = keeping.team
-        """ % sqlvalues(
-            child=child.id,
-            active_states=ACTIVE_STATES))
+        """
+        % sqlvalues(child=child.id, active_states=ACTIVE_STATES)
+    )
     store.invalidate()
 
 
@@ -486,7 +550,9 @@ def _fillTeamParticipation(member, accepting_team):
                     WHERE person = submember.person
                         AND team = superteam.team
                     )
-            """ % dict(member=member.id, accepting_team=accepting_team.id)
+            """ % dict(
+            member=member.id, accepting_team=accepting_team.id
+        )
     else:
         query = """
             INSERT INTO TeamParticipation (person, team)
@@ -499,7 +565,9 @@ def _fillTeamParticipation(member, accepting_team):
                     WHERE person = %(member)d
                         AND team = superteam.team
                     )
-            """ % dict(member=member.id, accepting_team=accepting_team.id)
+            """ % dict(
+            member=member.id, accepting_team=accepting_team.id
+        )
 
     store = Store.of(member)
     store.execute(query)
@@ -545,21 +613,19 @@ def find_team_participations(people, teams=None):
     # We are either checking for membership of any team or didn't eliminate
     # all the specific team participation checks above.
     if teams_to_query or not teams:
-        Team = ClassAlias(Person, 'Team')
+        Team = ClassAlias(Person, "Team")
         person_ids = [person.id for person in people]
         conditions = [
             TeamParticipation.personID == Person.id,
             TeamParticipation.teamID == Team.id,
-            Person.id.is_in(person_ids)
+            Person.id.is_in(person_ids),
         ]
         team_ids = [team.id for team in teams_to_query]
         if team_ids:
             conditions.append(Team.id.is_in(team_ids))
 
         store = IStore(Person)
-        rs = store.find(
-            (Person, Team),
-            *conditions)
+        rs = store.find((Person, Team), *conditions)
 
         for (person, team) in rs:
             add_team_to_result(person, team)

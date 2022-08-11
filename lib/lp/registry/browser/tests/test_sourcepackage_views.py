@@ -3,15 +3,9 @@
 
 """Tests for SourcePackage view code."""
 
-from urllib.parse import (
-    parse_qsl,
-    splitquery,
-    )
+from urllib.parse import parse_qsl, splitquery
 
-from soupmatchers import (
-    HTMLContains,
-    Tag,
-    )
+from soupmatchers import HTMLContains, Tag
 from testtools.matchers import Not
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
@@ -20,23 +14,16 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.registry.browser.sourcepackage import (
-    get_register_upstream_url,
     PackageUpstreamTracking,
     SourcePackageOverviewMenu,
-    )
+    get_register_upstream_url,
+)
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import IDistribution
-from lp.registry.interfaces.distroseries import (
-    IDistroSeries,
-    IDistroSeriesSet,
-    )
+from lp.registry.interfaces.distroseries import IDistroSeries, IDistroSeriesSet
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    BrowserTestCase,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import BrowserTestCase, TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import find_tag_by_id
 from lp.testing.views import create_initialized_view
@@ -50,10 +37,11 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
     def _makePublishedSourcePackage(self):
         test_publisher = SoyuzTestPublisher()
         test_data = test_publisher.makeSourcePackageSummaryData()
-        source_package_name = (
-            test_data['source_package'].sourcepackagename.name)
-        distroseries_id = test_data['distroseries'].id
-        test_publisher.updatePackageCache(test_data['distroseries'])
+        source_package_name = test_data[
+            "source_package"
+        ].sourcepackagename.name
+        distroseries_id = test_data["distroseries"].id
+        test_publisher.updatePackageCache(test_data["distroseries"])
 
         # updatePackageCache reconnects the db, so the objects need to be
         # reloaded.
@@ -67,51 +55,57 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
 
     def test_get_register_upstream_url_fields(self):
         distroseries = self.factory.makeDistroSeries(
-            distribution=self.factory.makeDistribution(name='zoobuntu'),
-            name='walrus')
+            distribution=self.factory.makeDistribution(name="zoobuntu"),
+            name="walrus",
+        )
         source_package = self.factory.makeSourcePackage(
-            distroseries=distroseries,
-            sourcepackagename='python-super-package')
+            distroseries=distroseries, sourcepackagename="python-super-package"
+        )
         url = get_register_upstream_url(source_package)
         base, query = splitquery(url)
-        self.assertEqual('/projects/+new', base)
+        self.assertEqual("/projects/+new", base)
         params = parse_qsl(query)
         expected_params = [
-            ('_return_url',
-             'http://launchpad.test/zoobuntu/walrus/'
-             '+source/python-super-package'),
-            ('field.__visited_steps__', 'projectaddstep1'),
-            ('field.actions.continue', 'Continue'),
-            ('field.display_name', 'Python Super Package'),
-            ('field.distroseries', 'zoobuntu/walrus'),
-            ('field.name', 'python-super-package'),
-            ('field.source_package_name', 'python-super-package'),
-            ('field.title', 'Python Super Package'),
-            ]
+            (
+                "_return_url",
+                "http://launchpad.test/zoobuntu/walrus/"
+                "+source/python-super-package",
+            ),
+            ("field.__visited_steps__", "projectaddstep1"),
+            ("field.actions.continue", "Continue"),
+            ("field.display_name", "Python Super Package"),
+            ("field.distroseries", "zoobuntu/walrus"),
+            ("field.name", "python-super-package"),
+            ("field.source_package_name", "python-super-package"),
+            ("field.title", "Python Super Package"),
+        ]
         self.assertEqual(expected_params, params)
 
     def test_get_register_upstream_url_display_name(self):
         # The sourcepackagename 'python-super-package' is split on
         # the hyphens, and each word is capitalized.
         distroseries = self.factory.makeDistroSeries(
-            distribution=self.factory.makeDistribution(name='zoobuntu'),
-            name='walrus')
+            distribution=self.factory.makeDistribution(name="zoobuntu"),
+            name="walrus",
+        )
         source_package = self.factory.makeSourcePackage(
-            distroseries=distroseries,
-            sourcepackagename='python-super-package')
+            distroseries=distroseries, sourcepackagename="python-super-package"
+        )
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
-            url, 'field.display_name', 'Python Super Package')
+            url, "field.display_name", "Python Super Package"
+        )
 
     def test_get_register_upstream_url_summary(self):
         source_package = self._makePublishedSourcePackage()
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
-            url, 'field.summary',
-            'summary for flubber-bin\nsummary for flubber-lib')
+            url,
+            "field.summary",
+            "summary for flubber-bin\nsummary for flubber-lib",
+        )
 
     def test_get_register_upstream_url_summary_duplicates(self):
-
         class Faker:
             # Fakes attributes easily.
             def __init__(self, **kw):
@@ -131,38 +125,47 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         class FakeDistribution(Faker):
             pass
 
-        releases = Faker(sample_binary_packages=[
-            Faker(summary='summary for foo'),
-            Faker(summary='summary for bar'),
-            Faker(summary='summary for baz'),
-            Faker(summary='summary for baz'),
-            ])
+        releases = Faker(
+            sample_binary_packages=[
+                Faker(summary="summary for foo"),
+                Faker(summary="summary for bar"),
+                Faker(summary="summary for baz"),
+                Faker(summary="summary for baz"),
+            ]
+        )
         source_package = FakeSourcePackage(
-            name='foo',
-            sourcepackagename=Faker(name='foo'),
+            name="foo",
+            sourcepackagename=Faker(name="foo"),
             distroseries=FakeDistroSeries(
-                name='walrus',
+                name="walrus",
                 distribution=FakeDistribution(
-                    name='zoobuntu',
+                    name="zoobuntu",
                     default_traversal_policy=(
-                        DistributionDefaultTraversalPolicy.SERIES),
-                    redirect_default_traversal=False)),
+                        DistributionDefaultTraversalPolicy.SERIES
+                    ),
+                    redirect_default_traversal=False,
+                ),
+            ),
             releases=[releases],
             currentrelease=Faker(homepage=None),
-            )
+        )
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
-            url, 'field.summary',
-            'summary for bar\nsummary for baz\nsummary for foo')
+            url,
+            "field.summary",
+            "summary for bar\nsummary for baz\nsummary for foo",
+        )
 
     def test_get_register_upstream_url_homepage(self):
         source_package = self._makePublishedSourcePackage()
         # SourcePackageReleases cannot be modified by users.
         removeSecurityProxy(
-            source_package.currentrelease).homepage = 'http://eg.dom/bonkers'
+            source_package.currentrelease
+        ).homepage = "http://eg.dom/bonkers"
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
-            url, 'field.homepageurl', 'http://eg.dom/bonkers')
+            url, "field.homepageurl", "http://eg.dom/bonkers"
+        )
 
 
 class TestSourcePackageView(BrowserTestCase):
@@ -177,7 +180,7 @@ class TestSourcePackageView(BrowserTestCase):
         browser.getControl("Link to Upstream Project").click()
         browser.getControl("Summary").value = "summary"
         browser.getControl("Continue").click()
-        t = Tag('info_type', 'input', attrs={'name': 'field.information_type'})
+        t = Tag("info_type", "input", attrs={"name": "field.information_type"})
         self.assertThat(browser.contents, Not(HTMLContains(t)))
 
     def test_link_upstream_handles_initial_proprietary(self):
@@ -187,9 +190,11 @@ class TestSourcePackageView(BrowserTestCase):
         product_name = sourcepackage.name
         product_displayname = self.factory.getUniqueString()
         self.factory.makeProduct(
-            name=product_name, owner=owner,
+            name=product_name,
+            owner=owner,
             information_type=InformationType.PROPRIETARY,
-            displayname=product_displayname)
+            displayname=product_displayname,
+        )
         browser = self.getViewBrowser(sourcepackage, user=owner)
         with ExpectedException(LookupError):
             browser.getControl(product_displayname)
@@ -201,7 +206,8 @@ class TestSourcePackageView(BrowserTestCase):
         product_name = product.name
         product_displayname = product.displayname
         sourcepackage = self.factory.makeSourcePackage(
-            sourcepackagename=product_name)
+            sourcepackagename=product_name
+        )
         with person_logged_in(None):
             browser = self.getViewBrowser(sourcepackage, user=owner)
             with person_logged_in(owner):
@@ -209,12 +215,14 @@ class TestSourcePackageView(BrowserTestCase):
             browser.getControl(product_displayname).click()
             browser.getControl("Link to Upstream Project").click()
         error = Tag(
-            'error', 'div', attrs={'class': 'message'},
-            text='Invalid value')
+            "error", "div", attrs={"class": "message"}, text="Invalid value"
+        )
         self.assertThat(browser.contents, HTMLContains(error))
         self.assertNotIn(
-            'The project %s was linked to this source package.' %
-            str(product_displayname), browser.contents)
+            "The project %s was linked to this source package."
+            % str(product_displayname),
+            browser.contents,
+        )
 
 
 class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
@@ -223,17 +231,22 @@ class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        productseries = self.factory.makeProductSeries(name='1.0')
+        productseries = self.factory.makeProductSeries(name="1.0")
         self.milestone = self.factory.makeMilestone(
-            product=productseries.product, productseries=productseries)
+            product=productseries.product, productseries=productseries
+        )
         distroseries = self.factory.makeDistroSeries()
         self.source_package = self.factory.makeSourcePackage(
-            distroseries=distroseries, sourcepackagename='fnord')
+            distroseries=distroseries, sourcepackagename="fnord"
+        )
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=self.source_package.sourcepackagename,
-            distroseries=distroseries, version='1.5-0ubuntu1')
+            distroseries=distroseries,
+            version="1.5-0ubuntu1",
+        )
         self.source_package.setPackaging(
-            productseries, productseries.product.owner)
+            productseries, productseries.product.owner
+        )
 
     def makeUpstreamRelease(self, version):
         with person_logged_in(self.milestone.productseries.product.owner):
@@ -246,34 +259,42 @@ class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
 
     def test_current_release_tracking_none(self):
         view = create_initialized_view(
-            self.source_package, name='+upstream-connections')
+            self.source_package, name="+upstream-connections"
+        )
         self.assertEqual(
-            PackageUpstreamTracking.NONE, view.current_release_tracking)
-        self.assertId(view, 'no-upstream-version')
+            PackageUpstreamTracking.NONE, view.current_release_tracking
+        )
+        self.assertId(view, "no-upstream-version")
 
     def test_current_release_tracking_current(self):
-        self.makeUpstreamRelease('1.5')
+        self.makeUpstreamRelease("1.5")
         view = create_initialized_view(
-            self.source_package, name='+upstream-connections')
+            self.source_package, name="+upstream-connections"
+        )
         self.assertEqual(
-            PackageUpstreamTracking.CURRENT, view.current_release_tracking)
-        self.assertId(view, 'current-upstream-version')
+            PackageUpstreamTracking.CURRENT, view.current_release_tracking
+        )
+        self.assertId(view, "current-upstream-version")
 
     def test_current_release_tracking_older(self):
-        self.makeUpstreamRelease('1.4')
+        self.makeUpstreamRelease("1.4")
         view = create_initialized_view(
-            self.source_package, name='+upstream-connections')
+            self.source_package, name="+upstream-connections"
+        )
         self.assertEqual(
-            PackageUpstreamTracking.OLDER, view.current_release_tracking)
-        self.assertId(view, 'older-upstream-version')
+            PackageUpstreamTracking.OLDER, view.current_release_tracking
+        )
+        self.assertId(view, "older-upstream-version")
 
     def test_current_release_tracking_newer(self):
-        self.makeUpstreamRelease('1.6')
+        self.makeUpstreamRelease("1.6")
         view = create_initialized_view(
-            self.source_package, name='+upstream-connections')
+            self.source_package, name="+upstream-connections"
+        )
         self.assertEqual(
-            PackageUpstreamTracking.NEWER, view.current_release_tracking)
-        self.assertId(view, 'newer-upstream-version')
+            PackageUpstreamTracking.NEWER, view.current_release_tracking
+        )
+        self.assertId(view, "newer-upstream-version")
 
 
 class TestSourcePackagePackagingLinks(TestCaseWithFactory):
@@ -286,7 +307,9 @@ class TestSourcePackagePackagingLinks(TestCaseWithFactory):
         if with_packaging:
             self.factory.makePackagingLink(
                 sourcepackagename=sourcepackage.sourcepackagename,
-                distroseries=sourcepackage.distroseries, owner=registrant)
+                distroseries=sourcepackage.distroseries,
+                owner=registrant,
+            )
         user = self.factory.makePerson(karma=karma)
         with person_logged_in(user):
             menu = SourcePackageOverviewMenu(sourcepackage)
@@ -363,38 +386,45 @@ class TestSourcePackageChangeUpstreamView(BrowserTestCase):
     def test_error_on_proprietary_product(self):
         """Packaging cannot be created for PROPRIETARY products"""
         product_owner = self.factory.makePerson()
-        product_name = 'proprietary-product'
+        product_name = "proprietary-product"
         self.factory.makeProduct(
-            name=product_name, owner=product_owner,
-            information_type=InformationType.PROPRIETARY)
+            name=product_name,
+            owner=product_owner,
+            information_type=InformationType.PROPRIETARY,
+        )
         ubuntu_series = self.factory.makeUbuntuDistroSeries()
         sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
         browser = self.getViewBrowser(
-            sp, '+edit-packaging', user=product_owner)
-        browser.getControl('Project').value = product_name
-        browser.getControl('Continue').click()
+            sp, "+edit-packaging", user=product_owner
+        )
+        browser.getControl("Project").value = product_name
+        browser.getControl("Continue").click()
         self.assertIn(
-            'Only Public projects can be packaged, not Proprietary.',
-            browser.contents)
+            "Only Public projects can be packaged, not Proprietary.",
+            browser.contents,
+        )
 
     def test_error_on_proprietary_productseries(self):
         """Packaging cannot be created for PROPRIETARY productseries"""
         product_owner = self.factory.makePerson()
-        product_name = 'proprietary-product'
+        product_name = "proprietary-product"
         product = self.factory.makeProduct(
-            name=product_name, owner=product_owner)
+            name=product_name, owner=product_owner
+        )
         series = self.factory.makeProductSeries(product=product)
         series_displayname = series.displayname
         ubuntu_series = self.factory.makeUbuntuDistroSeries()
         sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
         browser = self.getViewBrowser(
-            sp, '+edit-packaging', user=product_owner)
-        browser.getControl('Project').value = product_name
-        browser.getControl('Continue').click()
+            sp, "+edit-packaging", user=product_owner
+        )
+        browser.getControl("Project").value = product_name
+        browser.getControl("Continue").click()
         with person_logged_in(product_owner):
             product.information_type = InformationType.PROPRIETARY
         browser.getControl(series_displayname).selected = True
-        browser.getControl('Change').click()
+        browser.getControl("Change").click()
         self.assertIn(
-            'Only Public projects can be packaged, not Proprietary.',
-            browser.contents)
+            "Only Public projects can be packaged, not Proprietary.",
+            browser.contents,
+        )

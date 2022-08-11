@@ -4,43 +4,31 @@
 """Interfaces related to bug nomination."""
 
 __all__ = [
-    'BugNominationStatusError',
-    'NominationError',
-    'IBugNomination',
-    'IBugNominationForm',
-    'IBugNominationSet',
-    'BugNominationStatus',
-    'NominationSeriesObsoleteError']
+    "BugNominationStatusError",
+    "NominationError",
+    "IBugNomination",
+    "IBugNominationForm",
+    "IBugNominationSet",
+    "BugNominationStatus",
+    "NominationSeriesObsoleteError",
+]
 
 import http.client
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     error_status,
     export_read_operation,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Set,
-    )
+    operation_for_version,
+)
+from lazr.restful.fields import Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, Set
 
 from lp import _
 from lp.app.validators.validation import can_be_nominated_for_series
@@ -74,29 +62,38 @@ class BugNominationStatus(DBEnumeratedType):
     The status of the decision to fix a bug in a specific release.
     """
 
-    PROPOSED = DBItem(10, """
+    PROPOSED = DBItem(
+        10,
+        """
         Nominated
 
         This nomination hasn't yet been reviewed, or is still under
         review.
-        """)
+        """,
+    )
 
-    APPROVED = DBItem(20, """
+    APPROVED = DBItem(
+        20,
+        """
         Approved
 
         The release management team has approved fixing the bug for this
         release.
-        """)
+        """,
+    )
 
-    DECLINED = DBItem(30, """
+    DECLINED = DBItem(
+        30,
+        """
         Declined
 
         The release management team has declined fixing the bug for this
         release.
-        """)
+        """,
+    )
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(as_of="beta", publish_web_link=False)
 class IBugNomination(IHasBug, IHasOwner):
     """A nomination for a bug to be fixed in a specific series.
 
@@ -108,37 +105,77 @@ class IBugNomination(IHasBug, IHasOwner):
     # attributes below.
     id = Int(title=_("Bug Nomination #"))
     bug = exported(Reference(schema=IBug, readonly=True))
-    date_created = exported(Datetime(
-        title=_("Date Submitted"),
-        description=_("The date on which this nomination was submitted."),
-        required=True, readonly=True))
-    date_decided = exported(Datetime(
-        title=_("Date Decided"),
-        description=_(
-            "The date on which this nomination was approved or declined."),
-        required=False, readonly=True))
-    distroseries = exported(ReferenceChoice(
-        title=_("Series"), required=False, readonly=True,
-        vocabulary="DistroSeries", schema=IDistroSeries))
-    productseries = exported(ReferenceChoice(
-        title=_("Series"), required=False, readonly=True,
-        vocabulary="ProductSeries", schema=IProductSeries))
-    owner = exported(PublicPersonChoice(
-        title=_('Submitter'), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam'))
-    owner_id = Attribute('The db id of the owner.')
-    decider = exported(PublicPersonChoice(
-        title=_('Decided By'), required=False, readonly=True,
-        vocabulary='ValidPersonOrTeam'))
-    target = exported(Reference(
-        schema=IBugTarget,
-        title=_("The IProductSeries or IDistroSeries of this nomination.")))
-    status = exported(Choice(
-        title=_("Status"), vocabulary=BugNominationStatus,
-        default=BugNominationStatus.PROPOSED, readonly=True))
+    date_created = exported(
+        Datetime(
+            title=_("Date Submitted"),
+            description=_("The date on which this nomination was submitted."),
+            required=True,
+            readonly=True,
+        )
+    )
+    date_decided = exported(
+        Datetime(
+            title=_("Date Decided"),
+            description=_(
+                "The date on which this nomination was approved or declined."
+            ),
+            required=False,
+            readonly=True,
+        )
+    )
+    distroseries = exported(
+        ReferenceChoice(
+            title=_("Series"),
+            required=False,
+            readonly=True,
+            vocabulary="DistroSeries",
+            schema=IDistroSeries,
+        )
+    )
+    productseries = exported(
+        ReferenceChoice(
+            title=_("Series"),
+            required=False,
+            readonly=True,
+            vocabulary="ProductSeries",
+            schema=IProductSeries,
+        )
+    )
+    owner = exported(
+        PublicPersonChoice(
+            title=_("Submitter"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
+    owner_id = Attribute("The db id of the owner.")
+    decider = exported(
+        PublicPersonChoice(
+            title=_("Decided By"),
+            required=False,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
+    target = exported(
+        Reference(
+            schema=IBugTarget,
+            title=_("The IProductSeries or IDistroSeries of this nomination."),
+        )
+    )
+    status = exported(
+        Choice(
+            title=_("Status"),
+            vocabulary=BugNominationStatus,
+            default=BugNominationStatus.PROPOSED,
+            readonly=True,
+        )
+    )
 
     @call_with(approver=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def approve(approver):
         """Approve this bug for fixing in a series.
 
@@ -154,6 +191,7 @@ class IBugNomination(IHasBug, IHasOwner):
 
     @call_with(decliner=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def decline(decliner):
         """Decline this bug for fixing in a series.
 
@@ -178,6 +216,7 @@ class IBugNomination(IHasBug, IHasOwner):
 
     @call_with(person=REQUEST_USER)
     @export_read_operation()
+    @operation_for_version("beta")
     def canApprove(person):
         """Is this person allowed to approve the nomination?"""
 
@@ -206,6 +245,8 @@ class IBugNominationForm(Interface):
     """The browser form for nominating bugs for series."""
 
     nominatable_series = Set(
-        title=_("Series that can be nominated"), required=True,
+        title=_("Series that can be nominated"),
+        required=True,
         value_type=Choice(vocabulary="BugNominatableSeries"),
-        constraint=can_be_nominated_for_series)
+        constraint=can_be_nominated_for_series,
+    )

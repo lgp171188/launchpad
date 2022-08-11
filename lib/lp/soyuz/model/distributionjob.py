@@ -7,12 +7,7 @@ __all__ = [
 ]
 
 from lazr.delegates import delegate_to
-from storm.locals import (
-    And,
-    Int,
-    JSON,
-    Reference,
-    )
+from storm.locals import JSON, And, Int, Reference
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -21,37 +16,34 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.soyuz.interfaces.distributionjob import (
     DistributionJobType,
     IDistributionJob,
-    )
+)
 
 
 @implementer(IDistributionJob)
 class DistributionJob(StormBase):
     """Base class for jobs related to Distributions."""
 
-    __storm_table__ = 'DistributionJob'
+    __storm_table__ = "DistributionJob"
 
     id = Int(primary=True)
 
-    job_id = Int(name='job')
+    job_id = Int(name="job")
     job = Reference(job_id, Job.id)
 
-    distribution_id = Int(name='distribution')
+    distribution_id = Int(name="distribution")
     distribution = Reference(distribution_id, Distribution.id)
 
-    distroseries_id = Int(name='distroseries')
+    distroseries_id = Int(name="distroseries")
     distroseries = Reference(distroseries_id, DistroSeries.id)
 
     job_type = DBEnum(enum=DistributionJobType, allow_none=False)
 
-    metadata = JSON('json_data')
+    metadata = JSON("json_data")
 
     def __init__(self, distribution, distroseries, job_type, metadata):
         super().__init__()
@@ -84,8 +76,9 @@ class DistributionJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         job = DistributionJob.get(job_id)
         if job.job_type != cls.class_job_type:
             raise NotFoundError(
-                'No object found with id %d and type %s' % (job_id,
-                cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(job)
 
     @classmethod
@@ -93,18 +86,23 @@ class DistributionJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         """Iterate through all ready DistributionJobs."""
         jobs = IStore(DistributionJob).find(
             DistributionJob,
-            And(DistributionJob.job_type == cls.class_job_type,
+            And(
+                DistributionJob.job_type == cls.class_job_type,
                 DistributionJob.job == Job.id,
-                Job.id.is_in(Job.ready_jobs)))
+                Job.id.is_in(Job.ready_jobs),
+            ),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         vars = super().getOopsVars()
-        vars.extend([
-            ('distribution_id', self.context.distribution.id),
-            ('distroseries_id', self.context.distroseries.id),
-            ('distribution_job_id', self.context.id),
-            ('distribution_job_type', self.context.job_type.title),
-            ])
+        vars.extend(
+            [
+                ("distribution_id", self.context.distribution.id),
+                ("distroseries_id", self.context.distroseries.id),
+                ("distribution_job_id", self.context.id),
+                ("distribution_job_type", self.context.job_type.title),
+            ]
+        )
         return vars

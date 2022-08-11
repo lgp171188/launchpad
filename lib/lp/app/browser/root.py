@@ -3,17 +3,18 @@
 """Browser code for the Launchpad root page."""
 
 __all__ = [
-    'LaunchpadRootIndexView',
-    'LaunchpadSearchView',
-    ]
+    "LaunchpadRootIndexView",
+    "LaunchpadSearchView",
+]
 
 
 import re
 import time
+from typing import Any, List
 
 import feedparser
-from lazr.batchnavigator.z3batching import batch
 import requests
+from lazr.batchnavigator.z3batching import batch
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
 from zope.interface import Interface
@@ -23,11 +24,7 @@ from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp import _
 from lp.answers.interfaces.questioncollection import IQuestionSet
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    safe_action,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action, safe_action
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators.name import sanitize_name
@@ -41,9 +38,9 @@ from lp.services.features import getFeatureFlag
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.propertycache import cachedproperty
 from lp.services.sitesearch.interfaces import (
-    active_search_service,
     SiteSearchResponseError,
-    )
+    active_search_service,
+)
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import LaunchpadView
@@ -52,15 +49,14 @@ from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.vhosts import allvhosts
 
-
-shipit_faq_url = 'http://www.ubuntu.com/getubuntu/shipit-faq'
+shipit_faq_url = "http://www.ubuntu.com/getubuntu/shipit-faq"
 
 
 class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
     """An view for the default view of the LaunchpadRoot."""
 
-    page_title = 'Launchpad'
-    featured_projects = []
+    page_title = "Launchpad"
+    featured_projects = []  # type: List[Any]
     featured_projects_top = None
 
     # Used by the footer to display the lp-arcana section.
@@ -82,7 +78,8 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
         # The maximum number of projects to be displayed as defined by the
         # number of items plus one top featured project.
         self.featured_projects = list(
-            getUtility(IPillarNameSet).featured_projects)
+            getUtility(IPillarNameSet).featured_projects
+        )
         self._setFeaturedProjectsTop()
 
     def _setFeaturedProjectsTop(self):
@@ -91,36 +88,38 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
         if project_count > 0:
             top_project = self._get_day_of_year() % project_count
             self.featured_projects_top = self.featured_projects.pop(
-                top_project)
+                top_project
+            )
 
     @cachedproperty
     def apphomes(self):
         return {
-            'answers': canonical_url(self.context, rootsite='answers'),
-            'blueprints': canonical_url(self.context, rootsite='blueprints'),
-            'bugs': canonical_url(self.context, rootsite='bugs'),
-            'code': canonical_url(self.context, rootsite='code'),
-            'translations': canonical_url(self.context,
-                                          rootsite='translations'),
-            'ubuntu': canonical_url(
-                getUtility(ILaunchpadCelebrities).ubuntu),
-            }
+            "answers": canonical_url(self.context, rootsite="answers"),
+            "blueprints": canonical_url(self.context, rootsite="blueprints"),
+            "bugs": canonical_url(self.context, rootsite="bugs"),
+            "code": canonical_url(self.context, rootsite="code"),
+            "translations": canonical_url(
+                self.context, rootsite="translations"
+            ),
+            "ubuntu": canonical_url(getUtility(ILaunchpadCelebrities).ubuntu),
+        }
 
     @property
     def branch_count(self):
         """The total branch count of public branches in all of Launchpad."""
-        return getUtility(ILaunchpadStatisticSet).value('public_branch_count')
+        return getUtility(ILaunchpadStatisticSet).value("public_branch_count")
 
     @property
     def gitrepository_count(self):
         """The total Git repository count in all of Launchpad."""
         return getUtility(ILaunchpadStatisticSet).value(
-            'public_git_repository_count')
+            "public_git_repository_count"
+        )
 
     @property
     def bug_count(self):
         """The total bug count in all of Launchpad."""
-        return getUtility(ILaunchpadStatisticSet).value('bug_count')
+        return getUtility(ILaunchpadStatisticSet).value("bug_count")
 
     @property
     def project_count(self):
@@ -129,19 +128,20 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
 
     @property
     def translation_count(self):
-        """The total count of translatable strings in all of Launchpad """
-        return getUtility(ILaunchpadStatisticSet).value('pomsgid_count')
+        """The total count of translatable strings in all of Launchpad"""
+        return getUtility(ILaunchpadStatisticSet).value("pomsgid_count")
 
     @property
     def blueprint_count(self):
         """The total blueprint count in all of Launchpad."""
         return getUtility(ILaunchpadStatisticSet).value(
-            'public_specification_count')
+            "public_specification_count"
+        )
 
     @property
     def answer_count(self):
         """The total blueprint count in all of Launchpad."""
-        return getUtility(ILaunchpadStatisticSet).value('question_count')
+        return getUtility(ILaunchpadStatisticSet).value("question_count")
 
     @property
     def show_whatslaunchpad(self):
@@ -165,7 +165,7 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
 
         FeedParser takes care of sanitizing the HTML contained in the feed.
         """
-        key = '%s:homepage-blog-posts' % config.instance_name
+        key = "%s:homepage-blog-posts" % config.instance_name
         cached_data = getUtility(IMemcacheClient).get(key)
         if cached_data:
             return cached_data
@@ -179,12 +179,14 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
         max_count = config.launchpad.homepage_recent_posts_count
         # FeedParser takes care of HTML sanitisation.
         for entry in feed.entries[:max_count]:
-            posts.append({
-                'title': entry.title,
-                'description': entry.description,
-                'link': entry.link,
-                'date': time.strftime('%d %b %Y', entry.published_parsed),
-                })
+            posts.append(
+                {
+                    "title": entry.title,
+                    "description": entry.description,
+                    "link": entry.link,
+                    "date": time.strftime("%d %b %Y", entry.published_parsed),
+                }
+            )
         # The cache of posts expires after an hour.
         getUtility(IMemcacheClient).set(key, posts, expire=3600)
         return posts
@@ -192,7 +194,8 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
 
 class LaunchpadSearchFormView(LaunchpadView):
     """A view to display the global search form in any page."""
-    id_suffix = '-secondary'
+
+    id_suffix = "-secondary"
     text = None
     focusedElementScript = None
     form_wide_errors = None
@@ -204,12 +207,13 @@ class LaunchpadSearchFormView(LaunchpadView):
     @property
     def rooturl(self):
         """Return the site's root url."""
-        return allvhosts.configs['mainsite'].rooturl
+        return allvhosts.configs["mainsite"].rooturl
 
 
 class LaunchpadPrimarySearchFormView(LaunchpadSearchFormView):
     """A view to display the global search form in the page."""
-    id_suffix = ''
+
+    id_suffix = ""
 
     @property
     def text(self):
@@ -239,35 +243,56 @@ class LaunchpadPrimarySearchFormView(LaunchpadSearchFormView):
     @property
     def error(self):
         """The context view's text field error."""
-        return self.context.getFieldError('text')
+        return self.context.getFieldError("text")
 
     @property
     def error_class(self):
         """Return the 'error' if there is an error, or None."""
         if self.error:
-            return 'error'
+            return "error"
         return None
 
 
 class ILaunchpadSearch(Interface):
     """The Schema for performing searches across all Launchpad."""
 
-    text = TextLine(
-        title=_('Search text'), required=False, max_length=250)
+    text = TextLine(title=_("Search text"), required=False, max_length=250)
 
 
 class LaunchpadSearchView(LaunchpadFormView):
     """A view to search for Launchpad pages and objects."""
+
     schema = ILaunchpadSearch
-    field_names = ['text']
+    field_names = ["text"]
 
     shipit_keywords = {
-        'ubuntu', 'kubuntu', 'edubuntu',
-        'ship', 'shipit', 'send', 'get', 'mail', 'free',
-        'cd', 'cds', 'dvd', 'dvds', 'disc'}
+        "ubuntu",
+        "kubuntu",
+        "edubuntu",
+        "ship",
+        "shipit",
+        "send",
+        "get",
+        "mail",
+        "free",
+        "cd",
+        "cds",
+        "dvd",
+        "dvds",
+        "disc",
+    }
     shipit_anti_keywords = {
-        'burn', 'burning', 'enable', 'error', 'errors', 'image', 'iso',
-        'read', 'rip', 'write'}
+        "burn",
+        "burning",
+        "enable",
+        "error",
+        "errors",
+        "image",
+        "iso",
+        "read",
+        "rip",
+        "write",
+    }
 
     def __init__(self, context, request):
         """Initialize the view.
@@ -283,39 +308,39 @@ class LaunchpadSearchView(LaunchpadFormView):
         self._pages = None
         self.search_params = self._getDefaultSearchParams()
         # The Search Action should always run.
-        self.request.form['field.actions.search'] = 'Search'
+        self.request.form["field.actions.search"] = "Search"
 
     def _getDefaultSearchParams(self):
         """Return a dict of the search param set to their default state."""
         return {
-            'text': None,
-            'start': 0,
-            }
+            "text": None,
+            "start": 0,
+        }
 
     def _updateSearchParams(self):
         """Sanitize the search_params and add the BatchNavigator params."""
-        if self.search_params['text'] is not None:
-            text = self.search_params['text'].strip()
-            if text == '':
-                self.search_params['text'] = None
+        if self.search_params["text"] is not None:
+            text = self.search_params["text"].strip()
+            if text == "":
+                self.search_params["text"] = None
             else:
-                self.search_params['text'] = text
-        request_start = self.request.get('start', self.search_params['start'])
+                self.search_params["text"] = text
+        request_start = self.request.get("start", self.search_params["start"])
         try:
             start = int(request_start)
         except (ValueError, TypeError):
             return
-        self.search_params['start'] = start
+        self.search_params["start"] = start
 
     @property
     def text(self):
         """Return the text or None."""
-        return self.search_params['text']
+        return self.search_params["text"]
 
     @property
     def start(self):
         """Return the start index of the batch."""
-        return self.search_params['start']
+        return self.search_params["start"]
 
     @property
     def page_title(self):
@@ -326,7 +351,7 @@ class LaunchpadSearchView(LaunchpadFormView):
     def page_heading(self):
         """Heading to display above the search results."""
         if self.text is None:
-            return 'Search Launchpad'
+            return "Search Launchpad"
         else:
             return 'Pages matching "%s" in Launchpad' % self.text
 
@@ -334,11 +359,15 @@ class LaunchpadSearchView(LaunchpadFormView):
     def batch_heading(self):
         """Heading to display in the batch navigation."""
         if self.has_exact_matches:
-            return ('other page matching "%s"' % self.text,
-                    'other pages matching "%s"' % self.text)
+            return (
+                'other page matching "%s"' % self.text,
+                'other pages matching "%s"' % self.text,
+            )
         else:
-            return ('page matching "%s"' % self.text,
-                    'pages matching "%s"' % self.text)
+            return (
+                'page matching "%s"' % self.text,
+                'pages matching "%s"' % self.text,
+            )
 
     @property
     def focusedElementScript(self):
@@ -387,8 +416,13 @@ class LaunchpadSearchView(LaunchpadFormView):
     @property
     def has_exact_matches(self):
         """Return True if something exactly matched the search terms."""
-        kinds = (self.bug, self.question, self.pillar,
-                 self.person_or_team, self.has_shipit)
+        kinds = (
+            self.bug,
+            self.question,
+            self.pillar,
+            self.person_or_team,
+            self.has_shipit,
+        )
         return self.containsMatchingKind(kinds)
 
     @property
@@ -399,18 +433,24 @@ class LaunchpadSearchView(LaunchpadFormView):
     @property
     def has_matches(self):
         """Return True if something matched the search terms, or False."""
-        kinds = (self.bug, self.question, self.pillar,
-                 self.person_or_team, self.has_shipit, self.pages)
+        kinds = (
+            self.bug,
+            self.question,
+            self.pillar,
+            self.person_or_team,
+            self.has_shipit,
+            self.pages,
+        )
         return self.containsMatchingKind(kinds)
 
     @property
     def url(self):
         """Return the requested URL."""
-        if 'QUERY_STRING' in self.request:
-            query_string = self.request['QUERY_STRING']
+        if "QUERY_STRING" in self.request:
+            query_string = self.request["QUERY_STRING"]
         else:
-            query_string = ''
-        return self.request.getURL() + '?' + query_string
+            query_string = ""
+        return self.request.getURL() + "?" + query_string
 
     def containsMatchingKind(self, kinds):
         """Return True if one of the items in kinds is not None, or False."""
@@ -424,17 +464,18 @@ class LaunchpadSearchView(LaunchpadFormView):
         errors = list(self.errors)
         for error in errors:
             if isinstance(error, ConversionError):
-                self.setFieldError(
-                    'text', 'Can not convert your search term.')
+                self.setFieldError("text", "Can not convert your search term.")
             elif isinstance(error, str):
                 continue
-            elif (error.field_name == 'text'
-                and isinstance(error.errors, TooLong)):
+            elif error.field_name == "text" and isinstance(
+                error.errors, TooLong
+            ):
                 self.setFieldError(
-                    'text', 'The search text cannot exceed 250 characters.')
+                    "text", "The search text cannot exceed 250 characters."
+                )
 
     @safe_action
-    @action('Search', name='search')
+    @action("Search", name="search")
     def search_action(self, action, data):
         """The Action executed when the user uses the search button.
 
@@ -462,13 +503,14 @@ class LaunchpadSearchView(LaunchpadFormView):
             if name_token is not None:
                 self._person_or_team = self._getPersonOrTeam(name_token)
                 self._pillar = self._getDistributionOrProductOrProjectGroup(
-                    name_token)
+                    name_token
+                )
 
         self._pages = self.searchPages(self.text, start=self.start)
 
     def _getNumericToken(self, text):
         """Return the first group of numbers in the search text, or None."""
-        numeric_pattern = re.compile(r'(\d+)')
+        numeric_pattern = re.compile(r"(\d+)")
         match = numeric_pattern.search(text)
         if match is None:
             return None
@@ -480,16 +522,18 @@ class LaunchpadSearchView(LaunchpadFormView):
         Launchpad names may contain ^[a-z0-9][a-z0-9\+\.\-]+$.
         See `valid_name_pattern`.
         """
-        hypen_pattern = re.compile(r'[ _]')
-        name = hypen_pattern.sub('-', text.strip().lower())
+        hypen_pattern = re.compile(r"[ _]")
+        name = hypen_pattern.sub("-", text.strip().lower())
         return sanitize_name(name)
 
     def _getPersonOrTeam(self, name):
         """Return the matching active person or team."""
         person_or_team = getUtility(IPersonSet).getByName(name)
-        if (person_or_team is not None
+        if (
+            person_or_team is not None
             and person_or_team.is_valid_person_or_team
-            and check_permission('launchpad.View', person_or_team)):
+            and check_permission("launchpad.View", person_or_team)
+        ):
             return person_or_team
         return None
 
@@ -497,7 +541,8 @@ class LaunchpadSearchView(LaunchpadFormView):
         """Return the matching distribution, product or project, or None."""
         vocabulary_registry = getVocabularyRegistry()
         vocab = vocabulary_registry.get(
-            None, 'DistributionOrProductOrProjectGroup')
+            None, "DistributionOrProductOrProjectGroup"
+        )
         try:
             pillar = vocab.getTermByToken(name).value
             if check_permission("launchpad.View", pillar):
@@ -513,12 +558,11 @@ class LaunchpadSearchView(LaunchpadFormView):
         :param start: The index of the page that starts the set of pages.
         :return: A SiteSearchBatchNavigator or None.
         """
-        if query_terms in [None, '']:
+        if query_terms in [None, ""]:
             return None
         site_search = active_search_service()
         try:
-            page_matches = site_search.search(
-                terms=query_terms, start=start)
+            page_matches = site_search.search(terms=query_terms, start=start)
         except SiteSearchResponseError:
             # There was a connectivity or search service issue that means
             # there is no data available at this moment.
@@ -527,7 +571,8 @@ class LaunchpadSearchView(LaunchpadFormView):
         if len(page_matches) == 0:
             return None
         navigator = SiteSearchBatchNavigator(
-            page_matches, self.request, start=start)
+            page_matches, self.request, start=start
+        )
         navigator.setHeadings(*self.batch_heading)
         return navigator
 
@@ -596,12 +641,20 @@ class SiteSearchBatchNavigator(BatchNavigator):
     # good chance of getting over 100,000 results.
     show_last_link = False
 
-    singular_heading = 'page'
-    plural_heading = 'pages'
+    singular_heading = "page"
+    plural_heading = "pages"
 
-    def __init__(self, results, request, start=0, size=20, callback=None,
-                 transient_parameters=None, force_start=False,
-                 range_factory=None):
+    def __init__(
+        self,
+        results,
+        request,
+        start=0,
+        size=20,
+        callback=None,
+        transient_parameters=None,
+        force_start=False,
+        range_factory=None,
+    ):
         """See `BatchNavigator`.
 
         :param results: A `PageMatches` object that contains the matching
@@ -613,10 +666,16 @@ class SiteSearchBatchNavigator(BatchNavigator):
         :param callback: Not used.
         """
         results = WindowedList(results, start, results.total)
-        super().__init__(results, request,
-            start=start, size=size, callback=callback,
+        super().__init__(
+            results,
+            request,
+            start=start,
+            size=size,
+            callback=callback,
             transient_parameters=transient_parameters,
-            force_start=force_start, range_factory=range_factory)
+            force_start=force_start,
+            range_factory=range_factory,
+        )
 
     def determineSize(self, size, batch_params_source):
         # Force the default and users requested sizes to 20.

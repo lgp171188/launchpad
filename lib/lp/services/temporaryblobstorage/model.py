@@ -2,22 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TemporaryBlobStorage',
-    'TemporaryStorageManager',
-    ]
+    "TemporaryBlobStorage",
+    "TemporaryStorageManager",
+]
 
 
+import uuid
 from datetime import timedelta
 from io import BytesIO
-import uuid
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -32,7 +27,7 @@ from lp.services.temporaryblobstorage.interfaces import (
     BlobTooLarge,
     ITemporaryBlobStorage,
     ITemporaryStorageManager,
-    )
+)
 from lp.services.utils import utc_now
 
 
@@ -40,13 +35,13 @@ from lp.services.utils import utc_now
 class TemporaryBlobStorage(StormBase):
     """A temporary BLOB stored in Launchpad."""
 
-    __storm_table__ = 'TemporaryBlobStorage'
+    __storm_table__ = "TemporaryBlobStorage"
 
     id = Int(primary=True)
 
     uuid = Unicode(allow_none=False)
-    file_alias_id = Int(name='file_alias', allow_none=False)
-    file_alias = Reference(file_alias_id, 'LibraryFileAlias.id')
+    file_alias_id = Int(name="file_alias", allow_none=False)
+    file_alias = Reference(file_alias_id, "LibraryFileAlias.id")
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
 
     def __init__(self, uuid, file_alias):
@@ -66,9 +61,11 @@ class TemporaryBlobStorage(StormBase):
     def _apport_job(self):
         # Imported here to avoid circular imports
         from lp.bugs.interfaces.apportjob import IProcessApportBlobJobSource
+
         try:
             job_for_blob = getUtility(
-                IProcessApportBlobJobSource).getByBlobUUID(self.uuid)
+                IProcessApportBlobJobSource
+            ).getByBlobUUID(self.uuid)
         except NotFoundError:
             return None
 
@@ -79,17 +76,17 @@ class TemporaryBlobStorage(StormBase):
         job_for_blob = self._apport_job
         if not job_for_blob:
             return False
-        return (job_for_blob.job.status == JobStatus.COMPLETED)
+        return job_for_blob.job.status == JobStatus.COMPLETED
 
     def getProcessedData(self):
         """See `ITemporaryBlobStorage`."""
         job_for_blob = self._apport_job
         if not job_for_blob:
             return None
-        if 'processed_data' not in job_for_blob.metadata:
+        if "processed_data" not in job_for_blob.metadata:
             return {}
 
-        return job_for_blob.metadata['processed_data']
+        return job_for_blob.metadata["processed_data"]
 
 
 @implementer(ITemporaryStorageManager)
@@ -130,17 +127,24 @@ class TemporaryStorageManager:
         secret = str(uuid.uuid1())
 
         file_alias = getUtility(ILibraryFileAliasSet).create(
-                secret, len(blob), BytesIO(blob),
-                'application/octet-stream', expires
-                )
+            secret,
+            len(blob),
+            BytesIO(blob),
+            "application/octet-stream",
+            expires,
+        )
         IStore(TemporaryBlobStorage).add(
-            TemporaryBlobStorage(uuid=new_uuid, file_alias=file_alias))
+            TemporaryBlobStorage(uuid=new_uuid, file_alias=file_alias)
+        )
         return new_uuid
 
     def fetch(self, uuid):
         """See ITemporaryStorageManager."""
-        return IStore(TemporaryBlobStorage).find(
-            TemporaryBlobStorage, uuid=uuid).one()
+        return (
+            IStore(TemporaryBlobStorage)
+            .find(TemporaryBlobStorage, uuid=uuid)
+            .one()
+        )
 
     def delete(self, uuid):
         """See ITemporaryStorageManager."""

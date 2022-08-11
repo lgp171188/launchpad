@@ -1,20 +1,17 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from functools import partial
 import re
+from functools import partial
 
 from lazr.restful.fields import Reference
-from testscenarios import (
-    load_tests_apply_scenarios,
-    WithScenarios,
-    )
+from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
 from zope.formlib.interfaces import (
     IBrowserWidget,
     IInputWidget,
     WidgetInputError,
-    )
+)
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators import LaunchpadValidationError
@@ -26,10 +23,7 @@ from lp.snappy.interfaces.snap import ISnap
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.vocabularies import PPAVocabulary
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -53,11 +47,13 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
 
     scenarios = [
         ("Snap", {"context_factory": make_snap}),
-        ("Snap with no distroseries",
-         {"context_factory": partial(make_snap, distroseries=None)}),
+        (
+            "Snap with no distroseries",
+            {"context_factory": partial(make_snap, distroseries=None)},
+        ),
         ("Branch", {"context_factory": make_branch}),
         ("GitRepository", {"context_factory": make_git_repository}),
-        ]
+    ]
 
     def setUp(self):
         super().setUp()
@@ -75,7 +71,8 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
     def test_template(self):
         self.assertTrue(
             self.widget.template.filename.endswith("snaparchive.pt"),
-            "Template was not set up.")
+            "Template was not set up.",
+        )
 
     def test_default_option(self):
         # The primary field is the default option.
@@ -86,7 +83,8 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         self.widget.setUpSubWidgets()
         self.assertTrue(self.widget._widgets_set_up)
         self.assertIsInstance(
-            self.widget.ppa_widget.context.vocabulary, PPAVocabulary)
+            self.widget.ppa_widget.context.vocabulary, PPAVocabulary
+        )
 
     def test_setUpSubWidgets_second_call(self):
         # The setUpSubWidgets method exits early if a flag is set to
@@ -101,55 +99,61 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            'id="field.archive.option.primary" name="field.archive" '
+            '<input class="radioType" checked="checked" '
+            + 'id="field.archive.option.primary" name="field.archive" '
             'type="radio" value="primary" />',
-            self.widget.options["primary"])
+            self.widget.options["primary"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' +
-            'id="field.archive.option.ppa" name="field.archive" '
+            '<input class="radioType" '
+            + 'id="field.archive.option.ppa" name="field.archive" '
             'type="radio" value="ppa" />',
-            self.widget.options["ppa"])
+            self.widget.options["ppa"],
+        )
 
     def test_setUpOptions_primary_checked(self):
         # The primary radio button is selected when the form is submitted
         # when the archive field's value is 'primary'.
         form = {
             "field.archive": "primary",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            'id="field.archive.option.primary" name="field.archive" '
+            '<input class="radioType" checked="checked" '
+            + 'id="field.archive.option.primary" name="field.archive" '
             'type="radio" value="primary" />',
-            self.widget.options["primary"])
+            self.widget.options["primary"],
+        )
         self.assertEqual(
-            '<input class="radioType" ' +
-            'id="field.archive.option.ppa" name="field.archive" '
+            '<input class="radioType" '
+            + 'id="field.archive.option.ppa" name="field.archive" '
             'type="radio" value="ppa" />',
-            self.widget.options["ppa"])
+            self.widget.options["ppa"],
+        )
 
     def test_setUpOptions_ppa_checked(self):
         # The ppa radio button is selected when the form is submitted when
         # the archive field's value is 'ppa'.
         form = {
             "field.archive": "ppa",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.widget.setUpSubWidgets()
         self.widget.setUpOptions()
         self.assertEqual(
-            '<input class="radioType" ' +
-            'id="field.archive.option.primary" name="field.archive" '
+            '<input class="radioType" '
+            + 'id="field.archive.option.primary" name="field.archive" '
             'type="radio" value="primary" />',
-            self.widget.options["primary"])
+            self.widget.options["primary"],
+        )
         self.assertEqual(
-            '<input class="radioType" checked="checked" ' +
-            'id="field.archive.option.ppa" name="field.archive" '
+            '<input class="radioType" checked="checked" '
+            + 'id="field.archive.option.ppa" name="field.archive" '
             'type="radio" value="ppa" />',
-            self.widget.options["ppa"])
+            self.widget.options["ppa"],
+        )
 
     def test_setRenderedValue_primary(self):
         # Passing a primary archive will set the widget's render state to
@@ -165,7 +169,8 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         self.widget.setUpSubWidgets()
         archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         self.widget.setRenderedValue(archive)
         self.widget.setRenderedValue(self.distroseries.main_archive)
         self.assertEqual("primary", self.widget.default_option)
@@ -176,7 +181,8 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         self.widget.setUpSubWidgets()
         archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         self.widget.setRenderedValue(archive)
         self.assertEqual("ppa", self.widget.default_option)
         self.assertEqual(archive, self.widget.ppa_widget._getCurrentValue())
@@ -189,7 +195,8 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
     def test_hasInput_true(self):
         # hasInput is false when the widget's name is in the form data.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.archive": "primary"})
+            form={"field.archive": "primary"}
+        )
         self.assertTrue(self.widget.hasInput())
 
     def test_hasValidInput_false(self):
@@ -198,7 +205,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.archive": "ppa",
             "field.archive.ppa": "non-existent",
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertFalse(self.widget.hasValidInput())
 
@@ -208,7 +215,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.archive": "ppa",
             "field.archive.ppa": archive.reference,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertTrue(self.widget.hasValidInput())
 
@@ -223,13 +230,17 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         # context's primary archive if the context is a Snap and has a
         # distroseries, or the Ubuntu primary archive otherwise.
         self.widget.request = LaunchpadTestRequest(
-            form={"field.archive": "primary"})
-        if (ISnap.providedBy(self.context) and
-                self.context.distro_series is not None):
+            form={"field.archive": "primary"}
+        )
+        if (
+            ISnap.providedBy(self.context)
+            and self.context.distro_series is not None
+        ):
             expected_main_archive = self.context.distro_series.main_archive
         else:
-            expected_main_archive = (
-                getUtility(ILaunchpadCelebrities).ubuntu.main_archive)
+            expected_main_archive = getUtility(
+                ILaunchpadCelebrities
+            ).ubuntu.main_archive
         self.assertEqual(expected_main_archive, self.widget.getInputValue())
 
     def test_getInputValue_ppa_missing(self):
@@ -242,10 +253,11 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.archive": "ppa",
             "field.archive.ppa": "non-existent",
-            }
+        }
         self.assertGetInputValueError(
             form,
-            "There is no PPA named 'non-existent' registered in Launchpad.")
+            "There is no PPA named 'non-existent' registered in Launchpad.",
+        )
 
     def test_getInputValue_ppa(self):
         # The field value is the PPA when the ppa radio button is selected
@@ -254,7 +266,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
         form = {
             "field.archive": "ppa",
             "field.archive.ppa": archive.reference,
-            }
+        }
         self.widget.request = LaunchpadTestRequest(form=form)
         self.assertEqual(archive, self.widget.getInputValue())
 
@@ -270,7 +282,7 @@ class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
             "field.archive.option.primary",
             "field.archive.option.ppa",
             "field.archive.ppa",
-            ]
+        ]
         ids = [field["id"] for field in fields]
         self.assertContentEqual(expected_ids, ids)
 

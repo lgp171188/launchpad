@@ -4,13 +4,13 @@
 """`SQLObject` implementation of `IPOTemplate` interface."""
 
 __all__ = [
-    'get_pofiles_for',
-    'POTemplate',
-    'POTemplateSet',
-    'POTemplateSubset',
-    'POTemplateToTranslationFileDataAdapter',
-    'TranslationTemplatesCollection',
-    ]
+    "get_pofiles_for",
+    "POTemplate",
+    "POTemplateSet",
+    "POTemplateSubset",
+    "POTemplateToTranslationFileDataAdapter",
+    "TranslationTemplatesCollection",
+]
 
 import datetime
 import logging
@@ -18,21 +18,11 @@ import operator
 import os
 
 from psycopg2.extensions import TransactionRollbackError
-from storm.expr import (
-    And,
-    Desc,
-    Join,
-    LeftJoin,
-    Or,
-    SQL,
-    )
+from storm.expr import SQL, And, Desc, Join, LeftJoin, Or
 from storm.info import ClassAlias
 from storm.properties import Int
 from storm.store import Store
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getAdapter, getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -47,21 +37,15 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
-from lp.services.database.sqlbase import (
-    flush_database_updates,
-    SQLBase,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.sqlbase import SQLBase, flush_database_updates
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
     SQLMultipleJoin,
     StringCol,
-    )
+)
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty
@@ -75,36 +59,33 @@ from lp.translations.interfaces.potemplate import (
     IPOTemplateSharingSubset,
     IPOTemplateSubset,
     LanguageNotFound,
-    )
+)
 from lp.translations.interfaces.side import TranslationSide
 from lp.translations.interfaces.translationcommonformat import (
     ITranslationFileData,
-    )
-from lp.translations.interfaces.translationexporter import (
-    ITranslationExporter,
-    )
+)
+from lp.translations.interfaces.translationexporter import ITranslationExporter
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     ITranslationImporter,
     TranslationFormatInvalidInputError,
     TranslationFormatSyntaxError,
-    )
+)
 from lp.translations.model.pofile import POFile
 from lp.translations.model.pomsgid import POMsgID
 from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.translationimportqueue import collect_import_info
 from lp.translations.model.translationtemplateitem import (
     TranslationTemplateItem,
-    )
+)
 from lp.translations.model.vpotexport import VPOTExport
 from lp.translations.utilities.rosettastats import RosettaStats
 from lp.translations.utilities.sanitize import MixedNewlineMarkersError
 from lp.translations.utilities.translation_common_format import (
     TranslationMessageData,
-    )
-
+)
 
 sharing_subset_cte = """
 RECURSIVE location(product, distribution, sourcepackagename) AS (
@@ -144,12 +125,12 @@ RECURSIVE location(product, distribution, sourcepackagename) AS (
 log = logging.getLogger(__name__)
 
 
-standardPOFileTopComment = ''' %(languagename)s translation for %(origin)s
+standardPOFileTopComment = """ %(languagename)s translation for %(origin)s
  Copyright %(copyright)s %(year)s
  This file is distributed under the same license as the %(origin)s package.
  FIRST AUTHOR <EMAIL@ADDRESS>, %(year)s.
 
-'''
+"""
 
 standardTemplateHeader = (
     "Project-Id-Version: %(origin)s\n"
@@ -160,11 +141,14 @@ standardTemplateHeader = (
     "Language-Team: %(languagename)s <%(languagecode)s@li.org>\n"
     "MIME-Version: 1.0\n"
     "Content-Type: text/plain; charset=UTF-8\n"
-    "Content-Transfer-Encoding: 8bit\n")
+    "Content-Transfer-Encoding: 8bit\n"
+)
 
 
-standardPOFileHeader = (standardTemplateHeader +
-    "Plural-Forms: nplurals=%(nplurals)d; plural=%(pluralexpr)s\n")
+standardPOFileHeader = (
+    standardTemplateHeader
+    + "Plural-Forms: nplurals=%(nplurals)d; plural=%(pluralexpr)s\n"
+)
 
 
 def get_pofiles_for(potemplates, language):
@@ -174,7 +158,7 @@ def get_pofiles_for(potemplates, language):
     :param language: the language that the `IPOFile`s should be for.
     :return: a list of exactly one `IPOFile` for each `POTemplate`
         in `potemplates`.  They will be `POFile`s where available,
-        and `DummyPOFile`s where not.
+        and `PlaceholderPOFile`s where not.
     """
     potemplates = list(potemplates)
     if len(potemplates) == 0:
@@ -182,17 +166,22 @@ def get_pofiles_for(potemplates, language):
 
     template_ids = [template.id for template in potemplates]
 
-    pofiles = Store.of(potemplates[0]).find(POFile, And(
-        POFile.potemplateID.is_in(template_ids),
-        POFile.language == language))
+    pofiles = Store.of(potemplates[0]).find(
+        POFile,
+        And(
+            POFile.potemplateID.is_in(template_ids),
+            POFile.language == language,
+        ),
+    )
 
     mapping = {pofile.potemplate.id: pofile for pofile in pofiles}
     result = [mapping.get(id) for id in template_ids]
     for entry, pofile in enumerate(result):
         assert pofile == result[entry], "This enumerate confuses me."
         if pofile is None:
-            result[entry] = potemplates[entry].getDummyPOFile(
-                language, check_for_existing=False)
+            result[entry] = potemplates[entry].getPlaceholderPOFile(
+                language, check_for_existing=False
+            )
 
     return result
 
@@ -200,43 +189,70 @@ def get_pofiles_for(potemplates, language):
 @implementer(IPOTemplate)
 class POTemplate(SQLBase, RosettaStats):
 
-    _table = 'POTemplate'
+    _table = "POTemplate"
 
-    productseries = ForeignKey(foreignKey='ProductSeries',
-        dbName='productseries', notNull=False, default=None)
-    priority = IntCol(dbName='priority', notNull=True, default=DEFAULT)
-    name = StringCol(dbName='name', notNull=True)
-    translation_domain = StringCol(dbName='translation_domain', notNull=True)
-    description = StringCol(dbName='description', notNull=False, default=None)
-    copyright = StringCol(dbName='copyright', notNull=False, default=None)
-    datecreated = UtcDateTimeCol(dbName='datecreated', default=DEFAULT)
-    path = StringCol(dbName='path', notNull=True)
-    source_file = ForeignKey(foreignKey='LibraryFileAlias',
-        dbName='source_file', notNull=False, default=None)
+    productseries = ForeignKey(
+        foreignKey="ProductSeries",
+        dbName="productseries",
+        notNull=False,
+        default=None,
+    )
+    priority = IntCol(dbName="priority", notNull=True, default=DEFAULT)
+    name = StringCol(dbName="name", notNull=True)
+    translation_domain = StringCol(dbName="translation_domain", notNull=True)
+    description = StringCol(dbName="description", notNull=False, default=None)
+    copyright = StringCol(dbName="copyright", notNull=False, default=None)
+    datecreated = UtcDateTimeCol(dbName="datecreated", default=DEFAULT)
+    path = StringCol(dbName="path", notNull=True)
+    source_file = ForeignKey(
+        foreignKey="LibraryFileAlias",
+        dbName="source_file",
+        notNull=False,
+        default=None,
+    )
     source_file_format = DBEnum(
-        name='source_file_format',
-        enum=TranslationFileFormat, default=TranslationFileFormat.PO,
-        allow_none=False)
-    iscurrent = BoolCol(dbName='iscurrent', notNull=True, default=True)
-    messagecount = IntCol(dbName='messagecount', notNull=True, default=0)
+        name="source_file_format",
+        enum=TranslationFileFormat,
+        default=TranslationFileFormat.PO,
+        allow_none=False,
+    )
+    iscurrent = BoolCol(dbName="iscurrent", notNull=True, default=True)
+    messagecount = IntCol(dbName="messagecount", notNull=True, default=0)
     owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    sourcepackagename = ForeignKey(foreignKey='SourcePackageName',
-        dbName='sourcepackagename', notNull=False, default=None)
-    from_sourcepackagename = ForeignKey(foreignKey='SourcePackageName',
-        dbName='from_sourcepackagename', notNull=False, default=None)
-    sourcepackageversion = StringCol(dbName='sourcepackageversion',
-        notNull=False, default=None)
-    distroseries = ForeignKey(foreignKey='DistroSeries',
-        dbName='distroseries', notNull=False, default=None)
-    header = StringCol(dbName='header', notNull=True)
-    languagepack = BoolCol(dbName='languagepack', notNull=True, default=False)
-    date_last_updated = UtcDateTimeCol(dbName='date_last_updated',
-        default=DEFAULT)
+        dbName="owner",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
+    sourcepackagename = ForeignKey(
+        foreignKey="SourcePackageName",
+        dbName="sourcepackagename",
+        notNull=False,
+        default=None,
+    )
+    from_sourcepackagename = ForeignKey(
+        foreignKey="SourcePackageName",
+        dbName="from_sourcepackagename",
+        notNull=False,
+        default=None,
+    )
+    sourcepackageversion = StringCol(
+        dbName="sourcepackageversion", notNull=False, default=None
+    )
+    distroseries = ForeignKey(
+        foreignKey="DistroSeries",
+        dbName="distroseries",
+        notNull=False,
+        default=None,
+    )
+    header = StringCol(dbName="header", notNull=True)
+    languagepack = BoolCol(dbName="languagepack", notNull=True, default=False)
+    date_last_updated = UtcDateTimeCol(
+        dbName="date_last_updated", default=DEFAULT
+    )
 
     # joins
-    pofiles = SQLMultipleJoin('POFile', joinColumn='potemplate')
+    pofiles = SQLMultipleJoin("POFile", joinColumn="potemplate")
 
     # In-memory cache: maps language_code to list of POFiles
     # translating this template to that language.
@@ -250,7 +266,8 @@ class POTemplate(SQLBase, RosettaStats):
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             product=self.product,
             distribution=self.distribution,
-            sourcepackagename=self.sourcepackagename)
+            sourcepackagename=self.sourcepackagename,
+        )
         # Convert  to a list for caching.
         result = list(subset.getSharingPOTemplateIDs(self.name))
         if len(result) == 0:
@@ -270,8 +287,7 @@ class POTemplate(SQLBase, RosettaStats):
 
     def _removeFromSuggestivePOTemplatesCache(self):
         """One level of indirection to make testing easier."""
-        getUtility(
-            IPOTemplateSet).removeFromSuggestivePOTemplatesCache(self)
+        getUtility(IPOTemplateSet).removeFromSuggestivePOTemplatesCache(self)
 
     def setActive(self, active):
         """See `IPOTemplate`."""
@@ -287,7 +303,8 @@ class POTemplate(SQLBase, RosettaStats):
 
         translation_importer = getUtility(ITranslationImporter)
         format = translation_importer.getTranslationFormatImporter(
-            self.source_file_format)
+            self.source_file_format
+        )
         self._uses_english_msgids = not format.uses_source_string_msgids
         return self._uses_english_msgids
 
@@ -307,14 +324,16 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate.`"""
         if self.productseries is not None:
             product_focus = (
-                self.productseries ==
-                self.productseries.product.primary_translatable)
+                self.productseries
+                == self.productseries.product.primary_translatable
+            )
         else:
             product_focus = False
         if self.distroseries is not None:
             distro_focus = (
-                self.distroseries ==
-                self.distroseries.distribution.translation_focus)
+                self.distroseries
+                == self.distroseries.distribution.translation_focus
+            )
         else:
             distro_focus = False
         return self.iscurrent, product_focus, distro_focus, self.id
@@ -323,16 +342,18 @@ class POTemplate(SQLBase, RosettaStats):
     def displayname(self):
         """See `IPOTemplate`."""
         if self.productseries:
-            dn = '%s in %s %s' % (
+            dn = "%s in %s %s" % (
                 self.name,
                 self.productseries.product.displayname,
-                self.productseries.displayname)
+                self.productseries.displayname,
+            )
         if self.distroseries:
             dn = '%s in %s %s package "%s"' % (
                 self.name,
                 self.distroseries.distribution.displayname,
                 self.distroseries.displayname,
-                self.sourcepackagename.name)
+                self.sourcepackagename.name,
+            )
         return dn
 
     @property
@@ -342,13 +363,15 @@ class POTemplate(SQLBase, RosettaStats):
             title = 'Template "%s" in %s %s' % (
                 self.name,
                 self.productseries.product.displayname,
-                self.productseries.displayname)
+                self.productseries.displayname,
+            )
         if self.distroseries:
             title = 'Template "%s" in %s %s package "%s"' % (
                 self.name,
                 self.distroseries.distribution.displayname,
                 self.distroseries.displayname,
-                self.sourcepackagename.name)
+                self.sourcepackagename.name,
+            )
         return title
 
     @property
@@ -388,29 +411,48 @@ class POTemplate(SQLBase, RosettaStats):
     def relatives_by_source(self):
         """See `IPOTemplate`."""
         if self.productseries is not None:
-            return Store.of(self).find(
-                POTemplate,
-                POTemplate.id != self.id,
-                POTemplate.productseriesID == self.productseries.id,
-                POTemplate.iscurrent).order_by(POTemplate.name)
-        elif (self.distroseries is not None and
-              self.sourcepackagename is not None):
-            return Store.of(self).find(
-                POTemplate,
-                POTemplate.id != self.id,
-                POTemplate.distroseriesID == self.distroseries.id,
-                POTemplate.sourcepackagenameID == self.sourcepackagename.id,
-                POTemplate.iscurrent).order_by(POTemplate.name)
+            return (
+                Store.of(self)
+                .find(
+                    POTemplate,
+                    POTemplate.id != self.id,
+                    POTemplate.productseriesID == self.productseries.id,
+                    POTemplate.iscurrent,
+                )
+                .order_by(POTemplate.name)
+            )
+        elif (
+            self.distroseries is not None
+            and self.sourcepackagename is not None
+        ):
+            return (
+                Store.of(self)
+                .find(
+                    POTemplate,
+                    POTemplate.id != self.id,
+                    POTemplate.distroseriesID == self.distroseries.id,
+                    POTemplate.sourcepackagenameID
+                    == self.sourcepackagename.id,
+                    POTemplate.iscurrent,
+                )
+                .order_by(POTemplate.name)
+            )
         else:
-            raise AssertionError('Unknown POTemplate source.')
+            raise AssertionError("Unknown POTemplate source.")
 
     @property
     def language_count(self):
-        return IStore(Language).find(
-            Language,
-            POFile.language == Language.id,
-            POFile.currentcount + POFile.rosettacount > 0,
-            POFile.potemplateID == self.id).config(distinct=True).count()
+        return (
+            IStore(Language)
+            .find(
+                Language,
+                POFile.language == Language.id,
+                POFile.currentcount + POFile.rosettacount > 0,
+                POFile.potemplateID == self.id,
+            )
+            .config(distinct=True)
+            .count()
+        )
 
     @cachedproperty
     def sourcepackage(self):
@@ -422,7 +464,8 @@ class POTemplate(SQLBase, RosettaStats):
             return None
         return SourcePackage(
             distroseries=self.distroseries,
-            sourcepackagename=self.sourcepackagename)
+            sourcepackagename=self.sourcepackagename,
+        )
 
     @property
     def translationtarget(self):
@@ -436,7 +479,8 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate`."""
         translation_importer = getUtility(ITranslationImporter)
         format_importer = translation_importer.getTranslationFormatImporter(
-            self.source_file_format)
+            self.source_file_format
+        )
         header = format_importer.getHeaderFromString(self.header)
         header.has_plural_forms = self.hasPluralMessage()
         return header
@@ -447,11 +491,12 @@ class POTemplate(SQLBase, RosettaStats):
         clauses = [
             TranslationTemplateItem.potemplateID == self.id,
             TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
-            ]
+        ]
         return clauses
 
-    def getPOTMsgSetByMsgIDText(self, singular_text, plural_text=None,
-                                only_current=False, context=None):
+    def getPOTMsgSetByMsgIDText(
+        self, singular_text, plural_text=None, only_current=False, context=None
+    ):
         """See `IPOTemplate`."""
         # Find a message ID with the given text.
         try:
@@ -469,18 +514,20 @@ class POTemplate(SQLBase, RosettaStats):
 
         # Find a message set with the given message ID.
         clauses = self._getPOTMsgSetSelectionClauses()
-        clauses.extend([
-            POTMsgSet.msgid_singular == singular_msgid,
-            POTMsgSet.msgid_plural == plural_msgid,
-            POTMsgSet.context == context,
-            ])
+        clauses.extend(
+            [
+                POTMsgSet.msgid_singular == singular_msgid,
+                POTMsgSet.msgid_plural == plural_msgid,
+                POTMsgSet.context == context,
+            ]
+        )
         if only_current:
             clauses.append(TranslationTemplateItem.sequence > 0)
         return Store.of(self).find(POTMsgSet, *clauses).one()
 
     def getPOTMsgSetBySequence(self, sequence):
         """See `IPOTemplate`."""
-        assert sequence > 0, ('%r is out of range')
+        assert sequence > 0, "%r is out of range"
         clauses = self._getPOTMsgSetSelectionClauses()
         clauses.append(TranslationTemplateItem.sequence == sequence)
         return Store.of(self).find(POTMsgSet, *clauses).one()
@@ -491,13 +538,19 @@ class POTemplate(SQLBase, RosettaStats):
         if current:
             # Only count the number of POTMsgSet that are current.
             clauses.append(TranslationTemplateItem.sequence > 0)
-        result = Store.of(self).find(
-            POTMsgSet, *clauses).order_by(TranslationTemplateItem.sequence)
+        result = (
+            Store.of(self)
+            .find(POTMsgSet, *clauses)
+            .order_by(TranslationTemplateItem.sequence)
+        )
 
         if prefetch:
+
             def prefetch_msgids(rows):
                 load_related(
-                    POMsgID, rows, ['msgid_singular_id', 'msgid_plural_id'])
+                    POMsgID, rows, ["msgid_singular_id", "msgid_plural_id"]
+                )
+
             return DecoratedResultSet(result, pre_iter_hook=prefetch_msgids)
         else:
             return result
@@ -506,13 +559,16 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate`."""
         # Find potential credits messages by the message ids.
         store = IStore(POTemplate)
-        origin1 = Join(TranslationTemplateItem,
-                       TranslationTemplateItem.potmsgset == POTMsgSet.id)
+        origin1 = Join(
+            TranslationTemplateItem,
+            TranslationTemplateItem.potmsgset == POTMsgSet.id,
+        )
         origin2 = Join(POMsgID, POTMsgSet.msgid_singular == POMsgID.id)
         result = store.using(POTMsgSet, origin1, origin2).find(
             POTMsgSet,
             TranslationTemplateItem.potemplate == self,
-            POMsgID.msgid.is_in(POTMsgSet.credits_message_ids))
+            POMsgID.msgid.is_in(POTMsgSet.credits_message_ids),
+        )
         # Filter these candidates because is_translation_credit checks for
         # more conditions than the special msgids.
         for potmsgset in result:
@@ -532,11 +588,16 @@ class POTemplate(SQLBase, RosettaStats):
 
     def languages(self):
         """See `IPOTemplate`."""
-        return Store.of(self).find(
-            Language,
-            POFile.languageID == Language.id,
-            Language.code != 'en',
-            POFile.potemplateID == self.id).config(distinct=True)
+        return (
+            Store.of(self)
+            .find(
+                Language,
+                POFile.languageID == Language.id,
+                Language.code != "en",
+                POFile.potemplateID == self.id,
+            )
+            .config(distinct=True)
+        )
 
     def getPOFileByPath(self, path):
         """See `IPOTemplate`."""
@@ -552,10 +613,16 @@ class POTemplate(SQLBase, RosettaStats):
             # the usual get() followed by "is None"; the dict may contain None
             # values to indicate we looked for a POFile and found none.
             return self._cached_pofiles_by_language[language_code]
-        self._cached_pofiles_by_language[language_code] = Store.of(self).find(
-            POFile,
-            POFile.potemplateID == self.id, POFile.languageID == Language.id,
-            Language.code == language_code).one()
+        self._cached_pofiles_by_language[language_code] = (
+            Store.of(self)
+            .find(
+                POFile,
+                POFile.potemplateID == self.id,
+                POFile.languageID == Language.id,
+                Language.code == language_code,
+            )
+            .one()
+        )
         return self._cached_pofiles_by_language[language_code]
 
     def getOtherSidePOTemplate(self):
@@ -564,7 +631,8 @@ class POTemplate(SQLBase, RosettaStats):
             other_side_object = self.sourcepackage.productseries
         else:
             other_side_object = (
-                self.productseries.getUbuntuTranslationFocusPackage())
+                self.productseries.getUbuntuTranslationFocusPackage()
+            )
         if other_side_object is None:
             return None
         return other_side_object.getTranslationTemplateByName(self.name)
@@ -617,8 +685,13 @@ class POTemplate(SQLBase, RosettaStats):
         else:
             pofile.unreviewedCount()
 
-    def _getPOTMsgSetBy(self, msgid_singular, msgid_plural=None, context=None,
-                        sharing_templates=False):
+    def _getPOTMsgSetBy(
+        self,
+        msgid_singular,
+        msgid_plural=None,
+        context=None,
+        sharing_templates=False,
+    ):
         """Look for a POTMsgSet by msgid_singular, msgid_plural, context.
 
         If `sharing_templates` is True, and the current template has no such
@@ -629,24 +702,31 @@ class POTemplate(SQLBase, RosettaStats):
             POTMsgSet.msgid_singular == msgid_singular,
             POTMsgSet.msgid_plural == msgid_plural,
             POTMsgSet.context == context,
-            ]
+        ]
         if sharing_templates:
             clauses.append(
-                TranslationTemplateItem.potemplateID.is_in(self._sharing_ids))
+                TranslationTemplateItem.potemplateID.is_in(self._sharing_ids)
+            )
         else:
             clauses.append(TranslationTemplateItem.potemplateID == self.id)
 
         # If there are multiple messages, make the one from the
         # current POTemplate be returned first.
         order_by = SQL(
-            'TranslationTemplateItem.potemplate <> ?', params=(self.id,))
-        return IStore(POTMsgSet).find(
-            POTMsgSet, *clauses).order_by(order_by).first()
+            "TranslationTemplateItem.potemplate <> ?", params=(self.id,)
+        )
+        return (
+            IStore(POTMsgSet)
+            .find(POTMsgSet, *clauses)
+            .order_by(order_by)
+            .first()
+        )
 
     def hasMessageID(self, msgid_singular, msgid_plural, context=None):
         """See `IPOTemplate`."""
         return bool(
-            self._getPOTMsgSetBy(msgid_singular, msgid_plural, context))
+            self._getPOTMsgSetBy(msgid_singular, msgid_plural, context)
+        )
 
     def hasPluralMessage(self):
         """See `IPOTemplate`."""
@@ -658,10 +738,10 @@ class POTemplate(SQLBase, RosettaStats):
         """See `IPOTemplate`."""
 
         translation_exporter = getUtility(ITranslationExporter)
-        template_file = getAdapter(
-            self, ITranslationFileData, 'all_messages')
+        template_file = getAdapter(self, ITranslationFileData, "all_messages")
         exported_file = translation_exporter.exportTranslationFiles(
-            [template_file])
+            [template_file]
+        )
 
         try:
             file_content = exported_file.read()
@@ -679,16 +759,17 @@ class POTemplate(SQLBase, RosettaStats):
         time.
         """
         for pofile in self.pofiles:
-            yield getAdapter(pofile, ITranslationFileData, 'all_messages')
+            yield getAdapter(pofile, ITranslationFileData, "all_messages")
 
-        yield getAdapter(self, ITranslationFileData, 'all_messages')
+        yield getAdapter(self, ITranslationFileData, "all_messages")
 
     def exportWithTranslations(self):
         """See `IPOTemplate`."""
 
         translation_exporter = getUtility(ITranslationExporter)
         return translation_exporter.exportTranslationFiles(
-            self._generateTranslationFileDatas())
+            self._generateTranslationFileDatas()
+        )
 
     def expireAllMessages(self):
         """See `IPOTemplate`."""
@@ -711,8 +792,8 @@ class POTemplate(SQLBase, RosettaStats):
         """
         pofileset = getUtility(IPOFileSet)
         existing_pofiles = pofileset.getPOFilesByPathAndOrigin(
-            path, self.productseries, self.distroseries,
-            self.sourcepackagename)
+            path, self.productseries, self.distroseries, self.sourcepackagename
+        )
         return existing_pofiles.is_empty()
 
     def _composePOFilePath(self, language):
@@ -724,8 +805,7 @@ class POTemplate(SQLBase, RosettaStats):
         naming mistakes.
         """
         potemplate_dir = os.path.dirname(self.path)
-        path = '%s-%s.po' % (
-            self.translation_domain, language.code)
+        path = "%s-%s.po" % (self.translation_domain, language.code)
 
         return os.path.join(potemplate_dir, path)
 
@@ -734,7 +814,8 @@ class POTemplate(SQLBase, RosettaStats):
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             distribution=self.distribution,
             sourcepackagename=self.sourcepackagename,
-            product=self.product)
+            product=self.product,
+        )
         for template in subset.getSharingPOTemplates(self.name):
             template = removeSecurityProxy(template)
             if template is self:
@@ -751,7 +832,8 @@ class POTemplate(SQLBase, RosettaStats):
                 header=pofile.header,
                 fuzzyheader=pofile.fuzzyheader,
                 owner=pofile.owner,
-                path=newpopath)
+                path=newpopath,
+            )
 
             # Update cache to reflect the change.
             template._cached_pofiles_by_language[language_code] = pofile
@@ -765,28 +847,29 @@ class POTemplate(SQLBase, RosettaStats):
         # Make sure we don't already have a PO file for this language.
         existingpo = self.getPOFileByLang(language_code)
         assert existingpo is None, (
-            'There is already a valid IPOFile (%s)' % existingpo.title)
+            "There is already a valid IPOFile (%s)" % existingpo.title
+        )
 
         # Since we have no PO file for this language yet, create one.
         language = self._lookupLanguage(language_code)
 
         now = datetime.datetime.now()
         data = {
-            'year': now.year,
-            'languagename': language.englishname,
-            'languagecode': language_code,
-            'date': now.isoformat(' '),
-            'templatedate': self.datecreated,
-            'copyright': '(c) %d Rosetta Contributors and Canonical Ltd'
-                         % now.year,
-            'nplurals': language.pluralforms or 1,
-            'pluralexpr': language.pluralexpression or '0',
-            }
+            "year": now.year,
+            "languagename": language.englishname,
+            "languagecode": language_code,
+            "date": now.isoformat(" "),
+            "templatedate": self.datecreated,
+            "copyright": "(c) %d Rosetta Contributors and Canonical Ltd"
+            % now.year,
+            "nplurals": language.pluralforms or 1,
+            "pluralexpr": language.pluralexpression or "0",
+        }
 
         if self.productseries is not None:
-            data['origin'] = self.productseries.product.name
+            data["origin"] = self.productseries.product.name
         else:
-            data['origin'] = self.sourcepackagename.name
+            data["origin"] = self.sourcepackagename.name
 
         # The default POFile owner is the Rosetta Experts team.
         if owner is None:
@@ -801,7 +884,8 @@ class POTemplate(SQLBase, RosettaStats):
             header=standardPOFileHeader % data,
             fuzzyheader=True,
             owner=owner,
-            path=path)
+            path=path,
+        )
 
         # Update cache to reflect the change.
         self._cached_pofiles_by_language[language_code] = pofile
@@ -820,22 +904,25 @@ class POTemplate(SQLBase, RosettaStats):
 
         return pofile
 
-    def getDummyPOFile(self, language, requester=None,
-                       check_for_existing=True):
+    def getPlaceholderPOFile(
+        self, language, requester=None, check_for_existing=True
+    ):
         """See `IPOTemplate`."""
         # Avoid circular import.
-        from lp.translations.model.pofile import DummyPOFile
+        from lp.translations.model.pofile import PlaceholderPOFile
 
         if check_for_existing:
             # see if a valid one exists.
             existingpo = self.getPOFileByLang(language.code)
             assert existingpo is None, (
-                'There is already a valid IPOFile (%s)' % existingpo.title)
+                "There is already a valid IPOFile (%s)" % existingpo.title
+            )
 
-        return DummyPOFile(self, language, owner=requester)
+        return PlaceholderPOFile(self, language, owner=requester)
 
-    def createPOTMsgSetFromMsgIDs(self, msgid_singular, msgid_plural=None,
-                                  context=None, sequence=0):
+    def createPOTMsgSetFromMsgIDs(
+        self, msgid_singular, msgid_plural=None, context=None, sequence=0
+    ):
         """See `IPOTemplate`."""
         potmsgset = POTMsgSet(
             context=context,
@@ -846,7 +933,8 @@ class POTemplate(SQLBase, RosettaStats):
             commenttext=None,
             filereferences=None,
             sourcecomment=None,
-            flagscomment=None)
+            flagscomment=None,
+        )
 
         potmsgset.setSequence(self, sequence)
         if potmsgset.is_translation_credit:
@@ -869,8 +957,9 @@ class POTemplate(SQLBase, RosettaStats):
             msgid = POMsgID.new(text)
         return msgid
 
-    def createMessageSetFromText(self, singular_text, plural_text,
-                                 context=None, sequence=0):
+    def createMessageSetFromText(
+        self, singular_text, plural_text, context=None, sequence=0
+    ):
         """See `IPOTemplate`."""
 
         msgid_singular = self.getOrCreatePOMsgID(singular_text)
@@ -880,25 +969,34 @@ class POTemplate(SQLBase, RosettaStats):
             msgid_plural = self.getOrCreatePOMsgID(plural_text)
         assert not self.hasMessageID(msgid_singular, msgid_plural, context), (
             "There is already a message set for this template, file and"
-            " primary msgid and context '%r'" % context)
+            " primary msgid and context '%r'" % context
+        )
 
-        return self.createPOTMsgSetFromMsgIDs(msgid_singular, msgid_plural,
-                                              context, sequence)
+        return self.createPOTMsgSetFromMsgIDs(
+            msgid_singular, msgid_plural, context, sequence
+        )
 
-    def getOrCreateSharedPOTMsgSet(self, singular_text, plural_text,
-                                   context=None, initial_file_references=None,
-                                   initial_source_comment=None):
+    def getOrCreateSharedPOTMsgSet(
+        self,
+        singular_text,
+        plural_text,
+        context=None,
+        initial_file_references=None,
+        initial_source_comment=None,
+    ):
         """See `IPOTemplate`."""
         msgid_singular = self.getOrCreatePOMsgID(singular_text)
         if plural_text is None:
             msgid_plural = None
         else:
             msgid_plural = self.getOrCreatePOMsgID(plural_text)
-        potmsgset = self._getPOTMsgSetBy(msgid_singular, msgid_plural,
-                                         context, sharing_templates=True)
+        potmsgset = self._getPOTMsgSetBy(
+            msgid_singular, msgid_plural, context, sharing_templates=True
+        )
         if potmsgset is None:
             potmsgset = self.createPOTMsgSetFromMsgIDs(
-                msgid_singular, msgid_plural, context, sequence=0)
+                msgid_singular, msgid_plural, context, sequence=0
+            )
             potmsgset.filereferences = initial_file_references
             potmsgset.sourcecomment = initial_source_comment
         return potmsgset
@@ -906,10 +1004,12 @@ class POTemplate(SQLBase, RosettaStats):
     def importFromQueue(self, entry_to_import, logger=None, txn=None):
         """See `IPOTemplate`."""
         assert entry_to_import is not None, "Attempt to import None entry."
-        assert entry_to_import.import_into.id == self.id, (
-            "Attempt to import entry to POTemplate it doesn't belong to.")
-        assert entry_to_import.status == RosettaImportStatus.APPROVED, (
-            "Attempt to import non-approved entry.")
+        assert (
+            entry_to_import.import_into.id == self.id
+        ), "Attempt to import entry to POTemplate it doesn't belong to."
+        assert (
+            entry_to_import.status == RosettaImportStatus.APPROVED
+        ), "Attempt to import non-approved entry."
 
         # XXX: JeroenVermeulen 2007-11-29: This method is called from the
         # import script, which can provide the right object but can only
@@ -920,7 +1020,7 @@ class POTemplate(SQLBase, RosettaStats):
         translation_importer = getUtility(ITranslationImporter)
 
         rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
-        subject = 'Translation template import - %s' % self.displayname
+        subject = "Translation template import - %s" % self.displayname
         # Can use template_mail = 'poimport-template-confirmation.txt' to send
         # mail when everything is imported, but those mails aren't very useful
         # to or much welcomed by the recipients.  See bug 855150.
@@ -928,20 +1028,26 @@ class POTemplate(SQLBase, RosettaStats):
         errors, warnings = None, None
         try:
             errors, warnings = translation_importer.importFile(
-                entry_to_import, logger)
-        except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
-                TranslationFormatInvalidInputError,
-                UnicodeDecodeError) as exception:
+                entry_to_import, logger
+            )
+        except (
+            MixedNewlineMarkersError,
+            TranslationFormatSyntaxError,
+            TranslationFormatInvalidInputError,
+            UnicodeDecodeError,
+        ) as exception:
             if logger:
                 logger.info(
-                    'We got an error importing %s', self.title, exc_info=1)
-            subject = 'Import problem - %s' % self.displayname
+                    "We got an error importing %s", self.title, exc_info=1
+                )
+            subject = "Import problem - %s" % self.displayname
             if isinstance(exception, UnicodeDecodeError):
-                template_mail = 'poimport-bad-encoding.txt'
+                template_mail = "poimport-bad-encoding.txt"
             else:
-                template_mail = 'poimport-syntax-error.txt'
-            entry_to_import.setStatus(RosettaImportStatus.FAILED,
-                                      rosetta_experts)
+                template_mail = "poimport-syntax-error.txt"
+            entry_to_import.setStatus(
+                RosettaImportStatus.FAILED, rosetta_experts
+            )
             error_text = str(exception)
             entry_to_import.setErrorOutput(error_text)
         else:
@@ -949,18 +1055,22 @@ class POTemplate(SQLBase, RosettaStats):
             entry_to_import.setErrorOutput(None)
 
         replacements = collect_import_info(entry_to_import, self, warnings)
-        replacements.update({
-            'import_title': 'translation templates for %s' % self.displayname,
-            })
+        replacements.update(
+            {
+                "import_title": "translation templates for %s"
+                % self.displayname,
+            }
+        )
 
         if error_text is not None:
-            replacements['error'] = error_text
+            replacements["error"] = error_text
 
-        entry_to_import.addWarningOutput(replacements['warnings'])
+        entry_to_import.addWarningOutput(replacements["warnings"])
 
         if entry_to_import.status != RosettaImportStatus.FAILED:
-            entry_to_import.setStatus(RosettaImportStatus.IMPORTED,
-                                      rosetta_experts)
+            entry_to_import.setStatus(
+                RosettaImportStatus.IMPORTED, rosetta_experts
+            )
 
             # Assign karma to the importer if this is not an automatic import
             # (all automatic imports come from the rosetta expert team).
@@ -968,10 +1078,11 @@ class POTemplate(SQLBase, RosettaStats):
             rosetta_experts = celebs.rosetta_experts
             if entry_to_import.importer.id != rosetta_experts.id:
                 entry_to_import.importer.assignKarma(
-                    'translationtemplateimport',
+                    "translationtemplateimport",
                     product=self.product,
                     distribution=self.distribution,
-                    sourcepackagename=self.sourcepackagename)
+                    sourcepackagename=self.sourcepackagename,
+                )
 
             # Synchronize changes to database so we can calculate fresh
             # statistics on the server side.
@@ -1000,12 +1111,11 @@ class POTemplate(SQLBase, RosettaStats):
                         txn.begin()
                     if logger:
                         logger.warning(
-                            "Statistics update failed: %s" %
-                            str(error))
+                            "Statistics update failed: %s" % str(error)
+                        )
 
         if template_mail is not None:
-            template = get_email_template(
-                template_mail, 'translations')
+            template = get_email_template(template_mail, "translations")
             message = template % replacements
             return (subject, message)
         else:
@@ -1017,16 +1127,19 @@ class POTemplate(SQLBase, RosettaStats):
         Plural = ClassAlias(POMsgID)
 
         SingularJoin = LeftJoin(
-            Singular, Singular.id == POTMsgSet.msgid_singular_id)
+            Singular, Singular.id == POTMsgSet.msgid_singular_id
+        )
         PluralJoin = LeftJoin(Plural, Plural.id == POTMsgSet.msgid_plural_id)
 
         source = Store.of(self).using(
-            TranslationTemplateItem, POTMsgSet, SingularJoin, PluralJoin)
+            TranslationTemplateItem, POTMsgSet, SingularJoin, PluralJoin
+        )
 
         rows = source.find(
             (TranslationTemplateItem, POTMsgSet, Singular, Plural),
             TranslationTemplateItem.potemplate == self,
-            POTMsgSet.id == TranslationTemplateItem.potmsgsetID)
+            POTMsgSet.id == TranslationTemplateItem.potmsgsetID,
+        )
 
         rows = rows.order_by(TranslationTemplateItem.sequence)
 
@@ -1044,16 +1157,24 @@ class POTemplate(SQLBase, RosettaStats):
     def awardKarma(self, person, action_name):
         """See `IPOTemplate`."""
         person.assignKarma(
-            action_name, product=self.product, distribution=self.distribution,
-            sourcepackagename=self.sourcepackagename)
+            action_name,
+            product=self.product,
+            distribution=self.distribution,
+            sourcepackagename=self.sourcepackagename,
+        )
 
 
 @implementer(IPOTemplateSubset)
 class POTemplateSubset:
-
-    def __init__(self, sourcepackagename=None, from_sourcepackagename=None,
-                 distroseries=None, productseries=None, iscurrent=None,
-                 ordered_by_names=False):
+    def __init__(
+        self,
+        sourcepackagename=None,
+        from_sourcepackagename=None,
+        distroseries=None,
+        productseries=None,
+        iscurrent=None,
+        ordered_by_names=False,
+    ):
         """Create a new `POTemplateSubset` object.
 
         The set of POTemplate depends on the arguments you pass to this
@@ -1068,41 +1189,43 @@ class POTemplateSubset:
         self.orderby = [POTemplate.id]
         self.clauses = []
 
-        assert productseries is None or distroseries is None, (
-            'A product series must not be used with a distro series.')
+        assert (
+            productseries is None or distroseries is None
+        ), "A product series must not be used with a distro series."
 
-        assert productseries is not None or distroseries is not None, (
-            'Either productseries or distroseries must be not None.')
+        assert (
+            productseries is not None or distroseries is not None
+        ), "Either productseries or distroseries must be not None."
 
         # Construct the base clauses.
         if productseries is not None:
-            self.clauses.append(
-                POTemplate.productseriesID == productseries.id)
+            self.clauses.append(POTemplate.productseriesID == productseries.id)
             if ordered_by_names:
                 self.orderby = [POTemplate.name]
         else:
-            self.clauses.append(
-                POTemplate.distroseriesID == distroseries.id)
+            self.clauses.append(POTemplate.distroseriesID == distroseries.id)
             if ordered_by_names:
                 self.orderby = [SourcePackageName.name, POTemplate.name]
             if from_sourcepackagename is not None:
                 self.clauses.append(
-                    POTemplate.from_sourcepackagenameID ==
-                        from_sourcepackagename.id)
+                    POTemplate.from_sourcepackagenameID
+                    == from_sourcepackagename.id
+                )
                 self.sourcepackagename = from_sourcepackagename
             elif sourcepackagename is not None:
                 self.clauses.append(
-                    POTemplate.sourcepackagename == sourcepackagename.id)
+                    POTemplate.sourcepackagename == sourcepackagename.id
+                )
             else:
                 # Select all POTemplates in a Distroseries.
                 pass
         # Add the filter for the iscurrent flag if requested.
         if iscurrent is not None:
-            self.clauses.append(
-                POTemplate.iscurrent == iscurrent)
+            self.clauses.append(POTemplate.iscurrent == iscurrent)
 
-    def _build_query(self, additional_clause=None,
-                     ordered=True, do_prejoin=True):
+    def _build_query(
+        self, additional_clause=None, ordered=True, do_prejoin=True
+    ):
         """Construct the storm query."""
         if additional_clause is None:
             condition = And(self.clauses)
@@ -1115,11 +1238,17 @@ class POTemplateSubset:
         else:
             store = Store.of(self.distroseries)
             if do_prejoin:
-                query = DecoratedResultSet(store.find(
-                    (POTemplate, SourcePackageName),
-                    (POTemplate.sourcepackagenameID ==
-                     SourcePackageName.id), condition),
-                     operator.itemgetter(0))
+                query = DecoratedResultSet(
+                    store.find(
+                        (POTemplate, SourcePackageName),
+                        (
+                            POTemplate.sourcepackagenameID
+                            == SourcePackageName.id
+                        ),
+                        condition,
+                    ),
+                    operator.itemgetter(0),
+                )
             else:
                 query = store.find(POTemplate, condition)
 
@@ -1147,13 +1276,13 @@ class POTemplateSubset:
     @property
     def title(self):
         """See `IPOTemplateSubset`."""
-        titlestr = ''
+        titlestr = ""
         if self.distroseries:
-            titlestr += ' ' + self.distroseries.displayname
+            titlestr += " " + self.distroseries.displayname
         if self.sourcepackagename:
-            titlestr += ' ' + self.sourcepackagename.name
+            titlestr += " " + self.sourcepackagename.name
         if self.productseries:
-            titlestr += ' '
+            titlestr += " "
             titlestr += self.productseries.displayname
         return titlestr
 
@@ -1161,7 +1290,8 @@ class POTemplateSubset:
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             distribution=template.distribution,
             sourcepackagename=template.sourcepackagename,
-            product=template.product)
+            product=template.product,
+        )
         for shared_template in subset.getSharingPOTemplates(template.name):
             shared_template = removeSecurityProxy(shared_template)
             if shared_template is template:
@@ -1179,7 +1309,8 @@ class POTemplateSubset:
             return getUtility(IPOTemplateSet).getSubset(
                 productseries=self.productseries,
                 distroseries=self.distroseries,
-                sourcepackagename=self.sourcepackagename)
+                sourcepackagename=self.sourcepackagename,
+            )
 
     def isNameUnique(self, name):
         """See `IPOTemplateSubset`."""
@@ -1190,22 +1321,25 @@ class POTemplateSubset:
         existing_template = self._getSuperSet().getPOTemplateByName(name)
         if existing_template is not None:
             raise ValueError(
-                'POTempate %s already exists and is iscurrent=%s' %
-                (name, existing_template.iscurrent))
+                "POTempate %s already exists and is iscurrent=%s"
+                % (name, existing_template.iscurrent)
+            )
         header_params = {
-            'origin': 'PACKAGE VERSION',
-            'templatedate': datetime.datetime.now(),
-            'languagename': 'LANGUAGE',
-            'languagecode': 'LL',
-            }
-        template = POTemplate(name=name,
-                          translation_domain=translation_domain,
-                          sourcepackagename=self.sourcepackagename,
-                          distroseries=self.distroseries,
-                          productseries=self.productseries,
-                          path=path,
-                          owner=owner,
-                          header=standardTemplateHeader % header_params)
+            "origin": "PACKAGE VERSION",
+            "templatedate": datetime.datetime.now(),
+            "languagename": "LANGUAGE",
+            "languagecode": "LL",
+        }
+        template = POTemplate(
+            name=name,
+            translation_domain=translation_domain,
+            sourcepackagename=self.sourcepackagename,
+            distroseries=self.distroseries,
+            productseries=self.productseries,
+            path=path,
+            owner=owner,
+            header=standardTemplateHeader % header_params,
+        )
         if copy_pofiles:
             self._copyPOFilesFromSharingTemplates(template)
         return template
@@ -1218,12 +1352,12 @@ class POTemplateSubset:
     def getPOTemplatesByTranslationDomain(self, translation_domain):
         """See `IPOTemplateSubset`."""
         return self._build_query(
-            POTemplate.translation_domain == translation_domain)
+            POTemplate.translation_domain == translation_domain
+        )
 
     def getPOTemplateByPath(self, path):
         """See `IPOTemplateSubset`."""
-        result = self._build_query(
-            POTemplate.path == path, ordered=False)
+        result = self._build_query(POTemplate.path == path, ordered=False)
         return result.one()
 
     def getAllOrderByDateLastUpdated(self):
@@ -1241,7 +1375,8 @@ class POTemplateSubset:
         repeated = False
         for template in self:
             template_path_length = len(
-                os.path.commonprefix([template.path, path]))
+                os.path.commonprefix([template.path, path])
+            )
             if template_path_length > closest_template_path_length:
                 # This template is more near than the one we got previously
                 closest_template = template
@@ -1262,8 +1397,10 @@ class POTemplateSubset:
         result = self._build_query(
             Or(
                 POTemplate.path == filename,
-                POTemplate.path.endswith('/%s' % filename)),
-            ordered=False)
+                POTemplate.path.endswith("/%s" % filename),
+            ),
+            ordered=False,
+        )
         candidates = list(result.config(limit=2))
 
         if len(candidates) == 1:
@@ -1275,44 +1412,65 @@ class POTemplateSubset:
 
 @implementer(IPOTemplateSet)
 class POTemplateSet:
-
     def __iter__(self):
         """See `IPOTemplateSet`."""
         yield from IStore(POTemplate).find(POTemplate)
 
     def getAllByName(self, name):
         """See `IPOTemplateSet`."""
-        return IStore(POTemplate).find(POTemplate, name=name).order_by(
-            POTemplate.name, POTemplate.id)
+        return (
+            IStore(POTemplate)
+            .find(POTemplate, name=name)
+            .order_by(POTemplate.name, POTemplate.id)
+        )
 
     def getAllOrderByDateLastUpdated(self):
         """See `IPOTemplateSet`."""
-        return IStore(POTemplate).find(POTemplate).order_by(
-            Desc(POTemplate.date_last_updated))
+        return (
+            IStore(POTemplate)
+            .find(POTemplate)
+            .order_by(Desc(POTemplate.date_last_updated))
+        )
 
-    def getSubset(self, distroseries=None, sourcepackagename=None,
-                  productseries=None, iscurrent=None,
-                  ordered_by_names=False):
+    def getSubset(
+        self,
+        distroseries=None,
+        sourcepackagename=None,
+        productseries=None,
+        iscurrent=None,
+        ordered_by_names=False,
+    ):
         """See `IPOTemplateSet`."""
         return POTemplateSubset(
             distroseries=distroseries,
             sourcepackagename=sourcepackagename,
             productseries=productseries,
             iscurrent=iscurrent,
-            ordered_by_names=ordered_by_names)
+            ordered_by_names=ordered_by_names,
+        )
 
-    def getSharingSubset(self, distribution=None, sourcepackagename=None,
-                         product=None):
+    def getSharingSubset(
+        self, distribution=None, sourcepackagename=None, product=None
+    ):
         """See `IPOTemplateSet`."""
-        return POTemplateSharingSubset(self, distribution=distribution,
-                                       sourcepackagename=sourcepackagename,
-                                       product=product)
+        return POTemplateSharingSubset(
+            self,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+            product=product,
+        )
 
-    def getPOTemplateByPathAndOrigin(self, path, productseries=None,
-        distroseries=None, sourcepackagename=None):
+    def getPOTemplateByPathAndOrigin(
+        self,
+        path,
+        productseries=None,
+        distroseries=None,
+        sourcepackagename=None,
+    ):
         """See `IPOTemplateSet`."""
-        assert (productseries is None) != (sourcepackagename is None), (
-            "Must specify either productseries or sourcepackagename.")
+        assert (productseries is None) != (
+            sourcepackagename is None
+        ), "Must specify either productseries or sourcepackagename."
 
         conditions = And(
             POTemplate.iscurrent == True,
@@ -1320,11 +1478,14 @@ class POTemplateSet:
             POTemplate.productseries == productseries,
             Or(
                 POTemplate.from_sourcepackagename == sourcepackagename,
-                POTemplate.sourcepackagename == sourcepackagename))
+                POTemplate.sourcepackagename == sourcepackagename,
+            ),
+        )
 
         if distroseries:
             conditions = And(
-                conditions, POTemplate.distroseries == distroseries)
+                conditions, POTemplate.distroseries == distroseries
+            )
 
         store = IStore(POTemplate)
         matches = shortlist(store.find(POTemplate, conditions))
@@ -1339,7 +1500,10 @@ class POTemplateSet:
             # Multiple matches, and for a product not a package.
             logging.warning(
                 "Found %d templates with path '%s' for productseries %s",
-                len(matches), path, productseries.title)
+                len(matches),
+                path,
+                productseries.title,
+            )
             return None
         else:
             # Multiple matches, for a distribution package.  Prefer a
@@ -1349,7 +1513,8 @@ class POTemplateSet:
             preferred_matches = [
                 match
                 for match in matches
-                if match.from_sourcepackagename == sourcepackagename]
+                if match.from_sourcepackagename == sourcepackagename
+            ]
 
             if len(preferred_matches) == 1:
                 return preferred_matches[0]
@@ -1357,33 +1522,48 @@ class POTemplateSet:
                 logging.warning(
                     "Found %d templates with path '%s' for package %s "
                     "(%d matched on from_sourcepackagename).",
-                    len(matches), path, sourcepackagename.name,
-                    len(preferred_matches))
+                    len(matches),
+                    path,
+                    sourcepackagename.name,
+                    len(preferred_matches),
+                )
                 return None
 
     def preloadPOTemplateContexts(self, templates):
         """See `IPOTemplateSet`."""
         from lp.registry.model.product import Product
         from lp.registry.model.productseries import ProductSeries
-        pses = load_related(ProductSeries, templates, ['productseriesID'])
-        load_related(Product, pses, ['productID'])
-        load_related(SourcePackageName, templates, ['sourcepackagenameID'])
+
+        pses = load_related(ProductSeries, templates, ["productseriesID"])
+        load_related(Product, pses, ["productID"])
+        load_related(SourcePackageName, templates, ["sourcepackagenameID"])
 
     def wipeSuggestivePOTemplatesCache(self):
         """See `IPOTemplateSet`."""
-        return IMasterStore(POTemplate).execute(
-            "DELETE FROM SuggestivePOTemplate").rowcount
+        return (
+            IMasterStore(POTemplate)
+            .execute("DELETE FROM SuggestivePOTemplate")
+            .rowcount
+        )
 
     def removeFromSuggestivePOTemplatesCache(self, potemplate):
         """See `IPOTemplateSet`."""
-        rowcount = IMasterStore(POTemplate).execute(
-            "DELETE FROM SuggestivePOTemplate "
-            "WHERE potemplate = ?", params=(potemplate.id,)).rowcount
+        rowcount = (
+            IMasterStore(POTemplate)
+            .execute(
+                "DELETE FROM SuggestivePOTemplate " "WHERE potemplate = ?",
+                params=(potemplate.id,),
+            )
+            .rowcount
+        )
         return rowcount == 1
 
     def populateSuggestivePOTemplatesCache(self):
         """See `IPOTemplateSet`."""
-        return IMasterStore(POTemplate).execute("""
+        return (
+            IMasterStore(POTemplate)
+            .execute(
+                """
             INSERT INTO SuggestivePOTemplate (
                 SELECT POTemplate.id
                 FROM POTemplate
@@ -1402,10 +1582,15 @@ class POTemplateSet:
                 ORDER BY POTemplate.id
             )
             """,
-            params=(
-                ServiceUsage.LAUNCHPAD.value, ServiceUsage.EXTERNAL.value,
-                ServiceUsage.LAUNCHPAD.value, ServiceUsage.EXTERNAL.value)
-        ).rowcount
+                params=(
+                    ServiceUsage.LAUNCHPAD.value,
+                    ServiceUsage.EXTERNAL.value,
+                    ServiceUsage.LAUNCHPAD.value,
+                    ServiceUsage.EXTERNAL.value,
+                ),
+            )
+            .rowcount
+        )
 
 
 @implementer(IPOTemplateSharingSubset)
@@ -1415,14 +1600,20 @@ class POTemplateSharingSubset:
     sourcepackagename = None
     product = None
 
-    def __init__(self, potemplateset,
-                 distribution=None, sourcepackagename=None,
-                 product=None):
+    def __init__(
+        self,
+        potemplateset,
+        distribution=None,
+        sourcepackagename=None,
+        product=None,
+    ):
         assert product or distribution, "Pick a product or distribution!"
-        assert not (product and distribution), (
-            "Pick a product or distribution, not both!")
-        assert distribution or not sourcepackagename, (
-            "Picking a source package only makes sense with a distribution.")
+        assert not (
+            product and distribution
+        ), "Pick a product or distribution, not both!"
+        assert (
+            distribution or not sourcepackagename
+        ), "Picking a source package only makes sense with a distribution."
         self.potemplateset = potemplateset
 
         self.distribution = distribution
@@ -1441,6 +1632,7 @@ class POTemplateSharingSubset:
         """Find all POTemplates in this sharing subset."""
         from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.productseries import ProductSeries
+
         product_id = distro_id = spn_id = None
         if self.product is not None:
             product_id = self.product.id
@@ -1450,12 +1642,15 @@ class POTemplateSharingSubset:
 
         # Fake Storm table class for the CTE. The PK is a lie.
         class Location:
-            __storm_table__ = 'location'
+            __storm_table__ = "location"
             __storm_primary__ = (
-                'product_id', 'distribution_id', 'sourcepackagename_id')
-            product_id = Int(name='product')
-            distribution_id = Int(name='distribution')
-            sourcepackagename_id = Int(name='sourcepackagename')
+                "product_id",
+                "distribution_id",
+                "sourcepackagename_id",
+            )
+            product_id = Int(name="product")
+            distribution_id = Int(name="distribution")
+            sourcepackagename_id = Int(name="sourcepackagename")
 
         # Message sharing is by necessity symmetric and transitive,
         # since the POTMsgSets records themselves are shared. Two
@@ -1495,32 +1690,40 @@ class POTemplateSharingSubset:
         # join out to their series and find any templates with the right
         # name.
         context = IStore(POTemplate).with_(
-            SQL(sharing_subset_cte, params=(product_id, distro_id, spn_id)))
+            SQL(sharing_subset_cte, params=(product_id, distro_id, spn_id))
+        )
         return context.using(
             Location,
             LeftJoin(
                 DistroSeries,
-                DistroSeries.distributionID == Location.distribution_id),
+                DistroSeries.distributionID == Location.distribution_id,
+            ),
             LeftJoin(
-                ProductSeries,
-                ProductSeries.productID == Location.product_id),
+                ProductSeries, ProductSeries.productID == Location.product_id
+            ),
             Join(
                 POTemplate,
                 And(
                     Or(
                         POTemplate.productseriesID == ProductSeries.id,
-                        And(POTemplate.distroseriesID == DistroSeries.id,
-                            POTemplate.sourcepackagenameID ==
-                                Location.sourcepackagename_id)),
-                    templatename_clause))).find(POTemplate)
+                        And(
+                            POTemplate.distroseriesID == DistroSeries.id,
+                            POTemplate.sourcepackagenameID
+                            == Location.sourcepackagename_id,
+                        ),
+                    ),
+                    templatename_clause,
+                ),
+            ),
+        ).find(POTemplate)
 
     def getSharingPOTemplates(self, potemplate_name):
         """See `IPOTemplateSharingSubset`."""
         if self.distribution is not None:
-            assert self.sourcepackagename is not None, (
-                   "Need sourcepackagename to select from distribution.")
-        return self._queryPOTemplates(
-            POTemplate.name == potemplate_name)
+            assert (
+                self.sourcepackagename is not None
+            ), "Need sourcepackagename to select from distribution."
+        return self._queryPOTemplates(POTemplate.name == potemplate_name)
 
     def getSharingPOTemplatesByRegex(self, name_pattern=None):
         """See `IPOTemplateSharingSubset`."""
@@ -1528,14 +1731,16 @@ class POTemplateSharingSubset:
             templatename_clause = True
         else:
             templatename_clause = SQL(
-                "POTemplate.name ~ ?", params=(name_pattern,))
+                "POTemplate.name ~ ?", params=(name_pattern,)
+            )
 
         return self._queryPOTemplates(templatename_clause)
 
     def getSharingPOTemplateIDs(self, potemplate_name):
         """See `IPOTemplateSharingSubset`."""
         return self.getSharingPOTemplates(potemplate_name).values(
-            POTemplate.id)
+            POTemplate.id
+        )
 
     def groupEquivalentPOTemplates(self, name_pattern=None):
         """See `IPOTemplateSharingSubset`."""
@@ -1600,8 +1805,9 @@ class POTemplateToTranslationFileDataAdapter:
         messages = []
 
         for row in rows:
-            assert row.potemplate.id == potemplate.id, (
-                'Got a row for a different IPOTemplate.')
+            assert (
+                row.potemplate.id == potemplate.id
+            ), "Got a row for a different IPOTemplate."
 
             # Skip messages which aren't anymore in the PO template.
             if row.sequence == 0:
@@ -1623,8 +1829,9 @@ class POTemplateToTranslationFileDataAdapter:
             if row.flags_comment:
                 msgset.flags = {
                     flag.strip()
-                    for flag in row.flags_comment.split(',')
-                    if flag}
+                    for flag in row.flags_comment.split(",")
+                    if flag
+                }
 
             # Store the message.
             messages.append(msgset)
@@ -1634,6 +1841,7 @@ class POTemplateToTranslationFileDataAdapter:
 
 class TranslationTemplatesCollection(Collection):
     """A `Collection` of `POTemplate`."""
+
     starting_table = POTemplate
 
     def restrictProductSeries(self, productseries):
@@ -1644,7 +1852,8 @@ class TranslationTemplatesCollection(Collection):
 
     def restrictSourcePackageName(self, sourcepackagename):
         return self.refine(
-            POTemplate.sourcepackagenameID == sourcepackagename.id)
+            POTemplate.sourcepackagenameID == sourcepackagename.id
+        )
 
     def restrictCurrent(self, current_value=True):
         """Select based on `POTemplate.iscurrent`.
@@ -1683,8 +1892,11 @@ class TranslationTemplatesCollection(Collection):
         """
         if language is not None:
             return self.joinOuter(
-                POFile, And(POTemplate.id == POFile.potemplateID,
-                            POFile.languageID == language.id))
+                POFile,
+                And(
+                    POTemplate.id == POFile.potemplateID,
+                    POFile.languageID == language.id,
+                ),
+            )
         else:
-            return self.joinOuter(
-                POFile, POTemplate.id == POFile.potemplateID)
+            return self.joinOuter(POFile, POTemplate.id == POFile.potemplateID)

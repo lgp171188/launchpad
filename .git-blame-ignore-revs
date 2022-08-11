@@ -52,3 +52,55 @@ d61c2ad002c2997a132a1580ce6ee82bb03de11d
 afcfc15adcf3267d3fd07d7679df00231853c908
 # apply pyupgrade --py3-plus to lp.translations
 3f3ea0f7799093f93740d3a1db3a11965d0b25cb
+# apply black to lp.answers.browser
+c606443bdb2f342593c9a7c9437cb70c01f85f29
+# apply black to lp.answers
+7ae201d4e317cc9db665a0edb28c2439797daff6
+# apply black to lp.app
+8fd124775592a33c3d2ce9ef8111a9a5f1a5e089
+# apply black to lp.archivepublisher
+8885e7977012e4f376e23f52125784567aefebe4
+# apply black to lp.archiveuploader
+01c7f7112b20dab5c48373339d530a39f0dc859b
+# apply black to lp.blueprints
+6178b1869f90f9bf1eb9ed050154888b523c53c5
+# apply black to lp.bugs
+2edd6d52841e03ba11ad431e40828f2f0b6a7e17
+# apply black to lp.buildmaster
+95cf83968d59453397dfbdcbe30556fc8004479a
+# apply black to lp.charms
+a6bed71f3d2fdbceae20c2d435c993e8bededdce
+# apply black to lp.code
+94d8e9842b7c92f3f9b7f514fb49ebdc9af7e413
+# apply black to lp.codehosting
+ed7d7b97b8fb4ebe92799f922b0fa9c4bd1714e8
+# apply black to lp.coop
+1e6ead9387a1d073eea9271fe8dc646bb22fa3d2
+# apply black to lp.oci
+06b1048510a0b65bb0a6fc46d4e063510b52b5f6
+# apply black to lp.registry
+0a9f5f09fc0c930b73619e77524e60f2740595ed
+# apply black to lp.scripts
+66301b8ad409deeb9092dfe62c8e4ef6f3093302
+# apply black to lp.services
+4719b7aa672a2674c7fdbbde58772871b77c3301
+# apply black to lp.snappy
+cf7c6a08bd010dd260bff4690d64479fadf37e67
+# apply black to lp.soyuz
+5a98ef6df022b52adc06787b56f2482bc4a28a3e
+# apply black to lp.testing
+15e1c80d57296e830e0dd85f1e03245281a88f02
+# apply black to lp.{testopenid,tests}
+c7dedd4d8a3c642f77570e525be0af9714703eba
+# apply black to lp.translations
+b56a741985ca580c281f142bea589b1ef05d3e93
+# apply black to lp.xmlrpc
+0bf877facbd96ece340dd26a7429ebbf0fb9b65a
+# apply black to {cronscripts,scripts}
+86d834967ddae3eecd13deda5ac9eefea538195d
+# apply black to utilities
+35ac52c1c63d184b4660abbab4bead59408d3937
+# apply black to database
+a0cc45d527f251438cff74b4134e7a66fba42ac7
+# apply black to remaining files
+9c7e734d893362de4461910d309d9891558c9634

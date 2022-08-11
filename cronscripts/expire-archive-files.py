@@ -12,8 +12,8 @@ import _pythonpath  # noqa: F401
 from lp.services.config import config
 from lp.soyuz.scripts.expire_archive_files import ArchiveExpirer
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ArchiveExpirer(
-        'expire-archive-files', dbuser=config.binaryfile_expire.dbuser)
+        "expire-archive-files", dbuser=config.binaryfile_expire.dbuser
+    )
     script.lock_and_run()

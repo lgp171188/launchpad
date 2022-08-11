@@ -4,9 +4,9 @@
 """The vocabularies relating to sprints."""
 
 __all__ = [
-    'FutureSprintVocabulary',
-    'SprintVocabulary',
-    ]
+    "FutureSprintVocabulary",
+    "SprintVocabulary",
+]
 
 from lp.blueprints.model.sprint import Sprint
 from lp.services.database.constants import UTC_NOW

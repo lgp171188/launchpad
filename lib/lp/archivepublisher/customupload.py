@@ -11,7 +11,7 @@ Custom uploads include Debian installer packages, dist upgraders and
 DDTP (Debian Description Translation Project) tarballs.
 """
 
-__all__ = ['CustomUpload']
+__all__ = ["CustomUpload"]
 
 import os
 import shutil
@@ -20,56 +20,65 @@ import tempfile
 
 from zope.interface import implementer
 
-from lp.archivepublisher.debversion import (
-    Version as make_version,
-    VersionError,
-    )
+from lp.archivepublisher.debversion import Version as make_version
+from lp.archivepublisher.debversion import VersionError
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     ISignableArchive,
-    )
+)
 from lp.services.librarian.utils import copy_and_close
-from lp.soyuz.interfaces.queue import (
-    CustomUploadError,
-    ICustomUploadHandler,
-    )
+from lp.soyuz.interfaces.queue import CustomUploadError, ICustomUploadHandler
 
 
 class CustomUploadTarballTarError(CustomUploadError):
     """The tarfile module raised an exception."""
+
     def __init__(self, tarfile_path, tar_error):
-        message = 'Problem reading tarfile %s: %s' % (tarfile_path, tar_error)
+        message = "Problem reading tarfile %s: %s" % (tarfile_path, tar_error)
         CustomUploadError.__init__(self, message)
 
 
 class CustomUploadTarballInvalidTarfile(CustomUploadError):
     """The supplied tarfile did not contain the expected elements."""
+
     def __init__(self, tarfile_path, expected_dir):
-        message = ('Tarfile %s did not contain expected file %s' %
-                   (tarfile_path, expected_dir))
+        message = "Tarfile %s did not contain expected file %s" % (
+            tarfile_path,
+            expected_dir,
+        )
         CustomUploadError.__init__(self, message)
 
 
 class CustomUploadBadUmask(CustomUploadError):
     """The environment's umask was incorrect."""
+
     def __init__(self, expected_umask, got_umask):
-        message = 'Bad umask; expected %03o, got %03o' % (
-            expected_umask, got_umask)
+        message = "Bad umask; expected %03o, got %03o" % (
+            expected_umask,
+            got_umask,
+        )
         CustomUploadError.__init__(self, message)
 
 
 class CustomUploadTarballInvalidFileType(CustomUploadError):
     """A file of type other than regular or symlink was found."""
+
     def __init__(self, tarfile_path, file_name):
-        message = ("Tarfile %s has file %s which is not a regular file, "
-                   "directory or a symlink" % (tarfile_path, file_name))
+        message = (
+            "Tarfile %s has file %s which is not a regular file, "
+            "directory or a symlink" % (tarfile_path, file_name)
+        )
         CustomUploadError.__init__(self, message)
 
 
 class CustomUploadTarballBadSymLink(CustomUploadError):
     """A symlink was found whose target points outside the immediate tree."""
+
     def __init__(self, tarfile_path, symlink_name, target):
         message = "Tarfile %s has a symlink %s whose target %s is illegal" % (
-            tarfile_path, symlink_name, target)
+            tarfile_path,
+            symlink_name,
+            target,
+        )
         CustomUploadError.__init__(self, message)
 
 
@@ -78,17 +87,24 @@ class CustomUploadTarballBadFile(CustomUploadError):
 
     This can happen if someone embeds ../file in the tar, for example.
     """
+
     def __init__(self, tarfile_path, file_name):
         message = "Tarfile %s has a file %s which is illegal" % (
-            tarfile_path, file_name)
+            tarfile_path,
+            file_name,
+        )
         CustomUploadError.__init__(self, message)
 
 
 class CustomUploadAlreadyExists(CustomUploadError):
     """A build for this type, architecture, and version already exists."""
+
     def __init__(self, custom_type, arch, version):
-        message = ('%s build %s for architecture %s already exists' %
-                   (custom_type, version, arch))
+        message = "%s build %s for architecture %s already exists" % (
+            custom_type,
+            version,
+            arch,
+        )
         CustomUploadError.__init__(self, message)
 
 
@@ -97,7 +113,7 @@ class CustomUpload:
     """Base class for custom upload handlers"""
 
     # This should be set as a class property on each subclass.
-    custom_type = None
+    custom_type = None  # type: str
 
     @classmethod
     def publish(cls, packageupload, libraryfilealias, logger=None):
@@ -169,7 +185,8 @@ class CustomUpload:
         """Check for conflicts with existing publications in the archive."""
         if os.path.exists(os.path.join(self.targetdir, self.version)):
             raise CustomUploadAlreadyExists(
-                self.custom_type, self.arch, self.version)
+                self.custom_type, self.arch, self.version
+            )
 
     def verifyBeforeExtracting(self, tar):
         """Verify the tarball before extracting it.
@@ -187,7 +204,8 @@ class CustomUpload:
 
             if not (member.isreg() or member.issym() or member.isdir()):
                 raise CustomUploadTarballInvalidFileType(
-                    self.tarfile_path, member.name)
+                    self.tarfile_path, member.name
+                )
 
             # Append os.sep to stop attacks like /var/tmp/../tmpBOGUS
             # This is unlikely since someone would need to guess what
@@ -200,10 +218,13 @@ class CustomUpload:
             # The path can either be the tmpdir (without a trailing
             # separator) or have the tmpdir plus a trailing separator
             # as a prefix.
-            if (member_realpath != self.tmpdir and
-                not member_realpath.startswith(tmpdir_with_sep)):
+            if (
+                member_realpath != self.tmpdir
+                and not member_realpath.startswith(tmpdir_with_sep)
+            ):
                 raise CustomUploadTarballBadFile(
-                    self.tarfile_path, member.name)
+                    self.tarfile_path, member.name
+                )
 
             if member.issym():
                 # This is a bit tricky.  We need to take the dirname of
@@ -212,24 +233,29 @@ class CustomUpload:
                 # get an absolute path for the link target.
                 rel_link_file_location = os.path.dirname(member.name)
                 abs_link_file_location = os.path.join(
-                    self.tmpdir, rel_link_file_location)
+                    self.tmpdir, rel_link_file_location
+                )
                 target_path = os.path.join(
-                    abs_link_file_location, member.linkname)
+                    abs_link_file_location, member.linkname
+                )
                 target_realpath = os.path.realpath(target_path)
 
                 # The same rules apply here as for member_realpath
                 # above.
-                if (target_realpath != self.tmpdir and
-                    not target_realpath.startswith(tmpdir_with_sep)):
+                if (
+                    target_realpath != self.tmpdir
+                    and not target_realpath.startswith(tmpdir_with_sep)
+                ):
                     raise CustomUploadTarballBadSymLink(
-                        self.tarfile_path, member.name, member.linkname)
+                        self.tarfile_path, member.name, member.linkname
+                    )
 
         return True
 
     def extract(self):
         """Extract the custom upload to a temporary directory."""
         assert self.tmpdir is None, "Have already extracted tarfile"
-        self.tmpdir = tempfile.mkdtemp(prefix='customupload_')
+        self.tmpdir = tempfile.mkdtemp(prefix="customupload_")
         try:
             tar = tarfile.open(self.tarfile_path)
             self.verifyBeforeExtracting(tar)
@@ -256,9 +282,10 @@ class CustomUpload:
          * destpath is the absolute path to the target location.
         """
         sourcepath = os.path.join(dirname, basename)
-        assert sourcepath.startswith(self.tmpdir), (
-            "Source path must refer to the extracted location.")
-        basepath = sourcepath[len(self.tmpdir):].lstrip(os.path.sep)
+        assert sourcepath.startswith(
+            self.tmpdir
+        ), "Source path must refer to the extracted location."
+        basepath = sourcepath[len(self.tmpdir) :].lstrip(os.path.sep)
         destpath = os.path.join(self.targetdir, basepath)
 
         return sourcepath, basepath, destpath
@@ -292,7 +319,8 @@ class CustomUpload:
             # Create symbolic links to directories.
             for dirname in dirnames:
                 sourcepath, basepath, destpath = self._buildInstallPaths(
-                    dirname, dirpath)
+                    dirname, dirpath
+                )
 
                 if not self.shouldInstall(basepath):
                     continue
@@ -316,7 +344,8 @@ class CustomUpload:
             # Create/Copy files.
             for filename in filenames:
                 sourcepath, basepath, destpath = self._buildInstallPaths(
-                    filename, dirpath)
+                    filename, dirpath
+                )
 
                 if not self.shouldInstall(basepath):
                     continue
@@ -338,7 +367,8 @@ class CustomUpload:
 
         if not extracted:
             raise CustomUploadTarballInvalidTarfile(
-                self.tarfile_path, self.targetdir)
+                self.tarfile_path, self.targetdir
+            )
 
     def fixCurrentSymlink(self):
         """Update the 'current' symlink and prune old entries.
@@ -358,7 +388,7 @@ class CustomUpload:
         versions = []
         for entry in os.scandir(self.targetdir):
             # Skip the symlink.
-            if entry.name == 'current':
+            if entry.name == "current":
                 continue
             # Skip broken versions.
             try:
@@ -371,9 +401,9 @@ class CustomUpload:
 
         # Make sure the 'current' symlink points to the most recent version
         # The most recent version is in versions[0]
-        current = os.path.join(self.targetdir, 'current')
-        os.symlink(versions[0], '%s.new' % current)
-        os.rename('%s.new' % current, current)
+        current = os.path.join(self.targetdir, "current")
+        os.symlink(versions[0], "%s.new" % current)
+        os.rename("%s.new" % current, current)
 
         # There may be some other unpacked installer directories in
         # the target already. We only keep the three with the highest

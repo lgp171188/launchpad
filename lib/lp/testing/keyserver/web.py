@@ -27,8 +27,8 @@ $ gpg --export -a cprov > 0x681B6469.get
 """
 
 __all__ = [
-    'KeyServerResource',
-    ]
+    "KeyServerResource",
+]
 
 import glob
 import html
@@ -43,10 +43,9 @@ from lp.services.gpg.interfaces import (
     IGPGHandler,
     MoreThanOneGPGKeyFound,
     SecretGPGKeyImportDetected,
-    )
+)
 
-
-GREETING = b'Copyright 2004-2009 Canonical Ltd.\n'
+GREETING = b"Copyright 2004-2009 Canonical Ltd.\n"
 
 
 def locate_key(root, suffix):
@@ -65,9 +64,9 @@ def locate_key(root, suffix):
     if not os.path.exists(path):
         # GPG might request a key ID from us, but we name the keys by
         # fingerprint. Let's glob.
-        if suffix.startswith('0x'):
+        if suffix.startswith("0x"):
             suffix = suffix[2:]
-        keys = glob.glob(os.path.join(root, '*' + suffix))
+        keys = glob.glob(os.path.join(root, "*" + suffix))
         if len(keys) == 1:
             path = keys[0]
         else:
@@ -77,13 +76,11 @@ def locate_key(root, suffix):
 
 
 class _BaseResource(Resource):
-
     def getChild(self, name, request):
         """Redirect trailing slash correctly."""
-        if name == b'':
+        if name == b"":
             return self
-        return Resource.getChild(
-            self, name, request)
+        return Resource.getChild(self, name, request)
 
 
 class KeyServerResource(_BaseResource):
@@ -91,33 +88,33 @@ class KeyServerResource(_BaseResource):
 
     def __init__(self, root):
         _BaseResource.__init__(self)
-        self.putChild(b'pks', PksResource(root))
+        self.putChild(b"pks", PksResource(root))
 
     def render_GET(self, request):
         return GREETING
 
 
 class PksResource(_BaseResource):
-
     def __init__(self, root):
         _BaseResource.__init__(self)
-        self.putChild(b'lookup', LookUp(root))
-        self.putChild(b'add', SubmitKey(root))
+        self.putChild(b"lookup", LookUp(root))
+        self.putChild(b"add", SubmitKey(root))
 
     def render_GET(self, request):
-        return b'Welcome To Fake SKS service.\n'
+        return b"Welcome To Fake SKS service.\n"
 
 
 KEY_NOT_FOUND_BODY = (
     b"<html><head><title>Error handling request</title></head>\n"
     b"<body><h1>Error handling request</h1>No results found: "
-    b"No keys found</body></html>")
+    b"No keys found</body></html>"
+)
 
 
 class LookUp(Resource):
 
     isLeaf = True
-    permitted_actions = ['index', 'get']
+    permitted_actions = ["index", "get"]
 
     def __init__(self, root):
         Resource.__init__(self)
@@ -125,10 +122,10 @@ class LookUp(Resource):
 
     def render_GET(self, request):
         try:
-            action = request.args[b'op'][0].decode('ISO-8859-1')
-            keyid = request.args[b'search'][0].decode('ISO-8859-1')
+            action = request.args[b"op"][0].decode("ISO-8859-1")
+            keyid = request.args[b"search"][0].decode("ISO-8859-1")
         except KeyError:
-            return ('Invalid Arguments %s' % request.args).encode('UTF-8')
+            return ("Invalid Arguments %s" % request.args).encode("UTF-8")
 
         return self.processRequest(action, keyid, request)
 
@@ -138,20 +135,22 @@ class LookUp(Resource):
         sleep(0.02)
         if (action not in self.permitted_actions) or not keyid:
             message = 'Forbidden: "%s" on ID "%s"' % (action, keyid)
-            return message.encode('UTF-8')
+            return message.encode("UTF-8")
 
-        filename = '%s.%s' % (keyid, action)
+        filename = "%s.%s" % (keyid, action)
 
         path = locate_key(self.root, filename)
         if path is not None:
             with open(path) as f:
                 content = html.escape(f.read(), quote=False)
-            page = ('<html>\n<head>\n'
-                    '<title>Results for Key %s</title>\n'
-                    '</head>\n<body>'
-                    '<h1>Results for Key %s</h1>\n'
-                    '<pre>\n%s\n</pre>\n</html>') % (keyid, keyid, content)
-            return page.encode('UTF-8')
+            page = (
+                "<html>\n<head>\n"
+                "<title>Results for Key %s</title>\n"
+                "</head>\n<body>"
+                "<h1>Results for Key %s</h1>\n"
+                "<pre>\n%s\n</pre>\n</html>"
+            ) % (keyid, keyid, content)
+            return page.encode("UTF-8")
         else:
             request.setResponseCode(404)
             return KEY_NOT_FOUND_BODY
@@ -182,27 +181,30 @@ class SubmitKey(Resource):
         self.root = root
 
     def render_GET(self, request):
-        return (SUBMIT_KEY_PAGE % {'banner': ''}).encode('UTF-8')
+        return (SUBMIT_KEY_PAGE % {"banner": ""}).encode("UTF-8")
 
     def render_POST(self, request):
         try:
-            keytext = request.args[b'keytext'][0]
+            keytext = request.args[b"keytext"][0]
         except KeyError:
-            return ('Invalid Arguments %s' % request.args).encode('UTF-8')
+            return ("Invalid Arguments %s" % request.args).encode("UTF-8")
         return self.storeKey(keytext)
 
     def storeKey(self, keytext):
         gpghandler = getUtility(IGPGHandler)
         try:
             key = gpghandler.importPublicKey(keytext)
-        except (GPGKeyNotFoundError, SecretGPGKeyImportDetected,
-                MoreThanOneGPGKeyFound) as err:
-            return (SUBMIT_KEY_PAGE % {'banner': str(err)}).encode('UTF-8')
+        except (
+            GPGKeyNotFoundError,
+            SecretGPGKeyImportDetected,
+            MoreThanOneGPGKeyFound,
+        ) as err:
+            return (SUBMIT_KEY_PAGE % {"banner": str(err)}).encode("UTF-8")
 
-        filename = '0x%s.get' % key.fingerprint
+        filename = "0x%s.get" % key.fingerprint
         path = os.path.join(self.root, filename)
 
-        with open(path, 'wb') as fp:
+        with open(path, "wb") as fp:
             fp.write(keytext)
 
-        return (SUBMIT_KEY_PAGE % {'banner': 'Key added'}).encode('UTF-8')
+        return (SUBMIT_KEY_PAGE % {"banner": "Key added"}).encode("UTF-8")

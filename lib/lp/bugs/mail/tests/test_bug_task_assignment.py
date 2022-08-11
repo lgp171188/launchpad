@@ -23,22 +23,28 @@ class TestAssignmentNotification(TestCaseWithFactory):
 
     def setUp(self):
         # Run the tests as a logged-in user.
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.user = getUtility(ILaunchBag).user
-        self.product = self.factory.makeProduct(owner=self.user,
-                                                name='rebirth')
+        self.product = self.factory.makeProduct(
+            owner=self.user, name="rebirth"
+        )
         self.bug = self.factory.makeBug(target=self.product)
         self.bug_task = self.bug.getBugTask(self.product)
-        self.person_assigned_email = 'stever@example.com'
+        self.person_assigned_email = "stever@example.com"
         self.person_assigned = self.factory.makePerson(
-            name='assigned', displayname='Steve Rogers',
-            email=self.person_assigned_email)
-        self.team_member_email = 'hankp@example.com'
+            name="assigned",
+            displayname="Steve Rogers",
+            email=self.person_assigned_email,
+        )
+        self.team_member_email = "hankp@example.com"
         self.team_member = self.factory.makePerson(
-            name='giantman', displayname='Hank Pym',
-            email=self.team_member_email)
+            name="giantman",
+            displayname="Hank Pym",
+            email=self.team_member_email,
+        )
         self.team_assigned = self.factory.makeTeam(
-            name='avengers', owner=self.user)
+            name="avengers", owner=self.user
+        )
         self.team_assigned.addMember(self.team_member, self.user)
         # adding people to a team generates email
         transaction.commit()
@@ -46,27 +52,27 @@ class TestAssignmentNotification(TestCaseWithFactory):
 
     def test_assignee_notification_message(self):
         """Test notification string when a person is assigned a task by
-           someone else."""
-        self.assertEqual(len(stub.test_emails), 0, 'emails in queue')
-        with notify_modified(self.bug_task, ['assignee'], user=self.user):
+        someone else."""
+        self.assertEqual(len(stub.test_emails), 0, "emails in queue")
+        with notify_modified(self.bug_task, ["assignee"], user=self.user):
             self.bug_task.transitionToAssignee(self.person_assigned)
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 1, 'email not sent')
+        self.assertEqual(len(stub.test_emails), 1, "email not sent")
         rationale = (
-            b'Sample Person (name12) has assigned this bug to you for Rebirth')
+            b"Sample Person (name12) has assigned this bug to you for Rebirth"
+        )
         msg = stub.test_emails[-1][2]
         self.assertIn(rationale, msg)
 
     def test_self_assignee_notification_message(self):
         """Test notification string when a person is assigned a task by
-           themselves."""
+        themselves."""
         stub.test_emails = []
-        with notify_modified(self.bug_task, ['assignee']):
+        with notify_modified(self.bug_task, ["assignee"]):
             self.bug_task.transitionToAssignee(self.user)
         transaction.commit()
         self.assertEqual(1, len(stub.test_emails))
-        rationale = (
-            b'You have assigned this bug to yourself for Rebirth')
+        rationale = b"You have assigned this bug to yourself for Rebirth"
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
         msg = email[2]
@@ -74,43 +80,59 @@ class TestAssignmentNotification(TestCaseWithFactory):
 
     def test_assignee_not_a_subscriber(self):
         """Test that a new recipient being assigned a bug task does send
-           a NEW message."""
-        self.assertEqual(len(stub.test_emails), 0, 'emails in queue')
-        with notify_modified(self.bug_task, ['assignee'], user=self.user):
+        a NEW message."""
+        self.assertEqual(len(stub.test_emails), 0, "emails in queue")
+        with notify_modified(self.bug_task, ["assignee"], user=self.user):
             self.bug_task.transitionToAssignee(self.person_assigned)
         transaction.commit()
-        self.assertEqual(len(stub.test_emails), 1, 'email not sent')
-        new_message = b'[NEW]'
+        self.assertEqual(len(stub.test_emails), 1, "email not sent")
+        new_message = b"[NEW]"
         msg = stub.test_emails[-1][2]
         self.assertIn(new_message, msg)
 
     def test_assignee_new_subscriber(self):
         """Build a list of people who will receive emails about the bug
         task changes and ensure the assignee is not one."""
-        with notify_modified(self.bug_task, ['assignee'], user=self.user):
+        with notify_modified(self.bug_task, ["assignee"], user=self.user):
             self.bug_task.transitionToAssignee(self.person_assigned)
-        latest_notification = IStore(BugNotification).find(
-            BugNotification).order_by(BugNotification.id).last()
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
         notifications, omitted, messages = construct_email_notifications(
-            [latest_notification])
-        self.assertEqual(len(notifications), 1,
-                         'email notication not created')
-        receivers = [message['To'] for message in messages]
-        self.assertFalse(self.person_assigned_email in receivers,
-            'Assignee was emailed about the bug task change')
+            [latest_notification]
+        )
+        self.assertEqual(
+            len(notifications), 1, "email notification not created"
+        )
+        receivers = [message["To"] for message in messages]
+        self.assertFalse(
+            self.person_assigned_email in receivers,
+            "Assignee was emailed about the bug task change",
+        )
 
     def test_team_assigned_new_subscriber(self):
         """Assign a team, who is not subscribed to a bug, a bug task and
         ensure that team members do not receive an email about the bug
         task changes."""
-        with notify_modified(self.bug_task, ['assignee'], user=self.user):
+        with notify_modified(self.bug_task, ["assignee"], user=self.user):
             self.bug_task.transitionToAssignee(self.team_assigned)
-        latest_notification = IStore(BugNotification).find(
-            BugNotification).order_by(BugNotification.id).last()
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
         notifications, omitted, messages = construct_email_notifications(
-            [latest_notification])
-        self.assertEqual(len(notifications), 1,
-                         'email notification not created')
-        receivers = [message['To'] for message in messages]
-        self.assertFalse(self.team_member_email in receivers,
-            'Team member was emailed about the bug task change')
+            [latest_notification]
+        )
+        self.assertEqual(
+            len(notifications), 1, "email notification not created"
+        )
+        receivers = [message["To"] for message in messages]
+        self.assertFalse(
+            self.team_member_email in receivers,
+            "Team member was emailed about the bug task change",
+        )

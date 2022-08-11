@@ -2,35 +2,32 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'launchpadlib_credentials_for',
-    'launchpadlib_for',
-    'oauth_access_token_for',
-    ]
+    "launchpadlib_credentials_for",
+    "launchpadlib_for",
+    "oauth_access_token_for",
+]
 
 
 import shutil
 import tempfile
 
+import six
+import transaction
+import zope.testing.cleanup
 from launchpadlib.credentials import (
     AccessToken,
     AnonymousAccessToken,
     Credentials,
-    )
+)
 from launchpadlib.launchpad import Launchpad
-import six
-import transaction
 from zope.component import getUtility
-import zope.testing.cleanup
 
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.oauth.interfaces import IOAuthConsumerSet
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
-from lp.testing._login import (
-    login,
-    logout,
-    )
+from lp.testing._login import login, logout
 
 
 def api_url(obj):
@@ -65,6 +62,7 @@ def oauth_access_token_for(consumer_name, person, permission, context=None):
         # Turn an OAuth context string into the corresponding object.
         # Avoid an import loop by importing from launchpad.browser here.
         from lp.services.oauth.browser import lookup_oauth_context
+
         context = lookup_oauth_context(context)
     if isinstance(permission, str):
         # Look up a permission by its token string.
@@ -83,8 +81,11 @@ def oauth_access_token_for(consumer_name, person, permission, context=None):
 
 
 def launchpadlib_credentials_for(
-    consumer_name, person, permission=OAuthPermission.WRITE_PRIVATE,
-    context=None):
+    consumer_name,
+    person,
+    permission=OAuthPermission.WRITE_PRIVATE,
+    context=None,
+):
     """Create launchpadlib credentials for the given person.
 
     :param consumer_name: An OAuth consumer name.
@@ -102,11 +103,13 @@ def launchpadlib_credentials_for(
     # launchpadlib to use.
     login(ANONYMOUS)
     access_token, access_secret = oauth_access_token_for(
-        consumer_name, person, permission, context)
+        consumer_name, person, permission, context
+    )
     logout()
     launchpadlib_token = AccessToken(access_token.key, access_secret)
-    return Credentials(consumer_name=consumer_name,
-                       access_token=launchpadlib_token)
+    return Credentials(
+        consumer_name=consumer_name, access_token=launchpadlib_token
+    )
 
 
 def _clean_up_cache(cache):
@@ -115,8 +118,13 @@ def _clean_up_cache(cache):
 
 
 def launchpadlib_for(
-    consumer_name, person=None, permission=OAuthPermission.WRITE_PRIVATE,
-    context=None, version="devel", service_root="http://api.launchpad.test/"):
+    consumer_name,
+    person=None,
+    permission=OAuthPermission.WRITE_PRIVATE,
+    context=None,
+    version="devel",
+    service_root="http://api.launchpad.test/",
+):
     """Create a Launchpad object for the given person.
 
     :param consumer_name: An OAuth consumer name.
@@ -138,9 +146,16 @@ def launchpadlib_for(
         credentials = Credentials(consumer_name, access_token=token)
     else:
         credentials = launchpadlib_credentials_for(
-            consumer_name, person, permission, context)
+            consumer_name, person, permission, context
+        )
     transaction.commit()
-    cache = tempfile.mkdtemp(prefix='launchpadlib-cache-')
+    cache = tempfile.mkdtemp(prefix="launchpadlib-cache-")
     zope.testing.cleanup.addCleanUp(_clean_up_cache, (cache,))
-    return Launchpad(credentials, None, None, service_root=service_root,
-                     version=version, cache=cache)
+    return Launchpad(
+        credentials,
+        None,
+        None,
+        service_root=service_root,
+        version=version,
+        cache=cache,
+    )

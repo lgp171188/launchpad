@@ -4,14 +4,14 @@
 """Adapters for different objects to a revision cache."""
 
 __all__ = [
-    'revision_cache_for_distribution',
-    'revision_cache_for_distro_series',
-    'revision_cache_for_person',
-    'revision_cache_for_product',
-    'revision_cache_for_project_group',
-    'revision_cache_for_source_package',
-    'revision_cache_for_distro_source_package',
-    ]
+    "revision_cache_for_distribution",
+    "revision_cache_for_distro_series",
+    "revision_cache_for_person",
+    "revision_cache_for_product",
+    "revision_cache_for_project_group",
+    "revision_cache_for_source_package",
+    "revision_cache_for_distro_source_package",
+]
 
 
 from zope.component import getUtility
@@ -52,4 +52,5 @@ def revision_cache_for_source_package(source_package):
 def revision_cache_for_distro_source_package(distro_source_package):
     """Adapt a distro_source_package to a revision cache."""
     return getUtility(IRevisionCache).inDistributionSourcePackage(
-        distro_source_package)
+        distro_source_package
+    )

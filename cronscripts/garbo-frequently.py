@@ -15,8 +15,7 @@ import _pythonpath  # noqa: F401
 
 from lp.scripts.garbo import FrequentDatabaseGarbageCollector
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = FrequentDatabaseGarbageCollector()
     script.continue_on_failure = True
     script.lock_and_run()

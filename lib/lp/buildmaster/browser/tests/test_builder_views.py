@@ -4,36 +4,33 @@
 from functools import partial
 
 import soupmatchers
+import transaction
 from storm.locals import Store
 from testtools.matchers import MatchesAll
-import transaction
 from zope.component import getUtility
 
-from lp.buildmaster.enums import (
-    BuildFarmJobType,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobSource,
     InconsistentBuildFarmJobError,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.webapp.authorization import clear_cache
 from lp.soyuz.browser.build import getSpecificJobs
 from lp.testing import (
-    celebrity_logged_in,
-    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    celebrity_logged_in,
+    record_two_runs,
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import ADMIN_EMAIL
 from lp.testing.views import create_initialized_view
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuildSource,
-    )
+)
 
 
 class TestgetSpecificJobs(TestCaseWithFactory):
@@ -64,23 +61,26 @@ class TestgetSpecificJobs(TestCaseWithFactory):
     def test_getSpecificJobs(self):
         builds = self.createBuilds()
         specific_jobs = getSpecificJobs(
-            [build.build_farm_job for build in builds])
-        self.assertContentEqual(
-            builds, specific_jobs)
+            [build.build_farm_job for build in builds]
+        )
+        self.assertContentEqual(builds, specific_jobs)
 
     def test_getSpecificJobs_preserves_order(self):
         builds = self.createBuilds()
         specific_jobs = getSpecificJobs(
-            [build.build_farm_job for build in builds])
+            [build.build_farm_job for build in builds]
+        )
         self.assertEqual(
             [(build.id, build.__class__) for build in builds],
-            [(job.id, job.__class__) for job in specific_jobs])
+            [(job.id, job.__class__) for job in specific_jobs],
+        )
 
     def test_getSpecificJobs_duplicated_builds(self):
         builds = self.createBuilds()
         duplicated_builds = builds + builds
         specific_jobs = getSpecificJobs(
-            [build.build_farm_job for build in duplicated_builds])
+            [build.build_farm_job for build in duplicated_builds]
+        )
         self.assertEqual(len(duplicated_builds), len(specific_jobs))
 
     def test_getSpecificJobs_empty(self):
@@ -103,15 +103,15 @@ class TestgetSpecificJobs(TestCaseWithFactory):
     def test_getSpecificJobs_no_specific_job(self):
         build_farm_job_source = getUtility(IBuildFarmJobSource)
         build_farm_job = build_farm_job_source.new(
-            BuildFarmJobType.TRANSLATIONTEMPLATESBUILD)
+            BuildFarmJobType.TRANSLATIONTEMPLATESBUILD
+        )
         flush_database_updates()
         self.assertRaises(
-            InconsistentBuildFarmJobError,
-            getSpecificJobs, [build_farm_job])
+            InconsistentBuildFarmJobError, getSpecificJobs, [build_farm_job]
+        )
 
 
 class BuildCreationMixin:
-
     def markAsBuilt(self, build, builder):
         lfa = self.factory.makeLibraryFileAlias()
         build.updateStatus(BuildStatus.BUILDING, builder=builder)
@@ -127,19 +127,21 @@ class BuildCreationMixin:
         self.markAsBuilt(build, builder)
         return build
 
-    def createRecipeBuildWithBuilder(self, private_branch=False,
-                                     builder=None):
+    def createRecipeBuildWithBuilder(self, private_branch=False, builder=None):
         if builder is None:
             builder = self.factory.makeBuilder()
         branch2 = self.factory.makeAnyBranch()
         branch1 = self.factory.makeAnyBranch()
         build = self.factory.makeSourcePackageRecipeBuild(
             recipe=self.factory.makeSourcePackageRecipe(
-                branches=[branch1, branch2]))
+                branches=[branch1, branch2]
+            )
+        )
         if private_branch:
-            with celebrity_logged_in('admin'):
+            with celebrity_logged_in("admin"):
                 branch1.setPrivate(
-                    True, getUtility(IPersonSet).getByEmail(ADMIN_EMAIL))
+                    True, getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
+                )
         Store.of(build).flush()
         self.markAsBuilt(build, builder)
         return build
@@ -170,11 +172,13 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         # view.setupBuildList) issues a constant number of queries
         # when recipe builds are displayed.
         def builder_history_render():
-            create_initialized_view(self.builder, '+history').render()
+            create_initialized_view(self.builder, "+history").render()
+
         recorder1, recorder2 = record_two_runs(
             builder_history_render,
             partial(self.createRecipeBuildWithBuilder, builder=self.builder),
-            self.nb_objects)
+            self.nb_objects,
+        )
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
@@ -182,11 +186,13 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         # Rendering to builder's history issues a constant number of queries
         # when binary builds are displayed.
         def builder_history_render():
-            create_initialized_view(self.builder, '+history').render()
+            create_initialized_view(self.builder, "+history").render()
+
         recorder1, recorder2 = record_two_runs(
             builder_history_render,
             partial(self.createBinaryPackageBuild, builder=self.builder),
-            self.nb_objects)
+            self.nb_objects,
+        )
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
@@ -194,12 +200,16 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         # Rendering to builder's history issues a constant number of queries
         # when ppa binary builds are displayed.
         def builder_history_render():
-            create_initialized_view(self.builder, '+history').render()
+            create_initialized_view(self.builder, "+history").render()
+
         createBinaryPackageBuildInPPA = partial(
-            self.createBinaryPackageBuild, in_ppa=True, builder=self.builder)
+            self.createBinaryPackageBuild, in_ppa=True, builder=self.builder
+        )
         recorder1, recorder2 = record_two_runs(
-            builder_history_render, createBinaryPackageBuildInPPA,
-            self.nb_objects)
+            builder_history_render,
+            createBinaryPackageBuildInPPA,
+            self.nb_objects,
+        )
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
@@ -207,22 +217,26 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         # Rendering to builder's history issues a constant number of queries
         # when translation template builds are displayed.
         def builder_history_render():
-            create_initialized_view(self.builder, '+history').render()
+            create_initialized_view(self.builder, "+history").render()
+
         recorder1, recorder2 = record_two_runs(
             builder_history_render,
             partial(
                 self.createTranslationTemplateBuildWithBuilder,
-                builder=self.builder),
-            self.nb_objects)
+                builder=self.builder,
+            ),
+            self.nb_objects,
+        )
 
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_build_history_private_build_view(self):
         self.createRecipeBuildWithBuilder(builder=self.builder)
         self.createRecipeBuildWithBuilder(
-            private_branch=True, builder=self.builder)
+            private_branch=True, builder=self.builder
+        )
         clear_cache()
-        view = create_initialized_view(self.builder, '+history')
+        view = create_initialized_view(self.builder, "+history")
         view.setupBuildList()
 
         self.assertIn(None, view.complete_builds)
@@ -230,15 +244,20 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
     def test_build_history_private_build_display(self):
         self.createRecipeBuildWithBuilder(builder=self.builder)
         self.createRecipeBuildWithBuilder(
-            private_branch=True, builder=self.builder)
+            private_branch=True, builder=self.builder
+        )
         clear_cache()
-        view = create_initialized_view(self.builder, '+history')
+        view = create_initialized_view(self.builder, "+history")
         private_build_icon_matcher = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'Private build icon', 'img', attrs={'src': '/@@/private'}))
+                "Private build icon", "img", attrs={"src": "/@@/private"}
+            )
+        )
         private_build_matcher = soupmatchers.HTMLContains(
-            soupmatchers.Tag('Private build', 'td', text='Private job'))
+            soupmatchers.Tag("Private build", "td", text="Private job")
+        )
 
         self.assertThat(
             view.render(),
-            MatchesAll(private_build_matcher, private_build_icon_matcher))
+            MatchesAll(private_build_matcher, private_build_icon_matcher),
+        )

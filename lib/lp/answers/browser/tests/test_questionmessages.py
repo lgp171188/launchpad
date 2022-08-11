@@ -10,17 +10,15 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.coop.answersbugs.visibility import (
     TestHideMessageControlMixin,
     TestMessageVisibilityMixin,
-    )
-from lp.testing import (
-    BrowserTestCase,
-    person_logged_in,
-    )
+)
+from lp.testing import BrowserTestCase, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import find_tag_by_id
 
 
 class TestQuestionMessageVisibility(
-        BrowserTestCase, TestMessageVisibilityMixin):
+    BrowserTestCase, TestMessageVisibilityMixin
+):
 
     layer = DatabaseFunctionalLayer
 
@@ -38,18 +36,18 @@ class TestQuestionMessageVisibility(
     def getView(self, context, user=None, no_login=False):
         """Required by the mixin."""
         view = self.getViewBrowser(
-            context=context,
-            user=user,
-            no_login=no_login)
+            context=context, user=user, no_login=no_login
+        )
         return view
 
 
 class TestHideQuestionMessageControls(
-        BrowserTestCase, TestHideMessageControlMixin):
+    BrowserTestCase, TestHideMessageControlMixin
+):
 
     layer = DatabaseFunctionalLayer
 
-    control_text = 'mark-spam-0'
+    control_text = "mark-spam-0"
 
     def getContext(self, comment_owner=None):
         """Required by the mixin."""
@@ -64,9 +62,8 @@ class TestHideQuestionMessageControls(
     def getView(self, context, user=None, no_login=False):
         """Required by the mixin."""
         view = self.getViewBrowser(
-            context=context,
-            user=user,
-            no_login=no_login)
+            context=context, user=user, no_login=no_login
+        )
         return view
 
     def test_comment_owner_sees_hide_control(self):

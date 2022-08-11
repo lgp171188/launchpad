@@ -3,14 +3,12 @@
 
 """Unit tests for blueprints here."""
 
-from testtools.matchers import (
-    Equals,
-    MatchesStructure,
-    )
-from testtools.testcase import ExpectedException
 import transaction
+from testtools.matchers import Equals, MatchesStructure
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import isinstance as zope_isinstance
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -20,12 +18,9 @@ from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.specificationworkitem import (
     ISpecificationWorkItemSet,
     SpecificationWorkItemStatus,
-    )
+)
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
-from lp.registry.enums import (
-    SharingPermission,
-    SpecificationSharingPolicy,
-    )
+from lp.registry.enums import SharingPermission, SpecificationSharingPolicy
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.model.milestone import Milestone
 from lp.services.mail import stub
@@ -34,11 +29,11 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     login,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -89,13 +84,17 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         do_last.createDependency(do_next_lhs)
         do_last.createDependency(do_next_rhs)
         self.assertContentEqual(
-            [do_next_lhs, do_next_rhs], do_first.getBlockedSpecs())
+            [do_next_lhs, do_next_rhs], do_first.getBlockedSpecs()
+        )
         self.assertContentEqual(
-            [do_next_lhs, do_next_rhs, do_last], do_first.all_blocked())
+            [do_next_lhs, do_next_rhs, do_last], do_first.all_blocked()
+        )
         self.assertContentEqual(
-            [do_next_lhs, do_next_rhs], do_last.getDependencies())
+            [do_next_lhs, do_next_rhs], do_last.getDependencies()
+        )
         self.assertContentEqual(
-            [do_first, do_next_lhs, do_next_rhs], do_last.all_deps())
+            [do_first, do_next_lhs, do_next_rhs], do_last.all_deps()
+        )
 
     def test_all_deps_filters(self):
         # all_deps, when provided a user, shows only the dependencies the user
@@ -103,10 +102,12 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         sharing_policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=sharing_policy)
+            owner=owner, specification_sharing_policy=sharing_policy
+        )
         root = self.factory.makeBlueprint(product=product)
         proprietary_dep = self.factory.makeBlueprint(
-            product=product, information_type=InformationType.PROPRIETARY)
+            product=product, information_type=InformationType.PROPRIETARY
+        )
         public_dep = self.factory.makeBlueprint(product=product)
         root.createDependency(proprietary_dep)
         root.createDependency(public_dep)
@@ -114,10 +115,12 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         self.assertEqual([public_dep], root.all_deps())
         # The owner of the product can see everything.
         self.assertEqual(
-            [proprietary_dep, public_dep], root.all_deps(user=owner))
+            [proprietary_dep, public_dep], root.all_deps(user=owner)
+        )
         # A random person can't see the proprietary dependency.
         self.assertEqual(
-            [public_dep], root.all_deps(user=self.factory.makePerson()))
+            [public_dep], root.all_deps(user=self.factory.makePerson())
+        )
 
     def test_all_blocked_filters(self):
         # all_blocked, when provided a user, shows only the blocked specs the
@@ -125,25 +128,26 @@ class TestSpecificationDependencies(TestCaseWithFactory):
         sharing_policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=sharing_policy)
+            owner=owner, specification_sharing_policy=sharing_policy
+        )
         root = self.factory.makeBlueprint(product=product)
         proprietary_blocked = self.factory.makeBlueprint(
-            product=product, information_type=InformationType.PROPRIETARY)
+            product=product, information_type=InformationType.PROPRIETARY
+        )
         public_blocked = self.factory.makeBlueprint(product=product)
         with person_logged_in(owner):
             proprietary_blocked.createDependency(root)
         public_blocked.createDependency(root)
         # Anonymous (no user) requests only get public blocked specs.
-        self.assertEqual(
-            [public_blocked], root.all_blocked())
+        self.assertEqual([public_blocked], root.all_blocked())
         # The owner of the product can see everything.
         self.assertEqual(
-            [proprietary_blocked, public_blocked],
-            root.all_blocked(user=owner))
+            [proprietary_blocked, public_blocked], root.all_blocked(user=owner)
+        )
         # A random person can't see the proprietary blocked spec.
         self.assertEqual(
-            [public_blocked],
-            root.all_blocked(user=self.factory.makePerson()))
+            [public_blocked], root.all_blocked(user=self.factory.makePerson())
+        )
 
 
 class TestSpecificationSubscriptionSort(TestCaseWithFactory):
@@ -154,14 +158,17 @@ class TestSpecificationSubscriptionSort(TestCaseWithFactory):
         # Subscriptions are sorted by subscriber's displayname without regard
         # to case
         spec = self.factory.makeBlueprint()
-        bob = self.factory.makePerson(name='zbob', displayname='Bob')
-        ced = self.factory.makePerson(name='xed', displayname='ced')
-        dave = self.factory.makePerson(name='wdave', displayname='Dave')
+        bob = self.factory.makePerson(name="zbob", displayname="Bob")
+        ced = self.factory.makePerson(name="xed", displayname="ced")
+        dave = self.factory.makePerson(name="wdave", displayname="Dave")
         spec.subscribe(bob, bob, True)
         spec.subscribe(ced, bob, True)
         spec.subscribe(dave, bob, True)
-        sorted_subscriptions = [bob.displayname, ced.displayname,
-            dave.displayname]
+        sorted_subscriptions = [
+            bob.displayname,
+            ced.displayname,
+            dave.displayname,
+        ]
         people = [sub.person.displayname for sub in spec.subscriptions]
         self.assertEqual(sorted_subscriptions, people)
 
@@ -171,126 +178,138 @@ class TestSpecificationValidation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_specurl_validation_duplicate(self):
-        existing = self.factory.makeSpecification(specurl='http://ubuntu.com')
+        existing = self.factory.makeSpecification(specurl="http://ubuntu.com")
         spec = self.factory.makeSpecification()
         url = canonical_url(existing)
-        field = ISpecification['specurl'].bind(spec)
+        field = ISpecification["specurl"].bind(spec)
         e = self.assertRaises(
-            LaunchpadValidationError, field.validate, 'http://ubuntu.com')
+            LaunchpadValidationError, field.validate, "http://ubuntu.com"
+        )
         self.assertEqual(
             '%s is already registered by <a href="%s">%s</a>.'
-            % ('http://ubuntu.com', url, existing.title), str(e))
+            % ("http://ubuntu.com", url, existing.title),
+            str(e),
+        )
 
     def test_specurl_validation_valid(self):
         spec = self.factory.makeSpecification()
-        field = ISpecification['specurl'].bind(spec)
-        field.validate('http://example.com/nigelb')
+        field = ISpecification["specurl"].bind(spec)
+        field.validate("http://example.com/nigelb")
 
     def test_specurl_validation_escape(self):
         existing = self.factory.makeSpecification(
-            specurl='http://ubuntu.com/foo',
-            title='<script>alert("foo");</script>')
-        cleaned_title = '&lt;script&gt;alert(&quot;foo&quot;);&lt;/script&gt;'
+            specurl="http://ubuntu.com/foo",
+            title='<script>alert("foo");</script>',
+        )
+        cleaned_title = "&lt;script&gt;alert(&quot;foo&quot;);&lt;/script&gt;"
         spec = self.factory.makeSpecification()
         url = canonical_url(existing)
-        field = ISpecification['specurl'].bind(spec)
+        field = ISpecification["specurl"].bind(spec)
         e = self.assertRaises(
-            LaunchpadValidationError, field.validate, 'http://ubuntu.com/foo')
+            LaunchpadValidationError, field.validate, "http://ubuntu.com/foo"
+        )
         self.assertEqual(
             '%s is already registered by <a href="%s">%s</a>.'
-            % ('http://ubuntu.com/foo', url, cleaned_title), str(e))
+            % ("http://ubuntu.com/foo", url, cleaned_title),
+            str(e),
+        )
 
 
 class TestSpecificationWorkItemsNotifications(TestCaseWithFactory):
-    """ Test the notification related to SpecificationWorkItems on
+    """Test the notification related to SpecificationWorkItems on
     ISpecification."""
 
     layer = DatabaseFunctionalLayer
 
     def test_workitems_added_notification_message(self):
-        """ Test that we get a notification for setting work items on a new
+        """Test that we get a notification for setting work items on a new
         specification."""
         stub.test_emails = []
         spec = self.factory.makeSpecification()
         # For API requests, lazr.restful does the notification; for this
         # test we need to call ourselves.
-        with notify_modified(spec, ['workitems_text']):
+        with notify_modified(spec, ["workitems_text"]):
             new_work_item = {
-                'title': 'A work item',
-                'status': SpecificationWorkItemStatus.TODO,
-                'assignee': None,
-                'milestone': None,
-                'sequence': 0
+                "title": "A work item",
+                "status": SpecificationWorkItemStatus.TODO,
+                "assignee": None,
+                "milestone": None,
+                "sequence": 0,
             }
             login_person(spec.owner)
             spec.updateWorkItems([new_work_item])
         transaction.commit()
 
         self.assertEqual(1, len(stub.test_emails))
-        rationale = 'Work items set to:\nWork items:\n%s: %s' % (
-            new_work_item['title'],
-            new_work_item['status'].name)
+        rationale = "Work items set to:\nWork items:\n%s: %s" % (
+            new_work_item["title"],
+            new_work_item["status"].name,
+        )
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2].decode('UTF-8')
+        msg = email[2].decode("UTF-8")
         self.assertIn(rationale, msg)
 
     def test_workitems_deleted_notification_message(self):
-        """ Test that we get a notification for deleting a work item."""
+        """Test that we get a notification for deleting a work item."""
         stub.test_emails = []
         wi = self.factory.makeSpecificationWorkItem()
         spec = wi.specification
         # In production this notification is fired by lazr.restful, but we
         # need to do it ourselves in this test.
-        with notify_modified(spec, ['workitems_text']):
+        with notify_modified(spec, ["workitems_text"]):
             login_person(spec.owner)
             spec.updateWorkItems([])
         transaction.commit()
 
         self.assertEqual(1, len(stub.test_emails))
-        rationale = '- %s: %s' % (wi.title, wi.status.name)
+        rationale = "- %s: %s" % (wi.title, wi.status.name)
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2].decode('UTF-8')
+        msg = email[2].decode("UTF-8")
         self.assertIn(rationale, msg)
 
     def test_workitems_changed_notification_message(self):
-        """ Test that we get a notification about a work item status change.
+        """Test that we get a notification about a work item status change.
         This will be in the form of a line added and one deleted."""
         spec = self.factory.makeSpecification()
         original_status = SpecificationWorkItemStatus.TODO
         new_status = SpecificationWorkItemStatus.DONE
         original_work_item = {
-            'title': 'The same work item',
-            'status': original_status,
-            'assignee': None,
-            'milestone': None,
-            'sequence': 0
+            "title": "The same work item",
+            "status": original_status,
+            "assignee": None,
+            "milestone": None,
+            "sequence": 0,
         }
         new_work_item = {
-            'title': 'The same work item',
-            'status': new_status,
-            'assignee': None,
-            'milestone': None,
-            'sequence': 0
+            "title": "The same work item",
+            "status": new_status,
+            "assignee": None,
+            "milestone": None,
+            "sequence": 0,
         }
         login_person(spec.owner)
         spec.updateWorkItems([original_work_item])
         # In production this notification is fired by lazr.restful, but we
         # need to do it ourselves in this test.
-        with notify_modified(spec, ['workitems_text']):
+        with notify_modified(spec, ["workitems_text"]):
             stub.test_emails = []
             spec.updateWorkItems([new_work_item])
         transaction.commit()
 
         self.assertEqual(1, len(stub.test_emails))
-        rationale_removed = '- %s: %s' % (
-            original_work_item['title'], original_work_item['status'].name)
-        rationale_added = '+ %s: %s' % (
-            new_work_item['title'], new_work_item['status'].name)
+        rationale_removed = "- %s: %s" % (
+            original_work_item["title"],
+            original_work_item["status"].name,
+        )
+        rationale_added = "+ %s: %s" % (
+            new_work_item["title"],
+            new_work_item["status"].name,
+        )
         [email] = stub.test_emails
         # Actual message is part 2 of the email.
-        msg = email[2].decode('UTF-8')
+        msg = email[2].decode("UTF-8")
         self.assertIn(rationale_removed, msg)
         self.assertIn(rationale_added, msg)
 
@@ -303,17 +322,19 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.wi_header = self.factory.makeMilestone(
-            name='none-milestone-as-header')
+            name="none-milestone-as-header"
+        )
 
     def assertWorkItemsTextContains(self, spec, items):
         expected_lines = []
         for item in items:
-            if isinstance(item, SpecificationWorkItem):
-                line = ''
+            if zope_isinstance(item, SpecificationWorkItem):
+                line = ""
                 if item.assignee is not None:
                     line = "[%s] " % item.assignee.name
-                expected_lines.append("%s%s: %s" % (line, item.title,
-                                                    item.status.name))
+                expected_lines.append(
+                    "%s%s: %s" % (line, item.title, item.status.name)
+                )
             else:
                 self.assertIsInstance(item, Milestone)
                 if expected_lines != []:
@@ -328,24 +349,28 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
     def test_anonymous_newworkitem_not_allowed(self):
         spec = self.factory.makeSpecification()
         login(ANONYMOUS)
-        self.assertRaises(Unauthorized, getattr, spec, 'newWorkItem')
+        self.assertRaises(Unauthorized, getattr, spec, "newWorkItem")
 
     def test_owner_newworkitem_allowed(self):
         spec = self.factory.makeSpecification()
         login_person(spec.owner)
-        work_item = spec.newWorkItem(title='new-work-item', sequence=0)
+        work_item = spec.newWorkItem(title="new-work-item", sequence=0)
         self.assertIsInstance(work_item, SpecificationWorkItem)
 
     def test_newworkitem_uses_passed_arguments(self):
-        title = 'new-work-item'
+        title = "new-work-item"
         spec = self.factory.makeSpecification()
         assignee = self.factory.makePerson()
         milestone = self.factory.makeMilestone(product=spec.product)
         status = SpecificationWorkItemStatus.DONE
         login_person(spec.owner)
         work_item = spec.newWorkItem(
-            title=title, assignee=assignee, milestone=milestone,
-            status=status, sequence=0)
+            title=title,
+            assignee=assignee,
+            milestone=milestone,
+            status=status,
+            sequence=0,
+        )
         self.assertEqual(spec, work_item.specification)
         self.assertEqual(assignee, work_item.assignee)
         self.assertEqual(status, work_item.status)
@@ -354,41 +379,55 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
     def test_workitems_text_no_workitems(self):
         spec = self.factory.makeSpecification()
-        self.assertEqual('', spec.workitems_text)
+        self.assertEqual("", spec.workitems_text)
 
     def test_workitems_text_deleted_workitem(self):
         work_item = self.factory.makeSpecificationWorkItem(deleted=True)
-        self.assertEqual('', work_item.specification.workitems_text)
+        self.assertEqual("", work_item.specification.workitems_text)
 
     def test_workitems_text_single_workitem(self):
         work_item = self.factory.makeSpecificationWorkItem()
-        self.assertWorkItemsTextContains(work_item.specification,
-                                         [self.wi_header, work_item])
+        self.assertWorkItemsTextContains(
+            work_item.specification, [self.wi_header, work_item]
+        )
 
     def test_workitems_text_multi_workitems_all_statuses(self):
         spec = self.factory.makeSpecification()
-        work_item1 = self.factory.makeSpecificationWorkItem(specification=spec,
-            status=SpecificationWorkItemStatus.TODO)
-        work_item2 = self.factory.makeSpecificationWorkItem(specification=spec,
-            status=SpecificationWorkItemStatus.DONE)
-        work_item3 = self.factory.makeSpecificationWorkItem(specification=spec,
-            status=SpecificationWorkItemStatus.POSTPONED)
-        work_item4 = self.factory.makeSpecificationWorkItem(specification=spec,
-            status=SpecificationWorkItemStatus.INPROGRESS)
-        work_item5 = self.factory.makeSpecificationWorkItem(specification=spec,
-            status=SpecificationWorkItemStatus.BLOCKED)
-        work_items = [self.wi_header, work_item1, work_item2, work_item3,
-                      work_item4, work_item5]
+        work_item1 = self.factory.makeSpecificationWorkItem(
+            specification=spec, status=SpecificationWorkItemStatus.TODO
+        )
+        work_item2 = self.factory.makeSpecificationWorkItem(
+            specification=spec, status=SpecificationWorkItemStatus.DONE
+        )
+        work_item3 = self.factory.makeSpecificationWorkItem(
+            specification=spec, status=SpecificationWorkItemStatus.POSTPONED
+        )
+        work_item4 = self.factory.makeSpecificationWorkItem(
+            specification=spec, status=SpecificationWorkItemStatus.INPROGRESS
+        )
+        work_item5 = self.factory.makeSpecificationWorkItem(
+            specification=spec, status=SpecificationWorkItemStatus.BLOCKED
+        )
+        work_items = [
+            self.wi_header,
+            work_item1,
+            work_item2,
+            work_item3,
+            work_item4,
+            work_item5,
+        ]
         self.assertWorkItemsTextContains(spec, work_items)
 
     def test_workitems_text_with_milestone(self):
         spec = self.factory.makeSpecification()
         milestone = self.factory.makeMilestone(product=spec.product)
         login_person(spec.owner)
-        work_item = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='new-work-item',
+        work_item = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="new-work-item",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=milestone)
+            milestone=milestone,
+        )
         items = [milestone, work_item]
         self.assertWorkItemsTextContains(spec, items)
 
@@ -396,14 +435,18 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         spec = self.factory.makeSpecification()
         milestone = self.factory.makeMilestone(product=spec.product)
         login_person(spec.owner)
-        work_item1 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with default milestone',
+        work_item1 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with default milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=None)
-        work_item2 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with set milestone',
+            milestone=None,
+        )
+        work_item2 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with set milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=milestone)
+            milestone=milestone,
+        )
         items = [self.wi_header, work_item1, milestone, work_item2]
         self.assertWorkItemsTextContains(spec, items)
 
@@ -411,14 +454,18 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         spec = self.factory.makeSpecification()
         milestone = self.factory.makeMilestone(product=spec.product)
         login_person(spec.owner)
-        work_item1 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with set milestone',
+        work_item1 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with set milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=milestone)
-        work_item2 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with default milestone',
+            milestone=milestone,
+        )
+        work_item2 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with default milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=None)
+            milestone=None,
+        )
         items = [milestone, work_item1, self.wi_header, work_item2]
         self.assertWorkItemsTextContains(spec, items)
 
@@ -427,14 +474,18 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         milestone1 = self.factory.makeMilestone(product=spec.product)
         milestone2 = self.factory.makeMilestone(product=spec.product)
         login_person(spec.owner)
-        work_item1 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with first milestone',
+        work_item1 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with first milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=milestone1)
-        work_item2 = self.factory.makeSpecificationWorkItem(specification=spec,
-            title='Work item with second milestone',
+            milestone=milestone1,
+        )
+        work_item2 = self.factory.makeSpecificationWorkItem(
+            specification=spec,
+            title="Work item with second milestone",
             status=SpecificationWorkItemStatus.TODO,
-            milestone=milestone2)
+            milestone=milestone2,
+        )
         items = [milestone1, work_item1, milestone2, work_item2]
         self.assertWorkItemsTextContains(spec, items)
 
@@ -442,18 +493,22 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         assignee = self.factory.makePerson()
         work_item = self.factory.makeSpecificationWorkItem(assignee=assignee)
         self.assertWorkItemsTextContains(
-            work_item.specification, [self.wi_header, work_item])
+            work_item.specification, [self.wi_header, work_item]
+        )
 
     def test_work_items_property(self):
         spec = self.factory.makeSpecification()
         wi1 = self.factory.makeSpecificationWorkItem(
-            specification=spec, sequence=2)
+            specification=spec, sequence=2
+        )
         wi2 = self.factory.makeSpecificationWorkItem(
-            specification=spec, sequence=1)
+            specification=spec, sequence=1
+        )
         # This work item won't be included in the results of spec.work_items
         # because it is deleted.
         self.factory.makeSpecificationWorkItem(
-            specification=spec, sequence=3, deleted=True)
+            specification=spec, sequence=3, deleted=True
+        )
         # This work item belongs to a different spec so it won't be returned
         # by spec.work_items.
         self.factory.makeSpecificationWorkItem()
@@ -464,14 +519,21 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         a new entry for every element in the list given to it.
         """
         spec = self.factory.makeSpecification(
-            product=self.factory.makeProduct())
+            product=self.factory.makeProduct()
+        )
         milestone = self.factory.makeMilestone(product=spec.product)
         work_item1_data = dict(
-            title='Foo Bar', status=SpecificationWorkItemStatus.DONE,
-            assignee=spec.owner, milestone=None)
+            title="Foo Bar",
+            status=SpecificationWorkItemStatus.DONE,
+            assignee=spec.owner,
+            milestone=None,
+        )
         work_item2_data = dict(
-            title='Bar Foo', status=SpecificationWorkItemStatus.TODO,
-            assignee=None, milestone=milestone)
+            title="Bar Foo",
+            status=SpecificationWorkItemStatus.TODO,
+            assignee=None,
+            milestone=milestone,
+        )
 
         # We start with no work items.
         self.assertEqual([], list(spec.work_items))
@@ -485,20 +547,23 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         # The data dicts we pass to updateWorkItems() have no sequence because
         # that's taken from their position on the list, so we update our data
         # dicts with the sequence we expect our work items to have.
-        work_item1_data['sequence'] = 0
-        work_item2_data['sequence'] = 1
+        work_item1_data["sequence"] = 0
+        work_item2_data["sequence"] = 1
 
         # Assert that the work items ultimately inserted in the DB are exactly
         # what we expect them to be.
         created_wi1, created_wi2 = list(spec.work_items)
         self.assertThat(
-            created_wi1, MatchesStructure.byEquality(**work_item1_data))
+            created_wi1, MatchesStructure.byEquality(**work_item1_data)
+        )
         self.assertThat(
-            created_wi2, MatchesStructure.byEquality(**work_item2_data))
+            created_wi2, MatchesStructure.byEquality(**work_item2_data)
+        )
 
     def test_updateWorkItems_merges_with_existing_ones(self):
         spec = self.factory.makeSpecification(
-            product=self.factory.makeProduct())
+            product=self.factory.makeProduct()
+        )
         login_person(spec.owner)
         # Create two work-items in our database.
         wi1_data = self._createWorkItemAndReturnDataDict(spec)
@@ -507,11 +572,17 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
         # These are the work items we'll be inserting.
         new_wi1_data = dict(
-            title='Some Title', status=SpecificationWorkItemStatus.TODO,
-            assignee=None, milestone=None)
+            title="Some Title",
+            status=SpecificationWorkItemStatus.TODO,
+            assignee=None,
+            milestone=None,
+        )
         new_wi2_data = dict(
-            title='Other title', status=SpecificationWorkItemStatus.TODO,
-            assignee=None, milestone=None)
+            title="Other title",
+            status=SpecificationWorkItemStatus.TODO,
+            assignee=None,
+            milestone=None,
+        )
 
         # We want to insert the two work items above in the first and third
         # positions respectively, so the existing ones to be moved around
@@ -521,10 +592,10 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
         # Update our data dicts with the sequences we expect the work items in
         # our DB to have.
-        new_wi1_data['sequence'] = 0
-        wi1_data['sequence'] = 1
-        new_wi2_data['sequence'] = 2
-        wi2_data['sequence'] = 3
+        new_wi1_data["sequence"] = 0
+        wi1_data["sequence"] = 1
+        new_wi2_data["sequence"] = 2
+        wi2_data["sequence"] = 3
 
         self.assertEqual(4, len(spec.work_items))
         for data, obj in zip(work_items, list(spec.work_items)):
@@ -532,7 +603,8 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
     def _dup_work_items_set_up(self):
         spec = self.factory.makeSpecification(
-            product=self.factory.makeProduct())
+            product=self.factory.makeProduct()
+        )
         login_person(spec.owner)
         # Create two work-items in our database.
         wi1_data = self._createWorkItemAndReturnDataDict(spec)
@@ -541,15 +613,15 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         # Create a duplicate and a near duplicate, insert into DB.
         new_wi1_data = wi2_data.copy()
         new_wi2_data = new_wi1_data.copy()
-        new_wi2_data['status'] = SpecificationWorkItemStatus.DONE
+        new_wi2_data["status"] = SpecificationWorkItemStatus.DONE
         work_items = [new_wi1_data, wi1_data, new_wi2_data, wi2_data]
         spec.updateWorkItems(work_items)
 
         # Update our data dicts with the sequences to match data in DB
-        new_wi1_data['sequence'] = 0
-        wi1_data['sequence'] = 1
-        new_wi2_data['sequence'] = 2
-        wi2_data['sequence'] = 3
+        new_wi1_data["sequence"] = 0
+        wi1_data["sequence"] = 1
+        new_wi2_data["sequence"] = 2
+        wi2_data["sequence"] = 3
 
         self.assertEqual(4, len(spec.work_items))
         for data, obj in zip(work_items, spec.work_items):
@@ -562,7 +634,7 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
         # Test that we can insert another duplicate work item.
         new_wi3_data = work_items[0].copy()
-        new_wi3_data['sequence'] = 4
+        new_wi3_data["sequence"] = 4
         work_items.append(new_wi3_data)
         spec.updateWorkItems(work_items)
 
@@ -590,18 +662,21 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
         # This time we're only changing the existing work item; we'll change
         # its assignee and status.
-        wi_data.update(dict(status=SpecificationWorkItemStatus.DONE,
-                            assignee=spec.owner))
+        wi_data.update(
+            dict(status=SpecificationWorkItemStatus.DONE, assignee=spec.owner)
+        )
         spec.updateWorkItems([wi_data])
 
         self.assertEqual(1, len(spec.work_items))
         self.assertThat(
-            spec.work_items[0], MatchesStructure.byEquality(**wi_data))
+            spec.work_items[0], MatchesStructure.byEquality(**wi_data)
+        )
 
     def test_updateWorkItems_deletes_all_if_given_empty_list(self):
         work_item = self.factory.makeSpecificationWorkItem()
         spec = work_item.specification
         self.assertEqual(1, len(spec.work_items))
+        login_person(spec.owner)
         spec.updateWorkItems([])
         self.assertEqual(0, len(spec.work_items))
 
@@ -617,9 +692,10 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         # of the second will be changed.
         spec.updateWorkItems([wi2_data])
         self.assertEqual(1, len(spec.work_items))
-        wi2_data['sequence'] = 0
+        wi2_data["sequence"] = 0
         self.assertThat(
-            spec.work_items[0], MatchesStructure.byEquality(**wi2_data))
+            spec.work_items[0], MatchesStructure.byEquality(**wi2_data)
+        )
 
     def _createWorkItemAndReturnDataDict(self, spec):
         """Create a new work item for the given spec using the next available
@@ -634,21 +710,29 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
         else:
             sequence = max(wi.sequence for wi in spec.work_items) + 1
         wi = self.factory.makeSpecificationWorkItem(
-            specification=spec, sequence=sequence)
+            specification=spec, sequence=sequence
+        )
         del get_property_cache(spec).work_items
         return dict(
-            title=wi.title, status=wi.status, assignee=wi.assignee,
-            milestone=wi.milestone, sequence=sequence)
+            title=wi.title,
+            status=wi.status,
+            assignee=wi.assignee,
+            milestone=wi.milestone,
+            sequence=sequence,
+        )
 
     def test_workitemspecificationset_can_unlink_milestones(self):
         milestone_a = self.factory.makeMilestone()
         milestone_b = self.factory.makeMilestone()
         work_item_1 = self.factory.makeSpecificationWorkItem(
-            milestone=milestone_a)
+            milestone=milestone_a
+        )
         work_item_2 = self.factory.makeSpecificationWorkItem(
-            milestone=milestone_a)
+            milestone=milestone_a
+        )
         work_item_3 = self.factory.makeSpecificationWorkItem(
-            milestone=milestone_b)
+            milestone=milestone_b
+        )
 
         self.assertEqual(milestone_a, work_item_1.milestone)
         self.assertEqual(milestone_a, work_item_2.milestone)
@@ -669,31 +753,36 @@ class TestSpecificationInformationType(TestCaseWithFactory):
         """Ensure transitionToInformationType works."""
         public_private = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         product = self.factory.makeProduct(
-            specification_sharing_policy=public_private)
+            specification_sharing_policy=public_private
+        )
         spec = self.factory.makeSpecification(product=product)
         self.assertEqual(InformationType.PUBLIC, spec.information_type)
         removeSecurityProxy(spec.target)._ensurePolicies(
-            [InformationType.PROPRIETARY])
+            [InformationType.PROPRIETARY]
+        )
         with person_logged_in(spec.owner):
             result = spec.transitionToInformationType(
-                InformationType.PROPRIETARY, spec.owner)
+                InformationType.PROPRIETARY, spec.owner
+            )
             self.assertEqual(
-                InformationType.PROPRIETARY, spec.information_type)
+                InformationType.PROPRIETARY, spec.information_type
+            )
         self.assertTrue(result)
 
     def test_transitionToInformationType_no_change(self):
         """Return False on no change."""
         spec = self.factory.makeSpecification()
         with person_logged_in(spec.owner):
-            result = spec.transitionToInformationType(InformationType.PUBLIC,
-                                                      spec.owner)
+            result = spec.transitionToInformationType(
+                InformationType.PUBLIC, spec.owner
+            )
         self.assertFalse(result)
 
     def test_transitionToInformationType_forbidden(self):
         """Raise if specified type is not supported."""
         spec = self.factory.makeSpecification()
         with person_logged_in(spec.owner):
-            with ExpectedException(CannotChangeInformationType, '.*'):
+            with ExpectedException(CannotChangeInformationType, ".*"):
                 spec.transitionToInformationType(None, spec.owner)
 
     def test_transitionToInformationType_adds_grants_for_subscribers(self):
@@ -702,38 +791,54 @@ class TestSpecificationInformationType(TestCaseWithFactory):
         owner = self.factory.makePerson()
         public_private = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         product = self.factory.makeProduct(
-            owner=owner,
-            specification_sharing_policy=public_private)
+            owner=owner, specification_sharing_policy=public_private
+        )
         spec = self.factory.makeSpecification(product=product)
         subscriber_with_policy_grant = self.factory.makePerson()
         subscriber_without_policy_grant = self.factory.makePerson()
-        service = getUtility(IService, 'sharing')
+        service = getUtility(IService, "sharing")
         with person_logged_in(owner):
             service.sharePillarInformation(
-                product, subscriber_with_policy_grant, owner,
+                product,
+                subscriber_with_policy_grant,
+                owner,
                 permissions={
-            InformationType.PROPRIETARY: SharingPermission.ALL,
-            })
+                    InformationType.PROPRIETARY: SharingPermission.ALL,
+                },
+            )
             spec.subscribe(subscriber_with_policy_grant, owner)
             spec.subscribe(subscriber_without_policy_grant, owner)
 
             # The specification is public, hence subscribers do not need
             #  and do not have access grants.
             self.assertEqual(
-                [], service.getSharedSpecifications(
-                    product, subscriber_without_policy_grant, owner))
+                [],
+                service.getSharedSpecifications(
+                    product, subscriber_without_policy_grant, owner
+                ),
+            )
             self.assertEqual(
-                [], service.getSharedSpecifications(
-                    product, subscriber_with_policy_grant, owner))
+                [],
+                service.getSharedSpecifications(
+                    product, subscriber_with_policy_grant, owner
+                ),
+            )
 
             spec.transitionToInformationType(
-                InformationType.PROPRIETARY, owner)
+                InformationType.PROPRIETARY, owner
+            )
             # transitionToInformationType() added an artifact grant for
             # subscriber_without_policy_grant.
             self.assertEqual(
-                [spec], service.getSharedSpecifications(
-                    product, subscriber_without_policy_grant, owner))
+                [spec],
+                service.getSharedSpecifications(
+                    product, subscriber_without_policy_grant, owner
+                ),
+            )
             # No access grant was created for subscriber_with_policy_grant.
             self.assertEqual(
-                [], service.getSharedSpecifications(
-                    product, subscriber_with_policy_grant, owner))
+                [],
+                service.getSharedSpecifications(
+                    product, subscriber_with_policy_grant, owner
+                ),
+            )

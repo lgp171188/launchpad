@@ -15,9 +15,9 @@ Cut off access, slaughter connections and burn the database to the ground
 
 import _pythonpath  # noqa: F401
 
-from optparse import OptionParser
 import sys
 import time
+from optparse import OptionParser
 
 import psycopg2
 import psycopg2.extensions
@@ -25,7 +25,7 @@ import psycopg2.extensions
 from lp.services.database import activity_cols
 
 
-def connect(dbname='template1'):
+def connect(dbname="template1"):
     """Connect to the database, returning the DB-API connection."""
     if options.user is not None:
         return psycopg2.connect("dbname=%s user=%s" % (dbname, options.user))
@@ -45,8 +45,8 @@ def rollback_prepared_transactions(database):
 
     # Get a list of outstanding prepared transactions.
     cur.execute(
-            "SELECT gid FROM pg_prepared_xacts WHERE database=%(database)s",
-            vars())
+        "SELECT gid FROM pg_prepared_xacts WHERE database=%(database)s", vars()
+    )
     xids = [row[0] for row in cur.fetchall()]
     for xid in xids:
         cur.execute("ROLLBACK PREPARED %(xid)s", vars())
@@ -67,13 +67,17 @@ def still_open(database, max_wait=120):
     # of the backends are gone.
     start = time.time()
     while time.time() < start + max_wait:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT TRUE FROM pg_stat_activity
             WHERE
                 datname=%%s
                 AND %(pid)s != pg_backend_pid()
             LIMIT 1
-            """ % activity_cols(cur), [database])
+            """
+            % activity_cols(cur),
+            [database],
+        )
         if cur.fetchone() is None:
             return False
         time.sleep(0.6)  # Stats only updated every 500ms.
@@ -89,8 +93,8 @@ def massacre(database):
     # Allow connections to the doomed database if something turned this off,
     # such as an aborted run of this script.
     cur.execute(
-        "UPDATE pg_database SET datallowconn=TRUE WHERE datname=%s",
-        [database])
+        "UPDATE pg_database SET datallowconn=TRUE WHERE datname=%s", [database]
+    )
 
     # Rollback prepared transactions.
     rollback_prepared_transactions(database)
@@ -99,7 +103,8 @@ def massacre(database):
         # Stop connections to the doomed database.
         cur.execute(
             "UPDATE pg_database SET datallowconn=FALSE WHERE datname=%s",
-            [database])
+            [database],
+        )
 
         # New connections are disabled, but pg_stat_activity is only
         # updated every 500ms. Ensure that pg_stat_activity has
@@ -108,21 +113,25 @@ def massacre(database):
         time.sleep(1)
 
         # Terminate open connections.
-        cur.execute("""
+        cur.execute(
+            """
             SELECT %(pid)s, pg_terminate_backend(%(pid)s)
             FROM pg_stat_activity
             WHERE datname=%%s AND %(pid)s <> pg_backend_pid()
-            """ % activity_cols(cur), [database])
+            """
+            % activity_cols(cur),
+            [database],
+        )
         for pid, success in cur.fetchall():
             if not success:
-                print(
-                    "pg_terminate_backend(%s) failed" % pid, file=sys.stderr)
+                print("pg_terminate_backend(%s) failed" % pid, file=sys.stderr)
         con.close()
 
         if still_open(database):
             print(
                 "Unable to kill all backends! Database not destroyed.",
-                file=sys.stderr)
+                file=sys.stderr,
+            )
             return 9
 
         # Destroy the database.
@@ -140,8 +149,9 @@ def massacre(database):
         con.set_isolation_level(0)
         cur = con.cursor()
         cur.execute(
-                "UPDATE pg_database SET datallowconn=TRUE WHERE datname=%s",
-                [database])
+            "UPDATE pg_database SET datallowconn=TRUE WHERE datname=%s",
+            [database],
+        )
         con.close()
 
 
@@ -149,7 +159,8 @@ def rebuild(database, template):
     if still_open(template, 20):
         print(
             "Giving up waiting for connections to %s to drop." % template,
-            file=sys.stderr)
+            file=sys.stderr,
+        )
         report_open_connections(template)
         return 10
 
@@ -160,7 +171,10 @@ def rebuild(database, template):
     con.set_isolation_level(0)  # Autocommit required for CREATE DATABASE.
     create_db_cmd = """
         CREATE DATABASE %s WITH ENCODING='UTF8' TEMPLATE=%s
-        """ % (database, template)
+        """ % (
+        database,
+        template,
+    )
     # 8.4 allows us to create empty databases with a different locale
     # to template1 by using the template0 database as a template.
     # We make use of this feature so we don't have to care what locale
@@ -187,17 +201,21 @@ def rebuild(database, template):
 def report_open_connections(database):
     con = connect()
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT usename, datname, count(*)
         FROM pg_stat_activity
         WHERE %(pid)s != pg_backend_pid()
         GROUP BY usename, datname
         ORDER BY datname, usename
-        """ % activity_cols(cur))
+        """
+        % activity_cols(cur)
+    )
     for usename, datname, num_connections in cur.fetchall():
         print(
             "%d connections by %s to %s" % (num_connections, usename, datname),
-            file=sys.stderr)
+            file=sys.stderr,
+        )
     con.close()
 
 
@@ -206,24 +224,36 @@ options = None
 
 def main():
     parser = OptionParser("Usage: %prog [options] DBNAME")
-    parser.add_option("-U", "--user", dest="user", default=None,
-        help="Connect as USER", metavar="USER")
-    parser.add_option("-t", "--template", dest="template", default=None,
+    parser.add_option(
+        "-U",
+        "--user",
+        dest="user",
+        default=None,
+        help="Connect as USER",
+        metavar="USER",
+    )
+    parser.add_option(
+        "-t",
+        "--template",
+        dest="template",
+        default=None,
         help="Recreate database using DBNAME as a template database."
-            " If template0, database will be created in the C locale.",
-        metavar="DBNAME")
+        " If template0, database will be created in the C locale.",
+        metavar="DBNAME",
+    )
     global options
     (options, args) = parser.parse_args()
 
     if len(args) != 1:
-        parser.error('Must specify one, and only one, database to destroy')
+        parser.error("Must specify one, and only one, database to destroy")
 
     database = args[0]
 
     # Don't be stupid protection.
-    if database in ('template1', 'template0'):
+    if database in ("template1", "template0"):
         parser.error(
-            "Running this script against template1 or template0 is nuts.")
+            "Running this script against template1 or template0 is nuts."
+        )
 
     con = connect()
     cur = con.cursor()
@@ -231,11 +261,12 @@ def main():
     # Ensure the template database exists.
     if options.template is not None:
         cur.execute(
-            "SELECT TRUE FROM pg_database WHERE datname=%s",
-            [options.template])
+            "SELECT TRUE FROM pg_database WHERE datname=%s", [options.template]
+        )
         if cur.fetchone() is None:
             parser.error(
-                "Template database %s does not exist." % options.template)
+                "Template database %s does not exist." % options.template
+            )
     # If the database doesn't exist, no point attempting to drop it.
     cur.execute("SELECT TRUE FROM pg_database WHERE datname=%s", [database])
     db_exists = cur.fetchone() is not None
@@ -253,5 +284,5 @@ def main():
         return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

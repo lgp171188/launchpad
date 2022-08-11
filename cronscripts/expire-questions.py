@@ -10,7 +10,7 @@ The expiration period is configured through
 config.answertracker.days_before_expiration
 """
 
-__all__ = ['ExpireQuestions']
+__all__ = ["ExpireQuestions"]
 
 
 import _pythonpath  # noqa: F401
@@ -26,6 +26,7 @@ class ExpireQuestions(LaunchpadCronScript):
     didn't have any activity in the last X days. The number of days is
     configured through config.answertracker.days_before_expiration.
     """
+
     usage = "usage: %prog [options]"
     description = __doc__
 
@@ -35,7 +36,6 @@ class ExpireQuestions(LaunchpadCronScript):
         janitor.expireQuestions(self.txn)
 
 
-if __name__ == '__main__':
-    script = ExpireQuestions(
-        'expire-questions', dbuser='expire_questions')
+if __name__ == "__main__":
+    script = ExpireQuestions("expire-questions", dbuser="expire_questions")
     script.lock_and_run()

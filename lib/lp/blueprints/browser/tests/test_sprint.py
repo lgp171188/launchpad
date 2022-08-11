@@ -14,14 +14,11 @@ from lp.app.enums import InformationType
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     BrowserTestCase,
-    person_logged_in,
     RequestTimelineCollector,
-    )
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.matchers import (
-    BrowsesWithQueryLimit,
-    HasQueryCount,
-    )
+from lp.testing.matchers import BrowsesWithQueryLimit, HasQueryCount
 
 
 class TestSprintIndex(BrowserTestCase):
@@ -34,7 +31,10 @@ class TestSprintIndex(BrowserTestCase):
             for x in range(30):
                 sprint.attend(
                     self.factory.makePerson(),
-                    sprint.time_starts, sprint.time_ends, True)
+                    sprint.time_starts,
+                    sprint.time_ends,
+                    True,
+                )
         self.assertThat(sprint, BrowsesWithQueryLimit(21, sprint.owner))
 
     def test_blueprint_listing_query_count(self):
@@ -53,7 +53,8 @@ class TestSprintIndex(BrowserTestCase):
         sprint = self.factory.makeSprint()
         for count in range(10):
             blueprint = self.factory.makeSpecification(
-                information_type=InformationType.PROPRIETARY)
+                information_type=InformationType.PROPRIETARY
+            )
             owner = removeSecurityProxy(blueprint).owner
             link = removeSecurityProxy(blueprint).linkSprint(sprint, owner)
             link.acceptBy(sprint.owner)
@@ -71,7 +72,10 @@ class TestSprintDeleteView(BrowserTestCase):
         with person_logged_in(sprint.owner):
             sprint.attend(
                 self.factory.makePerson(),
-                sprint.time_starts, sprint.time_ends, True)
+                sprint.time_starts,
+                sprint.time_ends,
+                True,
+            )
         blueprint = self.factory.makeSpecification()
         blueprint.linkSprint(sprint, blueprint.owner).acceptBy(sprint.owner)
         return sprint
@@ -85,8 +89,11 @@ class TestSprintDeleteView(BrowserTestCase):
         browser = self.getViewBrowser(sprint, user=other_person)
         self.assertRaises(LinkNotFoundError, browser.getLink, "Delete sprint")
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, sprint_url + "/+delete",
-            user=other_person)
+            Unauthorized,
+            self.getUserBrowser,
+            sprint_url + "/+delete",
+            user=other_person,
+        )
 
     def test_delete_sprint_owner(self):
         # A sprint can be deleted by its owner, even if it has attendees and
@@ -109,7 +116,8 @@ class TestSprintDeleteView(BrowserTestCase):
         sprint_url = canonical_url(sprint)
         owner_url = canonical_url(sprint.owner)
         browser = self.getViewBrowser(
-            sprint, user=self.factory.makeRegistryExpert())
+            sprint, user=self.factory.makeRegistryExpert()
+        )
         browser.getLink("Delete sprint").click()
         browser.getControl("Delete sprint").click()
         self.assertEqual(owner_url, browser.url)

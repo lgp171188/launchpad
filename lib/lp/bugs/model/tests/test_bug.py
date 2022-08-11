@@ -1,10 +1,7 @@
 # Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pytz import UTC
@@ -16,43 +13,33 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.adapters.bugchange import BugTitleChange
-from lp.bugs.enums import (
-    BugNotificationLevel,
-    BugNotificationStatus,
-    )
+from lp.bugs.enums import BugNotificationLevel, BugNotificationStatus
 from lp.bugs.interfaces.bugnotification import IBugNotificationSet
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.mail.bugnotificationrecipients import BugNotificationRecipients
-from lp.bugs.model.bug import (
-    BugNotification,
-    BugSubscriptionInfo,
-    )
+from lp.bugs.model.bug import BugNotification, BugSubscriptionInfo
 from lp.registry.enums import BugSharingPolicy
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
-    )
+)
 from lp.registry.interfaces.person import PersonVisibility
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.testing import (
-    admin_logged_in,
     EventRecorder,
+    StormStatementRecorder,
+    TestCaseWithFactory,
+    admin_logged_in,
     feature_flags,
     login_person,
     person_logged_in,
     record_two_runs,
     set_feature_flag,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.matchers import (
-    Equals,
-    HasQueryCount,
-    LessThan,
-    )
+from lp.testing.matchers import Equals, HasQueryCount, LessThan
 
 
 class TestBug(TestCaseWithFactory):
@@ -79,7 +66,8 @@ class TestBug(TestCaseWithFactory):
         self.factory.makeBugTask(bug=bug, target=other_target)
         with person_logged_in(other_target.owner):
             other_nomination = bug.addNomination(
-                other_target.owner, other_series)
+                other_target.owner, other_series
+            )
         return bug, [nomination, other_nomination]
 
     def test_getNominations(self):
@@ -97,8 +85,8 @@ class TestBug(TestCaseWithFactory):
         # Calling markAsDuplicate(None) on a bug that is not currently a
         # duplicate works correctly, and does not raise an AttributeError.
         bug = self.factory.makeBug()
-        with ExpectedException(AssertionError, 'AttributeError not raised'):
-            with ExpectedException(AttributeError, ''):
+        with ExpectedException(AssertionError, "AttributeError not raised"):
+            with ExpectedException(AttributeError, ""):
                 with person_logged_in(self.factory.makePerson()):
                     bug.markAsDuplicate(None)
 
@@ -133,8 +121,8 @@ class TestBug(TestCaseWithFactory):
             bug.subscribe(team2, person)
             bug.subscribe(person, person)
         self.assertEqual(
-            {person, team1, team2},
-            set(bug.getSubscribersForPerson(person)))
+            {person, team1, team2}, set(bug.getSubscribersForPerson(person))
+        )
 
     def test_get_subscribers_for_person_from_duplicates_too(self):
         bug = self.factory.makeBug()
@@ -149,7 +137,8 @@ class TestBug(TestCaseWithFactory):
             bug.markAsDuplicate(real_bug)
         self.assertEqual(
             {person, team1, team2},
-            set(real_bug.getSubscribersForPerson(person)))
+            set(real_bug.getSubscribersForPerson(person)),
+        )
 
     def test_getSubscriptionsFromDuplicates(self):
         # getSubscriptionsFromDuplicates() will return only the earliest
@@ -165,14 +154,16 @@ class TestBug(TestCaseWithFactory):
         dupe2.markAsDuplicate(bug)
         dupe2.subscribe(user, user)
         self.assertEqual(
-            [subscription], list(bug.getSubscriptionsFromDuplicates()))
+            [subscription], list(bug.getSubscriptionsFromDuplicates())
+        )
 
     def test_get_also_notified_subscribers_with_private_team(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
         member = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=member, visibility=PersonVisibility.PRIVATE)
+            owner=member, visibility=PersonVisibility.PRIVATE
+        )
         with person_logged_in(member):
             product.addSubscription(team, member)
         self.assertTrue(team in bug.getAlsoNotifiedSubscribers())
@@ -182,7 +173,8 @@ class TestBug(TestCaseWithFactory):
         bug = self.factory.makeBug(target=product)
         member = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=member, visibility=PersonVisibility.PRIVATE)
+            owner=member, visibility=PersonVisibility.PRIVATE
+        )
         with person_logged_in(member):
             product.addSubscription(team, member)
         self.assertTrue(team in bug.getIndirectSubscribers())
@@ -192,7 +184,8 @@ class TestBug(TestCaseWithFactory):
         bug = self.factory.makeBug(target=product)
         member = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=member, visibility=PersonVisibility.PRIVATE)
+            owner=member, visibility=PersonVisibility.PRIVATE
+        )
         with person_logged_in(member):
             bug.subscribe(team, member)
         self.assertTrue(team in bug.getDirectSubscribers())
@@ -235,7 +228,8 @@ class TestBug(TestCaseWithFactory):
         return self.store.find(
             BugNotification,
             BugNotification.date_emailed == None,
-            BugNotification.status == status)
+            BugNotification.status == status,
+        )
 
     def _get_pending(self):
         return self._get_notifications(BugNotificationStatus.PENDING)
@@ -298,7 +292,8 @@ class TestBug(TestCaseWithFactory):
         dupe_bug = self.factory.makeBug()
         member = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=member, visibility=PersonVisibility.PRIVATE)
+            owner=member, visibility=PersonVisibility.PRIVATE
+        )
         with person_logged_in(member):
             dupe_bug.subscribe(team, member)
             dupe_bug.markAsDuplicate(bug)
@@ -313,7 +308,8 @@ class TestBug(TestCaseWithFactory):
             subscriber = self.factory.makePerson()
             with person_logged_in(subscriber):
                 subscription = bug.subscribe(
-                    subscriber, subscriber, level=level)
+                    subscriber, subscriber, level=level
+                )
             self.assertEqual(level, subscription.bug_notification_level)
 
     def test_resubscribe_with_level(self):
@@ -324,7 +320,8 @@ class TestBug(TestCaseWithFactory):
         levels = list(BugNotificationLevel.items)
         with person_logged_in(subscriber):
             subscription = bug.subscribe(
-                subscriber, subscriber, level=levels[-1])
+                subscriber, subscriber, level=levels[-1]
+            )
         for level in levels:
             with person_logged_in(subscriber):
                 bug.subscribe(subscriber, subscriber, level=level)
@@ -341,8 +338,7 @@ class TestBug(TestCaseWithFactory):
         # be two COMMENTS-level subscribers.
         with person_logged_in(bug.owner):
             bug.unsubscribe(bug.owner, bug.owner)
-        reversed_levels = sorted(
-            BugNotificationLevel.items, reverse=True)
+        reversed_levels = sorted(BugNotificationLevel.items, reverse=True)
         subscribers = []
         for level in reversed_levels:
             subscriber = self.factory.makePerson()
@@ -355,8 +351,10 @@ class TestBug(TestCaseWithFactory):
             # their level of subscription is such that they also receive
             # notifications at the current level.
             self.assertEqual(
-                set(subscribers), set(direct_subscribers),
-                "Subscribers did not match expected value.")
+                set(subscribers),
+                set(direct_subscribers),
+                "Subscribers did not match expected value.",
+            )
 
     def test_get_direct_subscribers_default_level(self):
         # If no `level` parameter is passed to getDirectSubscribers(),
@@ -378,8 +376,10 @@ class TestBug(TestCaseWithFactory):
         # subscribers at level LIFECYCLE, which everything is higher than.
         direct_subscribers = bug.getDirectSubscribers()
         self.assertEqual(
-            set(subscribers), set(direct_subscribers),
-            "Subscribers did not match expected value.")
+            set(subscribers),
+            set(direct_subscribers),
+            "Subscribers did not match expected value.",
+        )
 
     def test_get_direct_subscribers_with_details_other_subscriber(self):
         # getDirectSubscribersWithDetails() returns
@@ -393,10 +393,12 @@ class TestBug(TestCaseWithFactory):
         subscribee = self.factory.makePerson()
         with person_logged_in(subscriber):
             subscription = bug.subscribe(
-                subscribee, subscriber, level=BugNotificationLevel.LIFECYCLE)
+                subscribee, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
         self.assertContentEqual(
             [(subscribee, subscriber, subscription)],
-            bug.getDirectSubscribersWithDetails())
+            bug.getDirectSubscribersWithDetails(),
+        )
 
     def test_get_direct_subscribers_with_details_self_subscribed(self):
         # getDirectSubscribersWithDetails() returns
@@ -409,10 +411,12 @@ class TestBug(TestCaseWithFactory):
         subscriber = self.factory.makePerson()
         with person_logged_in(subscriber):
             subscription = bug.subscribe(
-                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE)
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
         self.assertContentEqual(
             [(subscriber, subscriber, subscription)],
-            bug.getDirectSubscribersWithDetails())
+            bug.getDirectSubscribersWithDetails(),
+        )
 
     def test_get_direct_subscribers_with_details_mute_excludes(self):
         # getDirectSubscribersWithDetails excludes muted subscriptions.
@@ -423,11 +427,11 @@ class TestBug(TestCaseWithFactory):
         subscriber = self.factory.makePerson()
         with person_logged_in(subscriber):
             bug.subscribe(
-                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE)
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
             bug.mute(subscriber, subscriber)
 
-        self.assertContentEqual(
-            [], bug.getDirectSubscribersWithDetails())
+        self.assertContentEqual([], bug.getDirectSubscribersWithDetails())
 
     def test_subscribers_from_dupes_uses_level(self):
         # When getSubscribersFromDuplicates() is passed a `level`
@@ -439,8 +443,7 @@ class TestBug(TestCaseWithFactory):
             duplicate_bug.markAsDuplicate(bug)
             # We unsubscribe the owner of the duplicate to avoid muddling
             # the results returned by getSubscribersFromDuplicates()
-            duplicate_bug.unsubscribe(
-                duplicate_bug.owner, duplicate_bug.owner)
+            duplicate_bug.unsubscribe(duplicate_bug.owner, duplicate_bug.owner)
         for level in BugNotificationLevel.items:
             subscriber = self.factory.makePerson()
             with person_logged_in(subscriber):
@@ -449,8 +452,8 @@ class TestBug(TestCaseWithFactory):
             # because the previous subscribers are subscribed at a lower
             # level.
             self.assertEqual(
-                (subscriber,),
-                bug.getSubscribersFromDuplicates(level=level))
+                (subscriber,), bug.getSubscribersFromDuplicates(level=level)
+            )
 
     def test_subscribers_from_dupes_overrides_using_level(self):
         # Bug.getSubscribersFromDuplicates() does not return subscribers
@@ -463,18 +466,20 @@ class TestBug(TestCaseWithFactory):
             duplicate_bug.markAsDuplicate(bug)
             # We unsubscribe the owner of the duplicate to avoid muddling
             # the results returned by getSubscribersFromDuplicates()
-            duplicate_bug.unsubscribe(
-                duplicate_bug.owner, duplicate_bug.owner)
+            duplicate_bug.unsubscribe(duplicate_bug.owner, duplicate_bug.owner)
         subscriber = self.factory.makePerson()
         with person_logged_in(subscriber):
             bug.subscribe(
-                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE)
+                subscriber, subscriber, level=BugNotificationLevel.LIFECYCLE
+            )
             duplicate_bug.subscribe(
-                subscriber, subscriber, level=BugNotificationLevel.METADATA)
+                subscriber, subscriber, level=BugNotificationLevel.METADATA
+            )
         duplicate_subscribers = bug.getSubscribersFromDuplicates()
         self.assertTrue(
             subscriber not in duplicate_subscribers,
-            "Subscriber should not be in duplicate_subscribers.")
+            "Subscriber should not be in duplicate_subscribers.",
+        )
 
     def test_getSubscriptionInfo(self):
         # getSubscriptionInfo() returns a BugSubscriptionInfo object.
@@ -497,19 +502,22 @@ class TestBug(TestCaseWithFactory):
         private_branch_owner = self.factory.makePerson()
         private_branch = self.factory.makeBranch(
             owner=private_branch_owner,
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA,
+        )
         with person_logged_in(private_branch_owner):
             bug.linkBranch(private_branch, private_branch.registrant)
         public_branch_owner = self.factory.makePerson()
-        public_branches = [
-            self.factory.makeBranch() for i in range(4)]
+        public_branches = [self.factory.makeBranch() for i in range(4)]
         with person_logged_in(public_branch_owner):
             for public_branch in public_branches:
                 bug.linkBranch(public_branch, public_branch.registrant)
         with StormStatementRecorder() as recorder:
             linked_branches = [
-                bug_branch.branch for bug_branch in
-                bug.getVisibleLinkedBranches(user=public_branch_owner)]
+                bug_branch.branch
+                for bug_branch in bug.getVisibleLinkedBranches(
+                    user=public_branch_owner
+                )
+            ]
             # We check that the query count is low, since that's
             # part of the point of the way that linked_branches is
             # implemented. If we try eager-loading all the linked
@@ -526,23 +534,26 @@ class TestBug(TestCaseWithFactory):
         bug = self.factory.makeBug()
         private_owner = self.factory.makePerson()
         [private_git_ref] = self.factory.makeGitRefs(
-            owner=private_owner, information_type=InformationType.USERDATA)
+            owner=private_owner, information_type=InformationType.USERDATA
+        )
         private_bmp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=private_git_ref)
+            source_ref=private_git_ref
+        )
         with person_logged_in(private_owner):
             bug.linkMergeProposal(private_bmp, private_bmp.registrant)
         public_owner = self.factory.makePerson()
-        public_git_refs = [
-            self.factory.makeGitRefs()[0] for i in range(4)]
+        public_git_refs = [self.factory.makeGitRefs()[0] for i in range(4)]
         public_bmps = [
             self.factory.makeBranchMergeProposalForGit(source_ref=git_ref)
-            for git_ref in public_git_refs]
+            for git_ref in public_git_refs
+        ]
         with person_logged_in(public_owner):
             for public_bmp in public_bmps:
                 bug.linkMergeProposal(public_bmp, public_bmp.registrant)
         with StormStatementRecorder() as recorder:
             linked_merge_proposals = list(
-                bug.getVisibleLinkedMergeProposals(user=public_owner))
+                bug.getVisibleLinkedMergeProposals(user=public_owner)
+            )
             # We check that the query count is low, since that's part of the
             # point of the way that linked_merge_proposals is implemented.
             self.assertThat(recorder, HasQueryCount(LessThan(7)))
@@ -565,7 +576,8 @@ class TestBug(TestCaseWithFactory):
             list(subs)  # Ensure they're pulled.
 
         recorder1, recorder2 = record_two_runs(
-            get_subscribers, create_subscriber, 3)
+            get_subscribers, create_subscriber, 3
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_getSubscribersFromDuplicates_with_recipients_query_count(self):
@@ -588,7 +600,8 @@ class TestBug(TestCaseWithFactory):
             list(subs)  # Ensure they're pulled.
 
         recorder1, recorder2 = record_two_runs(
-            get_subscribers, create_subscriber, 3)
+            get_subscribers, create_subscriber, 3
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_getAlsoNotifiedSubscribers_with_recipients_query_count(self):
@@ -606,8 +619,7 @@ class TestBug(TestCaseWithFactory):
                 bugtask.pillar.official_malone = True
             subscriber = self.factory.makePerson()
             with person_logged_in(subscriber):
-                bugtask.target.addSubscription(
-                    subscriber, subscriber)
+                bugtask.target.addSubscription(subscriber, subscriber)
 
         def get_subscribers():
             recipients = BugNotificationRecipients()
@@ -615,7 +627,8 @@ class TestBug(TestCaseWithFactory):
             list(subs)  # Ensure they're pulled.
 
         recorder1, recorder2 = record_two_runs(
-            get_subscribers, create_stuff, 3)
+            get_subscribers, create_stuff, 3
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_newMessage_default(self):
@@ -628,12 +641,41 @@ class TestBug(TestCaseWithFactory):
             self.assertIsInstance(recorder.events[0], ObjectCreatedEvent)
 
     def test_newMessage_send_notification_false(self):
-        # Notifications about new messages can be supressed.
+        # Notifications about new messages can be suppressed.
         bug = self.factory.makeBug()
         login_person(bug.owner)
         with EventRecorder() as recorder:
             bug.newMessage(owner=bug.owner, send_notifications=False)
             self.assertEqual(0, len(recorder.events))
+
+    def test_vulnerabilities_property(self):
+        vulnerability1 = self.factory.makeVulnerability()
+        vulnerability2 = self.factory.makeVulnerability()
+        vulnerability3 = self.factory.makeVulnerability()
+        bug1 = self.factory.makeBug()
+        bug2 = self.factory.makeBug()
+
+        with admin_logged_in():
+            vulnerability1.linkBug(bug1)
+            vulnerability2.linkBug(bug1)
+            vulnerability3.linkBug(bug1)
+            vulnerability3.linkBug(bug2)
+
+        self.assertEqual(
+            [
+                vulnerability1,
+                vulnerability2,
+                vulnerability3,
+            ],
+            bug1.vulnerabilities,
+        )
+
+        self.assertEqual(
+            [
+                vulnerability3,
+            ],
+            bug2.vulnerabilities,
+        )
 
 
 class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
@@ -655,8 +697,8 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
         # already a member of a team which is a direct subscriber and
         # maintains access after transition.
         bug = self.factory.makeBug()
-        person = self.factory.makePerson(name='teamowner')
-        team = self.factory.makeTeam(owner=person, name='team')
+        person = self.factory.makePerson(name="teamowner")
+        team = self.factory.makeTeam(owner=person, name="team")
         artifact = self.factory.makeAccessArtifact(bug)
         self.factory.makeAccessArtifactGrant(artifact, team)
         with person_logged_in(person):
@@ -667,14 +709,17 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
     def createBugTasksAndSubscribers(self, private_security_related=False):
         # Used with the various setPrivateAndSecurityRelated tests to create
         # a bug and add some initial subscribers.
-        bug_owner = self.factory.makePerson(name='bugowner')
+        bug_owner = self.factory.makePerson(name="bugowner")
         bug_supervisor = self.factory.makePerson(
-            name='bugsupervisor', email='bugsupervisor@example.com')
-        product_owner = self.factory.makePerson(name='productowner')
-        product_driver = self.factory.makePerson(name='productdriver')
+            name="bugsupervisor", email="bugsupervisor@example.com"
+        )
+        product_owner = self.factory.makePerson(name="productowner")
+        product_driver = self.factory.makePerson(name="productdriver")
         bug_product = self.factory.makeProduct(
-            owner=product_owner, bug_supervisor=bug_supervisor,
-            driver=product_driver)
+            owner=product_owner,
+            bug_supervisor=bug_supervisor,
+            driver=product_driver,
+        )
         bug = self.factory.makeBug(owner=bug_owner, target=bug_product)
         with person_logged_in(bug_owner):
             if private_security_related:
@@ -682,19 +727,26 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
             else:
                 information_type = InformationType.PUBLIC
             bug.transitionToInformationType(information_type, bug_owner)
-        owner_a = self.factory.makePerson(name='ownera')
+        owner_a = self.factory.makePerson(name="ownera")
         product_series_a = self.factory.makeProductSeries(
-            product=bug_product, owner=owner_a)
-        owner_b = self.factory.makePerson(name='ownerb')
+            product=bug_product, owner=owner_a
+        )
+        owner_b = self.factory.makePerson(name="ownerb")
         product_series_b = self.factory.makeProductSeries(
-            product=bug_product, owner=owner_b)
+            product=bug_product, owner=owner_b
+        )
         bugtask_a = self.factory.makeBugTask(bug=bug, target=product_series_a)
         bugtask_b = self.factory.makeBugTask(bug=bug, target=product_series_b)
         naked_bugtask_a = removeSecurityProxy(bugtask_a)
         naked_bugtask_b = removeSecurityProxy(bugtask_b)
         naked_default_bugtask = removeSecurityProxy(bug).default_bugtask
-        return (bug, bug_owner, naked_bugtask_a, naked_bugtask_b,
-                naked_default_bugtask)
+        return (
+            bug,
+            bug_owner,
+            naked_bugtask_a,
+            naked_bugtask_b,
+            naked_default_bugtask,
+        )
 
     def test_transition_to_PRIVATESECURITY_information_type(self):
         # When a bug is marked as PRIVATESECURITY, the direct subscribers
@@ -702,19 +754,27 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
         # - the bug reporter
         # - the person changing the state
 
-        (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
-            self.createBugTasksAndSubscribers())
+        (
+            bug,
+            bug_owner,
+            bugtask_a,
+            bugtask_b,
+            default_bugtask,
+        ) = self.createBugTasksAndSubscribers()
         initial_subscribers = {
-            self.factory.makePerson(name='subscriber'), bugtask_a.owner,
-            bug_owner}
+            self.factory.makePerson(name="subscriber"),
+            bugtask_a.owner,
+            bug_owner,
+        }
         initial_subscribers.update(bug.getDirectSubscribers())
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
                 bug.subscribe(subscriber, bug_owner)
-            who = self.factory.makePerson(name='who')
+            who = self.factory.makePerson(name="who")
             bug.transitionToInformationType(
-                InformationType.PRIVATESECURITY, who=who)
+                InformationType.PRIVATESECURITY, who=who
+            )
             subscribers = bug.getDirectSubscribers(filter_visible=True)
         self.assertContentEqual([bug_owner, who], subscribers)
 
@@ -724,15 +784,22 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
         # - the bug reporter
         # - the person changing the state
 
-        (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
-                self.createBugTasksAndSubscribers())
+        (
+            bug,
+            bug_owner,
+            bugtask_a,
+            bugtask_b,
+            default_bugtask,
+        ) = self.createBugTasksAndSubscribers()
         initial_subscribers = {
-            self.factory.makePerson(name='subscriber'), bug_owner}
+            self.factory.makePerson(name="subscriber"),
+            bug_owner,
+        }
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
                 bug.subscribe(subscriber, bug_owner)
-            who = self.factory.makePerson(name='who')
+            who = self.factory.makePerson(name="who")
             bug.transitionToInformationType(InformationType.USERDATA, who)
             subscribers = bug.getDirectSubscribers(filter_visible=True)
         self.assertContentEqual([bug_owner, who], subscribers)
@@ -743,18 +810,27 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
         # - the bug reporter
         # - and bug/pillar owners, drivers if they are already subscribed
 
-        (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
-            self.createBugTasksAndSubscribers(private_security_related=True))
+        (
+            bug,
+            bug_owner,
+            bugtask_a,
+            bugtask_b,
+            default_bugtask,
+        ) = self.createBugTasksAndSubscribers(private_security_related=True)
         initial_subscribers = {
-            self.factory.makePerson(), bug_owner, bugtask_a.pillar.driver,
-            bugtask_a.pillar.bug_supervisor}
+            self.factory.makePerson(),
+            bug_owner,
+            bugtask_a.pillar.driver,
+            bugtask_a.pillar.bug_supervisor,
+        }
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
                 bug.subscribe(subscriber, bug_owner)
-            who = self.factory.makePerson(name='who')
+            who = self.factory.makePerson(name="who")
             bug.transitionToInformationType(
-                InformationType.PUBLICSECURITY, who)
+                InformationType.PUBLICSECURITY, who
+            )
             subscribers = bug.getDirectSubscribers()
         expected_subscribers = {default_bugtask.pillar.driver, bug_owner}
         expected_subscribers.update(initial_subscribers)
@@ -764,22 +840,29 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
         # Subscriptions aren't altered when a bug is transitioned to the
         # PUBLIC information type.
 
-        (bug, bug_owner, bugtask_a, bugtask_b, default_bugtask) = (
-            self.createBugTasksAndSubscribers(private_security_related=True))
+        (
+            bug,
+            bug_owner,
+            bugtask_a,
+            bugtask_b,
+            default_bugtask,
+        ) = self.createBugTasksAndSubscribers(private_security_related=True)
         initial_subscribers = {
-            self.factory.makePerson(name='subscriber'), bug_owner,
-            bugtask_a.pillar.driver}
+            self.factory.makePerson(name="subscriber"),
+            bug_owner,
+            bugtask_a.pillar.driver,
+        }
 
         with person_logged_in(bug_owner):
             for subscriber in initial_subscribers:
                 bug.subscribe(subscriber, bug_owner)
-            who = self.factory.makePerson(name='who')
+            who = self.factory.makePerson(name="who")
             subscribers_before_public = set(bug.getDirectSubscribers())
             bug.transitionToInformationType(InformationType.PUBLIC, who)
         subscribers_after_public = set(bug.getDirectSubscribers())
         self.assertContentEqual(
-            subscribers_before_public,
-            subscribers_after_public)
+            subscribers_before_public, subscribers_after_public
+        )
 
 
 class TestBugPrivacy(TestCaseWithFactory):
@@ -789,9 +872,11 @@ class TestBugPrivacy(TestCaseWithFactory):
     def test_multipillar_proprietary_bugs_disallowed(self):
         # A multi-pillar bug cannot be made proprietary.
         p1 = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         p2 = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PUBLIC_OR_PROPRIETARY
+        )
         bug = self.factory.makeBug(target=p1)
         self.factory.makeBugTask(bug=bug, target=p2)
         login_person(bug.owner)
@@ -799,7 +884,9 @@ class TestBugPrivacy(TestCaseWithFactory):
             CannotChangeInformationType,
             "Proprietary bugs can only affect one project.",
             bug.transitionToInformationType,
-            InformationType.PROPRIETARY, bug.owner)
+            InformationType.PROPRIETARY,
+            bug.owner,
+        )
         bug.transitionToInformationType(InformationType.USERDATA, bug.owner)
         self.assertTrue(bug.private)
 
@@ -809,29 +896,34 @@ class TestBugPrivacy(TestCaseWithFactory):
         # to create one at the moment.
         bug = self.factory.makeBug()
         private_bug = self.factory.makeBug(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         private_sec_bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PRIVATESECURITY
+        )
         mapping = (
             (bug, InformationType.PUBLIC),
             (private_bug, InformationType.USERDATA),
             (private_sec_bug, InformationType.PRIVATESECURITY),
-            )
+        )
         [self.assertEqual(m[1], m[0].information_type) for m in mapping]
 
     def test_accesspolicyartifacts_updated(self):
         # transitionToTarget updates the AccessPolicyArtifacts related
         # to the bug.
         bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY)
+            information_type=InformationType.PRIVATESECURITY
+        )
 
         with admin_logged_in():
             product = bug.default_bugtask.product
             bug.transitionToInformationType(
-                InformationType.USERDATA, bug.owner)
+                InformationType.USERDATA, bug.owner
+            )
 
         [policy] = getUtility(IAccessPolicySource).find(
-            [(product, InformationType.USERDATA)])
+            [(product, InformationType.USERDATA)]
+        )
         self.assertContentEqual([policy], get_policies_for_artifact(bug))
 
     def test_private_to_public_information_type(self):
@@ -839,7 +931,8 @@ class TestBugPrivacy(TestCaseWithFactory):
         # type.
         owner = self.factory.makePerson()
         bug = self.factory.makeBug(
-            information_type=InformationType.USERDATA, owner=owner)
+            information_type=InformationType.USERDATA, owner=owner
+        )
         with person_logged_in(owner):
             bug.setPrivate(False, owner)
         self.assertEqual(InformationType.PUBLIC, bug.information_type)
@@ -849,18 +942,19 @@ class TestBugPrivacy(TestCaseWithFactory):
         # correct information type.
         owner = self.factory.makePerson()
         bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY, owner=owner)
+            information_type=InformationType.PRIVATESECURITY, owner=owner
+        )
         with person_logged_in(owner):
             bug.setPrivate(False, owner)
-        self.assertEqual(
-            InformationType.PUBLICSECURITY, bug.information_type)
+        self.assertEqual(InformationType.PUBLICSECURITY, bug.information_type)
 
     def test_private_sec_to_public_information_type(self):
         # A private security bug transitioning to public has the correct
         # information type.
         owner = self.factory.makePerson()
         bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY, owner=owner)
+            information_type=InformationType.PRIVATESECURITY, owner=owner
+        )
         with person_logged_in(owner):
             bug.transitionToInformationType(InformationType.PUBLIC, owner)
         self.assertEqual(InformationType.PUBLIC, bug.information_type)
@@ -885,11 +979,17 @@ class TestBugPrivacy(TestCaseWithFactory):
 
         targets = [product, productseries, distro, distroseries, dsp, sp]
         pillars = [
-            product, productseries.product, distro, distroseries.distribution,
-            dsp.distribution, sp.distribution]
+            product,
+            productseries.product,
+            distro,
+            distroseries.distribution,
+            dsp.distribution,
+            sp.distribution,
+        ]
 
         bug = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA)
+            target=product, information_type=InformationType.USERDATA
+        )
         for target in targets[1:]:
             self.factory.makeBugTask(bug, target=target)
         [artifact] = getUtility(IAccessArtifactSource).ensure([bug])
@@ -897,29 +997,39 @@ class TestBugPrivacy(TestCaseWithFactory):
         removeSecurityProxy(bug)._reconcileAccess()
         self.assertContentEqual(
             getUtility(IAccessPolicySource).find(
-                (pillar, InformationType.USERDATA) for pillar in pillars),
-            get_policies_for_artifact(bug))
+                (pillar, InformationType.USERDATA) for pillar in pillars
+            ),
+            get_policies_for_artifact(bug),
+        )
 
     def test_getAllowedInformationTypes(self):
         # A bug's information type must be in the intersection of its
         # pillars' permitted information types. Currently that means
         # it's just one of the usual four.
         self.assertContentEqual(
-            [InformationType.PUBLIC, InformationType.PUBLICSECURITY,
-             InformationType.PRIVATESECURITY, InformationType.USERDATA],
-            self.factory.makeBug().getAllowedInformationTypes(None))
+            [
+                InformationType.PUBLIC,
+                InformationType.PUBLICSECURITY,
+                InformationType.PRIVATESECURITY,
+                InformationType.USERDATA,
+            ],
+            self.factory.makeBug().getAllowedInformationTypes(None),
+        )
 
     def test_getAllowedInformationTypes_includes_current(self):
         # A bug's allowed information types must include its current
         # information type even if said type is not in the allowed types.
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(
-            target=product, information_type=InformationType.PUBLICSECURITY)
-        removeSecurityProxy(product).bug_sharing_policy = (
-            BugSharingPolicy.FORBIDDEN)
+            target=product, information_type=InformationType.PUBLICSECURITY
+        )
+        removeSecurityProxy(
+            product
+        ).bug_sharing_policy = BugSharingPolicy.FORBIDDEN
         self.assertContentEqual(
             [InformationType.PUBLICSECURITY],
-            bug.getAllowedInformationTypes(None))
+            bug.getAllowedInformationTypes(None),
+        )
 
     def test_transitionToInformationType_respects_allowed_proprietary(self):
         # transitionToInformationType rejects types that aren't allowed
@@ -928,21 +1038,28 @@ class TestBugPrivacy(TestCaseWithFactory):
         with person_logged_in(product.owner):
             bug = self.factory.makeBug(target=product)
             self.assertRaisesWithContent(
-                CannotChangeInformationType, "Forbidden by project policy.",
+                CannotChangeInformationType,
+                "Forbidden by project policy.",
                 bug.transitionToInformationType,
-                InformationType.PROPRIETARY, bug.owner)
+                InformationType.PROPRIETARY,
+                bug.owner,
+            )
 
     def test_transitionToInformationType_respects_allowed_public(self):
         # transitionToInformationType rejects types that aren't allowed
         # for the bug.
         product = self.factory.makeProduct(
-            bug_sharing_policy=BugSharingPolicy.PROPRIETARY)
+            bug_sharing_policy=BugSharingPolicy.PROPRIETARY
+        )
         with person_logged_in(product.owner):
             bug = self.factory.makeBug(target=product)
             self.assertRaisesWithContent(
-                CannotChangeInformationType, "Forbidden by project policy.",
+                CannotChangeInformationType,
+                "Forbidden by project policy.",
                 bug.transitionToInformationType,
-                InformationType.PUBLIC, bug.owner)
+                InformationType.PUBLIC,
+                bug.owner,
+            )
 
 
 class TestBugPrivateAndSecurityRelatedUpdatesSpecialCase(TestCaseWithFactory):
@@ -957,15 +1074,16 @@ class TestBugPrivateAndSecurityRelatedUpdatesSpecialCase(TestCaseWithFactory):
         # Launchpad norm.
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         ubuntu = removeSecurityProxy(ubuntu)
-        ubuntu.bug_supervisor = self.factory.makePerson(name='supervisor')
+        ubuntu.bug_supervisor = self.factory.makePerson(name="supervisor")
         bug = self.factory.makeBug(
-            information_type=InformationType.PRIVATESECURITY,
-            target=ubuntu)
+            information_type=InformationType.PRIVATESECURITY, target=ubuntu
+        )
         bug = removeSecurityProxy(bug)
         initial_subscribers = bug.getDirectSubscribers()
         self.assertTrue(ubuntu.bug_supervisor not in initial_subscribers)
         bug.transitionToInformationType(
-            InformationType.USERDATA, who=bug.owner)
+            InformationType.USERDATA, who=bug.owner
+        )
         subscribers = bug.getDirectSubscribers()
         self.assertContentEqual(initial_subscribers, subscribers)
         ubuntu.bug_supervisor = None
@@ -984,33 +1102,36 @@ class TestBugActivityMethods(TestCaseWithFactory):
             for days_ago in activity_ages:
                 activity = BugTitleChange(
                     when=self.now - timedelta(days=days_ago),
-                    person=bug.owner, what_changed='title',
-                    old_value='foo', new_value='baz')
+                    person=bug.owner,
+                    what_changed="title",
+                    old_value="foo",
+                    new_value="baz",
+                )
                 bug.addChange(activity)
 
     def test_getActivityForDateRange_returns_items_between_dates(self):
         # Bug.getActivityForDateRange() will return the activity for
         # that bug that falls within a given date range.
-        bug = self.factory.makeBug(
-            date_created=self.now - timedelta(days=365))
+        bug = self.factory.makeBug(date_created=self.now - timedelta(days=365))
         self._makeActivityForBug(bug, activity_ages=[200, 100])
         start_date = self.now - timedelta(days=250)
         end_date = self.now - timedelta(days=150)
         activity = bug.getActivityForDateRange(
-            start_date=start_date, end_date=end_date)
+            start_date=start_date, end_date=end_date
+        )
         expected_activity = bug.activity[1:2]
         self.assertContentEqual(expected_activity, activity)
 
     def test_getActivityForDateRange_is_inclusive_of_date_limits(self):
         # Bug.getActivityForDateRange() will return the activity that
         # falls on the start_ and end_ dates.
-        bug = self.factory.makeBug(
-            date_created=self.now - timedelta(days=365))
+        bug = self.factory.makeBug(date_created=self.now - timedelta(days=365))
         self._makeActivityForBug(bug, activity_ages=[300, 200, 100])
         start_date = self.now - timedelta(days=300)
         end_date = self.now - timedelta(days=100)
         activity = bug.getActivityForDateRange(
-            start_date=start_date, end_date=end_date)
+            start_date=start_date, end_date=end_date
+        )
         expected_activity = bug.activity[1:]
         self.assertContentEqual(expected_activity, activity)
 
@@ -1067,7 +1188,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
+            set_feature_flag("bugs.autoconfirm.enabled_product_names", "*")
             bug = self.factory.makeBug()
             person = self.factory.makePerson()
             with person_logged_in(person):
@@ -1079,7 +1200,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
+            set_feature_flag("bugs.autoconfirm.enabled_product_names", "*")
             bug = self.factory.makeBug()
             person = self.factory.makePerson()
             with person_logged_in(bug.owner):
@@ -1093,7 +1214,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
+            set_feature_flag("bugs.autoconfirm.enabled_product_names", "*")
             bug = self.factory.makeBug()
             duplicate_bug = self.factory.makeBug()
             with person_logged_in(duplicate_bug.owner):
@@ -1105,7 +1226,7 @@ class TestBugAutoConfirmation(TestCaseWithFactory):
         # When feature flag code is removed, remove the next two lines and
         # dedent the rest.
         with feature_flags():
-            set_feature_flag('bugs.autoconfirm.enabled_product_names', '*')
+            set_feature_flag("bugs.autoconfirm.enabled_product_names", "*")
             bug = self.factory.makeBug()
             with person_logged_in(bug.owner):
                 duplicate_bug = self.factory.makeBug(owner=bug.owner)

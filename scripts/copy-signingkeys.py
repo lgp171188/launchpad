@@ -9,8 +9,8 @@ import _pythonpath  # noqa: F401
 from lp.archivepublisher.scripts.copy_signingkeys import CopySigningKeysScript
 from lp.services.config import config
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = CopySigningKeysScript(
-        'copy-signingkeys', dbuser=config.archivepublisher.dbuser)
+        "copy-signingkeys", dbuser=config.archivepublisher.dbuser
+    )
     script.lock_and_run()

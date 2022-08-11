@@ -7,47 +7,47 @@
 # in this directory.
 
 __all__ = [
-    'BadStatus',
-    'BranchAlreadyRegistered',
-    'BranchCreationForbidden',
-    'BranchNameInUse',
-    'BranchUniqueNameConflict',
-    'CannotHaveLinkedBranch',
-    'FileBugGotProductAndDistro',
-    'FileBugMissingProductOrDistribution',
-    'GitRepositoryNotFound',
-    'InactiveAccount',
-    'InvalidBranchIdentifier',
-    'InvalidBranchName',
-    'InvalidBranchUniqueName',
-    'InvalidBranchUrl',
-    'InvalidPath',
-    'InvalidProductName',
-    'InvalidSourcePackageName',
-    'OopsOccurred',
-    'NoBranchWithID',
-    'NoLinkedBranch',
-    'NoSuchBranch',
-    'NoSuchBug',
-    'NoSuchCodeImportJob',
-    'NoSuchDistribution',
-    'NoSuchDistroSeries',
-    'NoSuchPackage',
-    'NoSuchPerson',
-    'NoSuchPersonWithName',
-    'NoSuchProduct',
-    'NoSuchProductSeries',
-    'NoSuchSourcePackageName',
-    'NoSuchTeamMailingList',
-    'NotFound',
-    'NotInTeam',
-    'NoUrlForBranch',
-    'PathTranslationError',
-    'PermissionDenied',
-    'RequiredParameterMissing',
-    'Unauthorized',
-    'UnexpectedStatusReport',
-    ]
+    "BadStatus",
+    "BranchAlreadyRegistered",
+    "BranchCreationForbidden",
+    "BranchNameInUse",
+    "BranchUniqueNameConflict",
+    "CannotHaveLinkedBranch",
+    "FileBugGotProductAndDistro",
+    "FileBugMissingProductOrDistribution",
+    "GitRepositoryNotFound",
+    "InactiveAccount",
+    "InvalidBranchIdentifier",
+    "InvalidBranchName",
+    "InvalidBranchUniqueName",
+    "InvalidBranchUrl",
+    "InvalidPath",
+    "InvalidProductName",
+    "InvalidSourcePackageName",
+    "OopsOccurred",
+    "NoBranchWithID",
+    "NoLinkedBranch",
+    "NoSuchBranch",
+    "NoSuchBug",
+    "NoSuchCodeImportJob",
+    "NoSuchDistribution",
+    "NoSuchDistroSeries",
+    "NoSuchPackage",
+    "NoSuchPerson",
+    "NoSuchPersonWithName",
+    "NoSuchProduct",
+    "NoSuchProductSeries",
+    "NoSuchSourcePackageName",
+    "NoSuchTeamMailingList",
+    "NotFound",
+    "NotInTeam",
+    "NoUrlForBranch",
+    "PathTranslationError",
+    "PermissionDenied",
+    "RequiredParameterMissing",
+    "Unauthorized",
+    "UnexpectedStatusReport",
+]
 
 
 from lp.services.xmlrpc import LaunchpadFault
@@ -69,8 +69,9 @@ class NoSuchPerson(LaunchpadFault):
 
     error_code = 20
     msg_template = (
-        'Invalid %(type)s: No user with the email address '
-        '"%(email_address)s" was found')
+        "Invalid %(type)s: No user with the email address "
+        '"%(email_address)s" was found'
+    )
 
     def __init__(self, email_address, type="user"):
         LaunchpadFault.__init__(self, type=type, email_address=email_address)
@@ -112,7 +113,8 @@ class FileBugMissingProductOrDistribution(LaunchpadFault):
     error_code = 60
     msg_template = (
         "Required arguments missing. You must specify either a product or "
-        "distribution in which the bug exists.")
+        "distribution in which the bug exists."
+    )
 
 
 class FileBugGotProductAndDistro(LaunchpadFault):
@@ -124,7 +126,8 @@ class FileBugGotProductAndDistro(LaunchpadFault):
     error_code = 70
     msg_template = (
         "Too many arguments. You may specify either a product or a "
-        "distribution, but not both.")
+        "distribution, but not both."
+    )
 
 
 class NoSuchDistribution(LaunchpadFault):
@@ -163,7 +166,8 @@ class BranchCreationForbidden(LaunchpadFault):
     error_code = 110
     msg_template = (
         "You are not allowed to create a branch for project: "
-        "%(parameter_name)s")
+        "%(parameter_name)s"
+    )
 
     def __init__(self, parameter_name):
         LaunchpadFault.__init__(self, parameter_name=parameter_name)
@@ -193,7 +197,7 @@ class NoSuchTeamMailingList(LaunchpadFault):
     """There is no such team mailing list with the given name."""
 
     error_code = 140
-    msg_template = 'No such team mailing list: %(team_name)s'
+    msg_template = "No such team mailing list: %(team_name)s"
 
     def __init__(self, team_name):
         LaunchpadFault.__init__(self, team_name=team_name)
@@ -207,8 +211,9 @@ class UnexpectedStatusReport(LaunchpadFault):
     """
 
     error_code = 150
-    msg_template = ('Unexpected status report "%(status)s" '
-                    'for team: %(team_name)s')
+    msg_template = (
+        'Unexpected status report "%(status)s" ' "for team: %(team_name)s"
+    )
 
     def __init__(self, team_name, status):
         LaunchpadFault.__init__(self, team_name=team_name, status=status)
@@ -228,7 +233,7 @@ class NoLinkedBranch(LaunchpadFault):
     """The object has no branch registered with it."""
 
     error_code = 170
-    msg_template = ('%(object_name)s has no default branch.')
+    msg_template = "%(object_name)s has no default branch."
 
     def __init__(self, component):
         LaunchpadFault.__init__(self, object_name=component.displayname)
@@ -239,19 +244,20 @@ class NoSuchProductSeries(LaunchpadFault):
 
     error_code = 180
     msg_template = (
-        'Project %(product_name)s has no series called "%(series_name)s"')
+        'Project %(product_name)s has no series called "%(series_name)s"'
+    )
 
     def __init__(self, series_name, product):
         LaunchpadFault.__init__(
-            self, series_name=series_name, product_name=product.name)
+            self, series_name=series_name, product_name=product.name
+        )
 
 
 class InvalidBranchIdentifier(LaunchpadFault):
     """The branch identifier didn't begin with a tilde."""
 
     error_code = 190
-    msg_template = (
-        'Invalid branch identifier: %(branch_path)r')
+    msg_template = "Invalid branch identifier: %(branch_path)r"
 
     def __init__(self, branch_path):
         LaunchpadFault.__init__(self, branch_path=branch_path)
@@ -261,7 +267,7 @@ class NoSuchPersonWithName(LaunchpadFault):
     """There's no Person with the specified name registered in Launchpad."""
 
     error_code = 200
-    msg_template = 'No such person or team: %(person_name)s'
+    msg_template = "No such person or team: %(person_name)s"
 
     def __init__(self, person_name):
         LaunchpadFault.__init__(self, person_name=person_name)
@@ -287,15 +293,18 @@ class CannotHaveLinkedBranch(LaunchpadFault):
     error_code = 230
     msg_template = (
         "%(component_name)s is a %(component_type)s, and a "
-        "%(component_type)s cannot have a default branch.")
+        "%(component_type)s cannot have a default branch."
+    )
 
     def __init__(self, component):
         component_type = component.__class__.__name__.lower()
-        if component_type == 'projectgroup':
-            component_type = 'project group'
+        if component_type == "projectgroup":
+            component_type = "project group"
         LaunchpadFault.__init__(
-            self, component_name=component.displayname,
-            component_type=component_type)
+            self,
+            component_name=component.displayname,
+            component_type=component_type,
+        )
 
 
 class InvalidProductName(LaunchpadFault):
@@ -320,11 +329,12 @@ class NotInTeam(LaunchpadFault):
     """
 
     error_code = 250
-    msg_template = '%(person_name)s is not a member of %(team_name)s.'
+    msg_template = "%(person_name)s is not a member of %(team_name)s."
 
     def __init__(self, person_name, team_name):
         LaunchpadFault.__init__(
-            self, person_name=person_name, team_name=team_name)
+            self, person_name=person_name, team_name=team_name
+        )
 
 
 class InvalidBranchName(LaunchpadFault):
@@ -336,10 +346,10 @@ class InvalidBranchName(LaunchpadFault):
 
     error_code = 260
     # The actual exception is rather friendly, so we just wrap it in a Fault.
-    msg_template = '%(error)s'
+    msg_template = "%(error)s"
 
     def __init__(self, error):
-        error_message = error.args[0].encode('utf-8', 'replace')
+        error_message = error.args[0].encode("utf-8", "replace")
         LaunchpadFault.__init__(self, error=error_message)
 
 
@@ -347,7 +357,7 @@ class NoBranchWithID(LaunchpadFault):
     """There's no branch with the given ID."""
 
     error_code = 270
-    msg_template = 'No branch with ID %(branch_id)s'
+    msg_template = "No branch with ID %(branch_id)s"
 
     def __init__(self, branch_id):
         LaunchpadFault.__init__(self, branch_id=branch_id)
@@ -357,8 +367,7 @@ class NoUrlForBranch(LaunchpadFault):
     """resolve_lp_path resolved to a remote branch with no URL."""
 
     error_code = 280
-    msg_template = (
-        'The remote branch at %(unique_name)s has no URL specified.')
+    msg_template = "The remote branch at %(unique_name)s has no URL specified."
 
     def __init__(self, unique_name):
         LaunchpadFault.__init__(self, unique_name=unique_name)
@@ -396,7 +405,8 @@ class InvalidPath(LaunchpadFault):
 
     error_code = 300
     msg_template = (
-        "Could not translate '%(path)s'. Can only translate absolute paths.")
+        "Could not translate '%(path)s'. Can only translate absolute paths."
+    )
 
     def __init__(self, path):
         LaunchpadFault.__init__(self, path=path)
@@ -406,8 +416,7 @@ class PermissionDenied(LaunchpadFault):
     """Raised when a user is denied access to some resource."""
 
     error_code = 310
-    msg_template = (
-        "%(message)s")
+    msg_template = "%(message)s"
 
     def __init__(self, message="Permission denied."):
         LaunchpadFault.__init__(self, message=message)
@@ -417,22 +426,21 @@ class NotFound(LaunchpadFault):
     """Raised when a resource is not found."""
 
     error_code = 320
-    msg_template = (
-        "%(message)s")
+    msg_template = "%(message)s"
 
     def __init__(self, message="Not found."):
         LaunchpadFault.__init__(self, message=message)
 
 
 class InvalidBranchUniqueName(LaunchpadFault):
-    """Raised when a user tries to resolve a unique name that's incomplete.
-    """
+    """Raised when a user tries to resolve a unique name that's incomplete."""
 
     error_code = 330
     msg_template = (
         "~%(path)s is too short to be a branch name. Try "
         "'~<owner>/+junk/<branch>', '~<owner>/<product>/<branch> or "
-        "'~<owner>/<distribution>/<series>/<sourcepackage>/<branch>'.")
+        "'~<owner>/<distribution>/<series>/<sourcepackage>/<branch>'."
+    )
 
     def __init__(self, path):
         self.path = path
@@ -451,8 +459,7 @@ class NoSuchDistroSeries(LaunchpadFault):
 
 
 class NoSuchSourcePackageName(LaunchpadFault):
-    """Raised when the user tries to get a sourcepackage that doesn't exist.
-    """
+    """Raised when the user tries to get a sourcepackage that doesn't exist."""
 
     error_code = 350
     msg_template = "No such source package %(sourcepackagename)s."
@@ -466,7 +473,7 @@ class NoSuchCodeImportJob(LaunchpadFault):
     """Raised by `ICodeImportScheduler` methods when a job is not found."""
 
     error_code = 360
-    msg_template = 'Job %(job_id)d not found.'
+    msg_template = "Job %(job_id)d not found."
 
     def __init__(self, job_id):
         LaunchpadFault.__init__(self, job_id=job_id)
@@ -477,8 +484,9 @@ class OopsOccurred(LaunchpadFault):
 
     error_code = 380
     msg_template = (
-        'An unexpected error has occurred while %(server_op)s. '
-        'Please report a Launchpad bug and quote: %(oopsid)s.')
+        "An unexpected error has occurred while %(server_op)s. "
+        "Please report a Launchpad bug and quote: %(oopsid)s."
+    )
 
     def __init__(self, server_op, oopsid):
         LaunchpadFault.__init__(self, server_op=server_op, oopsid=oopsid)
@@ -488,7 +496,7 @@ class OopsOccurred(LaunchpadFault):
 class InvalidSourcePackageName(LaunchpadFault):
 
     error_code = 390
-    msg_template = ("%(name)s is not a valid source package name.")
+    msg_template = "%(name)s is not a valid source package name."
 
     def __init__(self, name):
         self.name = name
@@ -500,8 +508,7 @@ class Unauthorized(LaunchpadFault):
     """Permission was denied, but authorisation may help."""
 
     error_code = 410
-    msg_template = (
-        "%(message)s")
+    msg_template = "%(message)s"
 
     def __init__(self, message="Authorisation required."):
         LaunchpadFault.__init__(self, message=message)
@@ -511,7 +518,7 @@ class InactiveAccount(LaunchpadFault):
     """The requested Launchpad account is inactive."""
 
     error_code = 420
-    msg_template = 'Inactive account: %(person_name)s'
+    msg_template = "Inactive account: %(person_name)s"
 
     def __init__(self, person_name):
         LaunchpadFault.__init__(self, person_name=person_name)

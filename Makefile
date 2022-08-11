@@ -31,7 +31,7 @@ VIRTUALENV := $(PIP_ENV) /usr/bin/virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
 VENV_INSTANCE_NAME := env/instance_name
-VENV_PYTHON := env/bin/$(PYTHON)
+VENV_PYTHON := env/bin/$(notdir $(PYTHON))
 
 SITE_PACKAGES := \
 	$$($(VENV_PYTHON) -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')

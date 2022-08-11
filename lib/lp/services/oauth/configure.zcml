@@ -9,6 +9,7 @@
     xmlns:browser="http://namespaces.zope.org/browser"
     i18n_domain="launchpad">
 
+  <authorizations module=".security" />
   <include package=".browser"/>
 
   <class class="lp.services.oauth.model.OAuthConsumer">

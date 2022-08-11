@@ -3,7 +3,7 @@
 
 """Interfaces for OpenID consumer functions."""
 
-__all__ = ['IOpenIDConsumerStore']
+__all__ = ["IOpenIDConsumerStore"]
 
 from zope.interface import Interface
 

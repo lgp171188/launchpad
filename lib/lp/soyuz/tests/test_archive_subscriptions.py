@@ -16,28 +16,22 @@ from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.testing import (
     BrowserTestCase,
-    login_person,
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+    login_person,
+    person_logged_in,
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import (
-    find_tag_by_id,
-    setupBrowserForUser,
-    )
+from lp.testing.pages import find_tag_by_id, setupBrowserForUser
 from lp.testing.views import create_initialized_view
 
 
 class TestArchiveSubscriptions(TestCaseWithFactory):
     """Edge-case tests for private PPA subscribers.
 
-    See also lib/lp/soyuz/stories/ppa/xx-private-ppa-subscription-stories.txt
+    See also lib/lp/soyuz/stories/ppa/xx-private-ppa-subscription-stories.rst
     """
 
     layer = DatabaseFunctionalLayer
@@ -48,10 +42,13 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
         self.owner = self.factory.makePerson()
         self.private_team = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE,
-            name="subscribertest", owner=self.owner)
+            name="subscribertest",
+            owner=self.owner,
+        )
         login_person(self.owner)
         self.archive = self.factory.makeArchive(
-            private=True, owner=self.private_team)
+            private=True, owner=self.private_team
+        )
         self.subscriber = self.factory.makePerson()
 
     def test_subscriber_can_access_private_team_ppa(self):
@@ -68,7 +65,8 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
 
         login_person(self.owner)
         self.archive.newSubscription(
-            self.subscriber, registrant=self.archive.owner)
+            self.subscriber, registrant=self.archive.owner
+        )
 
         # When a subscription exists, it's fine.
         login_person(self.subscriber)
@@ -84,17 +82,23 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
         # Before a subscription, accessing the view name will raise.
         login_person(self.subscriber)
         self.assertRaises(
-            Unauthorized, create_initialized_view,
-            self.archive, '+index', principal=self.subscriber)
+            Unauthorized,
+            create_initialized_view,
+            self.archive,
+            "+index",
+            principal=self.subscriber,
+        )
 
         login_person(self.owner)
         self.archive.newSubscription(
-            self.subscriber, registrant=self.archive.owner)
+            self.subscriber, registrant=self.archive.owner
+        )
 
         # When a subscription exists, it's fine.
         login_person(self.subscriber)
         view = create_initialized_view(
-            self.archive, '+index', principal=self.subscriber)
+            self.archive, "+index", principal=self.subscriber
+        )
         self.assertIn(self.archive.displayname, view.render())
 
     def test_new_subscription_sends_email(self):
@@ -103,12 +107,14 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
         self.assertEqual(0, len(pop_notifications()))
 
         self.archive.newSubscription(
-            self.subscriber, registrant=self.archive.owner)
+            self.subscriber, registrant=self.archive.owner
+        )
 
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
         self.assertEqual(
-            self.subscriber.preferredemail.email, notifications[0]['to'])
+            self.subscriber.preferredemail.email, notifications[0]["to"]
+        )
 
     def test_new_commercial_subscription_no_email(self):
         # As per bug 611568, an email is not sent for
@@ -116,21 +122,24 @@ class TestArchiveSubscriptions(TestCaseWithFactory):
         self.archive.suppress_subscription_notifications = True
 
         self.archive.newSubscription(
-            self.subscriber, registrant=self.archive.owner)
+            self.subscriber, registrant=self.archive.owner
+        )
 
         self.assertEqual(0, len(pop_notifications()))
 
     def test_permission_for_subscriber(self):
         self.archive.newSubscription(
-            self.subscriber, registrant=self.archive.owner)
+            self.subscriber, registrant=self.archive.owner
+        )
         with person_logged_in(self.subscriber):
             self.assertTrue(
-                check_permission('launchpad.SubscriberView', self.archive))
-            self.assertFalse(check_permission('launchpad.View', self.archive))
+                check_permission("launchpad.SubscriberView", self.archive)
+            )
+            self.assertFalse(check_permission("launchpad.View", self.archive))
 
 
 class PrivateArtifactsViewTestCase(BrowserTestCase):
-    """ Tests that private team archives can be viewed."""
+    """Tests that private team archives can be viewed."""
 
     layer = LaunchpadFunctionalLayer
 
@@ -140,37 +149,45 @@ class PrivateArtifactsViewTestCase(BrowserTestCase):
         self.owner = self.factory.makePerson()
         self.private_team = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE,
-            name="subscribertest", owner=self.owner)
+            name="subscribertest",
+            owner=self.owner,
+        )
         with person_logged_in(self.owner):
             self.archive = self.factory.makeArchive(
-                private=True, owner=self.private_team)
+                private=True, owner=self.private_team
+            )
         spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=self.archive, status=PackagePublishingStatus.PUBLISHED)
+            archive=self.archive, status=PackagePublishingStatus.PUBLISHED
+        )
         spr = removeSecurityProxy(spph).sourcepackagerelease
         self.factory.makeBinaryPackageBuild(
-            source_package_release=spr, archive=self.archive,
-            status=BuildStatus.FAILEDTOBUILD)
+            source_package_release=spr,
+            archive=self.archive,
+            status=BuildStatus.FAILEDTOBUILD,
+        )
         self.subscriber = self.factory.makePerson()
 
     def test_traverse_view_private_team_archive_subscriber(self):
         # A subscriber can traverse and view the archive.
         with person_logged_in(self.owner):
             self.archive.newSubscription(
-                self.subscriber, registrant=self.archive.owner)
+                self.subscriber, registrant=self.archive.owner
+            )
         with person_logged_in(self.subscriber):
             url = canonical_url(self.archive)
         browser = setupBrowserForUser(self.subscriber)
         browser.open(url)
-        content = find_tag_by_id(browser.contents, 'document')
-        self.assertIsNotNone(find_tag_by_id(content, 'ppa-install'))
+        content = find_tag_by_id(browser.contents, "document")
+        self.assertIsNotNone(find_tag_by_id(content, "ppa-install"))
 
     def test_unauthorized_subscriber_for_plus_packages(self):
         self.useFixture(FakeLogger())
         with person_logged_in(self.owner):
             self.archive.newSubscription(
-                self.subscriber, registrant=self.archive.owner)
+                self.subscriber, registrant=self.archive.owner
+            )
         with person_logged_in(self.subscriber):
-            url = canonical_url(self.archive) + '/+packages'
+            url = canonical_url(self.archive) + "/+packages"
         browser = setupBrowserForUser(self.subscriber)
         self.assertRaises(Unauthorized, browser.open, url)
 
@@ -182,7 +199,14 @@ class PersonArchiveSubscriptions(TestCaseWithFactory):
     def test_query_count(self):
         subscriber = self.factory.makePerson()
         for x in range(10):
-            archive = self.factory.makeArchive(private=True)
+            archive_owner = self.factory.makePerson()
+            # some archives are owned by a user, others are owned by a team
+            archive = self.factory.makeArchive(
+                private=True,
+                owner=archive_owner
+                if x < 5
+                else self.factory.makeTeam(members=[archive_owner]),
+            )
             with person_logged_in(archive.owner):
                 if x >= 5:
                     team = self.factory.makeTeam(members=[subscriber])
@@ -194,9 +218,10 @@ class PersonArchiveSubscriptions(TestCaseWithFactory):
         with person_logged_in(subscriber):
             with StormStatementRecorder() as recorder:
                 view = create_initialized_view(
-                    subscriber, '+archivesubscriptions', principal=subscriber)
+                    subscriber, "+archivesubscriptions", principal=subscriber
+                )
                 view.render()
-        self.assertThat(recorder, HasQueryCount(Equals(12)))
+        self.assertThat(recorder, HasQueryCount(Equals(16)))
 
     def test_getArchiveSubscriptions(self):
         # Anyone with 'View' permission on a given person is able to

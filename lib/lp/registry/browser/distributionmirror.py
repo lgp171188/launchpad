@@ -2,16 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistributionMirrorEditView',
-    'DistributionMirrorOverviewMenu',
-    'DistributionMirrorAddView',
-    'DistributionMirrorView',
-    'DistributionMirrorReviewView',
-    'DistributionMirrorReassignmentView',
-    'DistributionMirrorDeleteView',
-    'DistributionMirrorProberLogView',
-    'DistributionMirrorBreadcrumb',
-    ]
+    "DistributionMirrorEditView",
+    "DistributionMirrorOverviewMenu",
+    "DistributionMirrorAddView",
+    "DistributionMirrorView",
+    "DistributionMirrorReviewView",
+    "DistributionMirrorReassignmentView",
+    "DistributionMirrorDeleteView",
+    "DistributionMirrorProberLogView",
+    "DistributionMirrorBreadcrumb",
+]
 
 from datetime import datetime
 
@@ -22,10 +22,10 @@ from zope.lifecycleevent import ObjectCreatedEvent
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.archivepublisher.debversion import Version
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
 from lp.registry.errors import InvalidMirrorReviewState
@@ -33,61 +33,61 @@ from lp.registry.interfaces.distribution import IDistributionMirrorMenuMarker
 from lp.registry.interfaces.distributionmirror import (
     IDistributionMirror,
     MirrorStatus,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
-    enabled_with_permission,
     Link,
     NavigationMenu,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import TitleBreadcrumb
 from lp.services.webapp.publisher import LaunchpadView
 from lp.soyuz.browser.sourceslist import (
     SourcesListEntries,
     SourcesListEntriesView,
-    )
+)
 
 
 class DistributionMirrorOverviewMenu(NavigationMenu):
 
     usedfor = IDistributionMirror
-    facet = 'overview'
-    links = ['proberlogs', 'edit', 'review', 'reassign', 'delete', 'resubmit']
+    facet = "overview"
+    links = ["proberlogs", "edit", "review", "reassign", "delete", "resubmit"]
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
-        return Link('+edit', text, icon='edit')
+        text = "Change details"
+        return Link("+edit", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def proberlogs(self):
-        text = 'Prober logs'
+        text = "Prober logs"
         enabled = self.context.last_probe_record is not None
-        return Link('+prober-logs', text, icon='info', enabled=enabled)
+        return Link("+prober-logs", text, icon="info", enabled=enabled)
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def delete(self):
         enabled = self.context.last_probe_record is None
-        text = 'Delete this mirror'
-        return Link('+delete', text, icon='remove', enabled=enabled)
+        text = "Delete this mirror"
+        return Link("+delete", text, icon="remove", enabled=enabled)
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def reassign(self):
-        text = 'Change owner'
-        return Link('+reassign', text, icon='edit')
+        text = "Change owner"
+        return Link("+reassign", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def review(self):
-        text = 'Review mirror'
-        return Link('+review', text, icon='edit')
+        text = "Review mirror"
+        return Link("+review", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def resubmit(self):
-        text = 'Resubmit for review'
+        text = "Resubmit for review"
         enabled = self.context.status == MirrorStatus.BROKEN
-        return Link('+resubmit', text, icon='edit', enabled=enabled)
+        return Link("+resubmit", text, icon="edit", enabled=enabled)
 
 
 class _FlavoursByDistroSeries:
@@ -105,12 +105,13 @@ class DistributionMirrorBreadcrumb(TitleBreadcrumb):
 
 
 class DistributionMirrorView(LaunchpadView):
-
     @property
     def page_title(self):
         """The HTML page title."""
-        values = dict(distribution=self.context.distribution.displayname,
-                      name=self.context.title)
+        values = dict(
+            distribution=self.context.distribution.displayname,
+            name=self.context.title,
+        )
         return '%(distribution)s mirror "%(name)s"' % values
 
     def initialize(self):
@@ -121,11 +122,12 @@ class DistributionMirrorView(LaunchpadView):
             series = arch_series.distro_arch_series.distroseries
             if series not in valid_series:
                 valid_series.append(series)
-        entries = SourcesListEntries(self.context.distribution,
-                                     self.context.base_url,
-                                     valid_series)
+        entries = SourcesListEntries(
+            self.context.distribution, self.context.base_url, valid_series
+        )
         self.sources_list_entries = SourcesListEntriesView(
-            entries, self.request, initially_without_selection=True)
+            entries, self.request, initially_without_selection=True
+        )
 
     @cachedproperty
     def probe_records(self):
@@ -136,15 +138,21 @@ class DistributionMirrorView(LaunchpadView):
     def summarized_arch_series(self):
         mirrors = self.context.getSummarizedMirroredArchSeries()
         return sorted(
-            mirrors, reverse=True,
+            mirrors,
+            reverse=True,
             key=lambda mirror: Version(
-                mirror.distro_arch_series.distroseries.version))
+                mirror.distro_arch_series.distroseries.version
+            ),
+        )
 
     @property
     def summarized_source_series(self):
         mirrors = self.context.getSummarizedMirroredSourceSeries()
-        return sorted(mirrors, reverse=True,
-                      key=lambda mirror: Version(mirror.distroseries.version))
+        return sorted(
+            mirrors,
+            reverse=True,
+            key=lambda mirror: Version(mirror.distroseries.version),
+        )
 
     def getCDImageMirroredFlavoursBySeries(self):
         """Return a list of _FlavoursByDistroSeries objects ordered
@@ -159,8 +167,11 @@ class DistributionMirrorView(LaunchpadView):
                 all_series[series] = flavours_by_series
             flavours_by_series.flavours.append(flavour)
         flavours_by_series = all_series.values()
-        return sorted(flavours_by_series, reverse=True,
-                      key=lambda item: Version(item.distroseries.version))
+        return sorted(
+            flavours_by_series,
+            reverse=True,
+            key=lambda item: Version(item.distroseries.version),
+        )
 
 
 class DistributionMirrorDeleteView(LaunchpadFormView):
@@ -171,7 +182,7 @@ class DistributionMirrorDeleteView(LaunchpadFormView):
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Delete mirror %s' % self.context.title
+        return "Delete mirror %s" % self.context.title
 
     @property
     def page_title(self):
@@ -185,14 +196,17 @@ class DistributionMirrorDeleteView(LaunchpadFormView):
         # and so we do this check here.
         if self.context.last_probe_record is not None:
             self.request.response.addInfoNotification(
-                "This mirror has been probed and thus can't be deleted.")
+                "This mirror has been probed and thus can't be deleted."
+            )
             self.next_url = canonical_url(self.context)
             return
 
-        self.next_url = canonical_url(self.context.distribution,
-            view_name='+pendingreviewmirrors')
+        self.next_url = canonical_url(
+            self.context.distribution, view_name="+pendingreviewmirrors"
+        )
         self.request.response.addInfoNotification(
-            "Mirror %s has been deleted." % self.context.title)
+            "Mirror %s has been deleted." % self.context.title
+        )
         self.context.destroySelf()
 
     @property
@@ -205,10 +219,18 @@ class DistributionMirrorDeleteView(LaunchpadFormView):
 class DistributionMirrorAddView(LaunchpadFormView):
     schema = IDistributionMirror
     field_names = [
-        "display_name", "description", "whiteboard", "https_base_url",
-        "http_base_url", "ftp_base_url", "rsync_base_url", "speed", "country",
-        "content", "official_candidate",
-        ]
+        "display_name",
+        "description",
+        "whiteboard",
+        "https_base_url",
+        "http_base_url",
+        "ftp_base_url",
+        "rsync_base_url",
+        "speed",
+        "country",
+        "content",
+        "official_candidate",
+    ]
     invariant_context = None
 
     @property
@@ -229,15 +251,19 @@ class DistributionMirrorAddView(LaunchpadFormView):
     @action(_("Register Mirror"), name="create")
     def create_action(self, action, data):
         mirror = self.context.newMirror(
-            owner=self.user, speed=data['speed'], country=data['country'],
-            content=data['content'], display_name=data['display_name'],
-            description=data['description'],
-            whiteboard=data['whiteboard'],
-            https_base_url=data['https_base_url'],
-            http_base_url=data['http_base_url'],
-            ftp_base_url=data['ftp_base_url'],
-            rsync_base_url=data['rsync_base_url'],
-            official_candidate=data['official_candidate'])
+            owner=self.user,
+            speed=data["speed"],
+            country=data["country"],
+            content=data["content"],
+            display_name=data["display_name"],
+            description=data["description"],
+            whiteboard=data["whiteboard"],
+            https_base_url=data["https_base_url"],
+            http_base_url=data["http_base_url"],
+            ftp_base_url=data["ftp_base_url"],
+            rsync_base_url=data["rsync_base_url"],
+            official_candidate=data["official_candidate"],
+        )
 
         self.next_url = canonical_url(mirror)
         notify(ObjectCreatedEvent(mirror))
@@ -246,12 +272,12 @@ class DistributionMirrorAddView(LaunchpadFormView):
 class DistributionMirrorReviewView(LaunchpadEditFormView):
 
     schema = IDistributionMirror
-    field_names = ['status', 'whiteboard']
+    field_names = ["status", "whiteboard"]
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Review mirror %s' % self.context.title
+        return "Review mirror %s" % self.context.title
 
     @property
     def page_title(self):
@@ -266,9 +292,9 @@ class DistributionMirrorReviewView(LaunchpadEditFormView):
     @action(_("Save"), name="save")
     def action_save(self, action, data):
         context = self.context
-        if data['status'] != context.status:
+        if data["status"] != context.status:
             context.reviewer = self.user
-            context.date_reviewed = datetime.now(pytz.timezone('UTC'))
+            context.date_reviewed = datetime.now(pytz.timezone("UTC"))
         self.updateContextFromData(data)
         self.next_url = canonical_url(context)
 
@@ -277,15 +303,24 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
 
     schema = IDistributionMirror
     field_names = [
-        "name", "display_name", "description", "whiteboard",
-        "https_base_url", "http_base_url", "ftp_base_url", "rsync_base_url",
-        "speed", "country", "content", "official_candidate",
-        ]
+        "name",
+        "display_name",
+        "description",
+        "whiteboard",
+        "https_base_url",
+        "http_base_url",
+        "ftp_base_url",
+        "rsync_base_url",
+        "speed",
+        "country",
+        "content",
+        "official_candidate",
+    ]
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Edit mirror %s' % self.context.title
+        return "Edit mirror %s" % self.context.title
 
     @property
     def page_title(self):
@@ -311,7 +346,7 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Resubmit mirror %s' % self.context.title
+        return "Resubmit mirror %s" % self.context.title
 
     page_title = label
 
@@ -322,12 +357,12 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
         except InvalidMirrorReviewState:
             self.request.response.addInfoNotification(
                 "The mirror is not in the correct state"
-                " (broken) and cannot be resubmitted.")
+                " (broken) and cannot be resubmitted."
+            )
         self.next_url = canonical_url(self.context)
 
 
 class DistributionMirrorReassignmentView(ObjectReassignmentView):
-
     @property
     def contextName(self):
         return self.context.title
@@ -339,4 +374,4 @@ class DistributionMirrorProberLogView(DistributionMirrorView):
     @property
     def page_title(self):
         """The HTML page title."""
-        return '%s mirror prober logs' % self.context.title
+        return "%s mirror prober logs" % self.context.title

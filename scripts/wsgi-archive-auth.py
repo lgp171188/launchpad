@@ -13,14 +13,13 @@ as closely as possible.
 """
 
 __all__ = [
-    'check_password',
-    ]
+    "check_password",
+]
 
 # mod_wsgi imports this file without a useful sys.path, so we need some
 # acrobatics to set ourselves up properly.
 import os.path
 import sys
-
 
 scripts_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 if scripts_dir not in sys.path:
@@ -58,7 +57,8 @@ def main():
     args = parser.parse_args()
     archiveauth._memcache_client = MemcacheFixture()
     result = check_password(
-        {"SCRIPT_NAME": args.archive_path}, args.username, args.password)
+        {"SCRIPT_NAME": args.archive_path}, args.username, args.password
+    )
     if result is None:
         return 2
     elif result is False:

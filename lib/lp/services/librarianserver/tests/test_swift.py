@@ -9,8 +9,8 @@ import os.path
 import time
 from unittest.mock import patch
 
-from swiftclient import client as swiftclient
 import transaction
+from swiftclient import client as swiftclient
 
 from lp.services.database import write_transaction
 from lp.services.database.interfaces import IStore
@@ -21,11 +21,7 @@ from lp.services.librarianserver import swift
 from lp.services.librarianserver.storage import LibrarianStorage
 from lp.services.log.logger import BufferLogger
 from lp.testing import TestCase
-from lp.testing.layers import (
-    BaseLayer,
-    LaunchpadZopelessLayer,
-    LibrarianLayer,
-    )
+from lp.testing.layers import BaseLayer, LaunchpadZopelessLayer, LibrarianLayer
 from lp.testing.swift.fixture import SwiftFixture
 
 
@@ -35,7 +31,7 @@ class TestFeedSwift(TestCase):
     def setUp(self):
         super().setUp()
         self.swift_fixture = self.useFixture(SwiftFixture())
-        self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
+        self.useFixture(FeatureFixture({"librarian.swift.enabled": True}))
         transaction.commit()
 
         # Restart the Librarian so it picks up the OS_* environment
@@ -48,13 +44,15 @@ class TestFeedSwift(TestCase):
         # considered potential in-progress uploads.
         the_past = time.time() - 25 * 60 * 60
         self.librarian_client = LibrarianClient()
-        self.contents = [str(i).encode('ASCII') * i for i in range(1, 5)]
+        self.contents = [str(i).encode("ASCII") * i for i in range(1, 5)]
         self.lfa_ids = [
-            self.add_file('file_{}'.format(i), content, when=the_past)
-            for i, content in enumerate(self.contents)]
+            self.add_file("file_{}".format(i), content, when=the_past)
+            for i, content in enumerate(self.contents)
+        ]
         self.lfas = [
             IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
-                for lfa_id in self.lfa_ids]
+            for lfa_id in self.lfa_ids
+        ]
         self.lfcs = [lfa.content for lfa in self.lfas]
 
     def tearDown(self):
@@ -65,10 +63,13 @@ class TestFeedSwift(TestCase):
         LibrarianLayer.librarian_fixture.setUp()
 
     @write_transaction
-    def add_file(self, name, content, when=None, content_type='text/plain'):
+    def add_file(self, name, content, when=None, content_type="text/plain"):
         lfa_id = self.librarian_client.addFile(
-            name=name, size=len(content), file=io.BytesIO(content),
-            contentType=content_type)
+            name=name,
+            size=len(content),
+            file=io.BytesIO(content),
+            contentType=content_type,
+        )
         if when is None:
             when = 0  # Very very old
         lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
@@ -97,13 +98,15 @@ class TestFeedSwift(TestCase):
         for lfc, contents in zip(self.lfcs, self.contents):
             container, name = swift.swift_location(lfc.id)
             headers, obj = swift_client.get_object(container, name)
-            self.assertEqual(contents, obj, 'Did not round trip')
+            self.assertEqual(contents, obj, "Did not round trip")
 
         # Running again does nothing, in particular does not reupload
         # the files to Swift.
         con_patch = patch.object(
-            swift.swiftclient.Connection, 'put_object',
-            side_effect=AssertionError('do not call'))
+            swift.swiftclient.Connection,
+            "put_object",
+            side_effect=AssertionError("do not call"),
+        )
         with con_patch:
             swift.to_swift(log)  # remove_func == None
 
@@ -120,7 +123,7 @@ class TestFeedSwift(TestCase):
 
         # Confirm that files exist on disk where we expect to find them.
         for lfc in self.lfcs:
-            path = swift.filesystem_path(lfc.id) + '.migrated'
+            path = swift.filesystem_path(lfc.id) + ".migrated"
             self.assertTrue(os.path.exists(path))
 
         # Confirm all the files are also in Swift.
@@ -128,13 +131,15 @@ class TestFeedSwift(TestCase):
         for lfc, contents in zip(self.lfcs, self.contents):
             container, name = swift.swift_location(lfc.id)
             headers, obj = swift_client.get_object(container, name)
-            self.assertEqual(contents, obj, 'Did not round trip')
+            self.assertEqual(contents, obj, "Did not round trip")
 
         # Running again does nothing, in particular does not reupload
         # the files to Swift.
         con_patch = patch.object(
-            swift.swiftclient.Connection, 'put_object',
-            side_effect=AssertionError('do not call'))
+            swift.swiftclient.Connection,
+            "put_object",
+            side_effect=AssertionError("do not call"),
+        )
         with con_patch:
             swift.to_swift(log, remove_func=swift.rename)  # remove == False
 
@@ -158,7 +163,7 @@ class TestFeedSwift(TestCase):
         for lfc, contents in zip(self.lfcs, self.contents):
             container, name = swift.swift_location(lfc.id)
             headers, obj = swift_client.get_object(container, name)
-            self.assertEqual(contents, obj, 'Did not round trip')
+            self.assertEqual(contents, obj, "Did not round trip")
 
     def test_move_to_swift_multiple_instances(self):
         # If multiple Swift instances are configured, we only migrate to the
@@ -185,7 +190,7 @@ class TestFeedSwift(TestCase):
             for lfc, contents in zip(self.lfcs, self.contents):
                 container, name = swift.swift_location(lfc.id)
                 headers, obj = swift_client.get_object(container, name)
-                self.assertEqual(contents, obj, 'Did not round trip')
+                self.assertEqual(contents, obj, "Did not round trip")
         finally:
             swift_client.close()
 
@@ -194,8 +199,12 @@ class TestFeedSwift(TestCase):
             for lfc, contents in zip(self.lfcs, self.contents):
                 container, name = swift.swift_location(lfc.id)
                 self.assertRaises(
-                    swiftclient.ClientException, swift.quiet_swiftclient,
-                    old_swift_client.get_object, container, name)
+                    swiftclient.ClientException,
+                    swift.quiet_swiftclient,
+                    old_swift_client.get_object,
+                    container,
+                    name,
+                )
         finally:
             old_swift_client.close()
 
@@ -225,9 +234,8 @@ class TestFeedSwift(TestCase):
         # to be done in multiple chunks, but small enough that it is
         # stored in Swift as a single object.
         size = 512 * 1024  # 512KB
-        expected_content = b''.join(
-            bytes((i % 256,)) for i in range(0, size))
-        lfa_id = self.add_file('hello_bigboy.xls', expected_content)
+        expected_content = b"".join(bytes((i % 256,)) for i in range(0, size))
+        lfa_id = self.add_file("hello_bigboy.xls", expected_content)
 
         # Data round trips when served from disk.
         lfa = self.librarian_client.getFileByAlias(lfa_id)
@@ -241,14 +249,14 @@ class TestFeedSwift(TestCase):
         # stored in Swift as a single object.
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
-        expected_content = b''.join(
-            bytes((i % 256,)) for i in range(0, size))
-        lfa_id = self.add_file('hello_bigboy.xls', expected_content)
+        expected_content = b"".join(bytes((i % 256,)) for i in range(0, size))
+        lfa_id = self.add_file("hello_bigboy.xls", expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
         # This data size is a multiple of our chunk size.
         self.assertEqual(
-            0, len(expected_content) % LibrarianStorage.CHUNK_SIZE)
+            0, len(expected_content) % LibrarianStorage.CHUNK_SIZE
+        )
 
         # Data round trips when served from Swift.
         swift.to_swift(BufferLogger(), remove_func=os.unlink)
@@ -264,14 +272,14 @@ class TestFeedSwift(TestCase):
         # stored in Swift as a single object.
         size = LibrarianStorage.CHUNK_SIZE * 50 + 1
         self.assertTrue(size > 1024 * 1024)
-        expected_content = b''.join(
-            bytes((i % 256,)) for i in range(0, size))
-        lfa_id = self.add_file('hello_bigboy.xls', expected_content)
+        expected_content = b"".join(bytes((i % 256,)) for i in range(0, size))
+        lfa_id = self.add_file("hello_bigboy.xls", expected_content)
         lfc = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id).content
 
         # This data size is NOT a multiple of our chunk size.
         self.assertNotEqual(
-            0, len(expected_content) % LibrarianStorage.CHUNK_SIZE)
+            0, len(expected_content) % LibrarianStorage.CHUNK_SIZE
+        )
 
         # Data round trips when served from Swift.
         swift.to_swift(BufferLogger(), remove_func=os.unlink)
@@ -284,9 +292,8 @@ class TestFeedSwift(TestCase):
         # it as multiple objects plus a manifest.
         size = LibrarianStorage.CHUNK_SIZE * 50
         self.assertTrue(size > 1024 * 1024)
-        expected_content = b''.join(
-            bytes((i % 256,)) for i in range(0, size))
-        lfa_id = self.add_file('hello_bigboy.xls', expected_content)
+        expected_content = b"".join(bytes((i % 256,)) for i in range(0, size))
+        lfa_id = self.add_file("hello_bigboy.xls", expected_content)
         lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, lfa_id)
         lfc = lfa.content
 
@@ -294,6 +301,7 @@ class TestFeedSwift(TestCase):
         # so change the constant instead. Set it so we need 3 segments.
         def _reset_max(val):
             swift.MAX_SWIFT_OBJECT_SIZE = val
+
         self.addCleanup(_reset_max, swift.MAX_SWIFT_OBJECT_SIZE)
         swift.MAX_SWIFT_OBJECT_SIZE = int(size / 2) - 1
 
@@ -308,15 +316,19 @@ class TestFeedSwift(TestCase):
         # magic manifest header is set correctly.
         container, name = swift.swift_location(lfc.id)
         headers, obj = swift_client.get_object(container, name)
-        self.assertEqual(obj, b'')
+        self.assertEqual(obj, b"")
 
         # The segments we expect are all in their expected locations.
-        _, obj1 = swift_client.get_object(container, '{}/0000'.format(name))
-        _, obj2 = swift_client.get_object(container, '{}/0001'.format(name))
-        _, obj3 = swift_client.get_object(container, '{}/0002'.format(name))
+        _, obj1 = swift_client.get_object(container, "{}/0000".format(name))
+        _, obj2 = swift_client.get_object(container, "{}/0001".format(name))
+        _, obj3 = swift_client.get_object(container, "{}/0002".format(name))
         self.assertRaises(
-            swiftclient.ClientException, swift.quiet_swiftclient,
-            swift_client.get_object, container, '{}/0003'.format(name))
+            swiftclient.ClientException,
+            swift.quiet_swiftclient,
+            swift_client.get_object,
+            container,
+            "{}/0003".format(name),
+        )
 
         # Our object round tripped
         self.assertEqual(obj1 + obj2 + obj3, expected_content)
@@ -333,8 +345,11 @@ class TestFeedSwift(TestCase):
         # each instance, only the matching files are processed.
         for instance_id in range(3):
             swift.to_swift(
-                log, instance_id=instance_id, num_instances=3,
-                remove_func=os.unlink)
+                log,
+                instance_id=instance_id,
+                num_instances=3,
+                remove_func=os.unlink,
+            )
 
             # Only the matching files are gone from disk.  (This is
             # cumulative, so we test for all instances up to this point.)
@@ -353,86 +368,101 @@ class TestFeedSwift(TestCase):
                     container, name = swift.swift_location(lfc.id)
                     if (lfc.id % 3) <= instance_id:
                         headers, obj = swift_client.get_object(container, name)
-                        self.assertEqual(contents, obj, 'Did not round trip')
+                        self.assertEqual(contents, obj, "Did not round trip")
                     else:
                         self.assertRaises(
                             swiftclient.ClientException,
                             swift.quiet_swiftclient,
-                            swift_client.get_object, container, name)
+                            swift_client.get_object,
+                            container,
+                            name,
+                        )
             finally:
                 swift_client.close()
 
     def test_swift_timeout(self):
         # The librarian's Swift connections honour the configured timeout.
         self.pushConfig(
-            'librarian_server', os_username='timeout', swift_timeout=0.1)
+            "librarian_server", os_username="timeout", swift_timeout=0.1
+        )
         swift_client = self.swift_fixture.connect()
         self.assertRaises(
             swiftclient.ClientException,
-            swift_client.get_object, 'container', 'name')
+            swift_client.get_object,
+            "container",
+            "name",
+        )
 
 
 class TestHashStream(TestCase):
     layer = BaseLayer
 
     def test_read(self):
-        empty_md5 = 'd41d8cd98f00b204e9800998ecf8427e'
-        s = swift.HashStream(io.BytesIO(b'make me a coffee'))
+        empty_md5 = "d41d8cd98f00b204e9800998ecf8427e"
+        s = swift.HashStream(io.BytesIO(b"make me a coffee"))
         self.assertEqual(s.hash.hexdigest(), empty_md5)
         data = s.read()
-        self.assertEqual(data, b'make me a coffee')
-        self.assertEqual(s.hash.hexdigest(),
-                         '17dfd3e9f99a2260552e898406c696e9')
+        self.assertEqual(data, b"make me a coffee")
+        self.assertEqual(
+            s.hash.hexdigest(), "17dfd3e9f99a2260552e898406c696e9"
+        )
 
     def test_partial_read(self):
-        empty_sha1 = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
+        empty_sha1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
         s = swift.HashStream(
-            io.BytesIO(b'make me another coffee'), hash_factory=hashlib.sha1)
+            io.BytesIO(b"make me another coffee"), hash_factory=hashlib.sha1
+        )
         self.assertEqual(s.hash.hexdigest(), empty_sha1)
         chunk = s.read(4)
-        self.assertEqual(chunk, b'make')
-        self.assertEqual(s.hash.hexdigest(),
-                         '5821eb27d7b71c9078000da31a5a654c97e401b9')
+        self.assertEqual(chunk, b"make")
+        self.assertEqual(
+            s.hash.hexdigest(), "5821eb27d7b71c9078000da31a5a654c97e401b9"
+        )
         chunk = s.read()
-        self.assertEqual(chunk, b' me another coffee')
-        self.assertEqual(s.hash.hexdigest(),
-                         '8c826e573016ce05f3968044f82507b46fd2aa93')
+        self.assertEqual(chunk, b" me another coffee")
+        self.assertEqual(
+            s.hash.hexdigest(), "8c826e573016ce05f3968044f82507b46fd2aa93"
+        )
 
     def test_limited_length(self):
-        base_stream = io.BytesIO(b'make me a coffee')
+        base_stream = io.BytesIO(b"make me a coffee")
         s = swift.HashStream(base_stream, length=8)
         chunk = s.read(4)
-        self.assertEqual(chunk, b'make')
-        self.assertEqual(s.hash.hexdigest(),
-                         '099dafc678df7d266c25f95ccf6cde22')
+        self.assertEqual(chunk, b"make")
+        self.assertEqual(
+            s.hash.hexdigest(), "099dafc678df7d266c25f95ccf6cde22"
+        )
         chunk = s.read(8)
-        self.assertEqual(chunk, b' me ')
-        self.assertEqual(s.hash.hexdigest(),
-                         '10a0334e435b75f35b1923842bd87f81')
-        self.assertEqual(s.read(), b'')
+        self.assertEqual(chunk, b" me ")
+        self.assertEqual(
+            s.hash.hexdigest(), "10a0334e435b75f35b1923842bd87f81"
+        )
+        self.assertEqual(s.read(), b"")
         self.assertEqual(s.tell(), 8)
         self.assertEqual(base_stream.tell(), 8)
 
     def test_tell(self):
-        s = swift.HashStream(io.BytesIO(b'hurry up with that coffee'))
+        s = swift.HashStream(io.BytesIO(b"hurry up with that coffee"))
         self.assertEqual(s.tell(), 0)
         s.read(4)
         self.assertEqual(s.tell(), 4)
 
     def test_seek(self):
-        s = swift.HashStream(io.BytesIO(b'hurry up with that coffee'))
+        s = swift.HashStream(io.BytesIO(b"hurry up with that coffee"))
         s.seek(0)
         self.assertEqual(s.tell(), 0)
         s.seek(6)
         self.assertEqual(s.tell(), 6)
         chunk = s.read()
-        self.assertEqual(chunk, b'up with that coffee')
-        self.assertEqual(s.hash.hexdigest(),
-                         '0687b12af46824e3584530c5262fed36')
+        self.assertEqual(chunk, b"up with that coffee")
+        self.assertEqual(
+            s.hash.hexdigest(), "0687b12af46824e3584530c5262fed36"
+        )
 
         # Seek also must reset the hash.
         s.seek(2)
         chunk = s.read(3)
-        self.assertEqual(chunk, b'rry')
-        self.assertEqual(s.hash.hexdigest(),
-                         '35cd51ccd493b67542201d20b6ed7db9')
+        self.assertEqual(chunk, b"rry")
+        self.assertEqual(
+            s.hash.hexdigest(), "35cd51ccd493b67542201d20b6ed7db9"
+        )

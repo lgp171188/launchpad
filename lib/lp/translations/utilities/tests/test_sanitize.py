@@ -4,9 +4,9 @@
 from lp.testing import TestCase
 from lp.translations.utilities.sanitize import (
     MixedNewlineMarkersError,
-    sanitize_translations_from_webui,
     Sanitizer,
-    )
+    sanitize_translations_from_webui,
+)
 
 
 class TestSanitizer(TestCase):
@@ -19,8 +19,8 @@ class TestSanitizer(TestCase):
         expected_sanitized = "Text with dots."
 
         self.assertEqual(
-            expected_sanitized,
-            sanitizer.convertDotToSpace(translation))
+            expected_sanitized, sanitizer.convertDotToSpace(translation)
+        )
 
     def test_convertDotToSpace_dot_in_english(self):
         # If there are dots in the English string, no conversion happens.
@@ -29,8 +29,8 @@ class TestSanitizer(TestCase):
         expected_sanitized = "Text\u2022with\u2022dots."
 
         self.assertEqual(
-            expected_sanitized,
-            sanitizer.convertDotToSpace(translation))
+            expected_sanitized, sanitizer.convertDotToSpace(translation)
+        )
 
     def test_normalizeWhitespace_add(self):
         # Leading and trailing white space in the translation are synced to
@@ -40,8 +40,8 @@ class TestSanitizer(TestCase):
         expected_sanitized = "  Text without white space.  "
 
         self.assertEqual(
-            expected_sanitized,
-            sanitizer.normalizeWhitespace(translation))
+            expected_sanitized, sanitizer.normalizeWhitespace(translation)
+        )
 
     def test_normalizeWhitespace_remove(self):
         # Leading and trailing white space in the translation are synced to
@@ -51,8 +51,8 @@ class TestSanitizer(TestCase):
         expected_sanitized = "Text with white space."
 
         self.assertEqual(
-            expected_sanitized,
-            sanitizer.normalizeWhitespace(translation))
+            expected_sanitized, sanitizer.normalizeWhitespace(translation)
+        )
 
     def test_normalizeWhitespace_add_and_remove(self):
         # Leading and trailing white space in the translation are synced to
@@ -62,8 +62,8 @@ class TestSanitizer(TestCase):
         expected_sanitized = "  Text with trailing white space."
 
         self.assertEqual(
-            expected_sanitized,
-            sanitizer.normalizeWhitespace(translation))
+            expected_sanitized, sanitizer.normalizeWhitespace(translation)
+        )
 
     def test_normalizeWhitespace_only_whitespace(self):
         # If a translation is only whitespace, it will be turned into the
@@ -71,7 +71,7 @@ class TestSanitizer(TestCase):
         sanitizer = Sanitizer("English")
         only_whitespace = "    "
 
-        self.assertEqual('', sanitizer.normalizeWhitespace(only_whitespace))
+        self.assertEqual("", sanitizer.normalizeWhitespace(only_whitespace))
 
     def test_normalizeWhitespace_only_whitespace_everywhere(self):
         # Corner case: only whitespace in English and translation will
@@ -81,10 +81,10 @@ class TestSanitizer(TestCase):
         only_whitespace = "    "
 
         self.assertEqual(
-            english_whitespace,
-            sanitizer.normalizeWhitespace(only_whitespace))
+            english_whitespace, sanitizer.normalizeWhitespace(only_whitespace)
+        )
 
-    newline_styles = ['\r\n', '\r', '\n']
+    newline_styles = ["\r\n", "\r", "\n"]
 
     def test_normalizeNewlines(self):
         # Newlines will be converted to the same style that the English has.
@@ -98,10 +98,16 @@ class TestSanitizer(TestCase):
                 translation_text = translation_template % translation_newline
                 sanitized = sanitizer.normalizeNewlines(translation_text)
                 self.assertEqual(
-                    expected_sanitized, sanitized,
-                    "With %r and %r:\n%r != %r" % (
-                        english_newline, translation_newline,
-                        expected_sanitized, sanitized))
+                    expected_sanitized,
+                    sanitized,
+                    "With %r and %r:\n%r != %r"
+                    % (
+                        english_newline,
+                        translation_newline,
+                        expected_sanitized,
+                        sanitized,
+                    ),
+                )
 
     def test_normalizeNewlines_nothing_to_do_english(self):
         # If no newlines are found in the english text, no normalization
@@ -112,9 +118,11 @@ class TestSanitizer(TestCase):
             translation_text = translation_template % translation_newline
             sanitized = sanitizer.normalizeNewlines(translation_text)
             self.assertEqual(
-                translation_text, sanitized,
-                "With %r: %r != %r" % (
-                    translation_newline, translation_text, sanitized))
+                translation_text,
+                sanitized,
+                "With %r: %r != %r"
+                % (translation_newline, translation_text, sanitized),
+            )
 
     def test_normalizeNewlines_nothing_to_do_translation(self):
         # If no newlines are found in the translation text, no normalization
@@ -126,9 +134,11 @@ class TestSanitizer(TestCase):
             sanitizer = Sanitizer(english_text)
             sanitized = sanitizer.normalizeNewlines(translation_text)
             self.assertEqual(
-                translation_text, sanitized,
-                "With %r: %r != %r" % (
-                    english_newline, translation_text, sanitized))
+                translation_text,
+                sanitized,
+                "With %r: %r != %r"
+                % (english_newline, translation_text, sanitized),
+            )
 
     def test_normalizeNewlines_mixed_newlines_english(self):
         # Mixed newlines in the English text will not raise an exception.
@@ -138,7 +148,9 @@ class TestSanitizer(TestCase):
             other_newlines.remove(english_newline_1)
             for english_newline_2 in other_newlines:
                 english_text = english_template % (
-                    english_newline_1, english_newline_2)
+                    english_newline_1,
+                    english_newline_2,
+                )
                 Sanitizer(english_text)
 
     def test_normalizeNewlines_mixed_newlines_translation(self):
@@ -150,27 +162,31 @@ class TestSanitizer(TestCase):
             other_newlines.remove(translation_newline_1)
             for translation_newline_2 in other_newlines:
                 translation_text = translation_template % (
-                    translation_newline_1, translation_newline_2)
+                    translation_newline_1,
+                    translation_newline_2,
+                )
                 self.assertRaises(
                     MixedNewlineMarkersError,
-                    sanitizer.normalizeNewlines, translation_text)
+                    sanitizer.normalizeNewlines,
+                    translation_text,
+                )
 
     def test_sanitize(self):
         # Calling the Sanitizer object will apply all sanitization procedures.
         sanitizer = Sanitizer("Text with\nnewline.")
         translation_text = (
-                "Translation with\r\nnewline dots\u2022and whitespace.  ")
-        expected_sanitized = (
-                "Translation with\nnewline dots and whitespace.")
+            "Translation with\r\nnewline dots\u2022and whitespace.  "
+        )
+        expected_sanitized = "Translation with\nnewline dots and whitespace."
         self.assertEqual(
-            expected_sanitized, sanitizer.sanitize(translation_text))
+            expected_sanitized, sanitizer.sanitize(translation_text)
+        )
 
     def test_sanitize_whitespace_string(self):
         # A whitespace only string will be normalized to None.
         sanitizer = Sanitizer("Text without whitespace.")
-        empty_translation_text = ("  ")
-        self.assertTrue(
-            sanitizer.sanitize(empty_translation_text) is None)
+        empty_translation_text = "  "
+        self.assertTrue(sanitizer.sanitize(empty_translation_text) is None)
 
     def test_sanitizer_None(self):
         # None is returned as None.
@@ -190,78 +206,82 @@ class TestSanitizeTranslations(TestCase):
     def test_sanitize_translations(self):
         # All plural forms are sanitized.
         translations = {
-            0: 'Plural\r\nform 0  ',
-            1: 'Plural\r\nform 1  ',
-            2: 'Plural\r\nform 2  ',
-            }
+            0: "Plural\r\nform 0  ",
+            1: "Plural\r\nform 1  ",
+            2: "Plural\r\nform 2  ",
+        }
         expected_sanitized = {
-            0: 'Plural\nform 0',
-            1: 'Plural\nform 1',
-            2: 'Plural\nform 2',
-            }
+            0: "Plural\nform 0",
+            1: "Plural\nform 1",
+            2: "Plural\nform 2",
+        }
         self.assertEqual(
             expected_sanitized,
-            sanitize_translations_from_webui(self.english, translations, 3))
+            sanitize_translations_from_webui(self.english, translations, 3),
+        )
 
     def test_sanitize_translations_not_in_dict(self):
         # A list is converted to a dictionary.
         translations = [
-            'Pluralform 0',
-            'Pluralform 1',
-            'Pluralform 2',
-            ]
+            "Pluralform 0",
+            "Pluralform 1",
+            "Pluralform 2",
+        ]
         expected_sanitized = {
-            0: 'Pluralform 0',
-            1: 'Pluralform 1',
-            2: 'Pluralform 2',
-            }
+            0: "Pluralform 0",
+            1: "Pluralform 1",
+            2: "Pluralform 2",
+        }
         self.assertEqual(
             expected_sanitized,
-            sanitize_translations_from_webui(self.english, translations, 3))
+            sanitize_translations_from_webui(self.english, translations, 3),
+        )
 
     def test_sanitize_translations_missing_pluralform(self):
         # Missing plural forms are normalized to None.
         translations = {
-            0: 'Plural\r\nform 0  ',
-            2: 'Plural\r\nform 2  ',
-            }
+            0: "Plural\r\nform 0  ",
+            2: "Plural\r\nform 2  ",
+        }
         expected_sanitized = {
-            0: 'Plural\nform 0',
+            0: "Plural\nform 0",
             1: None,
-            2: 'Plural\nform 2',
-            }
+            2: "Plural\nform 2",
+        }
         self.assertEqual(
             expected_sanitized,
-            sanitize_translations_from_webui(self.english, translations, 3))
+            sanitize_translations_from_webui(self.english, translations, 3),
+        )
 
     def test_sanitize_translations_excess_pluralform(self):
         # Excess plural forms are sanitized, too.
         translations = {
-            0: 'Plural\r\nform 0  ',
-            1: 'Plural\r\nform 1  ',
-            2: 'Plural\r\nform 2  ',
-            4: 'Plural\r\nform 4  ',
-            }
+            0: "Plural\r\nform 0  ",
+            1: "Plural\r\nform 1  ",
+            2: "Plural\r\nform 2  ",
+            4: "Plural\r\nform 4  ",
+        }
         expected_sanitized = {
-            0: 'Plural\nform 0',
-            1: 'Plural\nform 1',
-            2: 'Plural\nform 2',
-            4: 'Plural\nform 4',
-            }
+            0: "Plural\nform 0",
+            1: "Plural\nform 1",
+            2: "Plural\nform 2",
+            4: "Plural\nform 4",
+        }
         self.assertEqual(
             expected_sanitized,
-            sanitize_translations_from_webui(self.english, translations, 3))
+            sanitize_translations_from_webui(self.english, translations, 3),
+        )
 
     def test_sanitize_translations_pluralforms_none(self):
         # Some languages don't provide a plural form, so 2 is assumed.
         translations = {
-            0: 'Plural form 0  ',
-            }
+            0: "Plural form 0  ",
+        }
         expected_sanitized = {
-            0: 'Plural form 0',
+            0: "Plural form 0",
             1: None,
-            }
+        }
         self.assertEqual(
             expected_sanitized,
-            sanitize_translations_from_webui(
-                self.english, translations, None))
+            sanitize_translations_from_webui(self.english, translations, None),
+        )

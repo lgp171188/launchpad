@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BinaryPackageBuildMailer',
-    ]
+    "BinaryPackageBuildMailer",
+]
 
 from collections import OrderedDict
 
@@ -14,10 +14,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.utils import get_ppa_reference
 from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
-from lp.services.mail.basemailer import (
-    BaseMailer,
-    RecipientReason,
-    )
+from lp.services.mail.basemailer import BaseMailer, RecipientReason
 from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.sendmail import format_address
@@ -25,20 +22,21 @@ from lp.services.webapp import canonical_url
 
 
 class BinaryPackageBuildRecipientReason(RecipientReason):
-
     @classmethod
     def forCreator(cls, creator, recipient):
         header = cls.makeRationale("Creator", creator)
         reason = (
             "You are receiving this email because you created this version of "
-            "this package.")
+            "this package."
+        )
         return cls(creator, recipient, header, reason)
 
     @classmethod
     def forSigner(cls, signer, recipient):
         header = cls.makeRationale("Signer", signer)
         reason = (
-            "You are receiving this email because you signed this package.")
+            "You are receiving this email because you signed this package."
+        )
         return cls(signer, recipient, header, reason)
 
     @classmethod
@@ -48,7 +46,8 @@ class BinaryPackageBuildRecipientReason(RecipientReason):
         # here.
         reason = (
             "You are receiving this email because you are a buildd "
-            "administrator.")
+            "administrator."
+        )
         return cls(buildd_admins, recipient, header, reason)
 
     @classmethod
@@ -56,7 +55,8 @@ class BinaryPackageBuildRecipientReason(RecipientReason):
         header = cls.makeRationale("Owner", owner)
         reason = (
             "You are receiving this email because %(lc_entity_is)s the owner "
-            "of this archive.")
+            "of this archive."
+        )
         return cls(owner, recipient, header, reason)
 
     def getReason(self):
@@ -66,7 +66,7 @@ class BinaryPackageBuildRecipientReason(RecipientReason):
 
 class BinaryPackageBuildMailer(BaseMailer):
 
-    app = 'soyuz'
+    app = "soyuz"
 
     @classmethod
     def forStatus(cls, build, extra_info=None):
@@ -91,11 +91,15 @@ class BinaryPackageBuildMailer(BaseMailer):
         #       archive.
         creator = build.source_package_release.creator
         package_was_not_copied = (
-            build.archive == build.source_package_release.upload_archive)
+            build.archive == build.source_package_release.upload_archive
+        )
 
         if package_was_not_copied and config.builddmaster.notify_owner:
-            if (build.archive.is_ppa and creator.inTeam(build.archive.owner)
-                or not build.archive.is_ppa):
+            if (
+                build.archive.is_ppa
+                and creator.inTeam(build.archive.owner)
+                or not build.archive.is_ppa
+            ):
                 # If this is a PPA, the package creator should only be
                 # notified if they are the PPA owner or in the PPA team.
                 # (see bug 375757)
@@ -103,14 +107,16 @@ class BinaryPackageBuildMailer(BaseMailer):
                 for recipient in get_recipients(creator):
                     if recipient not in recipients:
                         reason = BinaryPackageBuildRecipientReason.forCreator(
-                            creator, recipient)
+                            creator, recipient
+                        )
                         recipients[recipient] = reason
             signer = build.source_package_release.signing_key_owner
             if signer:
                 for recipient in get_recipients(signer):
                     if recipient not in recipients:
                         reason = BinaryPackageBuildRecipientReason.forSigner(
-                            signer, recipient)
+                            signer, recipient
+                        )
                         recipients[recipient] = reason
 
         if not build.archive.is_ppa:
@@ -118,13 +124,15 @@ class BinaryPackageBuildMailer(BaseMailer):
             for recipient in get_recipients(buildd_admins):
                 if recipient not in recipients:
                     reason = BinaryPackageBuildRecipientReason.forBuilddAdmins(
-                        buildd_admins, recipient)
+                        buildd_admins, recipient
+                    )
                     recipients[recipient] = reason
         else:
             for recipient in get_recipients(build.archive.owner):
                 if recipient not in recipients:
                     reason = BinaryPackageBuildRecipientReason.forArchiveOwner(
-                        build.archive.owner, recipient)
+                        build.archive.owner, recipient
+                    )
                     recipients[recipient] = reason
 
         # XXX cprov 2006-08-02: pending security recipients for SECURITY
@@ -132,19 +140,36 @@ class BinaryPackageBuildMailer(BaseMailer):
 
         fromaddress = format_address(
             config.builddmaster.default_sender_name,
-            config.builddmaster.default_sender_address)
+            config.builddmaster.default_sender_address,
+        )
         subject = "[Build #%d] %s" % (build.id, build.title)
         if build.archive.is_ppa:
             subject += " [%s]" % build.archive.reference
         return cls(
-            subject, "build-notification.txt", recipients, fromaddress, build,
-            extra_info=extra_info)
+            subject,
+            "build-notification.txt",
+            recipients,
+            fromaddress,
+            build,
+            extra_info=extra_info,
+        )
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 build, extra_info=None):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        build,
+        extra_info=None,
+    ):
         super().__init__(
-            subject, template_name, recipients, from_address,
-            notification_type="package-build-status")
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            notification_type="package-build-status",
+        )
         self.build = build
         self.extra_info = extra_info
 
@@ -152,22 +177,31 @@ class BinaryPackageBuildMailer(BaseMailer):
         """See `BaseMailer`."""
         headers = super()._getHeaders(email, recipient)
         build = self.build
-        headers.update({
-            "X-Launchpad-Archive": build.archive.reference,
-            "X-Launchpad-Build-State": build.status.name,
-            "X-Launchpad-Build-Component": build.current_component.name,
-            "X-Launchpad-Build-Arch": build.distro_arch_series.architecturetag,
-            # XXX cprov 2006-10-27: Temporary extra debug info about the
-            # SPR.creator in context, to be used during the service
-            # quarantine, notify_owner will be disabled to avoid *spamming*
-            # Debian people.
-            "X-Creator-Recipient": ",".join(get_contact_email_addresses(
-                build.source_package_release.creator)),
-            })
+        headers.update(
+            {
+                "X-Launchpad-Archive": build.archive.reference,
+                "X-Launchpad-Build-State": build.status.name,
+                "X-Launchpad-Build-Component": build.current_component.name,
+                "X-Launchpad-Build-Arch": (
+                    build.distro_arch_series.architecturetag
+                ),
+                # XXX cprov 2006-10-27: Temporary extra debug info about the
+                # SPR.creator in context, to be used during the service
+                # quarantine, notify_owner will be disabled to avoid *spamming*
+                # Debian people.
+                "X-Creator-Recipient": ",".join(
+                    get_contact_email_addresses(
+                        build.source_package_release.creator
+                    )
+                ),
+            }
+        )
         # The deprecated PPA reference header is included for Ubuntu PPAs to
         # avoid breaking existing consumers.
-        if (build.archive.is_ppa and
-                build.archive.distribution.name == 'ubuntu'):
+        if (
+            build.archive.is_ppa
+            and build.archive.distribution.name == "ubuntu"
+        ):
             headers["X-Launchpad-PPA"] = get_ppa_reference(build.archive)
         return headers
 
@@ -202,37 +236,39 @@ class BinaryPackageBuildMailer(BaseMailer):
         else:
             # completed states (success and failure)
             buildduration = DurationFormatterAPI(
-                build.duration).approximateduration()
+                build.duration
+            ).approximateduration()
             buildlog_url = build.log_url
             builder_url = canonical_url(build.builder)
 
         if build.status == BuildStatus.FAILEDTOUPLOAD:
             assert extra_info is not None, (
                 "Extra information is required for FAILEDTOUPLOAD "
-                "notifications.")
+                "notifications."
+            )
             extra_info = "Upload log:\n%s" % extra_info
         else:
             extra_info = ""
 
-        params.update({
-            "source_name": build.source_package_release.name,
-            "source_version": build.source_package_release.version,
-            "architecturetag": build.distro_arch_series.architecturetag,
-            "build_state": build.status.title,
-            "build_duration": buildduration,
-            "buildlog_url": buildlog_url,
-            "builder_url": builder_url,
-            "build_title": build.title,
-            "build_url": canonical_url(build),
-            "source_url": source_url,
-            "extra_info": extra_info,
-            "archive_tag": build.archive.reference,
-            "component_tag": build.current_component.name,
-            })
+        params.update(
+            {
+                "source_name": build.source_package_release.name,
+                "source_version": build.source_package_release.version,
+                "architecturetag": build.distro_arch_series.architecturetag,
+                "build_state": build.status.title,
+                "build_duration": buildduration,
+                "buildlog_url": buildlog_url,
+                "builder_url": builder_url,
+                "build_title": build.title,
+                "build_url": canonical_url(build),
+                "source_url": source_url,
+                "extra_info": extra_info,
+                "archive_tag": build.archive.reference,
+                "component_tag": build.current_component.name,
+            }
+        )
         return params
 
     def _getFooter(self, email, recipient, params):
         """See `BaseMailer`."""
-        return ("%(build_title)s\n"
-                "%(build_url)s\n\n"
-                "%(reason)s\n" % params)
+        return "%(build_title)s\n" "%(build_url)s\n\n" "%(reason)s\n" % params

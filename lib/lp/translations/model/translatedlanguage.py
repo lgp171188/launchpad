@@ -1,24 +1,19 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['TranslatedLanguageMixin']
+__all__ = ["TranslatedLanguageMixin"]
 
 import pytz
-from storm.expr import (
-    Coalesce,
-    Desc,
-    Max,
-    Sum,
-    )
+from storm.expr import Coalesce, Desc, Max, Sum
 from zope.interface import implementer
 
 from lp.translations.interfaces.hastranslationtemplates import (
     IHasTranslationTemplates,
-    )
+)
 from lp.translations.interfaces.translatedlanguage import (
     IPOFilesByPOTemplates,
     ITranslatedLanguage,
-    )
+)
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potemplate import POTemplate
 
@@ -31,10 +26,11 @@ class POFilesByPOTemplates:
         self.templates_collection = templates_collection
         self.language = language
 
-    def _getDummyOrPOFile(self, potemplate, pofile):
+    def _getPlaceholderOrPOFile(self, potemplate, pofile):
         if pofile is None:
-            return potemplate.getDummyPOFile(self.language,
-                                             check_for_existing=False)
+            return potemplate.getPlaceholderPOFile(
+                self.language, check_for_existing=False
+            )
         else:
             return pofile
 
@@ -42,7 +38,8 @@ class POFilesByPOTemplates:
         current_templates = self.templates_collection
         pofiles = current_templates.joinOuterPOFile(self.language)
         results = pofiles.select(POTemplate, POFile).order_by(
-            Desc(POTemplate.priority), POTemplate.name)
+            Desc(POTemplate.priority), POTemplate.name
+        )
         return results
 
     def _getPOFilesForResultSet(self, resultset, selector=None):
@@ -52,7 +49,9 @@ class POFilesByPOTemplates:
         else:
             results = resultset[selector]
         for potemplate, pofile in results:
-            pofiles_list.append(self._getDummyOrPOFile(potemplate, pofile))
+            pofiles_list.append(
+                self._getPlaceholderOrPOFile(potemplate, pofile)
+            )
         return pofiles_list
 
     def __getitem__(self, selector):
@@ -61,7 +60,7 @@ class POFilesByPOTemplates:
             return self._getPOFilesForResultSet(resultset, selector)
         else:
             potemplate, pofile = resultset[selector]
-            return self._getDummyOrPOFile(potemplate, pofile)
+            return self._getPlaceholderOrPOFile(potemplate, pofile)
 
     def __iter__(self):
         resultset = self._getPOTemplatesAndPOFilesResultSet()
@@ -87,8 +86,9 @@ class TranslatedLanguageMixin:
     @property
     def pofiles(self):
         """See `ITranslatedLanguage`."""
-        assert IHasTranslationTemplates.providedBy(self.parent), (
-            "Parent object should implement `IHasTranslationTemplates`.")
+        assert IHasTranslationTemplates.providedBy(
+            self.parent
+        ), "Parent object should implement `IHasTranslationTemplates`."
         current_templates = self.parent.getCurrentTemplatesCollection()
         return POFilesByPOTemplates(current_templates, self.language)
 
@@ -103,27 +103,36 @@ class TranslatedLanguageMixin:
         """See `ITranslatedLanguage`."""
         untranslated = total - translated
         self._translation_statistics = {
-            'total_count': total,
-            'translated_count': translated,
-            'new_count': new,
-            'changed_count': changed,
-            'unreviewed_count': unreviewed,
-            'untranslated_count': untranslated,
-            }
+            "total_count": total,
+            "translated_count": translated,
+            "new_count": new,
+            "changed_count": changed,
+            "unreviewed_count": unreviewed,
+            "untranslated_count": untranslated,
+        }
 
     def recalculateCounts(self):
         """See `ITranslatedLanguage`."""
         templates = self.parent.getCurrentTemplatesCollection()
         pofiles = templates.joinOuterPOFile(self.language)
         total_count_results = list(
-            pofiles.select(Coalesce(Sum(POTemplate.messagecount), 0),
-                           Coalesce(Sum(POFile.currentcount), 0),
-                           Coalesce(Sum(POFile.updatescount), 0),
-                           Coalesce(Sum(POFile.rosettacount), 0),
-                           Coalesce(Sum(POFile.unreviewed_count), 0),
-                           Max(POFile.date_changed)))
-        total, imported, changed, rosetta, unreviewed, date_changed = (
-            total_count_results[0])
+            pofiles.select(
+                Coalesce(Sum(POTemplate.messagecount), 0),
+                Coalesce(Sum(POFile.currentcount), 0),
+                Coalesce(Sum(POFile.updatescount), 0),
+                Coalesce(Sum(POFile.rosettacount), 0),
+                Coalesce(Sum(POFile.unreviewed_count), 0),
+                Max(POFile.date_changed),
+            )
+        )
+        (
+            total,
+            imported,
+            changed,
+            rosetta,
+            unreviewed,
+            date_changed,
+        ) = total_count_results[0]
         translated = imported + rosetta
         new = rosetta - changed
         self.setCounts(total, translated, new, changed, unreviewed)

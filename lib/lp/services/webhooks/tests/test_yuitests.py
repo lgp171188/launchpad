@@ -5,21 +5,16 @@
 
 __all__ = []
 
-from lp.testing import (
-    build_yui_unittest_suite,
-    YUIUnitTestCase,
-    )
+from lp.testing import YUIUnitTestCase, build_yui_unittest_suite
 from lp.testing.layers import YUITestLayer
 
 
 class WebhooksYUIUnitTestCase(YUIUnitTestCase):
 
     layer = YUITestLayer
-    suite_name = 'WebhooksYUIUnitTests'
+    suite_name = "WebhooksYUIUnitTests"
 
 
 def test_suite():
-    app_testing_path = 'lp/services/webhooks'
-    return build_yui_unittest_suite(
-            app_testing_path,
-            WebhooksYUIUnitTestCase)
+    app_testing_path = "lp/services/webhooks"
+    return build_yui_unittest_suite(app_testing_path, WebhooksYUIUnitTestCase)

@@ -7,11 +7,11 @@
 
 import _pythonpath  # noqa: F401
 
-from optparse import IndentedHelpFormatter
 import os
 import subprocess
 import sys
 import textwrap
+from optparse import IndentedHelpFormatter
 
 from lp.services.config import config
 from lp.services.helpers import english_list
@@ -24,7 +24,7 @@ class LongEpilogHelpFormatter(IndentedHelpFormatter):
 
     def format_epilog(self, epilog):
         if epilog:
-            return '\n%s\n' % epilog
+            return "\n%s\n" % epilog
         else:
             return ""
 
@@ -36,16 +36,24 @@ class ProcessJobSourceGroups(LaunchpadCronScript):
         self.parser.usage = "%prog [ -e JOB_SOURCE ] GROUP [GROUP]..."
         self.parser.epilog = (
             textwrap.fill(
-            "At least one group must be specified. Excluding job sources "
-            "is useful when you want to run all the other job sources in "
-            "a group.")
-            + "\n\n" + self.group_help)
+                "At least one group must be specified. Excluding job sources "
+                "is useful when you want to run all the other job sources in "
+                "a group."
+            )
+            + "\n\n"
+            + self.group_help
+        )
 
         self.parser.formatter = LongEpilogHelpFormatter()
         self.parser.add_option(
-            '-e', '--exclude', dest='excluded_job_sources',
-            metavar="JOB_SOURCE", default=[], action='append',
-            help="Exclude specific job sources.")
+            "-e",
+            "--exclude",
+            dest="excluded_job_sources",
+            metavar="JOB_SOURCE",
+            default=[],
+            action="append",
+            help="Exclude specific job sources.",
+        )
 
     def main(self):
         selected_groups = self.args
@@ -61,25 +69,27 @@ class ProcessJobSourceGroups(LaunchpadCronScript):
         for source in self.options.excluded_job_sources:
             if source not in selected_job_sources:
                 self.logger.info(
-                    '%r is not in %s' % (
-                        source, english_list(selected_groups, "or")))
+                    "%r is not in %s"
+                    % (source, english_list(selected_groups, "or"))
+                )
             else:
                 selected_job_sources.remove(source)
         if not selected_job_sources:
             return
         # Process job sources.
         command = os.path.join(
-            os.path.dirname(sys.argv[0]), 'process-job-source.py')
+            os.path.dirname(sys.argv[0]), "process-job-source.py"
+        )
         child_args = [command]
         if self.options.verbose:
-            child_args.append('-v')
+            child_args.append("-v")
         child_args.extend(sorted(selected_job_sources))
         subprocess.check_call(child_args)
 
     @cachedproperty
     def all_job_sources(self):
-        job_sources = config['process-job-source-groups'].job_sources
-        return [job_source.strip() for job_source in job_sources.split(',')]
+        job_sources = config["process-job-source-groups"].job_sources
+        return [job_source.strip() for job_source in job_sources.split(",")]
 
     @cachedproperty
     def grouped_sources(self):
@@ -94,12 +104,13 @@ class ProcessJobSourceGroups(LaunchpadCronScript):
 
     @cachedproperty
     def group_help(self):
-        return '\n\n'.join(
-            'Group: %s\n    %s' % (group, '\n    '.join(sources))
-            for group, sources in sorted(self.grouped_sources.items()))
+        return "\n\n".join(
+            "Group: %s\n    %s" % (group, "\n    ".join(sources))
+            for group, sources in sorted(self.grouped_sources.items())
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ProcessJobSourceGroups()
     # We do not need to take a lock here; all the interesting work is done
     # by process-job-source.py, which takes its own per-job-source locks.

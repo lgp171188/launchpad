@@ -4,19 +4,15 @@
 """Twisted resources implementing a fake signing service."""
 
 __all__ = [
-    'SigningServiceResource',
-    ]
+    "SigningServiceResource",
+]
 
 import base64
 import json
 import os
 
 from nacl.encoding import Base64Encoder
-from nacl.public import (
-    Box,
-    PrivateKey,
-    PublicKey,
-    )
+from nacl.public import Box, PrivateKey, PublicKey
 from nacl.utils import random
 from twisted.web import resource
 
@@ -32,10 +28,13 @@ class ServiceKeyResource(resource.Resource):
 
     def render_GET(self, request):
         request.setHeader(b"Content-Type", b"application/json")
-        return json.dumps({
-            "service-key": self.service_public_key.encode(
-                encoder=Base64Encoder).decode("UTF-8"),
-            }).encode("UTF-8")
+        return json.dumps(
+            {
+                "service-key": self.service_public_key.encode(
+                    encoder=Base64Encoder
+                ).decode("UTF-8"),
+            }
+        ).encode("UTF-8")
 
 
 class NonceResource(resource.Resource):
@@ -69,7 +68,8 @@ class BoxedAuthenticationResource(resource.Resource):
         """Authenticate and decrypt request data."""
         nonce = base64.b64decode(request.getHeader(b"X-Nonce"))
         return self.box.decrypt(
-            request.content.read(), nonce, encoder=Base64Encoder)
+            request.content.read(), nonce, encoder=Base64Encoder
+        )
 
     def _encrypt(self, request, data):
         """Encrypt and authenticate response data."""
@@ -100,9 +100,10 @@ class GenerateResource(BoxedAuthenticationResource):
         response_payload = {
             "fingerprint": fingerprint,
             "public-key": base64.b64encode(public_key).decode("UTF-8"),
-            }
+        }
         return self._encrypt(
-            request, json.dumps(response_payload).encode("UTF-8"))
+            request, json.dumps(response_payload).encode("UTF-8")
+        )
 
 
 class SignResource(BoxedAuthenticationResource):
@@ -125,9 +126,10 @@ class SignResource(BoxedAuthenticationResource):
         response_payload = {
             "public-key": base64.b64encode(public_key).decode("UTF-8"),
             "signed-message": base64.b64encode(signed_message).decode("UTF-8"),
-            }
+        }
         return self._encrypt(
-            request, json.dumps(response_payload).encode("UTF-8"))
+            request, json.dumps(response_payload).encode("UTF-8")
+        )
 
 
 class InjectResource(BoxedAuthenticationResource):
@@ -151,7 +153,8 @@ class InjectResource(BoxedAuthenticationResource):
         self.keys[fingerprint] = (private_key, public_key)
         response_payload = {"fingerprint": fingerprint}
         return self._encrypt(
-            request, json.dumps(response_payload).encode("UTF-8"))
+            request, json.dumps(response_payload).encode("UTF-8")
+        )
 
 
 class SigningServiceResource(resource.Resource):
@@ -161,22 +164,29 @@ class SigningServiceResource(resource.Resource):
         resource.Resource.__init__(self)
         self.service_private_key = PrivateKey.generate()
         self.client_public_key = PublicKey(
-            os.environ["FAKE_SIGNING_CLIENT_PUBLIC_KEY"],
-            encoder=Base64Encoder)
+            os.environ["FAKE_SIGNING_CLIENT_PUBLIC_KEY"], encoder=Base64Encoder
+        )
         self.keys = {}
         self.putChild(
             b"service-key",
-            ServiceKeyResource(self.service_private_key.public_key))
+            ServiceKeyResource(self.service_private_key.public_key),
+        )
         self.putChild(b"nonce", NonceResource())
         self.putChild(
             b"generate",
             GenerateResource(
-                self.service_private_key, self.client_public_key, self.keys))
+                self.service_private_key, self.client_public_key, self.keys
+            ),
+        )
         self.putChild(
             b"sign",
             SignResource(
-                self.service_private_key, self.client_public_key, self.keys))
+                self.service_private_key, self.client_public_key, self.keys
+            ),
+        )
         self.putChild(
             b"inject",
             InjectResource(
-                self.service_private_key, self.client_public_key, self.keys))
+                self.service_private_key, self.client_public_key, self.keys
+            ),
+        )

@@ -14,7 +14,7 @@ from lp.registry.enums import (
     INCLUSIVE_TEAM_POLICY,
     PersonVisibility,
     TeamMembershipPolicy,
-    )
+)
 from lp.registry.interfaces.irc import IIrcIDSet
 from lp.registry.interfaces.karma import IKarmaCacheManager
 from lp.registry.vocabularies import ValidPersonOrTeamVocabulary
@@ -22,11 +22,11 @@ from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.webapp.vocabulary import FilteredVocabularyBase
 from lp.testing import (
-    login_person,
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    login_person,
+    person_logged_in,
+)
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
@@ -56,12 +56,13 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
 
     def test_supported_filters(self):
         # The vocab supports the correct filters.
-        self.assertEqual([
-            FilteredVocabularyBase.ALL_FILTER,
-            ValidPersonOrTeamVocabulary.PERSON_FILTER,
-            ValidPersonOrTeamVocabulary.TEAM_FILTER,
+        self.assertEqual(
+            [
+                FilteredVocabularyBase.ALL_FILTER,
+                ValidPersonOrTeamVocabulary.PERSON_FILTER,
+                ValidPersonOrTeamVocabulary.TEAM_FILTER,
             ],
-            self.getVocabulary(None).supportedFilters()
+            self.getVocabulary(None).supportedFilters(),
         )
 
     def addKarma(self, person, value, product=None, distribution=None):
@@ -69,34 +70,41 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
             kwargs = dict(product_id=product.id)
         elif distribution:
             kwargs = dict(distribution_id=distribution.id)
-        with dbuser('karma'):
+        with dbuser("karma"):
             getUtility(IKarmaCacheManager).new(
-                value, person.id, None, **kwargs)
+                value, person.id, None, **kwargs
+            )
 
     def test_people_with_karma_sort_higher(self):
         exact_person = self.factory.makePerson(
-            name='fooix', displayname='Fooix Bar')
+            name="fooix", displayname="Fooix Bar"
+        )
         prefix_person = self.factory.makePerson(
-            name='fooix-bar', displayname='Fooix Bar')
+            name="fooix-bar", displayname="Fooix Bar"
+        )
         contributor_person = self.factory.makePerson(
-            name='bar', displayname='Fooix Bar')
+            name="bar", displayname="Fooix Bar"
+        )
         product = self.factory.makeProduct()
 
         # Exact is better than prefix is better than FTI.
         self.assertEqual(
             [exact_person, prefix_person, contributor_person],
-            list(self.searchVocabulary(product, 'fooix')))
+            list(self.searchVocabulary(product, "fooix")),
+        )
 
         # But karma can bump people up, behind the exact match.
         self.addKarma(contributor_person, 500, product=product)
         self.assertEqual(
             [exact_person, contributor_person, prefix_person],
-            list(self.searchVocabulary(product, 'fooix')))
+            list(self.searchVocabulary(product, "fooix")),
+        )
 
         self.addKarma(prefix_person, 500, product=product)
         self.assertEqual(
             [exact_person, prefix_person, contributor_person],
-            list(self.searchVocabulary(product, 'fooix')))
+            list(self.searchVocabulary(product, "fooix")),
+        )
 
     def assertKarmaContextConstraint(self, expected, context):
         """Check that the karma context constraint works.
@@ -109,20 +117,25 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
         self.assertEqual(
             expected,
             removeSecurityProxy(
-                self.getVocabulary(context))._karma_context_constraint)
-        self.searchVocabulary(context, 'foo')
+                self.getVocabulary(context)
+            )._karma_context_constraint,
+        )
+        self.searchVocabulary(context, "foo")
 
     def test_product_karma_context(self):
         self.assertKarmaContextConstraint(
-            'product = %d', self.factory.makeProduct())
+            "product = %d", self.factory.makeProduct()
+        )
 
     def test_project_karma_context(self):
         self.assertKarmaContextConstraint(
-            'project = %d', self.factory.makeProject())
+            "project = %d", self.factory.makeProject()
+        )
 
     def test_distribution_karma_context(self):
         self.assertKarmaContextConstraint(
-            'distribution = %d', self.factory.makeDistribution())
+            "distribution = %d", self.factory.makeDistribution()
+        )
 
     def test_root_karma_context(self):
         self.assertKarmaContextConstraint(None, None)
@@ -130,30 +143,32 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
     def test_irc_nick_match_is_not_case_sensitive(self):
         person = self.factory.makePerson()
         irc = getUtility(IIrcIDSet).new(
-            person, 'somenet', 'MiXeD' + self.factory.getUniqueString())
+            person, "somenet", "MiXeD" + self.factory.getUniqueString()
+        )
         self.assertContentEqual(
-            [person], self.searchVocabulary(person, irc.nickname.lower()))
+            [person], self.searchVocabulary(person, irc.nickname.lower())
+        )
 
     def _person_filter_tests(self, person):
-        results = self.searchVocabulary(None, '', 'PERSON')
+        results = self.searchVocabulary(None, "", "PERSON")
         for personorteam in results:
             self.assertFalse(personorteam.is_team)
-        results = self.searchVocabulary(None, 'fred', 'PERSON')
+        results = self.searchVocabulary(None, "fred", "PERSON")
         self.assertEqual([person], list(results))
 
     def test_person_filter(self):
         # Test that the person filter only returns people.
         person = self.factory.makePerson(
-            name="fredperson", email="fredperson@foo.com")
-        self.factory.makeTeam(
-            name="fredteam", email="fredteam@foo.com")
+            name="fredperson", email="fredperson@foo.com"
+        )
+        self.factory.makeTeam(name="fredteam", email="fredteam@foo.com")
         self._person_filter_tests(person)
 
     def _team_filter_tests(self, teams):
-        results = self.searchVocabulary(None, '', 'TEAM')
+        results = self.searchVocabulary(None, "", "TEAM")
         for personorteam in results:
             self.assertTrue(personorteam.is_team)
-        results = self.searchVocabulary(None, 'fred', 'TEAM')
+        results = self.searchVocabulary(None, "fred", "TEAM")
         self.assertContentEqual(teams, list(results))
 
     def test_inactive_people_ignored(self):
@@ -161,123 +176,136 @@ class ValidPersonOrTeamVocabularyMixin(VocabularyTestBase):
         for status in AccountStatus:
             if status.value != AccountStatus.ACTIVE:
                 self.factory.makePerson(
-                    name='fred' + status.token.lower(),
-                    account_status=status.value)
-        active_person = self.factory.makePerson(name='fredactive')
-        team = self.factory.makePerson(name='fredteam')
-        results = self.searchVocabulary(None, 'fred')
+                    name="fred" + status.token.lower(),
+                    account_status=status.value,
+                )
+        active_person = self.factory.makePerson(name="fredactive")
+        team = self.factory.makePerson(name="fredteam")
+        results = self.searchVocabulary(None, "fred")
         self.assertContentEqual([active_person, team], list(results))
 
 
-class TestValidPersonOrTeamVocabulary(ValidPersonOrTeamVocabularyMixin,
-                                      TestCaseWithFactory):
+class TestValidPersonOrTeamVocabulary(
+    ValidPersonOrTeamVocabularyMixin, TestCaseWithFactory
+):
     """Test that the ValidPersonOrTeamVocabulary behaves as expected.
 
-    Most tests are in lib/lp/registry/doc/vocabularies.txt.
+    Most tests are in lib/lp/registry/doc/vocabularies.rst.
     """
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidPersonOrTeam'
+    vocabulary_name = "ValidPersonOrTeam"
 
     def test_team_filter(self):
         # Test that the team filter only returns teams.
-        self.factory.makePerson(
-            name="fredperson", email="fredperson@foo.com")
-        team = self.factory.makeTeam(
-            name="fredteam", email="fredteam@foo.com")
+        self.factory.makePerson(name="fredperson", email="fredperson@foo.com")
+        team = self.factory.makeTeam(name="fredteam", email="fredteam@foo.com")
         self._team_filter_tests([team])
 
     def test_search_accepts_or_expressions(self):
-        person = self.factory.makePerson(name='baz')
-        team = self.factory.makeTeam(name='blah')
-        result = list(self.searchVocabulary(None, 'baz OR blah'))
+        person = self.factory.makePerson(name="baz")
+        team = self.factory.makeTeam(name="blah")
+        result = list(self.searchVocabulary(None, "baz OR blah"))
         self.assertEqual([person, team], result)
         private_team_one = self.factory.makeTeam(
-            name='private-eye', visibility=PersonVisibility.PRIVATE,
-            owner=person)
+            name="private-eye",
+            visibility=PersonVisibility.PRIVATE,
+            owner=person,
+        )
         private_team_two = self.factory.makeTeam(
-            name='paranoid', visibility=PersonVisibility.PRIVATE,
-            owner=person)
+            name="paranoid", visibility=PersonVisibility.PRIVATE, owner=person
+        )
         with person_logged_in(person):
             result = list(
-                self.searchVocabulary(None, 'paranoid OR private-eye'))
+                self.searchVocabulary(None, "paranoid OR private-eye")
+            )
         self.assertEqual([private_team_one, private_team_two], result)
 
 
-class TestValidPersonOrTeamPreloading(VocabularyTestBase,
-                                      TestCaseWithFactory):
+class TestValidPersonOrTeamPreloading(VocabularyTestBase, TestCaseWithFactory):
     """Tests for ValidPersonOrTeamVocabulary's preloading behaviour."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidPersonOrTeam'
+    vocabulary_name = "ValidPersonOrTeam"
 
     def test_preloads_irc_nicks_and_preferredemail(self):
         """Test that IRC nicks and preferred email addresses are preloaded."""
         # Create three people with IRC nicks, and one without.
         people = []
         for num in range(3):
-            person = self.factory.makePerson(displayname='foobar %d' % num)
-            getUtility(IIrcIDSet).new(person, 'launchpad', person.name)
+            person = self.factory.makePerson(displayname="foobar %d" % num)
+            getUtility(IIrcIDSet).new(person, "launchpad", person.name)
             people.append(person)
-        people.append(self.factory.makePerson(displayname='foobar 4'))
+        people.append(self.factory.makePerson(displayname="foobar 4"))
 
         # Remember the current values for checking later, and throw out
         # the cache.
         expected_nicks = {
-            person.id: list(person.ircnicknames) for person in people}
+            person.id: list(person.ircnicknames) for person in people
+        }
         expected_emails = {
-            person.id: person.preferredemail for person in people}
+            person.id: person.preferredemail for person in people
+        }
         Store.of(people[0]).invalidate()
 
-        results = list(self.searchVocabulary(None, 'foobar'))
+        results = list(self.searchVocabulary(None, "foobar"))
         with StormStatementRecorder() as recorder:
             self.assertEqual(4, len(results))
             for person in results:
                 self.assertEqual(
-                    expected_nicks[person.id], person.ircnicknames)
+                    expected_nicks[person.id], person.ircnicknames
+                )
                 self.assertEqual(
-                    expected_emails[person.id], person.preferredemail)
+                    expected_emails[person.id], person.preferredemail
+                )
         self.assertThat(recorder, HasQueryCount(Equals(0)))
 
 
 class TestValidPersonOrExclusiveTeamVocabulary(
-                    ValidPersonOrTeamVocabularyMixin, TestCaseWithFactory):
+    ValidPersonOrTeamVocabularyMixin, TestCaseWithFactory
+):
     """Test that the ValidPersonOrExclusiveTeamVocabulary is correct."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidPillarOwner'
+    vocabulary_name = "ValidPillarOwner"
 
     def test_team_filter(self):
         # Test that the team filter only returns exclusive teams.
-        self.factory.makePerson(
-            name="fredperson", email="fredperson@foo.com")
+        self.factory.makePerson(name="fredperson", email="fredperson@foo.com")
         for policy in INCLUSIVE_TEAM_POLICY:
             self.factory.makeTeam(
                 name="fred%s" % policy.name.lower(),
                 email="team_%s@foo.com" % policy.name,
-                membership_policy=policy)
+                membership_policy=policy,
+            )
         closed_teams = []
         for policy in EXCLUSIVE_TEAM_POLICY:
-            closed_teams.append(self.factory.makeTeam(
-                name="fred%s" % policy.name.lower(),
-                email="team_%s@foo.com" % policy.name,
-                membership_policy=policy))
+            closed_teams.append(
+                self.factory.makeTeam(
+                    name="fred%s" % policy.name.lower(),
+                    email="team_%s@foo.com" % policy.name,
+                    membership_policy=policy,
+                )
+            )
         self._team_filter_tests(closed_teams)
 
 
 class TeamMemberVocabularyTestBase(VocabularyTestBase):
-
     def test_open_team_cannot_be_a_member_of_a_closed_team(self):
         context_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
         open_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         moderated_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
         restricted_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
         user = self.factory.makePerson()
-        all_possible_members = self.searchVocabulary(context_team, '')
+        all_possible_members = self.searchVocabulary(context_team, "")
         self.assertNotIn(open_team, all_possible_members)
         self.assertIn(moderated_team, all_possible_members)
         self.assertIn(restricted_team, all_possible_members)
@@ -285,15 +313,19 @@ class TeamMemberVocabularyTestBase(VocabularyTestBase):
 
     def test_open_team_can_be_a_member_of_an_open_team(self):
         context_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         open_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         moderated_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
         restricted_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
         user = self.factory.makePerson()
-        all_possible_members = self.searchVocabulary(context_team, '')
+        all_possible_members = self.searchVocabulary(context_team, "")
         self.assertIn(open_team, all_possible_members)
         self.assertIn(moderated_team, all_possible_members)
         self.assertIn(restricted_team, all_possible_members)
@@ -301,32 +333,36 @@ class TeamMemberVocabularyTestBase(VocabularyTestBase):
 
     def test_vocabulary_displayname(self):
         context_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         vocabulary = self.getVocabulary(context_team)
-        self.assertEqual(
-            'Select a Team or Person', vocabulary.displayname)
+        self.assertEqual("Select a Team or Person", vocabulary.displayname)
 
     def test_open_team_vocabulary_step_title(self):
         context_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.OPEN)
+            membership_policy=TeamMembershipPolicy.OPEN
+        )
         vocabulary = self.getVocabulary(context_team)
-        self.assertEqual('Search', vocabulary.step_title)
+        self.assertEqual("Search", vocabulary.step_title)
 
     def test_closed_team_vocabulary_step_title(self):
         context_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED
+        )
         vocabulary = self.getVocabulary(context_team)
         self.assertEqual(
-            'Search for a restricted team, a moderated team, or a person',
-            vocabulary.step_title)
+            "Search for a restricted team, a moderated team, or a person",
+            vocabulary.step_title,
+        )
 
 
-class TestValidTeamMemberVocabulary(TeamMemberVocabularyTestBase,
-                                    TestCaseWithFactory):
+class TestValidTeamMemberVocabulary(
+    TeamMemberVocabularyTestBase, TestCaseWithFactory
+):
     """Test that the ValidTeamMemberVocabulary behaves as expected."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidTeamMember'
+    vocabulary_name = "ValidTeamMember"
 
     def test_public_team_cannot_be_a_member_of_itself(self):
         # A public team should be filtered by the vocab.extra_clause
@@ -339,17 +375,19 @@ class TestValidTeamMemberVocabulary(TeamMemberVocabularyTestBase,
         # when provided a search term.
         owner = self.factory.makePerson()
         team = self.factory.makeTeam(
-            owner=owner, visibility=PersonVisibility.PRIVATE)
+            owner=owner, visibility=PersonVisibility.PRIVATE
+        )
         login_person(owner)
         self.assertNotIn(team, self.searchVocabulary(team, team.name))
 
 
-class TestValidTeamOwnerVocabulary(TeamMemberVocabularyTestBase,
-                                   TestCaseWithFactory):
+class TestValidTeamOwnerVocabulary(
+    TeamMemberVocabularyTestBase, TestCaseWithFactory
+):
     """Test that the ValidTeamOwnerVocabulary behaves as expected."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidTeamOwner'
+    vocabulary_name = "ValidTeamOwner"
 
     def test_team_cannot_own_itself(self):
         context_team = self.factory.makeTeam()
@@ -363,24 +401,22 @@ class TestValidTeamOwnerVocabulary(TeamMemberVocabularyTestBase,
         self.assertNotIn(owned_team, results)
 
 
-class TestValidPersonVocabulary(VocabularyTestBase,
-                                      TestCaseWithFactory):
+class TestValidPersonVocabulary(VocabularyTestBase, TestCaseWithFactory):
     """Test that the ValidPersonVocabulary behaves as expected."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidPerson'
+    vocabulary_name = "ValidPerson"
 
     def test_supported_filters(self):
         # The vocab shouldn't support person or team filters.
         self.assertEqual([], self.getVocabulary(None).supportedFilters())
 
 
-class TestValidTeamVocabulary(VocabularyTestBase,
-                                      TestCaseWithFactory):
+class TestValidTeamVocabulary(VocabularyTestBase, TestCaseWithFactory):
     """Test that the ValidTeamVocabulary behaves as expected."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'ValidTeam'
+    vocabulary_name = "ValidTeam"
 
     def test_supported_filters(self):
         # The vocab shouldn't support person or team filters.
@@ -389,42 +425,40 @@ class TestValidTeamVocabulary(VocabularyTestBase,
     def test_unvalidated_emails_ignored(self):
         person = self.factory.makePerson()
         self.factory.makeEmail(
-            'fnord@example.com',
-            person,
-            email_status=EmailAddressStatus.NEW)
-        search = self.searchVocabulary(None, 'fnord@example.com')
+            "fnord@example.com", person, email_status=EmailAddressStatus.NEW
+        )
+        search = self.searchVocabulary(None, "fnord@example.com")
         self.assertEqual([], [s for s in search])
 
     def test_search_accepts_or_expressions(self):
-        team_one = self.factory.makeTeam(name='baz')
-        team_two = self.factory.makeTeam(name='blah')
-        result = list(self.searchVocabulary(None, 'baz OR blah'))
+        team_one = self.factory.makeTeam(name="baz")
+        team_two = self.factory.makeTeam(name="blah")
+        result = list(self.searchVocabulary(None, "baz OR blah"))
         self.assertEqual([team_one, team_two], result)
 
 
-class TestNewPillarGranteeVocabulary(VocabularyTestBase,
-                                        TestCaseWithFactory):
+class TestNewPillarGranteeVocabulary(VocabularyTestBase, TestCaseWithFactory):
     """Test that the NewPillarGranteeVocabulary behaves as expected."""
 
     layer = DatabaseFunctionalLayer
-    vocabulary_name = 'NewPillarGrantee'
+    vocabulary_name = "NewPillarGrantee"
 
     def test_existing_grantees_excluded(self):
         # Existing grantees should be excluded from the results.
         product = self.factory.makeProduct()
-        person1 = self.factory.makePerson(name='grantee1')
-        person2 = self.factory.makePerson(name='grantee2')
+        person1 = self.factory.makePerson(name="grantee1")
+        person2 = self.factory.makePerson(name="grantee2")
         policy = self.factory.makeAccessPolicy(pillar=product)
         self.factory.makeAccessPolicyGrant(policy=policy, grantee=person1)
-        [newgrantee] = self.searchVocabulary(product, 'grantee')
+        [newgrantee] = self.searchVocabulary(product, "grantee")
         self.assertEqual(newgrantee, person2)
 
     def test_open_teams_excluded(self):
         # Only exclusive teams should be available for selection.
         product = self.factory.makeProduct()
-        self.factory.makeTeam(name='grantee1')
+        self.factory.makeTeam(name="grantee1")
         closed_team = self.factory.makeTeam(
-            name='grantee2',
-            membership_policy=TeamMembershipPolicy.MODERATED)
-        [newgrantee] = self.searchVocabulary(product, 'grantee')
+            name="grantee2", membership_policy=TeamMembershipPolicy.MODERATED
+        )
+        [newgrantee] = self.searchVocabulary(product, "grantee")
         self.assertEqual(newgrantee, closed_team)

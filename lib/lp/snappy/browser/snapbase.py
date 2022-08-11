@@ -6,20 +6,13 @@
 __all__ = [
     "SnapBaseNavigation",
     "SnapBaseSetNavigation",
-    ]
+]
 
 from zope.component import getUtility
 
 from lp.services.database.sqlobject import SQLObjectNotFound
-from lp.services.webapp import (
-    GetitemNavigation,
-    Navigation,
-    stepthrough,
-    )
-from lp.snappy.interfaces.snapbase import (
-    ISnapBase,
-    ISnapBaseSet,
-    )
+from lp.services.webapp import GetitemNavigation, Navigation, stepthrough
+from lp.snappy.interfaces.snapbase import ISnapBase, ISnapBaseSet
 from lp.soyuz.interfaces.archive import IArchiveSet
 
 
@@ -52,4 +45,5 @@ class SnapBaseNavigation(Navigation):
 
 class SnapBaseSetNavigation(GetitemNavigation):
     """Navigation methods for `ISnapBaseSet`."""
+
     usedfor = ISnapBaseSet

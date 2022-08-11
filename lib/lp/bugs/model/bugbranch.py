@@ -6,21 +6,13 @@
 __all__ = [
     "BugBranch",
     "BugBranchSet",
-    ]
+]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    )
+from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
-from lp.bugs.interfaces.bugbranch import (
-    IBugBranch,
-    IBugBranchSet,
-    )
+from lp.bugs.interfaces.bugbranch import IBugBranch, IBugBranchSet
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
@@ -31,20 +23,22 @@ from lp.services.database.stormbase import StormBase
 class BugBranch(StormBase):
     """See `IBugBranch`."""
 
-    __storm_table__ = 'BugBranch'
+    __storm_table__ = "BugBranch"
 
     id = Int(primary=True)
 
     datecreated = DateTime(
-        name='datecreated', tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    bug_id = Int(name='bug', allow_none=False)
-    bug = Reference(bug_id, 'Bug.id')
+        name="datecreated", tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+    )
+    bug_id = Int(name="bug", allow_none=False)
+    bug = Reference(bug_id, "Bug.id")
     branch_id = Int(name="branch", allow_none=False)
-    branch = Reference(branch_id, 'Branch.id')
+    branch = Reference(branch_id, "Branch.id")
 
     registrant_id = Int(
-        name='registrant', allow_none=False, validator=validate_public_person)
-    registrant = Reference(registrant_id, 'Person.id')
+        name="registrant", allow_none=False, validator=validate_public_person
+    )
+    registrant = Reference(registrant_id, "Person.id")
 
     def __init__(self, branch, bug, registrant):
         super().__init__()
@@ -58,7 +52,6 @@ class BugBranch(StormBase):
 
 @implementer(IBugBranchSet)
 class BugBranchSet:
-
     def getBranchesWithVisibleBugs(self, branches, user):
         """See `IBugBranchSet`."""
         # Avoid circular imports.
@@ -70,8 +63,13 @@ class BugBranchSet:
             return []
 
         visible = get_bug_privacy_filter(user)
-        return IStore(BugBranch).find(
-            BugBranch.branch_id,
-            BugBranch.branch_id.is_in(branch_ids),
-            BugTaskFlat.bug_id == BugBranch.bug_id,
-            visible).config(distinct=True)
+        return (
+            IStore(BugBranch)
+            .find(
+                BugBranch.branch_id,
+                BugBranch.branch_id.is_in(branch_ids),
+                BugTaskFlat.bug_id == BugBranch.bug_id,
+                visible,
+            )
+            .config(distinct=True)
+        )

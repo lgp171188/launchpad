@@ -2,23 +2,22 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'copy_and_close',
-    'EncodableLibraryFileAlias',
-    'filechunks',
-    'guess_librarian_encoding',
-    'sha1_from_path',
-    ]
+    "copy_and_close",
+    "EncodableLibraryFileAlias",
+    "filechunks",
+    "guess_librarian_encoding",
+    "sha1_from_path",
+]
 
 
 import hashlib
-
 
 MEGABYTE = 1024 * 1024
 
 
 def filechunks(file, chunk_size=4 * MEGABYTE):
     """Return an iterator which reads chunks of the given file."""
-    return iter(lambda: file.read(chunk_size), b'')
+    return iter(lambda: file.read(chunk_size), b"")
 
 
 def copy_and_close(from_file, to_file):
@@ -39,7 +38,7 @@ def copy_and_close(from_file, to_file):
 
 def sha1_from_path(path):
     """Return the hexdigest SHA1 for the contents of the path."""
-    with open(path, 'rb') as the_file:
+    with open(path, "rb") as the_file:
         the_hash = hashlib.sha1()
         for chunk in filechunks(the_file):
             the_hash.update(chunk)
@@ -64,12 +63,12 @@ def guess_librarian_encoding(filename, mimetype):
     :return: a tuple containing the appropriate 'encoding' and 'mimetype'
         that should be used to serve the file.
     """
-    if filename.endswith('txt.gz'):
-        encoding = 'gzip'
-        mimetype = 'text/plain; charset=utf-8'
-    elif filename.endswith('diff.gz'):
-        encoding = 'gzip'
-        mimetype = 'text/plain'
+    if filename.endswith("txt.gz"):
+        encoding = "gzip"
+        mimetype = "text/plain; charset=utf-8"
+    elif filename.endswith("diff.gz"):
+        encoding = "gzip"
+        mimetype = "text/plain"
     else:
         encoding = None
 

@@ -4,12 +4,13 @@
 """Interfaces for things which have Questions."""
 
 __all__ = [
-    'IAnswersFrontPageSearchForm',
-    'IQuestionTarget',
-    'ISearchQuestionsForm',
-    ]
+    "IAnswersFrontPageSearchForm",
+    "IQuestionTarget",
+    "ISearchQuestionsForm",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     export_write_operation,
@@ -17,27 +18,18 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    List,
-    Set,
-    TextLine,
-    )
+from zope.schema import Choice, Int, List, Set, TextLine
 
 from lp import _
 from lp.answers.enums import (
     QUESTION_STATUS_DEFAULT_SEARCH,
     QuestionSort,
     QuestionStatus,
-    )
-from lp.answers.interfaces.questioncollection import (
-    ISearchableByQuestionOwner,
-    )
+)
+from lp.answers.interfaces.questioncollection import ISearchableByQuestionOwner
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import PublicPersonChoice
 from lp.services.worlddata.interfaces.language import ILanguage
@@ -47,9 +39,10 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
     """Methods that anonymous in user can access."""
 
     @operation_parameters(
-        question_id=Int(title=_('Question Number'), required=True))
+        question_id=Int(title=_("Question Number"), required=True)
+    )
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getQuestion(question_id):
         """Return the question by its id, if it is applicable to this target.
 
@@ -58,11 +51,10 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
         If there is no such question number for this target, return None
         """
 
-    @operation_parameters(
-        phrase=TextLine(title=_('A phrase'), required=True))
+    @operation_parameters(phrase=TextLine(title=_("A phrase"), required=True))
     @operation_returns_collection_of(Interface)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def findSimilarQuestions(phrase):
         """Return questions similar to phrase.
 
@@ -73,11 +65,10 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
         :param phrase: A phrase such as the summary of a question.
         """
 
-    @operation_parameters(
-        language=Reference(ILanguage))
+    @operation_parameters(language=Reference(ILanguage))
     @operation_returns_collection_of(IPerson)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getAnswerContactsForLanguage(language):
         """Return the list of Persons that provide support for a language.
 
@@ -98,7 +89,7 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
 
     @operation_returns_collection_of(ILanguage)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSupportedLanguages():
         """Return a list of languages spoken by at the answer contacts.
 
@@ -111,24 +102,31 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
         description=_(
             "Persons that are willing to provide support for this target. "
             "They receive email notifications about each new question as "
-            "well as for changes to any questions related to this target."),
-        value_type=PublicPersonChoice(vocabulary="ValidPersonOrTeam"))
+            "well as for changes to any questions related to this target."
+        ),
+        value_type=PublicPersonChoice(vocabulary="ValidPersonOrTeam"),
+    )
 
     direct_answer_contacts = List(
         title=_("Direct Answer Contacts"),
         description=_(
-            "IPersons that registered as answer contacts explicitely on "
+            "IPersons that registered as answer contacts explicitly on "
             "this target. (answer_contacts may include answer contacts "
-            "inherited from other context.)"),
-        value_type=PublicPersonChoice(vocabulary="ValidPersonOrTeam"))
+            "inherited from other context.)"
+        ),
+        value_type=PublicPersonChoice(vocabulary="ValidPersonOrTeam"),
+    )
 
     @operation_parameters(
         person=PublicPersonChoice(
-            title=_('The user or an administered team'), required=True,
-            vocabulary='ValidPersonOrTeam'))
+            title=_("The user or an administered team"),
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
     @call_with(subscribed_by=REQUEST_USER)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def canUserAlterAnswerContact(person, subscribed_by):
         """Can the user add or remove the answer contact.
 
@@ -143,8 +141,9 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
 class IQuestionTargetView(Interface):
     """Methods that logged in user can access."""
 
-    def newQuestion(owner, title, description, language=None,
-                    datecreated=None):
+    def newQuestion(
+        owner, title, description, language=None, datecreated=None
+    ):
         """Create a new question.
 
          A new question is created with status OPEN.
@@ -178,11 +177,14 @@ class IQuestionTargetView(Interface):
 
     @operation_parameters(
         person=PublicPersonChoice(
-            title=_('The user of an administered team'), required=True,
-            vocabulary='ValidPersonOrTeam'))
+            title=_("The user of an administered team"),
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
     @call_with(subscribed_by=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def addAnswerContact(person, subscribed_by):
         """Add a new answer contact.
 
@@ -196,11 +198,14 @@ class IQuestionTargetView(Interface):
 
     @operation_parameters(
         person=PublicPersonChoice(
-            title=_('The user of an administered team'), required=True,
-            vocabulary='ValidPersonOrTeam'))
+            title=_("The user of an administered team"),
+            required=True,
+            vocabulary="ValidPersonOrTeam",
+        )
+    )
     @call_with(subscribed_by=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def removeAnswerContact(person, subscribed_by):
         """Remove an answer contact.
 
@@ -211,7 +216,7 @@ class IQuestionTargetView(Interface):
         """
 
 
-@exported_as_webservice_entry(as_of='devel')
+@exported_as_webservice_entry(as_of="devel")
 class IQuestionTarget(IQuestionTargetPublic, IQuestionTargetView):
     """An object that can have a new question asked about it."""
 
@@ -221,19 +226,28 @@ class IQuestionTarget(IQuestionTargetPublic, IQuestionTargetView):
 class ISearchQuestionsForm(Interface):
     """Schema for the search question form."""
 
-    search_text = TextLine(title=_('Search text'), required=False)
+    search_text = TextLine(title=_("Search text"), required=False)
 
-    sort = Choice(title=_('Sort order'), required=True,
-                  vocabulary=QuestionSort,
-                  default=QuestionSort.RELEVANCY)
+    sort = Choice(
+        title=_("Sort order"),
+        required=True,
+        vocabulary=QuestionSort,
+        default=QuestionSort.RELEVANCY,
+    )
 
-    status = Set(title=_('Status'), required=False,
-                 value_type=Choice(vocabulary=QuestionStatus),
-                 default=set(QUESTION_STATUS_DEFAULT_SEARCH))
+    status = Set(
+        title=_("Status"),
+        required=False,
+        value_type=Choice(vocabulary=QuestionStatus),
+        default=set(QUESTION_STATUS_DEFAULT_SEARCH),
+    )
 
 
 class IAnswersFrontPageSearchForm(ISearchQuestionsForm):
     """Schema for the Answers front page search form."""
 
-    scope = Choice(title=_('Search scope'), required=False,
-                   vocabulary='DistributionOrProductOrProjectGroup')
+    scope = Choice(
+        title=_("Search scope"),
+        required=False,
+        vocabulary="DistributionOrProductOrProjectGroup",
+    )

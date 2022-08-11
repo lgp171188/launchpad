@@ -15,12 +15,9 @@ __all__ = [
     "CharmRecipeRequestBuildsView",
     "CharmRecipeURL",
     "CharmRecipeView",
-    ]
+]
 
-from lazr.restful.interface import (
-    copy_field,
-    use_template,
-    )
+from lazr.restful.interface import copy_field, use_template
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.formlib.form import FormFields
@@ -40,26 +37,24 @@ from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.charms.browser.widgets.charmrecipebuildchannels import (
     CharmRecipeBuildChannelsWidget,
-    )
-from lp.charms.interfaces.charmhubclient import (
-    BadRequestPackageUploadResponse,
-    )
+)
+from lp.charms.interfaces.charmhubclient import BadRequestPackageUploadResponse
 from lp.charms.interfaces.charmrecipe import (
-    CannotAuthorizeCharmhubUploads,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    CannotAuthorizeCharmhubUploads,
     ICharmRecipe,
     ICharmRecipeSet,
     NoSuchCharmRecipe,
-    )
+)
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuildSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.gitref import IGitRef
@@ -73,20 +68,17 @@ from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
+    canonical_url,
+    enabled_with_permission,
     stepthrough,
     structured,
-    )
-from lp.services.webapp.breadcrumb import (
-    Breadcrumb,
-    NameBreadcrumb,
-    )
+)
+from lp.services.webapp.breadcrumb import Breadcrumb, NameBreadcrumb
 from lp.services.webapp.candid import request_candid_discharge
 from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
@@ -97,6 +89,7 @@ from lp.soyuz.browser.build import get_build_by_id_str
 @implementer(ICanonicalUrlData)
 class CharmRecipeURL:
     """Charm recipe URL creation rules."""
+
     rootsite = "mainsite"
 
     def __init__(self, recipe):
@@ -133,14 +126,15 @@ class CharmRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
 
 
 class CharmRecipeBreadcrumb(NameBreadcrumb):
-
     @property
     def inside(self):
         # XXX cjwatson 2021-06-04: This should probably link to an
         # appropriate listing view, but we don't have one of those yet.
         return Breadcrumb(
-            self.context.project, text=self.context.project.display_name,
-            inside=self.context.project)
+            self.context.project,
+            text=self.context.project.display_name,
+            inside=self.context.project,
+        )
 
 
 class CharmRecipeNavigationMenu(NavigationMenu):
@@ -163,10 +157,11 @@ class CharmRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
         return Link(
-            "+webhooks", "Manage webhooks", icon="edit",
-            enabled=(
-                bool(getFeatureFlag(CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG)) and
-                bool(getFeatureFlag("webhooks.new.enabled"))))
+            "+webhooks",
+            "Manage webhooks",
+            icon="edit",
+            enabled=bool(getFeatureFlag(CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG)),
+        )
 
     @enabled_with_permission("launchpad.Edit")
     def authorize(self):
@@ -206,10 +201,15 @@ class CharmRecipeView(LaunchpadView):
     def person_picker(self):
         field = copy_field(
             ICharmRecipe["owner"],
-            vocabularyName="AllUserTeamsParticipationPlusSelfSimpleDisplay")
+            vocabularyName="AllUserTeamsParticipationPlusSelfSimpleDisplay",
+        )
         return InlinePersonEditPickerWidget(
-            self.context, field, format_link(self.context.owner),
-            header="Change owner", step_title="Select a new owner")
+            self.context,
+            field,
+            format_link(self.context.owner),
+            header="Change owner",
+            step_title="Select a new owner",
+        )
 
     @property
     def build_frequency(self):
@@ -263,34 +263,42 @@ def builds_and_requests_for_recipe(recipe):
 
     items = sorted(
         list(recipe.pending_builds) + list(recipe.pending_build_requests),
-        key=make_sort_key("date_created", "date_requested"))
+        key=make_sort_key("date_created", "date_requested"),
+    )
     if len(items) < 10:
         # We need to interleave two unbounded result sets, but we only need
         # enough items from them to make the total count up to 10.  It's
         # simplest to just fetch the upper bound from each set and do our
         # own sorting.
         recent_items = sorted(
-            list(recipe.completed_builds[:10 - len(items)]) +
-            list(recipe.failed_build_requests[:10 - len(items)]),
+            list(recipe.completed_builds[: 10 - len(items)])
+            + list(recipe.failed_build_requests[: 10 - len(items)]),
             key=make_sort_key(
-                "date_finished", "date_started",
-                "date_created", "date_requested"))
-        items.extend(recent_items[:10 - len(items)])
+                "date_finished",
+                "date_started",
+                "date_created",
+                "date_requested",
+            ),
+        )
+        items.extend(recent_items[: 10 - len(items)])
     return items
 
 
 class ICharmRecipeEditSchema(Interface):
     """Schema for adding or editing a charm recipe."""
 
-    use_template(ICharmRecipe, include=[
-        "owner",
-        "name",
-        "project",
-        "require_virtualized",
-        "auto_build",
-        "auto_build_channels",
-        "store_upload",
-        ])
+    use_template(
+        ICharmRecipe,
+        include=[
+            "owner",
+            "name",
+            "project",
+            "require_virtualized",
+            "auto_build",
+            "auto_build_channels",
+            "store_upload",
+        ],
+    )
 
     git_ref = copy_field(ICharmRecipe["git_ref"], required=True)
 
@@ -307,15 +315,16 @@ def log_oops(error, request):
 
 
 class CharmRecipeAuthorizeMixin:
-
     def requestAuthorization(self, recipe):
         try:
             self.next_url = CharmRecipeAuthorizeView.requestAuthorization(
-                recipe, self.request)
+                recipe, self.request
+            )
         except BadRequestPackageUploadResponse as e:
             self.setFieldError(
                 "store_upload",
-                "Cannot get permission from Charmhub to upload this package.")
+                "Cannot get permission from Charmhub to upload this package.",
+            )
             log_oops(e, self.request)
 
 
@@ -344,7 +353,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
             "store_upload",
             "store_name",
             "store_channels",
-            ]
+        ]
 
     @property
     def is_project_context(self):
@@ -357,8 +366,9 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     @property
     def initial_values(self):
         initial_values = {"owner": self.user}
-        if (IGitRef.providedBy(self.context) and
-                IProduct.providedBy(self.context.target)):
+        if IGitRef.providedBy(self.context) and IProduct.providedBy(
+            self.context.target
+        ):
             initial_values["project"] = self.context.target
         return initial_values
 
@@ -383,14 +393,20 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
             git_ref = data["git_ref"]
         else:
             raise NotImplementedError(
-                "Unknown context for charm recipe creation.")
+                "Unknown context for charm recipe creation."
+            )
         recipe = getUtility(ICharmRecipeSet).new(
-            self.user, data["owner"], project, data["name"], git_ref=git_ref,
+            self.user,
+            data["owner"],
+            project,
+            data["name"],
+            git_ref=git_ref,
             auto_build=data["auto_build"],
             auto_build_channels=data["auto_build_channels"],
             store_upload=data["store_upload"],
             store_name=data["store_name"],
-            store_channels=data.get("store_channels"))
+            store_channels=data.get("store_channels"),
+        )
         if data["store_upload"]:
             self.requestAuthorization(recipe)
         else:
@@ -409,7 +425,8 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
                 self.setFieldError(
                     "name",
                     "There is already a charm recipe owned by %s in %s with "
-                    "this name." % (owner.display_name, project.display_name))
+                    "this name." % (owner.display_name, project.display_name),
+                )
 
     def _getFieldName(self, name, store_channel_index):
         suffix = ".%s" % store_channel_index
@@ -428,7 +445,8 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
 
 
 class BaseCharmRecipeEditView(
-        CharmRecipeAuthorizeMixin, LaunchpadEditFormView):
+    CharmRecipeAuthorizeMixin, LaunchpadEditFormView
+):
 
     schema = ICharmRecipeEditSchema
 
@@ -544,13 +562,15 @@ class BaseCharmRecipeEditView(
             if owner is not None and owner.private:
                 self.setFieldError(
                     "owner",
-                    "A public charm recipe cannot have a private owner.")
+                    "A public charm recipe cannot have a private owner.",
+                )
         if "git_ref" in data:
             ref = data.get("git_ref", self.context.git_ref)
             if ref is not None and ref.private:
                 self.setFieldError(
                     "git_ref",
-                    "A public charm recipe cannot have a private repository.")
+                    "A public charm recipe cannot have a private repository.",
+                )
 
     def _needCharmhubReauth(self, data):
         """Does this change require reauthorizing to Charmhub?"""
@@ -559,8 +579,9 @@ class BaseCharmRecipeEditView(
         if not store_upload or store_name is None:
             return False
         return (
-            not self.context.store_upload or
-            store_name != self.context.store_name)
+            not self.context.store_upload
+            or store_name != self.context.store_name
+        )
 
     def parseData(self, data):
         """Rearrange form data to make it easier to process."""
@@ -685,7 +706,7 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
         "store_upload",
         "store_name",
         "store_channels",
-        ]
+    ]
     custom_widget_git_ref = GitRefWidget
     custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
@@ -698,13 +719,15 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
         if owner and project and name:
             try:
                 recipe = getUtility(ICharmRecipeSet).getByName(
-                    owner, project, name)
+                    owner, project, name
+                )
                 if recipe != self.context:
                     self.setFieldError(
                         "name",
                         "There is already a charm recipe owned by %s in %s "
-                        "with this name." %
-                        (owner.display_name, project.display_name))
+                        "with this name."
+                        % (owner.display_name, project.display_name),
+                    )
             except NoSuchCharmRecipe:
                 pass
 
@@ -722,7 +745,8 @@ class CharmRecipeAuthorizeView(LaunchpadEditFormView):
         """Schema for authorizing charm recipe uploads to Charmhub."""
 
         discharge_macaroon = TextLine(
-            title="Serialized discharge macaroon", required=True)
+            title="Serialized discharge macaroon", required=True
+        )
 
     render_context = False
 
@@ -743,9 +767,12 @@ class CharmRecipeAuthorizeView(LaunchpadEditFormView):
         else:
             base_url = canonical_url(recipe, view_name="+authorize")
             return request_candid_discharge(
-                request, root_macaroon_raw, base_url,
+                request,
+                root_macaroon_raw,
+                base_url,
                 "field.discharge_macaroon",
-                discharge_macaroon_action="field.actions.complete")
+                discharge_macaroon_action="field.actions.complete",
+            )
 
     @action("Begin authorization", name="begin")
     def begin_action(self, action, data):
@@ -756,14 +783,23 @@ class CharmRecipeAuthorizeView(LaunchpadEditFormView):
     @action("Complete authorization", name="complete")
     def complete_action(self, action, data):
         if not data.get("discharge_macaroon"):
-            self.addError(structured(
-                _("Uploads of %(recipe)s to Charmhub were not authorized."),
-                recipe=self.context.name))
+            self.addError(
+                structured(
+                    _(
+                        "Uploads of %(recipe)s to Charmhub were not "
+                        "authorized."
+                    ),
+                    recipe=self.context.name,
+                )
+            )
             return
         self.context.completeAuthorization(data["discharge_macaroon"])
-        self.request.response.addInfoNotification(structured(
-            _("Uploads of %(recipe)s to Charmhub are now authorized."),
-            recipe=self.context.name))
+        self.request.response.addInfoNotification(
+            structured(
+                _("Uploads of %(recipe)s to Charmhub are now authorized."),
+                recipe=self.context.name,
+            )
+        )
         self.request.response.redirect(canonical_url(self.context))
 
     @property
@@ -803,8 +839,11 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
         """Schema for requesting a build."""
 
         channels = Dict(
-            title="Source snap channels", key_type=TextLine(), required=True,
-            description=ICharmRecipe["auto_build_channels"].description)
+            title="Source snap channels",
+            key_type=TextLine(),
+            required=True,
+            description=ICharmRecipe["auto_build_channels"].description,
+        )
 
     custom_widget_channels = CharmRecipeBuildChannelsWidget
 
@@ -817,11 +856,12 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
         """See `LaunchpadFormView`."""
         return {
             "channels": self.context.auto_build_channels,
-            }
+        }
 
     @action("Request builds", name="request")
     def request_action(self, action, data):
         self.context.requestBuilds(self.user, channels=data["channels"])
         self.request.response.addNotification(
-            _("Builds will be dispatched soon."))
+            _("Builds will be dispatched soon.")
+        )
         self.next_url = self.cancel_url

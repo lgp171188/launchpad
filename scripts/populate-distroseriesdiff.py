@@ -7,8 +7,7 @@ import _pythonpath  # noqa: F401
 
 from lp.registry.scripts.populate_distroseriesdiff import (
     PopulateDistroSeriesDiff,
-    )
+)
 
-
-if __name__ == '__main__':
-    PopulateDistroSeriesDiff('populate-distroseriesdiff').run()
+if __name__ == "__main__":
+    PopulateDistroSeriesDiff("populate-distroseriesdiff").run()

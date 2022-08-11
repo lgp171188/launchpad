@@ -4,27 +4,22 @@
 """Interfaces to handle translation files imports."""
 
 __all__ = [
-    'ITranslationFormatImporter',
-    'ITranslationImporter',
-    'OutdatedTranslationError',
-    'NotExportedFromLaunchpad',
-    'TooManyPluralFormsError',
-    'TranslationFormatSyntaxError',
-    'TranslationFormatInvalidInputError',
-    ]
+    "ITranslationFormatImporter",
+    "ITranslationImporter",
+    "OutdatedTranslationError",
+    "NotExportedFromLaunchpad",
+    "TooManyPluralFormsError",
+    "TranslationFormatSyntaxError",
+    "TranslationFormatInvalidInputError",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Int, List, TextLine
 
 from lp.services.helpers import backslashreplace
 from lp.translations.interfaces.translationcommonformat import (
     TranslationImportExportBaseException,
-    )
+)
 
 
 class OutdatedTranslationError(TranslationImportExportBaseException):
@@ -102,15 +97,19 @@ class ITranslationImporter(Interface):
     """Importer of translation files."""
 
     supported_file_extensions = List(
-        title='List of file extensions we have imports for.',
-        required=True, readonly=True)
+        title="List of file extensions we have imports for.",
+        required=True,
+        readonly=True,
+    )
 
     # Filename suffixes that identify templates.  These do not have to be
     # CP/M-style "filename extensions" separated from the base file name by a
     # dot; any suffix will do.
     template_suffixes = TextLine(
-        title='Filename endings that identify templates.', required=True,
-        readonly=True)
+        title="Filename endings that identify templates.",
+        required=True,
+        readonly=True,
+    )
 
     def isTemplateName(path):
         """Based on filename, is this a template file?
@@ -190,33 +189,39 @@ class ITranslationFormatImporter(Interface):
         """
 
     priority = Int(
-        title='Priority among importers for the same file extension.',
-        description='''
+        title="Priority among importers for the same file extension.",
+        description="""
             Priority an `ITranslationFormatImporter` has if there are
             multiple importers for the same file extension.
 
             Higher value indicates higher priority, i.e. that importer
             is tried first.
-            ''',
+            """,
         required=True,
-        default=0
-        )
+        default=0,
+    )
 
     content_type = TextLine(
-        title='Content type string for this file format.',
-        required=True, readonly=True)
+        title="Content type string for this file format.",
+        required=True,
+        readonly=True,
+    )
 
     file_extensions = List(
-        title='File extensions handable by this importer.',
-        required=True, readonly=True)
+        title="File extensions handable by this importer.",
+        required=True,
+        readonly=True,
+    )
 
     uses_source_string_msgids = Bool(
-        title='A flag indicating whether uses source string as the id',
-        description='''
+        title="A flag indicating whether uses source string as the id",
+        description="""
             A flag indicating whether this file format importer uses source
             string msgids as the English strings.
-            ''',
-        required=True, readonly=True)
+            """,
+        required=True,
+        readonly=True,
+    )
 
     def parse(translation_import_queue_entry):
         """Parse an `ITranslationImportQueueEntry` into an

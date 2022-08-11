@@ -2,25 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Tests for constructing bug notification emails for sending."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import re
-from smtplib import SMTPException
 import unittest
+from datetime import datetime, timedelta
+from smtplib import SMTPException
+from typing import Any, List, Optional, Type
 
-from fixtures import FakeLogger
 import pytz
-from testtools.matchers import (
-    MatchesRegex,
-    Not,
-    )
+from fixtures import FakeLogger
+from testtools.matchers import MatchesRegex, Not
 from transaction import commit
-from zope.component import (
-    getSiteManager,
-    getUtility,
-    )
+from zope.component import getSiteManager, getUtility
 from zope.interface import implementer
 from zope.sendmail.interfaces import IMailDelivery
 
@@ -38,35 +30,31 @@ from lp.bugs.adapters.bugchange import (
     BugWatchRemoved,
     CveLinkedToBug,
     CveUnlinkedFromBug,
-    )
+)
 from lp.bugs.enums import BugNotificationStatus
-from lp.bugs.interfaces.bug import (
-    CreateBugParams,
-    IBug,
-    IBugSet,
-    )
+from lp.bugs.interfaces.bug import CreateBugParams, IBug, IBugSet
 from lp.bugs.interfaces.bugnotification import IBugNotificationSet
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     IBugTaskSet,
-    )
+)
 from lp.bugs.mail.bugnotificationrecipients import BugNotificationRecipients
 from lp.bugs.model.bugnotification import (
     BugNotification,
     BugNotificationFilter,
     BugNotificationRecipient,
-    )
+)
 from lp.bugs.model.bugsubscriptionfilter import BugSubscriptionFilterMute
 from lp.bugs.scripts.bugnotification import (
+    SendBugNotifications,
     construct_email_notifications,
     get_activity_key,
     get_email_notifications,
     notification_batches,
     notification_comment_batches,
     process_deferred_notifications,
-    SendBugNotifications,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
@@ -75,21 +63,14 @@ from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
-    )
+)
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.mail.stub import TestMailer
 from lp.services.messages.interfaces.message import IMessageSet
+from lp.services.messages.model.message import Message
 from lp.services.propertycache import cachedproperty
-from lp.testing import (
-    login,
-    person_logged_in,
-    TestCase,
-    TestCaseWithFactory,
-    )
-from lp.testing.dbuser import (
-    lp_dbuser,
-    switch_dbuser,
-    )
+from lp.testing import TestCase, TestCaseWithFactory, login, person_logged_in
+from lp.testing.dbuser import lp_dbuser, switch_dbuser
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import Contains
@@ -101,12 +82,13 @@ class MockBug:
 
     duplicateof = None
     information_type = InformationType.PUBLIC
-    messages = []
+    messages = []  # type: List[Message]
 
     def __init__(self, id, owner):
         self.id = id
         self.initial_message = getUtility(IMessageSet).fromText(
-            'Bug Title', 'Initial message.', owner=owner)
+            "Bug Title", "Initial message.", owner=owner
+        )
         self.owner = owner
         self.bugtasks = []
         self.tags = []
@@ -125,9 +107,10 @@ class MockBugNotificationRecipient:
 
     def __init__(self):
         self.person = getUtility(IPersonSet).getByEmail(
-            'no-priv@canonical.com')
-        self.reason_header = 'Test Rationale'
-        self.reason_body = 'Test Reason'
+            "no-priv@canonical.com"
+        )
+        self.reason_header = "Test Rationale"
+        self.reason_body = "Test Reason"
 
 
 class MockBugNotification:
@@ -154,7 +137,7 @@ class ExceptionBugNotification(MockBugNotification):
 
     @property
     def recipients(self):
-        raise Exception('FUBAR')
+        raise Exception("FUBAR")
 
 
 class DBExceptionBugNotification(MockBugNotification):
@@ -164,7 +147,7 @@ class DBExceptionBugNotification(MockBugNotification):
     def recipients(self):
         # Trigger a DB constraint, resulting in the transaction being
         # unusable.
-        firefox = getUtility(IProductSet).getByName('firefox')
+        firefox = getUtility(IProductSet).getByName("firefox")
         bug_one = getUtility(IBugSet).get(1)
         getUtility(IBugTaskSet).createTask(bug_one, self.bug.owner, firefox)
 
@@ -190,18 +173,19 @@ class FakeNotification:
 class FakeBugNotificationSetUtility:
     """A notification utility used for testing."""
 
-    def getRecipientFilterData(self, bug, recipient_to_sources,
-                               notifications):
+    def getRecipientFilterData(self, bug, recipient_to_sources, notifications):
         return {
-            recipient: {'sources': sources, 'filter descriptions': []}
-            for recipient, sources in recipient_to_sources.items()}
+            recipient: {"sources": sources, "filter descriptions": []}
+            for recipient, sources in recipient_to_sources.items()
+        }
 
 
 class MockBugActivity:
     """A mock BugActivity used for testing."""
 
-    def __init__(self, target=None, attribute=None,
-                 oldvalue=None, newvalue=None):
+    def __init__(
+        self, target=None, attribute=None, oldvalue=None, newvalue=None
+    ):
         self.target = target
         self.attribute = attribute
         self.oldvalue = oldvalue
@@ -216,70 +200,92 @@ class TestGetActivityKey(TestCase):
 
     def test_normal_bug_attribute_activity(self):
         notification = FakeNotification()
-        notification.activity = MockBugActivity(attribute='title')
-        self.assertEqual(get_activity_key(notification), 'title')
+        notification.activity = MockBugActivity(attribute="title")
+        self.assertEqual(get_activity_key(notification), "title")
 
     def test_collection_bug_attribute_added_activity(self):
         notification = FakeNotification()
         notification.activity = MockBugActivity(
-            attribute='cves', newvalue='some cve identifier')
-        self.assertEqual(get_activity_key(notification),
-                         'cves:some cve identifier')
+            attribute="cves", newvalue="some cve identifier"
+        )
+        self.assertEqual(
+            get_activity_key(notification), "cves:some cve identifier"
+        )
 
     def test_collection_bug_attribute_removed_activity(self):
         notification = FakeNotification()
         notification.activity = MockBugActivity(
-            attribute='cves', oldvalue='some cve identifier')
-        self.assertEqual(get_activity_key(notification),
-                         'cves:some cve identifier')
+            attribute="cves", oldvalue="some cve identifier"
+        )
+        self.assertEqual(
+            get_activity_key(notification), "cves:some cve identifier"
+        )
 
     def test_bugtask_attribute_activity(self):
         notification = FakeNotification()
         notification.activity = MockBugActivity(
-            attribute='status', target='some bug task identifier')
-        self.assertEqual(get_activity_key(notification),
-                         'some bug task identifier:status')
+            attribute="status", target="some bug task identifier"
+        )
+        self.assertEqual(
+            get_activity_key(notification), "some bug task identifier:status"
+        )
 
 
 class TestGetEmailNotifications(TestCase):
     """Tests for the exception handling in get_email_notifications()."""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         """Set up some mock bug notifications to use."""
         super().setUp()
         switch_dbuser(config.malone.bugnotification_dbuser)
-        sample_person = getUtility(IPersonSet).getByEmail(
-            'test@canonical.com')
-        self.now = datetime.now(pytz.timezone('UTC'))
+        sample_person = getUtility(IPersonSet).getByEmail("test@canonical.com")
+        self.now = datetime.now(pytz.timezone("UTC"))
 
         # A normal comment notification for bug 1
         msg = getUtility(IMessageSet).fromText(
-            'Subject', "Comment on bug 1", owner=sample_person)
+            "Subject", "Comment on bug 1", owner=sample_person
+        )
         self.bug_one_notification = MockBugNotification(
-            message=msg, bug=MockBug(1, sample_person),
-            is_comment=True, date_emailed=None)
+            message=msg,
+            bug=MockBug(1, sample_person),
+            is_comment=True,
+            date_emailed=None,
+        )
 
         # Another normal comment notification for bug one.
         msg = getUtility(IMessageSet).fromText(
-            'Subject', "Comment on bug 1", owner=sample_person)
+            "Subject", "Comment on bug 1", owner=sample_person
+        )
         self.bug_one_another_notification = MockBugNotification(
-            message=msg, bug=MockBug(1, sample_person),
-            is_comment=True, date_emailed=None)
+            message=msg,
+            bug=MockBug(1, sample_person),
+            is_comment=True,
+            date_emailed=None,
+        )
 
         # A comment notification for bug one which raises an exception.
         msg = getUtility(IMessageSet).fromText(
-            'Subject', "Comment on bug 1", owner=sample_person)
+            "Subject", "Comment on bug 1", owner=sample_person
+        )
         self.bug_one_exception_notification = ExceptionBugNotification(
-            message=msg, bug=MockBug(1, sample_person),
-            is_comment=True, date_emailed=None)
+            message=msg,
+            bug=MockBug(1, sample_person),
+            is_comment=True,
+            date_emailed=None,
+        )
 
         # A comment notification for bug one which raises a DB exception.
         msg = getUtility(IMessageSet).fromText(
-            'Subject', "Comment on bug 1", owner=sample_person)
+            "Subject", "Comment on bug 1", owner=sample_person
+        )
         self.bug_one_dbexception_notification = DBExceptionBugNotification(
-            message=msg, bug=MockBug(1, sample_person),
-            is_comment=True, date_emailed=None)
+            message=msg,
+            bug=MockBug(1, sample_person),
+            is_comment=True,
+            date_emailed=None,
+        )
 
         # We need to commit the transaction, since the error handling
         # will abort the current transaction.
@@ -312,16 +318,18 @@ class TestGetEmailNotifications(TestCase):
         sent_notifications = []
         for notifications, omitted, messages in email_notifications:
             for message in messages:
-                to_addresses.add(message['to'])
+                to_addresses.add(message["to"])
             recipients = {}
             for notification in notifications:
                 for recipient in notification.recipients:
                     for address in get_contact_email_addresses(
-                        recipient.person):
+                        recipient.person
+                    ):
                         recipients[address] = recipient
             expected_to_addresses = recipients.keys()
             self.assertEqual(
-                sorted(expected_to_addresses), sorted(to_addresses))
+                sorted(expected_to_addresses), sorted(to_addresses)
+            )
             sent_notifications += notifications
         return sent_notifications
 
@@ -331,11 +339,12 @@ class TestGetEmailNotifications(TestCase):
         notifications_to_send = [
             self.bug_one_notification,
             self.bug_one_exception_notification,
-            ]
+        ]
         sent_notifications = self._getAndCheckSentNotifications(
-            notifications_to_send)
+            notifications_to_send
+        )
         self.assertEqual(sent_notifications, [self.bug_one_notification])
-        self.assertIn('Exception: FUBAR', self.logger.output)
+        self.assertIn("Exception: FUBAR", self.logger.output)
 
     def test_catch_simple_exception_in_the_middle(self):
         # Make sure that the first and last notifications are sent even
@@ -344,13 +353,15 @@ class TestGetEmailNotifications(TestCase):
             self.bug_one_notification,
             self.bug_one_exception_notification,
             self.bug_one_another_notification,
-            ]
+        ]
         sent_notifications = self._getAndCheckSentNotifications(
-            notifications_to_send)
+            notifications_to_send
+        )
         self.assertEqual(
             sent_notifications,
-            [self.bug_one_notification, self.bug_one_another_notification])
-        self.assertIn('Exception: FUBAR', self.logger.output)
+            [self.bug_one_notification, self.bug_one_another_notification],
+        )
+        self.assertIn("Exception: FUBAR", self.logger.output)
 
     def test_catch_db_exception_last(self):
         # Make sure that the first notification is sent even if the
@@ -359,14 +370,16 @@ class TestGetEmailNotifications(TestCase):
         notifications_to_send = [
             self.bug_one_notification,
             self.bug_one_dbexception_notification,
-            ]
+        ]
         sent_notifications = self._getAndCheckSentNotifications(
-            notifications_to_send)
+            notifications_to_send
+        )
         self.assertEqual(sent_notifications, [self.bug_one_notification])
         self.assertIn(
-            'IllegalTarget: A fix for this bug has already been requested for '
-            'Mozilla Firefox',
-            self.logger.output)
+            "IllegalTarget: A fix for this bug has already been requested for "
+            "Mozilla Firefox",
+            self.logger.output,
+        )
 
         # The transaction should have been rolled back and restarted
         # properly, so getting something from the database shouldn't
@@ -382,16 +395,19 @@ class TestGetEmailNotifications(TestCase):
             self.bug_one_notification,
             self.bug_one_dbexception_notification,
             self.bug_one_another_notification,
-            ]
+        ]
         sent_notifications = self._getAndCheckSentNotifications(
-            notifications_to_send)
+            notifications_to_send
+        )
         self.assertEqual(
             sent_notifications,
-            [self.bug_one_notification, self.bug_one_another_notification])
+            [self.bug_one_notification, self.bug_one_another_notification],
+        )
         self.assertIn(
-            'IllegalTarget: A fix for this bug has already been requested for '
-            'Mozilla Firefox',
-            self.logger.output)
+            "IllegalTarget: A fix for this bug has already been requested for "
+            "Mozilla Firefox",
+            self.logger.output,
+        )
 
         # The transaction should have been rolled back and restarted
         # properly, so getting something from the database shouldn't
@@ -408,18 +424,20 @@ class TestGetEmailNotifications(TestCase):
         # in place.
 
         # Make some data to feed to get_email_notifications.
-        person = getUtility(IPersonSet).getByEmail('test@canonical.com')
-        msg = getUtility(IMessageSet).fromText('', '', owner=person)
+        person = getUtility(IPersonSet).getByEmail("test@canonical.com")
+        msg = getUtility(IMessageSet).fromText("", "", owner=person)
         bug = MockBug(1, person)
         # We need more than one notification because we want the generator to
         # stay around after being started.  Consuming the first starts it but
         # since the second exists, the generator stays active.
         notifications = [
             MockBugNotification(
-                message=msg, bug=bug, is_comment=True, date_emailed=None),
+                message=msg, bug=bug, is_comment=True, date_emailed=None
+            ),
             MockBugNotification(
-                message=msg, bug=bug, is_comment=True, date_emailed=None),
-            ]
+                message=msg, bug=bug, is_comment=True, date_emailed=None
+            ),
+        ]
 
         # Now we create the generator, start it, and then close it, triggering
         # a GeneratorExit exception inside the generator.
@@ -428,7 +446,7 @@ class TestGetEmailNotifications(TestCase):
         email_notifications.close()
 
         # Verify that no "Error while building email notifications." is logged.
-        self.assertEqual('', self.logger.output)
+        self.assertEqual("", self.logger.output)
 
 
 class TestNotificationCommentBatches(unittest.TestCase):
@@ -444,14 +462,16 @@ class TestNotificationCommentBatches(unittest.TestCase):
         notification = FakeNotification(False)
         self.assertEqual(
             [(1, notification)],
-            list(notification_comment_batches([notification])))
+            list(notification_comment_batches([notification])),
+        )
 
     def test_with_one_comment_notification(self):
         # Given a single comment notification, a single tuple is generated.
         notification = FakeNotification(True)
         self.assertEqual(
             [(1, notification)],
-            list(notification_comment_batches([notification])))
+            list(notification_comment_batches([notification])),
+        )
 
     def test_with_two_notifications_comment_first(self):
         # Given two notifications, one a comment, one not, and the comment
@@ -461,7 +481,8 @@ class TestNotificationCommentBatches(unittest.TestCase):
         notifications = [notification1, notification2]
         self.assertEqual(
             [(1, notification1), (1, notification2)],
-            list(notification_comment_batches(notifications)))
+            list(notification_comment_batches(notifications)),
+        )
 
     def test_with_two_notifications_comment_last(self):
         # Given two notifications, one a comment, one not, and the comment
@@ -471,7 +492,8 @@ class TestNotificationCommentBatches(unittest.TestCase):
         notifications = [notification1, notification2]
         self.assertEqual(
             [(1, notification1), (1, notification2)],
-            list(notification_comment_batches(notifications)))
+            list(notification_comment_batches(notifications)),
+        )
 
     def test_with_three_notifications_comment_in_middle(self):
         # Given three notifications, one a comment, two not, and the comment
@@ -482,7 +504,8 @@ class TestNotificationCommentBatches(unittest.TestCase):
         notifications = [notification1, notification2, notification3]
         self.assertEqual(
             [(1, notification1), (1, notification2), (1, notification3)],
-            list(notification_comment_batches(notifications)))
+            list(notification_comment_batches(notifications)),
+        )
 
     def test_with_more_notifications(self):
         # Given four notifications - non-comment, comment, non-comment,
@@ -494,13 +517,20 @@ class TestNotificationCommentBatches(unittest.TestCase):
         notification3 = FakeNotification(False)
         notification4 = FakeNotification(True)
         notifications = [
-            notification1, notification2,
-            notification3, notification4,
-            ]
+            notification1,
+            notification2,
+            notification3,
+            notification4,
+        ]
         self.assertEqual(
-            [(1, notification1), (1, notification2),
-             (1, notification3), (2, notification4)],
-            list(notification_comment_batches(notifications)))
+            [
+                (1, notification1),
+                (1, notification2),
+                (1, notification3),
+                (2, notification4),
+            ],
+            list(notification_comment_batches(notifications)),
+        )
 
 
 class TestNotificationBatches(unittest.TestCase):
@@ -515,15 +545,15 @@ class TestNotificationBatches(unittest.TestCase):
         # generated.
         notification = FakeNotification(False)
         self.assertEqual(
-            [[notification]],
-            list(notification_batches([notification])))
+            [[notification]], list(notification_batches([notification]))
+        )
 
     def test_with_one_comment_notification(self):
         # Given a single comment notification, a single batch is generated.
         notification = FakeNotification(True)
         self.assertEqual(
-            [[notification]],
-            list(notification_batches([notification])))
+            [[notification]], list(notification_batches([notification]))
+        )
 
     def test_with_two_notifications_comment_first(self):
         # Given two similar notifications, one a comment, one not, and the
@@ -533,7 +563,8 @@ class TestNotificationBatches(unittest.TestCase):
         notifications = [notification1, notification2]
         self.assertEqual(
             [[notification1, notification2]],
-            list(notification_batches(notifications)))
+            list(notification_batches(notifications)),
+        )
 
     def test_with_two_notifications_comment_last(self):
         # Given two similar notifications, one a comment, one not, and the
@@ -543,7 +574,8 @@ class TestNotificationBatches(unittest.TestCase):
         notifications = [notification1, notification2]
         self.assertEqual(
             [[notification1, notification2]],
-            list(notification_batches(notifications)))
+            list(notification_batches(notifications)),
+        )
 
     def test_with_three_notifications_comment_in_middle(self):
         # Given three similar notifications, one a comment, two not, and the
@@ -554,7 +586,8 @@ class TestNotificationBatches(unittest.TestCase):
         notifications = [notification1, notification2, notification3]
         self.assertEqual(
             [[notification1, notification2, notification3]],
-            list(notification_batches(notifications)))
+            list(notification_batches(notifications)),
+        )
 
     def test_with_more_notifications(self):
         # Given four similar notifications - non-comment, comment,
@@ -565,12 +598,15 @@ class TestNotificationBatches(unittest.TestCase):
         notification3 = FakeNotification(False)
         notification4 = FakeNotification(True)
         notifications = [
-            notification1, notification2,
-            notification3, notification4,
-            ]
+            notification1,
+            notification2,
+            notification3,
+            notification4,
+        ]
         self.assertEqual(
             [[notification1, notification2, notification3], [notification4]],
-            list(notification_batches(notifications)))
+            list(notification_batches(notifications)),
+        )
 
     def test_notifications_for_same_bug(self):
         # Batches are grouped by bug.
@@ -593,8 +629,7 @@ class TestNotificationBatches(unittest.TestCase):
 
     def test_notifications_for_different_owners(self):
         # Batches are grouped by owner.
-        notifications = [
-            FakeNotification(owner=number) for number in range(5)]
+        notifications = [FakeNotification(owner=number) for number in range(5)]
         expected = [[notification] for notification in notifications]
         observed = list(notification_batches(notifications))
         self.assertEqual(expected, observed)
@@ -606,7 +641,7 @@ class TestNotificationBatches(unittest.TestCase):
             FakeNotification(bug=1, owner=2),
             FakeNotification(bug=2, owner=2),
             FakeNotification(bug=2, owner=1),
-            ]
+        ]
         expected = [[notification] for notification in notifications]
         observed = list(notification_batches(notifications))
         self.assertEqual(expected, observed)
@@ -618,7 +653,7 @@ class TestNotificationBatches(unittest.TestCase):
             FakeNotification(bug=1, owner=1),
             FakeNotification(bug=2, owner=2),
             FakeNotification(bug=2, owner=2),
-            ]
+        ]
         expected = [notifications[0:2], notifications[2:4]]
         observed = list(notification_batches(notifications))
         self.assertEqual(expected, observed)
@@ -630,7 +665,7 @@ class TestNotificationBatches(unittest.TestCase):
             FakeNotification(is_comment=False, bug=1, owner=1),
             FakeNotification(is_comment=True, bug=1, owner=1),
             FakeNotification(is_comment=False, bug=1, owner=2),
-            ]
+        ]
         expected = [notifications[0:3], notifications[3:4]]
         observed = list(notification_batches(notifications))
         self.assertEqual(expected, observed)
@@ -642,24 +677,28 @@ class EmailNotificationTestBase(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         self.product_owner = self.factory.makePerson(name="product-owner")
         self.person = self.factory.makePerson(name="sample-person")
         self.product = self.factory.makeProduct(owner=self.product_owner)
         self.product_subscriber = self.factory.makePerson(
-            name="product-subscriber")
+            name="product-subscriber"
+        )
         self.product.addBugSubscription(
-            self.product_subscriber, self.product_subscriber)
+            self.product_subscriber, self.product_subscriber
+        )
         self.bug_subscriber = self.factory.makePerson(name="bug-subscriber")
         self.bug_owner = self.factory.makePerson(name="bug-owner")
         self.bug = self.factory.makeBug(
-            target=self.product, owner=self.bug_owner,
-            information_type=InformationType.USERDATA)
+            target=self.product,
+            owner=self.bug_owner,
+            information_type=InformationType.USERDATA,
+        )
         self.reporter = self.bug.owner
         self.bug.subscribe(self.bug_subscriber, self.reporter)
         [self.product_bugtask] = self.bug.bugtasks
         commit()
-        login('test@canonical.com')
+        login("test@canonical.com")
         switch_dbuser(config.malone.bugnotification_dbuser)
         self.now = datetime.now(pytz.UTC)
         self.ten_minutes_ago = self.now - timedelta(minutes=10)
@@ -677,28 +716,41 @@ class EmailNotificationTestBase(TestCaseWithFactory):
     def get_messages(self):
         notifications = self.notification_set.getNotificationsToSend()
         email_notifications = get_email_notifications(notifications)
-        for (bug_notifications,
-             omitted_notifications,
-             messages) in email_notifications:
+        for (
+            bug_notifications,
+            omitted_notifications,
+            messages,
+        ) in email_notifications:
             for message in messages:
                 yield message, message.get_payload(decode=True)
 
 
 class EmailNotificationsBugMixin:
 
-    change_class = change_name = old = new = alt = unexpected_bytes = None
+    change_class = None  # type: Optional[Type[Any]]
+    change_name = None  # type: Optional[str]
+    old = None  # type: Any
+    new = None  # type: Any
+    alt = None  # type: Any
+    unexpected_bytes = None  # type: Optional[bytes]
 
     def change(self, old, new):
         self.bug.addChange(
             self.change_class(
-                self.ten_minutes_ago, self.person, self.change_name,
-                old, new))
+                self.ten_minutes_ago, self.person, self.change_name, old, new
+            )
+        )
 
     def change_other(self):
         self.bug.addChange(
             BugInformationTypeChange(
-                self.ten_minutes_ago, self.person, "information_type",
-                InformationType.PUBLIC, InformationType.USERDATA))
+                self.ten_minutes_ago,
+                self.person,
+                "information_type",
+                InformationType.PUBLIC,
+                InformationType.USERDATA,
+            )
+        )
 
     def test_change_seen(self):
         # A smoketest.
@@ -745,12 +797,17 @@ class EmailNotificationsBugNotRequiredMixin(EmailNotificationsBugMixin):
 
 
 class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
-
     def change(self, old, new, index=0):
         self.bug.addChange(
             self.change_class(
-                self.bug.bugtasks[index], self.ten_minutes_ago,
-                self.person, self.change_name, old, new))
+                self.bug.bugtasks[index],
+                self.ten_minutes_ago,
+                self.person,
+                self.change_name,
+                old,
+                new,
+            )
+        )
 
     def test_changing_on_different_bugtasks_is_not_undoing(self):
         with lp_dbuser():
@@ -764,10 +821,11 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
 
 class EmailNotificationsAddedRemovedMixin:
 
-    old = new = added_message = removed_message = None
+    old = new = added_message = removed_message = b""
 
     def add(self, item):
         raise NotImplementedError
+
     remove = add
 
     def test_added_seen(self):
@@ -794,63 +852,68 @@ class EmailNotificationsAddedRemovedMixin:
 
 
 class TestEmailNotificationsBugTitle(
-    EmailNotificationsBugMixin, EmailNotificationTestBase):
+    EmailNotificationsBugMixin, EmailNotificationTestBase
+):
 
     change_class = BugTitleChange
     change_name = "title"
     old = "Old summary"
     new = "New summary"
     alt = "Another summary"
-    unexpected_bytes = b'** Summary changed:'
+    unexpected_bytes = b"** Summary changed:"
 
 
 class TestEmailNotificationsBugTags(
-    EmailNotificationsBugMixin, EmailNotificationTestBase):
+    EmailNotificationsBugMixin, EmailNotificationTestBase
+):
 
     change_class = BugTagsChange
     change_name = "tags"
-    old = ['foo', 'bar', 'baz']
-    new = ['foo', 'bar']
-    alt = ['bing', 'shazam']
-    unexpected_bytes = b'** Tags'
+    old = ["foo", "bar", "baz"]
+    new = ["foo", "bar"]
+    alt = ["bing", "shazam"]
+    unexpected_bytes = b"** Tags"
 
     def test_undone_ordered_set_sends_no_email(self):
         # Tags use ordered sets to generate change descriptions, which we
         # demonstrate here.
-        self.change(['foo', 'bar', 'baz'], ['foo', 'bar'])
-        self.change(['foo', 'bar'], ['baz', 'bar', 'foo', 'bar'])
+        self.change(["foo", "bar", "baz"], ["foo", "bar"])
+        self.change(["foo", "bar"], ["baz", "bar", "foo", "bar"])
         self.assertEqual(list(self.get_messages()), [])
 
 
 class TestEmailNotificationsBugDuplicate(
-    EmailNotificationsBugNotRequiredMixin, EmailNotificationTestBase):
+    EmailNotificationsBugNotRequiredMixin, EmailNotificationTestBase
+):
 
     change_class = BugDuplicateChange
     change_name = "duplicateof"
-    unexpected_bytes = b'duplicate'
+    unexpected_bytes = b"duplicate"
 
     def _bug(self):
         with lp_dbuser():
             return self.factory.makeBug()
 
-    old = cachedproperty('old')(_bug)
-    new = cachedproperty('new')(_bug)
-    alt = cachedproperty('alt')(_bug)
+    old = cachedproperty("old")(_bug)
+    new = cachedproperty("new")(_bug)
+    alt = cachedproperty("alt")(_bug)
 
 
 class TestEmailNotificationsBugTaskStatus(
-    EmailNotificationsBugTaskMixin, EmailNotificationTestBase):
+    EmailNotificationsBugTaskMixin, EmailNotificationTestBase
+):
 
     change_class = BugTaskStatusChange
     change_name = "status"
     old = BugTaskStatus.TRIAGED
     new = BugTaskStatus.INPROGRESS
     alt = BugTaskStatus.INVALID
-    unexpected_bytes = b'Status: '
+    unexpected_bytes = b"Status: "
 
 
 class TestEmailNotificationsBugWatch(
-    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
+    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
+):
 
     # Note that this is for bugwatches added to bugs.  Bugwatches added
     # to bugtasks are separate animals AIUI, and we don't try to combine
@@ -858,95 +921,103 @@ class TestEmailNotificationsBugWatch(
     # bugwatch, so they can be handled just as a simple bugtask attribute
     # change, like status.
 
-    added_message = b'** Bug watch added:'
-    removed_message = b'** Bug watch removed:'
+    added_message = b"** Bug watch added:"
+    removed_message = b"** Bug watch removed:"
 
     @cachedproperty
     def tracker(self):
         with lp_dbuser():
             return self.factory.makeBugTracker()
 
-    def _watch(self, identifier='123'):
+    def _watch(self, identifier="123"):
         with lp_dbuser():
             # This actually creates a notification all by itself.  However,
             # it won't be sent out for another five minutes.  Therefore,
             # we send out separate change notifications.
             return self.bug.addWatch(
-                self.tracker, identifier, self.product_owner)
+                self.tracker, identifier, self.product_owner
+            )
 
-    old = cachedproperty('old')(_watch)
-    new = cachedproperty('new')(lambda self: self._watch('456'))
+    old = cachedproperty("old")(_watch)
+    new = cachedproperty("new")(lambda self: self._watch("456"))
 
     def add(self, item):
         with lp_dbuser():
             self.bug.addChange(
-                BugWatchAdded(
-                    self.ten_minutes_ago, self.product_owner, item))
+                BugWatchAdded(self.ten_minutes_ago, self.product_owner, item)
+            )
 
     def remove(self, item):
         with lp_dbuser():
             self.bug.addChange(
-                BugWatchRemoved(
-                    self.ten_minutes_ago, self.product_owner, item))
+                BugWatchRemoved(self.ten_minutes_ago, self.product_owner, item)
+            )
 
 
 class TestEmailNotificationsBranch(
-    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
+    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
+):
 
-    added_message = b'** Branch linked:'
-    removed_message = b'** Branch unlinked:'
+    added_message = b"** Branch linked:"
+    removed_message = b"** Branch unlinked:"
 
     def _branch(self):
         with lp_dbuser():
             return self.factory.makeBranch()
 
-    old = cachedproperty('old')(_branch)
-    new = cachedproperty('new')(_branch)
+    old = cachedproperty("old")(_branch)
+    new = cachedproperty("new")(_branch)
 
     def add(self, item):
         with lp_dbuser():
             self.bug.addChange(
                 BranchLinkedToBug(
-                    self.ten_minutes_ago, self.person, item, self.bug))
+                    self.ten_minutes_ago, self.person, item, self.bug
+                )
+            )
 
     def remove(self, item):
         with lp_dbuser():
             self.bug.addChange(
                 BranchUnlinkedFromBug(
-                    self.ten_minutes_ago, self.person, item, self.bug))
+                    self.ten_minutes_ago, self.person, item, self.bug
+                )
+            )
 
 
 class TestEmailNotificationsCVE(
-    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
+    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
+):
 
-    added_message = b'** CVE added:'
-    removed_message = b'** CVE removed:'
+    added_message = b"** CVE added:"
+    removed_message = b"** CVE removed:"
 
     def _cve(self, sequence):
         with lp_dbuser():
             return self.factory.makeCVE(sequence)
 
-    old = cachedproperty('old')(lambda self: self._cve('2020-1234'))
-    new = cachedproperty('new')(lambda self: self._cve('2020-5678'))
+    old = cachedproperty("old")(lambda self: self._cve("2020-1234"))
+    new = cachedproperty("new")(lambda self: self._cve("2020-5678"))
 
     def add(self, item):
         with lp_dbuser():
             self.bug.addChange(
-                CveLinkedToBug(
-                    self.ten_minutes_ago, self.person, item))
+                CveLinkedToBug(self.ten_minutes_ago, self.person, item)
+            )
 
     def remove(self, item):
         with lp_dbuser():
             self.bug.addChange(
-                CveUnlinkedFromBug(
-                    self.ten_minutes_ago, self.person, item))
+                CveUnlinkedFromBug(self.ten_minutes_ago, self.person, item)
+            )
 
 
 class TestEmailNotificationsAttachments(
-    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase):
+    EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
+):
 
-    added_message = b'** Attachment added:'
-    removed_message = b'** Attachment removed:'
+    added_message = b"** Attachment added:"
+    removed_message = b"** Attachment removed:"
 
     def _attachment(self):
         with lp_dbuser():
@@ -955,24 +1026,27 @@ class TestEmailNotificationsAttachments(
             # another five minutes.  Therefore, we send out separate
             # change notifications.
             return self.bug.addAttachment(
-                self.person, b'content', 'a comment', 'stuff.txt')
+                self.person, b"content", "a comment", "stuff.txt"
+            )
 
-    old = cachedproperty('old')(_attachment)
-    new = cachedproperty('new')(_attachment)
+    old = cachedproperty("old")(_attachment)
+    new = cachedproperty("new")(_attachment)
 
     def add(self, item):
         with lp_dbuser():
             self.bug.addChange(
                 BugAttachmentChange(
-                    self.ten_minutes_ago, self.person, 'attachment',
-                    None, item))
+                    self.ten_minutes_ago, self.person, "attachment", None, item
+                )
+            )
 
     def remove(self, item):
         with lp_dbuser():
             self.bug.addChange(
                 BugAttachmentChange(
-                    self.ten_minutes_ago, self.person, 'attachment',
-                    item, None))
+                    self.ten_minutes_ago, self.person, "attachment", item, None
+                )
+            )
 
 
 class TestEmailNotificationsWithFilters(TestCaseWithFactory):
@@ -998,7 +1072,8 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         self.bug = self.factory.makeBug()
         subscriber = self.factory.makePerson()
         self.subscription = self.bug.default_bugtask.target.addSubscription(
-            subscriber, subscriber)
+            subscriber, subscriber
+        )
         self.filter_count = 0
         self.notification = self.addNotification(subscriber)
 
@@ -1006,8 +1081,11 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         # Manually insert BugNotificationRecipient for
         # construct_email_notifications to work.
         BugNotificationRecipient(
-            bug_notification=notification, person=person,
-            reason_header='reason header', reason_body='reason body')
+            bug_notification=notification,
+            person=person,
+            reason_header="reason header",
+            reason_body="reason body",
+        )
 
     def addNotification(self, person):
         # Add a notification along with recipient data.
@@ -1015,8 +1093,12 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         # but that requires a more complex set-up.
         message = self.factory.makeMessage()
         notification = BugNotification(
-            message=message, activity=None, bug=self.bug,
-            is_comment=False, date_emailed=None)
+            message=message,
+            activity=None,
+            bug=self.bug,
+            is_comment=False,
+            date_emailed=None,
+        )
         self.addNotificationRecipient(notification, person)
         return notification
 
@@ -1039,28 +1121,32 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         bug_filter.description = description
         BugNotificationFilter(
             bug_notification=self.notification,
-            bug_subscription_filter=bug_filter)
+            bug_subscription_filter=bug_filter,
+        )
 
     def getSubscriptionEmailHeaders(self, by_person=False):
         filtered, omitted, messages = construct_email_notifications(
-            [self.notification])
+            [self.notification]
+        )
         if by_person:
             headers = {}
         else:
             headers = set()
         for message in messages:
             if by_person:
-                headers[message['to']] = message.get_all(
-                    "X-Launchpad-Subscription", [])
+                headers[message["to"]] = message.get_all(
+                    "X-Launchpad-Subscription", []
+                )
             else:
                 headers = headers.union(
-                    set(message.get_all(
-                        "X-Launchpad-Subscription", [])))
+                    set(message.get_all("X-Launchpad-Subscription", []))
+                )
         return headers
 
     def getSubscriptionEmailBody(self, by_person=False):
         filtered, omitted, messages = construct_email_notifications(
-            [self.notification])
+            [self.notification]
+        )
         if by_person:
             filter_texts = {}
         else:
@@ -1073,7 +1159,7 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
                     break
             if filters_line is not None:
                 if by_person:
-                    filter_texts[message['to']] = filters_line
+                    filter_texts[message["to"]] = filters_line
                 else:
                     filter_texts.add(filters_line)
         return filter_texts
@@ -1081,16 +1167,16 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
     def test_header_empty(self):
         # An initial filter with no description doesn't cause any
         # headers to be added.
-        self.assertContentEqual([],
-                                self.getSubscriptionEmailHeaders())
+        self.assertContentEqual([], self.getSubscriptionEmailHeaders())
 
     def test_header_single(self):
         # A single filter with a description makes all emails
         # include that particular filter description in a header.
         self.addFilter("Test filter")
 
-        self.assertContentEqual(["Test filter"],
-                                self.getSubscriptionEmailHeaders())
+        self.assertContentEqual(
+            ["Test filter"], self.getSubscriptionEmailHeaders()
+        )
 
     def test_header_multiple(self):
         # Multiple filters with a description make all emails
@@ -1098,8 +1184,10 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         self.addFilter("First filter")
         self.addFilter("Second filter")
 
-        self.assertContentEqual(["First filter", "Second filter"],
-                                self.getSubscriptionEmailHeaders())
+        self.assertContentEqual(
+            ["First filter", "Second filter"],
+            self.getSubscriptionEmailHeaders(),
+        )
 
     def test_header_other_subscriber_by_person(self):
         # Filters for a different subscribers are included only
@@ -1107,7 +1195,8 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         # all be for the same notification.
         other_person = self.factory.makePerson()
         other_subscription = self.bug.default_bugtask.target.addSubscription(
-            other_person, other_person)
+            other_person, other_person
+        )
         self.addFilter("Someone's filter", other_subscription)
         self.addNotificationRecipient(self.notification, other_person)
 
@@ -1115,23 +1204,27 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
 
         the_subscriber = self.subscription.subscriber
         self.assertEqual(
-            {other_person.preferredemail.email: ["Someone's filter"],
-             the_subscriber.preferredemail.email: ["Test filter"]},
-            self.getSubscriptionEmailHeaders(by_person=True))
+            {
+                other_person.preferredemail.email: ["Someone's filter"],
+                the_subscriber.preferredemail.email: ["Test filter"],
+            },
+            self.getSubscriptionEmailHeaders(by_person=True),
+        )
 
     def test_body_empty(self):
         # An initial filter with no description doesn't cause any
         # text to be added to the email body.
-        self.assertContentEqual([],
-                                self.getSubscriptionEmailBody())
+        self.assertContentEqual([], self.getSubscriptionEmailBody())
 
     def test_body_single(self):
         # A single filter with a description makes all emails
         # include that particular filter description in the body.
         self.addFilter("Test filter")
 
-        self.assertContentEqual(["Matching subscriptions: Test filter"],
-                                self.getSubscriptionEmailBody())
+        self.assertContentEqual(
+            ["Matching subscriptions: Test filter"],
+            self.getSubscriptionEmailBody(),
+        )
 
     def test_body_multiple(self):
         # Multiple filters with description make all emails
@@ -1141,15 +1234,18 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
 
         self.assertContentEqual(
             ["Matching subscriptions: First filter, Second filter"],
-            self.getSubscriptionEmailBody())
+            self.getSubscriptionEmailBody(),
+        )
 
     def test_muted(self):
         self.addFilter("Test filter")
         BugSubscriptionFilterMute(
             person=self.subscription.subscriber,
-            filter=self.notification.bug_filters.one())
+            filter=self.notification.bug_filters.one(),
+        )
         filtered, omitted, messages = construct_email_notifications(
-            [self.notification])
+            [self.notification]
+        )
         self.assertEqual(list(messages), [])
 
     def test_header_multiple_one_muted(self):
@@ -1159,10 +1255,12 @@ class TestEmailNotificationsWithFilters(TestCaseWithFactory):
         self.addFilter("Second filter")
         BugSubscriptionFilterMute(
             person=self.subscription.subscriber,
-            filter=self.notification.bug_filters[0])
+            filter=self.notification.bug_filters[0],
+        )
 
-        self.assertContentEqual(["Second filter"],
-                                self.getSubscriptionEmailHeaders())
+        self.assertContentEqual(
+            ["Second filter"], self.getSubscriptionEmailHeaders()
+        )
 
 
 def fetch_notifications(subscriber, bug):
@@ -1170,7 +1268,8 @@ def fetch_notifications(subscriber, bug):
         BugNotification,
         BugNotification.id == BugNotificationRecipient.bug_notification_id,
         BugNotificationRecipient.person == subscriber,
-        BugNotification.bug == bug)
+        BugNotification.bug == bug,
+    )
 
 
 class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
@@ -1182,20 +1281,22 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
         super().setUp()
         self.subscriber = self.factory.makePerson()
         self.submitter = self.factory.makePerson()
-        self.product = self.factory.makeProduct(
-            bug_supervisor=self.submitter)
+        self.product = self.factory.makeProduct(bug_supervisor=self.submitter)
         self.subscription = self.product.addSubscription(
-            self.subscriber, self.subscriber)
+            self.subscriber, self.subscriber
+        )
         self.filter = self.subscription.bug_filters[0]
-        self.filter.description = 'Needs triage'
+        self.filter.description = "Needs triage"
         self.filter.statuses = [BugTaskStatus.NEW, BugTaskStatus.INCOMPLETE]
 
     def test_filters_match_when_bug_is_created(self):
         message = "this is an unfiltered comment"
         params = CreateBugParams(
             title="crashes all the time",
-            comment=message, owner=self.submitter,
-            status=BugTaskStatus.NEW)
+            comment=message,
+            owner=self.submitter,
+            status=BugTaskStatus.NEW,
+        )
         bug = self.product.createBug(params)
         notification = fetch_notifications(self.subscriber, bug).one()
         self.assertEqual(notification.message.text_contents, message)
@@ -1204,9 +1305,11 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
         message = "this is a filtered comment"
         params = CreateBugParams(
             title="crashes all the time",
-            comment=message, owner=self.submitter,
+            comment=message,
+            owner=self.submitter,
             status=BugTaskStatus.TRIAGED,
-            importance=BugTaskImportance.HIGH)
+            importance=BugTaskImportance.HIGH,
+        )
         bug = self.product.createBug(params)
         notifications = fetch_notifications(self.subscriber, bug)
         self.assertTrue(notifications.is_empty())
@@ -1220,32 +1323,35 @@ class TestManageNotificationsMessage(TestCaseWithFactory):
         # Set up a subscription to a product.
         subscriber = self.factory.makePerson()
         submitter = self.factory.makePerson()
-        product = self.factory.makeProduct(
-            bug_supervisor=submitter)
+        product = self.factory.makeProduct(bug_supervisor=submitter)
         product.addSubscription(subscriber, subscriber)
         # Create a bug that will match the subscription.
-        bug = product.createBug(CreateBugParams(
-            title=self.factory.getUniqueString(),
-            comment=self.factory.getUniqueString(),
-            owner=submitter))
+        bug = product.createBug(
+            CreateBugParams(
+                title=self.factory.getUniqueString(),
+                comment=self.factory.getUniqueString(),
+                owner=submitter,
+            )
+        )
         notification = fetch_notifications(subscriber, bug).one()
         _, _, (message,) = construct_email_notifications([notification])
         payload = message.get_payload()
-        self.assertThat(payload, Contains(
-            'To manage notifications about this bug go to:\nhttp://'))
+        self.assertThat(
+            payload,
+            Contains("To manage notifications about this bug go to:\nhttp://"),
+        )
 
 
 class TestNotificationSignatureSeparator(TestCase):
-
     def test_signature_separator(self):
         # Email signatures are often separated from the body of a message by a
         # special separator so user agents can identify the signature for
         # special treatment (hiding, stripping when replying, colorizing,
         # etc.).  The bug notification messages follow the convention.
-        names = ['bug-notification-verbose.txt', 'bug-notification.txt']
+        names = ["bug-notification-verbose.txt", "bug-notification.txt"]
         for name in names:
-            template = get_email_template(name, 'bugs')
-            self.assertTrue(re.search('^-- $', template, re.MULTILINE))
+            template = get_email_template(name, "bugs")
+            self.assertTrue(re.search("^-- $", template, re.MULTILINE))
 
 
 class TestExpandedNotificationFooters(EmailNotificationTestBase):
@@ -1259,17 +1365,30 @@ class TestExpandedNotificationFooters(EmailNotificationTestBase):
         with lp_dbuser(), person_logged_in(self.bug_subscriber):
             self.bug_subscriber.expanded_notification_footers = True
             expected_to = str(self.bug_subscriber.preferredemail.email)
-        self.bug.addChange(BugTitleChange(
-            self.ten_minutes_ago, self.person, "title",
-            "Old summary", "New summary"))
+        self.bug.addChange(
+            BugTitleChange(
+                self.ten_minutes_ago,
+                self.person,
+                "title",
+                "Old summary",
+                "New summary",
+            )
+        )
         [payload] = [
-            payload for message, payload in self.get_messages()
-            if message["to"] == expected_to]
-        self.assertThat(payload, MatchesRegex(
-            br'.*To manage notifications about this bug go to:\n'
-            br'http://.*\+subscriptions\n'
-            br'\n'
-            br'Launchpad-Notification-Type: bug\n', re.S))
+            payload
+            for message, payload in self.get_messages()
+            if message["to"] == expected_to
+        ]
+        self.assertThat(
+            payload,
+            MatchesRegex(
+                rb".*To manage notifications about this bug go to:\n"
+                rb"http://.*\+subscriptions\n"
+                rb"\n"
+                rb"Launchpad-Notification-Type: bug\n",
+                re.S,
+            ),
+        )
 
 
 class TestDeferredNotifications(TestCaseWithFactory):
@@ -1288,10 +1407,14 @@ class TestDeferredNotifications(TestCaseWithFactory):
         bug = self.factory.makeBug()
         empty_recipients = BugNotificationRecipients()
         message = getUtility(IMessageSet).fromText(
-            'subject', 'a comment.', bug.owner,
-            datecreated=self.ten_minutes_ago)
+            "subject",
+            "a comment.",
+            bug.owner,
+            datecreated=self.ten_minutes_ago,
+        )
         self.notification_set.addNotification(
-            bug, False, message, empty_recipients, None, deferred=True)
+            bug, False, message, empty_recipients, None, deferred=True
+        )
 
     def test_deferred_notifications(self):
         # Create some deferred notifications and show that processing them
@@ -1345,32 +1468,43 @@ class TestSendBugNotifications(TestCaseWithFactory):
             subscribers.append(subscriber.preferredemail.email)
             bug.default_bugtask.target.addSubscription(subscriber, subscriber)
             message = getUtility(IMessageSet).fromText(
-                "subject", "a comment.", bug.owner,
-                datecreated=self.ten_minutes_ago)
+                "subject",
+                "a comment.",
+                bug.owner,
+                datecreated=self.ten_minutes_ago,
+            )
             bug.addCommentNotification(message)
 
-        notifications = list(get_email_notifications(
-            self.notification_set.getNotificationsToSend()))
+        notifications = list(
+            get_email_notifications(
+                self.notification_set.getNotificationsToSend()
+            )
+        )
         self.assertEqual(3, len(notifications))
 
         mailer = BrokenMailer([subscribers[1]])
         with ZopeUtilityFixture(mailer, IMailDelivery, "Mail"):
             switch_dbuser(config.malone.bugnotification_dbuser)
             script = SendBugNotifications(
-                "send-bug-notifications", config.malone.bugnotification_dbuser,
-                ["-q"])
+                "send-bug-notifications",
+                config.malone.bugnotification_dbuser,
+                ["-q"],
+            )
             script.txn = self.layer.txn
             script.main()
 
         self.assertEqual(1, len(self.oopses))
         self.assertIn(
             "SMTPException: test requested delivery failure",
-            self.oopses[0]["tb_text"])
+            self.oopses[0]["tb_text"],
+        )
         for i, (bug_notifications, _, messages) in enumerate(notifications):
             for bug_notification in bug_notifications:
                 if i == 1:
                     self.assertEqual(
-                        BugNotificationStatus.PENDING, bug_notification.status)
+                        BugNotificationStatus.PENDING, bug_notification.status
+                    )
                 else:
                     self.assertEqual(
-                        BugNotificationStatus.SENT, bug_notification.status)
+                        BugNotificationStatus.SENT, bug_notification.status
+                    )

@@ -4,9 +4,9 @@
 """Email notifications for code review comments."""
 
 __all__ = [
-    'build_inline_comments_section',
-    'CodeReviewCommentMailer',
-    ]
+    "build_inline_comments_section",
+    "CodeReviewCommentMailer",
+]
 
 from breezy.patches import BinaryPatch
 from zope.component import getUtility
@@ -15,16 +15,13 @@ from zope.security.proxy import removeSecurityProxy
 from lp.code.enums import CodeReviewNotificationLevel
 from lp.code.interfaces.branchmergeproposal import (
     ICodeReviewCommentEmailJobSource,
-    )
+)
 from lp.code.interfaces.codereviewinlinecomment import (
     ICodeReviewInlineCommentSet,
-    )
+)
 from lp.code.mail.branchmergeproposal import BMPMailer
 from lp.code.mail.patches import parse_patches
-from lp.services.mail.sendmail import (
-    append_footer,
-    format_address,
-    )
+from lp.services.mail.sendmail import append_footer, format_address
 from lp.services.webapp import canonical_url
 
 
@@ -43,11 +40,18 @@ class CodeReviewCommentMailer(BMPMailer):
         from_person = self.message.owner
         from_address = format_address(
             from_person.display_name,
-            code_review_comment.branch_merge_proposal.address)
+            code_review_comment.branch_merge_proposal.address,
+        )
         merge_proposal = code_review_comment.branch_merge_proposal
         BMPMailer.__init__(
-            self, self.message.subject, None, recipients, merge_proposal,
-            from_address, message_id=message_id)
+            self,
+            self.message.subject,
+            None,
+            recipients,
+            merge_proposal,
+            from_address,
+            message_id=message_id,
+        )
         self.attachments = []
         original_email = self.code_review_comment.getOriginalEmail()
         if original_email is not None:
@@ -57,23 +61,24 @@ class CodeReviewCommentMailer(BMPMailer):
             original_email = removeSecurityProxy(original_email)
             # The attachments for the code review comment are actually
             # library file aliases.
-            display_aliases, other_aliases = (
-                self.code_review_comment.getAttachments())
+            (
+                display_aliases,
+                other_aliases,
+            ) = self.code_review_comment.getAttachments()
             include_attachments = set()
             for alias in display_aliases:
                 include_attachments.add((alias.filename, alias.mimetype))
             for part in original_email.walk():
                 if part.is_multipart():
                     continue
-                filename = part.get_filename() or 'unnamed'
-                if part['content-type'] is None:
-                    content_type = 'application/octet-stream'
+                filename = part.get_filename() or "unnamed"
+                if part["content-type"] is None:
+                    content_type = "application/octet-stream"
                 else:
-                    content_type = part['content-type']
+                    content_type = part["content-type"]
                 if (filename, content_type) in include_attachments:
                     payload = part.get_payload(decode=True)
-                    self.attachments.append(
-                        (payload, filename, content_type))
+                    self.attachments.append((payload, filename, content_type))
         self._generateBodyBits()
 
     @classmethod
@@ -81,10 +86,13 @@ class CodeReviewCommentMailer(BMPMailer):
         """Return a mailer for CodeReviewComment creation."""
         merge_proposal = code_review_comment.branch_merge_proposal
         recipients = merge_proposal.getNotificationRecipients(
-            CodeReviewNotificationLevel.FULL)
+            CodeReviewNotificationLevel.FULL
+        )
         return klass(
-            code_review_comment, recipients,
-            code_review_comment.message.rfc822msgid)
+            code_review_comment,
+            recipients,
+            code_review_comment.message.rfc822msgid,
+        )
 
     def _getSubject(self, email, recipient):
         """Don't do any string template insertions on subjects."""
@@ -93,25 +101,28 @@ class CodeReviewCommentMailer(BMPMailer):
     def _generateBodyBits(self):
         """Pre-generate the bits of the body email that don't change."""
         if self.code_review_comment.vote is None:
-            self.body_prefix = ''
+            self.body_prefix = ""
         else:
             if self.code_review_comment.vote_tag is None:
-                vote_tag = ''
+                vote_tag = ""
             else:
-                vote_tag = ' ' + self.code_review_comment.vote_tag
-            self.body_prefix = 'Review: %s%s\n\n' % (
-                self.code_review_comment.vote.title, vote_tag)
+                vote_tag = " " + self.code_review_comment.vote_tag
+            self.body_prefix = "Review: %s%s\n\n" % (
+                self.code_review_comment.vote.title,
+                vote_tag,
+            )
         self.body_main = self.message.text_contents
 
         # Append the Inline Comments section to the message body if there
         # are associated inline comments.
         inline_comment = getUtility(
-            ICodeReviewInlineCommentSet).getByReviewComment(
-                self.code_review_comment)
+            ICodeReviewInlineCommentSet
+        ).getByReviewComment(self.code_review_comment)
         if inline_comment is not None:
             self.body_main += build_inline_comments_section(
                 inline_comment.comments,
-                inline_comment.previewdiff.text.encode('UTF-8'))
+                inline_comment.previewdiff.text.encode("UTF-8"),
+            )
 
         self.proposal_url = canonical_url(self.merge_proposal)
 
@@ -127,17 +138,19 @@ class CodeReviewCommentMailer(BMPMailer):
         # in the footer to the email.
         reason, rationale = self._recipients.getReason(email)
         footer = "%(proposal_url)s\n%(reason)s\n" % {
-            'proposal_url': self.proposal_url,
-            'reason': reason.getReason()}
-        return ''.join((
-            self.body_prefix, append_footer(self.body_main, footer)))
+            "proposal_url": self.proposal_url,
+            "reason": reason.getReason(),
+        }
+        return "".join(
+            (self.body_prefix, append_footer(self.body_main, footer))
+        )
 
     def _getHeaders(self, email, recipient):
         """Return the mail headers to use."""
         headers = BMPMailer._getHeaders(self, email, recipient)
-        headers['Message-Id'] = self.message.rfc822msgid
+        headers["Message-Id"] = self.message.rfc822msgid
         if self.message.parent is not None:
-            headers['In-Reply-To'] = self.message.parent.rfc822msgid
+            headers["In-Reply-To"] = self.message.parent.rfc822msgid
         return headers
 
     def _getToAddresses(self, email, recipient):
@@ -167,17 +180,19 @@ class CodeReviewCommentMailer(BMPMailer):
         for content, filename, content_type in self.attachments:
             # Append directly to the controller's list.
             ctrl.addAttachment(
-                content, content_type=content_type, filename=filename)
+                content, content_type=content_type, filename=filename
+            )
 
 
 def format_comment(comment):
     """Returns a list of correctly formatted comment(s)."""
     comment_lines = []
     if comment is not None:
-        comment_lines.append(b'')
+        comment_lines.append(b"")
         comment_lines.extend(
-            [line.encode('UTF-8') for line in comment.splitlines()])
-        comment_lines.append(b'')
+            [line.encode("UTF-8") for line in comment.splitlines()]
+        )
+        comment_lines.append(b"")
     return comment_lines
 
 
@@ -200,21 +215,21 @@ def build_inline_comments_section(comments, diff_text):
         dirty_comment = False
         patch_comment = False
 
-        if isinstance(patch, dict) and 'dirty_head' in patch:
-            for line in patch['dirty_head']:
-                dirty_head.append(b'> %s' % line.rstrip(b'\n'))
+        if isinstance(patch, dict) and "dirty_head" in patch:
+            for line in patch["dirty_head"]:
+                dirty_head.append(b"> %s" % line.rstrip(b"\n"))
                 line_count += 1  # inc for dirty headers
                 comment = comments.get(str(line_count))
                 if comment:
                     dirty_head.extend(format_comment(comment))
                     dirty_comment = True
-            patch = patch['patch']
+            patch = patch["patch"]
 
         # call type here as patch is an instance of both Patch and BinaryPatch
         if type(patch) is BinaryPatch:
             if dirty_comment:
                 result_lines.extend(dirty_head)
-                result_lines.append(b'> %s' % patch.as_bytes().rstrip(b'\n'))
+                result_lines.append(b"> %s" % patch.as_bytes().rstrip(b"\n"))
             line_count += 1
             comment = comments.get(str(line_count))
             if comment:
@@ -225,7 +240,7 @@ def build_inline_comments_section(comments, diff_text):
             line_count += 1  # inc patch headers
             comment = comments.get(str(line_count))
 
-            patch_lines.append(b'> %s' % ph)
+            patch_lines.append(b"> %s" % ph)
             if comment:
                 patch_lines.extend(format_comment(comment))
                 patch_comment = True
@@ -237,7 +252,7 @@ def build_inline_comments_section(comments, diff_text):
 
             # add context line (hunk header)
             line_count += 1  # inc hunk context line
-            hunk_lines.append(b'> %s' % hunk.get_header().rstrip(b'\n'))
+            hunk_lines.append(b"> %s" % hunk.get_header().rstrip(b"\n"))
 
             # comment for context line (hunk header)
             comment = comments.get(str(line_count))
@@ -250,7 +265,7 @@ def build_inline_comments_section(comments, diff_text):
                 # lines in the "No newline at end of file" case.
                 for line in hunk_line.as_bytes().splitlines():
                     line_count += 1  # inc hunk lines
-                    hunk_lines.append(b'> %s' % line.rstrip(b'\n'))
+                    hunk_lines.append(b"> %s" % line.rstrip(b"\n"))
                     comment = comments.get(str(line_count))
                     if comment:
                         hunk_lines.extend(format_comment(comment))
@@ -268,5 +283,5 @@ def build_inline_comments_section(comments, diff_text):
         elif dirty_comment:
             result_lines.extend(dirty_head)
 
-    result_text = b'\n'.join(result_lines).decode('UTF-8', errors='replace')
-    return '\n\nDiff comments:\n\n%s\n\n' % result_text
+    result_text = b"\n".join(result_lines).decode("UTF-8", errors="replace")
+    return "\n\nDiff comments:\n\n%s\n\n" % result_text

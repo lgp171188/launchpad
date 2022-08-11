@@ -40,20 +40,19 @@
       <p id="application-summary">
         Launchpad can host your project&#8217;s source code
         using the <a href="http://bazaar.canonical.com/">Bazaar</a>
+        or the <a href="https://git-scm.com/">Git</a>
         version control system.
         We also import
         <tal:XXX condition="nothing">
           # XXX mpt 20080222 bug=84913: This link should be changed to
           # the URL produced.
         </tal:XXX>
-        <a href="/+recently-imported-branches">over 2000
-        <abbr>CVS</abbr>, <abbr>SVN</abbr> and Git projects</a>,
-        so you can use Bazaar with those too.
+        <a href="/+recently-imported-branches">thousands of
+        <abbr>CVS</abbr>, <abbr>SVN</abbr> and Git projects</a>.
         (<a href="https://help.launchpad.net/Code">Read our guide</a>)
       </p>
       <p id="build-recipes" class="application-summary" style="padding-top: 0.25em;">
         Launchpad can build Ubuntu packages directly from branches using recipes.
-        We currently build over 100 different packages into PPAs automatically using this method.
         (<a href="https://help.launchpad.net/Packaging/SourceBuilds">Learn more about recipes</a>)
       </p>
 

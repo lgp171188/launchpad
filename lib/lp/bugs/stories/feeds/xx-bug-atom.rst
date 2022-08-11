@@ -1,0 +1,610 @@
+Atom Feeds
+==========
+
+Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
+by asking BeautifulSoup to use lxml.
+
+    >>> import feedparser
+    >>> from lp.services.beautifulsoup import (
+    ...     BeautifulSoup,
+    ...     SoupStrainer,
+    ...     )
+    >>> from lp.services.feeds.tests.helper import (
+    ...     parse_entries, parse_links)
+
+Please note that when displaying the results of the feeds in a reader
+the order of entries may not be the same as generated.  Some readers
+will arrange the entries in a different sort order based on the update
+time.
+
+
+Latest bugs for a product
+-------------------------
+
+This feed gets the latest bugs reported against a product. The feed
+includes summary information about the bugs such as ID, title, author,
+and a link to the bug itself. The alternate link for the feed points to
+the bugs page for the product, while the alternate link for entries
+point to the bugs themselves.
+
+    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Jokosher
+    >>> browser.url
+    'http://feeds.launchpad.test/jokosher/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2007-03-15:/bugs/jokosher
+    >>> alternate_links = parse_links(browser.contents, 'alternate')
+    >>> for link in alternate_links:
+    ...     print(link)
+    <link href="http://bugs.launchpad.test/jokosher" rel="alternate"/>
+    <link href="http://bugs.launchpad.test/bugs/12" rel="alternate"/>
+    <link href="http://bugs.launchpad.test/bugs/11" rel="alternate"/>
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/jokosher/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    2
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [12] Copy, Cut and Delete operations should work on selections
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+    >>> print(extract_text(entry.id))
+    tag:launchpad.net,2007-03-15:/bugs/12
+
+    >>> entry = entries[1]
+    >>> print(extract_text(entry.title))
+    [11] Make Jokosher use autoaudiosink
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+    >>> print(extract_text(entry.id))
+    tag:launchpad.net,2007-03-15:/bugs/11
+
+The Atom feed must have the content-type of "application/atom+xml".
+
+    >>> browser.headers['content-type']
+    'application/atom+xml;charset=utf-8'
+
+Latest bugs for a project
+-------------------------
+
+This feed gets the latest bugs for a project, and has the same type of content
+as the latest bugs feed for a product.
+
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in The Mozilla Project
+    >>> browser.url
+    'http://feeds.launchpad.test/mozilla/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2004-09-24:/bugs/mozilla
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/mozilla/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    5
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [15] Nonsensical bugs are useless
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> entry = entries[1]
+    >>> print(extract_text(entry.title))
+    [9] Thunderbird crashes
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> entry = entries[2]
+    >>> print(extract_text(entry.title))
+    [5] Firefox install instructions should be complete
+    >>> print(extract_text(entry.author('name')[0]))
+    Sample Person
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name12
+
+Ensure the entries are in reverse chronological order by published date.
+
+    >>> def check_entries_order(entries):
+    ...     dates = [extract_text(entry.published)
+    ...              for entry in entries]
+    ...     return dates == sorted(dates, reverse=True)
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+Latest bugs for a distro
+------------------------
+
+This feed gets the latest bugs for a distribution, and has the same type
+of content as the latest bugs feed for a product.
+
+    >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Ubuntu
+    >>> browser.url
+    'http://feeds.launchpad.test/ubuntu/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2006-10-16:/bugs/ubuntu
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    4
+
+    >>> entry = entries[1]
+    >>> print(extract_text(entry.title))
+    [9] Thunderbird crashes
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+Private teams as assignees
+..........................
+
+Create a private team and assign an ubuntu distro bug to that team.
+
+    >>> from zope.component import getUtility
+    >>> from lp.bugs.interfaces.bug import IBugSet
+    >>> from lp.registry.interfaces.person import PersonVisibility
+
+    >>> login('foo.bar@canonical.com')
+    >>> priv_team = factory.makeTeam(visibility=PersonVisibility.PRIVATE)
+    >>> bug = getUtility(IBugSet).get(1)
+    >>> print(bug.title)
+    Firefox does not support SVG
+    >>> print(len(bug.bugtasks))
+    3
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> bugtask = removeSecurityProxy(bug.bugtasks[1])
+    >>> print(bugtask.distribution)
+    <Distribution 'Ubuntu' (ubuntu)>
+    >>> bugtask.assignee = priv_team
+    >>> logout()
+
+Get the ubuntu/latest-bugs feed.
+
+    >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    4
+
+The bug should be included in the feed.
+
+    >>> entry = entries[3]
+    >>> print(extract_text(entry.title))
+    [1] Firefox does not support SVG
+
+Private teams should show as '-'.
+
+    >>> soup = BeautifulSoup(entry.find('content').text, 'xml')
+    >>> for tr in soup.find_all('tr')[1:4]:
+    ...     print(tr.find_all('td')[4].text)
+    Mark Shuttleworth
+    -
+    -
+
+Latest bugs for a source package
+--------------------------------
+
+This feed gets the latest bugs for a source package, and has the same
+type of content as the latest bugs feed for a product.
+
+    >>> browser.open(
+    ...     'http://feeds.launchpad.test/ubuntu/+source/thunderbird'
+    ...     '/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in thunderbird in Ubuntu
+    >>> browser.url
+    'http://feeds.launchpad.test/ubuntu/+source/thunderbird/latest-bugs.atom'
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2008:/bugs/ubuntu/+source/thunderbird
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    1
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [9] Thunderbird crashes
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+Latest bugs for a distroseries
+------------------------------
+
+This feed gets the latest bugs for a distribution series, and has the same
+type of content as the latest bugs feed for a product.
+
+    >>> browser.open(
+    ...     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in Hoary
+    >>> browser.url
+    'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2006-10-16:/bugs/ubuntu/hoary
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    1
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [2] Blackhole Trash folder
+    >>> print(extract_text(entry.author('name')[0]))
+    Sample Person
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name12
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+Latest bugs for a product series
+--------------------------------
+
+This feed gets the latest bugs for a product series, and has the same
+type of content as the latest bugs feed for a product.
+
+    >>> browser.open(
+    ...     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs in 1.0
+    >>> browser.url
+    'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2005-06-06:/bugs/firefox/1.0
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    1
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [5] Firefox install instructions should be complete
+    >>> print(extract_text(entry.author('name')[0]))
+    Sample Person
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name12
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+Latest bugs for a person
+------------------------
+
+This feed gets the latest bugs for a person.
+
+    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs for Foo Bar
+    >>> browser.url
+    'http://feeds.launchpad.test/~name16/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2005-06-06:/bugs/~name16
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/~name16/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    9
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [15] Nonsensical bugs are useless
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> entry = entries[1]
+    >>> print(extract_text(entry.title))
+    [12] Copy, Cut and Delete operations should work on selections
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+Latest bugs for a team
+----------------------
+
+This feed gets the latest bugs for a whole team.
+First, make a team responsible for some bugs.
+
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> one_mem_browser = setupBrowser(
+    ...    auth='Basic one-membership@test.com:test')
+    >>> personset = getUtility(IPersonSet)
+
+Subscribe simple-team to a number of bugs.
+
+    >>> one_mem_browser.open('http://launchpad.test/bugs/1')
+    >>> one_mem_browser.getLink('Subscribe someone else').click()
+    >>> one_mem_browser.getControl('Person').value = 'simple-team'
+    >>> one_mem_browser.getControl('Subscribe user').click()
+
+    >>> one_mem_browser.open('http://launchpad.test/bugs/2')
+    >>> one_mem_browser.getLink('Subscribe someone else').click()
+    >>> one_mem_browser.getControl('Person').value = 'simple-team'
+    >>> one_mem_browser.getControl('Subscribe user').click()
+
+    >>> one_mem_browser.open('http://launchpad.test/bugs/3')
+    >>> one_mem_browser.getLink('Subscribe someone else').click()
+    >>> one_mem_browser.getControl('Person').value = 'simple-team'
+    >>> one_mem_browser.getControl('Subscribe user').click()
+
+
+Now we can do a query on the latest bugs for simple team and expect
+some results.
+
+    >>> browser.open(
+    ...    'http://feeds.launchpad.test/~simple-team/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs for Simple Team
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2007-02-21:/bugs/~simple-team
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    3
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+Latest bugs for any target
+--------------------------
+
+This feed gets the latest bugs reported against any target.
+
+    >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Launchpad bugs
+    >>> browser.url
+    'http://feeds.launchpad.test/bugs/latest-bugs.atom'
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> print(extract_text(soup.find('id')))
+    tag:launchpad.net,2008:/bugs
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/bugs/latest-bugs.atom"
+          rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    13
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [15] Nonsensical bugs are useless
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> assert check_entries_order(entries), (
+    ...     "Published dates are not sorted.")
+
+
+General bug search
+------------------
+
+This feed is the most useful of them all. Any bug search can be turned into
+a feed.
+
+    >>> url = ("http://feeds.launchpad.test/bugs/+bugs.atom?"
+    ...        "field.searchtext=&search=Search+Bug+Reports&"
+    ...        "field.scope=all&field.scope.target=")
+
+The bug search feed is not enabled by default since it may represent a
+performance problem in production.
+
+    >>> from lp.services.config import config
+    >>> config.launchpad.is_bug_search_feed_active
+    True
+    >>> bug_search_feed_data = """
+    ...     [launchpad]
+    ...     is_bug_search_feed_active: False
+    ...     """
+    >>> config.push('bug_search_feed_data', bug_search_feed_data)
+    >>> browser.open(url)
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: Bug search feed deactivated
+
+    # Restore the config.
+    >>> config_data = config.pop('bug_search_feed_data')
+
+The bug search feed can be tested after setting is_bug_search_feed_active
+to True.
+
+    >>> browser.open(url)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bugs from custom search
+
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
+    >>> feed_id = extract_text(soup.find('id'))
+    >>> print(feed_id)  # noqa
+    tag:launchpad.net,2008:/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
+
+    >>> from lp.services.webapp.escaping import html_escape
+    >>> print(html_escape(browser.url))  # noqa
+    http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
+
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)  # noqa
+    <link href="http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" rel="self"/>
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    12
+
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [15] Nonsensical bugs are useless
+    >>> print(extract_text(entry.author('name')[0]))
+    Foo Bar
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name16
+
+    >>> entry = entries[1]
+    >>> print(extract_text(entry.title))
+    [13] Launchpad CSS and JS is not testible
+    >>> print(extract_text(entry.author('name')[0]))
+    Sample Person
+    >>> print(extract_text(entry.author('uri')[0]))
+    http://bugs.launchpad.test/~name12
+
+
+Results for a single bug
+------------------------
+
+This feed shows the status of a single bug.
+
+    >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
+    >>> _ = feedparser.parse(browser.contents)
+    >>> for element in BeautifulSoup(browser.contents, 'xml').title.contents:
+    ...     print(element)
+    Bug 1
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    1
+    >>> entry = entries[0]
+    >>> print(extract_text(entry.title))
+    [1] Firefox does not support SVG
+    >>> self_links = parse_links(browser.contents, 'self')
+    >>> for link in self_links:
+    ...     print(link)
+    <link href="http://feeds.launchpad.test/bugs/1/bug.atom" rel="self"/>
+
+Feeds Configuration Options
+---------------------------
+
+The max_bug_feed_cache_minutes configuration is provided to allow
+overriding the Expires and Cache-Control headers so that the feeds
+will be cached longer by browsers and the reverse-proxy in front
+of the feeds servers.
+
+    >>> import time
+    >>> old_time = time.time
+    >>> time.time = lambda: 17
+    >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
+    >>> config.launchpad.max_bug_feed_cache_minutes
+    30
+    >>> browser.headers['Expires']
+    'Thu, 01 Jan 1970 00:30:17 GMT'
+    >>> browser.headers['Cache-Control']
+    'max-age=1800'
+    >>> time.time = old_time

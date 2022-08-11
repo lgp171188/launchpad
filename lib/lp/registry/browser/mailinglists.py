@@ -4,9 +4,9 @@
 """Browser views for handling mailing lists."""
 
 __all__ = [
-    'HeldMessageView',
-    'enabled_with_active_mailing_list',
-    ]
+    "HeldMessageView",
+    "enabled_with_active_mailing_list",
+]
 
 
 from textwrap import TextWrapper
@@ -18,7 +18,7 @@ from lp.app.browser.tales import PersonFormatterAPI
 from lp.registry.interfaces.mailinglist import (
     IHeldMessageDetails,
     IMailingListSet,
-    )
+)
 from lp.registry.interfaces.person import ITeam
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.escaping import html_escape
@@ -40,7 +40,7 @@ class HeldMessageView(LaunchpadView):
         self.message_id = self.details.message_id
         self.subject = self.details.subject
         self.date = self.details.date
-        self.widget_name = 'field.' + quote(self.message_id)
+        self.widget_name = "field." + quote(self.message_id)
         self.author = PersonFormatterAPI(self.details.author).link(None)
 
     def initialize(self):
@@ -74,16 +74,16 @@ class HeldMessageView(LaunchpadView):
             else:
                 current_paragraph.append(line)
         self._append_paragraph(paragraphs, current_paragraph)
-        self.body_details = ''.join(paragraphs)
+        self.body_details = "".join(paragraphs)
 
     def _append_paragraph(self, paragraphs, current_paragraph):
         if len(current_paragraph) == 0:
             # There is nothing to append. The message has multiple
             # blank lines.
             return
-        paragraphs.append('\n<p>\n')
-        paragraphs.append('\n'.join(current_paragraph))
-        paragraphs.append('\n</p>\n')
+        paragraphs.append("\n<p>\n")
+        paragraphs.append("\n".join(current_paragraph))
+        paragraphs.append("\n</p>\n")
 
     def _remove_leading_blank_lines(self):
         """Strip off any leading blank lines.
@@ -113,13 +113,13 @@ class HeldMessageView(LaunchpadView):
         """
         # If there are no non-blank lines, then we're done.
         if len(text_lines) == 0:
-            self.body_summary = ''
-            return ''
+            self.body_summary = ""
+            return ""
         # If the first line is of a completely arbitrarily chosen reasonable
         # length, then we'll just use that as the summary.
         elif len(text_lines[0]) < 60:
             self.body_summary = text_lines[0]
-            return '\n'.join(text_lines[1:])
+            return "\n".join(text_lines[1:])
         # It could be the case that the text is actually flowed using RFC
         # 3676 format="flowed" parameters.  In that case, just split the line
         # at the first whitespace after, again, our arbitrarily chosen limit.
@@ -128,8 +128,8 @@ class HeldMessageView(LaunchpadView):
             wrapper = TextWrapper(width=60)
             filled_lines = wrapper.fill(first_line).splitlines()
             self.body_summary = filled_lines[0]
-            text_lines.insert(0, ''.join(filled_lines[1:]))
-            return '\n'.join(text_lines)
+            text_lines.insert(0, "".join(filled_lines[1:]))
+            return "\n".join(text_lines)
 
 
 class enabled_with_active_mailing_list:
@@ -139,8 +139,7 @@ class enabled_with_active_mailing_list:
         self._function = function
 
     def __get__(self, obj, type=None):
-        """Called by the decorator machinery to return a decorated function.
-        """
+        """Called by the decorator machinery to return a decorated function."""
 
         def enable_if_active(*args, **kws):
             link = self._function(obj, *args, **kws)
@@ -150,4 +149,5 @@ class enabled_with_active_mailing_list:
             if mailing_list is None or not mailing_list.is_usable:
                 link.enabled = False
             return link
+
         return enable_if_active

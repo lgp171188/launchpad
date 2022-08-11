@@ -8,34 +8,25 @@ time zone.
 """
 
 __all__ = [
-    'IHasLocation',
-    'ILocationRecord',
-    'IObjectWithLocation',
-    'IPersonLocation',
-    'ISetLocation',
-    ]
+    "IHasLocation",
+    "ILocationRecord",
+    "IObjectWithLocation",
+    "IPersonLocation",
+    "ISetLocation",
+]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Float,
-    Object,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Float, Object
 
 from lp import _
 
@@ -45,20 +36,38 @@ class IHasLocation(Interface):
 
     latitude = exported(
         doNotSnapshot(
-            Float(title=_("The latitude of this object."),
-                  required=False, readonly=True)),
-        ('devel', dict(exported=False)),
-        exported=True)
+            Float(
+                title=_("The latitude of this object."),
+                required=False,
+                readonly=True,
+            )
+        ),
+        ("devel", dict(exported=False)),
+        as_of="beta",
+        exported=True,
+    )
     longitude = exported(
         doNotSnapshot(
-            Float(title=_("The longitude of this object."),
-                  required=False, readonly=True)),
-        ('devel', dict(exported=False)),
-        exported=True)
-    time_zone = exported(doNotSnapshot(
-        Choice(title=_('The time zone of this object.'),
-               required=False, readonly=True,
-               vocabulary='TimezoneName')))
+            Float(
+                title=_("The longitude of this object."),
+                required=False,
+                readonly=True,
+            )
+        ),
+        ("devel", dict(exported=False)),
+        as_of="beta",
+        exported=True,
+    )
+    time_zone = exported(
+        doNotSnapshot(
+            Choice(
+                title=_("The time zone of this object."),
+                required=False,
+                readonly=True,
+                vocabulary="TimezoneName",
+            )
+        )
+    )
 
 
 class IObjectWithLocation(Interface):
@@ -75,12 +84,17 @@ class ILocationRecord(IHasLocation):
     """
 
     last_modified_by = Attribute(
-        "The person who last provided this location information.")
+        "The person who last provided this location information."
+    )
     date_last_modified = Datetime(
-        title=_("The date this information was last updated."))
+        title=_("The date this information was last updated.")
+    )
     visible = Bool(
         title=_("Is this location record visible?"),
-        required=False, readonly=False, default=True)
+        required=False,
+        readonly=False,
+        default=True,
+    )
 
 
 class ISetLocation(Interface):
@@ -88,11 +102,12 @@ class ISetLocation(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        latitude=copy_field(IHasLocation['latitude'], required=True),
-        longitude=copy_field(IHasLocation['longitude'], required=True),
-        time_zone=copy_field(IHasLocation['time_zone'], required=True))
+        latitude=copy_field(IHasLocation["latitude"], required=True),
+        longitude=copy_field(IHasLocation["longitude"], required=True),
+        time_zone=copy_field(IHasLocation["time_zone"], required=True),
+    )
     @export_write_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def setLocation(latitude, longitude, time_zone, user):
         """Specify the location and time zone of a person."""
 

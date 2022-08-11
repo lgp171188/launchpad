@@ -21,7 +21,7 @@ from zope.interface import implementer
 from lp.code.interfaces.lpcraft import (
     ILPCraftConfiguration,
     LPCraftConfigurationError,
-    )
+)
 
 
 def _expand_job_values(values):
@@ -58,13 +58,14 @@ def load_configuration(configuration_file):
     for required_key in "pipeline", "jobs":
         if required_key not in content:
             raise LPCraftConfigurationError(
-                "Configuration file does not declare '{}'".format(
-                    required_key))
+                "Configuration file does not declare '{}'".format(required_key)
+            )
     # normalize each element of `pipeline` into a list
     expanded_values = content.copy()
     expanded_values["pipeline"] = [
         [stage] if isinstance(stage, str) else stage
-        for stage in expanded_values["pipeline"]]
+        for stage in expanded_values["pipeline"]
+    ]
     # expand matrix
     expanded_values["jobs"] = {
         job_name: _expand_job_values(job_values)
@@ -76,7 +77,9 @@ def load_configuration(configuration_file):
                 if required_key not in job_values:
                     raise LPCraftConfigurationError(
                         "Job {}:{} does not declare '{}'".format(
-                            job_name, i, required_key))
+                            job_name, i, required_key
+                        )
+                    )
     # create "data class"
     return LPCraftConfiguration(expanded_values)
 

@@ -1,7 +1,7 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['ParseApacheLogs']
+__all__ = ["ParseApacheLogs"]
 
 import glob
 import os
@@ -13,7 +13,7 @@ from lp.services.apachelogparser.base import (
     create_or_update_parsedlog_entry,
     get_files_to_parse,
     parse_file,
-    )
+)
 from lp.services.config import config
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.services.worlddata.interfaces.country import ICountrySet
@@ -30,7 +30,7 @@ class ParseApacheLogs(LaunchpadCronScript):
     """
 
     # Glob to restrict filenames that are parsed.
-    log_file_glob = '*'
+    log_file_glob = "*"
 
     def setUpUtilities(self):
         """Prepare any utilities that might be used many times."""
@@ -74,20 +74,25 @@ class ParseApacheLogs(LaunchpadCronScript):
         # files. Note that we still error if a file we want to parse
         # disappears before we get around to parsing it, which is
         # desirable behaviour.
-        files_to_parse = list(get_files_to_parse(
-            glob.glob(os.path.join(self.root, self.log_file_glob))))
+        files_to_parse = list(
+            get_files_to_parse(
+                glob.glob(os.path.join(self.root, self.log_file_glob))
+            )
+        )
 
         country_set = getUtility(ICountrySet)
         parsed_lines = 0
         max_parsed_lines = getattr(
-            config.launchpad, 'logparser_max_parsed_lines', None)
+            config.launchpad, "logparser_max_parsed_lines", None
+        )
         max_is_set = max_parsed_lines is not None
         for fd, position in files_to_parse:
             # If we've used up our budget of lines to process, stop.
-            if (max_is_set and parsed_lines >= max_parsed_lines):
+            if max_is_set and parsed_lines >= max_parsed_lines:
                 break
             downloads, parsed_bytes, parsed_lines = parse_file(
-                fd, position, self.logger, self.getDownloadKey)
+                fd, position, self.logger, self.getDownloadKey
+            )
             # Use a while loop here because we want to pop items from the dict
             # in order to free some memory as we go along. This is a good
             # thing here because the downloads dict may get really huge.
@@ -114,7 +119,7 @@ class ParseApacheLogs(LaunchpadCronScript):
             fd.close()
             create_or_update_parsedlog_entry(first_line, parsed_bytes)
             self.txn.commit()
-            name = getattr(fd, 'name', fd)
-            self.logger.info('Finished parsing %s' % name)
+            name = getattr(fd, "name", fd)
+            self.logger.info("Finished parsing %s" % name)
 
-        self.logger.info('Done parsing apache log files')
+        self.logger.info("Done parsing apache log files")

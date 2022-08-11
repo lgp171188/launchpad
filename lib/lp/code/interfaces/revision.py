@@ -4,20 +4,15 @@
 """Revision interfaces."""
 
 __all__ = [
-    'IRevision', 'IRevisionAuthor', 'IRevisionParent', 'IRevisionProperty',
-    'IRevisionSet']
+    "IRevision",
+    "IRevisionAuthor",
+    "IRevisionParent",
+    "IRevisionProperty",
+    "IRevisionSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.services.fields import PublicPersonChoice
@@ -26,10 +21,11 @@ from lp.services.fields import PublicPersonChoice
 class IRevision(Interface):
     """Bazaar revision."""
 
-    id = Int(title=_('The database revision ID'))
+    id = Int(title=_("The database revision ID"))
 
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )
     log_body = Attribute("The revision log message.")
 
     revision_author_id = Attribute("Revision author identifier id.")
@@ -38,16 +34,21 @@ class IRevision(Interface):
     revision_id = Attribute("The globally unique revision identifier.")
     revision_date = Datetime(
         title=_("The date the revision was committed."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     karma_allocated = Bool(
         title=_("Has karma been allocated for this revision?"),
-        required=True, default=False)
+        required=True,
+        default=False,
+    )
     parents = Attribute("The RevisionParents for this revision.")
     parent_ids = Attribute(
         "The revision_ids of the parent Revisions. Parent revisions are "
         "identified by their revision_id rather than a foreign key "
         "so that ghosts and parents that actually exist can be modelled "
-        "in the same way.")
+        "in the same way."
+    )
     properties = Attribute("The `RevisionProperty`s for this revision.")
 
     def getProperties():
@@ -79,14 +80,19 @@ class IRevision(Interface):
 class IRevisionAuthor(Interface):
     """Committer of a Bazaar revision."""
 
-    id = Int(title=_('The database revision author ID'))
+    id = Int(title=_("The database revision author ID"))
     name = TextLine(title=_("Revision Author Name"), required=True)
     name_without_email = Attribute(
-        "Revision author name without email address.")
+        "Revision author name without email address."
+    )
     email = Attribute("The email address extracted from the author text.")
-    person = PublicPersonChoice(title=_('Author'), required=False,
-        readonly=False, vocabulary='ValidPersonOrTeam')
-    personID = Attribute("The primary key of the person")
+    person = PublicPersonChoice(
+        title=_("Author"),
+        required=False,
+        readonly=False,
+        vocabulary="ValidPersonOrTeam",
+    )
+    person_id = Attribute("The primary key of the person")
 
     def linkToLaunchpadPerson():
         """Attempt to link the revision author to a Launchpad `Person`.
@@ -127,8 +133,14 @@ class IRevisionSet(Interface):
     def onlyPresent(revids):
         """Return the revision ids from `revids` that are present."""
 
-    def new(revision_id, log_body, revision_date, revision_author,
-            parent_ids, properties):
+    def new(
+        revision_id,
+        log_body,
+        revision_date,
+        revision_author,
+        parent_ids,
+        properties,
+    ):
         """Create a new Revision with the given revision ID."""
 
     def newFromBazaarRevisions(revision_batch):

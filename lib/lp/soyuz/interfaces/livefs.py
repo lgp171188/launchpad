@@ -4,26 +4,27 @@
 """Live filesystem interfaces."""
 
 __all__ = [
-    'CannotDeleteLiveFS',
-    'DuplicateLiveFSName',
-    'ILiveFS',
-    'ILiveFSEditableAttributes',
-    'ILiveFSEditableAttributes',
-    'ILiveFSSet',
-    'ILiveFSView',
-    'LIVEFS_FEATURE_FLAG',
-    'LIVEFS_WEBHOOKS_FEATURE_FLAG',
-    'LiveFSBuildAlreadyPending',
-    'LiveFSBuildArchiveOwnerMismatch',
-    'LiveFSFeatureDisabled',
-    'LiveFSNotOwner',
-    'NoSuchLiveFS',
-    ]
+    "CannotDeleteLiveFS",
+    "DuplicateLiveFSName",
+    "ILiveFS",
+    "ILiveFSEditableAttributes",
+    "ILiveFSEditableAttributes",
+    "ILiveFSSet",
+    "ILiveFSView",
+    "LIVEFS_FEATURE_FLAG",
+    "LIVEFS_WEBHOOKS_FEATURE_FLAG",
+    "LiveFSBuildAlreadyPending",
+    "LiveFSBuildArchiveOwnerMismatch",
+    "LiveFSFeatureDisabled",
+    "LiveFSNotOwner",
+    "NoSuchLiveFS",
+]
 
 import http.client
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     error_status,
@@ -36,25 +37,11 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Dict,
-    Int,
-    TextLine,
-    )
-from zope.security.interfaces import (
-    Forbidden,
-    Unauthorized,
-    )
+from zope.schema import Bool, Choice, Datetime, Dict, Int, TextLine
+from zope.security.interfaces import Forbidden, Unauthorized
 
 from lp import _
 from lp.app.errors import NameLookupFailed
@@ -64,14 +51,10 @@ from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import (
-    PersonChoice,
-    PublicPersonChoice,
-    )
+from lp.services.fields import PersonChoice, PublicPersonChoice
 from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
-
 
 LIVEFS_FEATURE_FLAG = "soyuz.livefs.allow_new"
 LIVEFS_WEBHOOKS_FEATURE_FLAG = "soyuz.livefs.webhooks.enabled"
@@ -84,7 +67,8 @@ class LiveFSBuildAlreadyPending(Exception):
     def __init__(self):
         super().__init__(
             "An identical build of this live filesystem image is already "
-            "pending.")
+            "pending."
+        )
 
 
 @error_status(http.client.FORBIDDEN)
@@ -103,7 +87,8 @@ class LiveFSBuildArchiveOwnerMismatch(Forbidden):
         super().__init__(
             "Live filesystem builds against private archives are only "
             "allowed if the live filesystem owner and the archive owner are "
-            "equal.")
+            "equal."
+        )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -113,7 +98,8 @@ class LiveFSFeatureDisabled(Unauthorized):
     def __init__(self):
         super().__init__(
             "You do not have permission to create new live filesystems or "
-            "new live filesystem builds.")
+            "new live filesystem builds."
+        )
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -123,7 +109,8 @@ class DuplicateLiveFSName(Exception):
     def __init__(self):
         super().__init__(
             "There is already a live filesystem with the same name, owner, "
-            "and distroseries.")
+            "and distroseries."
+        )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -133,6 +120,7 @@ class LiveFSNotOwner(Unauthorized):
 
 class NoSuchLiveFS(NameLookupFailed):
     """The requested LiveFS does not exist."""
+
     _message_prefix = "No such live filesystem with this owner/distroseries"
 
 
@@ -146,14 +134,21 @@ class ILiveFSView(IPrivacy):
 
     id = exported(Int(title=_("ID"), required=True, readonly=True))
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_(
-            "The person who registered this live filesystem image.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_(
+                "The person who registered this live filesystem image."
+            ),
+        )
+    )
 
     @call_with(requester=REQUEST_USER)
     @operation_parameters(
@@ -162,16 +157,27 @@ class ILiveFSView(IPrivacy):
         pocket=Choice(vocabulary=PackagePublishingPocket),
         unique_key=TextLine(
             title=_("A unique key for this build, if required."),
-            required=False),
+            required=False,
+        ),
         metadata_override=Dict(
             title=_("A dict of data about the image."),
-            key_type=TextLine(), required=False),
-        version=TextLine(title=_("A version string for this build.")))
-    # Really ILiveFSBuild, patched in _schema_circular_imports.py.
+            key_type=TextLine(),
+            required=False,
+        ),
+        version=TextLine(title=_("A version string for this build.")),
+    )
+    # Really ILiveFSBuild, patched in lp.soyuz.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def requestBuild(requester, archive, distro_arch_series, pocket,
-                     unique_key=None, metadata_override=None, version=None):
+    def requestBuild(
+        requester,
+        archive,
+        distro_arch_series,
+        pocket,
+        unique_key=None,
+        metadata_override=None,
+        version=None,
+    ):
         """Request that the live filesystem be built.
 
         :param requester: The person requesting the build.
@@ -189,29 +195,54 @@ class ILiveFSView(IPrivacy):
         :return: `ILiveFSBuild`.
         """
 
-    builds = exported(doNotSnapshot(CollectionField(
-        title=_("All builds of this live filesystem."),
-        description=_(
-            "All builds of this live filesystem, sorted in descending order "
-            "of finishing (or starting if not completed successfully)."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
-        value_type=Reference(schema=Interface), readonly=True)))
+    builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("All builds of this live filesystem."),
+                description=_(
+                    "All builds of this live filesystem, sorted in descending "
+                    "order of finishing (or starting if not completed "
+                    "successfully)."
+                ),
+                # Really ILiveFSBuild, patched in
+                # lp.soyuz.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
-    completed_builds = exported(doNotSnapshot(CollectionField(
-        title=_("Completed builds of this live filesystem."),
-        description=_(
-            "Completed builds of this live filesystem, sorted in descending "
-            "order of finishing."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
-        value_type=Reference(schema=Interface), readonly=True)))
+    completed_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Completed builds of this live filesystem."),
+                description=_(
+                    "Completed builds of this live filesystem, sorted in "
+                    "descending order of finishing."
+                ),
+                # Really ILiveFSBuild, patched in
+                # lp.soyuz.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
-    pending_builds = exported(doNotSnapshot(CollectionField(
-        title=_("Pending builds of this live filesystem."),
-        description=_(
-            "Pending builds of this live filesystem, sorted in descending "
-            "order of creation."),
-        # Really ILiveFSBuild, patched in _schema_circular_imports.py.
-        value_type=Reference(schema=Interface), readonly=True)))
+    pending_builds = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Pending builds of this live filesystem."),
+                description=_(
+                    "Pending builds of this live filesystem, sorted in "
+                    "descending order of creation."
+                ),
+                # Really ILiveFSBuild, patched in
+                # lp.soyuz.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
 
 
 class ILiveFSEdit(IWebhookTarget):
@@ -228,28 +259,52 @@ class ILiveFSEditableAttributes(IHasOwner):
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
-    date_last_modified = exported(Datetime(
-        title=_("Date last modified"), required=True, readonly=True))
 
-    owner = exported(PersonChoice(
-        title=_("Owner"), required=True, readonly=False,
-        vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_("The owner of this live filesystem image.")))
+    date_last_modified = exported(
+        Datetime(title=_("Date last modified"), required=True, readonly=True)
+    )
 
-    distro_series = exported(Reference(
-        IDistroSeries, title=_("Distro Series"), required=True, readonly=False,
-        description=_("The series for which the image should be built.")))
+    owner = exported(
+        PersonChoice(
+            title=_("Owner"),
+            required=True,
+            readonly=False,
+            vocabulary="AllUserTeamsParticipationPlusSelf",
+            description=_("The owner of this live filesystem image."),
+        )
+    )
 
-    name = exported(TextLine(
-        title=_("Name"), required=True, readonly=False,
-        constraint=name_validator,
-        description=_("The name of the live filesystem image.")))
+    distro_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Distro Series"),
+            required=True,
+            readonly=False,
+            description=_("The series for which the image should be built."),
+        )
+    )
 
-    metadata = exported(Dict(
-        title=_(
-            "A dict of data about the image.  Entries here will be passed to "
-            "the builder."),
-        key_type=TextLine(), required=True, readonly=False))
+    name = exported(
+        TextLine(
+            title=_("Name"),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+            description=_("The name of the live filesystem image."),
+        )
+    )
+
+    metadata = exported(
+        Dict(
+            title=_(
+                "A dict of data about the image.  Entries here will be passed "
+                "to the builder."
+            ),
+            key_type=TextLine(),
+            required=True,
+            readonly=False,
+        )
+    )
 
 
 class ILiveFSModerateAttributes(Interface):
@@ -258,18 +313,30 @@ class ILiveFSModerateAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Moderate to
     change.
     """
-    relative_build_score = exported(Int(
-        title=_("Relative build score"), required=True, readonly=False,
-        description=_(
-            "A delta to apply to all build scores for the live filesystem.  "
-            "Builds with a higher score will build sooner.")))
 
-    keep_binary_files_days = exported(Int(
-        title=_("Binary file retention period"),
-        required=False, readonly=False,
-        description=_(
-            "Keep binary files attached to builds of this live filesystem "
-            "for at least this many days.  If unset, disable pruning.")))
+    relative_build_score = exported(
+        Int(
+            title=_("Relative build score"),
+            required=True,
+            readonly=False,
+            description=_(
+                "A delta to apply to all build scores for the live "
+                "filesystem.  Builds with a higher score will build sooner."
+            ),
+        )
+    )
+
+    keep_binary_files_days = exported(
+        Int(
+            title=_("Binary file retention period"),
+            required=False,
+            readonly=False,
+            description=_(
+                "Keep binary files attached to builds of this live filesystem "
+                "for at least this many days.  If unset, disable pruning."
+            ),
+        )
+    )
 
 
 class ILiveFSAdminAttributes(Interface):
@@ -277,20 +344,32 @@ class ILiveFSAdminAttributes(Interface):
 
     These attributes need launchpad.View to see, and launchpad.Admin to change.
     """
-    require_virtualized = exported(Bool(
-        title=_("Require virtualized builders"), required=True, readonly=False,
-        description=_(
-            "Only build this live filesystem image on virtual builders.")))
+
+    require_virtualized = exported(
+        Bool(
+            title=_("Require virtualized builders"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Only build this live filesystem image on virtual builders."
+            ),
+        )
+    )
 
 
 # XXX cjwatson 2014-05-06 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
 # "devel".
 @exported_as_webservice_entry(
-    singular_name="livefs", plural_name="livefses", as_of="beta")
+    singular_name="livefs", plural_name="livefses", as_of="beta"
+)
 class ILiveFS(
-    ILiveFSView, ILiveFSEdit, ILiveFSEditableAttributes,
-    ILiveFSModerateAttributes, ILiveFSAdminAttributes):
+    ILiveFSView,
+    ILiveFSEdit,
+    ILiveFSEditableAttributes,
+    ILiveFSModerateAttributes,
+    ILiveFSAdminAttributes,
+):
     """A buildable live filesystem image."""
 
 
@@ -300,10 +379,18 @@ class ILiveFSSet(Interface):
 
     @call_with(registrant=REQUEST_USER)
     @export_factory_operation(
-        ILiveFS, ["owner", "distro_series", "name", "metadata"])
+        ILiveFS, ["owner", "distro_series", "name", "metadata"]
+    )
     @operation_for_version("devel")
-    def new(registrant, owner, distro_series, name, metadata,
-            require_virtualized=True, date_created=None):
+    def new(
+        registrant,
+        owner,
+        distro_series,
+        name,
+        metadata,
+        require_virtualized=True,
+        date_created=None,
+    ):
         """Create an `ILiveFS`."""
 
     def exists(owner, distro_series, name):
@@ -312,8 +399,10 @@ class ILiveFSSet(Interface):
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),
         distro_series=Reference(
-            IDistroSeries, title=_("Distroseries"), required=True),
-        name=TextLine(title=_("Live filesystem name"), required=True))
+            IDistroSeries, title=_("Distroseries"), required=True
+        ),
+        name=TextLine(title=_("Live filesystem name"), required=True),
+    )
     @operation_returns_entry(ILiveFS)
     @export_read_operation()
     @operation_for_version("devel")

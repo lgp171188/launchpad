@@ -4,15 +4,9 @@
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.soyuz.adapters.copypolicy import InsecureCopyPolicy
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackageCopyPolicy,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackageCopyPolicy
 from lp.soyuz.interfaces.copypolicy import ICopyPolicy
-from lp.testing import (
-    TestCaseWithFactory,
-    verifyObject,
-    )
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
@@ -29,16 +23,20 @@ class TestCopyPolicy(TestCaseWithFactory):
             pocket = self.factory.getAnyPocket()
         return archive, distroseries, pocket
 
-    def assertApproved(self, archive_purpose, method,
-                       status=None, pocket=None):
+    def assertApproved(
+        self, archive_purpose, method, status=None, pocket=None
+    ):
         archive, distroseries, pocket = self._getUploadCriteria(
-            archive_purpose, status=status, pocket=pocket)
+            archive_purpose, status=status, pocket=pocket
+        )
         self.assertTrue(method(archive, distroseries, pocket))
 
-    def assertUnapproved(self, archive_purpose, method,
-                         status=None, pocket=None):
+    def assertUnapproved(
+        self, archive_purpose, method, status=None, pocket=None
+    ):
         archive, distroseries, pocket = self._getUploadCriteria(
-            archive_purpose, status=status, pocket=pocket)
+            archive_purpose, status=status, pocket=pocket
+        )
         self.assertFalse(method(archive, distroseries, pocket))
 
     def test_insecure_holds_new_distro_package(self):
@@ -52,39 +50,54 @@ class TestCopyPolicy(TestCaseWithFactory):
     def test_insecure_approves_known_distro_package_to_unfrozen_release(self):
         cp = InsecureCopyPolicy()
         self.assertApproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove,
-            pocket=PackagePublishingPocket.RELEASE)
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
 
     def test_insecure_holds_copy_to_updates_pocket_in_frozen_series(self):
         cp = InsecureCopyPolicy()
         self.assertUnapproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove, status=SeriesStatus.FROZEN,
-            pocket=PackagePublishingPocket.UPDATES)
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
+            status=SeriesStatus.FROZEN,
+            pocket=PackagePublishingPocket.UPDATES,
+        )
 
     def test_insecure_holds_copy_to_release_pocket_in_frozen_series(self):
         cp = InsecureCopyPolicy()
         self.assertUnapproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove, status=SeriesStatus.FROZEN,
-            pocket=PackagePublishingPocket.RELEASE)
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
+            status=SeriesStatus.FROZEN,
+            pocket=PackagePublishingPocket.RELEASE,
+        )
 
     def test_insecure_approves_copy_to_proposed_in_unfrozen_series(self):
         cp = InsecureCopyPolicy()
         self.assertApproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove,
-            pocket=PackagePublishingPocket.PROPOSED)
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
 
     def test_insecure_holds_copy_to_proposed_in_frozen_series(self):
         cp = InsecureCopyPolicy()
         self.assertUnapproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove, status=SeriesStatus.FROZEN,
-            pocket=PackagePublishingPocket.PROPOSED)
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
+            status=SeriesStatus.FROZEN,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
 
     def test_insecure_holds_copy_to_proposed_in_current_series(self):
         cp = InsecureCopyPolicy()
         self.assertUnapproved(
-            ArchivePurpose.PRIMARY, cp.autoApprove,
+            ArchivePurpose.PRIMARY,
+            cp.autoApprove,
             status=SeriesStatus.CURRENT,
-            pocket=PackagePublishingPocket.PROPOSED)
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
 
     def test_insecure_approves_existing_ppa_package(self):
         cp = InsecureCopyPolicy()

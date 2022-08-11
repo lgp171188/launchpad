@@ -4,9 +4,9 @@
 """Utilities for the update-bugzilla-remote-components cronscript"""
 
 __all__ = [
-    'BugzillaRemoteComponentFinder',
-    'BugzillaRemoteComponentScraper',
-    ]
+    "BugzillaRemoteComponentFinder",
+    "BugzillaRemoteComponentScraper",
+]
 
 import re
 
@@ -14,20 +14,14 @@ import requests
 import transaction
 from zope.component import getUtility
 
-from lp.bugs.interfaces.bugtracker import (
-    BugTrackerType,
-    IBugTrackerSet,
-    )
+from lp.bugs.interfaces.bugtracker import BugTrackerType, IBugTrackerSet
 from lp.bugs.model.bugtracker import BugTrackerComponent
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database import bulk
 from lp.services.database.interfaces import IStore
 from lp.services.scripts.logger import log as default_log
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+from lp.services.timeout import override_timeout, urlfetch
 
 
 def dictFromCSV(line):
@@ -37,19 +31,19 @@ def dictFromCSV(line):
         item = item.replace("'", "")
         item = item.replace("\\", "")
         items_dict[item] = {
-            'name': item,
-            }
+            "name": item,
+        }
     return items_dict
 
 
 class BugzillaRemoteComponentScraper:
     """Scrapes Bugzilla query.cgi page for lists of products and components"""
 
-    re_cpts = re.compile(r'cpts\[(\d+)\] = \[(.*)\]')
-    re_vers = re.compile(r'vers\[(\d+)\] = \[(.*)\]')
+    re_cpts = re.compile(r"cpts\[(\d+)\] = \[(.*)\]")
+    re_vers = re.compile(r"vers\[(\d+)\] = \[(.*)\]")
 
     def __init__(self, base_url=None):
-        self.base_url = re.sub(r'/$', '', base_url)
+        self.base_url = re.sub(r"/$", "", base_url)
         self.url = "%s/query.cgi?format=advanced" % (self.base_url)
         self.products = {}
 
@@ -69,14 +63,16 @@ class BugzillaRemoteComponentScraper:
         # by index number
         products = []
         for product in soup.find(
-            name='select',
-            onchange="doOnSelectProduct(2);").contents:
+            name="select", onchange="doOnSelectProduct(2);"
+        ).contents:
             if product.string != "\n":
-                products.append({
-                    'name': product.string,
-                    'components': {},
-                    'versions': None,
-                    })
+                products.append(
+                    {
+                        "name": product.string,
+                        "components": {},
+                        "versions": None,
+                    }
+                )
 
         for script_text in soup.find_all(name="script"):
             if script_text is None or script_text.string is None:
@@ -85,16 +81,16 @@ class BugzillaRemoteComponentScraper:
                 m = self.re_cpts.search(line)
                 if m:
                     num = int(m.group(1))
-                    products[num]['components'] = dictFromCSV(m.group(2))
+                    products[num]["components"] = dictFromCSV(m.group(2))
 
                 m = self.re_vers.search(line)
                 if m:
                     num = int(m.group(1))
-                    products[num]['versions'] = dictFromCSV(m.group(2))
+                    products[num]["versions"] = dictFromCSV(m.group(2))
 
         # Re-map list into dict for easier lookups
         for product in products:
-            product_name = product['name']
+            product_name = product["name"]
             self.products[product_name] = product
 
         return True
@@ -107,7 +103,7 @@ class BugzillaRemoteComponentFinder:
     _BLACKLIST = [
         "ubuntu-bugzilla",
         "mozilla.org",
-        ]
+    ]
 
     def __init__(self, logger=None):
         """Instantiates object, without performing any parsing.
@@ -124,41 +120,44 @@ class BugzillaRemoteComponentFinder:
         if bugtracker_name is not None:
             lp_bugtrackers = [
                 lp_bugtrackers.getByName(bugtracker_name),
-                ]
+            ]
             if not lp_bugtrackers or len(lp_bugtrackers) != 1:
                 self.logger.warning(
-                    "Could not find specified bug tracker %s",
-                    bugtracker_name)
+                    "Could not find specified bug tracker %s", bugtracker_name
+                )
         for lp_bugtracker in lp_bugtrackers:
             if lp_bugtracker.bugtrackertype != BugTrackerType.BUGZILLA:
                 continue
             if lp_bugtracker.name in self._BLACKLIST:
                 continue
 
-            self.logger.info("%s: %s" % (
-                lp_bugtracker.name, lp_bugtracker.baseurl))
+            self.logger.info(
+                "%s: %s" % (lp_bugtracker.name, lp_bugtracker.baseurl)
+            )
 
             bz_bugtracker = BugzillaRemoteComponentScraper(
-                base_url=lp_bugtracker.baseurl)
+                base_url=lp_bugtracker.baseurl
+            )
 
             try:
                 self.logger.debug("...Fetching page")
                 page_text = bz_bugtracker.getPage()
             except requests.HTTPError as error:
-                self.logger.warning("Could not fetch %s: %s" % (
-                    lp_bugtracker.baseurl, error))
+                self.logger.warning(
+                    "Could not fetch %s: %s" % (lp_bugtracker.baseurl, error)
+                )
                 continue
             except Exception:
-                self.logger.warning("Failed to access %s" % (
-                    lp_bugtracker.baseurl))
+                self.logger.warning(
+                    "Failed to access %s" % (lp_bugtracker.baseurl)
+                )
                 continue
 
             self.logger.debug("...Parsing html")
             bz_bugtracker.parsePage(page_text)
 
             self.logger.debug("...Storing new data to Launchpad")
-            self.storeRemoteProductsAndComponents(
-                bz_bugtracker, lp_bugtracker)
+            self.storeRemoteProductsAndComponents(bz_bugtracker, lp_bugtracker)
 
     def storeRemoteProductsAndComponents(self, bz_bugtracker, lp_bugtracker):
         """Stores parsed product/component data from bz_bugtracker"""
@@ -167,21 +166,25 @@ class BugzillaRemoteComponentFinder:
             # Look up the component group id from Launchpad for the product
             # if it already exists.  Otherwise, add it.
             lp_component_group = lp_bugtracker.getRemoteComponentGroup(
-                product['name'])
+                product["name"]
+            )
             if lp_component_group is None:
                 lp_component_group = lp_bugtracker.addRemoteComponentGroup(
-                    product['name'])
+                    product["name"]
+                )
                 if lp_component_group is None:
                     self.logger.warning("Failed to add new component group")
                     continue
             else:
                 for component in lp_component_group.components:
-                    if (component.name in product['components'] or
-                        component.is_visible == False or
-                        component.is_custom == True):
+                    if (
+                        component.name in product["components"]
+                        or component.is_visible == False
+                        or component.is_custom == True
+                    ):
                         # We already know something about this component,
                         # or a user has configured it, so ignore it
-                        del product['components'][component.name]
+                        del product["components"][component.name]
                     else:
                         # Component is now missing from Bugzilla,
                         # so drop it here too
@@ -189,21 +192,25 @@ class BugzillaRemoteComponentFinder:
                         store.find(
                             BugTrackerComponent,
                             BugTrackerComponent.id == component.id,
-                            ).remove()
+                        ).remove()
 
             # The remaining components in the collection will need to be
             # added to launchpad.  Record them for now.
-            for component in product['components'].values():
+            for component in product["components"].values():
                 components_to_add.append(
-                    (component['name'], lp_component_group, True, False))
+                    (component["name"], lp_component_group, True, False)
+                )
 
         if len(components_to_add) > 0:
             self.logger.debug("...Inserting components into database")
             bulk.create(
-                (BugTrackerComponent.name,
-                 BugTrackerComponent.component_group,
-                 BugTrackerComponent.is_visible,
-                 BugTrackerComponent.is_custom),
-                components_to_add)
+                (
+                    BugTrackerComponent.name,
+                    BugTrackerComponent.component_group,
+                    BugTrackerComponent.is_visible,
+                    BugTrackerComponent.is_custom,
+                ),
+                components_to_add,
+            )
             transaction.commit()
             self.logger.debug("...Done")

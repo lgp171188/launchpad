@@ -10,7 +10,7 @@ import _pythonpath  # noqa: F401
 from lp.services.scripts.base import LaunchpadScript
 from lp.translations.scripts.fix_translation_credits import (
     FixTranslationCreditsProcess,
-    )
+)
 
 
 class FixTranslationCredits(LaunchpadScript):
@@ -21,7 +21,8 @@ class FixTranslationCredits(LaunchpadScript):
         fixer.run()
 
 
-if __name__ == '__main__':
-    script = FixTranslationCredits(name="fix-translation-credits",
-                                   dbuser='rosettaadmin')
+if __name__ == "__main__":
+    script = FixTranslationCredits(
+        name="fix-translation-credits", dbuser="rosettaadmin"
+    )
     script.lock_and_run()

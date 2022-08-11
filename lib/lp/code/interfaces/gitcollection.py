@@ -7,10 +7,10 @@ See `IGitCollection` for more details.
 """
 
 __all__ = [
-    'IAllGitRepositories',
-    'IGitCollection',
-    'InvalidGitFilter',
-    ]
+    "IAllGitRepositories",
+    "IGitCollection",
+    "InvalidGitFilter",
+]
 
 from zope.interface import Interface
 
@@ -72,9 +72,14 @@ class IGitCollection(Interface):
 
     # XXX cjwatson 2015-04-16: Add something like for_repositories or
     # for_refs once we know exactly what we need.
-    def getMergeProposals(statuses=None, target_repository=None,
-                          target_path=None, prerequisite_repository=None,
-                          prerequisite_path=None, eager_load=False):
+    def getMergeProposals(
+        statuses=None,
+        target_repository=None,
+        target_path=None,
+        prerequisite_repository=None,
+        prerequisite_path=None,
+        eager_load=False,
+    ):
         """Return a result set of merge proposals for the repositories in
         this collection.
 

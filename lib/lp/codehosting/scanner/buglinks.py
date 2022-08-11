@@ -4,8 +4,8 @@
 """Bugs support for the scanner."""
 
 __all__ = [
-    'BugBranchLinker',
-    ]
+    "BugBranchLinker",
+]
 
 from urllib.parse import urlsplit
 
@@ -27,18 +27,17 @@ class BugBranchLinker:
         protocol, host, path, ignored, ignored = urlsplit(url)
 
         # Skip URLs that don't point to Launchpad.
-        if host != 'launchpad.net':
+        if host != "launchpad.net":
             return None
 
         # Remove empty path segments.
-        segments = [
-            segment for segment in path.split('/') if len(segment) > 0]
+        segments = [segment for segment in path.split("/") if len(segment) > 0]
         # Don't allow Launchpad URLs that aren't /bugs/<integer>.
         try:
             bug_segment, bug_id = segments
         except ValueError:
             return None
-        if bug_segment != 'bugs':
+        if bug_segment != "bugs":
             return None
         try:
             return int(bug_id)
@@ -47,7 +46,7 @@ class BugBranchLinker:
 
     def _getBugStatus(self, bzr_status):
         # Make sure the status is acceptable.
-        valid_statuses = {'fixed': 'fixed'}
+        valid_statuses = {"fixed": "fixed"}
         return valid_statuses.get(bzr_status.lower(), None)
 
     def extractBugInfo(self, bzr_revision):
@@ -85,7 +84,8 @@ class BugBranchLinker:
             else:
                 bug.linkBranch(
                     branch=self.db_branch,
-                    registrant=getUtility(ILaunchpadCelebrities).janitor)
+                    registrant=getUtility(ILaunchpadCelebrities).janitor,
+                )
 
 
 def got_new_mainline_revisions(new_mainline_revisions):

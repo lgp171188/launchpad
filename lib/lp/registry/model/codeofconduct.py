@@ -6,22 +6,20 @@
 https://launchpad.canonical.com/CodeOfConduct
 """
 
-__all__ = ['CodeOfConduct', 'CodeOfConductSet', 'CodeOfConductConf',
-           'SignedCodeOfConduct', 'SignedCodeOfConductSet']
+__all__ = [
+    "CodeOfConduct",
+    "CodeOfConductSet",
+    "CodeOfConductConf",
+    "SignedCodeOfConduct",
+    "SignedCodeOfConductSet",
+]
 
-from datetime import datetime
 import os
+from datetime import datetime
 
 import pytz
 import six
-from storm.locals import (
-    Bool,
-    DateTime,
-    Int,
-    Not,
-    Reference,
-    Unicode,
-    )
+from storm.locals import Bool, DateTime, Int, Not, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -32,7 +30,7 @@ from lp.registry.interfaces.codeofconduct import (
     ICodeOfConductSet,
     ISignedCodeOfConduct,
     ISignedCodeOfConductSet,
-    )
+)
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -45,12 +43,9 @@ from lp.services.gpg.interfaces import (
     GPGKeyNotFoundError,
     GPGVerificationError,
     IGPGHandler,
-    )
+)
 from lp.services.mail.helpers import get_email_template
-from lp.services.mail.sendmail import (
-    format_address,
-    simple_sendmail,
-    )
+from lp.services.mail.sendmail import format_address, simple_sendmail
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import canonical_url
 
@@ -59,13 +54,13 @@ from lp.services.webapp import canonical_url
 class CodeOfConductConf:
     """Abstract Component to store the current CoC configuration."""
 
-    ## XXX: cprov 2005-02-17
-    ## Integrate this class with LaunchpadCentral configuration
-    ## in the future.
+    # XXX: cprov 2005-02-17
+    # Integrate this class with LaunchpadCentral configuration
+    # in the future.
 
-    path = 'lib/lp/registry/codesofconduct/'
-    prefix = 'Ubuntu Code of Conduct - '
-    currentrelease = '2.0'
+    path = "lib/lp/registry/codesofconduct/"
+    prefix = "Ubuntu Code of Conduct - "
+    currentrelease = "2.0"
     # Set the datereleased to the date that 1.0 CoC was released,
     # preserving everyone's Ubuntu Code of Conduct signatory status.
     # https://launchpad.net/products/launchpad/+bug/48995
@@ -91,14 +86,14 @@ class CodeOfConduct:
     def title(self):
         """Return preformatted title (config_prefix + version)."""
 
-        ## XXX: cprov 2005-02-18
-        ## Missed doctest, problems initing ZopeComponentLookupError.
+        # XXX: cprov 2005-02-18
+        # Missed doctest, problems initing ZopeComponentLookupError.
 
         # Recover the prefix for CoC from a Component
         prefix = getUtility(ICodeOfConductConf).prefix
 
         # Build a fancy title
-        return '%s' % prefix + self.version
+        return "%s" % prefix + self.version
 
     @property
     def content(self):
@@ -119,7 +114,7 @@ class CodeOfConduct:
         """Rebuild filename according to the local version."""
         # Recover the path for CoC from a Component
         path = getUtility(ICodeOfConductConf).path
-        return os.path.join(path, self.version + '.txt')
+        return os.path.join(path, self.version + ".txt")
 
     @property
     def datereleased(self):
@@ -130,13 +125,13 @@ class CodeOfConduct:
 class CodeOfConductSet:
     """A set of CodeOfConducts."""
 
-    title = 'Launchpad Codes of Conduct'
+    title = "Launchpad Codes of Conduct"
 
     def __getitem__(self, version):
         """See ICodeOfConductSet."""
         # Create an entry point for the Admin Console
         # Obviously we are excluding a CoC version called 'console'
-        if version == 'console':
+        if version == "console":
             return SignedCodeOfConductSet()
         # in normal conditions return the CoC Release
         try:
@@ -154,9 +149,9 @@ class CodeOfConductSet:
         # iter through files and store the CoC Object
         for entry in os.scandir(cocs_path):
             # Select the correct filenames
-            if entry.name.endswith('.txt'):
+            if entry.name.endswith(".txt"):
                 # Extract the version from filename
-                version = entry.name.replace('.txt', '')
+                version = entry.name.replace(".txt", "")
                 releases.append(CodeOfConduct(version))
 
         # Return the available list of CoCs objects
@@ -177,34 +172,46 @@ class CodeOfConductSet:
 class SignedCodeOfConduct(StormBase):
     """Code of Conduct."""
 
-    __storm_table__ = 'SignedCodeOfConduct'
+    __storm_table__ = "SignedCodeOfConduct"
 
     id = Int(primary=True)
 
-    owner_id = Int(name='owner', allow_none=False)
-    owner = Reference(owner_id, 'Person.id')
+    owner_id = Int(name="owner", allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
-    signedcode = Unicode(name='signedcode', allow_none=True, default=None)
+    signedcode = Unicode(name="signedcode", allow_none=True, default=None)
 
     signing_key_fingerprint = Unicode()
 
     datecreated = DateTime(
-        tzinfo=pytz.UTC, name='datecreated', allow_none=False,
-        default=UTC_NOW)
+        tzinfo=pytz.UTC, name="datecreated", allow_none=False, default=UTC_NOW
+    )
 
-    recipient_id = Int(name='recipient', allow_none=True, default=None)
-    recipient = Reference(recipient_id, 'Person.id')
+    recipient_id = Int(name="recipient", allow_none=True, default=None)
+    recipient = Reference(recipient_id, "Person.id")
 
-    admincomment = Unicode(name='admincomment', allow_none=True, default=None)
+    admincomment = Unicode(name="admincomment", allow_none=True, default=None)
 
-    active = Bool(name='active', allow_none=False, default=False)
+    active = Bool(name="active", allow_none=False, default=False)
 
-    affirmed = Bool(name='affirmed', allow_none=False, default=False,)
+    affirmed = Bool(
+        name="affirmed",
+        allow_none=False,
+        default=False,
+    )
 
-    version = Unicode(name='version', allow_none=True, default=None)
+    version = Unicode(name="version", allow_none=True, default=None)
 
-    def __init__(self, owner, signedcode=None, signing_key_fingerprint=None,
-                 recipient=None, active=False, affirmed=False, version=None):
+    def __init__(
+        self,
+        owner,
+        signedcode=None,
+        signing_key_fingerprint=None,
+        recipient=None,
+        active=False,
+        affirmed=False,
+        version=None,
+    ):
         super().__init__()
         self.owner = owner
         self.signedcode = signedcode
@@ -218,23 +225,26 @@ class SignedCodeOfConduct(StormBase):
     def signingkey(self):
         if self.signing_key_fingerprint is not None:
             return getUtility(IGPGKeySet).getByFingerprint(
-                self.signing_key_fingerprint)
+                self.signing_key_fingerprint
+            )
 
     @property
     def displayname(self):
         """Build a Fancy Title for CoC."""
-        displayname = self.datecreated.strftime('%Y-%m-%d')
+        displayname = self.datecreated.strftime("%Y-%m-%d")
 
         if self.signingkey:
-            displayname += (': digitally signed by %s (%s)'
-                            % (self.owner.displayname,
-                               self.signingkey.displayname))
+            displayname += ": digitally signed by %s (%s)" % (
+                self.owner.displayname,
+                self.signingkey.displayname,
+            )
         elif self.affirmed:
-            displayname += (': affirmed by %s'
-                            % self.owner.displayname)
+            displayname += ": affirmed by %s" % self.owner.displayname
         else:
-            displayname += (': paper submission accepted by %s'
-                            % self.recipient.displayname)
+            displayname += (
+                ": paper submission accepted by %s"
+                % self.recipient.displayname
+            )
 
         return displayname
 
@@ -242,38 +252,38 @@ class SignedCodeOfConduct(StormBase):
         """See ISignedCodeOfConduct."""
         assert self.owner.preferredemail
         template = get_email_template(
-            'signedcoc-acknowledge.txt', app='registry')
+            "signedcoc-acknowledge.txt", app="registry"
+        )
         fromaddress = format_address(
             "Launchpad Code Of Conduct System",
-            config.canonical.noreply_from_address)
-        replacements = {'user': self.owner.displayname,
-                        'content': content}
+            config.canonical.noreply_from_address,
+        )
+        replacements = {"user": self.owner.displayname, "content": content}
         message = template % replacements
         simple_sendmail(
-            fromaddress, str(self.owner.preferredemail.email),
-            subject, message)
+            fromaddress, str(self.owner.preferredemail.email), subject, message
+        )
 
     def sendAffirmationEmail(self, subject, content):
         """See ISignedCodeOfConduct."""
         assert self.owner.preferredemail
-        template = get_email_template(
-            'signedcoc-affirmed.txt', app='registry')
+        template = get_email_template("signedcoc-affirmed.txt", app="registry")
         fromaddress = format_address(
             "Launchpad Code Of Conduct System",
-            config.canonical.noreply_from_address)
-        replacements = {'user': self.owner.displayname,
-                        'content': content}
+            config.canonical.noreply_from_address,
+        )
+        replacements = {"user": self.owner.displayname, "content": content}
         message = template % replacements
         simple_sendmail(
-            fromaddress, str(self.owner.preferredemail.email),
-            subject, message)
+            fromaddress, str(self.owner.preferredemail.email), subject, message
+        )
 
 
 @implementer(ISignedCodeOfConductSet)
 class SignedCodeOfConductSet:
     """A set of CodeOfConducts"""
 
-    title = 'Code of Conduct Administrator Page'
+    title = "Code of Conduct Administrator Page"
 
     def __getitem__(self, id):
         """Get a Signed CoC Entry."""
@@ -302,9 +312,9 @@ class SignedCodeOfConductSet:
         gpghandler = getUtility(IGPGHandler)
 
         try:
-            sane_signedcode = signedcode.encode('utf-8')
+            sane_signedcode = signedcode.encode("utf-8")
         except UnicodeEncodeError:
-            raise TypeError('Signed Code Could not be encoded as UTF-8')
+            raise TypeError("Signed Code Could not be encoded as UTF-8")
 
         try:
             sig = gpghandler.getVerifiedSignature(sane_signedcode)
@@ -312,52 +322,63 @@ class SignedCodeOfConductSet:
             return str(e)
 
         if not sig.fingerprint:
-            return ('The signature could not be verified. '
-                    'Check that the OpenPGP key you used to sign with '
-                    'is published correctly in the global key ring.')
+            return (
+                "The signature could not be verified. "
+                "Check that the OpenPGP key you used to sign with "
+                "is published correctly in the global key ring."
+            )
 
         gpgkeyset = getUtility(IGPGKeySet)
 
         gpg = gpgkeyset.getByFingerprint(sig.fingerprint)
 
         if not gpg:
-            return ('The key you used, which has the fingerprint <code>%s'
-                    '</code>, is not registered in Launchpad. Please '
-                    '<a href="%s/+editpgpkeys">follow the '
-                    'instructions</a> and try again.'
-                    % (sig.fingerprint, canonical_url(user)))
+            return (
+                "The key you used, which has the fingerprint <code>%s"
+                "</code>, is not registered in Launchpad. Please "
+                '<a href="%s/+editpgpkeys">follow the '
+                "instructions</a> and try again."
+                % (sig.fingerprint, canonical_url(user))
+            )
 
         if gpg.owner.id != user.id:
-            return ('You (%s) do not seem to be the owner of this OpenPGP '
-                    'key (<code>%s</code>).'
-                    % (user.displayname, gpg.owner.displayname))
+            return (
+                "You (%s) do not seem to be the owner of this OpenPGP "
+                "key (<code>%s</code>)."
+                % (user.displayname, gpg.owner.displayname)
+            )
 
         if not gpg.active:
-            return ('The OpenPGP key used (<code>%s</code>) has been '
-                    'deactivated. '
-                    'Please <a href="%s/+editpgpkeys">reactivate</a> it and '
-                    'try again.'
-                    % (gpg.displayname, canonical_url(user)))
+            return (
+                "The OpenPGP key used (<code>%s</code>) has been "
+                "deactivated. "
+                'Please <a href="%s/+editpgpkeys">reactivate</a> it and '
+                "try again." % (gpg.displayname, canonical_url(user))
+            )
 
         # recover the current CoC release
         coc = CodeOfConduct(getUtility(ICodeOfConductConf).currentrelease)
         current = coc.content
 
         # calculate text digest
-        if sig.plain_data.split() != current.encode('UTF-8').split():
-            return ('The signed text does not match the Code of Conduct. '
-                    'Make sure that you signed the correct text (white '
-                    'space differences are acceptable).')
+        if sig.plain_data.split() != current.encode("UTF-8").split():
+            return (
+                "The signed text does not match the Code of Conduct. "
+                "Make sure that you signed the correct text (white "
+                "space differences are acceptable)."
+            )
 
         # Store the signature
         signed = SignedCodeOfConduct(
             owner=user,
             signing_key_fingerprint=gpg.fingerprint if gpg else None,
-            signedcode=signedcode, active=True)
+            signedcode=signedcode,
+            active=True,
+        )
 
         # Send Advertisement Email
-        subject = 'Your Code of Conduct signature has been acknowledged'
-        content = ('Digitally Signed by %s\n' % sig.fingerprint)
+        subject = "Your Code of Conduct signature has been acknowledged"
+        content = "Digitally Signed by %s\n" % sig.fingerprint
         signed.sendAdvertisementEmail(subject, content)
 
     def affirmAndStore(self, user, codetext):
@@ -365,28 +386,35 @@ class SignedCodeOfConductSet:
         try:
             encoded_codetext = six.ensure_text(codetext)
         except UnicodeDecodeError:
-            raise TypeError('Signed Code Could not be decoded as UTF-8')
+            raise TypeError("Signed Code Could not be decoded as UTF-8")
 
         # recover the current CoC release
         coc = CodeOfConduct(getUtility(ICodeOfConductConf).currentrelease)
         current = coc.content
 
         if encoded_codetext.split() != six.ensure_text(current).split():
-            return ('The affirmed text does not match the current '
-                    'Code of Conduct.')
+            return (
+                "The affirmed text does not match the current "
+                "Code of Conduct."
+            )
 
-        existing = not self.searchByUser(user).find(
-            SignedCodeOfConduct.version == six.ensure_text(coc.version)
-            ).is_empty()
+        existing = (
+            not self.searchByUser(user)
+            .find(SignedCodeOfConduct.version == six.ensure_text(coc.version))
+            .is_empty()
+        )
         if existing:
-            return 'You have already affirmed the current Code of Conduct.'
+            return "You have already affirmed the current Code of Conduct."
 
         affirmed = SignedCodeOfConduct(
-            owner=user, affirmed=True, version=six.ensure_text(coc.version),
-            active=True)
+            owner=user,
+            affirmed=True,
+            version=six.ensure_text(coc.version),
+            active=True,
+        )
         # Send Advertisement Email
-        subject = 'You have affirmed the Code of Conduct'
-        content = ('Version affirmed: %s\n\n%s' % (coc.version, coc.content))
+        subject = "You have affirmed the Code of Conduct"
+        content = "Version affirmed: %s\n\n%s" % (coc.version, coc.content)
         affirmed.sendAffirmationEmail(subject, content)
 
     def searchByDisplayname(self, displayname, searchfor=None):
@@ -412,18 +440,22 @@ class SignedCodeOfConductSet:
             clauses.append(fti_search(Person, displayname))
 
         # Attempt to search for directive
-        if searchfor == 'activeonly':
+        if searchfor == "activeonly":
             clauses.append(SignedCodeOfConduct.active)
-        elif searchfor == 'inactiveonly':
+        elif searchfor == "inactiveonly":
             clauses.append(Not(SignedCodeOfConduct.active))
 
-        return IStore(SignedCodeOfConduct).find(
-            SignedCodeOfConduct, *clauses).order_by(SignedCodeOfConduct.active)
+        return (
+            IStore(SignedCodeOfConduct)
+            .find(SignedCodeOfConduct, *clauses)
+            .order_by(SignedCodeOfConduct.active)
+        )
 
     def searchByUser(self, user, active=True):
         """See ISignedCodeOfConductSet."""
         return IStore(SignedCodeOfConduct).find(
-            SignedCodeOfConduct, owner=user, active=active)
+            SignedCodeOfConduct, owner=user, active=active
+        )
 
     def modifySignature(self, sign_id, recipient, admincomment, state):
         """See ISignedCodeOfConductSet."""
@@ -432,11 +464,12 @@ class SignedCodeOfConductSet:
         sign.admincomment = admincomment
         sign.recipient = recipient.id
 
-        subject = 'Launchpad: Code Of Conduct Signature Modified'
-        content = ('State: %s\n'
-                   'Comment: %s\n'
-                   'Modified by %s'
-                    % (state, admincomment, recipient.displayname))
+        subject = "Launchpad: Code Of Conduct Signature Modified"
+        content = (
+            "State: %s\n"
+            "Comment: %s\n"
+            "Modified by %s" % (state, admincomment, recipient.displayname)
+        )
 
         sign.sendAdvertisementEmail(subject, content)
 
@@ -445,11 +478,12 @@ class SignedCodeOfConductSet:
     def acknowledgeSignature(self, user, recipient):
         """See ISignedCodeOfConductSet."""
         active = True
-        sign = SignedCodeOfConduct(owner=user, recipient=recipient,
-                                   active=active)
+        sign = SignedCodeOfConduct(
+            owner=user, recipient=recipient, active=active
+        )
 
-        subject = 'Launchpad: Code Of Conduct Signature Acknowledge'
-        content = 'Paper Submitted acknowledge by %s' % recipient.displayname
+        subject = "Launchpad: Code Of Conduct Signature Acknowledge"
+        content = "Paper Submitted acknowledge by %s" % recipient.displayname
 
         sign.sendAdvertisementEmail(subject, content)
 

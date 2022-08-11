@@ -12,6 +12,9 @@ own machine, using a `LXD
 <https://linuxcontainers.org/lxd/introduction/>`_-managed container to
 isolate it from the rest of your system.
 
+After you've done this, you may want to read about
+:doc:`../explanation/navigating`.
+
 Supported operating systems
 ===========================
 
@@ -22,6 +25,15 @@ test on them.
 For the containers, these instructions should work with Ubuntu 16.04 LTS or
 later.  We currently test on 16.04 and 18.04, with the aim of upgrading
 production to 18.04 soon.  20.04 is known not to work yet.
+
+.. note::
+   Ubuntu 22.04 ships with cgroups v2 enabled by default. Since the 16.04
+   release is too old to support it, the container doesn't get set up properly
+   as per the profile and isn't usable for setting up Launchpad. So to re-enable
+   cgroups v1, set the `systemd.unified_cgroup_hierarchy=0` kernel parameter.
+   For GRUB, this can be done by editing `/etc/default/grub` and
+   appending the parameter to the `GRUB_CMDLINE_LINUX_DEFAULT` value,
+   running `update-grub` after that, and rebooting.
 
 Launchpad requires at least Python 3.5 (i.e. newer than Ubuntu 14.04 LTS).
 
@@ -196,11 +208,13 @@ You are now in a newly-cloned Git repository, with one branch ('master'),
 into whose working tree the other source dependencies have been symlinked.
 The source dependencies actually live in ``../lp-sourcedeps``.
 
+.. _pre-commit:
+
 Installing the pre-commit hook
 ==============================
 
 If you intend to make any changes to Launchpad, you should also set up
-`pre-commit <https://pre-commit.com/>`_ now:
+`pre-commit <https://pre-commit.com/>`__ now:
 
 1. Install ``pre-commit`` itself.  If your host system is Ubuntu 20.10 or
    newer, then ``sudo apt install pre-commit`` is enough; otherwise, you can

@@ -3,9 +3,7 @@
 
 """Validators for paths and path functions."""
 
-__all__ = [
-    'path_does_not_escape'
-]
+__all__ = ["path_does_not_escape"]
 
 import os
 
@@ -19,7 +17,7 @@ def path_does_not_escape(path):
     require checking for filesystem escapes (symlinks, etc).
     """
     # We're not working with complete paths, so we need to make them so
-    fake_base_path = '/target'
+    fake_base_path = "/target"
     # Ensure that we start with a common base
     target_path = os.path.join(fake_base_path, path)
     # Resolve symlinks and such

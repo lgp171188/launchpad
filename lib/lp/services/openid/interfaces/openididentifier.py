@@ -3,14 +3,10 @@
 
 """OpenIdIdentifier interface"""
 
-__all__ = ['IOpenIdIdentifier']
+__all__ = ["IOpenIdIdentifier"]
 
 from zope.interface import Interface
-from zope.schema import (
-    Datetime,
-    Object,
-    TextLine,
-    )
+from zope.schema import Datetime, Object, TextLine
 
 from lp import _
 from lp.services.identity.interfaces.account import IAccount
@@ -18,7 +14,9 @@ from lp.services.identity.interfaces.account import IAccount
 
 class IOpenIdIdentifier(Interface):
     """An OpenId Identifier that can be used to log into an Account"""
+
     account = Object(schema=IAccount, required=True)
     identifier = TextLine(title=_("OpenId Identity"), required=True)
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )

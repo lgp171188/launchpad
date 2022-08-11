@@ -14,37 +14,24 @@ __all__ = [
     "TransportWithTimeout",
     "urlfetch",
     "with_timeout",
-    ]
+]
 
-from contextlib import contextmanager
 import re
 import socket
 import sys
-from threading import (
-    Lock,
-    Thread,
-    )
+from contextlib import contextmanager
+from threading import Lock, Thread
 from xmlrpc.client import Transport
 
-from requests import (
-    HTTPError,
-    Session,
-    )
-from requests.adapters import (
-    DEFAULT_POOLBLOCK,
-    HTTPAdapter,
-    )
+from requests import HTTPError, Session
+from requests.adapters import DEFAULT_POOLBLOCK, HTTPAdapter
 from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
-from urllib3.connectionpool import (
-    HTTPConnectionPool,
-    HTTPSConnectionPool,
-    )
+from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
 from urllib3.exceptions import ClosedPoolError
 from urllib3.poolmanager import PoolManager
 
 from lp.services.config import config
-
 
 default_timeout_function = None
 
@@ -99,8 +86,11 @@ def reduced_timeout(clearance, webapp_max=None, default=None):
 
         if remaining is None:
             return default
-        elif (webapp_max is not None and remaining > webapp_max and
-                get_request_start_time() is not None):
+        elif (
+            webapp_max is not None
+            and remaining > webapp_max
+            and get_request_start_time() is not None
+        ):
             return webapp_max
         elif remaining > clearance:
             return remaining - clearance
@@ -160,7 +150,8 @@ class DefaultTimeout:
         global default_timeout_function
         if default_timeout_function is None:
             raise AssertionError(
-                "no timeout set and there is no default timeout function.")
+                "no timeout set and there is no default timeout function."
+            )
         return default_timeout_function()
 
 
@@ -189,15 +180,17 @@ class with_timeout:
             f_locals = frame.f_locals
 
             # Try to make sure we were called from a class def.
-            if f_locals is frame.f_globals or '__module__' not in f_locals:
+            if f_locals is frame.f_globals or "__module__" not in f_locals:
                 raise TypeError(
-                    "when not wrapping a method, cleanup must be a callable.")
+                    "when not wrapping a method, cleanup must be a callable."
+                )
         self.cleanup = cleanup
         if timeout is not None:
             self.timeout = timeout
 
     def __call__(self, f):
         """Wraps the method."""
+
         def cleanup(t, args):
             if self.cleanup is not None:
                 if isinstance(self.cleanup, str):
@@ -211,7 +204,7 @@ class with_timeout:
         def call_with_timeout(*args, **kwargs):
             # Ensure that we have a timeout before we start the thread
             timeout = self.timeout
-            if getattr(timeout, '__call__', None):
+            if getattr(timeout, "__call__", None):
                 # timeout may be a method or a function on the calling
                 # instance class.
                 if args:
@@ -232,7 +225,7 @@ class with_timeout:
             if t.is_alive():
                 cleanup(t, args)
                 raise TimeoutError("timeout exceeded.")
-            if getattr(t, 'exc_info', None) is not None:
+            if getattr(t, "exc_info", None) is not None:
                 exc_info = t.exc_info
                 # Remove the cyclic reference for faster GC.
                 del t.exc_info
@@ -277,19 +270,21 @@ class CleanableConnectionPoolMixin:
 
 
 class CleanableHTTPConnectionPool(
-    CleanableConnectionPoolMixin, HTTPConnectionPool):
+    CleanableConnectionPoolMixin, HTTPConnectionPool
+):
     pass
 
 
 class CleanableHTTPSConnectionPool(
-    CleanableConnectionPoolMixin, HTTPSConnectionPool):
+    CleanableConnectionPoolMixin, HTTPSConnectionPool
+):
     pass
 
 
 cleanable_pool_classes_by_scheme = {
     "http": CleanableHTTPConnectionPool,
     "https": CleanableHTTPSConnectionPool,
-    }
+}
 
 
 class CleanablePoolManager(PoolManager):
@@ -305,16 +300,21 @@ class CleanableHTTPAdapter(HTTPAdapter):
 
     # XXX cjwatson 2015-03-11: Reimplements HTTPAdapter.init_poolmanager;
     # check this when upgrading requests.
-    def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK,
-                         **pool_kwargs):
+    def init_poolmanager(
+        self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs
+    ):
         # save these values for pickling
         self._pool_connections = connections
         self._pool_maxsize = maxsize
         self._pool_block = block
 
         self.poolmanager = CleanablePoolManager(
-            num_pools=connections, maxsize=maxsize, block=block, strict=True,
-            **pool_kwargs)
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            strict=True,
+            **pool_kwargs,
+        )
 
 
 def raise_for_status_redacted(response):
@@ -327,7 +327,8 @@ def raise_for_status_redacted(response):
         response.raise_for_status()
     except HTTPError as e:
         raise HTTPError(
-            re.sub(r" for url: .*", "", e.args[0]), response=e.response)
+            re.sub(r" for url: .*", "", e.args[0]), response=e.response
+        )
 
 
 class URLFetcher:
@@ -336,9 +337,17 @@ class URLFetcher:
     def __init__(self):
         self.session = None
 
-    @with_timeout(cleanup='cleanup')
-    def fetch(self, url, use_proxy=False, allow_ftp=False, allow_file=False,
-              output_file=None, check_status=True, **request_kwargs):
+    @with_timeout(cleanup="cleanup")
+    def fetch(
+        self,
+        url,
+        use_proxy=False,
+        allow_ftp=False,
+        allow_file=False,
+        output_file=None,
+        check_status=True,
+        **request_kwargs
+    ):
         """Fetch the URL using a custom HTTP handler supporting timeout.
 
         :param url: The URL to fetch.
@@ -377,11 +386,13 @@ class URLFetcher:
             request_kwargs["stream"] = True
         if config.launchpad.ca_certificates_path is not None:
             request_kwargs.setdefault(
-                "verify", config.launchpad.ca_certificates_path)
+                "verify", config.launchpad.ca_certificates_path
+            )
         response = self.session.request(url=url, **request_kwargs)
         if response.status_code is None:
             raise HTTPError(
-                "HTTP request returned no status code", response=response)
+                "HTTP request returned no status code", response=response
+            )
         if check_status:
             raise_for_status_redacted(response)
         if output_file is None:
@@ -419,11 +430,10 @@ class TransportWithTimeout(Transport):
         self.conn = Transport.make_connection(self, host)
         return self.conn
 
-    @with_timeout(cleanup='cleanup')
+    @with_timeout(cleanup="cleanup")
     def request(self, host, handler, request_body, verbose=0):
         """Make the request but using the with_timeout decorator."""
-        return Transport.request(
-            self, host, handler, request_body, verbose)
+        return Transport.request(self, host, handler, request_body, verbose)
 
     def cleanup(self):
         """In the event of a timeout cleanup by closing the connection."""

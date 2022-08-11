@@ -4,8 +4,8 @@
 """View classes for branch summaries."""
 
 __all__ = [
-    'BranchCountSummaryView',
-    ]
+    "BranchCountSummaryView",
+]
 
 
 from lp import _
@@ -25,7 +25,8 @@ class BranchCountSummaryView(LaunchpadView):
         """Return the branch collection for this context."""
         collection = IBranchCollection(self.context).visibleByUser(self.user)
         collection = collection.withLifecycleStatus(
-            *DEFAULT_BRANCH_STATUS_IN_LISTING)
+            *DEFAULT_BRANCH_STATUS_IN_LISTING
+        )
         return collection
 
     @cachedproperty
@@ -62,21 +63,23 @@ class BranchCountSummaryView(LaunchpadView):
     @property
     def branch_text(self):
         return get_plural_text(
-            self.branch_count, _('active branch'), _('active branches'))
+            self.branch_count, _("active branch"), _("active branches")
+        )
 
     @property
     def person_text(self):
         return get_plural_text(
-            self.person_owner_count, _('person'), _('people'))
+            self.person_owner_count, _("person"), _("people")
+        )
 
     @property
     def team_text(self):
-        return get_plural_text(self.team_owner_count, _('team'), _('teams'))
+        return get_plural_text(self.team_owner_count, _("team"), _("teams"))
 
     @property
     def commit_text(self):
-        return get_plural_text(self.commit_count, _('commit'), _('commits'))
+        return get_plural_text(self.commit_count, _("commit"), _("commits"))
 
     @property
     def committer_text(self):
-        return get_plural_text(self.committer_count, _('person'), _('people'))
+        return get_plural_text(self.committer_count, _("person"), _("people"))

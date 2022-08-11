@@ -8,7 +8,7 @@ from the upstream bug tracker.  It only updates multi-product bug
 trackers, not single-product bug trackers or email-only bug trackers.
 """
 
-__all__ = ['RemoteProductUpdater']
+__all__ = ["RemoteProductUpdater"]
 
 from zope.component import getUtility
 
@@ -16,11 +16,11 @@ from lp.bugs.externalbugtracker import (
     BugWatchUpdateError,
     BugWatchUpdateWarning,
     get_external_bugtracker,
-    )
+)
 from lp.bugs.interfaces.bugtracker import (
-    BugTrackerType,
     SINGLE_PRODUCT_BUGTRACKERTYPES,
-    )
+    BugTrackerType,
+)
 from lp.registry.interfaces.product import IProductSet
 
 
@@ -39,11 +39,14 @@ class RemoteProductUpdater:
         """Update `remote_product` for all Products it can be set for."""
         # We can't interact with an email address, so don't try to
         # update products with such trackers.
-        types_to_exclude = (
-            SINGLE_PRODUCT_BUGTRACKERTYPES + [BugTrackerType.EMAILADDRESS])
+        types_to_exclude = SINGLE_PRODUCT_BUGTRACKERTYPES + [
+            BugTrackerType.EMAILADDRESS
+        ]
         multi_product_trackers = [
-            bugtracker_type for bugtracker_type in BugTrackerType.items
-            if bugtracker_type not in types_to_exclude]
+            bugtracker_type
+            for bugtracker_type in BugTrackerType.items
+            if bugtracker_type not in types_to_exclude
+        ]
 
         for bugtracker_type in multi_product_trackers:
             self.updateByBugTrackerType(bugtracker_type)
@@ -55,9 +58,12 @@ class RemoteProductUpdater:
         """
         product_set = getUtility(IProductSet)
         products_needing_updating = list(
-            product_set.getProductsWithNoneRemoteProduct(bugtracker_type))
-        self.logger.info("%s projects using %s needing updating." % (
-            len(products_needing_updating), bugtracker_type.name))
+            product_set.getProductsWithNoneRemoteProduct(bugtracker_type)
+        )
+        self.logger.info(
+            "%s projects using %s needing updating."
+            % (len(products_needing_updating), bugtracker_type.name)
+        )
         for product in products_needing_updating:
             self.logger.debug("Trying to update %s" % product.name)
             # Pick an arbitrary bug watch for the product. They all
@@ -71,26 +77,35 @@ class RemoteProductUpdater:
                 # we can't figure out what remote_product should be.
                 continue
             external_bugtracker = self._getExternalBugTracker(
-                bug_watch.bugtracker)
+                bug_watch.bugtracker
+            )
 
             try:
                 external_bugtracker.initializeRemoteBugDB(
-                    [bug_watch.remotebug])
+                    [bug_watch.remotebug]
+                )
                 remote_product = external_bugtracker.getRemoteProduct(
-                    bug_watch.remotebug)
+                    bug_watch.remotebug
+                )
 
             # XXX 2009-02-25 gmb [bug=334449]
             #     We shouldn't be catching AssertionErrors here. Once
             #     bug 334449 is fixed this part of the except should be
             #     removed.
-            except (AssertionError, BugWatchUpdateError,
-                    BugWatchUpdateWarning) as error:
+            except (
+                AssertionError,
+                BugWatchUpdateError,
+                BugWatchUpdateWarning,
+            ) as error:
                 self.logger.error(
-                    "Unable to set remote_product for '%s': %s" %
-                    (product.name, error))
+                    "Unable to set remote_product for '%s': %s"
+                    % (product.name, error)
+                )
                 continue
 
-            self.logger.info("Setting remote_product for %s to %r" % (
-                product.name, remote_product))
+            self.logger.info(
+                "Setting remote_product for %s to %r"
+                % (product.name, remote_product)
+            )
             product.remote_product = remote_product
             self.txn.commit()

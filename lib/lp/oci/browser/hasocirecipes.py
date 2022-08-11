@@ -4,8 +4,8 @@
 """Mixins for browser classes for objects related to OCI recipe."""
 
 __all__ = [
-    'HasOCIRecipesMenuMixin',
-    ]
+    "HasOCIRecipesMenuMixin",
+]
 
 from zope.component import getUtility
 
@@ -17,8 +17,11 @@ class HasOCIRecipesMenuMixin:
     """A mixin for context menus for objects that has OCI recipes."""
 
     def view_oci_recipes(self):
-        target = '+oci-recipes'
-        text = 'View OCI recipes'
-        enabled = not getUtility(IOCIRecipeSet).findByContext(
-            self.context, visible_by_user=self.user).is_empty()
-        return Link(target, text, enabled=enabled, icon='info')
+        target = "+oci-recipes"
+        text = "View OCI recipes"
+        enabled = (
+            not getUtility(IOCIRecipeSet)
+            .findByContext(self.context, visible_by_user=self.user)
+            .is_empty()
+        )
+        return Link(target, text, enabled=enabled, icon="info")

@@ -7,10 +7,7 @@ from lazr.restful.interfaces import IWebServiceConfiguration
 from testtools.matchers import StartsWith
 from zope.component import getUtility
 
-from lp.services.webservice.wadl import (
-    generate_json,
-    generate_wadl,
-    )
+from lp.services.webservice.wadl import generate_json, generate_wadl
 from lp.systemhomes import WebServiceApplication
 from lp.testing import TestCase
 from lp.testing.layers import LaunchpadFunctionalLayer
@@ -26,7 +23,7 @@ class SmokeTestWadlAndDocGeneration(TestCase):
         config = getUtility(IWebServiceConfiguration)
         for version in config.active_versions:
             wadl = generate_wadl(version)
-            self.assertThat(wadl[:40], StartsWith(b'<?xml '))
+            self.assertThat(wadl[:40], StartsWith(b"<?xml "))
         WebServiceApplication.cached_wadl = preexisting_wadl_cache
 
     def test_json(self):

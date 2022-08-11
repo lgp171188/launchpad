@@ -4,8 +4,8 @@
 """MilestoneTag interfaces."""
 
 __all__ = [
-    'IProjectGroupMilestoneTag',
-    ]
+    "IProjectGroupMilestoneTag",
+]
 
 
 from zope.interface import Attribute
@@ -17,4 +17,5 @@ class IProjectGroupMilestoneTag(IMilestoneData):
     """An IProjectGroupMilestoneTag is a tag aggretating milestones for the
     ProjectGroup with a given tag or tags.
     """
+
     tags = Attribute("A list of tag names associated with the project group.")

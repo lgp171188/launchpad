@@ -4,13 +4,10 @@
 """Featured project interfaces."""
 
 __all__ = [
-    'IFeaturedProject',
-    ]
+    "IFeaturedProject",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IFeaturedProject(Interface):

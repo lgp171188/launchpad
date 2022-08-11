@@ -8,32 +8,17 @@ __all__ = [
     "IPlainPackageCopyJob",
     "IPlainPackageCopyJobSource",
     "PackageCopyJobType",
-    ]
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 from lp.soyuz.enums import PackageCopyPolicy
 from lp.soyuz.interfaces.archive import IArchive
 
@@ -64,44 +49,63 @@ class IPackageCopyJobPublic(Interface):
     """The immutable data on an `IPackageCopyJob`, for normal use."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number for this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number for this job."),
+    )
 
     source_archive_id = Int(
-        title=_('Source Archive ID'),
-        required=True, readonly=True)
+        title=_("Source Archive ID"), required=True, readonly=True
+    )
 
     source_archive = Reference(
-        schema=IArchive, title=_('Source Archive'),
-        required=True, readonly=True)
+        schema=IArchive,
+        title=_("Source Archive"),
+        required=True,
+        readonly=True,
+    )
 
     target_archive_id = Int(
-        title=_('Target Archive ID'),
-        required=True, readonly=True)
+        title=_("Target Archive ID"), required=True, readonly=True
+    )
 
     target_archive = Reference(
-        schema=IArchive, title=_('Target Archive'),
-        required=True, readonly=True)
+        schema=IArchive,
+        title=_("Target Archive"),
+        required=True,
+        readonly=True,
+    )
 
     target_distroseries = Reference(
-        schema=IDistroSeries, title=_('Target DistroSeries.'),
-        required=True, readonly=True)
+        schema=IDistroSeries,
+        title=_("Target DistroSeries."),
+        required=True,
+        readonly=True,
+    )
 
     package_name = TextLine(
-        title=_("Package name"), required=True, readonly=True)
+        title=_("Package name"), required=True, readonly=True
+    )
 
     package_version = TextLine(
-        title=_("Package version"), required=True, readonly=True)
+        title=_("Package version"), required=True, readonly=True
+    )
 
     job = Reference(
-        schema=IJob, title=_('The common Job attributes'),
-        required=True, readonly=True)
+        schema=IJob,
+        title=_("The common Job attributes"),
+        required=True,
+        readonly=True,
+    )
 
     component_name = TextLine(
-        title=_("Component override name"), required=False, readonly=True)
+        title=_("Component override name"), required=False, readonly=True
+    )
 
     section_name = TextLine(
-        title=_("Section override name"), required=False, readonly=True)
+        title=_("Section override name"), required=False, readonly=True
+    )
 
     metadata = Attribute(_("A dict of data about the job."))
 
@@ -112,23 +116,38 @@ class IPackageCopyJob(IPackageCopyJobPublic, IPackageCopyJobEdit):
 
 class PackageCopyJobType(DBEnumeratedType):
 
-    PLAIN = DBItem(1, """
+    PLAIN = DBItem(
+        1,
+        """
         Copy packages between archives.
 
         This job copies one or more packages, optionally including binaries.
-        """)
+        """,
+    )
 
 
 class IPlainPackageCopyJobSource(IJobSource):
     """An interface for acquiring `IPackageCopyJobs`."""
 
-    def create(package_name, source_archive,
-               target_archive, target_distroseries, target_pocket,
-               include_binaries=False, package_version=None,
-               copy_policy=PackageCopyPolicy.INSECURE, requester=None,
-               sponsored=None, unembargo=False, auto_approve=False,
-               silent=False, source_distroseries=None, source_pocket=None,
-               phased_update_percentage=None, move=False):
+    def create(
+        package_name,
+        source_archive,
+        target_archive,
+        target_distroseries,
+        target_pocket,
+        include_binaries=False,
+        package_version=None,
+        copy_policy=PackageCopyPolicy.INSECURE,
+        requester=None,
+        sponsored=None,
+        unembargo=False,
+        auto_approve=False,
+        silent=False,
+        source_distroseries=None,
+        source_pocket=None,
+        phased_update_percentage=None,
+        move=False,
+    ):
         """Create a new `IPlainPackageCopyJob`.
 
         :param package_name: The name of the source package to copy.
@@ -164,10 +183,16 @@ class IPlainPackageCopyJobSource(IJobSource):
             to the destination.
         """
 
-    def createMultiple(target_distroseries, copy_tasks, requester,
-                       copy_policy=PackageCopyPolicy.INSECURE,
-                       include_binaries=False, unembargo=False,
-                       auto_approve=False, silent=False):
+    def createMultiple(
+        target_distroseries,
+        copy_tasks,
+        requester,
+        copy_policy=PackageCopyPolicy.INSECURE,
+        include_binaries=False,
+        unembargo=False,
+        auto_approve=False,
+        silent=False,
+    ):
         """Create multiple new `IPlainPackageCopyJob`s at once.
 
         :param target_distroseries: The `IDistroSeries` to which to copy the
@@ -219,43 +244,54 @@ class IPlainPackageCopyJob(IRunnableJob):
     """A no-frills job to copy packages between `IArchive`s."""
 
     target_pocket = Int(
-        title=_("Target package publishing pocket"), required=True,
-        readonly=True)
+        title=_("Target package publishing pocket"),
+        required=True,
+        readonly=True,
+    )
 
-    error_message = Int(
-        title=_("Error message"), required=True, readonly=True)
+    error_message = Int(title=_("Error message"), required=True, readonly=True)
 
     include_binaries = Bool(
-        title=_("Copy binaries"),
-        required=False, readonly=True)
+        title=_("Copy binaries"), required=False, readonly=True
+    )
 
     sponsored = Reference(
-        schema=IPerson, title=_('Sponsored Person'),
-        required=False, readonly=True)
+        schema=IPerson,
+        title=_("Sponsored Person"),
+        required=False,
+        readonly=True,
+    )
 
     unembargo = Bool(
-        title=_("Unembargo restricted files"),
-        required=False, readonly=True)
+        title=_("Unembargo restricted files"), required=False, readonly=True
+    )
 
     auto_approve = Bool(
-        title=_("Automatic approval"),
-        required=False, readonly=True)
+        title=_("Automatic approval"), required=False, readonly=True
+    )
 
     silent = Bool(title=_("Silent"), required=False, readonly=True)
 
     source_distroseries = Reference(
-        schema=IDistroSeries, title=_('Source DistroSeries.'),
-        required=False, readonly=True)
+        schema=IDistroSeries,
+        title=_("Source DistroSeries."),
+        required=False,
+        readonly=True,
+    )
 
     source_pocket = Int(
-        title=_("Source package publishing pocket"), required=False,
-        readonly=True)
+        title=_("Source package publishing pocket"),
+        required=False,
+        readonly=True,
+    )
 
     phased_update_percentage = Int(
-        title=_("Phased update percentage"), required=False, readonly=True)
+        title=_("Phased update percentage"), required=False, readonly=True
+    )
 
     move = Bool(
-        title=_("Delete source after copy"), required=False, readonly=True)
+        title=_("Delete source after copy"), required=False, readonly=True
+    )
 
     def addSourceOverride(override):
         """Add an `ISourceOverride` to the metadata."""
@@ -271,7 +307,10 @@ class IPlainPackageCopyJob(IRunnableJob):
 
     copy_policy = Choice(
         title=_("Applicable copy policy"),
-        values=PackageCopyPolicy, required=True, readonly=True)
+        values=PackageCopyPolicy,
+        required=True,
+        readonly=True,
+    )
 
     def getOperationDescription():
         """Return a description of the copy operation."""

@@ -8,43 +8,34 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import (
-    BuildQueueStatus,
-    BuildStatus,
-    )
+from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.services.database.interfaces import IStore
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
-def find_job(test, name, processor='386'):
+def find_job(test, name, processor="386"):
     """Find build and queue instance for the given source and processor."""
 
     def processor_matches(bq):
         if processor is None:
-            return (bq.processor is None)
+            return bq.processor is None
         else:
-            return (processor == bq.processor.name)
+            return processor == bq.processor.name
 
     for build in test.builds:
         bq = build.buildqueue_record
         source = None
-        for attr in ('source_package_release', 'recipe'):
+        for attr in ("source_package_release", "recipe"):
             source = getattr(build, attr, None)
             if source is not None:
                 break
-        if (source.name == name and processor_matches(bq)):
+        if source.name == name and processor_matches(bq):
             return (build, bq)
     return (None, None)
 
@@ -153,29 +144,35 @@ class TestPlatformData(TestCaseWithFactory):
 
         # We test builds that target a primary archive.
         self.non_ppa = self.factory.makeArchive(
-            name="primary", purpose=ArchivePurpose.PRIMARY)
+            name="primary", purpose=ArchivePurpose.PRIMARY
+        )
         self.non_ppa.require_virtualized = False
 
         self.builds = []
         self.builds.extend(
             self.publisher.getPubSource(
-                sourcename="gedit", status=PackagePublishingStatus.PUBLISHED,
-                archive=self.non_ppa).createMissingBuilds())
+                sourcename="gedit",
+                status=PackagePublishingStatus.PUBLISHED,
+                archive=self.non_ppa,
+            ).createMissingBuilds()
+        )
 
     def test_JobPlatformSettings(self):
         """The `BuildQueue` instance shares the processor/virtualized
         properties with the associated `Build`."""
-        build, bq = find_job(self, 'gedit')
+        build, bq = find_job(self, "gedit")
 
         # Make sure the 'processor' properties are the same.
         self.assertEqual(
-            bq.processor, build.processor,
-            "The 'processor' property deviates.")
+            bq.processor, build.processor, "The 'processor' property deviates."
+        )
 
         # Make sure the 'virtualized' properties are the same.
         self.assertEqual(
-            bq.virtualized, build.virtualized,
-            "The 'virtualized' property deviates.")
+            bq.virtualized,
+            build.virtualized,
+            "The 'virtualized' property deviates.",
+        )
 
 
 class TestBuildQueueManual(TestCaseWithFactory):

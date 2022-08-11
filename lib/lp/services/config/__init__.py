@@ -1,12 +1,12 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-'''
+"""
 Configuration information pulled from launchpad-lazr.conf.
 
 The configuration section used is specified using the LPCONFIG
 environment variable, and defaults to 'development'
-'''
+"""
 
 import glob
 import os
@@ -17,43 +17,42 @@ from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
 
 from lp.services.osutils import open_for_writing
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
-
+from lp.services.propertycache import cachedproperty, get_property_cache
 
 __all__ = [
-    'dbconfig',
-    'config',
-    ]
+    "dbconfig",
+    "config",
+]
 
 
 # The config to use can be specified in one of these files.
-CONFIG_LOOKUP_FILES = ['/etc/launchpad/config']
-if os.environ.get('HOME'):
+CONFIG_LOOKUP_FILES = ["/etc/launchpad/config"]
+if os.environ.get("HOME"):
     CONFIG_LOOKUP_FILES.insert(
-        0, os.path.join(os.environ['HOME'], '.lpconfig'))
+        0, os.path.join(os.environ["HOME"], ".lpconfig")
+    )
 
 # LPCONFIG specifies the config to use, which corresponds to a subdirectory
 # of configs. It overrides any setting in the CONFIG_LOOKUP_FILES.
-LPCONFIG = 'LPCONFIG'
+LPCONFIG = "LPCONFIG"
 
 # If no CONFIG_LOOKUP_FILE is found and there is no LPCONFIG environment
 # variable, we have a fallback. This is what developers normally use.
-DEFAULT_CONFIG = 'development'
+DEFAULT_CONFIG = "development"
 
 PACKAGE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Root of the launchpad tree so code can stop jumping through hoops
 # with __file__.
 TREE_ROOT = os.path.abspath(
-    os.path.join(PACKAGE_DIR, os.pardir, os.pardir, os.pardir, os.pardir))
+    os.path.join(PACKAGE_DIR, os.pardir, os.pardir, os.pardir, os.pardir)
+)
 
 # The directories containing instances configuration directories.
 CONFIG_ROOT_DIRS = [
-    os.path.join(TREE_ROOT, 'configs'),
-    os.path.join(TREE_ROOT, 'production-configs')]
+    os.path.join(TREE_ROOT, "configs"),
+    os.path.join(TREE_ROOT, "production-configs"),
+]
 
 
 def find_instance_name():
@@ -83,7 +82,8 @@ def find_config_dir(instance_name):
         if os.path.isdir(config_dir):
             return config_dir
     raise ValueError(
-        "Can't find %s in %s" % (instance_name, ", ".join(CONFIG_ROOT_DIRS)))
+        "Can't find %s in %s" % (instance_name, ", ".join(CONFIG_ROOT_DIRS))
+    )
 
 
 class LaunchpadConfig:
@@ -116,7 +116,7 @@ class LaunchpadConfig:
         self.root = TREE_ROOT
 
     def _make_process_name(self):
-        if getattr(sys, 'argv', None) is None:
+        if getattr(sys, "argv", None) is None:
             return None
         basename = os.path.basename(sys.argv[0])
         return os.path.splitext(basename)[0]
@@ -166,8 +166,10 @@ class LaunchpadConfig:
         but not if its the testrunner-appserver, development or production
         config.
         """
-        return (self.instance_name == 'testrunner' or
-                self.instance_name.startswith('testrunner_'))
+        return (
+            self.instance_name == "testrunner"
+            or self.instance_name.startswith("testrunner_")
+        )
 
     @property
     def process_name(self):
@@ -201,29 +203,31 @@ class LaunchpadConfig:
         if self._config is not None:
             return
 
-        schema_file = os.path.join(PACKAGE_DIR, 'schema-lazr.conf')
+        schema_file = os.path.join(PACKAGE_DIR, "schema-lazr.conf")
         config_dir = self.config_dir
         config_file = os.path.join(
-            config_dir, '%s-lazr.conf' % self.process_name)
+            config_dir, "%s-lazr.conf" % self.process_name
+        )
         if not os.path.isfile(config_file):
-            config_file = os.path.join(config_dir, 'launchpad-lazr.conf')
+            config_file = os.path.join(config_dir, "launchpad-lazr.conf")
         schema = ImplicitTypeSchema(schema_file)
         self._config = schema.load(config_file)
         self._loadConfigOverlays(config_file)
         try:
             self._config.validate()
         except ConfigErrors as error:
-            message = '\n'.join([str(e) for e in error.errors])
+            message = "\n".join([str(e) for e in error.errors])
             raise ConfigErrors(message)
 
     def _loadConfigOverlays(self, config_file):
         """Apply config overlays from the launchpad.config_overlay_dir."""
-        rel_dir = self._config['launchpad']['config_overlay_dir']
+        rel_dir = self._config["launchpad"]["config_overlay_dir"]
         if not rel_dir:
             return
         dir = os.path.join(
-            os.path.dirname(os.path.abspath(config_file)), rel_dir)
-        for path in sorted(glob.glob(os.path.join(dir, '*-lazr.conf'))):
+            os.path.dirname(os.path.abspath(config_file)), rel_dir
+        )
+        for path in sorted(glob.glob(os.path.join(dir, "*-lazr.conf"))):
             with open(path) as f:
                 text = f.read()
             self._config.push(path, text)
@@ -233,25 +237,29 @@ class LaunchpadConfig:
 
         Call this method before letting any ZCML processing occur.
         """
-        loader_file = os.path.join(self.root, 'zcml/+config-overrides.zcml')
-        loader = open_for_writing(loader_file, 'w')
+        loader_file = os.path.join(self.root, "zcml/+config-overrides.zcml")
+        loader = open_for_writing(loader_file, "w")
 
-        print("""
+        print(
+            """
             <configure xmlns="http://namespaces.zope.org/zope">
                 <!-- This file automatically generated using
                      lp.services.config.LaunchpadConfig.generate_overrides.
                      DO NOT EDIT. -->
                 <include files="%s/*.zcml" />
-                </configure>""" % self.config_dir, file=loader)
+                </configure>"""
+            % self.config_dir,
+            file=loader,
+        )
         loader.close()
 
-    def appserver_root_url(self, facet='mainsite', ensureSlash=False):
+    def appserver_root_url(self, facet="mainsite", ensureSlash=False):
         """Return the correct app server root url for the given facet."""
         root_url = str(getattr(self.vhost, facet).rooturl)
         if not ensureSlash:
-            return root_url.rstrip('/')
-        if not root_url.endswith('/'):
-            return root_url + '/'
+            return root_url.rstrip("/")
+        if not root_url.endswith("/"):
+            return root_url + "/"
         return root_url
 
     def __getattr__(self, name):
@@ -293,15 +301,24 @@ class DatabaseConfigOverrides:
 
 class DatabaseConfig:
     """A class to provide the Launchpad database configuration."""
+
     _config_section = None
-    _db_config_attrs = frozenset([
-        'dbuser',
-        'rw_main_primary', 'rw_main_standby',
-        'db_statement_timeout', 'db_statement_timeout_precision',
-        'isolation_level', 'soft_request_timeout',
-        'storm_cache', 'storm_cache_size'])
-    _db_config_required_attrs = frozenset([
-        'dbuser', 'rw_main_primary', 'rw_main_standby'])
+    _db_config_attrs = frozenset(
+        [
+            "dbuser",
+            "rw_main_primary",
+            "rw_main_standby",
+            "db_statement_timeout",
+            "db_statement_timeout_precision",
+            "isolation_level",
+            "soft_request_timeout",
+            "storm_cache",
+            "storm_cache_size",
+        ]
+    )
+    _db_config_required_attrs = frozenset(
+        ["dbuser", "rw_main_primary", "rw_main_standby"]
+    )
 
     def __init__(self):
         self.reset()
@@ -312,7 +329,7 @@ class DatabaseConfig:
 
     @cachedproperty
     def main_standby(self):
-        return random.choice(self.rw_main_standby.split(','))
+        return random.choice(self.rw_main_standby.split(","))
 
     # XXX cjwatson 2021-10-01: Remove these once Launchpad's store flavors
     # have been renamed.
@@ -331,13 +348,14 @@ class DatabaseConfig:
         """
         for attr, value in kwargs.items():
             assert attr in self._db_config_attrs, (
-                "%s cannot be overridden" % attr)
+                "%s cannot be overridden" % attr
+            )
             if value is None:
                 if hasattr(self.overrides, attr):
                     delattr(self.overrides, attr)
             else:
                 setattr(self.overrides, attr, value)
-                if attr == 'rw_main_standby':
+                if attr == "rw_main_standby":
                     del get_property_cache(self).main_standby
 
     def reset(self):
@@ -365,7 +383,7 @@ class DatabaseConfig:
                 break
         # Some values must be provided by the config
         if value is None and name in self._db_config_required_attrs:
-            raise ValueError('%s must be set' % name)
+            raise ValueError("%s must be set" % name)
         return value
 
 

@@ -3,7 +3,7 @@
 
 __all__ = [
     "mail_handlers",
-    ]
+]
 
 from lp.answers.mail.handler import AnswerTrackerHandler
 from lp.bugs.mail.handler import MaloneHandler
@@ -19,9 +19,9 @@ class MailHandlers:
         (config.answertracker.email_domain, AnswerTrackerHandler),
         # XXX flacoste 2007-04-23 Backward compatibility for old domain.
         # We probably want to remove it in the future.
-        ('support.launchpad.net', AnswerTrackerHandler),
+        ("support.launchpad.net", AnswerTrackerHandler),
         (config.launchpad.code_domain, CodeHandler),
-        )
+    )
 
     def __init__(self):
         self._handlers = {}

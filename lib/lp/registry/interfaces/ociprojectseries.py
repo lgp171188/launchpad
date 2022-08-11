@@ -4,24 +4,15 @@
 """Interfaces to allow bug filing on multiple versions of an OCI Project."""
 
 __all__ = [
-    'IOCIProjectSeries',
-    'IOCIProjectSeriesEditableAttributes',
-    'IOCIProjectSeriesView',
-    ]
+    "IOCIProjectSeries",
+    "IOCIProjectSeriesEditableAttributes",
+    "IOCIProjectSeriesView",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Choice, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -35,20 +26,35 @@ class IOCIProjectSeriesView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    oci_project = exported(Reference(
-        IOCIProject,
-        title=_("The OCI project that this series belongs to."),
-        required=True, readonly=True))
+    oci_project = exported(
+        Reference(
+            IOCIProject,
+            title=_("The OCI project that this series belongs to."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True,
-        description=_(
-            "The date on which this series was created in Launchpad.")))
+    date_created = exported(
+        Datetime(
+            title=_("Date created"),
+            required=True,
+            readonly=True,
+            description=_(
+                "The date on which this series was created in Launchpad."
+            ),
+        )
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"),
-        description=_("The person that registered this series."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            description=_("The person that registered this series."),
+            vocabulary="ValidPersonOrTeam",
+            required=True,
+            readonly=True,
+        )
+    )
 
 
 class IOCIProjectSeriesEditableAttributes(Interface):
@@ -57,18 +63,33 @@ class IOCIProjectSeriesEditableAttributes(Interface):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    name = exported(TextLine(
-        title=_("Name"), constraint=name_validator,
-        required=True, readonly=False,
-        description=_("The name of this series.")))
+    name = exported(
+        TextLine(
+            title=_("Name"),
+            constraint=name_validator,
+            required=True,
+            readonly=False,
+            description=_("The name of this series."),
+        )
+    )
 
-    summary = exported(Text(
-        title=_("Summary"), required=True, readonly=False,
-        description=_("A brief summary of this series.")))
+    summary = exported(
+        Text(
+            title=_("Summary"),
+            required=True,
+            readonly=False,
+            description=_("A brief summary of this series."),
+        )
+    )
 
-    status = exported(Choice(
-        title=_("Status"), required=True, readonly=False,
-        vocabulary=SeriesStatus))
+    status = exported(
+        Choice(
+            title=_("Status"),
+            required=True,
+            readonly=False,
+            vocabulary=SeriesStatus,
+        )
+    )
 
 
 class IOCIProjectSeriesEdit(Interface):
@@ -79,9 +100,13 @@ class IOCIProjectSeriesEdit(Interface):
 
 
 @exported_as_webservice_entry(
-    publish_web_link=True, as_of="devel", singular_name="oci_project_series")
-class IOCIProjectSeries(IOCIProjectSeriesView, IOCIProjectSeriesEdit,
-                        IOCIProjectSeriesEditableAttributes):
+    publish_web_link=True, as_of="devel", singular_name="oci_project_series"
+)
+class IOCIProjectSeries(
+    IOCIProjectSeriesView,
+    IOCIProjectSeriesEdit,
+    IOCIProjectSeriesEditableAttributes,
+):
     """A series of an Open Container Initiative project.
 
     This is used to allow tracking bugs against multiple versions of images.

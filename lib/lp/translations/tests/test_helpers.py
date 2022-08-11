@@ -9,7 +9,7 @@ from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.tests.helpers import (
     make_translationmessage,
     summarize_current_translations,
-    )
+)
 
 
 class TestTranslationMessageHelpers(TestCaseWithFactory):
@@ -23,27 +23,35 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         new_series = self.factory.makeDistroSeries(distribution=ubuntu)
         sourcepackagename = self.factory.makeSourcePackageName()
         potemplate = self.factory.makePOTemplate(
-            distroseries=new_series,
-            sourcepackagename=sourcepackagename)
-        self.pofile = self.factory.makePOFile('sr', potemplate=potemplate)
+            distroseries=new_series, sourcepackagename=sourcepackagename
+        )
+        self.pofile = self.factory.makePOFile("sr", potemplate=potemplate)
         self.potmsgset = self.factory.makePOTMsgSet(potemplate=potemplate)
 
         # A POFile in a different context from self.pofile.
         self.other_pofile = self.factory.makePOFile(
-            language_code=self.pofile.language.code)
+            language_code=self.pofile.language.code
+        )
 
     def test_make_translationmessage(self):
         translations = ["testing"]
-        tm = make_translationmessage(self.factory, pofile=self.pofile,
-                                     potmsgset=self.potmsgset,
-                                     translations=translations)
+        tm = make_translationmessage(
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            translations=translations,
+        )
         self.assertEqual(translations, tm.translations)
 
     def test_summarize_current_translations_baseline(self):
         # The trivial case for summarize_current_translations: no
         # translations at all.
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertIs(None, current_shared)
         self.assertIs(None, current_diverged)
         self.assertIs(None, other)
@@ -53,10 +61,19 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # summarize_current_translations when there is a single, shared
         # current message.
         tm = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=False)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=False,
+        )
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertEqual(tm, current_shared)
         self.assertIs(None, current_diverged)
         self.assertIs(None, other)
@@ -66,10 +83,19 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # summarize_current_translations when there is a single message
         # shared between Ubuntu and upstream.
         tm = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=True, diverged=False)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=True,
+            diverged=False,
+        )
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertEqual(tm, current_shared)
         self.assertIs(None, current_diverged)
         self.assertEqual(tm, other)
@@ -80,13 +106,27 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # separate shared current messages on the Ubuntu side and
         # upstream.
         tm_ubuntu = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=False)
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=False,
+        )
         tm_upstream = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=False, upstream=True, diverged=False)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=False,
+            upstream=True,
+            diverged=False,
+        )
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
 
         self.assertIn(current_shared, (tm_ubuntu, tm_upstream))
         if self.pofile.potemplate.distroseries is not None:
@@ -103,13 +143,27 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # summarize_current_translations when there are different
         # shared, current translations on the Ubuntu and upstream sides.
         tm_this = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=False)
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=False,
+        )
         tm_other = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=False, upstream=True, diverged=False)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=False,
+            upstream=True,
+            diverged=False,
+        )
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertEqual(tm_this, current_shared)
         self.assertIs(None, current_diverged)
         self.assertEqual(tm_other, other)
@@ -120,16 +174,35 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # shared current messages on the Ubuntu side and upstream, and
         # there is also a diverged message.
         tm_this = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=False)
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=False,
+        )
         tm_other = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=False, upstream=True, diverged=False)
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=False,
+            upstream=True,
+            diverged=False,
+        )
         tm_diverged = make_translationmessage(
-            self.factory, pofile=self.pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=True)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+            self.factory,
+            pofile=self.pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=True,
+        )
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertEqual(tm_this, current_shared)
         self.assertEqual(tm_diverged, current_diverged)
         self.assertEqual(tm_other, other)
@@ -141,14 +214,22 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # there is also a diverged message in another template than the
         # one we're looking at.
         tm_diverged = make_translationmessage(
-            self.factory, pofile=self.other_pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=True)
+            self.factory,
+            pofile=self.other_pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=True,
+        )
         self.assertTrue(tm_diverged.is_current_ubuntu)
-        self.assertEqual(
-            tm_diverged.potemplate, self.other_pofile.potemplate)
+        self.assertEqual(tm_diverged.potemplate, self.other_pofile.potemplate)
         self.assertEqual(self.potmsgset, tm_diverged.potmsgset)
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
         self.assertIs(None, current_shared)
         self.assertIs(None, current_diverged)
         self.assertIs(None, other)
@@ -158,20 +239,36 @@ class TestTranslationMessageHelpers(TestCaseWithFactory):
         # summarize_current_translations when there are diverged
         # messages on both the Ubuntu side and the upstream side.
         tm_diverged1 = make_translationmessage(
-            self.factory, pofile=self.other_pofile, potmsgset=self.potmsgset,
-            ubuntu=True, upstream=False, diverged=True)
+            self.factory,
+            pofile=self.other_pofile,
+            potmsgset=self.potmsgset,
+            ubuntu=True,
+            upstream=False,
+            diverged=True,
+        )
 
         ubuntu = self.pofile.potemplate.distroseries.distribution
         potemplate2 = self.factory.makePOTemplate(
             distroseries=self.factory.makeDistroSeries(distribution=ubuntu),
-            sourcepackagename=self.pofile.potemplate.sourcepackagename)
+            sourcepackagename=self.pofile.potemplate.sourcepackagename,
+        )
         pofile2 = self.factory.makePOFile(
-            self.pofile.language.code, potemplate=potemplate2)
+            self.pofile.language.code, potemplate=potemplate2
+        )
         tm_diverged2 = make_translationmessage(
-            self.factory, pofile=pofile2, potmsgset=self.potmsgset,
-            ubuntu=False, upstream=True, diverged=True)
+            self.factory,
+            pofile=pofile2,
+            potmsgset=self.potmsgset,
+            ubuntu=False,
+            upstream=True,
+            diverged=True,
+        )
 
-        current_shared, current_diverged, other, divergences = (
-            summarize_current_translations(self.pofile, self.potmsgset))
+        (
+            current_shared,
+            current_diverged,
+            other,
+            divergences,
+        ) = summarize_current_translations(self.pofile, self.potmsgset)
 
         self.assertContentEqual([tm_diverged1, tm_diverged2], divergences)

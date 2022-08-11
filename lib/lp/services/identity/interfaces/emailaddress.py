@@ -4,31 +4,25 @@
 """EmailAddress interfaces."""
 
 __all__ = [
-    'EmailAddressAlreadyTaken',
-    'EmailAddressStatus',
-    'IEmailAddress',
-    'IEmailAddressSet',
-    'InvalidEmailAddress',
-    'VALID_EMAIL_STATUSES']
+    "EmailAddressAlreadyTaken",
+    "EmailAddressStatus",
+    "IEmailAddress",
+    "IEmailAddressSet",
+    "InvalidEmailAddress",
+    "VALID_EMAIL_STATUSES",
+]
 
 import http.client
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     error_status,
     exported,
     exported_as_webservice_entry,
-    )
+)
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Int,
-    TextLine,
-    )
+from zope.schema import Choice, Int, TextLine
 
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
@@ -52,7 +46,9 @@ class EmailAddressStatus(DBEnumeratedType):
     for example.
     """
 
-    NEW = DBItem(1, """
+    NEW = DBItem(
+        1,
+        """
         New Email Address
 
         This email address has had no validation associated with it. It
@@ -61,59 +57,80 @@ class EmailAddressStatus(DBEnumeratedType):
         arch changeset including that email address and have created
         a phantom person and email address to record it. WE SHOULD
         NEVER EMAIL A "NEW" EMAIL.
-        """)
+        """,
+    )
 
-    VALIDATED = DBItem(2, """
+    VALIDATED = DBItem(
+        2,
+        """
         Validated Email Address
 
         We have proven that the person associated with this email address
         can read email sent to this email address, by sending a token
         to that address and getting the appropriate response from that
         person.
-        """)
+        """,
+    )
 
-    OLD = DBItem(3, """
+    OLD = DBItem(
+        3,
+        """
         Old Email Address
 
         The email address was validated for this person, but is now no
         longer accessible or in use by them. We should not use this email
         address to login that person, nor should we associate new incoming
         content from that email address with that person.
-        """)
+        """,
+    )
 
-    PREFERRED = DBItem(4, """
+    PREFERRED = DBItem(
+        4,
+        """
         Preferred Email Address
 
         The email address was validated and is the person's choice for
         receiving notifications from Launchpad.
-        """)
+        """,
+    )
+
 
 VALID_EMAIL_STATUSES = (
     EmailAddressStatus.VALIDATED,
-    EmailAddressStatus.PREFERRED)
+    EmailAddressStatus.PREFERRED,
+)
 
 
-@exported_as_webservice_entry(plural_name='email_addresses')
+@exported_as_webservice_entry(plural_name="email_addresses", as_of="beta")
 class IEmailAddress(IHasOwner):
     """The object that stores the `IPerson`'s emails."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     email = exported(
-        TextLine(title=_('Email Address'), required=True, readonly=True))
+        TextLine(title=_("Email Address"), required=True, readonly=True)
+    )
     status = Choice(
-        title=_('Email Address Status'), required=True, readonly=False,
-        vocabulary=EmailAddressStatus)
+        title=_("Email Address Status"),
+        required=True,
+        readonly=False,
+        vocabulary=EmailAddressStatus,
+    )
     person = exported(
-        Reference(title=_('Person'), required=True, readonly=False,
-        schema=Interface))
-    personID = Int(title=_('PersonID'), required=True, readonly=True)
+        Reference(
+            title=_("Person"), required=True, readonly=False, schema=Interface
+        )
+    )
+    personID = Int(title=_("PersonID"), required=True, readonly=True)
 
     rdf_sha1 = TextLine(
         title=_("RDF-ready SHA-1 Hash"),
-        description=_("The SHA-1 hash of the preferred email address and "
-                      "a mailto: prefix as a hexadecimal string. This is "
-                      "used as a key by FOAF RDF spec"),
-        readonly=True)
+        description=_(
+            "The SHA-1 hash of the preferred email address and "
+            "a mailto: prefix as a hexadecimal string. This is "
+            "used as a key by FOAF RDF spec"
+        ),
+        readonly=True,
+    )
 
     def destroySelf():
         """Destroy this email address and any associated subscriptions.

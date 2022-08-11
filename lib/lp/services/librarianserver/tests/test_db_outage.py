@@ -15,10 +15,7 @@ from lp.services.librarian.client import LibrarianClient
 from lp.services.librarianserver.testing.server import LibrarianServerFixture
 from lp.testing import TestCase
 from lp.testing.fixture import PGBouncerFixture
-from lp.testing.layers import (
-    BaseLayer,
-    DatabaseFunctionalLayer,
-    )
+from lp.testing.layers import BaseLayer, DatabaseFunctionalLayer
 
 
 class PGBouncerLibrarianLayer(DatabaseFunctionalLayer):
@@ -29,6 +26,7 @@ class PGBouncerLibrarianLayer(DatabaseFunctionalLayer):
     changes made to BaseLayer.config_fixture to allow access to the
     Librarian we just started up.
     """
+
     pgbouncer_fixture = None
     librarian_fixture = None
 
@@ -46,7 +44,8 @@ class PGBouncerLibrarianLayer(DatabaseFunctionalLayer):
         # Bring up the Librarian, which will be connecting via
         # pgbouncer.
         cls.librarian_fixture = LibrarianServerFixture(
-            BaseLayer.config_fixture)
+            BaseLayer.config_fixture
+        )
         cls._fixture.useFixture(cls.librarian_fixture)
 
     @classmethod
@@ -72,9 +71,10 @@ class TestLibrarianDBOutage(TestCase):
         self.url = self._makeLibraryFileUrl()
 
     def _makeLibraryFileUrl(self):
-        data = b'whatever'
+        data = b"whatever"
         return self.client.remoteAddFile(
-            'foo.txt', len(data), io.BytesIO(data), 'text/plain')
+            "foo.txt", len(data), io.BytesIO(data), "text/plain"
+        )
 
     def getErrorCode(self):
         # We need to talk to every Librarian thread to ensure all the
@@ -90,7 +90,7 @@ class TestLibrarianDBOutage(TestCase):
                 codes.add(200)
             except HTTPError as error:
                 codes.add(error.code)
-        self.assertTrue(len(codes) == 1, 'Mixed responses: %s' % str(codes))
+        self.assertTrue(len(codes) == 1, "Mixed responses: %s" % str(codes))
         return codes.pop()
 
     def test_outage(self):

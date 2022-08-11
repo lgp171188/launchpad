@@ -4,26 +4,28 @@
 """Test BuilderInteractor features."""
 
 __all__ = [
-    'FakeBuildQueue',
-    'MockBuilderFactory',
-    ]
+    "FakeBuildQueue",
+    "MockBuilderFactory",
+]
 
 import hashlib
 import os
 import signal
 import tempfile
 import xmlrpc.client
+from functools import partial
 
-from lpbuildd.builder import BuilderStatus
 import six
+import treq
+from fixtures import MockPatchObject
+from lpbuildd.builder import BuilderStatus
 from testtools.matchers import ContainsAll
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import (
-    assert_fails_with,
     AsynchronousDeferredRunTest,
     AsynchronousDeferredRunTestForBrokenTwisted,
-    )
-import treq
+    assert_fails_with,
+)
 from twisted.internet import defer
 from twisted.internet.task import Clock
 from twisted.python.failure import Failure
@@ -33,23 +35,20 @@ from lp.buildmaster.enums import (
     BuilderResetProtocol,
     BuildQueueStatus,
     BuildStatus,
-    )
+)
 from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderWorker,
     extract_vitals_from_db,
     make_download_process_pool,
     shut_down_default_process_pool,
-    )
+)
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
     CannotFetchFile,
     CannotResumeHost,
-    )
-from lp.buildmaster.manager import (
-    BaseBuilderFactory,
-    PrefetchedBuilderFactory,
-    )
+)
+from lp.buildmaster.manager import BaseBuilderFactory, PrefetchedBuilderFactory
 from lp.buildmaster.tests.mock_workers import (
     AbortingWorker,
     BuildingWorker,
@@ -59,28 +58,21 @@ from lp.buildmaster.tests.mock_workers import (
     OkWorker,
     WaitingWorker,
     WorkerTestHelpers,
-    )
+)
 from lp.services.config import config
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
-    )
-from lp.testing import (
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
 class FakeBuildQueue:
-
-    def __init__(self, cookie='PACKAGEBUILD-1'):
+    def __init__(self, cookie="PACKAGEBUILD-1"):
         self.build_cookie = cookie
         self.reset = FakeMethod()
         self.status = BuildQueueStatus.RUNNING
@@ -124,7 +116,8 @@ class TestBuilderInteractor(TestCase):
     def resumeWorkerHost(self, builder):
         vitals = extract_vitals_from_db(builder)
         return BuilderInteractor.resumeWorkerHost(
-            vitals, BuilderInteractor.makeWorkerFromVitals(vitals))
+            vitals, BuilderInteractor.makeWorkerFromVitals(vitals)
+        )
 
     def test_resumeWorkerHost_nonvirtual(self):
         d = self.resumeWorkerHost(MockBuilder(virtualized=False))
@@ -139,22 +132,26 @@ class TestBuilderInteractor(TestCase):
             [builddmaster]
             vm_resume_command: /bin/echo -n snap %(buildd_name)s %(vm_host)s
             """
-        config.push('reset', reset_config)
-        self.addCleanup(config.pop, 'reset')
+        config.push("reset", reset_config)
+        self.addCleanup(config.pop, "reset")
 
-        d = self.resumeWorkerHost(MockBuilder(
-            url="http://crackle.ppa/", virtualized=True, vm_host="pop"))
+        d = self.resumeWorkerHost(
+            MockBuilder(
+                url="http://crackle.ppa/", virtualized=True, vm_host="pop"
+            )
+        )
 
         def got_resume(output):
-            self.assertEqual((b'snap crackle pop', b''), output)
+            self.assertEqual((b"snap crackle pop", b""), output)
+
         return d.addCallback(got_resume)
 
     def test_resumeWorkerHost_command_failed(self):
         reset_fail_config = """
             [builddmaster]
             vm_resume_command: /bin/false"""
-        config.push('reset fail', reset_fail_config)
-        self.addCleanup(config.pop, 'reset fail')
+        config.push("reset fail", reset_fail_config)
+        self.addCleanup(config.pop, "reset fail")
         d = self.resumeWorkerHost(MockBuilder(virtualized=True, vm_host="pop"))
         return assert_fails_with(d, CannotResumeHost)
 
@@ -181,8 +178,10 @@ class TestBuilderInteractorCleanWorker(TestCase):
     @defer.inlineCallbacks
     def assertCleanCalls(self, builder, worker, calls, done):
         actually_done = yield BuilderInteractor.cleanWorker(
-            extract_vitals_from_db(builder), worker,
-            MockBuilderFactory(builder, None))
+            extract_vitals_from_db(builder),
+            worker,
+            MockBuilderFactory(builder, None),
+        )
         self.assertEqual(done, actually_done)
         self.assertEqual(calls, worker.method_log)
 
@@ -191,10 +190,14 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # Virtual builders using protocol 1.1 get reset, and once the
         # trigger completes we're happy that it's clean.
         builder = MockBuilder(
-            virtualized=True, clean_status=BuilderCleanStatus.DIRTY,
-            vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_1_1)
+            virtualized=True,
+            clean_status=BuilderCleanStatus.DIRTY,
+            vm_host="lol",
+            vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
+        )
         yield self.assertCleanCalls(
-            builder, OkWorker(), ['resume', 'echo'], True)
+            builder, OkWorker(), ["resume", "echo"], True
+        )
 
     @defer.inlineCallbacks
     def test_virtual_2_0_dirty(self):
@@ -202,9 +205,12 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # CLEANING. It's then up to the non-Launchpad reset code to set
         # the builder back to CLEAN using the webservice.
         builder = MockBuilder(
-            virtualized=True, clean_status=BuilderCleanStatus.DIRTY,
-            vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_2_0)
-        yield self.assertCleanCalls(builder, OkWorker(), ['resume'], False)
+            virtualized=True,
+            clean_status=BuilderCleanStatus.DIRTY,
+            vm_host="lol",
+            vm_reset_protocol=BuilderResetProtocol.PROTO_2_0,
+        )
+        yield self.assertCleanCalls(builder, OkWorker(), ["resume"], False)
         self.assertEqual(BuilderCleanStatus.CLEANING, builder.clean_status)
 
     @defer.inlineCallbacks
@@ -213,8 +219,11 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # they're DIRTY. Once they're cleaning, they're not our problem
         # until they return to CLEAN, so we ignore them.
         builder = MockBuilder(
-            virtualized=True, clean_status=BuilderCleanStatus.CLEANING,
-            vm_host='lol', vm_reset_protocol=BuilderResetProtocol.PROTO_2_0)
+            virtualized=True,
+            clean_status=BuilderCleanStatus.CLEANING,
+            vm_host="lol",
+            vm_reset_protocol=BuilderResetProtocol.PROTO_2_0,
+        )
         yield self.assertCleanCalls(builder, OkWorker(), [], False)
         self.assertEqual(BuilderCleanStatus.CLEANING, builder.clean_status)
 
@@ -223,22 +232,31 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # Virtual builders fail to clean unless vm_reset_protocol is
         # set.
         builder = MockBuilder(
-            virtualized=True, clean_status=BuilderCleanStatus.DIRTY,
-            vm_host='lol')
+            virtualized=True,
+            clean_status=BuilderCleanStatus.DIRTY,
+            vm_host="lol",
+        )
         builder.vm_reset_protocol = None
         with ExpectedException(
-                CannotResumeHost, "Invalid vm_reset_protocol: None"):
+            CannotResumeHost, "Invalid vm_reset_protocol: None"
+        ):
             yield BuilderInteractor.cleanWorker(
-                extract_vitals_from_db(builder), OkWorker(),
-                MockBuilderFactory(builder, None))
+                extract_vitals_from_db(builder),
+                OkWorker(),
+                MockBuilderFactory(builder, None),
+            )
 
     @defer.inlineCallbacks
     def test_nonvirtual_idle(self):
         # An IDLE non-virtual worker is already as clean as we can get it.
         yield self.assertCleanCalls(
             MockBuilder(
-                virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            OkWorker(), ['status'], True)
+                virtualized=False, clean_status=BuilderCleanStatus.DIRTY
+            ),
+            OkWorker(),
+            ["status"],
+            True,
+        )
 
     @defer.inlineCallbacks
     def test_nonvirtual_building(self):
@@ -246,8 +264,12 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # through ABORTING and eventually be picked up from WAITING.
         yield self.assertCleanCalls(
             MockBuilder(
-                virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            BuildingWorker(), ['status', 'abort'], False)
+                virtualized=False, clean_status=BuilderCleanStatus.DIRTY
+            ),
+            BuildingWorker(),
+            ["status", "abort"],
+            False,
+        )
 
     @defer.inlineCallbacks
     def test_nonvirtual_aborting(self):
@@ -255,30 +277,40 @@ class TestBuilderInteractorCleanWorker(TestCase):
         # hit WAITING eventually.
         yield self.assertCleanCalls(
             MockBuilder(
-                virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            AbortingWorker(), ['status'], False)
+                virtualized=False, clean_status=BuilderCleanStatus.DIRTY
+            ),
+            AbortingWorker(),
+            ["status"],
+            False,
+        )
 
     @defer.inlineCallbacks
     def test_nonvirtual_waiting(self):
         # A WAITING non-virtual worker just needs clean() called.
         yield self.assertCleanCalls(
             MockBuilder(
-                virtualized=False, clean_status=BuilderCleanStatus.DIRTY),
-            WaitingWorker(), ['status', 'clean'], True)
+                virtualized=False, clean_status=BuilderCleanStatus.DIRTY
+            ),
+            WaitingWorker(),
+            ["status", "clean"],
+            True,
+        )
 
     @defer.inlineCallbacks
     def test_nonvirtual_broken(self):
         # A broken non-virtual builder is probably unrecoverable, so the
         # method just crashes.
         builder = MockBuilder(
-            virtualized=False, clean_status=BuilderCleanStatus.DIRTY)
+            virtualized=False, clean_status=BuilderCleanStatus.DIRTY
+        )
         vitals = extract_vitals_from_db(builder)
         worker = LostBuildingBrokenWorker()
         try:
             yield BuilderInteractor.cleanWorker(
-                vitals, worker, MockBuilderFactory(builder, None))
+                vitals, worker, MockBuilderFactory(builder, None)
+            )
         except xmlrpc.client.Fault:
-            self.assertEqual(['status', 'abort'], worker.call_log)
+            self.assertEqual(["status", "abort"], worker.call_log)
         else:
             self.fail("abort() should crash.")
 
@@ -290,9 +322,16 @@ class TestBuilderWorkerStatus(TestCase):
     run_tests_with = AsynchronousDeferredRunTest
 
     @defer.inlineCallbacks
-    def assertStatus(self, worker, builder_status=None, build_status=None,
-                     build_id=False, logtail=False, filemap=None,
-                     dependencies=None):
+    def assertStatus(
+        self,
+        worker,
+        builder_status=None,
+        build_status=None,
+        build_id=False,
+        logtail=False,
+        filemap=None,
+        dependencies=None,
+    ):
         status = yield worker.status()
 
         expected = {}
@@ -316,22 +355,31 @@ class TestBuilderWorkerStatus(TestCase):
         self.assertEqual(expected, status)
 
     def test_status_idle_worker(self):
-        self.assertStatus(OkWorker(), builder_status='BuilderStatus.IDLE')
+        self.assertStatus(OkWorker(), builder_status="BuilderStatus.IDLE")
 
     def test_status_building_worker(self):
         self.assertStatus(
-            BuildingWorker(), builder_status='BuilderStatus.BUILDING',
-            build_id=True, logtail=True)
+            BuildingWorker(),
+            builder_status="BuilderStatus.BUILDING",
+            build_id=True,
+            logtail=True,
+        )
 
     def test_status_waiting_worker(self):
         self.assertStatus(
-            WaitingWorker(), builder_status='BuilderStatus.WAITING',
-            build_status='BuildStatus.OK', build_id=True, filemap={})
+            WaitingWorker(),
+            builder_status="BuilderStatus.WAITING",
+            build_status="BuildStatus.OK",
+            build_id=True,
+            filemap={},
+        )
 
     def test_status_aborting_worker(self):
         self.assertStatus(
-            AbortingWorker(), builder_status='BuilderStatus.ABORTING',
-            build_id=True)
+            AbortingWorker(),
+            builder_status="BuilderStatus.ABORTING",
+            build_id=True,
+        )
 
 
 class TestBuilderInteractorDB(TestCaseWithFactory):
@@ -344,13 +392,14 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         """An idle builder has no build behaviour."""
         self.assertIs(
             None,
-            BuilderInteractor.getBuildBehaviour(None, MockBuilder(), None))
+            BuilderInteractor.getBuildBehaviour(None, MockBuilder(), None),
+        )
 
     def test_getBuildBehaviour_building(self):
         """The current behaviour is set automatically from the current job."""
         # Set the builder attribute on the buildqueue record so that our
         # builder will think it has a current build.
-        builder = self.factory.makeBuilder(name='builder')
+        builder = self.factory.makeBuilder(name="builder")
         worker = BuildingWorker()
         build = self.factory.makeBinaryPackageBuild()
         bq = build.queueBuild()
@@ -363,13 +412,16 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
     def _setupBuilder(self):
         processor = self.factory.makeProcessor(name="i386")
         builder = self.factory.makeBuilder(
-            processors=[processor], virtualized=True, vm_host="bladh")
+            processors=[processor], virtualized=True, vm_host="bladh"
+        )
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(OkWorker()))
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         chroot = self.factory.makeLibraryFileAlias(db_only=True)
         das.addOrUpdateChroot(chroot)
         distroseries.nominatedarchindep = das
@@ -380,7 +432,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         # recipe, returning both.
         builder, distroseries, distroarchseries = self._setupBuilder()
         build = self.factory.makeSourcePackageRecipeBuild(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         return builder, build
 
     def _setupBinaryBuildAndBuilder(self):
@@ -388,7 +441,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         # binary package, returning both.
         builder, distroseries, distroarchseries = self._setupBuilder()
         build = self.factory.makeBinaryPackageBuild(
-            distroarchseries=distroarchseries, builder=builder)
+            distroarchseries=distroarchseries, builder=builder
+        )
         return builder, build
 
     def test_findAndStartJob_returns_candidate(self):
@@ -402,7 +456,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         d = BuilderInteractor.findAndStartJob(
-            vitals, builder, OkWorker(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory
+        )
         return d.addCallback(self.assertEqual, candidate)
 
     @defer.inlineCallbacks
@@ -413,8 +468,10 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder, distroseries, distroarchseries = self._setupBuilder()
         builds = [
             self.factory.makeBinaryPackageBuild(
-                distroarchseries=distroarchseries)
-            for _ in range(3)]
+                distroarchseries=distroarchseries
+            )
+            for _ in range(3)
+        ]
         candidates = [build.queueBuild() for build in builds]
         builder_factory = PrefetchedBuilderFactory()
         candidates_iter = iter(candidates)
@@ -429,12 +486,17 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         # Starting a job selects a non-superseded candidate, and supersedes
         # the candidates that have superseded source packages.
         candidate = yield BuilderInteractor.findAndStartJob(
-            vitals, builder, OkWorker(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory
+        )
         self.assertEqual(candidates[2], candidate)
         self.assertEqual(
-            [BuildStatus.SUPERSEDED, BuildStatus.SUPERSEDED,
-             BuildStatus.BUILDING],
-            [build.status for build in builds])
+            [
+                BuildStatus.SUPERSEDED,
+                BuildStatus.SUPERSEDED,
+                BuildStatus.BUILDING,
+            ],
+            [build.status for build in builds],
+        )
 
     def test_findAndStartJob_starts_job(self):
         # findAndStartJob finds the next queued job using findBuildCandidate
@@ -446,7 +508,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         d = BuilderInteractor.findAndStartJob(
-            vitals, builder, OkWorker(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory
+        )
 
         def check_build_started(candidate):
             self.assertEqual(candidate.builder, builder)
@@ -464,10 +527,12 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         with ExpectedException(
-                BuildDaemonIsolationError,
-                "Attempted to start build on a dirty worker."):
+            BuildDaemonIsolationError,
+            "Attempted to start build on a dirty worker.",
+        ):
             yield BuilderInteractor.findAndStartJob(
-                vitals, builder, OkWorker(), builder_factory)
+                vitals, builder, OkWorker(), builder_factory
+            )
 
     @defer.inlineCallbacks
     def test_findAndStartJob_dirties_worker(self):
@@ -478,7 +543,8 @@ class TestBuilderInteractorDB(TestCaseWithFactory):
         builder_factory.findBuildCandidate = FakeMethod(result=candidate)
         vitals = extract_vitals_from_db(builder)
         yield BuilderInteractor.findAndStartJob(
-            vitals, builder, OkWorker(), builder_factory)
+            vitals, builder, OkWorker(), builder_factory
+        )
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
 
 
@@ -499,7 +565,7 @@ class TestWorker(TestCase):
     def test_abort(self):
         worker = self.worker_helper.getClientWorker()
         # We need to be in a BUILDING state before we can abort.
-        build_id = 'some-id'
+        build_id = "some-id"
         response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         response = yield worker.abort()
@@ -510,7 +576,7 @@ class TestWorker(TestCase):
         # Calling 'build' with an expected builder type, a good build id,
         # valid chroot & filemaps works and returns a BuilderStatus of
         # BUILDING.
-        build_id = 'some-id'
+        build_id = "some-id"
         worker = self.worker_helper.getClientWorker()
         response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
@@ -521,7 +587,7 @@ class TestWorker(TestCase):
         # it to be in either the WAITING or ABORTED states, and both of these
         # states are very difficult to achieve in a test environment. For the
         # time being, we'll just assert that a clean attribute exists.
-        self.assertNotEqual(getattr(worker, 'clean', None), None)
+        self.assertNotEqual(getattr(worker, "clean", None), None)
 
     @defer.inlineCallbacks
     def test_echo(self):
@@ -529,8 +595,8 @@ class TestWorker(TestCase):
         # gave it.
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        response = yield worker.echo('foo', 'bar', 42)
-        self.assertEqual(['foo', 'bar', 42], response)
+        response = yield worker.echo("foo", "bar", 42)
+        self.assertEqual(["foo", "bar", 42], response)
 
     @defer.inlineCallbacks
     def test_info(self):
@@ -543,12 +609,19 @@ class TestWorker(TestCase):
         # into the tac file for the remote worker and config is returned from
         # the configuration file.
         self.assertEqual(3, len(info))
-        self.assertEqual(['1.0', 'i386'], info[:2])
+        self.assertEqual(["1.0", "i386"], info[:2])
         self.assertThat(
             info[2],
             ContainsAll(
-                ('sourcepackagerecipe', 'translation-templates',
-                 'binarypackage', 'livefs', 'snap')))
+                (
+                    "sourcepackagerecipe",
+                    "translation-templates",
+                    "binarypackage",
+                    "livefs",
+                    "snap",
+                )
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_initial_status(self):
@@ -557,7 +630,7 @@ class TestWorker(TestCase):
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
         status = yield worker.status()
-        self.assertEqual(BuilderStatus.IDLE, status['builder_status'])
+        self.assertEqual(BuilderStatus.IDLE, status["builder_status"])
 
     @defer.inlineCallbacks
     def test_status_after_build(self):
@@ -566,50 +639,51 @@ class TestWorker(TestCase):
         # WAITING if the build finishes before we have a chance to check its
         # status.)
         worker = self.worker_helper.getClientWorker()
-        build_id = 'status-build-id'
+        build_id = "status-build-id"
         response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         status = yield worker.status()
         self.assertIn(
-            status['builder_status'],
-            {BuilderStatus.BUILDING, BuilderStatus.WAITING})
-        self.assertEqual(build_id, status['build_id'])
+            status["builder_status"],
+            {BuilderStatus.BUILDING, BuilderStatus.WAITING},
+        )
+        self.assertEqual(build_id, status["build_id"])
         # We only see a logtail if the build is still in the BUILDING
         # status.
-        if 'logtail' in status:
-            self.assertIsInstance(status['logtail'], xmlrpc.client.Binary)
+        if "logtail" in status:
+            self.assertIsInstance(status["logtail"], xmlrpc.client.Binary)
 
     @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):
         # ensurepresent checks to see if a file is there.
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        response = yield worker.ensurepresent('blahblah', None, None, None)
-        self.assertEqual([False, 'No URL'], response)
+        response = yield worker.ensurepresent("blahblah", None, None, None)
+        self.assertEqual([False, "No URL"], response)
 
     @defer.inlineCallbacks
     def test_ensurepresent_actually_there(self):
         # ensurepresent checks to see if a file is there.
         tachandler = self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        self.worker_helper.makeCacheFile(tachandler, 'blahblah')
-        response = yield worker.ensurepresent('blahblah', None, None, None)
-        self.assertEqual([True, 'No URL'], response)
+        self.worker_helper.makeCacheFile(tachandler, "blahblah")
+        response = yield worker.ensurepresent("blahblah", None, None, None)
+        self.assertEqual([True, "No URL"], response)
 
     def test_sendFileToWorker_not_there(self):
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        d = worker.sendFileToWorker('blahblah', None, None, None)
+        d = worker.sendFileToWorker("blahblah", None, None, None)
         return assert_fails_with(d, CannotFetchFile)
 
     @defer.inlineCallbacks
     def test_sendFileToWorker_actually_there(self):
         tachandler = self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
-        self.worker_helper.makeCacheFile(tachandler, 'blahblah')
-        yield worker.sendFileToWorker('blahblah', None, None, None)
-        response = yield worker.ensurepresent('blahblah', None, None, None)
-        self.assertEqual([True, 'No URL'], response)
+        self.worker_helper.makeCacheFile(tachandler, "blahblah")
+        yield worker.sendFileToWorker("blahblah", None, None, None)
+        response = yield worker.ensurepresent("blahblah", None, None, None)
+        self.assertEqual([True, "No URL"], response)
 
     @defer.inlineCallbacks
     def test_resumeHost_success(self):
@@ -620,7 +694,8 @@ class TestWorker(TestCase):
 
         # The configuration testing command-line.
         self.assertEqual(
-            'echo %(vm_host)s', config.builddmaster.vm_resume_command)
+            "echo %(vm_host)s", config.builddmaster.vm_resume_command
+        )
 
         out, err, code = yield worker.resume()
         self.assertEqual(os.EX_OK, code)
@@ -640,8 +715,8 @@ class TestWorker(TestCase):
         [builddmaster]
         vm_resume_command: test "%(vm_host)s = 'no-sir'"
         """
-        config.push('failed_resume_command', failed_config)
-        self.addCleanup(config.pop, 'failed_resume_command')
+        config.push("failed_resume_command", failed_config)
+        self.addCleanup(config.pop, "failed_resume_command")
 
         # On failures, the response is a twisted `Failure` object containing
         # a tuple.
@@ -649,6 +724,7 @@ class TestWorker(TestCase):
             out, err, code = failure.value
             # The process will exit with a return code of "1".
             self.assertEqual(code, 1)
+
         d = worker.resume()
         d.addBoth(check_resume_failure)
         return d
@@ -663,8 +739,8 @@ class TestWorker(TestCase):
         vm_resume_command: sleep 5
         socket_timeout: 1
         """
-        config.push('timeout_resume_command', timeout_config)
-        self.addCleanup(config.pop, 'timeout_resume_command')
+        config.push("timeout_resume_command", timeout_config)
+        self.addCleanup(config.pop, "timeout_resume_command")
 
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
@@ -675,6 +751,7 @@ class TestWorker(TestCase):
             self.assertIsInstance(failure, Failure)
             out, err, code = failure.value
             self.assertEqual(code, signal.SIGKILL)
+
         clock = Clock()
         d = worker.resume(clock=clock)
         # Move the clock beyond the socket_timeout but earlier than the
@@ -690,7 +767,8 @@ class TestWorkerTimeouts(TestCase):
     # as required.
 
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=30)
+        timeout=30
+    )
 
     def setUp(self):
         super().setUp()
@@ -698,7 +776,8 @@ class TestWorkerTimeouts(TestCase):
         self.clock = Clock()
         self.proxy = DeadProxy(b"url")
         self.worker = self.worker_helper.getClientWorker(
-            reactor=self.clock, proxy=self.proxy)
+            reactor=self.clock, proxy=self.proxy
+        )
         self.addCleanup(shut_down_default_process_pool)
 
     def assertCancelled(self, d, timeout=None):
@@ -723,11 +802,13 @@ class TestWorkerTimeouts(TestCase):
     def test_timeout_ensurepresent(self):
         return self.assertCancelled(
             self.worker.ensurepresent(None, None, None, None),
-            config.builddmaster.socket_timeout * 5)
+            config.builddmaster.socket_timeout * 5,
+        )
 
     def test_timeout_build(self):
         return self.assertCancelled(
-            self.worker.build(None, None, None, None, None))
+            self.worker.build(None, None, None, None, None)
+        )
 
 
 class TestWorkerConnectionTimeouts(TestCase):
@@ -748,7 +829,7 @@ class TestWorkerConnectionTimeouts(TestCase):
     def test_connection_timeout(self):
         # The default timeout of 30 seconds should not cause a timeout,
         # only the config value should.
-        self.pushConfig('builddmaster', socket_timeout=180)
+        self.pushConfig("builddmaster", socket_timeout=180)
 
         worker = self.worker_helper.getClientWorker(reactor=self.clock)
         d = worker.echo()
@@ -769,7 +850,8 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=30)
+        timeout=30
+    )
 
     def setUp(self):
         super().setUp()
@@ -783,12 +865,13 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
 
         # Use the Librarian because it's a "convenient" web server.
         lf = self.factory.makeLibraryFileAlias(
-            'HelloWorld.txt', content="Hello World")
+            "HelloWorld.txt", content="Hello World"
+        )
         self.layer.txn.commit()
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
         d = worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
-        d.addCallback(self.assertEqual, [True, 'Download'])
+        d.addCallback(self.assertEqual, [True, "Download"])
         return d
 
     @defer.inlineCallbacks
@@ -797,12 +880,16 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         # filename made from the sha1 of the content underneath the
         # 'filecache' directory.
         from twisted.internet import reactor
+
         content = b"Hello World"
         lf = self.factory.makeLibraryFileAlias(
-            'HelloWorld.txt', content=content)
+            "HelloWorld.txt", content=content
+        )
         self.layer.txn.commit()
-        expected_url = '%s/filecache/%s' % (
-            self.worker_helper.base_url, lf.content.sha1)
+        expected_url = "%s/filecache/%s" % (
+            self.worker_helper.base_url,
+            lf.content.sha1,
+        )
         self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
         yield worker.ensurepresent(lf.content.sha1, lf.http_url, "", "")
@@ -837,7 +924,7 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         # content_map so we can compare downloads later.
         dl = []
         for content in contents:
-            filename = content + '.txt'
+            filename = content + ".txt"
             lf = self.factory.makeLibraryFileAlias(filename, content=content)
             content_map[lf.content.sha1] = content
             files.append((lf.content.sha1, tempfile.mkstemp()[1]))
@@ -881,7 +968,7 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         # content_map so we can compare downloads later.
         dl = []
         for content in contents:
-            filename = content + '.txt'
+            filename = content + ".txt"
             lf = self.factory.makeLibraryFileAlias(filename, content=content)
             content_map[lf.content.sha1] = content
             files.append((lf.content.sha1, tempfile.mkstemp()[1]))
@@ -899,11 +986,11 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         worker = self.worker_helper.getClientWorker()
         temp_fd, temp_name = tempfile.mkstemp()
         self.addCleanup(os.remove, temp_name)
-        empty_sha1 = hashlib.sha1(b'').hexdigest()
-        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
+        empty_sha1 = hashlib.sha1(b"").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b"")
         yield worker.getFiles([(empty_sha1, temp_name)])
-        with open(temp_name, 'rb') as f:
-            self.assertEqual(b'', f.read())
+        with open(temp_name, "rb") as f:
+            self.assertEqual(b"", f.read())
 
     @defer.inlineCallbacks
     def test_getFiles_to_subdirectory(self):
@@ -912,9 +999,59 @@ class TestWorkerWithLibrarian(TestCaseWithFactory):
         tachandler = self.worker_helper.getServerWorker()
         worker = self.worker_helper.getClientWorker()
         temp_dir = self.makeTemporaryDirectory()
-        temp_name = os.path.join(temp_dir, 'build:0', 'log')
-        empty_sha1 = hashlib.sha1(b'').hexdigest()
-        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
+        temp_name = os.path.join(temp_dir, "build:0", "log")
+        empty_sha1 = hashlib.sha1(b"").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, empty_sha1, contents=b"")
         yield worker.getFiles([(empty_sha1, temp_name)])
-        with open(temp_name, 'rb') as f:
-            self.assertEqual(b'', f.read())
+        with open(temp_name, "rb") as f:
+            self.assertEqual(b"", f.read())
+
+    @defer.inlineCallbacks
+    def test_getFiles_retries(self):
+        # getFiles retries failed download attempts rather than giving up on
+        # the first failure.
+        self.pushConfig("builddmaster", download_attempts=3)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        count = 0
+
+        def fail_twice(original, *args, **kwargs):
+            nonlocal count
+            count += 1
+            if count < 3:
+                raise RuntimeError("Boom")
+            return original(*args, **kwargs)
+
+        self.useFixture(
+            MockPatchObject(
+                worker.process_pool,
+                "doWork",
+                side_effect=partial(fail_twice, worker.process_pool.doWork),
+            )
+        )
+        temp_dir = self.makeTemporaryDirectory()
+        temp_name = os.path.join(temp_dir, "log")
+        sha1 = hashlib.sha1(b"log").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, sha1, contents=b"log")
+        yield worker.getFiles([(sha1, temp_name)])
+        with open(temp_name, "rb") as f:
+            self.assertEqual(b"log", f.read())
+
+    @defer.inlineCallbacks
+    def test_getFiles_limited_retries(self):
+        # getFiles gives up on retrying downloads after the configured
+        # number of attempts.
+        self.pushConfig("builddmaster", download_attempts=3)
+        tachandler = self.worker_helper.getServerWorker()
+        worker = self.worker_helper.getClientWorker()
+        self.useFixture(
+            MockPatchObject(
+                worker.process_pool, "doWork", side_effect=RuntimeError("Boom")
+            )
+        )
+        temp_dir = self.makeTemporaryDirectory()
+        temp_name = os.path.join(temp_dir, "log")
+        sha1 = hashlib.sha1(b"log").hexdigest()
+        self.worker_helper.makeCacheFile(tachandler, sha1, contents=b"log")
+        with ExpectedException(RuntimeError, r"^Boom$"):
+            yield worker.getFiles([(sha1, temp_name)])

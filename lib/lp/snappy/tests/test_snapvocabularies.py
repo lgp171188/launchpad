@@ -21,56 +21,67 @@ class TestSnappyDistroSeriesVocabulary(TestCaseWithFactory):
     def test_getTermByToken(self):
         distro_series = self.factory.makeDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series])
+            usable_distro_series=[distro_series]
+        )
 
-        term = self.vocab.getTermByToken("%s/%s/%s" % (
-            distro_series.distribution.name,
-            distro_series.name,
-            snappy_series.name
-        ))
+        term = self.vocab.getTermByToken(
+            "%s/%s/%s"
+            % (
+                distro_series.distribution.name,
+                distro_series.name,
+                snappy_series.name,
+            )
+        )
         self.assertIsNotNone(term)
 
     def test_term_structure_for_current_store_series(self):
         distro_series = self.factory.makeUbuntuDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series],
-            status=SeriesStatus.CURRENT
+            usable_distro_series=[distro_series], status=SeriesStatus.CURRENT
         )
 
-        term = self.vocab.getTermByToken("%s/%s/%s" % (
-            distro_series.distribution.name,
-            distro_series.name,
-            snappy_series.name
-        ))
+        term = self.vocab.getTermByToken(
+            "%s/%s/%s"
+            % (
+                distro_series.distribution.name,
+                distro_series.name,
+                snappy_series.name,
+            )
+        )
 
         self.assertEqual(term.title, distro_series.fullseriesname)
 
     def test_term_structure_for_older_store_series(self):
         distro_series = self.factory.makeUbuntuDistroSeries()
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[distro_series],
-            status=SeriesStatus.SUPPORTED)
+            usable_distro_series=[distro_series], status=SeriesStatus.SUPPORTED
+        )
 
-        term = self.vocab.getTermByToken("%s/%s/%s" % (
-            distro_series.distribution.name,
-            distro_series.name,
-            snappy_series.name
-        ))
+        term = self.vocab.getTermByToken(
+            "%s/%s/%s"
+            % (
+                distro_series.distribution.name,
+                distro_series.name,
+                snappy_series.name,
+            )
+        )
 
-        self.assertEqual(term.title, "%s, for %s" % (
-            distro_series.fullseriesname,
-            snappy_series.title))
+        self.assertEqual(
+            term.title,
+            "%s, for %s" % (distro_series.fullseriesname, snappy_series.title),
+        )
 
     def test_term_structure_for_distro_series_None(self):
         snappy_series = self.factory.makeSnappySeries(
-            can_infer_distro_series=True)
+            can_infer_distro_series=True
+        )
         term = self.vocab.getTermByToken(snappy_series.name)
         self.assertEqual(term.title, snappy_series.title)
 
     def test_term_structure_for_infer_from_snapcraft(self):
         snappy_series = self.factory.makeSnappySeries(
-            can_infer_distro_series=True,
-            status=SeriesStatus.CURRENT)
+            can_infer_distro_series=True, status=SeriesStatus.CURRENT
+        )
         term = self.vocab.getTermByToken(snappy_series.name)
 
         self.assertEqual(term.title, "Infer from snapcraft.yaml (recommended)")
@@ -83,7 +94,8 @@ class TestSnappyDistroSeriesVocabulary(TestCaseWithFactory):
         # which should also be a the top
 
         snappy_series = self.factory.makeSnappySeries(
-            can_infer_distro_series=True)
+            can_infer_distro_series=True
+        )
         entries = self.vocab._entries
 
         self.assertIsNone(entries[0].distro_series)

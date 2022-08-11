@@ -3,11 +3,7 @@
 
 """Utility classes for parsing Debian tag files."""
 
-__all__ = [
-    'TagFileParseError',
-    'parse_tagfile',
-    'parse_tagfile_content'
-    ]
+__all__ = ["TagFileParseError", "parse_tagfile", "parse_tagfile_content"]
 
 
 import tempfile
@@ -19,6 +15,7 @@ from lp.services.mail.signedmessage import strip_pgp_signature
 
 class TagFileParseError(Exception):
     """This exception is raised if parse_changes encounters nastiness"""
+
     pass
 
 
@@ -43,7 +40,8 @@ def parse_tagfile_content(content, filename=None):
             raise TagFileParseError("%s: %s" % (filename, e))
     if len(stanzas) != 1:
         raise TagFileParseError(
-            "%s: multiple stanzas where only one is expected" % filename)
+            "%s: multiple stanzas where only one is expected" % filename
+        )
 
     [stanza] = stanzas
 

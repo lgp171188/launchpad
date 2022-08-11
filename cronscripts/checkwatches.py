@@ -12,8 +12,8 @@ import _pythonpath  # noqa: F401
 from lp.bugs.scripts.checkwatches import CheckWatchesCronScript
 from lp.services.config import config
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = CheckWatchesCronScript(
-        "checkwatches", dbuser=config.checkwatches.dbuser)
+        "checkwatches", dbuser=config.checkwatches.dbuser
+    )
     script.lock_and_run()

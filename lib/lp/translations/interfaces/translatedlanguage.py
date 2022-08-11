@@ -1,28 +1,21 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.interface.common.sequence import IFiniteSequence
-from zope.schema import (
-    Datetime,
-    Object,
-    )
+from zope.schema import Datetime, Object
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
 from lp.services.worlddata.interfaces.language import ILanguage
 from lp.translations.interfaces.hastranslationtemplates import (
     IHasTranslationTemplates,
-    )
-
+)
 
 __all__ = [
-    'IPOFilesByPOTemplates',
-    'ITranslatedLanguage',
-    ]
+    "IPOFilesByPOTemplates",
+    "ITranslatedLanguage",
+]
 
 
 class ITranslatedLanguage(Interface):
@@ -32,18 +25,22 @@ class ITranslatedLanguage(Interface):
     """
 
     language = Object(
-        title=_('Language to gather statistics and POFiles for.'),
-        schema=ILanguage)
+        title=_("Language to gather statistics and POFiles for."),
+        schema=ILanguage,
+    )
 
     parent = Object(
-        title=_('A parent with translation templates.'),
-        schema=IHasTranslationTemplates)
+        title=_("A parent with translation templates."),
+        schema=IHasTranslationTemplates,
+    )
 
     pofiles = Attribute(
-        _('Iterator over all POFiles for this context and language.'))
+        _("Iterator over all POFiles for this context and language.")
+    )
 
     translation_statistics = Attribute(
-        _('A dict containing relevant aggregated statistics counts.'))
+        _("A dict containing relevant aggregated statistics counts.")
+    )
 
     def setCounts(total, translated, new, changed, unreviewed):
         """Set aggregated message counts for ITranslatedLanguage."""
@@ -52,19 +49,22 @@ class ITranslatedLanguage(Interface):
         """Recalculate message counts for this ITranslatedLanguage."""
 
     last_changed_date = Datetime(
-        title=_('When was this translation last changed.'),
-        readonly=False, required=True)
+        title=_("When was this translation last changed."),
+        readonly=False,
+        required=True,
+    )
 
     last_translator = Object(
-        title=_('Last person that translated something in this context.'),
-        schema=IPerson)
+        title=_("Last person that translated something in this context."),
+        schema=IPerson,
+    )
 
 
 class IPOFilesByPOTemplates(IFiniteSequence):
     """Iterate `IPOFile`s for (`ILanguage`, `ITranslationTemplateCollection`).
 
     This is a wrapper for Storm ResultSet that enables optimized slicing
-    by doing it lazily on the query, thus allowing DummyPOFile objects
+    by doing it lazily on the query, thus allowing PlaceholderPOFile objects
     to be returned while still not doing more than one database query.
 
     It subclasses `IFiniteSequence` so it can easily be used with the

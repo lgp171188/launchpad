@@ -10,15 +10,12 @@ from zope.component import getUtility
 
 from lp.code.feed.branch import (
     ProductRevisionFeed,
-    revision_feed_id,
     RevisionListingFeed,
-    )
+    revision_feed_id,
+)
 from lp.code.interfaces.revision import IRevisionSet
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,11 +29,12 @@ class TestRevisionFeedId(TestCaseWithFactory):
         # date, and the revision id.
         revision_date = datetime(2009, 7, 21, 12, tzinfo=UTC)
         revision = self.factory.makeRevision(
-            revision_date=revision_date, rev_id="test_revision_id")
+            revision_date=revision_date, rev_id="test_revision_id"
+        )
         feed_id = revision_feed_id(revision)
         self.assertEqual(
-            'tag:launchpad.net,2009-07-21:/revision/test_revision_id',
-            feed_id)
+            "tag:launchpad.net,2009-07-21:/revision/test_revision_id", feed_id
+        )
 
 
 class TestRevisionFeed(TestCaseWithFactory):
@@ -60,8 +58,9 @@ class TestRevisionFeed(TestCaseWithFactory):
         # The FeedBase class determins the feed type by the end of the
         # requested URL, so forcing .atom here.
         return RevisionListingFeed(
-            None, LaunchpadTestRequest(
-                SERVER_URL="http://example.com/fake.atom"))
+            None,
+            LaunchpadTestRequest(SERVER_URL="http://example.com/fake.atom"),
+        )
 
     def test_createView(self):
         # Revisions that are linked to branches are shown in the feed.
@@ -109,8 +108,9 @@ class TestProductRevisionFeed(TestCaseWithFactory):
         # The FeedBase class determins the feed type by the end of the
         # requested URL, so forcing .atom here.
         return ProductRevisionFeed(
-            product, LaunchpadTestRequest(
-                SERVER_URL="http://example.com/fake.atom"))
+            product,
+            LaunchpadTestRequest(SERVER_URL="http://example.com/fake.atom"),
+        )
 
     def test_getItems_empty(self):
         # If there are no revisions for a product, there are no items.

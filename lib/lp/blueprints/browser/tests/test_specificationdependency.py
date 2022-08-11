@@ -3,18 +3,18 @@
 
 """Tests for the specification dependency views.
 
-There are also tests in lp/blueprints/stories/blueprints/xx-dependencies.txt.
+There are also tests in lp/blueprints/stories/blueprints/xx-dependencies.rst.
 """
 
 from lp.app.enums import InformationType
 from lp.registry.enums import SpecificationSharingPolicy
 from lp.services.webapp import canonical_url
 from lp.testing import (
-    anonymous_logged_in,
     BrowserTestCase,
-    person_logged_in,
     TestCaseWithFactory,
-    )
+    anonymous_logged_in,
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_view
 
@@ -29,9 +29,9 @@ class TestAddDependency(BrowserTestCase):
         spec = self.factory.makeSpecification(owner=self.user)
         dependency = self.factory.makeSpecification()
         dependency_url = canonical_url(dependency)
-        browser = self.getViewBrowser(spec, '+linkdependency')
-        browser.getControl('Depends On').value = dependency_url
-        browser.getControl('Continue').click()
+        browser = self.getViewBrowser(spec, "+linkdependency")
+        browser.getControl("Depends On").value = dependency_url
+        browser.getControl("Continue").click()
         # click() above issues a request, and
         # ZopePublication.endRequest() calls
         # zope.security.management.endInteraction().
@@ -51,10 +51,12 @@ class TestDepTree(TestCaseWithFactory):
         sharing_policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=sharing_policy)
+            owner=owner, specification_sharing_policy=sharing_policy
+        )
         root = self.factory.makeBlueprint(product=product)
         proprietary_dep = self.factory.makeBlueprint(
-            product=product, information_type=InformationType.PROPRIETARY)
+            product=product, information_type=InformationType.PROPRIETARY
+        )
         public_dep = self.factory.makeBlueprint(product=product)
         root.createDependency(proprietary_dep)
         root.createDependency(public_dep)
@@ -68,10 +70,8 @@ class TestDepTree(TestCaseWithFactory):
         # The owner can see everything.
         with person_logged_in(owner):
             view = create_view(root, name="+deptree")
-            self.assertEqual(
-                [proprietary_dep, public_dep], view.all_deps)
-            self.assertEqual(
-                [proprietary_dep, public_dep], view.dependencies)
+            self.assertEqual([proprietary_dep, public_dep], view.all_deps)
+            self.assertEqual([proprietary_dep, public_dep], view.dependencies)
 
         # A random person cannot see the propriety dep.
         with person_logged_in(self.factory.makePerson()):
@@ -85,10 +85,12 @@ class TestDepTree(TestCaseWithFactory):
         sharing_policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=sharing_policy)
+            owner=owner, specification_sharing_policy=sharing_policy
+        )
         root = self.factory.makeBlueprint(product=product)
         proprietary_blocked = self.factory.makeBlueprint(
-            product=product, information_type=InformationType.PROPRIETARY)
+            product=product, information_type=InformationType.PROPRIETARY
+        )
         public_blocked = self.factory.makeBlueprint(product=product)
         with person_logged_in(product.owner):
             proprietary_blocked.createDependency(root)
@@ -104,9 +106,11 @@ class TestDepTree(TestCaseWithFactory):
         with person_logged_in(owner):
             view = create_view(root, name="+deptree")
             self.assertEqual(
-                [proprietary_blocked, public_blocked], view.all_blocked)
+                [proprietary_blocked, public_blocked], view.all_blocked
+            )
             self.assertEqual(
-                [proprietary_blocked, public_blocked], view.blocked_specs)
+                [proprietary_blocked, public_blocked], view.blocked_specs
+            )
 
         # A random person cannot see the propriety dep.
         with person_logged_in(self.factory.makePerson()):

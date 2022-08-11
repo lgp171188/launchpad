@@ -15,25 +15,21 @@ browser window the request came from.
 from datetime import datetime
 
 from zope.interface import implementer
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
+from lp.services.webapp.escaping import html_escape, structured
 from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
     INotification,
     INotificationList,
     INotificationRequest,
     INotificationResponse,
-    )
+    ISession,
+)
 from lp.services.webapp.login import allowUnauthenticatedSession
 from lp.services.webapp.publisher import LaunchpadView
 
-
-SESSION_KEY = 'launchpad'
+SESSION_KEY = "launchpad"
 
 
 @implementer(INotificationRequest)
@@ -41,35 +37,7 @@ class NotificationRequest:
     """NotificationRequest extracts notifications to display to the user
     from the request and session
 
-    It is designed to be mixed in with an IBrowserRequest
-
-    By default, there are no notifications
-
-    >>> request = NotificationRequest()
-    >>> len(request.notifications)
-    0
-    >>> INotificationRequest.providedBy(request)
-    True
-
-    >>> request = NotificationRequest()
-    >>> session = ISession(request)[SESSION_KEY]
-    >>> notifications = NotificationList()
-    >>> session['notifications'] = notifications
-    >>> notifications.append(Notification(0, 'Fnord'))
-    >>> for notification in request.notifications:
-    ...     print(notification.message)
-    Fnord
-
-    Note that NotificationRequest.notifications also returns any notifications
-    that have been added so far in this request, making it the single source
-    you need to interogate to display notifications to the user.
-
-    >>> response = INotificationResponse(request)
-    >>> response.addNotification('Aargh')
-    >>> for notification in request.notifications:
-    ...     print(notification.message)
-    Fnord
-    Aargh
+    It is designed to be mixed in with an IBrowserRequest.
     """
 
     @property
@@ -86,84 +54,6 @@ class NotificationResponse:
 
     It needs to be mixed in with an IHTTPApplicationResponse so its redirect
     method intercepts the default behaviour.
-
-    >>> class MyNotificationResponse(NotificationResponse, MockResponse):
-    ...     pass
-    >>> response = MyNotificationResponse()
-    >>> INotificationResponse.providedBy(response)
-    True
-    >>> request = NotificationRequest()
-    >>> request.response = response
-    >>> response._request = request
-    >>> request.principal = None # full IRequests are zope.security
-    ... # participations, and NotificationResponse.redirect expects a
-    ... # principal, as in the full IRequest interface.
-
-    >>> len(response.notifications)
-    0
-
-    >>> response.addNotification("something")
-    >>> len(response.notifications)
-    1
-
-    >>> response.removeAllNotifications()
-    >>> len(response.notifications)
-    0
-
-    >>> msg = structured("<b>%(escaped)s</b>", escaped="<Fnord>")
-    >>> response.addNotification(msg)
-
-    >>> response.addNotification("Whatever", BrowserNotificationLevel.DEBUG)
-    >>> response.addDebugNotification('Debug')
-    >>> response.addInfoNotification('Info')
-    >>> response.addWarningNotification('Warning')
-
-    And an odd one to test Bug #54987
-
-    >>> from lp import _
-    >>> response.addErrorNotification(_('Error${value}', mapping={'value':''}))
-
-    >>> INotificationList.providedBy(response.notifications)
-    True
-
-    >>> for notification in response.notifications:
-    ...     print("%d -- %s" % (notification.level, notification.message))
-    20 -- <b>&lt;Fnord&gt;</b>
-    10 -- Whatever
-    10 -- Debug
-    20 -- Info
-    30 -- Warning
-    40 -- Error
-
-    >>> response.redirect("http://example.com?foo=bar")
-    302: http://example.com?foo=bar
-
-    Once redirect has been called, any notifications that have been set
-    are stored in the session
-
-    >>> for notification in ISession(request)[SESSION_KEY]['notifications']:
-    ...     print("%d -- %s" % (notification.level, notification.message))
-    ...     break
-    20 -- <b>&lt;Fnord&gt;</b>
-
-    If there are no notifications, the session is not touched. This ensures
-    that we don't needlessly burden the session storage.
-
-    >>> response = MyNotificationResponse()
-    >>> request = NotificationRequest()
-    >>> request.response = response
-    >>> response._request = request
-
-    >>> session = ISession(request)[SESSION_KEY]
-    >>> del ISession(request)[SESSION_KEY]['notifications']
-    >>> 'notifications' in session
-    False
-    >>> len(response.notifications)
-    0
-    >>> response.redirect("http://example.com")
-    302: http://example.com
-    >>> 'notifications' in session
-    False
     """
 
     # We stuff our Notifications here until we are sure we should persist it
@@ -188,19 +78,21 @@ class NotificationResponse:
         # still pass.  Doing this rather than improving the Mock classes
         # that the mixins are used with, as we'll be moving this hack to
         # the sesions machinery in due course.
-        if (not (getattr(request, 'cookies', None) and
-                 getattr(response, 'getCookie', None))
-            or
-            (request.cookies.get(cookie_name) is not None or
-             response.getCookie(cookie_name) is not None)):
+        if not (
+            getattr(request, "cookies", None)
+            and getattr(response, "getCookie", None)
+        ) or (
+            request.cookies.get(cookie_name) is not None
+            or response.getCookie(cookie_name) is not None
+        ):
             session = ISession(self)[SESSION_KEY]
             try:
                 # Use notifications stored in the session.
-                self._notifications = session['notifications']
+                self._notifications = session["notifications"]
                 # Remove them from the session so they don't propogate to
                 # subsequent pages, unless redirect() is called which will
                 # push the notifications back into the session.
-                del session['notifications']
+                del session["notifications"]
             except KeyError:
                 # No stored notifications - create a new NotificationList
                 self._notifications = NotificationList()
@@ -223,7 +115,7 @@ class NotificationResponse:
             # to set the session.
             allowUnauthenticatedSession(self._request)
             session = ISession(self)[SESSION_KEY]
-            session['notifications'] = self._notifications
+            session["notifications"] = self._notifications
         return super().redirect(location, status, trusted=trusted)
 
     def addDebugNotification(self, msg):
@@ -245,34 +137,7 @@ class NotificationResponse:
 
 @implementer(INotificationList)
 class NotificationList(list):
-    """
-    Collection of INotification instances with a creation date
-
-    >>> notifications = NotificationList()
-    >>> notifications.created <= datetime.utcnow()
-    True
-    >>> notifications[0]
-    Traceback (most recent call last):
-    ...
-    IndexError: list index out of range
-
-    >>> debug = BrowserNotificationLevel.DEBUG
-    >>> error = BrowserNotificationLevel.ERROR
-    >>> notifications.append(Notification(error, u'An error'))
-    >>> notifications.append(Notification(debug, u'A debug message'))
-    >>> for notification in notifications:
-    ...     print(notification.message)
-    An error
-    A debug message
-
-    The __getitem__ method is also overloaded to allow TALES expressions
-    to easily retrieve lists of notifications that match a particular
-    notification level.
-
-    >>> for notification in notifications['debug']:
-    ...     print(notification.message)
-    A debug message
-    """
+    """Collection of INotification instances with a creation date."""
 
     created = None
 
@@ -285,15 +150,16 @@ class NotificationList(list):
             return super().__getitem__(index_or_levelname)
 
         level = getattr(
-                BrowserNotificationLevel, index_or_levelname.upper(), None
-                )
+            BrowserNotificationLevel, index_or_levelname.upper(), None
+        )
         if level is None:
             raise KeyError(index_or_levelname)
 
         return [
-            notification for notification in self
-                if notification.level == level
-            ]
+            notification
+            for notification in self
+            if notification.level == level
+        ]
 
 
 @implementer(INotification)
@@ -315,7 +181,7 @@ class NotificationTestView1(LaunchpadView):
     of the notifications
     """
 
-    label = page_title = 'Notification test'
+    label = page_title = "Notification test"
 
     def initialize(self):
         response = self.request.response
@@ -323,13 +189,17 @@ class NotificationTestView1(LaunchpadView):
         # Add some notifications
         for count in range(1, 3):
             response.addDebugNotification(
-                structured('Debug notification <b>%d</b>' % count))
+                structured("Debug notification <b>%d</b>" % count)
+            )
             response.addInfoNotification(
-                structured('Info notification <b>%d</b>' % count))
+                structured("Info notification <b>%d</b>" % count)
+            )
             response.addWarningNotification(
-                structured('Warning notification <b>%d</b>' % count))
+                structured("Warning notification <b>%d</b>" % count)
+            )
             response.addErrorNotification(
-                structured('Error notification <b>%d</b>' % count))
+                structured("Error notification <b>%d</b>" % count)
+            )
 
 
 class NotificationTestView2(NotificationTestView1):
@@ -339,9 +209,10 @@ class NotificationTestView2(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
         NotificationTestView1.initialize(self)
-        self.request.response.redirect('/')
+        self.request.response.redirect("/")
 
 
 class NotificationTestView3(NotificationTestView1):
@@ -352,11 +223,10 @@ class NotificationTestView3(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
-        self.request.response.addErrorNotification(
-                    '+notificationtest3 error'
-                    )
-        self.request.response.redirect('/+notificationtest1')
+        self.request.response.addErrorNotification("+notificationtest3 error")
+        self.request.response.redirect("/+notificationtest1")
 
 
 class NotificationTestView4(NotificationTestView1):
@@ -367,8 +237,7 @@ class NotificationTestView4(NotificationTestView1):
     in the test suite, as this page is useful for adjusting the visual style
     of the notifications
     """
+
     def initialize(self):
-        self.request.response.addErrorNotification(
-                    '+notificationtest4 error'
-                    )
-        self.request.response.redirect('/+notificationtest3')
+        self.request.response.addErrorNotification("+notificationtest4 error")
+        self.request.response.redirect("/+notificationtest3")

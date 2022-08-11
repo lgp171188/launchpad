@@ -7,27 +7,24 @@ __all__ = [
     "construct_email_notifications",
     "get_email_notifications",
     "process_deferred_notifications",
-    ]
+]
 
+import sys
 from itertools import groupby
 from operator import itemgetter
 from smtplib import SMTPException
-import sys
 
-from storm.store import Store
 import transaction
+from storm.store import Store
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 
-from lp.bugs.enums import (
-    BugNotificationLevel,
-    BugNotificationStatus,
-    )
+from lp.bugs.enums import BugNotificationLevel, BugNotificationStatus
 from lp.bugs.interfaces.bugnotification import IBugNotificationSet
 from lp.bugs.mail.bugnotificationbuilder import (
     BugNotificationBuilder,
     get_bugmail_from_address,
-    )
+)
 from lp.bugs.mail.newbug import generate_bug_add_email
 from lp.registry.model.person import get_recipients
 from lp.services.database.constants import UTC_NOW
@@ -62,15 +59,20 @@ def get_activity_key(notification):
     if activity is not None:
         key = activity.attribute
         if activity.target is not None:
-            key = ':'.join((activity.target, key))
-        if key in ('attachments', 'watches', 'cves', 'linked_branches',
-                   'linked_merge_proposals'):
+            key = ":".join((activity.target, key))
+        if key in (
+            "attachments",
+            "watches",
+            "cves",
+            "linked_branches",
+            "linked_merge_proposals",
+        ):
             # We are intentionally leaving bug task bugwatches out of this
             # list, so we use the key rather than the activity.attribute.
             if activity.oldvalue is not None:
-                key = ':'.join((key, activity.oldvalue))
+                key = ":".join((key, activity.oldvalue))
             elif activity.newvalue is not None:
-                key = ':'.join((key, activity.newvalue))
+                key = ":".join((key, activity.newvalue))
         return key
 
 
@@ -95,8 +97,9 @@ def construct_email_notifications(bug_notifications):
         assert notification.bug == bug, bug.id
         assert notification.message.owner == actor, actor.id
         if notification.is_comment:
-            assert comment is None, (
-                "Only one of the notifications is allowed to be a comment.")
+            assert (
+                comment is None
+            ), "Only one of the notifications is allowed to be a comment."
             comment = notification.message
         else:
             key = get_activity_key(notification)
@@ -110,15 +113,16 @@ def construct_email_notifications(bug_notifications):
     omitted_notifications = []
     for notification in bug_notifications:
         key = get_activity_key(notification)
-        if (notification.is_comment or
-            key is None or
-            key == 'removed_subscriber' or
-            old_values[key] != new_values[key]):
+        if (
+            notification.is_comment
+            or key is None
+            or key == "removed_subscriber"
+            or old_values[key] != new_values[key]
+        ):
             # We will report this notification.
             filtered_notifications.append(notification)
             for subscription_source in notification.recipients:
-                for recipient in get_recipients(
-                    subscription_source.person):
+                for recipient in get_recipients(subscription_source.person):
                     # The subscription_source.person may be a person or a
                     # team.  The get_recipients function gives us everyone
                     # who should actually get an email for that person.
@@ -145,8 +149,9 @@ def construct_email_notifications(bug_notifications):
 
     if bug.duplicateof is not None:
         text_notifications.append(
-            '*** This bug is a duplicate of bug %d ***\n    %s' %
-                (bug.duplicateof.id, canonical_url(bug.duplicateof)))
+            "*** This bug is a duplicate of bug %d ***\n    %s"
+            % (bug.duplicateof.id, canonical_url(bug.duplicateof))
+        )
 
     if comment is not None:
         if comment == bug.initial_message:
@@ -173,8 +178,10 @@ def construct_email_notifications(bug_notifications):
         text = notification.message.text_contents.rstrip()
         text_notifications.append(text)
 
-    if (bug.initial_message.rfc822msgid not in references and
-            msgid != bug.initial_message.rfc822msgid):
+    if (
+        bug.initial_message.rfc822msgid not in references
+        and msgid != bug.initial_message.rfc822msgid
+    ):
         # Ensure that references contain the initial message ID
         references.insert(0, bug.initial_message.rfc822msgid)
 
@@ -182,26 +189,29 @@ def construct_email_notifications(bug_notifications):
     # messages. Now go ahead and actually do that.
     messages = []
     mail_wrapper = MailWrapper(width=72)
-    content = '\n\n'.join(text_notifications)
+    content = "\n\n".join(text_notifications)
     from_address = get_bugmail_from_address(actor, bug)
     bug_notification_builder = BugNotificationBuilder(bug, actor)
     recipients = getUtility(IBugNotificationSet).getRecipientFilterData(
-        bug, recipients, filtered_notifications)
+        bug, recipients, filtered_notifications
+    )
     sorted_recipients = sorted(
-        recipients.items(), key=lambda t: t[0].preferredemail.email)
+        recipients.items(), key=lambda t: t[0].preferredemail.email
+    )
 
     for email_person, data in sorted_recipients:
         # Choosing the first source is a bit arbitrary, but it
         # is simple for the user to understand.  We may want to reconsider
         # this in the future.
-        reason = data['sources'][0].reason_body
-        rationale = data['sources'][0].reason_header
+        reason = data["sources"][0].reason_body
+        rationale = data["sources"][0].reason_header
 
-        if data['filter descriptions']:
+        if data["filter descriptions"]:
             # There are some filter descriptions as well. Add them to
             # the email body.
             filters_text = "\nMatching subscriptions: %s" % ", ".join(
-                data['filter descriptions'])
+                data["filter descriptions"]
+            )
         else:
             filters_text = ""
 
@@ -210,46 +220,56 @@ def construct_email_notifications(bug_notifications):
         # management message entirely.
         if len(bug.bugtasks):
             bug_url = canonical_url(bug.bugtasks[0])
-            notification_url = bug_url + '/+subscriptions'
+            notification_url = bug_url + "/+subscriptions"
             subscriptions_message = (
                 "To manage notifications about this bug go to:\n%s"
-                % notification_url)
+                % notification_url
+            )
         else:
-            subscriptions_message = ''
+            subscriptions_message = ""
 
-        data_wrapper = MailWrapper(width=72, indent='  ')
+        data_wrapper = MailWrapper(width=72, indent="  ")
         body_data = {
-            'content': mail_wrapper.format(content),
-            'bug_title': data_wrapper.format(bug.title),
-            'bug_url': canonical_url(bug),
-            'notification_rationale': mail_wrapper.format(reason),
-            'subscription_filters': filters_text,
-            'subscriptions_message': subscriptions_message,
-            }
+            "content": mail_wrapper.format(content),
+            "bug_title": data_wrapper.format(bug.title),
+            "bug_url": canonical_url(bug),
+            "notification_rationale": mail_wrapper.format(reason),
+            "subscription_filters": filters_text,
+            "subscriptions_message": subscriptions_message,
+        }
 
         # If the person we're sending to receives verbose notifications
         # we include the description and status of the bug in the email
         # footer.
         if email_person.verbose_bugnotifications:
-            email_template = 'bug-notification-verbose.txt'
-            body_data['bug_description'] = data_wrapper.format(
-                bug.description)
+            email_template = "bug-notification-verbose.txt"
+            body_data["bug_description"] = data_wrapper.format(bug.description)
 
             status_base = "Status in %s:\n  %s"
             status_strings = []
             for bug_task in bug.bugtasks:
-                status_strings.append(status_base % (bug_task.target.title,
-                    bug_task.status.title))
+                status_strings.append(
+                    status_base
+                    % (bug_task.target.title, bug_task.status.title)
+                )
 
-            body_data['bug_statuses'] = "\n".join(status_strings)
+            body_data["bug_statuses"] = "\n".join(status_strings)
         else:
-            email_template = 'bug-notification.txt'
+            email_template = "bug-notification.txt"
 
-        body_template = get_email_template(email_template, 'bugs')
+        body_template = get_email_template(email_template, "bugs")
         body = (body_template % body_data).strip() + "\n"
         msg = bug_notification_builder.build(
-            from_address, email_person, body, subject, email_date,
-            rationale, references, msgid, filters=data['filter descriptions'])
+            from_address,
+            email_person,
+            body,
+            subject,
+            email_date,
+            rationale,
+            references,
+            msgid,
+            filters=data["filter descriptions"],
+        )
         messages.append(msg)
 
     return filtered_notifications, omitted_notifications, messages
@@ -261,7 +281,7 @@ def notification_comment_batches(notifications):
     Generates `comment_group, notification` tuples.
 
     The notifications are searched in order for continuous spans containing
-    only one comment. Each continous span is given a unique number. Each
+    only one comment. Each continuous span is given a unique number. Each
     notification is yielded along with its span number.
     """
     comment_count = 0
@@ -318,7 +338,8 @@ def process_deferred_notifications(bug_notifications):
         # Construct the real notification with recipients.
         bug = notification.bug
         recipients = bug.getBugNotificationRecipients(
-            level=BugNotificationLevel.LIFECYCLE)
+            level=BugNotificationLevel.LIFECYCLE
+        )
         message = notification.message
         is_comment = notification.is_comment
         activity = notification.activity
@@ -332,40 +353,49 @@ def process_deferred_notifications(bug_notifications):
             is_comment=is_comment,
             message=message,
             recipients=recipients,
-            activity=activity)
+            activity=activity,
+        )
 
 
 class SendBugNotifications(LaunchpadCronScript):
     def main(self):
         notifications_sent = False
         bug_notification_set = getUtility(IBugNotificationSet)
-        deferred_notifications = \
+        deferred_notifications = (
             bug_notification_set.getDeferredNotifications()
+        )
         process_deferred_notifications(deferred_notifications)
         pending_notifications = get_email_notifications(
-            bug_notification_set.getNotificationsToSend())
-        for (bug_notifications,
-             omitted_notifications,
-             messages) in pending_notifications:
+            bug_notification_set.getNotificationsToSend()
+        )
+        for (
+            bug_notifications,
+            omitted_notifications,
+            messages,
+        ) in pending_notifications:
             try:
                 for message in messages:
                     try:
-                        self.logger.info("Notifying %s about bug %d." % (
-                            message['To'], bug_notifications[0].bug.id))
+                        self.logger.info(
+                            "Notifying %s about bug %d."
+                            % (message["To"], bug_notifications[0].bug.id)
+                        )
                         sendmail(message)
                         self.logger.debug(message.as_string())
                     except SMTPException:
-                        request = ScriptRequest([
-                            ("script_name", self.name),
-                            ("path", sys.argv[0]),
-                            ])
+                        request = ScriptRequest(
+                            [
+                                ("script_name", self.name),
+                                ("path", sys.argv[0]),
+                            ]
+                        )
                         error_utility = getUtility(IErrorReportingUtility)
                         oops_vars = {
                             "message_id": message.get("Message-Id"),
                             "notification_type": "bug",
                             "recipient": message["To"],
                             "subject": message["Subject"],
-                            }
+                        }
                         with error_utility.oopsMessage(oops_vars):
                             error_utility.raising(sys.exc_info(), request)
                         self.logger.info(request.oopsid)

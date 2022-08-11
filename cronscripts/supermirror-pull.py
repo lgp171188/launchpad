@@ -7,22 +7,16 @@ import _pythonpath  # noqa: F401
 
 from optparse import OptionParser
 
-from twisted.internet import (
-    defer,
-    reactor,
-    )
+from twisted.internet import defer, reactor
 from twisted.python import log as tplog
 
-from lp.codehosting.puller import (
-    mirror,
-    scheduler,
-    )
+from lp.codehosting.puller import mirror, scheduler
 from lp.services.config import config
 from lp.services.scripts import logger_options
 from lp.services.twistedsupport.loggingsupport import (
     LoggingProxy,
     set_up_logging_for_script,
-    )
+)
 
 
 def clean_shutdown(ignored):
@@ -43,19 +37,23 @@ def run_mirror(log, manager):
     deferred.addErrback(shutdown_with_errors)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = OptionParser()
     logger_options(parser)
-    parser.add_option('--branch-type', action='append', default=[])
+    parser.add_option("--branch-type", action="append", default=[])
     (options, arguments) = parser.parse_args()
     if arguments:
         parser.error("Unhandled arguments %s" % repr(arguments))
     log = set_up_logging_for_script(
-        options, 'supermirror_puller', options.log_file)
+        options, "supermirror_puller", options.log_file
+    )
     manager = scheduler.JobScheduler(
         LoggingProxy(
-            config.codehosting.codehosting_endpoint.encode('UTF-8'), log),
-        log, options.branch_type)
+            config.codehosting.codehosting_endpoint.encode("UTF-8"), log
+        ),
+        log,
+        options.branch_type,
+    )
 
     reactor.callWhenRunning(run_mirror, log, manager)
     reactor.run()

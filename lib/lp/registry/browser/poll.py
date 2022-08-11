@@ -2,36 +2,33 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BasePollView',
-    'PollAddView',
-    'PollEditNavigationMenu',
-    'PollEditView',
-    'PollNavigation',
-    'PollOptionAddView',
-    'PollOptionEditView',
-    'PollOverviewMenu',
-    'PollView',
-    'PollVoteView',
-    'PollBreadcrumb',
-    'TeamPollsView',
-    ]
+    "BasePollView",
+    "PollAddView",
+    "PollEditNavigationMenu",
+    "PollEditView",
+    "PollNavigation",
+    "PollOptionAddView",
+    "PollOptionEditView",
+    "PollOverviewMenu",
+    "PollView",
+    "PollVoteView",
+    "PollBreadcrumb",
+    "TeamPollsView",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.lifecycleevent import ObjectCreatedEvent
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.registry.browser.person import PersonView
 from lp.registry.interfaces.poll import (
     IPoll,
@@ -41,38 +38,37 @@ from lp.registry.interfaces.poll import (
     IVoteSet,
     PollAlgorithm,
     PollSecrecy,
-    )
+)
 from lp.services.helpers import shortlist
 from lp.services.webapp import (
     ApplicationMenu,
-    canonical_url,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
+    canonical_url,
+    enabled_with_permission,
     stepthrough,
-    )
+)
 from lp.services.webapp.breadcrumb import TitleBreadcrumb
 
 
 class PollEditLinksMixin:
-
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def addnew(self):
-        text = 'Add new option'
-        return Link('+newoption', text, icon='add')
+        text = "Add new option"
+        return Link("+newoption", text, icon="add")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
-        return Link('+edit', text, icon='edit')
+        text = "Change details"
+        return Link("+edit", text, icon="edit")
 
 
 class PollOverviewMenu(ApplicationMenu, PollEditLinksMixin):
     usedfor = IPoll
-    facet = 'overview'
-    links = ['addnew']
+    facet = "overview"
+    links = ["addnew"]
 
 
 class IPollEditMenu(Interface):
@@ -81,8 +77,8 @@ class IPollEditMenu(Interface):
 
 class PollEditNavigationMenu(NavigationMenu, PollEditLinksMixin):
     usedfor = IPollEditMenu
-    facet = 'overview'
-    links = ['addnew', 'edit']
+    facet = "overview"
+    links = ["addnew", "edit"]
 
 
 class IPollActionMenu(Interface):
@@ -91,17 +87,18 @@ class IPollActionMenu(Interface):
 
 class PollActionNavigationMenu(PollEditNavigationMenu):
     usedfor = IPollActionMenu
-    links = ['edit']
+    links = ["edit"]
 
 
 class PollNavigation(Navigation):
 
     usedfor = IPoll
 
-    @stepthrough('+option')
+    @stepthrough("+option")
     def traverse_option(self, name):
         return getUtility(IPollOptionSet).getByPollAndId(
-            self.context, int(name))
+            self.context, int(name)
+        )
 
 
 def vote_sort_key(vote):
@@ -127,7 +124,7 @@ class BasePollView(LaunchpadView):
 
         # For secret polls we can only display the votes after the token
         # is submitted.
-        if self.request.method == 'POST' and self.isSecret():
+        if self.request.method == "POST" and self.isSecret():
             self.setUpTokenAndVotesForSecretPolls()
         elif not self.isSecret():
             self.setUpTokenAndVotesForNonSecretPolls()
@@ -143,8 +140,10 @@ class BasePollView(LaunchpadView):
         """
         assert not self.isSecret() and self.userVoted()
         votes = self.context.getVotesByPerson(self.user)
-        assert votes, (
-            "User %r hasn't voted on poll %r" % (self.user, self.context))
+        assert votes, "User %r hasn't voted on poll %r" % (
+            self.user,
+            self.context,
+        )
         if self.isSimple():
             # Here we have only one vote.
             self.currentVote = votes[0]
@@ -170,22 +169,25 @@ class BasePollView(LaunchpadView):
         in user has voted on this poll.
         """
         assert self.isSecret() and self.userVoted()
-        token = self.request.form.get('token')
+        token = self.request.form.get("token")
         # Only overwrite self.token if the request contains a 'token'
         # variable.
         if token is not None:
             self.token = token
         votes = getUtility(IVoteSet).getByToken(self.token)
         if not votes:
-            self.feedback = ("There's no vote associated with the token %s"
-                             % self.token)
+            self.feedback = (
+                "There's no vote associated with the token %s" % self.token
+            )
             return False
 
         # All votes with a given token must be on the same poll. That means
         # checking the poll of the first vote is enough.
         if votes[0].poll != self.context:
-            self.feedback = ("The vote associated with the token %s is not "
-                             "a vote on this poll." % self.token)
+            self.feedback = (
+                "The vote associated with the token %s is not "
+                "a vote on this poll." % self.token
+            )
             return False
 
         if self.isSimple():
@@ -199,11 +201,11 @@ class BasePollView(LaunchpadView):
 
     def userCanVote(self):
         """Return True if the user is/was eligible to vote on this poll."""
-        return (self.user and self.user.inTeam(self.context.team))
+        return self.user and self.user.inTeam(self.context.team)
 
     def userVoted(self):
         """Return True if the user voted on this poll."""
-        return (self.user and self.context.personVoted(self.user))
+        return self.user and self.context.personVoted(self.user)
 
     def isCondorcet(self):
         """Return True if this poll's type is Condorcet."""
@@ -229,9 +231,12 @@ class PollView(BasePollView):
     def initialize(self):
         super().initialize()
         request = self.request
-        if (self.userCanVote() and self.context.isOpen() and
-            self.context.getActiveOptions()):
-            vote_url = canonical_url(self.context, view_name='+vote')
+        if (
+            self.userCanVote()
+            and self.context.isOpen()
+            and self.context.getActiveOptions()
+        ):
+            vote_url = canonical_url(self.context, view_name="+vote")
             request.response.redirect(vote_url)
 
     def getVotesByOption(self, option):
@@ -265,12 +270,12 @@ class PollVoteView(BasePollView):
     change it. Otherwise they can register their vote.
     """
 
-    default_template = ViewPageTemplateFile(
-        '../templates/poll-vote-simple.pt')
+    default_template = ViewPageTemplateFile("../templates/poll-vote-simple.pt")
     condorcet_template = ViewPageTemplateFile(
-        '../templates/poll-vote-condorcet.pt')
+        "../templates/poll-vote-condorcet.pt"
+    )
 
-    page_title = 'Vote'
+    page_title = "Vote"
 
     @property
     def template(self):
@@ -286,7 +291,7 @@ class PollVoteView(BasePollView):
             # For non-secret polls, the user's vote is always displayed
             self.setUpTokenAndVotesForNonSecretPolls()
 
-        if self.request.method != 'POST':
+        if self.request.method != "POST":
             return
 
         if self.isSecret() and self.userVoted():
@@ -294,7 +299,7 @@ class PollVoteView(BasePollView):
                 # Not possible to get the votes. Probably the token was wrong.
                 return
 
-        if 'showvote' in self.request.form:
+        if "showvote" in self.request.form:
             # The user only wants to see the vote.
             return
 
@@ -318,18 +323,19 @@ class PollVoteView(BasePollView):
         """
         assert self.context.isOpen()
         context = self.context
-        newoption_id = self.request.form.get('newoption')
-        if newoption_id == 'donotchange':
+        newoption_id = self.request.form.get("newoption")
+        if newoption_id == "donotchange":
             self.feedback = "Your vote was not changed."
             return
-        elif newoption_id == 'donotvote':
+        elif newoption_id == "donotvote":
             self.feedback = "You chose not to vote yet."
             return
-        elif newoption_id == 'none':
+        elif newoption_id == "none":
             newoption = None
         else:
             newoption = getUtility(IPollOptionSet).getByPollAndId(
-                context, int(newoption_id))
+                context, int(newoption_id)
+            )
 
         if self.userVoted():
             self.currentVote.option = newoption
@@ -342,12 +348,14 @@ class PollVoteView(BasePollView):
                 self.feedback = (
                     "Your vote has been recorded. If you want to view or "
                     "change it later you must write down this key: %s"
-                    % self.token)
+                    % self.token
+                )
             else:
                 self.feedback = (
                     "Your vote was stored successfully. You can come back to "
                     "this page at any time before this poll closes to view "
-                    "or change your vote, if you want.")
+                    "or change your vote, if you want."
+                )
 
     def processCondorcetVotingForm(self):
         """Process the condorcet-voting form to change a user's vote or
@@ -361,7 +369,7 @@ class PollVoteView(BasePollView):
         newvotes = {}
         for option in activeoptions:
             try:
-                preference = int(form.get('option_%d' % option.id))
+                preference = int(form.get("option_%d" % option.id))
             except ValueError:
                 # XXX: Guilherme Salgado 2005-09-14:
                 # User tried to specify a value which we can't convert to
@@ -389,23 +397,31 @@ class PollVoteView(BasePollView):
                 self.feedback = (
                     "Your vote has been recorded. If you want to view or "
                     "change it later you must write down this key: %s"
-                    % self.token)
+                    % self.token
+                )
             else:
                 self.feedback = (
                     "Your vote was stored successfully. You can come back to "
                     "this page at any time before this poll closes to view "
-                    "or change your vote, if you want.")
+                    "or change your vote, if you want."
+                )
 
 
 class PollAddView(LaunchpadFormView):
     """The view class to create a new poll in a given team."""
 
     schema = IPoll
-    field_names = ["name", "title", "proposition", "allowspoilt", "dateopens",
-                   "datecloses"]
+    field_names = [
+        "name",
+        "title",
+        "proposition",
+        "allowspoilt",
+        "dateopens",
+        "datecloses",
+    ]
     invariant_context = None
 
-    page_title = 'New poll'
+    page_title = "New poll"
 
     @property
     def cancel_url(self):
@@ -418,9 +434,14 @@ class PollAddView(LaunchpadFormView):
         # fix https://launchpad.net/bugs/80596.
         secrecy = PollSecrecy.SECRET
         poll = IPollSubset(self.context).new(
-            data['name'], data['title'], data['proposition'],
-            data['dateopens'], data['datecloses'], secrecy,
-            data['allowspoilt'])
+            data["name"],
+            data["title"],
+            data["proposition"],
+            data["dateopens"],
+            data["datecloses"],
+            secrecy,
+            data["allowspoilt"],
+        )
         self.next_url = canonical_url(poll)
         notify(ObjectCreatedEvent(poll))
 
@@ -429,9 +450,15 @@ class PollAddView(LaunchpadFormView):
 class PollEditView(LaunchpadEditFormView):
     schema = IPoll
     label = "Edit poll details"
-    page_title = 'Edit'
-    field_names = ["name", "title", "proposition", "allowspoilt", "dateopens",
-                   "datecloses"]
+    page_title = "Edit"
+    field_names = [
+        "name",
+        "title",
+        "proposition",
+        "allowspoilt",
+        "dateopens",
+        "datecloses",
+    ]
 
     @property
     def cancel_url(self):
@@ -449,7 +476,7 @@ class PollOptionEditView(LaunchpadEditFormView):
 
     schema = IPollOption
     label = "Edit option details"
-    page_title = 'Edit option'
+    page_title = "Edit option"
     field_names = ["name", "title"]
     custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
 
@@ -480,11 +507,11 @@ class PollOptionAddView(LaunchpadFormView):
 
     @action("Create", name="create")
     def create_action(self, action, data):
-        polloption = self.context.newOption(data['name'], data['title'])
+        polloption = self.context.newOption(data["name"], data["title"])
         self.next_url = canonical_url(self.context)
         notify(ObjectCreatedEvent(polloption))
 
 
 class TeamPollsView(PersonView):
 
-    page_title = 'Polls'
+    page_title = "Polls"

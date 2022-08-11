@@ -4,15 +4,12 @@
 """OCI Project Name interfaces."""
 
 __all__ = [
-    'IOCIProjectName',
-    'IOCIProjectNameSet',
-    ]
+    "IOCIProjectName",
+    "IOCIProjectNameSet",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -24,12 +21,16 @@ class IOCIProjectName(Interface):
     This is a tiny table that allows multiple OCIProject entities to share
     a single name.
     """
+
     id = Int(title=_("ID"), required=True, readonly=True)
 
     name = TextLine(
-        title=_("Name"), constraint=name_validator,
-        required=True, readonly=False,
-        description=_("The name of the OCI Project."))
+        title=_("Name"),
+        constraint=name_validator,
+        required=True,
+        readonly=False,
+        description=_("The name of the OCI Project."),
+    )
 
 
 class IOCIProjectNameSet(Interface):

@@ -3,14 +3,10 @@
 
 """StormBase implementation of IQuestionSubscription."""
 
-__all__ = ['QuestionSubscription']
+__all__ = ["QuestionSubscription"]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    )
+from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
 from lp.answers.interfaces.questionsubscription import IQuestionSubscription
@@ -24,18 +20,18 @@ from lp.services.database.stormbase import StormBase
 class QuestionSubscription(StormBase):
     """A subscription for person to a question."""
 
-    __storm_table__ = 'QuestionSubscription'
+    __storm_table__ = "QuestionSubscription"
 
     id = Int(primary=True)
     question_id = Int(name="question", allow_none=False)
-    question = Reference(question_id, 'Question.id')
+    question = Reference(question_id, "Question.id")
 
     person_id = Int(
-        name="person", allow_none=False, validator=validate_public_person)
-    person = Reference(person_id, 'Person.id')
+        name="person", allow_none=False, validator=validate_public_person
+    )
+    person = Reference(person_id, "Person.id")
 
-    date_created = DateTime(
-        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
     def __init__(self, question, person):
         self.question = question
@@ -50,7 +46,9 @@ class QuestionSubscription(StormBase):
         # - the person themselves
         # - the question owner
         # - people who can reject questions (eg target owner, answer contacts)
-        return (user.inTeam(self.question.owner) or
-                user.inTeam(self.person) or
-                IPersonRoles(user).in_admin or
-                self.question.canReject(user))
+        return (
+            user.inTeam(self.question.owner)
+            or user.inTeam(self.person)
+            or IPersonRoles(user).in_admin
+            or self.question.canReject(user)
+        )

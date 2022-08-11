@@ -4,8 +4,8 @@
 """IBugMessage-related browser view classes."""
 
 __all__ = [
-    'BugMessageAddFormView',
-    ]
+    "BugMessageAddFormView",
+]
 
 from io import BytesIO
 
@@ -13,10 +13,7 @@ from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.bugs.browser.bugattachment import BugAttachmentContentCheck
 from lp.bugs.interfaces.bugmessage import IBugMessageAddForm
 from lp.bugs.interfaces.bugwatch import IBugWatchSet
@@ -30,13 +27,14 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
     initial_focus_widget = None
 
     custom_widget_comment = CustomWidgetFactory(
-        TextAreaWidget, cssClass='comment-text')
+        TextAreaWidget, cssClass="comment-text"
+    )
 
     page_title = "Add a comment or attachment"
 
     @property
     def label(self):
-        return 'Add a comment or attachment to bug #%d' % self.context.bug.id
+        return "Add a comment or attachment to bug #%d" % self.context.bug.id
 
     @property
     def initial_values(self):
@@ -54,57 +52,61 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
         # Ensure either a comment or filecontent was provide, but only
         # if no errors have already been noted.
         if len(self.errors) == 0:
-            comment = data.get('comment') or ''
-            filecontent = data.get('filecontent', None)
+            comment = data.get("comment") or ""
+            filecontent = data.get("filecontent", None)
             if not comment.strip() and not filecontent:
-                self.addError("Either a comment or attachment "
-                              "must be provided.")
+                self.addError(
+                    "Either a comment or attachment " "must be provided."
+                )
 
-    @action("Post Comment", name='save')
+    @action("Post Comment", name="save")
     def save_action(self, action, data):
         """Add the comment and/or attachment."""
 
         bug = self.context.bug
 
         # Subscribe to this bug if the checkbox exists and was selected
-        if data.get('email_me'):
+        if data.get("email_me"):
             bug.subscribe(self.user, self.user)
 
         # XXX: Bjorn Tillenius 2005-06-16:
         # Write proper FileUpload field and widget instead of this hack.
-        file_ = self.request.form.get(self.widgets['filecontent'].name)
+        file_ = self.request.form.get(self.widgets["filecontent"].name)
 
         message = None
-        if data['comment'] or file_:
-            bugwatch_id = data.get('bugwatch_id')
+        if data["comment"] or file_:
+            bugwatch_id = data.get("bugwatch_id")
             if bugwatch_id is not None:
                 bugwatch = getUtility(IBugWatchSet).get(bugwatch_id)
             else:
                 bugwatch = None
-            message = bug.newMessage(subject=data.get('subject'),
-                                     content=data['comment'],
-                                     owner=self.user,
-                                     bugwatch=bugwatch)
+            message = bug.newMessage(
+                subject=data.get("subject"),
+                content=data["comment"],
+                owner=self.user,
+                bugwatch=bugwatch,
+            )
 
             # A blank comment with only a subect line is always added
             # when the user attaches a file, so show the add comment
             # feedback message only when the user actually added a
             # comment.
-            if data['comment']:
+            if data["comment"]:
                 self.request.response.addNotification(
-                    "Thank you for your comment.")
+                    "Thank you for your comment."
+                )
 
         self.next_url = canonical_url(self.context)
         if file_:
 
             # Slashes in filenames cause problems, convert them to dashes
             # instead.
-            filename = file_.filename.replace('/', '-')
+            filename = file_.filename.replace("/", "-")
 
             # if no description was given use the converted filename
             file_description = None
-            if 'attachment_description' in data:
-                file_description = data['attachment_description']
+            if "attachment_description" in data:
+                file_description = data["attachment_description"]
             if not file_description:
                 file_description = filename
 
@@ -116,24 +118,33 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
             # guess is wrong.
             patch_flag_consistent = (
                 self.attachmentTypeConsistentWithContentType(
-                    data['patch'], filename, data['filecontent']))
+                    data["patch"], filename, data["filecontent"]
+                )
+            )
             if not patch_flag_consistent:
                 guessed_type = self.guessContentType(
-                    filename, data['filecontent'])
-                is_patch = guessed_type == 'text/x-diff'
+                    filename, data["filecontent"]
+                )
+                is_patch = guessed_type == "text/x-diff"
             else:
-                is_patch = data['patch']
+                is_patch = data["patch"]
             attachment = bug.addAttachment(
-                owner=self.user, data=BytesIO(data['filecontent']),
-                filename=filename, description=file_description,
-                comment=message, is_patch=is_patch)
+                owner=self.user,
+                data=BytesIO(data["filecontent"]),
+                filename=filename,
+                description=file_description,
+                comment=message,
+                is_patch=is_patch,
+            )
 
             if not patch_flag_consistent:
                 self.next_url = self.nextUrlForInconsistentPatchFlags(
-                    attachment)
+                    attachment
+                )
 
             self.request.response.addNotification(
-                "Attachment %s added to bug." % filename)
+                "Attachment %s added to bug." % filename
+            )
 
     def shouldShowEmailMeWidget(self):
         """Should the subscribe checkbox be shown?"""

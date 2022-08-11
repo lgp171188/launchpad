@@ -3,9 +3,9 @@
 """Code for the BugWatch scheduler."""
 
 __all__ = [
-    'BugWatchScheduler',
-    'MAX_SAMPLE_SIZE',
-    ]
+    "BugWatchScheduler",
+    "MAX_SAMPLE_SIZE",
+]
 
 import transaction
 
@@ -14,7 +14,6 @@ from lp.bugs.model.bugwatch import BugWatch
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.looptuner import TunableLoop
-
 
 # The maximum additional delay in days that a watch may have placed upon
 # it.
@@ -32,8 +31,9 @@ class BugWatchScheduler(TunableLoop):
 
     maximum_chunk_size = 1000
 
-    def __init__(self, log, abort_time=None, max_delay_days=None,
-                 max_sample_size=None):
+    def __init__(
+        self, log, abort_time=None, max_delay_days=None, max_sample_size=None
+    ):
         super().__init__(log, abort_time)
         self.transaction = transaction
         self.store = IMasterStore(BugWatch)
@@ -45,7 +45,8 @@ class BugWatchScheduler(TunableLoop):
         self.max_sample_size = max_sample_size
 
         self.delay_coefficient = get_delay_coefficient(
-            max_delay_days, max_sample_size)
+            max_delay_days, max_sample_size
+        )
 
     def __call__(self, chunk_size):
         """Run the loop."""
@@ -77,8 +78,11 @@ class BugWatchScheduler(TunableLoop):
             ) AS counts
         WHERE BugWatch.id = counts.id
         """ % sqlvalues(
-            self.delay_coefficient, BUG_WATCH_ACTIVITY_SUCCESS_STATUSES,
-            self.max_sample_size, chunk_size)
+            self.delay_coefficient,
+            BUG_WATCH_ACTIVITY_SUCCESS_STATUSES,
+            self.max_sample_size,
+            chunk_size,
+        )
         self.transaction.begin()
         result = self.store.execute(query)
         self.log.debug("Scheduled %s watches" % result.rowcount)
@@ -87,4 +91,5 @@ class BugWatchScheduler(TunableLoop):
     def isDone(self):
         """Return True when there are no more watches to schedule."""
         return self.store.find(
-            BugWatch, BugWatch.next_check == None).is_empty()
+            BugWatch, BugWatch.next_check == None
+        ).is_empty()

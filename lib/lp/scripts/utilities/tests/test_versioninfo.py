@@ -15,10 +15,9 @@ from lp.testing.fixture import CapturedOutput
 
 
 class TestVersionInfo(TestCase):
-
     def runScript(self, args, expect_exit=False):
         try:
-            with MockPatch('sys.argv', ['version-info'] + args):
+            with MockPatch("sys.argv", ["version-info"] + args):
                 with CapturedOutput() as captured:
                     versioninfo_main()
         except SystemExit:
@@ -27,55 +26,62 @@ class TestVersionInfo(TestCase):
             exited = False
         stdout = captured.stdout.getvalue()
         stderr = captured.stderr.getvalue()
-        self.addDetail('stdout', text_content(stdout))
-        self.addDetail('stderr', text_content(stderr))
+        self.addDetail("stdout", text_content(stdout))
+        self.addDetail("stderr", text_content(stderr))
         if expect_exit:
             if not exited:
-                raise AssertionError('Script unexpectedly exited successfully')
+                raise AssertionError("Script unexpectedly exited successfully")
         else:
             if exited:
                 raise AssertionError(
-                    'Script unexpectedly exited unsuccessfully')
-            self.assertEqual('', stderr)
+                    "Script unexpectedly exited unsuccessfully"
+                )
+            self.assertEqual("", stderr)
         return stdout
 
     def test_attribute_revision(self):
-        for option in '-a', '--attribute':
+        for option in "-a", "--attribute":
             self.assertEqual(
-                versioninfo.revision + '\n',
-                self.runScript([option, 'revision']))
+                versioninfo.revision + "\n",
+                self.runScript([option, "revision"]),
+            )
 
     def test_attribute_display_revision(self):
-        for option in '-a', '--attribute':
+        for option in "-a", "--attribute":
             self.assertEqual(
-                versioninfo.display_revision + '\n',
-                self.runScript([option, 'display_revision']))
+                versioninfo.display_revision + "\n",
+                self.runScript([option, "display_revision"]),
+            )
 
     def test_attribute_date(self):
-        for option in '-a', '--attribute':
+        for option in "-a", "--attribute":
             self.assertEqual(
-                versioninfo.date + '\n',
-                self.runScript([option, 'date']))
+                versioninfo.date + "\n", self.runScript([option, "date"])
+            )
 
     def test_attribute_branch_nick(self):
-        for option in '-a', '--attribute':
+        for option in "-a", "--attribute":
             self.assertEqual(
-                versioninfo.branch_nick + '\n',
-                self.runScript([option, 'branch_nick']))
+                versioninfo.branch_nick + "\n",
+                self.runScript([option, "branch_nick"]),
+            )
 
     def test_attribute_nonsense(self):
-        for option in '-a', '--attribute':
-            self.runScript([option, 'nonsense'], expect_exit=True)
+        for option in "-a", "--attribute":
+            self.runScript([option, "nonsense"], expect_exit=True)
 
     def test_all_attributes(self):
-        expected_output = dedent('''\
+        expected_output = dedent(
+            """\
             Revision: {revision}
             Display revision: {display_revision}
             Date: {date}
             Branch nick: {branch_nick}
-            ''').format(
-                revision=versioninfo.revision,
-                display_revision=versioninfo.display_revision,
-                date=versioninfo.date,
-                branch_nick=versioninfo.branch_nick)
+            """
+        ).format(
+            revision=versioninfo.revision,
+            display_revision=versioninfo.display_revision,
+            date=versioninfo.date,
+            branch_nick=versioninfo.branch_nick,
+        )
         self.assertEqual(expected_output, self.runScript([]))

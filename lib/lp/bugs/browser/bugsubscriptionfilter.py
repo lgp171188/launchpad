@@ -5,16 +5,13 @@
 
 __all__ = [
     "BugSubscriptionFilterView",
-    ]
+]
 
 
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadEditFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadEditFormView, action
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.bugs.browser.bugsubscription import AdvancedSubscriptionMixin
 from lp.bugs.browser.widgets.bug import BugTagsFrozenSetWidget
@@ -22,23 +19,22 @@ from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp.publisher import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp.publisher import LaunchpadView, canonical_url
 
 
 def bug_notification_level_description_mapping(displayname):
     return {
         BugNotificationLevel.LIFECYCLE: (
-            "%s is fixed or re-opened." % displayname).capitalize(),
+            "%s is fixed or re-opened." % displayname
+        ).capitalize(),
         BugNotificationLevel.METADATA: (
             "Any change is made to %s, other than a new "
-            "comment being added." % displayname),
+            "comment being added." % displayname
+        ),
         BugNotificationLevel.COMMENTS: (
-            "A change is made or a new comment is added to %s."
-            % displayname),
-        }
+            "A change is made or a new comment is added to %s." % displayname
+        ),
+    }
 
 
 class BugSubscriptionFilterView(LaunchpadView):
@@ -72,9 +68,15 @@ class BugSubscriptionFilterView(LaunchpadView):
     def _add_english_condition(self, conditions, variable, description):
         if len(variable) > 0:
             conditions.append(
-                "the %s is %s" % (description, english_list(
-                    (kind.title for kind in sorted(variable)),
-                    conjunction="or")))
+                "the %s is %s"
+                % (
+                    description,
+                    english_list(
+                        (kind.title for kind in sorted(variable)),
+                        conjunction="or",
+                    ),
+                )
+            )
 
     @property
     def conditions(self):
@@ -82,46 +84,55 @@ class BugSubscriptionFilterView(LaunchpadView):
         conditions = []
         bug_notification_level = self.context.bug_notification_level
         if bug_notification_level < BugNotificationLevel.COMMENTS:
-            mapping = bug_notification_level_description_mapping(
-                'the bug')
-            conditions.append(
-                mapping[bug_notification_level].lower()[:-1])
+            mapping = bug_notification_level_description_mapping("the bug")
+            conditions.append(mapping[bug_notification_level].lower()[:-1])
         self._add_english_condition(
-            conditions, self.context.statuses, 'status')
+            conditions, self.context.statuses, "status"
+        )
         self._add_english_condition(
-            conditions, self.context.importances, 'importance')
+            conditions, self.context.importances, "importance"
+        )
         tags = self.context.tags
         if len(tags) > 0:
             conditions.append(
-                "the bug is tagged with %s" % english_list(
-                    sorted(tags), conjunction=(
-                        "and" if self.context.find_all_tags else "or")))
+                "the bug is tagged with %s"
+                % english_list(
+                    sorted(tags),
+                    conjunction=(
+                        "and" if self.context.find_all_tags else "or"
+                    ),
+                )
+            )
         self._add_english_condition(
-            conditions, self.context.information_types, 'information type')
+            conditions, self.context.information_types, "information type"
+        )
         return conditions
 
 
-class BugSubscriptionFilterEditViewBase(LaunchpadEditFormView,
-                                        AdvancedSubscriptionMixin):
+class BugSubscriptionFilterEditViewBase(
+    LaunchpadEditFormView, AdvancedSubscriptionMixin
+):
     """Base class for edit or create views of `IBugSubscriptionFilter`."""
 
     schema = IBugSubscriptionFilter
-    field_names = (
+    field_names = [
         "description",
         "statuses",
         "importances",
         "information_types",
         "tags",
         "find_all_tags",
-        )
+    ]
 
     custom_widget_description = CustomWidgetFactory(
-        TextWidget, displayWidth=50)
+        TextWidget, displayWidth=50
+    )
     custom_widget_statuses = LabeledMultiCheckBoxWidget
     custom_widget_importances = LabeledMultiCheckBoxWidget
     custom_widget_information_types = LabeledMultiCheckBoxWidget
     custom_widget_tags = CustomWidgetFactory(
-        BugTagsFrozenSetWidget, displayWidth=35)
+        BugTagsFrozenSetWidget, displayWidth=35
+    )
 
     # Define in concrete subclass to be the target of the
     # structural subscription that we are modifying.
@@ -133,7 +144,8 @@ class BugSubscriptionFilterEditViewBase(LaunchpadEditFormView,
     @cachedproperty
     def _bug_notification_level_descriptions(self):
         return bug_notification_level_description_mapping(
-            'a bug in %s' % self.target.displayname)
+            "a bug in %s" % self.target.displayname
+        )
 
     def setUpFields(self):
         """Set up fields for form.
@@ -145,14 +157,14 @@ class BugSubscriptionFilterEditViewBase(LaunchpadEditFormView,
     @property
     def next_url(self):
         """Return to the user's structural subscriptions page."""
-        return canonical_url(
-            self.user, view_name="+structural-subscriptions")
+        return canonical_url(self.user, view_name="+structural-subscriptions")
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
-class BugSubscriptionFilterEditView(
-    BugSubscriptionFilterEditViewBase):
+class BugSubscriptionFilterEditView(BugSubscriptionFilterEditViewBase):
     """Edit view for `IBugSubscriptionFilter`.
 
     :ivar context: A provider of `IBugSubscriptionFilter`.
@@ -180,8 +192,7 @@ class BugSubscriptionFilterEditView(
         return self.context.structural_subscription.target
 
 
-class BugSubscriptionFilterCreateView(
-    BugSubscriptionFilterEditViewBase):
+class BugSubscriptionFilterCreateView(BugSubscriptionFilterEditViewBase):
     """View to create a new `IBugSubscriptionFilter`.
 
     :ivar context: A provider of `IStructuralSubscription`.

@@ -3,8 +3,8 @@
 
 """KDE PO importer tests."""
 
-from io import BytesIO
 import unittest
+from io import BytesIO
 
 import transaction
 from zope.component import getUtility
@@ -15,21 +15,20 @@ from lp.registry.interfaces.product import IProductSet
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.interfaces.translationimporter import (
     ITranslationFormatImporter,
-    )
+)
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 from lp.translations.utilities.kde_po_importer import KdePOImporter
 from lp.translations.utilities.tests.test_gettext_po_importer import (
     test_template,
-    )
+)
 
-
-test_kde_template = br'''
+test_kde_template = rb"""
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -42,9 +41,9 @@ msgstr ""
 
 msgid "_: Context\nMessage"
 msgstr ""
-'''
+"""
 
-test_kde_translation_file = br'''
+test_kde_translation_file = rb"""
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -59,48 +58,63 @@ msgstr ""
 
 msgid "_: Context\nMessage"
 msgstr "Contextual translation"
-'''
+"""
 
 
 class KdePOImporterTestCase(unittest.TestCase):
     """Class test for gettext's .po file imports"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         # Add a new entry for testing purposes. It's a template one.
         self.translation_import_queue = getUtility(ITranslationImportQueue)
-        template_path = 'po/testing.pot'
+        template_path = "po/testing.pot"
         by_maintainer = True
         personset = getUtility(IPersonSet)
-        importer = personset.getByName('carlos')
+        importer = personset.getByName("carlos")
         productset = getUtility(IProductSet)
-        firefox = productset.getByName('firefox')
-        firefox_trunk = firefox.getSeries('trunk')
+        firefox = productset.getByName("firefox")
+        firefox_trunk = firefox.getSeries("trunk")
         template_entry = self.translation_import_queue.addOrUpdateEntry(
-            template_path, test_kde_template, by_maintainer, importer,
-            productseries=firefox_trunk)
+            template_path,
+            test_kde_template,
+            by_maintainer,
+            importer,
+            productseries=firefox_trunk,
+        )
 
         # Add another one, a translation file.
-        pofile_path = 'po/sr.po'
+        pofile_path = "po/sr.po"
         translation_entry = self.translation_import_queue.addOrUpdateEntry(
-            pofile_path, test_kde_translation_file, by_maintainer, importer,
-            productseries=firefox_trunk)
+            pofile_path,
+            test_kde_translation_file,
+            by_maintainer,
+            importer,
+            productseries=firefox_trunk,
+        )
 
         # Add a non-KDE PO file which gets recognized as regular PO file
         # (we use different productseries so it doesn't conflict with
         # KDE PO file being imported into firefox_trunk)
-        firefox_10 = firefox.getSeries('1.0')
+        firefox_10 = firefox.getSeries("1.0")
         gettext_template_entry = (
             self.translation_import_queue.addOrUpdateEntry(
-                template_path, test_template, by_maintainer, importer,
-                productseries=firefox_10))
+                template_path,
+                test_template,
+                by_maintainer,
+                importer,
+                productseries=firefox_10,
+            )
+        )
 
         transaction.commit()
         self.template_importer = KdePOImporter()
         self.template_file = self.template_importer.parse(template_entry)
         self.translation_importer = KdePOImporter()
         self.translation_file = self.translation_importer.parse(
-            translation_entry)
+            translation_entry
+        )
 
         self.gettext_template_entry = gettext_template_entry
 
@@ -109,14 +123,16 @@ class KdePOImporterTestCase(unittest.TestCase):
         self.assertTrue(
             verifyObject(ITranslationFormatImporter, self.template_importer),
             "KdePOImporter doesn't conform to ITranslationFormatImporter"
-                "interface.")
+            "interface.",
+        )
 
     def testFormat(self):
         """Check whether KdePOImporter can handle the KDEPO file format."""
         format = self.template_importer.getFormat(BytesIO(test_kde_template))
         self.assertTrue(
             format == TranslationFileFormat.KDEPO,
-            'KdePOImporter format expected KDEPO but got %s' % format.name)
+            "KdePOImporter format expected KDEPO but got %s" % format.name,
+        )
 
     def testKDEPriorityIsHigherThanPOPriority(self):
         """Check if KdePOImporter has precedence over GettextPOImporter."""
@@ -127,15 +143,20 @@ class KdePOImporterTestCase(unittest.TestCase):
 
         self.assertTrue(
             self.template_importer.priority > gettext_importer.priority,
-            'KdePOImporter priority is not higher than priority of '
-            'GettextPOImporter')
+            "KdePOImporter priority is not higher than priority of "
+            "GettextPOImporter",
+        )
 
     def testGettextPOFileFormat(self):
         """Check that non-KDE PO files are recognized as regular PO files."""
         format = self.gettext_template_entry.format
-        self.assertTrue(format == TranslationFileFormat.PO,
-                        ('KdePOImporter format expected PO '
-                         'but got %s for non-KDE PO file.' % format.name))
+        self.assertTrue(
+            format == TranslationFileFormat.PO,
+            (
+                "KdePOImporter format expected PO "
+                "but got %s for non-KDE PO file." % format.name
+            ),
+        )
 
     def testTemplatePlurals(self):
         """Check whether legacy KDE plural forms are correctly imported."""
@@ -143,20 +164,23 @@ class KdePOImporterTestCase(unittest.TestCase):
         singular = message.msgid_singular
         plural = message.msgid_plural
         self.assertTrue(
-            (singular == '%1 foo' and plural == '%1 foos'),
-            "KdePOImporter didn't import KDE plural forms correctly.")
+            (singular == "%1 foo" and plural == "%1 foos"),
+            "KdePOImporter didn't import KDE plural forms correctly.",
+        )
 
     def testTranslationPlurals(self):
-        """Check if translated legacy KDE plural forms are correctly imported.
-        """
+        """Translated legacy KDE plural forms are correctly imported."""
         message = self.translation_file.messages[0]
         translations = message.translations
         self.assertTrue(
-            (translations[0] == '1st plural form %1' and
-             translations[1] == '2nd plural form %1' and
-             translations[2] == '3rd plural form %1'),
+            (
+                translations[0] == "1st plural form %1"
+                and translations[1] == "2nd plural form %1"
+                and translations[2] == "3rd plural form %1"
+            ),
             "KdePOImporter didn't import translated KDE plural forms "
-            "correctly.")
+            "correctly.",
+        )
 
     def testTemplateContext(self):
         """Check whether legacy KDE context is correctly imported."""
@@ -164,8 +188,9 @@ class KdePOImporterTestCase(unittest.TestCase):
         singular = message.msgid_singular
         context = message.context
         self.assertTrue(
-            (singular == 'Message' and context == 'Context'),
-            "KdePOImporter didn't import KDE context correctly.")
+            (singular == "Message" and context == "Context"),
+            "KdePOImporter didn't import KDE context correctly.",
+        )
 
     def testTranslationContext(self):
         """Check whether legacy KDE context is correctly imported."""
@@ -174,6 +199,10 @@ class KdePOImporterTestCase(unittest.TestCase):
         context = message.context
         translations = message.translations
         self.assertTrue(
-            (singular == 'Message' and context == 'Context' and
-             translations[0] == 'Contextual translation'),
-            "KdePOImporter didn't import translated KDE context correctly.")
+            (
+                singular == "Message"
+                and context == "Context"
+                and translations[0] == "Contextual translation"
+            ),
+            "KdePOImporter didn't import translated KDE context correctly.",
+        )

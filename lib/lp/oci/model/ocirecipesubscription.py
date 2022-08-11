@@ -3,15 +3,10 @@
 
 """OCIRecipe subscription model."""
 
-__all__ = [
-    'OCIRecipeSubscription'
-]
+__all__ = ["OCIRecipeSubscription"]
 
 import pytz
-from storm.properties import (
-    DateTime,
-    Int,
-    )
+from storm.properties import DateTime, Int
 from storm.references import Reference
 from zope.interface import implementer
 
@@ -26,12 +21,11 @@ from lp.services.database.stormbase import StormBase
 class OCIRecipeSubscription(StormBase):
     """A relationship between a person and an OCI recipe."""
 
-    __storm_table__ = 'OCIRecipeSubscription'
+    __storm_table__ = "OCIRecipeSubscription"
 
     id = Int(primary=True)
 
-    person_id = Int(
-        "person", allow_none=False, validator=validate_person)
+    person_id = Int("person", allow_none=False, validator=validate_person)
     person = Reference(person_id, "Person.id")
 
     recipe_id = Int("recipe", allow_none=False)
@@ -40,7 +34,8 @@ class OCIRecipeSubscription(StormBase):
     date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
     subscribed_by_id = Int(
-        "subscribed_by", allow_none=False, validator=validate_person)
+        "subscribed_by", allow_none=False, validator=validate_person
+    )
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
     def __init__(self, recipe, person, subscribed_by):
@@ -53,7 +48,9 @@ class OCIRecipeSubscription(StormBase):
         """See `IOCIRecipeSubscription`."""
         if user is None:
             return False
-        return (user.inTeam(self.recipe.owner) or
-                user.inTeam(self.person) or
-                user.inTeam(self.subscribed_by) or
-                IPersonRoles(user).in_admin)
+        return (
+            user.inTeam(self.recipe.owner)
+            or user.inTeam(self.person)
+            or user.inTeam(self.subscribed_by)
+            or IPersonRoles(user).in_admin
+        )

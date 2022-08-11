@@ -3,16 +3,11 @@
 
 """SQLBase implementation of IQuestionReopening."""
 
-__all__ = ['QuestionReopening',
-           'create_questionreopening']
+__all__ = ["QuestionReopening", "create_questionreopening"]
 
-from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    )
+from lazr.lifecycle.event import ObjectCreatedEvent
+from storm.locals import DateTime, Int, Reference
 from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import ProxyFactory
@@ -29,26 +24,40 @@ from lp.services.database.stormbase import StormBase
 class QuestionReopening(StormBase):
     """A table recording each time a question is re-opened."""
 
-    __storm_table__ = 'QuestionReopening'
+    __storm_table__ = "QuestionReopening"
 
     id = Int(primary=True)
 
-    question_id = Int(name='question', allow_none=False)
-    question = Reference(question_id, 'Question.id')
+    question_id = Int(name="question", allow_none=False)
+    question = Reference(question_id, "Question.id")
     datecreated = DateTime(
-        name='datecreated', allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+        name="datecreated", allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+    )
     reopener_id = Int(
-        name='reopener', allow_none=False, validator=validate_public_person)
-    reopener = Reference(reopener_id, 'Person.id')
-    answerer_id = Int(name='answerer', allow_none=True, default=None,
-                      validator=validate_public_person)
-    answerer = Reference(answerer_id, 'Person.id')
+        name="reopener", allow_none=False, validator=validate_public_person
+    )
+    reopener = Reference(reopener_id, "Person.id")
+    answerer_id = Int(
+        name="answerer",
+        allow_none=True,
+        default=None,
+        validator=validate_public_person,
+    )
+    answerer = Reference(answerer_id, "Person.id")
     date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
     priorstate = DBEnum(
-        name="priorstate", enum=QuestionStatus, allow_none=False)
+        name="priorstate", enum=QuestionStatus, allow_none=False
+    )
 
-    def __init__(self, question, reopener, datecreated,
-                 answerer, date_solved, priorstate):
+    def __init__(
+        self,
+        question,
+        reopener,
+        datecreated,
+        answerer,
+        date_solved,
+        priorstate,
+    ):
         self.question = question
         self.reopener = reopener
         self.datecreated = datecreated
@@ -58,11 +67,8 @@ class QuestionReopening(StormBase):
 
 
 def create_questionreopening(
-        question,
-        reopen_msg,
-        old_status,
-        old_answerer,
-        old_date_solved):
+    question, reopen_msg, old_status, old_answerer, old_date_solved
+):
     """Helper function to handle question reopening.
 
     A QuestionReopening is created when question with an answer changes back
@@ -73,11 +79,12 @@ def create_questionreopening(
     if old_answerer is None:
         return
     reopening = QuestionReopening(
-            question=question,
-            reopener=reopen_msg.owner,
-            datecreated=reopen_msg.datecreated,
-            answerer=old_answerer,
-            date_solved=old_date_solved,
-            priorstate=old_status)
+        question=question,
+        reopener=reopen_msg.owner,
+        datecreated=reopen_msg.datecreated,
+        answerer=old_answerer,
+        date_solved=old_date_solved,
+        priorstate=old_status,
+    )
     reopening = ProxyFactory(reopening)
     notify(ObjectCreatedEvent(reopening, user=reopen_msg.owner))

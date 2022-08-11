@@ -41,89 +41,70 @@ branch if appropriate.
 """
 
 __all__ = [
-    'AsyncLaunchpadTransport',
-    'branch_id_to_path',
-    'DirectDatabaseLaunchpadServer',
-    'get_lp_server',
-    'get_real_branch_path',
-    'get_ro_server',
-    'get_rw_server',
-    'LaunchpadInternalServer',
-    'LaunchpadServer',
-    ]
+    "AsyncLaunchpadTransport",
+    "branch_id_to_path",
+    "DirectDatabaseLaunchpadServer",
+    "get_lp_server",
+    "get_real_branch_path",
+    "get_ro_server",
+    "get_rw_server",
+    "LaunchpadInternalServer",
+    "LaunchpadServer",
+]
 
 import os.path
 import sys
 import xmlrpc.client
 
+import six
 from breezy import urlutils
 from breezy.bzr.bzrdir import BzrDir
 from breezy.bzr.smart.request import jail_info
 from breezy.config import TransportConfig
 from breezy.controldir import ControlDirFormat
-from breezy.errors import (
-    NoSuchFile,
-    PermissionDenied,
-    TransportNotPossible,
-    )
+from breezy.errors import NoSuchFile, PermissionDenied, TransportNotPossible
 from breezy.transport import get_transport
 from breezy.transport.memory import MemoryServer
 from lazr.uri import URI
-import six
-from twisted.internet import (
-    defer,
-    error,
-    )
-from twisted.python import (
-    failure,
-    log,
-    )
+from twisted.internet import defer, error
+from twisted.python import failure, log
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.codehosting import (
     BRANCH_TRANSPORT,
     CONTROL_TRANSPORT,
     LAUNCHPAD_SERVICES,
-    )
-from lp.codehosting.bzrutils import (
-    get_branch_info,
-    get_stacked_on_url,
-    )
+)
+from lp.codehosting.bzrutils import get_branch_info, get_stacked_on_url
 from lp.codehosting.vfs.branchfsclient import BranchFileSystemClient
 from lp.codehosting.vfs.transport import (
     AsyncVirtualServer,
     AsyncVirtualTransport,
+    TranslationError,
     get_chrooted_transport,
     get_readonly_transport,
-    TranslationError,
-    )
+)
 from lp.services.config import config
 from lp.services.twistedsupport import no_traceback_failures
-from lp.services.twistedsupport.xmlrpc import (
-    DeferredBlockingProxy,
-    trap_fault,
-    )
+from lp.services.twistedsupport.xmlrpc import DeferredBlockingProxy, trap_fault
 from lp.services.webapp import errorlog
 from lp.xmlrpc import faults
-
 
 # The directories allowed directly beneath a branch directory. These are the
 # directories that Bazaar creates as part of regular operation. We support
 # only two numbered backups to avoid indefinite space usage.
 ALLOWED_DIRECTORIES = (
-    '.bzr',
-    '.bzr.backup',
-    'backup.bzr',
-    'backup.bzr.~1~',
-    'backup.bzr.~2~',
-    )
+    ".bzr",
+    ".bzr.backup",
+    "backup.bzr",
+    "backup.bzr.~1~",
+    "backup.bzr.~2~",
+)
 FORBIDDEN_DIRECTORY_ERROR = (
-    "Cannot create '%s'. Only Bazaar branches are allowed.")
+    "Cannot create '%s'. Only Bazaar branches are allowed."
+)
 
 
 class NotABranchPath(TranslationError):
@@ -133,8 +114,9 @@ class NotABranchPath(TranslationError):
     the path itself.
     """
 
-    _fmt = ("Could not translate %(virtual_url_fragment)r to branch. "
-            "%(reason)s")
+    _fmt = (
+        "Could not translate %(virtual_url_fragment)r to branch. " "%(reason)s"
+    )
 
 
 class UnknownTransportType(Exception):
@@ -151,7 +133,7 @@ def branch_id_to_path(branch_id):
     to determine the splitting.
     """
     h = "%08x" % int(branch_id)
-    return '%s/%s/%s/%s' % (h[:2], h[2:4], h[4:6], h[6:])
+    return "%s/%s/%s/%s" % (h[:2], h[2:4], h[4:6], h[6:])
 
 
 def get_path_segments(path, maximum_segments=-1):
@@ -160,12 +142,12 @@ def get_path_segments(path, maximum_segments=-1):
     If 'path' ends with a trailing slash, then the final empty segment is
     ignored.
     """
-    return path.strip('/').split('/', maximum_segments)
+    return path.strip("/").split("/", maximum_segments)
 
 
 def is_lock_directory(absolute_path):
     """Is 'absolute_path' a Bazaar branch lock directory?"""
-    return absolute_path.endswith('/.bzr/branch/lock/held')
+    return absolute_path.endswith("/.bzr/branch/lock/held")
 
 
 def get_ro_server():
@@ -173,9 +155,11 @@ def get_ro_server():
     proxy = xmlrpc.client.ServerProxy(config.codehosting.codehosting_endpoint)
     codehosting_endpoint = DeferredBlockingProxy(proxy)
     branch_transport = get_readonly_transport(
-        get_transport(config.codehosting.internal_branch_by_id_root))
+        get_transport(config.codehosting.internal_branch_by_id_root)
+    )
     return LaunchpadInternalServer(
-        'lp-internal:///', codehosting_endpoint, branch_transport)
+        "lp-internal:///", codehosting_endpoint, branch_transport
+    )
 
 
 def get_rw_server(direct_database=False):
@@ -189,15 +173,18 @@ def get_rw_server(direct_database=False):
         implementation that talks to the internal XML-RPC server.
     """
     transport = get_chrooted_transport(
-        config.codehosting.mirrored_branches_root, mkdir=True)
+        config.codehosting.mirrored_branches_root, mkdir=True
+    )
     if direct_database:
-        return DirectDatabaseLaunchpadServer('lp-internal:///', transport)
+        return DirectDatabaseLaunchpadServer("lp-internal:///", transport)
     else:
         proxy = xmlrpc.client.ServerProxy(
-            config.codehosting.codehosting_endpoint)
+            config.codehosting.codehosting_endpoint
+        )
         codehosting_endpoint = DeferredBlockingProxy(proxy)
         return LaunchpadInternalServer(
-            'lp-internal:///', codehosting_endpoint, transport)
+            "lp-internal:///", codehosting_endpoint, transport
+        )
 
 
 def get_real_branch_path(branch_id):
@@ -250,12 +237,11 @@ class BranchTransportDispatch:
 
         :raise PermissionDenied: if `path_on_branch` is forbidden.
         """
-        if path_on_branch == '':
+        if path_on_branch == "":
             return
         segments = get_path_segments(path_on_branch)
         if segments[0] not in ALLOWED_DIRECTORIES:
-            raise PermissionDenied(
-                FORBIDDEN_DIRECTORY_ERROR % (segments[0],))
+            raise PermissionDenied(FORBIDDEN_DIRECTORY_ERROR % (segments[0],))
 
     def makeTransport(self, transport_tuple):
         """See `ITransportDispatch`.
@@ -267,7 +253,7 @@ class BranchTransportDispatch:
         if transport_type != BRANCH_TRANSPORT:
             raise UnknownTransportType(transport_type)
         self._checkPath(trailing_path)
-        transport = self.base_transport.clone(branch_id_to_path(data['id']))
+        transport = self.base_transport.clone(branch_id_to_path(data["id"]))
         try:
             transport.create_prefix()
         except TransportNotPossible:
@@ -291,26 +277,29 @@ class TransportDispatch:
     def __init__(self, rw_transport):
         self._rw_dispatch = BranchTransportDispatch(rw_transport)
         self._ro_dispatch = BranchTransportDispatch(
-            get_readonly_transport(rw_transport))
+            get_readonly_transport(rw_transport)
+        )
         self._transport_factories = {
             BRANCH_TRANSPORT: self._makeBranchTransport,
             CONTROL_TRANSPORT: self._makeControlTransport,
-            }
+        }
 
     def makeTransport(self, transport_tuple):
         transport_type, data, trailing_path = transport_tuple
         factory = self._transport_factories[transport_type]
-        data['trailing_path'] = trailing_path
+        data["trailing_path"] = trailing_path
         return factory(**data), trailing_path
 
-    def _makeBranchTransport(self, id, writable, trailing_path='',
-                             private=False):
+    def _makeBranchTransport(
+        self, id, writable, trailing_path="", private=False
+    ):
         if writable:
             dispatch = self._rw_dispatch
         else:
             dispatch = self._ro_dispatch
         transport, ignored = dispatch.makeTransport(
-            (BRANCH_TRANSPORT, dict(id=id), trailing_path))
+            (BRANCH_TRANSPORT, dict(id=id), trailing_path)
+        )
         return transport
 
     def _makeControlTransport(self, default_stack_on, trailing_path=None):
@@ -329,12 +318,13 @@ class TransportDispatch:
         memory_server = MemoryServer()
         memory_server.start_server()
         transport = get_transport(memory_server.get_url())
-        if default_stack_on == '':
+        if default_stack_on == "":
             return transport
         format = ControlDirFormat.get_default_format()
         bzrdir = format.initialize_on_transport(transport)
         bzrdir.get_config().set_default_stack_on(
-            urlutils.unescape(default_stack_on))
+            urlutils.unescape(default_stack_on)
+        )
         return get_readonly_transport(transport)
 
 
@@ -355,8 +345,9 @@ class _BaseLaunchpadServer(AsyncVirtualServer):
         path on that transport.
     """
 
-    def __init__(self, scheme, codehosting_api, user_id,
-                 seen_new_branch_hook=None):
+    def __init__(
+        self, scheme, codehosting_api, user_id, seen_new_branch_hook=None
+    ):
         """Construct a LaunchpadServer.
 
         :param scheme: The URL scheme to use.
@@ -368,8 +359,8 @@ class _BaseLaunchpadServer(AsyncVirtualServer):
         """
         AsyncVirtualServer.__init__(self, scheme)
         self._branchfs_client = BranchFileSystemClient(
-            codehosting_api, user_id,
-            seen_new_branch_hook=seen_new_branch_hook)
+            codehosting_api, user_id, seen_new_branch_hook=seen_new_branch_hook
+        )
         self._is_start_server = False
 
     def translateVirtualPath(self, virtual_url_fragment):
@@ -380,11 +371,13 @@ class _BaseLaunchpadServer(AsyncVirtualServer):
         result into a transport and trailing path.
         """
         deferred = self._branchfs_client.translatePath(
-            '/' + virtual_url_fragment)
+            "/" + virtual_url_fragment
+        )
 
         def path_not_translated(fail):
             trap_fault(
-                fail, faults.PathTranslationError, faults.PermissionDenied)
+                fail, faults.PathTranslationError, faults.PermissionDenied
+            )
             return failure.Failure(NoSuchFile(virtual_url_fragment))
 
         def unknown_transport_type(fail):
@@ -393,7 +386,8 @@ class _BaseLaunchpadServer(AsyncVirtualServer):
 
         deferred.addCallbacks(
             no_traceback_failures(self._transport_dispatch.makeTransport),
-            path_not_translated)
+            path_not_translated,
+        )
         deferred.addErrback(unknown_transport_type)
         return deferred
 
@@ -432,12 +426,11 @@ class LaunchpadInternalServer(_BaseLaunchpadServer):
 
     def destroy(self):
         """Delete the on-disk branches and tear down."""
-        self._transport_dispatch.base_transport.delete_tree('.')
+        self._transport_dispatch.base_transport.delete_tree(".")
         self.stop_server()
 
 
 class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
-
     def __init__(self, scheme, branch_transport):
         AsyncVirtualServer.__init__(self, scheme)
         self._transport_dispatch = BranchTransportDispatch(branch_transport)
@@ -451,7 +444,7 @@ class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
 
     def destroy(self):
         """Delete the on-disk branches and tear down."""
-        self._transport_dispatch.base_transport.delete_tree('.')
+        self._transport_dispatch.base_transport.delete_tree(".")
         self.stop_server()
 
     def translateVirtualPath(self, virtual_url_fragment):
@@ -461,7 +454,9 @@ class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
         """
         deferred = defer.succeed(
             getUtility(IBranchLookup).getByHostingPath(
-                virtual_url_fragment.lstrip('/')))
+                virtual_url_fragment.lstrip("/")
+            )
+        )
 
         @no_traceback_failures
         def process_result(result):
@@ -470,7 +465,8 @@ class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
                 raise NoSuchFile(virtual_url_fragment)
             else:
                 return self._transport_dispatch.makeTransport(
-                    (BRANCH_TRANSPORT, dict(id=branch.id), trailing[1:]))
+                    (BRANCH_TRANSPORT, dict(id=branch.id), trailing[1:])
+                )
 
         deferred.addCallback(process_result)
         return deferred
@@ -494,7 +490,8 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
         # directory that has too little information to be translated into a
         # Launchpad branch.
         deferred = AsyncVirtualTransport._getUnderlyingTransportAndPath(
-            self, relpath)
+            self, relpath
+        )
 
         @no_traceback_failures
         def maybe_make_branch_in_db(failure):
@@ -505,7 +502,7 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
         @no_traceback_failures
         def real_mkdir(result):
             transport, path = result
-            return getattr(transport, 'mkdir')(path, mode)
+            return getattr(transport, "mkdir")(path, mode)
 
         deferred.addCallback(real_mkdir)
         deferred.addErrback(maybe_make_branch_in_db)
@@ -522,20 +519,24 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
         deferred = deferred.addCallback(
             no_traceback_failures(
                 lambda ignored: AsyncVirtualTransport.rename(
-                    self, rel_from, rel_to)))
+                    self, rel_from, rel_to
+                )
+            )
+        )
         return deferred
 
     def rmdir(self, relpath):
         # We hook into rmdir in order to prevent users from deleting branches,
         # products and people from the VFS.
         virtual_url_fragment = self._abspath(relpath)
-        path_segments = virtual_url_fragment.lstrip('/').split('/')
+        path_segments = virtual_url_fragment.lstrip("/").split("/")
         # XXX: JonathanLange 2008-11-19 bug=300551: This code assumes stuff
         # about the VFS! We need to figure out the best way to delegate the
         # decision about permission-to-delete to the XML-RPC server.
         if len(path_segments) <= 3:
             return defer.fail(
-                failure.Failure(PermissionDenied(virtual_url_fragment)))
+                failure.Failure(PermissionDenied(virtual_url_fragment))
+            )
         return AsyncVirtualTransport.rmdir(self, relpath)
 
 
@@ -554,8 +555,13 @@ class LaunchpadServer(_BaseLaunchpadServer):
 
     asyncTransportFactory = AsyncLaunchpadTransport
 
-    def __init__(self, codehosting_api, user_id, branch_transport,
-                 seen_new_branch_hook=None):
+    def __init__(
+        self,
+        codehosting_api,
+        user_id,
+        branch_transport,
+        seen_new_branch_hook=None,
+    ):
         """Construct a `LaunchpadServer`.
 
         See `_BaseLaunchpadServer` for more information.
@@ -571,9 +577,10 @@ class LaunchpadServer(_BaseLaunchpadServer):
         :param seen_new_branch_hook: A callable that will be called once for
             each branch accessed via this server.
         """
-        scheme = 'lp-%d:///' % id(self)
+        scheme = "lp-%d:///" % id(self)
         super().__init__(
-            scheme, codehosting_api, user_id, seen_new_branch_hook)
+            scheme, codehosting_api, user_id, seen_new_branch_hook
+        )
         self._transport_dispatch = TransportDispatch(branch_transport)
 
     def createBranch(self, virtual_url_fragment):
@@ -605,11 +612,16 @@ class LaunchpadServer(_BaseLaunchpadServer):
             # exist. You may supply --create-prefix to create all leading
             # parent directories", which is just misleading.
             fault = trap_fault(
-                fail, faults.NotFound, faults.PermissionDenied,
-                faults.InvalidSourcePackageName, faults.InvalidProductName)
+                fail,
+                faults.NotFound,
+                faults.PermissionDenied,
+                faults.InvalidSourcePackageName,
+                faults.InvalidProductName,
+            )
             faultString = six.ensure_str(fault.faultString)
             return failure.Failure(
-                PermissionDenied(virtual_url_fragment, faultString))
+                PermissionDenied(virtual_url_fragment, faultString)
+            )
 
         return deferred.addErrback(translate_fault)
 
@@ -631,11 +643,11 @@ class LaunchpadServer(_BaseLaunchpadServer):
         stacked_on_url = get_stacked_on_url(branch)
         if stacked_on_url is None:
             return None
-        if '://' not in stacked_on_url:
+        if "://" not in stacked_on_url:
             # Assume it's a relative path.
             return stacked_on_url
         uri = URI(stacked_on_url)
-        if uri.scheme not in ['http', 'bzr+ssh', 'sftp']:
+        if uri.scheme not in ["http", "bzr+ssh", "sftp"]:
             return stacked_on_url
         launchpad_domain = config.vhost.mainsite.hostname
         if not uri.underDomain(launchpad_domain):
@@ -643,8 +655,8 @@ class LaunchpadServer(_BaseLaunchpadServer):
         # We use TransportConfig directly because the branch
         # is still locked at this point!  We're effectively
         # 'borrowing' the lock that is being released.
-        branch_config = TransportConfig(branch._transport, 'branch.conf')
-        branch_config.set_option(uri.path, 'stacked_on_location')
+        branch_config = TransportConfig(branch._transport, "branch.conf")
+        branch_config.set_option(uri.path, "stacked_on_location")
         return uri.path
 
     def branchChanged(self, virtual_url_fragment):
@@ -658,7 +670,8 @@ class LaunchpadServer(_BaseLaunchpadServer):
             owned by a branch.
         """
         deferred = self._branchfs_client.translatePath(
-            '/' + virtual_url_fragment)
+            "/" + virtual_url_fragment
+        )
 
         @no_traceback_failures
         def got_path_info(result):
@@ -666,22 +679,22 @@ class LaunchpadServer(_BaseLaunchpadServer):
             if transport_type != BRANCH_TRANSPORT:
                 raise NotABranchPath(virtual_url_fragment)
             transport, _ = self._transport_dispatch.makeTransport(
-                (transport_type, data, trailing_path))
+                (transport_type, data, trailing_path)
+            )
             if jail_info.transports:
                 jail_info.transports.append(transport)
             try:
                 branch = BzrDir.open_from_transport(transport).open_branch(
-                    ignore_fallbacks=True)
+                    ignore_fallbacks=True
+                )
                 info = get_branch_info(branch)
-                info['stacked_on_url'] = (
-                    self._normalize_stacked_on_url(branch))
+                info["stacked_on_url"] = self._normalize_stacked_on_url(branch)
             finally:
                 if jail_info.transports:
                     jail_info.transports.remove(transport)
-            if info['stacked_on_url'] is None:
-                info['stacked_on_url'] = ''
-            return self._branchfs_client.branchChanged(
-                data['id'], **info)
+            if info["stacked_on_url"] is None:
+                info["stacked_on_url"] = ""
+            return self._branchfs_client.branchChanged(data["id"], **info)
 
         @no_traceback_failures
         def handle_error(failure=None, **kw):
@@ -696,17 +709,22 @@ class LaunchpadServer(_BaseLaunchpadServer):
             # to log a bug with the oops information.
             # See bugs 674305 and 675517 for details.
 
-            request = errorlog.ScriptRequest([
-                ('source', virtual_url_fragment),
-                ('error-explanation', failure.getErrorMessage())])
+            request = errorlog.ScriptRequest(
+                [
+                    ("source", virtual_url_fragment),
+                    ("error-explanation", failure.getErrorMessage()),
+                ]
+            )
             self.unexpectedError(failure, request)
             fault = faults.OopsOccurred(
-                "updating a Launchpad branch", request.oopsid)
+                "updating a Launchpad branch", request.oopsid
+            )
             # Twisted's log.err used to write to stderr but it doesn't now so
             # we will write to stderr as well as log.err.
             print(repr(fault), file=sys.stderr)
             log.err(repr(fault))
             return fault
+
         return deferred.addCallback(got_path_info).addErrback(handle_error)
 
     def unexpectedError(self, failure, request=None):
@@ -715,15 +733,21 @@ class LaunchpadServer(_BaseLaunchpadServer):
         # the Failure we've been passed.
         traceback = None
         if failure.check(error.ProcessTerminated):
-            traceback = getattr(failure, 'error', None)
+            traceback = getattr(failure, "error", None)
         if traceback is None:
             traceback = failure.getTraceback()
         errorlog.globalErrorUtility.raising(
-            (failure.type, failure.value, traceback), request)
+            (failure.type, failure.value, traceback), request
+        )
 
 
-def get_lp_server(user_id, codehosting_endpoint_url=None, branch_url=None,
-                  seen_new_branch_hook=None, branch_transport=None):
+def get_lp_server(
+    user_id,
+    codehosting_endpoint_url=None,
+    branch_url=None,
+    seen_new_branch_hook=None,
+    branch_transport=None,
+):
     """Create a Launchpad server.
 
     :param user_id: A unique database ID of the user whose branches are
@@ -746,10 +770,14 @@ def get_lp_server(user_id, codehosting_endpoint_url=None, branch_url=None,
             branch_transport = get_chrooted_transport(branch_url)
         else:
             raise AssertionError(
-                "can't supply both branch_url and branch_transport!")
+                "can't supply both branch_url and branch_transport!"
+            )
 
     codehosting_client = xmlrpc.client.ServerProxy(codehosting_endpoint_url)
     lp_server = LaunchpadServer(
-        DeferredBlockingProxy(codehosting_client), user_id, branch_transport,
-        seen_new_branch_hook)
+        DeferredBlockingProxy(codehosting_client),
+        user_id,
+        branch_transport,
+        seen_new_branch_hook,
+    )
     return lp_server

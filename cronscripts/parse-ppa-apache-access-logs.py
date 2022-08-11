@@ -16,10 +16,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.apachelogparser.script import ParseApacheLogs
 from lp.services.config import config
 from lp.soyuz.interfaces.archive import IArchiveSet
-from lp.soyuz.scripts.ppa_apache_log_parser import (
-    DBUSER,
-    get_ppa_file_key,
-    )
+from lp.soyuz.scripts.ppa_apache_log_parser import DBUSER, get_ppa_file_key
 
 
 class ParsePPAApacheLogs(ParseApacheLogs):
@@ -51,7 +48,8 @@ class ParsePPAApacheLogs(ParseApacheLogs):
         if distro is None:
             return None
         archive = getUtility(IArchiveSet).getPPAOwnedByPerson(
-            person, distribution=distro, name=file_id[1])
+            person, distribution=distro, name=file_id[1]
+        )
         if archive is None:
             return None
         bpr = archive.getBinaryPackageReleaseByFileName(file_id[3])
@@ -61,6 +59,6 @@ class ParsePPAApacheLogs(ParseApacheLogs):
         return functools.partial(archive.updatePackageDownloadCount, bpr)
 
 
-if __name__ == '__main__':
-    script = ParsePPAApacheLogs('parse-ppa-apache-logs', DBUSER)
+if __name__ == "__main__":
+    script = ParsePPAApacheLogs("parse-ppa-apache-logs", DBUSER)
     script.lock_and_run()

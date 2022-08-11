@@ -5,12 +5,9 @@
 
 from textwrap import dedent
 
-from lazr.lifecycle.event import (
-    ObjectCreatedEvent,
-    ObjectModifiedEvent,
-    )
-from storm.store import Store
 import transaction
+from lazr.lifecycle.event import ObjectCreatedEvent, ObjectModifiedEvent
+from storm.store import Store
 from zope.security.management import setSecurityPolicy
 
 from lp.code.enums import (
@@ -18,7 +15,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     CodeReviewVote,
-    )
+)
 from lp.code.mail.codehandler import (
     AddReviewerEmailCommand,
     CodeEmailCommands,
@@ -27,11 +24,11 @@ from lp.code.mail.codehandler import (
     InvalidBranchMergeProposalAddress,
     UpdateStatusEmailCommand,
     VoteEmailCommand,
-    )
+)
 from lp.code.model.branchmergeproposaljob import (
     BranchMergeProposalJob,
     BranchMergeProposalJobType,
-    )
+)
 from lp.code.tests.helpers import make_merge_proposal_without_reviewers
 from lp.services.config import config
 from lp.services.mail.handlers import mail_handlers
@@ -39,17 +36,14 @@ from lp.services.mail.interfaces import EmailProcessingError
 from lp.services.messages.model.message import MessageSet
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing import (
+    TestCase,
+    TestCaseWithFactory,
     login,
     login_person,
     person_logged_in,
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessAppServerLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessAppServerLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -64,42 +58,44 @@ class TestGetCodeEmailCommands(TestCase):
         # Check that the vote command is correctly created.
         [command] = CodeEmailCommands.getCommands(" vote approve tag me")
         self.assertIsInstance(command, VoteEmailCommand)
-        self.assertEqual('vote', command.name)
-        self.assertEqual(['approve', 'tag', 'me'], command.string_args)
+        self.assertEqual("vote", command.name)
+        self.assertEqual(["approve", "tag", "me"], command.string_args)
 
     def test_review_as_vote_command(self):
         # Check that the vote command is correctly created.
         [command] = CodeEmailCommands.getCommands(" review approve tag me")
         self.assertIsInstance(command, VoteEmailCommand)
-        self.assertEqual('review', command.name)
-        self.assertEqual(['approve', 'tag', 'me'], command.string_args)
+        self.assertEqual("review", command.name)
+        self.assertEqual(["approve", "tag", "me"], command.string_args)
 
     def test_status_command(self):
         # Check that the update status command is correctly created.
         [command] = CodeEmailCommands.getCommands(" status approved")
         self.assertIsInstance(command, UpdateStatusEmailCommand)
-        self.assertEqual('status', command.name)
-        self.assertEqual(['approved'], command.string_args)
+        self.assertEqual("status", command.name)
+        self.assertEqual(["approved"], command.string_args)
 
     def test_merge_command(self):
         # Merge is an alias for the status command.
         [command] = CodeEmailCommands.getCommands(" merge approved")
         self.assertIsInstance(command, UpdateStatusEmailCommand)
-        self.assertEqual('merge', command.name)
-        self.assertEqual(['approved'], command.string_args)
+        self.assertEqual("merge", command.name)
+        self.assertEqual(["approved"], command.string_args)
 
     def test_reviewer_command(self):
         # Check that the add review command is correctly created.
         [command] = CodeEmailCommands.getCommands(
-            " reviewer test@canonical.com db")
+            " reviewer test@canonical.com db"
+        )
         self.assertIsInstance(command, AddReviewerEmailCommand)
-        self.assertEqual('reviewer', command.name)
-        self.assertEqual(['test@canonical.com', 'db'], command.string_args)
+        self.assertEqual("reviewer", command.name)
+        self.assertEqual(["test@canonical.com", "db"], command.string_args)
 
     def test_ignored_commands(self):
         # Check that other "commands" are not created.
-        self.assertEqual([], CodeEmailCommands.getCommands(
-            " not-a-command\n spam"))
+        self.assertEqual(
+            [], CodeEmailCommands.getCommands(" not-a-command\n spam")
+        )
 
     def test_vote_commands_come_first(self):
         # Vote commands come before either status or reviewer commands.
@@ -108,7 +104,8 @@ class TestGetCodeEmailCommands(TestCase):
             vote approve db
             """
         vote_command, status_command = CodeEmailCommands.getCommands(
-            message_body)
+            message_body
+        )
         self.assertIsInstance(vote_command, VoteEmailCommand)
         self.assertIsInstance(status_command, UpdateStatusEmailCommand)
 
@@ -117,7 +114,8 @@ class TestGetCodeEmailCommands(TestCase):
             vote reject
             """
         vote_command, reviewer_command = CodeEmailCommands.getCommands(
-            message_body)
+            message_body
+        )
 
         self.assertIsInstance(vote_command, VoteEmailCommand)
         self.assertIsInstance(reviewer_command, AddReviewerEmailCommand)
@@ -129,7 +127,7 @@ class TestCodeHandler(TestCaseWithFactory):
     layer = ZopelessAppServerLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self.code_handler = CodeHandler()
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
 
@@ -143,79 +141,88 @@ class TestCodeHandler(TestCaseWithFactory):
 
     def test_process(self):
         """Processing an email creates an appropriate CodeReviewComment."""
-        mail = self.factory.makeSignedMessage('<my-id>')
+        mail = self.factory.makeSignedMessage("<my-id>")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
-        self.assertTrue(self.code_handler.process(
-            mail, email_addr, None), "Succeeded, but didn't return True")
+        self.assertTrue(
+            self.code_handler.process(mail, email_addr, None),
+            "Succeeded, but didn't return True",
+        )
         # if the message has not been created, this raises SQLObjectNotFound
-        MessageSet().get('<my-id>')
+        MessageSet().get("<my-id>")
 
     def test_process_packagebranch(self):
         """Processing an email related to a package branch works.."""
-        mail = self.factory.makeSignedMessage('<my-id>')
+        mail = self.factory.makeSignedMessage("<my-id>")
         target_branch = self.factory.makePackageBranch()
-        bmp = self.factory.makeBranchMergeProposal(
-            target_branch=target_branch)
+        bmp = self.factory.makeBranchMergeProposal(target_branch=target_branch)
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertIn(
-            '<my-id>', [comment.message.rfc822msgid
-                        for comment in bmp.all_comments])
+            "<my-id>",
+            [comment.message.rfc822msgid for comment in bmp.all_comments],
+        )
 
     def test_process_git(self):
         """Processing an email related to a Git-based merge proposal works."""
-        mail = self.factory.makeSignedMessage('<my-id>')
+        mail = self.factory.makeSignedMessage("<my-id>")
         bmp = self.factory.makeBranchMergeProposalForGit()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertIn(
-            '<my-id>',
-            [comment.message.rfc822msgid for comment in bmp.all_comments])
+            "<my-id>",
+            [comment.message.rfc822msgid for comment in bmp.all_comments],
+        )
 
     def test_processBadAddress(self):
         """When a bad address is supplied, it returns False."""
-        mail = self.factory.makeSignedMessage('<my-id>')
+        mail = self.factory.makeSignedMessage("<my-id>")
         switch_dbuser(config.processmail.dbuser)
-        self.assertFalse(self.code_handler.process(mail,
-            'foo@code.launchpad.test', None))
+        self.assertFalse(
+            self.code_handler.process(mail, "foo@code.launchpad.test", None)
+        )
 
-    def test_processNonExistantAddress(self):
-        """When a non-existant address is supplied, it returns False."""
-        mail = self.factory.makeSignedMessage('<my-id>')
+    def test_processNonExistentAddress(self):
+        """When a non-existent address is supplied, it returns False."""
+        mail = self.factory.makeSignedMessage("<my-id>")
         switch_dbuser(config.processmail.dbuser)
-        self.assertTrue(self.code_handler.process(mail,
-            'mp+0@code.launchpad.test', None))
+        self.assertTrue(
+            self.code_handler.process(mail, "mp+0@code.launchpad.test", None)
+        )
         notification = pop_notifications()[0]
-        self.assertEqual('Submit Request Failure', notification['subject'])
+        self.assertEqual("Submit Request Failure", notification["subject"])
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
         self.assertIn(
             b"There is no merge proposal at mp+0@code.launchpad.test\n",
-            message.get_payload(decode=True))
+            message.get_payload(decode=True),
+        )
 
     def test_processBadVote(self):
         """process handles bad votes properly."""
-        mail = self.factory.makeSignedMessage(body=' vote badvalue')
+        mail = self.factory.makeSignedMessage(body=" vote badvalue")
         # Make sure that the correct user principal is there.
-        login(mail['From'])
+        login(mail["From"])
         bmp = self.factory.makeBranchMergeProposal()
         # Remove the notifications sent about the new proposal.
         pop_notifications()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
-        self.assertTrue(self.code_handler.process(
-            mail, email_addr, None), "Didn't return True")
+        self.assertTrue(
+            self.code_handler.process(mail, email_addr, None),
+            "Didn't return True",
+        )
         notification = pop_notifications()[0]
-        self.assertEqual('Submit Request Failure', notification['subject'])
+        self.assertEqual("Submit Request Failure", notification["subject"])
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
-        expected_payload = dedent("""\
+        expected_payload = dedent(
+            """\
         An error occurred while processing a mail you sent to Launchpad's email
         interface.
 
@@ -235,20 +242,24 @@ class TestCodeHandler(TestCaseWithFactory):
         --\x20
         For more information about using Launchpad by email, see
         https://help.launchpad.net/EmailInterface
-        or send an email to help@launchpad.net""")  # noqa: E501
+        or send an email to help@launchpad.net"""  # noqa: E501
+        )
         self.assertEqual(
-            expected_payload.encode("UTF-8"), message.get_payload(decode=True))
-        self.assertEqual(mail['From'], notification['To'])
+            expected_payload.encode("UTF-8"), message.get_payload(decode=True)
+        )
+        self.assertEqual(mail["From"], notification["To"])
 
     def test_getReplyAddress(self):
         """getReplyAddress should return From or Reply-to address."""
         mail = self.factory.makeSignedMessage()
         switch_dbuser(config.processmail.dbuser)
         self.assertEqual(
-            mail['From'], self.code_handler._getReplyAddress(mail))
-        mail['Reply-to'] = self.factory.getUniqueEmailAddress()
+            mail["From"], self.code_handler._getReplyAddress(mail)
+        )
+        mail["Reply-to"] = self.factory.getUniqueEmailAddress()
         self.assertEqual(
-            mail['Reply-to'], self.code_handler._getReplyAddress(mail))
+            mail["Reply-to"], self.code_handler._getReplyAddress(mail)
+        )
 
     def test_process_for_imported_branch(self):
         """Make sure that the database user is able refer to import branches.
@@ -263,10 +274,11 @@ class TestCodeHandler(TestCaseWithFactory):
         they don't have launchpad.Edit but are a member of the review team,
         then a check against the code import is done.
         """
-        mail = self.factory.makeSignedMessage(body=' merge approved')
+        mail = self.factory.makeSignedMessage(body=" merge approved")
         code_import = self.factory.makeCodeImport()
         bmp = self.factory.makeBranchMergeProposal(
-            target_branch=code_import.branch)
+            target_branch=code_import.branch
+        )
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         pop_notifications()
@@ -277,52 +289,52 @@ class TestCodeHandler(TestCaseWithFactory):
         message, original = notification.get_payload()
         self.assertIn(
             b"You are not a reviewer for the branch",
-            message.get_payload(decode=True))
+            message.get_payload(decode=True),
+        )
 
     def test_processVote(self):
         """Process respects the vote command."""
-        mail = self.factory.makeSignedMessage(body=' vote Abstain EBAILIWICK')
+        mail = self.factory.makeSignedMessage(body=" vote Abstain EBAILIWICK")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertEqual(CodeReviewVote.ABSTAIN, bmp.all_comments[0].vote)
-        self.assertEqual('ebailiwick', bmp.all_comments[0].vote_tag)
+        self.assertEqual("ebailiwick", bmp.all_comments[0].vote_tag)
 
     def test_processVoteColon(self):
         """Process respects the vote: command."""
-        mail = self.factory.makeSignedMessage(
-            body=' vote: Abstain EBAILIWICK')
+        mail = self.factory.makeSignedMessage(body=" vote: Abstain EBAILIWICK")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertEqual(CodeReviewVote.ABSTAIN, bmp.all_comments[0].vote)
-        self.assertEqual('ebailiwick', bmp.all_comments[0].vote_tag)
+        self.assertEqual("ebailiwick", bmp.all_comments[0].vote_tag)
 
     def test_processReview(self):
         """Process respects the review command."""
-        mail = self.factory.makeSignedMessage(body=' review Abstain ROAR!')
+        mail = self.factory.makeSignedMessage(body=" review Abstain ROAR!")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertEqual(CodeReviewVote.ABSTAIN, bmp.all_comments[0].vote)
-        self.assertEqual('roar!', bmp.all_comments[0].vote_tag)
+        self.assertEqual("roar!", bmp.all_comments[0].vote_tag)
 
     def test_processReviewColon(self):
         """Process respects the review: command."""
-        mail = self.factory.makeSignedMessage(body=' review: Abstain ROAR!')
+        mail = self.factory.makeSignedMessage(body=" review: Abstain ROAR!")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
         self.assertEqual(CodeReviewVote.ABSTAIN, bmp.all_comments[0].vote)
-        self.assertEqual('roar!', bmp.all_comments[0].vote_tag)
+        self.assertEqual("roar!", bmp.all_comments[0].vote_tag)
 
     def test_processWithExistingVote(self):
         """Process respects the vote command."""
-        mail = self.factory.makeSignedMessage(body=' vote Abstain EBAILIWICK')
+        mail = self.factory.makeSignedMessage(body=" vote Abstain EBAILIWICK")
         sender = self.factory.makePerson()
         bmp = self.factory.makeBranchMergeProposal(reviewer=sender)
         email_addr = bmp.address
@@ -335,7 +347,7 @@ class TestCodeHandler(TestCaseWithFactory):
         self.code_handler.process(mail, email_addr, None)
         comment = bmp.all_comments[0]
         self.assertEqual(CodeReviewVote.ABSTAIN, comment.vote)
-        self.assertEqual('ebailiwick', comment.vote_tag)
+        self.assertEqual("ebailiwick", comment.vote_tag)
         [vote] = list(bmp.votes)
         self.assertEqual(sender, vote.reviewer)
         self.assertEqual(comment, vote.comment)
@@ -343,22 +355,32 @@ class TestCodeHandler(TestCaseWithFactory):
     def test_processmail_generates_job(self):
         """Processing mail causes an email job to be created."""
         mail = self.factory.makeSignedMessage(
-            body=' vote Abstain EBAILIWICK', subject='subject')
+            body=" vote Abstain EBAILIWICK", subject="subject"
+        )
         bmp = self.factory.makeBranchMergeProposal()
         # Pop the notifications generated by the new proposal.
         pop_notifications()
         subscriber = self.factory.makePerson()
         bmp.source_branch.subscribe(
-            subscriber, BranchSubscriptionNotificationLevel.NOEMAIL, None,
-            CodeReviewNotificationLevel.FULL, subscriber)
+            subscriber,
+            BranchSubscriptionNotificationLevel.NOEMAIL,
+            None,
+            CodeReviewNotificationLevel.FULL,
+            subscriber,
+        )
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
-        job = Store.of(bmp).find(
-            BranchMergeProposalJob,
-            BranchMergeProposalJob.branch_merge_proposal == bmp,
-            BranchMergeProposalJob.job_type ==
-            BranchMergeProposalJobType.CODE_REVIEW_COMMENT_EMAIL).one()
+        job = (
+            Store.of(bmp)
+            .find(
+                BranchMergeProposalJob,
+                BranchMergeProposalJob.branch_merge_proposal == bmp,
+                BranchMergeProposalJob.job_type
+                == BranchMergeProposalJobType.CODE_REVIEW_COMMENT_EMAIL,
+            )
+            .one()
+        )
         self.assertIsNot(None, job)
         # Ensure the DB operations violate no constraints.
         Store.of(bmp).flush()
@@ -373,23 +395,31 @@ class TestCodeHandler(TestCaseWithFactory):
     def test_getBranchMergeProposalInvalid(self):
         """InvalidBranchMergeProposalAddress is raised if appropriate."""
         switch_dbuser(config.processmail.dbuser)
-        self.assertRaises(InvalidBranchMergeProposalAddress,
-                          self.code_handler.getBranchMergeProposal, '')
-        self.assertRaises(InvalidBranchMergeProposalAddress,
-                          self.code_handler.getBranchMergeProposal, 'mp+abc@')
+        self.assertRaises(
+            InvalidBranchMergeProposalAddress,
+            self.code_handler.getBranchMergeProposal,
+            "",
+        )
+        self.assertRaises(
+            InvalidBranchMergeProposalAddress,
+            self.code_handler.getBranchMergeProposal,
+            "mp+abc@",
+        )
 
     def test_processWithMergeDirectiveEmail(self):
         """process errors if merge@ address used."""
         message = self.factory.makeSignedMessage()
         file_alias = self.factory.makeLibraryFileAlias(
-            content=message.as_string())
+            content=message.as_string()
+        )
         # mail.incoming.handleMail also explicitly does this.
         switch_dbuser(config.processmail.dbuser)
         code_handler = CodeHandler()
-        code_handler.process(message, 'merge@code.launchpad.net', file_alias)
+        code_handler.process(message, "merge@code.launchpad.net", file_alias)
         notification = pop_notifications()[0]
         self.assertEqual(
-            'Merge directive not supported.', notification['Subject'])
+            "Merge directive not supported.", notification["Subject"]
+        )
 
     def test_reviewer_with_diff(self):
         """Requesting a review with a diff works."""
@@ -398,7 +428,7 @@ class TestCodeHandler(TestCaseWithFactory):
         # To record the diff in the librarian.
         transaction.commit()
         eric = self.factory.makePerson(name="eric", email="eric@example.com")
-        mail = self.factory.makeSignedMessage(body=' reviewer eric')
+        mail = self.factory.makeSignedMessage(body=" reviewer eric")
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         self.code_handler.process(mail, email_addr, None)
@@ -408,8 +438,8 @@ class TestCodeHandler(TestCaseWithFactory):
     def test_processMissingSubject(self):
         """If the subject is missing, the user is warned by email."""
         mail = self.factory.makeSignedMessage(
-            body=' review abstain',
-            subject='')
+            body=" review abstain", subject=""
+        )
         bmp = self.factory.makeBranchMergeProposal()
         pop_notifications()
         email_addr = bmp.address
@@ -418,33 +448,41 @@ class TestCodeHandler(TestCaseWithFactory):
         [notification] = pop_notifications()
 
         self.assertEqual(
-            notification['Subject'], 'Error Creating Merge Proposal')
+            notification["Subject"], "Error Creating Merge Proposal"
+        )
         self.assertEqual(
             notification.get_payload(decode=True),
-            b'Your message did not contain a subject.  Launchpad code '
-            b'reviews require all\nemails to contain subject lines.  '
-            b'Please re-send your email including the\nsubject line.\n\n')
-        self.assertEqual(notification['to'],
-            mail['from'])
+            b"Your message did not contain a subject.  Launchpad code "
+            b"reviews require all\nemails to contain subject lines.  "
+            b"Please re-send your email including the\nsubject line.\n\n",
+        )
+        self.assertEqual(notification["to"], mail["from"])
         self.assertEqual(0, bmp.all_comments.count())
 
     def test_notifies_modification(self):
         """Changes to the merge proposal itself trigger events."""
-        mail = self.factory.makeSignedMessage(body=' merge approved')
+        mail = self.factory.makeSignedMessage(body=" merge approved")
         bmp = self.factory.makeBranchMergeProposal()
         email_addr = bmp.address
         switch_dbuser(config.processmail.dbuser)
         login_person(bmp.merge_target.owner)
         _, events = self.assertNotifies(
-            [ObjectModifiedEvent, ObjectCreatedEvent], False,
-            self.code_handler.process, mail, email_addr, None)
+            [ObjectModifiedEvent, ObjectCreatedEvent],
+            False,
+            self.code_handler.process,
+            mail,
+            email_addr,
+            None,
+        )
         self.assertEqual(bmp, events[0].object)
         self.assertEqual(
             BranchMergeProposalStatus.WORK_IN_PROGRESS,
-            events[0].object_before_modification.queue_status)
+            events[0].object_before_modification.queue_status,
+        )
         self.assertEqual(
             BranchMergeProposalStatus.CODE_APPROVED,
-            events[0].object.queue_status)
+            events[0].object.queue_status,
+        )
 
 
 class TestVoteEmailCommand(TestCase):
@@ -458,11 +496,12 @@ class TestVoteEmailCommand(TestCase):
         class FakeExecutionContext:
             vote = None
             vote_tags = None
+
         self.context = FakeExecutionContext()
 
     def test_getVoteNoArgs(self):
         """getVote returns None, None when no arguments are supplied."""
-        command = VoteEmailCommand('vote', [])
+        command = VoteEmailCommand("vote", [])
         self.assertRaises(EmailProcessingError, command.execute, self.context)
 
     def assertVoteAndTag(self, expected_vote, expected_tag, command):
@@ -476,76 +515,76 @@ class TestVoteEmailCommand(TestCase):
 
     def test_getVoteOneArg(self):
         """getVote returns vote, None when only a vote is supplied."""
-        command = VoteEmailCommand('vote', ['apPRoVe'])
+        command = VoteEmailCommand("vote", ["apPRoVe"])
         self.assertVoteAndTag(CodeReviewVote.APPROVE, None, command)
 
     def test_getVoteDisapprove(self):
         """getVote returns disapprove when it is specified."""
-        command = VoteEmailCommand('vote', ['dIsAppRoVe'])
+        command = VoteEmailCommand("vote", ["dIsAppRoVe"])
         self.assertVoteAndTag(CodeReviewVote.DISAPPROVE, None, command)
 
     def test_getVoteBadValue(self):
         """getVote returns vote, None when only a vote is supplied."""
-        command = VoteEmailCommand('vote', ['badvalue'])
+        command = VoteEmailCommand("vote", ["badvalue"])
         self.assertRaises(EmailProcessingError, command.execute, self.context)
 
     def test_getVoteThreeArg(self):
         """getVote returns vote, vote_tag when both are supplied."""
-        command = VoteEmailCommand('vote', ['apPRoVe', 'DB', 'TAG'])
-        self.assertVoteAndTag(CodeReviewVote.APPROVE, 'DB TAG', command)
+        command = VoteEmailCommand("vote", ["apPRoVe", "DB", "TAG"])
+        self.assertVoteAndTag(CodeReviewVote.APPROVE, "DB TAG", command)
 
     def test_getVoteApproveAlias(self):
         """Test the approve alias of +1."""
-        command = VoteEmailCommand('vote', ['+1'])
+        command = VoteEmailCommand("vote", ["+1"])
         self.assertVoteAndTag(CodeReviewVote.APPROVE, None, command)
 
     def test_getVoteAbstainAlias(self):
         """Test the abstain alias of 0."""
-        command = VoteEmailCommand('vote', ['0'])
+        command = VoteEmailCommand("vote", ["0"])
         self.assertVoteAndTag(CodeReviewVote.ABSTAIN, None, command)
-        command = VoteEmailCommand('vote', ['+0'])
+        command = VoteEmailCommand("vote", ["+0"])
         self.assertVoteAndTag(CodeReviewVote.ABSTAIN, None, command)
-        command = VoteEmailCommand('vote', ['-0'])
+        command = VoteEmailCommand("vote", ["-0"])
         self.assertVoteAndTag(CodeReviewVote.ABSTAIN, None, command)
 
     def test_getVoteDisapproveAlias(self):
         """Test the disapprove alias of -1."""
-        command = VoteEmailCommand('vote', ['-1'])
+        command = VoteEmailCommand("vote", ["-1"])
         self.assertVoteAndTag(CodeReviewVote.DISAPPROVE, None, command)
 
     def test_getVoteNeedsFixingAlias(self):
         """Test the needs_fixing aliases of needsfixing and needs-fixing."""
-        command = VoteEmailCommand('vote', ['needs_fixing'])
+        command = VoteEmailCommand("vote", ["needs_fixing"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_FIXING, None, command)
-        command = VoteEmailCommand('vote', ['needsfixing'])
+        command = VoteEmailCommand("vote", ["needsfixing"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_FIXING, None, command)
-        command = VoteEmailCommand('vote', ['needs-fixing'])
+        command = VoteEmailCommand("vote", ["needs-fixing"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_FIXING, None, command)
 
     def test_getVoteNeedsInfoAlias(self):
         """Test the needs_info review type and its aliases."""
-        command = VoteEmailCommand('vote', ['needs_info'])
+        command = VoteEmailCommand("vote", ["needs_info"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
-        command = VoteEmailCommand('vote', ['needsinfo'])
+        command = VoteEmailCommand("vote", ["needsinfo"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
-        command = VoteEmailCommand('vote', ['needs-info'])
+        command = VoteEmailCommand("vote", ["needs-info"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
-        command = VoteEmailCommand('vote', ['needs_information'])
+        command = VoteEmailCommand("vote", ["needs_information"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
-        command = VoteEmailCommand('vote', ['needsinformation'])
+        command = VoteEmailCommand("vote", ["needsinformation"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
-        command = VoteEmailCommand('vote', ['needs-information'])
+        command = VoteEmailCommand("vote", ["needs-information"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_INFO, None, command)
 
     def test_getVoteNeedsResubmittingAlias(self):
         """Test the needs_resubmitting review type and its aliases."""
-        command = VoteEmailCommand('vote', ['needs_resubmitting'])
+        command = VoteEmailCommand("vote", ["needs_resubmitting"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
-        command = VoteEmailCommand('vote', ['needsresubmitting'])
+        command = VoteEmailCommand("vote", ["needsresubmitting"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
-        command = VoteEmailCommand('vote', ['needs-resubmitting'])
+        command = VoteEmailCommand("vote", ["needs-resubmitting"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
-        command = VoteEmailCommand('vote', ['resubmit'])
+        command = VoteEmailCommand("vote", ["resubmit"])
         self.assertVoteAndTag(CodeReviewVote.NEEDS_RESUBMITTING, None, command)
 
 
@@ -555,13 +594,14 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
         self.merge_proposal = self.factory.makeBranchMergeProposal()
         # Default the user to be the target branch owner, so they are
         # authorised to update the status.
         self.context = CodeReviewEmailCommandExecutionContext(
-            self.merge_proposal, self.merge_proposal.target_branch.owner)
+            self.merge_proposal, self.merge_proposal.target_branch.owner
+        )
         self.jrandom = self.factory.makePerson()
         switch_dbuser(config.processmail.dbuser)
 
@@ -571,29 +611,35 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
 
     def test_numberOfArguments(self):
         # The command needs one and only one arg.
-        command = UpdateStatusEmailCommand('status', [])
+        command = UpdateStatusEmailCommand("status", [])
         error = self.assertRaises(
-            EmailProcessingError, command.execute, self.context)
+            EmailProcessingError, command.execute, self.context
+        )
         self.assertEqual(
             "The 'status' argument expects 1 argument(s). It got 0.\n",
-            str(error))
-        command = UpdateStatusEmailCommand('status', ['approve', 'spam'])
+            str(error),
+        )
+        command = UpdateStatusEmailCommand("status", ["approve", "spam"])
         error = self.assertRaises(
-            EmailProcessingError, command.execute, self.context)
+            EmailProcessingError, command.execute, self.context
+        )
         self.assertEqual(
             "The 'status' argument expects 1 argument(s). It got 2.\n",
-            str(error))
+            str(error),
+        )
 
     def test_status_approved(self):
         # Test that approve sets the status of the merge proposal.
         self.assertNotEqual(
             BranchMergeProposalStatus.CODE_APPROVED,
-            self.merge_proposal.queue_status)
-        command = UpdateStatusEmailCommand('status', ['approved'])
+            self.merge_proposal.queue_status,
+        )
+        command = UpdateStatusEmailCommand("status", ["approved"])
         command.execute(self.context)
         self.assertEqual(
             BranchMergeProposalStatus.CODE_APPROVED,
-            self.merge_proposal.queue_status)
+            self.merge_proposal.queue_status,
+        )
         # The vote is also set if it wasn't before.
         self.assertEqual(CodeReviewVote.APPROVE, self.context.vote)
         # Commit the transaction to check database permissions.
@@ -602,23 +648,26 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
     def test_status_approved_doesnt_override_vote(self):
         # Test that approve sets the status of the merge proposal.
         self.context.vote = CodeReviewVote.NEEDS_FIXING
-        command = UpdateStatusEmailCommand('status', ['approved'])
+        command = UpdateStatusEmailCommand("status", ["approved"])
         command.execute(self.context)
         self.assertEqual(
             BranchMergeProposalStatus.CODE_APPROVED,
-            self.merge_proposal.queue_status)
+            self.merge_proposal.queue_status,
+        )
         self.assertEqual(CodeReviewVote.NEEDS_FIXING, self.context.vote)
 
     def test_status_rejected(self):
         # Test that rejected sets the status of the merge proposal.
         self.assertNotEqual(
             BranchMergeProposalStatus.REJECTED,
-            self.merge_proposal.queue_status)
-        command = UpdateStatusEmailCommand('status', ['rejected'])
+            self.merge_proposal.queue_status,
+        )
+        command = UpdateStatusEmailCommand("status", ["rejected"])
         command.execute(self.context)
         self.assertEqual(
             BranchMergeProposalStatus.REJECTED,
-            self.merge_proposal.queue_status)
+            self.merge_proposal.queue_status,
+        )
         # The vote is also set if it wasn't before.
         self.assertEqual(CodeReviewVote.DISAPPROVE, self.context.vote)
         # Commit the transaction to check database permissions.
@@ -627,48 +676,53 @@ class TestUpdateStatusEmailCommand(TestCaseWithFactory):
     def test_status_rejected_doesnt_override_vote(self):
         # Test that approve sets the status of the merge proposal.
         self.context.vote = CodeReviewVote.NEEDS_FIXING
-        command = UpdateStatusEmailCommand('status', ['rejected'])
+        command = UpdateStatusEmailCommand("status", ["rejected"])
         command.execute(self.context)
         self.assertEqual(
             BranchMergeProposalStatus.REJECTED,
-            self.merge_proposal.queue_status)
+            self.merge_proposal.queue_status,
+        )
         self.assertEqual(CodeReviewVote.NEEDS_FIXING, self.context.vote)
 
     def test_unknown_status(self):
         # Unknown status values will cause an email response to the user.
-        command = UpdateStatusEmailCommand('status', ['bob'])
+        command = UpdateStatusEmailCommand("status", ["bob"])
         error = self.assertRaises(
-            EmailProcessingError, command.execute, self.context)
+            EmailProcessingError, command.execute, self.context
+        )
         self.assertEqual(
             "The 'status' command expects any of the following arguments:\n"
             "approved, rejected\n\n"
             "For example:\n\n"
             "    status approved\n",
-            str(error))
+            str(error),
+        )
 
     def test_not_a_reviewer(self):
         # If the user is not a reviewer, they cannot update the status.
         self.context.user = self.jrandom
-        command = UpdateStatusEmailCommand('status', ['approve'])
+        command = UpdateStatusEmailCommand("status", ["approve"])
         with person_logged_in(self.context.user):
             error = self.assertRaises(
-                EmailProcessingError, command.execute, self.context)
+                EmailProcessingError, command.execute, self.context
+            )
         target = self.merge_proposal.target_branch.bzr_identity
         self.assertEqual(
-            "You are not a reviewer for the branch %s.\n" % target,
-            str(error))
+            "You are not a reviewer for the branch %s.\n" % target, str(error)
+        )
 
     def test_registrant_not_a_reviewer(self):
         # If the registrant is not a reviewer, they cannot update the status.
         self.context.user = self.context.merge_proposal.registrant
-        command = UpdateStatusEmailCommand('status', ['approve'])
+        command = UpdateStatusEmailCommand("status", ["approve"])
         with person_logged_in(self.context.user):
             error = self.assertRaises(
-                EmailProcessingError, command.execute, self.context)
+                EmailProcessingError, command.execute, self.context
+            )
         target = self.merge_proposal.target_branch.bzr_identity
         self.assertEqual(
-            "You are not a reviewer for the branch %s.\n" % target,
-            str(error))
+            "You are not a reviewer for the branch %s.\n" % target, str(error)
+        )
 
 
 class TestAddReviewerEmailCommand(TestCaseWithFactory):
@@ -677,14 +731,16 @@ class TestAddReviewerEmailCommand(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super().setUp(user='test@canonical.com')
+        super().setUp(user="test@canonical.com")
         self._old_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
-        self.merge_proposal = (
-            make_merge_proposal_without_reviewers(self.factory))
+        self.merge_proposal = make_merge_proposal_without_reviewers(
+            self.factory
+        )
         # Default the user to be the target branch owner, so they are
         # authorised to update the status.
         self.context = CodeReviewEmailCommandExecutionContext(
-            self.merge_proposal, self.merge_proposal.target_branch.owner)
+            self.merge_proposal, self.merge_proposal.target_branch.owner
+        )
         self.reviewer = self.factory.makePerson()
         switch_dbuser(config.processmail.dbuser)
 
@@ -694,17 +750,19 @@ class TestAddReviewerEmailCommand(TestCaseWithFactory):
 
     def test_numberOfArguments(self):
         # The command needs at least one arg.
-        command = AddReviewerEmailCommand('reviewer', [])
+        command = AddReviewerEmailCommand("reviewer", [])
         error = self.assertRaises(
-            EmailProcessingError, command.execute, self.context)
+            EmailProcessingError, command.execute, self.context
+        )
         self.assertEqual(
             "The 'reviewer' argument expects one or more argument(s). "
             "It got 0.\n",
-            str(error))
+            str(error),
+        )
 
     def test_add_reviewer(self):
         # The simple case is to add a reviewer with no tags.
-        command = AddReviewerEmailCommand('reviewer', [self.reviewer.name])
+        command = AddReviewerEmailCommand("reviewer", [self.reviewer.name])
         command.execute(self.context)
         [vote_ref] = list(self.context.merge_proposal.votes)
         self.assertEqual(self.reviewer, vote_ref.reviewer)
@@ -715,20 +773,23 @@ class TestAddReviewerEmailCommand(TestCaseWithFactory):
     def test_add_reviewer_with_tags(self):
         # The simple case is to add a reviewer with no tags.
         command = AddReviewerEmailCommand(
-            'reviewer', [self.reviewer.name, 'DB', 'Foo'])
+            "reviewer", [self.reviewer.name, "DB", "Foo"]
+        )
         command.execute(self.context)
         [vote_ref] = list(self.context.merge_proposal.votes)
         self.assertEqual(self.reviewer, vote_ref.reviewer)
         self.assertEqual(self.context.user, vote_ref.registrant)
-        self.assertEqual('db foo', vote_ref.review_type)
+        self.assertEqual("db foo", vote_ref.review_type)
         self.assertIs(None, vote_ref.comment)
 
     def test_unknown_reviewer(self):
         # An unknown user raises.
-        command = AddReviewerEmailCommand('reviewer', ['unknown@example.com'])
+        command = AddReviewerEmailCommand("reviewer", ["unknown@example.com"])
         error = self.assertRaises(
-            EmailProcessingError, command.execute, self.context)
+            EmailProcessingError, command.execute, self.context
+        )
         self.assertEqual(
             "There's no such person with the specified name or email: "
             "unknown@example.com\n",
-            str(error))
+            str(error),
+        )

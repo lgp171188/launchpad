@@ -2,82 +2,55 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'expose_enum_to_js',
-    'expose_structural_subscription_data_to_js',
-    'expose_user_administered_teams_to_js',
-    'expose_user_subscriptions_to_js',
-    'StructuralSubscriptionMenuMixin',
-    'StructuralSubscriptionTargetTraversalMixin',
-    'StructuralSubscriptionView',
-    'StructuralSubscribersPortletView',
-    ]
+    "expose_enum_to_js",
+    "expose_structural_subscription_data_to_js",
+    "expose_user_administered_teams_to_js",
+    "expose_user_subscriptions_to_js",
+    "StructuralSubscriptionMenuMixin",
+    "StructuralSubscriptionTargetTraversalMixin",
+    "StructuralSubscriptionView",
+    "StructuralSubscribersPortletView",
+]
 
-from operator import (
-    attrgetter,
-    itemgetter,
-    )
+from operator import attrgetter, itemgetter
 
-from lazr.restful.interfaces import (
-    IJSONRequestCache,
-    IWebServiceClientRequest,
-    )
+from lazr.restful.interfaces import IJSONRequestCache, IWebServiceClientRequest
 from zope.component import getUtility
 from zope.formlib import form
-from zope.schema import (
-    Choice,
-    List,
-    )
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema import Choice, List
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.traversing.browser import absoluteURL
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
-from lp.app.enums import (
-    InformationType,
-    ServiceUsage,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
+from lp.app.enums import InformationType, ServiceUsage
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionForm,
     IStructuralSubscriptionTarget,
     IStructuralSubscriptionTargetHelper,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.milestone import IProjectGroupMilestone
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    )
+from lp.registry.interfaces.person import IPerson, IPersonSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import NoCanonicalUrl
-from lp.services.webapp.menu import (
-    enabled_with_permission,
-    Link,
-    )
+from lp.services.webapp.menu import Link, enabled_with_permission
 from lp.services.webapp.publisher import (
-    canonical_url,
     LaunchpadView,
     Navigation,
+    canonical_url,
     stepthrough,
-    )
+)
 
 
 class StructuralSubscriptionNavigation(Navigation):
@@ -102,11 +75,11 @@ class StructuralSubscriptionView(LaunchpadFormView):
     custom_widget_subscriptions_team = LabeledMultiCheckBoxWidget
     custom_widget_remove_other_subscriptions = LabeledMultiCheckBoxWidget
 
-    page_title = 'Subscribe'
+    page_title = "Subscribe"
 
     @property
     def label(self):
-        return 'Subscribe to Bugs in %s' % self.context.title
+        return "Subscribe to Bugs in %s" % self.context.title
 
     @property
     def next_url(self):
@@ -134,18 +107,21 @@ class StructuralSubscriptionView(LaunchpadFormView):
         teams = self.user_teams
         if not teams:
             return None
-        teams.sort(key=attrgetter('displayname'))
+        teams.sort(key=attrgetter("displayname"))
         terms = [
-            SimpleTerm(team, team.name, team.displayname)
-            for team in teams]
+            SimpleTerm(team, team.name, team.displayname) for team in teams
+        ]
         team_vocabulary = SimpleVocabulary(terms)
         team_subscriptions_field = List(
-            __name__='subscriptions_team',
-            title='Team subscriptions',
-            description=('You can subscribe the teams of '
-                          'which you are an administrator.'),
+            __name__="subscriptions_team",
+            title="Team subscriptions",
+            description=(
+                "You can subscribe the teams of "
+                "which you are an administrator."
+            ),
             value_type=Choice(vocabulary=team_vocabulary),
-            required=False)
+            required=False,
+        )
         return form.FormField(team_subscriptions_field)
 
     def _createRemoveOtherSubscriptionsField(self):
@@ -157,8 +133,8 @@ class StructuralSubscriptionView(LaunchpadFormView):
         teams = set(self.user_teams)
         other_subscriptions = {
             subscription.subscriber
-            for subscription
-            in self.context.bug_subscriptions}
+            for subscription in self.context.bug_subscriptions
+        }
 
         # Teams and the current user have their own UI elements. Remove
         # them to avoid duplicates.
@@ -169,40 +145,42 @@ class StructuralSubscriptionView(LaunchpadFormView):
             return None
 
         other_subscriptions = sorted(
-            other_subscriptions, key=attrgetter('displayname'))
+            other_subscriptions, key=attrgetter("displayname")
+        )
 
         terms = [
             SimpleTerm(subscriber, subscriber.name, subscriber.displayname)
-            for subscriber in other_subscriptions]
+            for subscriber in other_subscriptions
+        ]
 
         subscriptions_vocabulary = SimpleVocabulary(terms)
         other_subscriptions_field = List(
-            __name__='remove_other_subscriptions',
-            title='Unsubscribe',
+            __name__="remove_other_subscriptions",
+            title="Unsubscribe",
             value_type=Choice(vocabulary=subscriptions_vocabulary),
-            required=False)
+            required=False,
+        )
         return form.FormField(other_subscriptions_field)
 
     def _createAddOtherSubscriptionsField(self):
         """Create a field for a new subscription."""
         new_subscription_field = Choice(
-            __name__='new_subscription',
-            title='Subscribe someone else',
-            vocabulary='ValidPersonOrTeam',
-            required=False)
+            __name__="new_subscription",
+            title="Subscribe someone else",
+            vocabulary="ValidPersonOrTeam",
+            required=False,
+        )
         return form.FormField(new_subscription_field)
 
     @property
     def initial_values(self):
         """See `LaunchpadFormView`."""
         teams = set(self.user_teams)
-        subscribed_teams = {team
-                               for team in teams
-                               if self.isSubscribed(team)}
+        subscribed_teams = {team for team in teams if self.isSubscribed(team)}
         return {
-            'subscribe_me': self.currentUserIsSubscribed(),
-            'subscriptions_team': subscribed_teams,
-            }
+            "subscribe_me": self.currentUserIsSubscribed(),
+            "subscriptions_team": subscribed_teams,
+        }
 
     def isSubscribed(self, person):
         """Is `person` subscribed to the context target?
@@ -220,7 +198,7 @@ class StructuralSubscriptionView(LaunchpadFormView):
         if self.context.userCanAlterBugSubscription(self.user, self.user):
             return True
 
-    @action('Save these changes', name='save')
+    @action("Save these changes", name="save")
     def save_action(self, action, data):
         """Process the subscriptions submitted by the user."""
         self._handleUserSubscription(data)
@@ -235,48 +213,51 @@ class StructuralSubscriptionView(LaunchpadFormView):
         # for a non-subscriber, hence call these methods only, if the
         # subscription status changed.
         is_subscribed = self.isSubscribed(self.user)
-        subscribe = data['subscribe_me']
+        subscribe = data["subscribe_me"]
         if (not is_subscribed) and subscribe:
             target.addBugSubscription(self.user, self.user)
             self.request.response.addNotification(
                 'You have subscribed to "%s". You will now receive an '
-                'email each time someone reports or changes one of '
-                'its bugs.' % target.displayname)
+                "email each time someone reports or changes one of "
+                "its bugs." % target.displayname
+            )
         elif is_subscribed and not subscribe:
             target.removeBugSubscription(self.user, self.user)
             self.request.response.addNotification(
                 'You have unsubscribed from "%s". You '
-                'will no longer automatically receive email about '
-                'changes to its bugs.' % target.displayname)
+                "will no longer automatically receive email about "
+                "changes to its bugs." % target.displayname
+            )
         else:
             # The subscription status did not change: nothing to do.
             pass
 
     def _handleTeamSubscriptions(self, data):
         """Process subscriptions for teams."""
-        form_selected_teams = data.get('subscriptions_team', None)
+        form_selected_teams = data.get("subscriptions_team", None)
         if form_selected_teams is None:
             return
 
         target = self.context
         teams = set(self.user_teams)
         form_selected_teams = teams & set(form_selected_teams)
-        subscriptions = {
-            team for team in teams if self.isSubscribed(team)}
+        subscriptions = {team for team in teams if self.isSubscribed(team)}
 
         for team in form_selected_teams - subscriptions:
             target.addBugSubscription(team, self.user)
             self.request.response.addNotification(
-                'The %s team will now receive an email each time '
-                'someone reports or changes a public bug in "%s".' % (
-                team.displayname, self.context.displayname))
+                "The %s team will now receive an email each time "
+                'someone reports or changes a public bug in "%s".'
+                % (team.displayname, self.context.displayname)
+            )
 
         for team in subscriptions - form_selected_teams:
             target.removeBugSubscription(team, self.user)
             self.request.response.addNotification(
-                'The %s team will no longer automatically receive '
-                'email about changes to public bugs in "%s".' % (
-                    team.displayname, self.context.displayname))
+                "The %s team will no longer automatically receive "
+                'email about changes to public bugs in "%s".'
+                % (team.displayname, self.context.displayname)
+            )
 
     def _handleDriverChanges(self, data):
         """Process subscriptions for other persons."""
@@ -284,22 +265,23 @@ class StructuralSubscriptionView(LaunchpadFormView):
             return
 
         target = self.context
-        new_subscription = data['new_subscription']
+        new_subscription = data["new_subscription"]
         if new_subscription is not None:
             target.addBugSubscription(new_subscription, self.user)
             self.request.response.addNotification(
-                '%s will now receive an email each time someone '
-                'reports or changes a public bug in "%s".' % (
-                new_subscription.displayname,
-                target.displayname))
+                "%s will now receive an email each time someone "
+                'reports or changes a public bug in "%s".'
+                % (new_subscription.displayname, target.displayname)
+            )
 
-        subscriptions_to_remove = data.get('remove_other_subscriptions', [])
+        subscriptions_to_remove = data.get("remove_other_subscriptions", [])
         for subscription in subscriptions_to_remove:
             target.removeBugSubscription(subscription, self.user)
             self.request.response.addNotification(
-                '%s will no longer automatically receive email about '
-                'public bugs in "%s".' % (
-                    subscription.displayname, target.displayname))
+                "%s will no longer automatically receive email about "
+                'public bugs in "%s".'
+                % (subscription.displayname, target.displayname)
+            )
 
     def userIsDriver(self):
         """Has the current user driver permissions?"""
@@ -308,7 +290,8 @@ class StructuralSubscriptionView(LaunchpadFormView):
         # compatibility with the obsolete bug contacts feature.
         if IDistributionSourcePackage.providedBy(self.context):
             return check_permission(
-                "launchpad.Driver", self.context.distribution)
+                "launchpad.Driver", self.context.distribution
+            )
         else:
             return False
 
@@ -321,7 +304,7 @@ class StructuralSubscriptionView(LaunchpadFormView):
 class StructuralSubscriptionTargetTraversalMixin:
     """Mix-in class that provides +subscription/<SUBSCRIBER> traversal."""
 
-    @stepthrough('+subscription')
+    @stepthrough("+subscription")
     def traverse_structuralsubscription(self, name):
         """Traverses +subscription portions of URLs."""
         person = getUtility(IPersonSet).getByName(name)
@@ -350,21 +333,22 @@ class StructuralSubscriptionMenuMixin:
         sst = self._getSST()
 
         if sst.userHasBugSubscriptions(self.user):
-            text = 'Edit bug mail subscription'
-            icon = 'edit'
+            text = "Edit bug mail subscription"
+            icon = "edit"
         else:
-            text = 'Subscribe to bug mail'
-            icon = 'add'
+            text = "Subscribe to bug mail"
+            icon = "add"
         # ProjectGroup milestones aren't really structural subscription
         # targets as they're not real milestones, so you can't subscribe to
         # them.
-        if (not IProjectGroupMilestone.providedBy(sst) and
-            sst.userCanAlterBugSubscription(self.user, self.user)):
+        if not IProjectGroupMilestone.providedBy(
+            sst
+        ) and sst.userCanAlterBugSubscription(self.user, self.user):
             enabled = True
         else:
             enabled = False
 
-        return Link('+subscribe', text, icon=icon, enabled=enabled)
+        return Link("+subscribe", text, icon=icon, enabled=enabled)
 
     @property
     def _enabled(self):
@@ -380,39 +364,48 @@ class StructuralSubscriptionMenuMixin:
         if IProjectGroupMilestone.providedBy(sst):
             return False
         pillar = IStructuralSubscriptionTargetHelper(sst).pillar
-        return (pillar.bug_tracking_usage == ServiceUsage.LAUNCHPAD and
-                sst.userCanAlterBugSubscription(self.user, self.user))
+        return (
+            pillar.bug_tracking_usage == ServiceUsage.LAUNCHPAD
+            and sst.userCanAlterBugSubscription(self.user, self.user)
+        )
 
-    @enabled_with_permission('launchpad.AnyPerson')
+    @enabled_with_permission("launchpad.AnyPerson")
     def subscribe_to_bug_mail(self):
-        text = 'Subscribe to bug mail'
+        text = "Subscribe to bug mail"
         # Clicks to this link will be intercepted by the on-page JavaScript,
         # but we want a link target for non-JS-enabled browsers.
-        return Link('+subscribe', text, icon='add', hidden=True,
-            enabled=self._enabled)
+        return Link(
+            "+subscribe", text, icon="add", hidden=True, enabled=self._enabled
+        )
 
-    @enabled_with_permission('launchpad.AnyPerson')
+    @enabled_with_permission("launchpad.AnyPerson")
     def edit_bug_mail(self):
-        text = 'Edit bug mail'
-        return Link('+subscriptions', text, icon='edit', site='bugs',
-                    enabled=self._enabled)
+        text = "Edit bug mail"
+        return Link(
+            "+subscriptions",
+            text,
+            icon="edit",
+            site="bugs",
+            enabled=self._enabled,
+        )
 
 
-def expose_structural_subscription_data_to_js(context, request,
-                                              user, subscriptions=None):
+def expose_structural_subscription_data_to_js(
+    context, request, user, subscriptions=None
+):
     """Expose all of the data for a structural subscription to JavaScript."""
     expose_user_administered_teams_to_js(request, user, context)
-    expose_enum_to_js(request, BugTaskImportance, 'importances')
-    expose_enum_to_js(request, BugTaskStatus, 'statuses')
-    expose_enum_to_js(request, InformationType, 'information_types')
+    expose_enum_to_js(request, BugTaskImportance, "importances")
+    expose_enum_to_js(request, BugTaskStatus, "statuses")
+    expose_enum_to_js(request, InformationType, "information_types")
     if subscriptions is None:
         try:
             # No subscriptions, which means we are on a target
             # subscriptions page. Let's at least provide target details.
             target_info = {}
-            target_info['title'] = context.title
-            target_info['url'] = canonical_url(context, rootsite='mainsite')
-            IJSONRequestCache(request).objects['target_info'] = target_info
+            target_info["title"] = context.title
+            target_info["url"] = canonical_url(context, rootsite="mainsite")
+            IJSONRequestCache(request).objects["target_info"] = target_info
         except NoCanonicalUrl:
             # We export nothing if the target implements no canonical URL.
             pass
@@ -425,13 +418,14 @@ def expose_enum_to_js(request, enum, name):
     IJSONRequestCache(request).objects[name] = [item.title for item in enum]
 
 
-def expose_user_administered_teams_to_js(request, user, context,
-        absoluteURL=absoluteURL):
+def expose_user_administered_teams_to_js(
+    request, user, context, absoluteURL=absoluteURL
+):
     """Make the list of teams the user administers available to JavaScript."""
     # XXX: Robert Collins workaround multiple calls making this cause
     # timeouts: see bug 788510.
     objects = IJSONRequestCache(request).objects
-    if 'administratedTeams' in objects:
+    if "administratedTeams" in objects:
         return
     info = []
     api_request = IWebServiceClientRequest(request)
@@ -453,30 +447,37 @@ def expose_user_administered_teams_to_js(request, user, context,
             # filters can only be edited by the subscriber.
             # This can happen if the user is an owner but not a member.
             administers_and_in = membership.intersection(administrated_teams)
-            list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                [team.id for team in administers_and_in],
-                need_preferred_email=True))
+            list(
+                getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                    [team.id for team in administers_and_in],
+                    need_preferred_email=True,
+                )
+            )
 
             # If the requester is the user, they're at least an admin in
             # all of these teams. Precache launchpad.(Limited)View so we
             # can see the necessary attributes.
             current_user = IPerson(get_current_principal(), None)
             if current_user is not None and user == current_user:
-                for perm in ('launchpad.View', 'launchpad.LimitedView'):
+                for perm in ("launchpad.View", "launchpad.LimitedView"):
                     precache_permission_for_objects(
-                        None, perm, administers_and_in)
+                        None, perm, administers_and_in
+                    )
 
-            for team in sorted(administers_and_in, key=attrgetter('name')):
-                if (bug_supervisor is not None and
-                    not team.inTeam(bug_supervisor)):
+            for team in sorted(administers_and_in, key=attrgetter("name")):
+                if bug_supervisor is not None and not team.inTeam(
+                    bug_supervisor
+                ):
                     continue
-                info.append({
-                    'has_preferredemail': team.preferredemail is not None,
-                    'link': absoluteURL(team, api_request),
-                    'title': team.unique_displayname,
-                    'url': canonical_url(team),
-                })
-    objects['administratedTeams'] = info
+                info.append(
+                    {
+                        "has_preferredemail": team.preferredemail is not None,
+                        "link": absoluteURL(team, api_request),
+                        "title": team.unique_displayname,
+                        "url": canonical_url(team),
+                    }
+                )
+    objects["administratedTeams"] = info
 
 
 def expose_user_subscriptions_to_js(user, subscriptions, request):
@@ -492,41 +493,46 @@ def expose_user_subscriptions_to_js(user, subscriptions, request):
         target = subscription.target
         record = info.get(target)
         if record is None:
-            record = dict(target_title=target.title,
-                          target_url=canonical_url(
-                            target, rootsite='mainsite'),
-                          filters=[])
+            record = dict(
+                target_title=target.title,
+                target_url=canonical_url(target, rootsite="mainsite"),
+                filters=[],
+            )
             info[target] = record
         subscriber = subscription.subscriber
         for filter in subscription.bug_filters:
             is_team = subscriber.is_team
-            user_is_team_admin = (
-                is_team and subscriber in administered_teams)
+            user_is_team_admin = is_team and subscriber in administered_teams
             team_has_contact_address = (
-                is_team and subscriber.preferredemail is not None)
+                is_team and subscriber.preferredemail is not None
+            )
             mailing_list = subscriber.mailing_list
             user_is_on_team_mailing_list = (
-                team_has_contact_address and
-                mailing_list is not None and
-                mailing_list.is_usable and
-                mailing_list.getSubscription(subscriber) is not None)
-            record['filters'].append(dict(
-                filter=filter,
-                subscriber_link=absoluteURL(subscriber, api_request),
-                subscriber_url=canonical_url(
-                    subscriber, rootsite='mainsite'),
-                target_bugs_url=canonical_url(
-                    target, rootsite='bugs'),
-                subscriber_title=subscriber.title,
-                subscriber_is_team=is_team,
-                user_is_team_admin=user_is_team_admin,
-                team_has_contact_address=team_has_contact_address,
-                user_is_on_team_mailing_list=user_is_on_team_mailing_list,
-                can_mute=filter.isMuteAllowed(user),
-                is_muted=filter.muted(user) is not None,
-                target_title=target.title))
-    info = sorted(info.values(), key=itemgetter('target_url'))
-    IJSONRequestCache(request).objects['subscription_info'] = info
+                team_has_contact_address
+                and mailing_list is not None
+                and mailing_list.is_usable
+                and mailing_list.getSubscription(subscriber) is not None
+            )
+            record["filters"].append(
+                dict(
+                    filter=filter,
+                    subscriber_link=absoluteURL(subscriber, api_request),
+                    subscriber_url=canonical_url(
+                        subscriber, rootsite="mainsite"
+                    ),
+                    target_bugs_url=canonical_url(target, rootsite="bugs"),
+                    subscriber_title=subscriber.title,
+                    subscriber_is_team=is_team,
+                    user_is_team_admin=user_is_team_admin,
+                    team_has_contact_address=team_has_contact_address,
+                    user_is_on_team_mailing_list=user_is_on_team_mailing_list,
+                    can_mute=filter.isMuteAllowed(user),
+                    is_muted=filter.muted(user) is not None,
+                    target_title=target.title,
+                )
+            )
+    info = sorted(info.values(), key=itemgetter("target_url"))
+    IJSONRequestCache(request).objects["subscription_info"] = info
 
 
 class StructuralSubscribersPortletView(LaunchpadView):
@@ -543,5 +549,4 @@ class StructuralSubscribersPortletView(LaunchpadView):
     @property
     def parent_target_label(self):
         """Return the target label for the portlet."""
-        return (
-            "To all %s bugs" % self.context.parent_subscription_target.title)
+        return "To all %s bugs" % self.context.parent_subscription_target.title

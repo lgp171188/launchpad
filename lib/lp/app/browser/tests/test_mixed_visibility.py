@@ -3,10 +3,7 @@
 
 from lp.app.browser.tales import TeamFormatterAPI
 from lp.registry.interfaces.person import PersonVisibility
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -21,7 +18,7 @@ class TestMixedVisibility(TestCaseWithFactory):
         viewer = self.factory.makePerson()
         with person_logged_in(viewer):
             self.assertEqual(
-                '<hidden>', TeamFormatterAPI(team).displayname(None))
+                "<hidden>", TeamFormatterAPI(team).displayname(None)
+            )
         self.assertEqual(1, len(self.oopses))
-        self.assertTrue(
-            'MixedVisibilityError' in self.oopses[0]['tb_text'])
+        self.assertTrue("MixedVisibilityError" in self.oopses[0]["tb_text"])

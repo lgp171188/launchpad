@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IInformationType',
-    ]
+    "IInformationType",
+]
 
 from lazr.restful.declarations import exported
 from zope.schema import Choice
@@ -15,9 +15,11 @@ from lp.app.interfaces.launchpad import IPrivacy
 
 class IInformationType(IPrivacy):
 
-    information_type = exported(Choice(
-        title=_('Information Type'),
-        vocabulary=InformationType,
-        required=True,
-        description=_('The type of data contained in this item.')
-        ))
+    information_type = exported(
+        Choice(
+            title=_("Information Type"),
+            vocabulary=InformationType,
+            required=True,
+            description=_("The type of data contained in this item."),
+        )
+    )

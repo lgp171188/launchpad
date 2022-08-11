@@ -10,7 +10,7 @@ from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesStructure,
-    )
+)
 
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.registry.enums import PersonVisibility
@@ -20,19 +20,19 @@ from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     ANONYMOUS,
+    TestCaseWithFactory,
     api_url,
     login,
     login_as,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.pages import webservice_for_person
 
 
 class TestDistroArchSeriesWebservice(TestCaseWithFactory):
-    """Unit Tests for 'DistroArchSeries' Webservice.
-    """
+    """Unit Tests for 'DistroArchSeries' Webservice."""
+
     layer = LaunchpadFunctionalLayer
 
     def test_distroseries_architectures_anonymous(self):
@@ -42,7 +42,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         ws = webservice_for_person(None, default_api_version="devel")
         ws_distroseries = self.getWebserviceJSON(ws, distroseries_url)
         ws_architectures = self.getWebserviceJSON(
-            ws, ws_distroseries["architectures_collection_link"])
+            ws, ws_distroseries["architectures_collection_link"]
+        )
         self.assertEqual(1, len(ws_architectures["entries"]))
 
     def test_distroseries_architectures_authenticated(self):
@@ -54,7 +55,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         ws = webservice_for_person(accessor, default_api_version="devel")
         ws_distroseries = self.getWebserviceJSON(ws, distroseries_url)
         ws_architectures = self.getWebserviceJSON(
-            ws, ws_distroseries["architectures_collection_link"])
+            ws, ws_distroseries["architectures_collection_link"]
+        )
         self.assertEqual(1, len(ws_architectures["entries"]))
 
     def test_getBuildRecords(self):
@@ -68,7 +70,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(
             [build_title],
-            [entry["title"] for entry in response.jsonBody()["entries"]])
+            [entry["title"] for entry in response.jsonBody()["entries"]],
+        )
 
     def test_setChroot_removeChroot_random_user(self):
         # Random users are not allowed to set or remove chroots.
@@ -76,10 +79,13 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         das_url = api_url(das)
         user = self.factory.makePerson()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"xyz"), sha1sum="0")
+            das_url, "setChroot", data=io.BytesIO(b"xyz"), sha1sum="0"
+        )
         self.assertEqual(401, response.status)
         response = ws.named_post(das_url, "removeChroot")
         self.assertEqual(401, response.status)
@@ -90,13 +96,19 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         das_url = api_url(das)
         user = das.distroseries.distribution.main_archive.owner
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"zyx"), sha1sum="x")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=b"Chroot upload checksums do not match"))
+            das_url, "setChroot", data=io.BytesIO(b"zyx"), sha1sum="x"
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=b"Chroot upload checksums do not match"
+            ),
+        )
 
     def test_setChroot_missing_trailing_cr(self):
         # Due to http://bugs.python.org/issue1349106 launchpadlib sends
@@ -109,12 +121,17 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         das_url = api_url(das)
         user = das.distroseries.distribution.main_archive.owner
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
-        sha1 = '95e0c0e09be59e04eb0e312e5daa11a2a830e526'
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        sha1 = "95e0c0e09be59e04eb0e312e5daa11a2a830e526"
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"foo\r"),
-            sha1sum="95e0c0e09be59e04eb0e312e5daa11a2a830e526")
+            das_url,
+            "setChroot",
+            data=io.BytesIO(b"foo\r"),
+            sha1sum="95e0c0e09be59e04eb0e312e5daa11a2a830e526",
+        )
         self.assertEqual(200, response.status)
         login(ANONYMOUS)
         self.assertEqual(sha1, das.getChroot().content.sha1)
@@ -126,41 +143,54 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         sha1 = hashlib.sha1(b"abcxyz").hexdigest()
         sha256 = hashlib.sha256(b"abcxyz").hexdigest()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1)
+            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1
+        )
         self.assertEqual(200, response.status)
         login(ANONYMOUS)
         self.assertThat(
             das.getChrootHash(
-                PackagePublishingPocket.RELEASE, BuildBaseImageType.CHROOT),
-            MatchesDict({"sha256": Equals(sha256)}))
+                PackagePublishingPocket.RELEASE, BuildBaseImageType.CHROOT
+            ),
+            MatchesDict({"sha256": Equals(sha256)}),
+        )
 
     def test_setChroot_removeChroot(self):
         das = self.factory.makeDistroArchSeries()
         das_url = api_url(das)
         user = das.distroseries.distribution.main_archive.owner
         expected_file = "chroot-%s-%s-%s.tar.gz" % (
-            das.distroseries.distribution.name, das.distroseries.name,
-            das.architecturetag)
+            das.distroseries.distribution.name,
+            das.distroseries.name,
+            das.architecturetag,
+        )
         sha1 = hashlib.sha1(b"abcxyz").hexdigest()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1)
+            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1
+        )
         self.assertEqual(200, response.status)
         self.assertEndsWith(
-            self.getWebserviceJSON(ws, das_url)["chroot_url"], expected_file)
+            self.getWebserviceJSON(ws, das_url)["chroot_url"], expected_file
+        )
         response = ws.named_post(das_url, "removeChroot")
         self.assertEqual(200, response.status)
         self.assertIsNone(self.getWebserviceJSON(ws, das_url)["chroot_url"])
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1)
+            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1
+        )
         self.assertEqual(200, response.status)
         self.assertEndsWith(
-            self.getWebserviceJSON(ws, das_url)["chroot_url"], expected_file)
+            self.getWebserviceJSON(ws, das_url)["chroot_url"], expected_file
+        )
 
     def test_setChroot_removeChroot_pocket(self):
         das = self.factory.makeDistroArchSeries()
@@ -169,21 +199,30 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         sha1_1 = hashlib.sha1(b"abcxyz").hexdigest()
         sha1_2 = hashlib.sha1(b"123456").hexdigest()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1_1)
+            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1_1
+        )
         self.assertEqual(200, response.status)
         response = ws.named_post(
-            das_url, "setChroot",
-            data=io.BytesIO(b"123456"), sha1sum=sha1_2, pocket="Updates")
+            das_url,
+            "setChroot",
+            data=io.BytesIO(b"123456"),
+            sha1sum=sha1_2,
+            pocket="Updates",
+        )
         self.assertEqual(200, response.status)
         with person_logged_in(user):
             release_chroot = das.getChroot(
-                pocket=PackagePublishingPocket.RELEASE)
+                pocket=PackagePublishingPocket.RELEASE
+            )
             self.assertEqual(sha1_1, release_chroot.content.sha1)
             updates_chroot = das.getChroot(
-                pocket=PackagePublishingPocket.UPDATES)
+                pocket=PackagePublishingPocket.UPDATES
+            )
             self.assertEqual(sha1_2, updates_chroot.content.sha1)
             release_chroot_url = release_chroot.http_url
             updates_chroot_url = updates_chroot.http_url
@@ -207,11 +246,16 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(release_chroot_url, response.jsonBody())
         response = ws.named_post(
-            das_url, "setChroot",
-            data=io.BytesIO(b"123456"), sha1sum=sha1_2, pocket="Updates")
+            das_url,
+            "setChroot",
+            data=io.BytesIO(b"123456"),
+            sha1sum=sha1_2,
+            pocket="Updates",
+        )
         with person_logged_in(user):
             updates_chroot = das.getChroot(
-                pocket=PackagePublishingPocket.UPDATES)
+                pocket=PackagePublishingPocket.UPDATES
+            )
             self.assertEqual(sha1_2, updates_chroot.content.sha1)
             updates_chroot_url = updates_chroot.http_url
         response = ws.named_get(das_url, "getChrootURL", pocket="Release")
@@ -231,14 +275,21 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         sha1_1 = hashlib.sha1(b"abcxyz").hexdigest()
         sha1_2 = hashlib.sha1(b"123456").hexdigest()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1_1)
+            das_url, "setChroot", data=io.BytesIO(b"abcxyz"), sha1sum=sha1_1
+        )
         self.assertEqual(200, response.status)
         response = ws.named_post(
-            das_url, "setChroot",
-            data=io.BytesIO(b"123456"), sha1sum=sha1_2, image_type="LXD image")
+            das_url,
+            "setChroot",
+            data=io.BytesIO(b"123456"),
+            sha1sum=sha1_2,
+            image_type="LXD image",
+        )
         self.assertEqual(200, response.status)
         with person_logged_in(user):
             chroot_image = das.getChroot(image_type=BuildBaseImageType.CHROOT)
@@ -248,21 +299,26 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             chroot_image_url = chroot_image.http_url
             lxd_image_url = lxd_image.http_url
         response = ws.named_get(
-            das_url, "getChrootURL", image_type="Chroot tarball")
+            das_url, "getChrootURL", image_type="Chroot tarball"
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(chroot_image_url, response.jsonBody())
         response = ws.named_get(
-            das_url, "getChrootURL", image_type="LXD image")
+            das_url, "getChrootURL", image_type="LXD image"
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(lxd_image_url, response.jsonBody())
         response = ws.named_post(
-            das_url, "removeChroot", image_type="LXD image")
+            das_url, "removeChroot", image_type="LXD image"
+        )
         response = ws.named_get(
-            das_url, "getChrootURL", image_type="Chroot tarball")
+            das_url, "getChrootURL", image_type="Chroot tarball"
+        )
         self.assertEqual(200, response.status)
         self.assertEqual(chroot_image_url, response.jsonBody())
         response = ws.named_get(
-            das_url, "getChrootURL", image_type="LXD image")
+            das_url, "getChrootURL", image_type="LXD image"
+        )
         self.assertEqual(200, response.status)
         self.assertIsNone(response.jsonBody())
 
@@ -275,18 +331,24 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         login_as(build.livefs.owner)
         lfas = []
         for filename in (
-                "livecd.ubuntu-base.rootfs.tar.gz",
-                "livecd.ubuntu-base.manifest"):
+            "livecd.ubuntu-base.rootfs.tar.gz",
+            "livecd.ubuntu-base.manifest",
+        ):
             lfa = self.factory.makeLibraryFileAlias(filename=filename)
             lfas.append(lfa)
             build.addFile(lfa)
         user = das.distroseries.distribution.main_archive.owner
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         ws.named_post(
-            das_url, "setChrootFromBuild",
-            livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
+            das_url,
+            "setChrootFromBuild",
+            livefsbuild=build_url,
+            filename="livecd.ubuntu-base.rootfs.tar.gz",
+        )
         login(ANONYMOUS)
         self.assertEqual(lfas[0], das.getChroot())
 
@@ -298,15 +360,23 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         build = self.factory.makeLiveFSBuild()
         build_url = api_url(build)
         login_as(build.livefs.owner)
-        build.addFile(self.factory.makeLibraryFileAlias(
-            filename="livecd.ubuntu-base.rootfs.tar.gz"))
+        build.addFile(
+            self.factory.makeLibraryFileAlias(
+                filename="livecd.ubuntu-base.rootfs.tar.gz"
+            )
+        )
         user = self.factory.makePerson()
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChrootFromBuild",
-            livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
+            das_url,
+            "setChrootFromBuild",
+            livefsbuild=build_url,
+            filename="livecd.ubuntu-base.rootfs.tar.gz",
+        )
         self.assertEqual(401, response.status)
 
     def test_setChrootFromBuild_private(self):
@@ -316,24 +386,37 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         das_url = api_url(das)
         owner = self.factory.makePerson()
         private_team = self.factory.makeTeam(
-            owner=owner, visibility=PersonVisibility.PRIVATE)
+            owner=owner, visibility=PersonVisibility.PRIVATE
+        )
         login_as(owner)
         build = self.factory.makeLiveFSBuild(
-            requester=owner, owner=private_team)
+            requester=owner, owner=private_team
+        )
         build_url = api_url(build)
-        build.addFile(self.factory.makeLibraryFileAlias(
-            filename="livecd.ubuntu-base.rootfs.tar.gz"))
+        build.addFile(
+            self.factory.makeLibraryFileAlias(
+                filename="livecd.ubuntu-base.rootfs.tar.gz"
+            )
+        )
         user = das.distroseries.distribution.main_archive.owner
         private_team.addMember(user, owner)
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PRIVATE,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChrootFromBuild",
-            livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=b"Cannot set chroot from a private build."))
+            das_url,
+            "setChrootFromBuild",
+            livefsbuild=build_url,
+            filename="livecd.ubuntu-base.rootfs.tar.gz",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=b"Cannot set chroot from a private build."
+            ),
+        )
 
     def test_setChrootFromBuild_pocket(self):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
@@ -343,21 +426,30 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         build_url = api_url(build)
         login_as(build.livefs.owner)
         lfa = self.factory.makeLibraryFileAlias(
-            filename="livecd.ubuntu-base.rootfs.tar.gz")
+            filename="livecd.ubuntu-base.rootfs.tar.gz"
+        )
         build.addFile(lfa)
         user = das.distroseries.distribution.main_archive.owner
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChrootFromBuild", livefsbuild=build_url,
-            filename="livecd.ubuntu-base.rootfs.tar.gz", pocket="Updates")
+            das_url,
+            "setChrootFromBuild",
+            livefsbuild=build_url,
+            filename="livecd.ubuntu-base.rootfs.tar.gz",
+            pocket="Updates",
+        )
         self.assertEqual(200, response.status)
         login(ANONYMOUS)
         self.assertIsNone(
-            das.getChroot(pocket=PackagePublishingPocket.RELEASE))
+            das.getChroot(pocket=PackagePublishingPocket.RELEASE)
+        )
         self.assertEqual(
-            lfa, das.getChroot(pocket=PackagePublishingPocket.UPDATES))
+            lfa, das.getChroot(pocket=PackagePublishingPocket.UPDATES)
+        )
 
     def test_setChrootFromBuild_image_type(self):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
@@ -367,15 +459,22 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         build_url = api_url(build)
         login_as(build.livefs.owner)
         lfa = self.factory.makeLibraryFileAlias(
-            filename="livecd.ubuntu-base.lxd.tar.gz")
+            filename="livecd.ubuntu-base.lxd.tar.gz"
+        )
         build.addFile(lfa)
         user = das.distroseries.distribution.main_archive.owner
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setChrootFromBuild", livefsbuild=build_url,
-            filename="livecd.ubuntu-base.lxd.tar.gz", image_type="LXD image")
+            das_url,
+            "setChrootFromBuild",
+            livefsbuild=build_url,
+            filename="livecd.ubuntu-base.lxd.tar.gz",
+            image_type="LXD image",
+        )
         self.assertEqual(200, response.status)
         login(ANONYMOUS)
         self.assertIsNone(das.getChroot(image_type=BuildBaseImageType.CHROOT))
@@ -389,11 +488,16 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = self.factory.makePerson()
         packageset_url = api_url(packageset)
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setSourceFilter",
-            packageset=packageset_url, sense="Include")
+            das_url,
+            "setSourceFilter",
+            packageset=packageset_url,
+            sense="Include",
+        )
         self.assertEqual(401, response.status)
         response = ws.named_post(das_url, "removeSourceFilter")
         self.assertEqual(401, response.status)
@@ -407,20 +511,31 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         packageset_url = api_url(packageset)
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setSourceFilter",
-            packageset=packageset_url, sense="Include")
+            das_url,
+            "setSourceFilter",
+            packageset=packageset_url,
+            sense="Include",
+        )
         expected_error = (
             "The requested package set is for %s and cannot be set as a "
-            "filter for %s %s." % (
+            "filter for %s %s."
+            % (
                 packageset.distroseries.fullseriesname,
                 das.distroseries.fullseriesname,
-                das.architecturetag))
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400,
-            body=expected_error.encode()))
+                das.architecturetag,
+            )
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=expected_error.encode()
+            ),
+        )
 
     def test_setSourceFilter_removeSourceFilter(self):
         das = self.factory.makeDistroArchSeries()
@@ -429,28 +544,46 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         packageset_url = api_url(packageset)
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel")
+            user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
         response = ws.named_post(
-            das_url, "setSourceFilter",
-            packageset=packageset_url, sense="Include")
+            das_url,
+            "setSourceFilter",
+            packageset=packageset_url,
+            sense="Include",
+        )
         self.assertEqual(200, response.status)
         response = ws.named_get(das_url, "getSourceFilter")
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "packageset_link": EndsWith(packageset_url),
-            "sense": Equals("Include"),
-            }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "packageset_link": EndsWith(packageset_url),
+                    "sense": Equals("Include"),
+                }
+            ),
+        )
         response = ws.named_post(
-            das_url, "setSourceFilter",
-            packageset=packageset_url, sense="Exclude")
+            das_url,
+            "setSourceFilter",
+            packageset=packageset_url,
+            sense="Exclude",
+        )
         self.assertEqual(200, response.status)
         response = ws.named_get(das_url, "getSourceFilter")
         self.assertEqual(200, response.status)
-        self.assertThat(response.jsonBody(), ContainsDict({
-            "packageset_link": EndsWith(packageset_url),
-            "sense": Equals("Exclude"),
-            }))
+        self.assertThat(
+            response.jsonBody(),
+            ContainsDict(
+                {
+                    "packageset_link": EndsWith(packageset_url),
+                    "sense": Equals("Exclude"),
+                }
+            ),
+        )
         response = ws.named_post(das_url, "removeSourceFilter")
         self.assertEqual(200, response.status)
         response = ws.named_get(das_url, "getSourceFilter")

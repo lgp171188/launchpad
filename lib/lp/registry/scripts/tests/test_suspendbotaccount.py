@@ -23,8 +23,8 @@ class TestSuspendBotAccount(TestCaseWithFactory):
         return script
 
     def test_suspendbotaccount(self):
-        bot = self.factory.makePerson(email='webops+bot@canonical.com')
-        script = self.makeScript(['--email', 'webops+bot@canonical.com'])
+        bot = self.factory.makePerson(email="webops+bot@canonical.com")
+        script = self.makeScript(["--email", "webops+bot@canonical.com"])
         script.main()
         self.assertEqual(AccountStatus.SUSPENDED, bot.account_status)
 

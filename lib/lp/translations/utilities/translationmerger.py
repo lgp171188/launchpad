@@ -2,19 +2,16 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'MessageSharingMerge',
-    'TransactionManager',
-    'TranslationMerger',
-    ]
+    "MessageSharingMerge",
+    "TransactionManager",
+    "TranslationMerger",
+]
 
 
 from operator import methodcaller
 
 import six
-from storm.locals import (
-    ClassAlias,
-    Store,
-    )
+from storm.locals import ClassAlias, Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -25,21 +22,12 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.packaging import Packaging
 from lp.services.database.interfaces import IStore
 from lp.services.orderingcheck import OrderingCheck
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
-from lp.services.scripts.logger import (
-    DEBUG2,
-    log,
-    )
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
+from lp.services.scripts.logger import DEBUG2, log
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.interfaces.side import TranslationSide
 from lp.translations.interfaces.translations import TranslationConstants
-from lp.translations.model.potemplate import (
-    POTemplate,
-    POTemplateSubset,
-    )
+from lp.translations.model.potemplate import POTemplate, POTemplateSubset
 from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.translationmessage import TranslationMessage
 
@@ -52,17 +40,18 @@ def get_potmsgset_key(potmsgset):
     """
     potmsgset = removeSecurityProxy(potmsgset)
     return (
-        potmsgset.msgid_singular_id, potmsgset.msgid_plural_id,
-        potmsgset.context)
+        potmsgset.msgid_singular_id,
+        potmsgset.msgid_plural_id,
+        potmsgset.context,
+    )
 
 
 def merge_pofiletranslators(from_template, to_template):
-    """Merge POFileTranslator entries from one template into another.
-    """
+    """Merge POFileTranslator entries from one template into another."""
     # Import here to avoid circular import.
     from lp.translations.interfaces.pofiletranslator import (
         IPOFileTranslatorSet,
-        )
+    )
 
     pofiletranslatorset = getUtility(IPOFileTranslatorSet)
     affected_rows = pofiletranslatorset.getForTemplate(from_template)
@@ -78,7 +67,8 @@ def merge_pofiletranslators(from_template, to_template):
             pofiletranslator.destroySelf()
         else:
             existing_row = pofiletranslatorset.getForPersonPOFile(
-                person, to_pofile)
+                person, to_pofile
+            )
             date_last_touched = pofiletranslator.date_last_touched
             if existing_row is None:
                 # Move POFileTranslator over to representative POFile.
@@ -89,8 +79,9 @@ def merge_pofiletranslators(from_template, to_template):
                 pofiletranslator.destroySelf()
 
 
-def merge_translationtemplateitems(subordinate, representative,
-                                   representative_template):
+def merge_translationtemplateitems(
+    subordinate, representative, representative_template
+):
     """Merge subordinate POTMsgSet into its representative POTMsgSet.
 
     This adds all of the subordinate's TranslationTemplateItems to the
@@ -164,21 +155,27 @@ def bequeathe_flags(source_message, target_message, incumbents=None):
     """
     sacrifice_flags(source_message, incumbents)
 
-    if (source_message.is_current_ubuntu and
-        not target_message.is_current_ubuntu):
+    if (
+        source_message.is_current_ubuntu
+        and not target_message.is_current_ubuntu
+    ):
         # Transfer is_current_ubuntu flag.
         source_message.is_current_ubuntu = False
         target_message.is_current_ubuntu = True
         Store.of(source_message).add_flush_order(
-            source_message, target_message)
+            source_message, target_message
+        )
 
-    if (source_message.is_current_upstream and
-        not target_message.is_current_upstream):
+    if (
+        source_message.is_current_upstream
+        and not target_message.is_current_upstream
+    ):
         # Transfer is_current_upstream flag.
         source_message.is_current_upstream = False
         target_message.is_current_upstream = True
         Store.of(source_message).add_flush_order(
-            source_message, target_message)
+            source_message, target_message
+        )
 
     source_message.destroySelf()
 
@@ -190,27 +187,58 @@ class MessageSharingMerge(LaunchpadScript):
     commit_count = 0
 
     def add_my_options(self):
-        self.parser.add_option('-d', '--distribution', dest='distribution',
-            help="Distribution to merge messages for.")
-        self.parser.add_option('-D', '--remove-duplicates',
-            dest='remove_duplicates', action='store_true',
-            help="Phase 1: Remove problematic duplicate TranslationMessages.")
-        self.parser.add_option('-p', '--product', dest='product',
-            help="Product to merge messages for.")
-        self.parser.add_option('-P', '--merge-potmsgsets',
-            action='store_true', dest='merge_potmsgsets',
-            help="Phase 2: Merge POTMsgSets.")
-        self.parser.add_option('-s', '--source-package', dest='sourcepackage',
-            help="Source package name within a distribution.")
-        self.parser.add_option('-t', '--template-names',
-            dest='template_names',
-            help="Merge for templates with name matching this regex pattern.")
-        self.parser.add_option('-T', '--merge-translationmessages',
-            action='store_true', dest='merge_translationmessages',
-            help="Phase 3: Merge TranslationMessages.")
-        self.parser.add_option('-x', '--dry-run', dest='dry_run',
-            action='store_true',
-            help="Dry run, don't really make any changes.")
+        self.parser.add_option(
+            "-d",
+            "--distribution",
+            dest="distribution",
+            help="Distribution to merge messages for.",
+        )
+        self.parser.add_option(
+            "-D",
+            "--remove-duplicates",
+            dest="remove_duplicates",
+            action="store_true",
+            help="Phase 1: Remove problematic duplicate TranslationMessages.",
+        )
+        self.parser.add_option(
+            "-p",
+            "--product",
+            dest="product",
+            help="Product to merge messages for.",
+        )
+        self.parser.add_option(
+            "-P",
+            "--merge-potmsgsets",
+            action="store_true",
+            dest="merge_potmsgsets",
+            help="Phase 2: Merge POTMsgSets.",
+        )
+        self.parser.add_option(
+            "-s",
+            "--source-package",
+            dest="sourcepackage",
+            help="Source package name within a distribution.",
+        )
+        self.parser.add_option(
+            "-t",
+            "--template-names",
+            dest="template_names",
+            help="Merge for templates with name matching this regex pattern.",
+        )
+        self.parser.add_option(
+            "-T",
+            "--merge-translationmessages",
+            action="store_true",
+            dest="merge_translationmessages",
+            help="Phase 3: Merge TranslationMessages.",
+        )
+        self.parser.add_option(
+            "-x",
+            "--dry-run",
+            dest="dry_run",
+            action="store_true",
+            help="Dry run, don't really make any changes.",
+        )
 
     def _setUpUtilities(self):
         """Prepare a few members that several methods need.
@@ -222,58 +250,71 @@ class MessageSharingMerge(LaunchpadScript):
 
     def main(self):
         actions = (
-            self.options.remove_duplicates or
-            self.options.merge_potmsgsets or
-            self.options.merge_translationmessages)
+            self.options.remove_duplicates
+            or self.options.merge_potmsgsets
+            or self.options.merge_translationmessages
+        )
 
         if not actions:
             raise LaunchpadScriptFailure(
                 "Select at least one action: remove duplicates, merge "
-                "POTMsgSets, and/or merge TranslationMessages.")
+                "POTMsgSets, and/or merge TranslationMessages."
+            )
 
         if self.options.product and self.options.distribution:
             raise LaunchpadScriptFailure(
-                "Merge a product or a distribution, but not both.")
+                "Merge a product or a distribution, but not both."
+            )
 
         if not (self.options.product or self.options.distribution):
             raise LaunchpadScriptFailure(
-                "Specify a product or distribution to merge.")
+                "Specify a product or distribution to merge."
+            )
 
         if self.options.sourcepackage and not self.options.distribution:
             raise LaunchpadScriptFailure(
-                "Selecting a package only makes sense for distributions.")
+                "Selecting a package only makes sense for distributions."
+            )
 
         if self.options.product:
             product = getUtility(IProductSet).getByName(self.options.product)
             distribution = None
             if product is None:
                 raise LaunchpadScriptFailure(
-                    "Unknown product: '%s'" % self.options.product)
+                    "Unknown product: '%s'" % self.options.product
+                )
         else:
             product = None
             # import here to avoid circular import.
             from lp.registry.interfaces.distribution import IDistributionSet
+
             distribution = getUtility(IDistributionSet).getByName(
-                self.options.distribution)
+                self.options.distribution
+            )
             if distribution is None:
                 raise LaunchpadScriptFailure(
-                    "Unknown distribution: '%s'" % self.options.distribution)
+                    "Unknown distribution: '%s'" % self.options.distribution
+                )
 
         if self.options.sourcepackage is None:
             sourcepackagename = None
         else:
             sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
-                self.options.sourcepackage)
+                self.options.sourcepackage
+            )
             if sourcepackagename is None:
                 raise LaunchpadScriptFailure(
-                    "Unknown source package name: '%s'" %
-                        self.options.sourcepackage)
+                    "Unknown source package name: '%s'"
+                    % self.options.sourcepackage
+                )
 
         self._setUpUtilities()
 
         subset = self.template_set.getSharingSubset(
-                product=product, distribution=distribution,
-                sourcepackagename=sourcepackagename)
+            product=product,
+            distribution=distribution,
+            sourcepackagename=sourcepackagename,
+        )
         template_regex = self.options.template_names
         if template_regex is not None:
             template_regex = six.ensure_text(template_regex)
@@ -290,12 +331,14 @@ class MessageSharingMerge(LaunchpadScript):
                 return template_name, 1, package_name
 
         tm = TransactionManager(self.txn, self.options.dry_run)
-        for number, name in enumerate(sorted(
-                equivalence_classes, key=equivalence_class_sort_key)):
+        for number, name in enumerate(
+            sorted(equivalence_classes, key=equivalence_class_sort_key)
+        ):
             templates = equivalence_classes[name]
             log.info(
-                "Merging equivalence class '%s': %d template(s) (%d / %d)" % (
-                    name, len(templates), number + 1, class_count))
+                "Merging equivalence class '%s': %d template(s) (%d / %d)"
+                % (name, len(templates), number + 1, class_count)
+            )
             log.debug("Templates: %s" % str(templates))
             merger = TranslationMerger(templates, tm)
             if self.options.remove_duplicates:
@@ -368,7 +411,7 @@ class TranslationMerger:
     def findMergeablePackagings():
         """Find packagings where both product and package have templates."""
         store = IStore(Packaging)
-        PackageTemplate = ClassAlias(POTemplate, 'PackageTemplate')
+        PackageTemplate = ClassAlias(POTemplate, "PackageTemplate")
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         result = store.find(
             Packaging,
@@ -376,17 +419,18 @@ class TranslationMerger:
             Packaging.distroseries == PackageTemplate.distroseriesID,
             Packaging.distroseries == DistroSeries.id,
             DistroSeries.distribution == ubuntu.id,
-            Packaging.sourcepackagename ==
-                PackageTemplate.sourcepackagenameID,
-            )
+            Packaging.sourcepackagename == PackageTemplate.sourcepackagenameID,
+        )
         result.config(distinct=True)
         return result
 
     @classmethod
-    def mergePackagingTemplates(cls, productseries, sourcepackagename,
-                                distroseries, tm):
+    def mergePackagingTemplates(
+        cls, productseries, sourcepackagename, distroseries, tm
+    ):
         subset = getUtility(IPOTemplateSet).getSharingSubset(
-            product=productseries.product)
+            product=productseries.product
+        )
         for pot in POTemplateSubset(productseries=productseries):
             cls._mergeTemplates(subset.getSharingPOTemplates(pot.name), tm)
 
@@ -395,13 +439,15 @@ class TranslationMerger:
         subset = getUtility(IPOTemplateSet).getSharingSubset(
             distribution=potemplate.distribution,
             sourcepackagename=potemplate.sourcepackagename,
-            product=potemplate.product)
+            product=potemplate.product,
+        )
         cls._mergeTemplates(subset.getSharingPOTemplates(potemplate.name), tm)
 
     @classmethod
     def _mergeTemplates(cls, templates, tm):
-        templates = list(sorted(
-            templates, key=methodcaller('sharingKey'), reverse=True))
+        templates = list(
+            sorted(templates, key=methodcaller("sharingKey"), reverse=True)
+        )
         merger = cls(templates, tm)
         merger.mergeAll()
 
@@ -426,7 +472,8 @@ class TranslationMerger:
         """Get rid of duplicate `TranslationMessages` where needed."""
         representatives = {}
         order_check = OrderingCheck(
-            key=methodcaller('sharingKey'), reverse=True)
+            key=methodcaller("sharingKey"), reverse=True
+        )
 
         for template in self.potemplates:
             order_check.check(template)
@@ -468,7 +515,8 @@ class TranslationMerger:
         # moving towards the least representative.  For any unique potmsgset
         # key we find, the first POTMsgSet is the representative one.
         order_check = OrderingCheck(
-            key=methodcaller('sharingKey'), reverse=True)
+            key=methodcaller("sharingKey"), reverse=True
+        )
 
         for template in self.potemplates:
             order_check.check(template)
@@ -494,8 +542,10 @@ class TranslationMerger:
 
         for representative, potmsgsets in subordinates.items():
             representative_num += 1
-            log.debug("Message %d/%d: %d subordinate(s)." % (
-                representative_num, num_representatives, len(potmsgsets)))
+            log.debug(
+                "Message %d/%d: %d subordinate(s)."
+                % (representative_num, num_representatives, len(potmsgsets))
+            )
 
             seen_potmsgsets = {representative.id}
 
@@ -510,15 +560,18 @@ class TranslationMerger:
                 seen_potmsgsets.add(subordinate.id)
 
                 for message in subordinate.getAllTranslationMessages():
-                    message = removeSecurityProxy(message)
-
-                    clashing_current, clashing_imported, twin = (
-                        self._findClashes(
-                            message, representative, message.potemplate))
+                    (
+                        clashing_current,
+                        clashing_imported,
+                        twin,
+                    ) = self._findClashes(
+                        message, representative, message.potemplate
+                    )
 
                     if clashing_current or clashing_imported:
                         saved = self._saveByDiverging(
-                            message, representative, subordinate)
+                            message, representative, subordinate
+                        )
                     else:
                         saved = False
 
@@ -527,8 +580,8 @@ class TranslationMerger:
                             # This message will have to lose some flags, but
                             # then it can still move to the new potmsgset.
                             sacrifice_flags(
-                                message,
-                                (clashing_current, clashing_imported))
+                                message, (clashing_current, clashing_imported)
+                            )
                             message.potmsgset = representative
                         else:
                             # This message is identical in contents to one
@@ -539,20 +592,26 @@ class TranslationMerger:
                             # check for clashes with other current/imported
                             # messages in the target context.
                             bequeathe_flags(
-                                message, twin,
-                                (clashing_current, clashing_imported))
+                                message,
+                                twin,
+                                (clashing_current, clashing_imported),
+                            )
                             tm_deletions += 1
 
                 merge_translationtemplateitems(
-                    subordinate, representative,
-                    representative_templates[representative])
+                    subordinate,
+                    representative,
+                    representative_templates[representative],
+                )
                 removeSecurityProxy(subordinate).destroySelf()
                 potmsgset_deletions += 1
 
                 self.tm.endTransaction(intermediate=True)
 
             report = "Deleted POTMsgSets: %d.  TranslationMessages: %d." % (
-                potmsgset_deletions, tm_deletions)
+                potmsgset_deletions,
+                tm_deletions,
+            )
             if potmsgset_deletions > 0 or tm_deletions > 0:
                 log.info(report)
             else:
@@ -563,15 +622,19 @@ class TranslationMerger:
         """Get list of ids for `template`'s `POTMsgSet`s."""
         return [
             potmsgset.id
-            for potmsgset in template.getPOTMsgSets(False, prefetch=False)]
+            for potmsgset in template.getPOTMsgSets(False, prefetch=False)
+        ]
 
     def mergeTranslationMessages(self):
         """Share `TranslationMessage`s between templates where possible."""
         order_check = OrderingCheck(
-            key=methodcaller('sharingKey'), reverse=True)
+            key=methodcaller("sharingKey"), reverse=True
+        )
         for template_number, template in enumerate(self.potemplates):
-            log.info("Merging template %d/%d." % (
-                template_number + 1, len(self.potemplates)))
+            log.info(
+                "Merging template %d/%d."
+                % (template_number + 1, len(self.potemplates))
+            )
             deletions = 0
             order_check.check(template)
             potmsgset_ids = self._getPOTMsgSetIds(template)
@@ -608,8 +671,9 @@ class TranslationMerger:
         """
         tm = removeSecurityProxy(tm)
         msgstr_ids = tuple(
-            getattr(tm, 'msgstr%d_id' % form)
-            for form in range(TranslationConstants.MAX_PLURAL_FORMS))
+            getattr(tm, "msgstr%d_id" % form)
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)
+        )
 
         return (tm.potemplateID, tm.languageID) + msgstr_ids
 
@@ -627,7 +691,8 @@ class TranslationMerger:
         """
         ids_per_language = {}
         tms = potmsgset.getAllTranslationMessages().order_by(
-            TranslationMessage.languageID)
+            TranslationMessage.languageID
+        )
         for tm in tms:
             language = removeSecurityProxy(tm).languageID
             if language not in ids_per_language:
@@ -664,16 +729,18 @@ class TranslationMerger:
                 if key in translations:
                     language_code = tm.language.code
                     log.info(
-                        "Cleaning up identical '%s' message for: \"%s\"" % (
-                            language_code, potmsgset.singular_text))
+                        "Cleaning up identical '%s' message for: \"%s\""
+                        % (language_code, potmsgset.singular_text)
+                    )
 
                     existing_tm = translations[key]
-                    assert tm != existing_tm, (
-                        "Message is duplicate of itself.")
-                    assert tm.potmsgset == existing_tm.potmsgset, (
-                        "Different potmsgsets considered identical.")
-                    assert tm.potemplate == existing_tm.potemplate, (
-                        "Different potemplates considered identical.")
+                    assert tm != existing_tm, "Message is duplicate of itself."
+                    assert (
+                        tm.potmsgset == existing_tm.potmsgset
+                    ), "Different potmsgsets considered identical."
+                    assert (
+                        tm.potemplate == existing_tm.potemplate
+                    ), "Different potemplates considered identical."
 
                     # Transfer any current/imported flags to the existing
                     # message, and delete the duplicate.
@@ -705,21 +772,26 @@ class TranslationMerger:
         clashing_ubuntu = None
         if message.is_current_ubuntu:
             found = target_potmsgset.getCurrentTranslation(
-                potemplate=target_potemplate, language=message.language,
-                side=TranslationSide.UBUNTU)
+                potemplate=target_potemplate,
+                language=message.language,
+                side=TranslationSide.UBUNTU,
+            )
             if found is not None and found.potemplate == target_potemplate:
                 clashing_ubuntu = found
 
         clashing_upstream = None
         if message.is_current_upstream:
             found = target_potmsgset.getCurrentTranslation(
-                potemplate=target_potemplate, language=message.language,
-                side=TranslationSide.UPSTREAM)
+                potemplate=target_potemplate,
+                language=message.language,
+                side=TranslationSide.UPSTREAM,
+            )
             if found is not None and found.potemplate == target_potemplate:
                 clashing_upstream = found
 
         twin = message.findIdenticalMessage(
-            target_potmsgset, target_potemplate)
+            target_potmsgset, target_potemplate
+        )
 
         # Clashes with a twin message are not real clashes: in such cases the
         # message can be merged into the twin without problems.
@@ -743,8 +815,7 @@ class TranslationMerger:
             # least one template by making it diverged.
             target_ttis = source_potmsgset.getAllTranslationTemplateItems()
             target_templates = [tti.potemplate for tti in target_ttis]
-            target_templates.sort(
-                key=methodcaller('sharingKey'), reverse=True)
+            target_templates.sort(key=methodcaller("sharingKey"), reverse=True)
             for template in target_templates:
                 if self._divergeTo(message, target_potmsgset, template):
                     return True
@@ -767,7 +838,8 @@ class TranslationMerger:
             find another place for it.
         """
         clashing_current, clashing_imported, twin = cls._findClashes(
-            message, target_potmsgset, target_potemplate)
+            message, target_potmsgset, target_potemplate
+        )
 
         if clashing_current is not None or clashing_imported is not None:
             return False
@@ -792,12 +864,19 @@ class MergeExistingPackagings(LaunchpadScript):
     def main(self):
         tm = TransactionManager(self.txn, False)
         for packaging in TranslationMerger.findMergeablePackagings():
-            log.info('Merging %s/%s and %s/%s.' % (
-                packaging.productseries.product.name,
-                packaging.productseries.name,
-                packaging.sourcepackagename.name,
-                packaging.distroseries.name))
+            log.info(
+                "Merging %s/%s and %s/%s."
+                % (
+                    packaging.productseries.product.name,
+                    packaging.productseries.name,
+                    packaging.sourcepackagename.name,
+                    packaging.distroseries.name,
+                )
+            )
             TranslationMerger.mergePackagingTemplates(
-                packaging.productseries, packaging.sourcepackagename,
-                packaging.distroseries, tm)
+                packaging.productseries,
+                packaging.sourcepackagename,
+                packaging.distroseries,
+                tm,
+            )
             tm.endTransaction(False)

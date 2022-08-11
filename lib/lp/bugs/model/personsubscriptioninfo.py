@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'PersonSubscriptions',
-    ]
+    "PersonSubscriptions",
+]
 
 from storm.expr import SQL
 from storm.store import Store
@@ -18,22 +18,15 @@ from lp.bugs.interfaces.personsubscriptioninfo import (
     IRealSubscriptionInfoCollection,
     IVirtualSubscriptionInfo,
     IVirtualSubscriptionInfoCollection,
-    )
-from lp.bugs.model.bug import (
-    Bug,
-    BugMute,
-    generate_subscription_with,
-    )
+)
+from lp.bugs.model.bug import Bug, BugMute, generate_subscription_with
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
+from lp.services.database.bulk import load_referencing, load_related
 
 
 @implementer(IRealSubscriptionInfo)
@@ -80,11 +73,10 @@ class AbstractSubscriptionInfoCollection:
                 collection = self.as_team_admin
             else:
                 collection = self.as_team_member
-        self._add_item_to_collection(
-            collection, principal, bug, *args)
+        self._add_item_to_collection(collection, principal, bug, *args)
 
     def _add_item_to_collection(self, *args):
-        raise NotImplementedError('Programmer error: use a subclass')
+        raise NotImplementedError("Programmer error: use a subclass")
 
 
 @implementer(IVirtualSubscriptionInfoCollection)
@@ -95,8 +87,9 @@ class VirtualSubscriptionInfoCollection(AbstractSubscriptionInfoCollection):
         super().__init__(person, administrated_team_ids)
         self._principal_pillar_to_info = {}
 
-    def _add_item_to_collection(self, collection, principal, bug, pillar,
-                                task):
+    def _add_item_to_collection(
+        self, collection, principal, bug, pillar, task
+    ):
         key = (principal, pillar)
         info = self._principal_pillar_to_info.get(key)
         if info is None:
@@ -107,16 +100,16 @@ class VirtualSubscriptionInfoCollection(AbstractSubscriptionInfoCollection):
 
 
 @implementer(IRealSubscriptionInfoCollection)
-class RealSubscriptionInfoCollection(
-    AbstractSubscriptionInfoCollection):
+class RealSubscriptionInfoCollection(AbstractSubscriptionInfoCollection):
     """Core functionality for Duplicate and Direct"""
 
     def __init__(self, person, administrated_team_ids):
         super().__init__(person, administrated_team_ids)
         self._principal_bug_to_infos = {}
 
-    def _add_item_to_collection(self, collection, principal, bug,
-                                subscription):
+    def _add_item_to_collection(
+        self, collection, principal, bug, subscription
+    ):
         info = RealSubscriptionInfo(principal, bug, subscription)
         key = (principal, bug)
         infos = self._principal_bug_to_infos.get(key)
@@ -138,7 +131,7 @@ class RealSubscriptionInfoCollection(
             key = (bug_supervisor, bugtask.bug)
             infos = self._principal_bug_to_infos.get(key)
             if infos is not None:
-                value = {'task': bugtask, 'pillar': pillar}
+                value = {"task": bugtask, "pillar": pillar}
                 for info in infos:
                     info.bug_supervisor_tasks.append(value)
 
@@ -159,17 +152,25 @@ class PersonSubscriptions:
         # subscriptions (including indirect through team
         # membership) in a single query.
         with_statement = generate_subscription_with(bug, person)
-        info = Store.of(person).with_(with_statement).find(
-            (BugSubscription, Bug, Person),
-            BugSubscription.id.is_in(
-                SQL('SELECT bugsubscriptions.id FROM bugsubscriptions')),
-            Person.id == BugSubscription.person_id,
-            Bug.id == BugSubscription.bug_id)
+        info = (
+            Store.of(person)
+            .with_(with_statement)
+            .find(
+                (BugSubscription, Bug, Person),
+                BugSubscription.id.is_in(
+                    SQL("SELECT bugsubscriptions.id FROM bugsubscriptions")
+                ),
+                Person.id == BugSubscription.person_id,
+                Bug.id == BugSubscription.bug_id,
+            )
+        )
 
         direct = RealSubscriptionInfoCollection(
-            self.person, self.administrated_team_ids)
+            self.person, self.administrated_team_ids
+        )
         duplicates = RealSubscriptionInfoCollection(
-            self.person, self.administrated_team_ids)
+            self.person, self.administrated_team_ids
+        )
         bugs = set()
         for subscription, subscribed_bug, subscriber in info:
             bugs.add(subscribed_bug)
@@ -179,14 +180,16 @@ class PersonSubscriptions:
             else:
                 # This is a direct subscription.
                 collection = direct
-            collection.add(
-                subscriber, subscribed_bug, subscription)
+            collection.add(subscriber, subscribed_bug, subscription)
         # Preload bug owners, then all pillars.
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [bug.ownerID for bug in bugs]))
-        all_tasks = load_referencing(BugTask, bugs, ['bug_id'])
-        load_related(Product, all_tasks, ['product_id'])
-        load_related(Distribution, all_tasks, ['distribution_id'])
+        list(
+            getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                [bug.ownerID for bug in bugs]
+            )
+        )
+        all_tasks = load_referencing(BugTask, bugs, ["bug_id"])
+        load_related(Product, all_tasks, ["product_id"])
+        load_related(Distribution, all_tasks, ["distribution_id"])
         for bug in bugs:
             # indicate the reporter and bug_supervisor
             duplicates.annotateReporter(bug, bug.owner)
@@ -194,33 +197,42 @@ class PersonSubscriptions:
         for task in all_tasks:
             # Get bug_supervisor.
             duplicates.annotateBugTaskResponsibilities(
-                task, task.pillar, task.pillar.bug_supervisor)
+                task, task.pillar, task.pillar.bug_supervisor
+            )
             direct.annotateBugTaskResponsibilities(
-                task, task.pillar, task.pillar.bug_supervisor)
+                task, task.pillar, task.pillar.bug_supervisor
+            )
         return (direct, duplicates)
 
     def _isMuted(self, person, bug):
-        return not Store.of(person).find(
-            BugMute, bug=bug, person=person).is_empty()
+        return (
+            not Store.of(person)
+            .find(BugMute, bug=bug, person=person)
+            .is_empty()
+        )
 
     def loadSubscriptionsFor(self, person, bug):
         self.person = person
         self.administrated_team_ids = [
-            team.id for team in person.getAdministratedTeams()]
+            team.id for team in person.getAdministratedTeams()
+        ]
         self.bug = bug
 
         # First get direct and duplicate real subscriptions.
-        direct, from_duplicate = (
-            self._getDirectAndDuplicateSubscriptions(person, bug))
+        direct, from_duplicate = self._getDirectAndDuplicateSubscriptions(
+            person, bug
+        )
 
         # Then get the 'muted' flag.
         self.muted = self._isMuted(person, bug)
 
         # Then get owner and assignee virtual subscriptions.
         as_owner = VirtualSubscriptionInfoCollection(
-            self.person, self.administrated_team_ids)
+            self.person, self.administrated_team_ids
+        )
         as_assignee = VirtualSubscriptionInfoCollection(
-            self.person, self.administrated_team_ids)
+            self.person, self.administrated_team_ids
+        )
         for bugtask in bug.bugtasks:
             owner = bugtask.pillar.owner
             if person.inTeam(owner) and bugtask.pillar.bug_supervisor is None:
@@ -230,8 +242,11 @@ class PersonSubscriptions:
                 as_assignee.add(assignee, bug, bugtask.pillar, bugtask)
         self.count = 0
         for name, collection in (
-            ('direct', direct), ('from_duplicate', from_duplicate),
-            ('as_owner', as_owner), ('as_assignee', as_assignee)):
+            ("direct", direct),
+            ("from_duplicate", from_duplicate),
+            ("as_owner", as_owner),
+            ("as_assignee", as_assignee),
+        ):
             self.count += collection.count
             setattr(self, name, collection)
 
@@ -244,58 +259,66 @@ class PersonSubscriptions:
             # We could leverage .id for most objects, but not pillars.
             identifier = reference_map.get(obj)
             if identifier is None:
-                identifier = 'subscription-cache-reference-%d' % (
-                    len(reference_map),)
+                identifier = "subscription-cache-reference-%d" % (
+                    len(reference_map),
+                )
                 reference_map[obj] = identifier
                 dest[identifier] = obj
             return identifier
 
         def virtual_sub_data(info):
             return {
-                'principal': get_id(info.principal),
-                'bug': get_id(info.bug),
-                'pillar': get_id(info.pillar),
+                "principal": get_id(info.principal),
+                "bug": get_id(info.bug),
+                "pillar": get_id(info.pillar),
                 # We won't add bugtasks yet unless we need them.
-                }
+            }
 
         def real_sub_data(info):
             return {
-                'principal': get_id(info.principal),
-                'bug': get_id(info.bug),
-                'subscription': get_id(info.subscription),
-                'principal_is_reporter': info.principal_is_reporter,
+                "principal": get_id(info.principal),
+                "bug": get_id(info.bug),
+                "subscription": get_id(info.subscription),
+                "principal_is_reporter": info.principal_is_reporter,
                 # We won't add bugtasks yet unless we need them.
-                'bug_supervisor_pillars': sorted({
-                    get_id(d['pillar']) for d
-                    in info.bug_supervisor_tasks}),
-                }
+                "bug_supervisor_pillars": sorted(
+                    {get_id(d["pillar"]) for d in info.bug_supervisor_tasks}
+                ),
+            }
+
         direct = {}
         from_duplicate = {}
         as_owner = {}  # This is an owner of a pillar with no bug supervisor.
         as_assignee = {}
         subscription_data = {
-            'direct': direct,
-            'from_duplicate': from_duplicate,
-            'as_owner': as_owner,
-            'as_assignee': as_assignee,
-            'count': self.count,
-            'muted': self.muted,
-            'bug_id': self.bug.id,
-            }
-        for category, collection in ((as_owner, self.as_owner),
-                                 (as_assignee, self.as_assignee)):
+            "direct": direct,
+            "from_duplicate": from_duplicate,
+            "as_owner": as_owner,
+            "as_assignee": as_assignee,
+            "count": self.count,
+            "muted": self.muted,
+            "bug_id": self.bug.id,
+        }
+        for category, collection in (
+            (as_owner, self.as_owner),
+            (as_assignee, self.as_assignee),
+        ):
             for name, inner in (
-                ('personal', collection.personal),
-                ('as_team_admin', collection.as_team_admin),
-                ('as_team_member', collection.as_team_member)):
+                ("personal", collection.personal),
+                ("as_team_admin", collection.as_team_admin),
+                ("as_team_member", collection.as_team_member),
+            ):
                 category[name] = [virtual_sub_data(info) for info in inner]
-            category['count'] = collection.count
-        for category, collection in ((direct, self.direct),
-                                     (from_duplicate, self.from_duplicate)):
+            category["count"] = collection.count
+        for category, collection in (
+            (direct, self.direct),
+            (from_duplicate, self.from_duplicate),
+        ):
             for name, inner in (
-                ('personal', collection.personal),
-                ('as_team_admin', collection.as_team_admin),
-                ('as_team_member', collection.as_team_member)):
+                ("personal", collection.personal),
+                ("as_team_admin", collection.as_team_admin),
+                ("as_team_member", collection.as_team_member),
+            ):
                 category[name] = [real_sub_data(info) for info in inner]
-            category['count'] = collection.count
+            category["count"] = collection.count
         return subscription_data, dest

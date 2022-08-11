@@ -4,16 +4,13 @@
 """Section interfaces."""
 
 __all__ = [
-    'ISection',
-    'ISectionSelection',
-    'ISectionSet',
-    ]
+    "ISection",
+    "ISectionSelection",
+    "ISectionSet",
+]
 
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class ISection(Interface):
@@ -29,6 +26,7 @@ class ISection(Interface):
 
 class ISectionSelection(Interface):
     """Represents the allowed section within a DistroSeries."""
+
     id = Attribute("The ID")
     distroseries = Attribute("Target DistroSeries")
     section = Attribute("Selected Section")

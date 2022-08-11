@@ -3,7 +3,6 @@
 
 """Tests for `DirectBranchCommit`."""
 
-import six
 from testtools.testcase import ExpectedException
 from zope.security.proxy import removeSecurityProxy
 
@@ -11,21 +10,19 @@ from lp.code.errors import StaleLastMirrored
 from lp.code.model.directbranchcommit import (
     ConcurrentUpdateError,
     DirectBranchCommit,
-    )
-from lp.testing import (
-    map_branch_contents,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, map_branch_contents
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
-    )
+)
 
 
 class DirectBranchCommitTestCase:
     """Base class for `DirectBranchCommit` tests."""
+
     db_branch = None
     committer = None
 
@@ -49,7 +46,8 @@ class DirectBranchCommitTestCase:
         self.committer = DirectBranchCommit(self.db_branch)
         if update_last_scanned_id:
             self.committer.last_scanned_id = (
-                self.committer.bzrbranch.last_revision())
+                self.committer.bzrbranch.last_revision()
+            )
 
     def _tearDownCommitter(self):
         if self.committer:
@@ -72,41 +70,41 @@ class TestDirectBranchCommit(DirectBranchCommitTestCase, TestCaseWithFactory):
 
     def test_DirectBranchCommit_empty_initial_commit_noop(self):
         # An empty initial commit to a branch is a no-op.
-        self.assertEqual(b'null:', self.tree.branch.last_revision())
-        self.committer.commit('')
+        self.assertEqual(b"null:", self.tree.branch.last_revision())
+        self.committer.commit("")
         self.assertEqual({}, self._getContents())
-        self.assertEqual(b'null:', self.tree.branch.last_revision())
+        self.assertEqual(b"null:", self.tree.branch.last_revision())
 
     def _addInitialCommit(self):
-        self.committer._getDir('')
-        rev_id = self.committer.commit('Commit creation of root dir.')
+        self.committer._getDir("")
+        rev_id = self.committer.commit("Commit creation of root dir.")
         self._setUpCommitter()
         return rev_id
 
     def test_DirectBranchCommit_commits_no_changes(self):
         # Committing nothing to an empty branch leaves its tree empty.
-        self.assertEqual(b'null:', self.tree.branch.last_revision())
+        self.assertEqual(b"null:", self.tree.branch.last_revision())
         old_rev_id = self.tree.branch.last_revision()
         self._addInitialCommit()
-        self.committer.commit('')
+        self.committer.commit("")
         self.assertEqual({}, self._getContents())
         self.assertNotEqual(old_rev_id, self.tree.branch.last_revision())
 
     def test_DirectBranchCommit_rejects_change_after_commit(self):
         # Changes are not accepted after commit.
-        self.committer.commit('')
-        self.assertRaises(AssertionError, self.committer.writeFile, 'x', b'y')
+        self.committer.commit("")
+        self.assertRaises(AssertionError, self.committer.writeFile, "x", b"y")
 
     def test_DirectBranchCommit_adds_file(self):
         # DirectBranchCommit can add a new file to the branch.
-        self.committer.writeFile('file.txt', b'contents')
-        self.committer.commit('')
-        self.assertEqual({'file.txt': b'contents'}, self._getContents())
+        self.committer.writeFile("file.txt", b"contents")
+        self.committer.commit("")
+        self.assertEqual({"file.txt": b"contents"}, self._getContents())
 
     def test_commit_returns_revision_id(self):
         # DirectBranchCommit.commit returns the new revision_id.
-        self.committer.writeFile('file.txt', b'contents')
-        revision_id = self.committer.commit('')
+        self.committer.writeFile("file.txt", b"contents")
+        revision_id = self.committer.commit("")
         branch_revision_id = self.committer.bzrbranch.last_revision()
         self.assertEqual(branch_revision_id, revision_id)
 
@@ -115,56 +113,58 @@ class TestDirectBranchCommit(DirectBranchCommitTestCase, TestCaseWithFactory):
         self._tearDownCommitter()
         # Merge parents cannot be specified for initial commit, so do an
         # empty commit.
-        self.tree.commit('foo', committer='foo@bar', rev_id=b'foo')
-        self.db_branch.last_mirrored_id = 'foo'
+        self.tree.commit("foo", committer="foo@bar", rev_id=b"foo")
+        self.db_branch.last_mirrored_id = "foo"
         committer = DirectBranchCommit(
-            self.db_branch, merge_parents=[b'parent-1', b'parent-2'])
-        committer.last_scanned_id = (
-            committer.bzrbranch.last_revision())
-        committer.writeFile('file.txt', b'contents')
-        committer.commit('')
+            self.db_branch, merge_parents=[b"parent-1", b"parent-2"]
+        )
+        committer.last_scanned_id = committer.bzrbranch.last_revision()
+        committer.writeFile("file.txt", b"contents")
+        committer.commit("")
         branch_revision_id = committer.bzrbranch.last_revision()
         branch_revision = committer.bzrbranch.repository.get_revision(
-            branch_revision_id)
+            branch_revision_id
+        )
         self.assertEqual(
-            [b'parent-1', b'parent-2'], branch_revision.parent_ids[1:])
+            [b"parent-1", b"parent-2"], branch_revision.parent_ids[1:]
+        )
 
     def test_DirectBranchCommit_aborts_cleanly(self):
         # If a DirectBranchCommit is not committed, its changes do not
         # go into the branch.
-        self.committer.writeFile('oldfile.txt', b'already here')
-        self.committer.commit('')
+        self.committer.writeFile("oldfile.txt", b"already here")
+        self.committer.commit("")
         self._setUpCommitter()
-        self.committer.writeFile('newfile.txt', b'adding this')
+        self.committer.writeFile("newfile.txt", b"adding this")
         self._setUpCommitter()
-        self.assertEqual({'oldfile.txt': b'already here'}, self._getContents())
+        self.assertEqual({"oldfile.txt": b"already here"}, self._getContents())
         self.committer.unlock()
 
     def test_DirectBranchCommit_updates_file(self):
         # DirectBranchCommit can replace a file in the branch.
-        self.committer.writeFile('file.txt', b'contents')
-        self.committer.commit('')
+        self.committer.writeFile("file.txt", b"contents")
+        self.committer.commit("")
         self._setUpCommitter()
-        self.committer.writeFile('file.txt', b'changed')
-        self.committer.commit('')
-        self.assertEqual({'file.txt': b'changed'}, self._getContents())
+        self.committer.writeFile("file.txt", b"changed")
+        self.committer.commit("")
+        self.assertEqual({"file.txt": b"changed"}, self._getContents())
 
     def test_DirectBranchCommit_creates_directories(self):
         # Files can be in subdirectories.
-        self.committer.writeFile('a/b/c.txt', b'ctext')
-        self.committer.commit('')
-        self.assertEqual({'a/b/c.txt': b'ctext'}, self._getContents())
+        self.committer.writeFile("a/b/c.txt", b"ctext")
+        self.committer.commit("")
+        self.assertEqual({"a/b/c.txt": b"ctext"}, self._getContents())
 
     def test_DirectBranchCommit_adds_directories(self):
         # Creating a subdirectory of an existing directory also works.
-        self.committer.writeFile('a/n.txt', b'aa')
-        self.committer.commit('')
+        self.committer.writeFile("a/n.txt", b"aa")
+        self.committer.commit("")
         self._setUpCommitter()
-        self.committer.writeFile('a/b/m.txt', b'aa/bb')
-        self.committer.commit('')
+        self.committer.writeFile("a/b/m.txt", b"aa/bb")
+        self.committer.commit("")
         expected = {
-            'a/n.txt': b'aa',
-            'a/b/m.txt': b'aa/bb',
+            "a/n.txt": b"aa",
+            "a/b/m.txt": b"aa/bb",
         }
         self.assertEqual(expected, self._getContents())
 
@@ -172,50 +172,49 @@ class TestDirectBranchCommit(DirectBranchCommitTestCase, TestCaseWithFactory):
         # If a directory doesn't exist in the committed branch, creating
         # it twice would be an error.  DirectBranchCommit doesn't do
         # that.
-        self.committer.writeFile('foo/x.txt', b'x')
-        self.committer.writeFile('foo/y.txt', b'y')
-        self.committer.commit('')
+        self.committer.writeFile("foo/x.txt", b"x")
+        self.committer.writeFile("foo/y.txt", b"y")
+        self.committer.commit("")
         expected = {
-            'foo/x.txt': b'x',
-            'foo/y.txt': b'y',
+            "foo/x.txt": b"x",
+            "foo/y.txt": b"y",
         }
         self.assertEqual(expected, self._getContents())
 
     def test_DirectBranchCommit_writes_new_file_twice(self):
         # If you write the same new file multiple times before
         # committing, the original wins.
-        self.committer.writeFile('x.txt', b'aaa')
-        self.committer.writeFile('x.txt', b'bbb')
-        self.committer.commit('')
-        self.assertEqual({'x.txt': b'aaa'}, self._getContents())
+        self.committer.writeFile("x.txt", b"aaa")
+        self.committer.writeFile("x.txt", b"bbb")
+        self.committer.commit("")
+        self.assertEqual({"x.txt": b"aaa"}, self._getContents())
 
     def test_DirectBranchCommit_updates_file_twice(self):
         # If you update the same file multiple times before committing,
         # the original wins.
-        self.committer.writeFile('y.txt', b'aaa')
-        self.committer.commit('')
+        self.committer.writeFile("y.txt", b"aaa")
+        self.committer.commit("")
         self._setUpCommitter()
-        self.committer.writeFile('y.txt', b'bbb')
-        self.committer.writeFile('y.txt', b'ccc')
-        self.committer.commit('')
-        self.assertEqual({'y.txt': b'bbb'}, self._getContents())
+        self.committer.writeFile("y.txt", b"bbb")
+        self.committer.writeFile("y.txt", b"ccc")
+        self.committer.commit("")
+        self.assertEqual({"y.txt": b"bbb"}, self._getContents())
 
     def test_DirectBranchCommit_detects_race_condition(self):
         # If the branch has been updated since it was last scanned,
         # attempting to commit to it will raise ConcurrentUpdateError.
-        self.committer.writeFile('hi.c', b'main(){puts("hi world");}')
-        self.committer.commit('')
+        self.committer.writeFile("hi.c", b'main(){puts("hi world");}')
+        self.committer.commit("")
         self._setUpCommitter(False)
-        self.committer.writeFile('hi.py', b'print "hi world"')
-        self.assertRaises(ConcurrentUpdateError, self.committer.commit, '')
+        self.committer.writeFile("hi.py", b'print "hi world"')
+        self.assertRaises(ConcurrentUpdateError, self.committer.commit, "")
 
     def test_DirectBranchCommit_records_committed_revision_id(self):
         # commit() records the committed revision in the database record for
         # the branch.
-        self.committer.writeFile('hi.c', b'main(){puts("hi world");}')
-        revid = self.committer.commit('')
-        self.assertEqual(
-            six.ensure_text(revid), self.db_branch.last_mirrored_id)
+        self.committer.writeFile("hi.c", b'main(){puts("hi world");}')
+        revid = self.committer.commit("")
+        self.assertEqual(revid.decode(), self.db_branch.last_mirrored_id)
 
     def test_commit_uses_getBzrCommitterID(self):
         # commit() passes self.getBzrCommitterID() to bzr as the
@@ -225,11 +224,11 @@ class TestDirectBranchCommit(DirectBranchCommitTestCase, TestCaseWithFactory):
         fake_commit = FakeMethod()
         self.committer.transform_preview.commit = fake_commit
 
-        self.committer.writeFile('x', b'y')
-        self.committer.commit('')
+        self.committer.writeFile("x", b"y")
+        self.committer.commit("")
 
         commit_args, commit_kwargs = fake_commit.calls[-1]
-        self.assertEqual(bzr_id, commit_kwargs['committer'])
+        self.assertEqual(bzr_id, commit_kwargs["committer"])
 
 
 class TestGetDir(DirectBranchCommitTestCase, TestCaseWithFactory):
@@ -239,51 +238,51 @@ class TestGetDir(DirectBranchCommitTestCase, TestCaseWithFactory):
 
     def test_getDir_creates_root(self):
         # An id is created even for the branch root directory.
-        self.assertFalse('' in self.committer.path_ids)
-        root_id = self.committer._getDir('')
+        self.assertFalse("" in self.committer.path_ids)
+        root_id = self.committer._getDir("")
         self.assertNotEqual(None, root_id)
-        self.assertTrue('' in self.committer.path_ids)
-        self.assertEqual(self.committer.path_ids[''], root_id)
+        self.assertTrue("" in self.committer.path_ids)
+        self.assertEqual(self.committer.path_ids[""], root_id)
 
     def test_getDir_creates_dir(self):
         # _getDir will create a new directory, under the root.
-        self.assertFalse('dir' in self.committer.path_ids)
-        dir_id = self.committer._getDir('dir')
-        self.assertTrue('' in self.committer.path_ids)
-        self.assertTrue('dir' in self.committer.path_ids)
-        self.assertEqual(self.committer.path_ids['dir'], dir_id)
-        self.assertNotEqual(self.committer.path_ids[''], dir_id)
+        self.assertFalse("dir" in self.committer.path_ids)
+        dir_id = self.committer._getDir("dir")
+        self.assertTrue("" in self.committer.path_ids)
+        self.assertTrue("dir" in self.committer.path_ids)
+        self.assertEqual(self.committer.path_ids["dir"], dir_id)
+        self.assertNotEqual(self.committer.path_ids[""], dir_id)
 
     def test_getDir_creates_subdir(self):
         # _getDir will create nested directories.
-        subdir_id = self.committer._getDir('dir/subdir')
-        self.assertTrue('' in self.committer.path_ids)
-        self.assertTrue('dir' in self.committer.path_ids)
-        self.assertTrue('dir/subdir' in self.committer.path_ids)
-        self.assertEqual(self.committer.path_ids['dir/subdir'], subdir_id)
+        subdir_id = self.committer._getDir("dir/subdir")
+        self.assertTrue("" in self.committer.path_ids)
+        self.assertTrue("dir" in self.committer.path_ids)
+        self.assertTrue("dir/subdir" in self.committer.path_ids)
+        self.assertEqual(self.committer.path_ids["dir/subdir"], subdir_id)
 
     def test_getDir_finds_existing_dir(self):
         # _getDir finds directories that already existed in a previously
         # committed version of the branch.
-        existing_id = self.committer._getDir('po')
+        existing_id = self.committer._getDir("po")
         self._setUpCommitter()
-        dir_id = self.committer._getDir('po')
+        dir_id = self.committer._getDir("po")
         self.assertEqual(existing_id, dir_id)
 
     def test_getDir_creates_dir_in_existing_dir(self):
         # _getDir creates directories inside ones that already existed
         # in a previously committed version of the branch.
-        self.committer._getDir('po')
+        self.committer._getDir("po")
         self._setUpCommitter()
-        new_dir_id = self.committer._getDir('po/main/files')
-        self.assertTrue('po/main' in self.committer.path_ids)
-        self.assertTrue('po/main/files' in self.committer.path_ids)
-        self.assertEqual(self.committer.path_ids['po/main/files'], new_dir_id)
+        new_dir_id = self.committer._getDir("po/main/files")
+        self.assertTrue("po/main" in self.committer.path_ids)
+        self.assertTrue("po/main/files" in self.committer.path_ids)
+        self.assertEqual(self.committer.path_ids["po/main/files"], new_dir_id)
 
     def test_getDir_reuses_new_id(self):
         # If a directory was newly created, _getDir will reuse its id.
-        dir_id = self.committer._getDir('foo/bar')
-        self.assertEqual(dir_id, self.committer._getDir('foo/bar'))
+        dir_id = self.committer._getDir("foo/bar")
+        self.assertEqual(dir_id, self.committer._getDir("foo/bar"))
 
 
 class TestGetBzrCommitterID(TestCaseWithFactory):
@@ -303,8 +302,7 @@ class TestGetBzrCommitterID(TestCaseWithFactory):
     def test_uses_committer_id(self):
         # getBzrCommitterID uses the committer string if provided.
         bzr_id = self.factory.getUniqueString()
-        committer = DirectBranchCommit(
-            self._makeBranch(), committer_id=bzr_id)
+        committer = DirectBranchCommit(self._makeBranch(), committer_id=bzr_id)
         self.addCleanup(committer.unlock)
         self.assertEqual(bzr_id, committer.getBzrCommitterID())
 
@@ -316,7 +314,8 @@ class TestGetBzrCommitterID(TestCaseWithFactory):
         self.addCleanup(committer.unlock)
         self.assertIn(
             removeSecurityProxy(branch.owner).preferredemail.email,
-            committer.getBzrCommitterID())
+            committer.getBzrCommitterID(),
+        )
 
     def test_falls_back_to_noreply(self):
         # If all else fails, getBzrCommitterID uses the noreply
@@ -326,7 +325,7 @@ class TestGetBzrCommitterID(TestCaseWithFactory):
         branch = self._makeBranch(owner=team)
         committer = DirectBranchCommit(branch)
         self.addCleanup(committer.unlock)
-        self.assertIn('noreply', committer.getBzrCommitterID())
+        self.assertIn("noreply", committer.getBzrCommitterID())
 
 
 class TestStaleLastMirroredID(TestCaseWithFactory):
@@ -338,9 +337,8 @@ class TestStaleLastMirroredID(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
         bzr_id = self.factory.getUniqueString()
         db_branch, tree = self.create_branch_and_tree()
-        tree.commit('unchanged', committer='jrandom@example.com')
-        with ExpectedException(StaleLastMirrored, '.*'):
-            committer = DirectBranchCommit(
-                db_branch, committer_id=bzr_id)
+        tree.commit("unchanged", committer="jrandom@example.com")
+        with ExpectedException(StaleLastMirrored, ".*"):
+            committer = DirectBranchCommit(db_branch, committer_id=bzr_id)
             self.addCleanup(committer.unlock)
-            committer.commit('')
+            committer.commit("")

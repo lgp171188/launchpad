@@ -8,11 +8,7 @@ from itertools import count
 from random import getrandbits
 
 import transaction
-from zope.interface import (
-    implementer,
-    Interface,
-    provider,
-    )
+from zope.interface import Interface, implementer, provider
 from zope.security.interfaces import Unauthorized
 
 from lp.app.interfaces.security import IAuthorization
@@ -24,43 +20,33 @@ from lp.services.privacy.interfaces import IObjectPrivacy
 from lp.services.webapp.authentication import (
     LaunchpadPrincipal,
     PlacelessAuthUtility,
-    )
+)
 from lp.services.webapp.authorization import (
-    available_with_permission,
-    check_permission,
-    iter_authorization,
     LAUNCHPAD_SECURITY_POLICY_CACHE_KEY,
     LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY,
     LaunchpadSecurityPolicy,
+    available_with_permission,
+    check_permission,
+    iter_authorization,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.interfaces import (
     AccessLevel,
     ICanonicalUrlData,
     ILaunchpadContainer,
     ILaunchpadPrincipal,
     IPlacelessAuthUtility,
-    )
+)
 from lp.services.webapp.metazcml import ILaunchpadPermission
 from lp.services.webapp.publisher import LaunchpadContainer
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     LaunchpadTestRequest,
-    )
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    TestCase,
-    )
+)
+from lp.testing import ANONYMOUS, TestCase, login
 from lp.testing.factory import ObjectFactory
-from lp.testing.fixture import (
-    ZopeAdapterFixture,
-    ZopeUtilityFixture,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessLayer,
-    )
+from lp.testing.fixture import ZopeAdapterFixture, ZopeUtilityFixture
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessLayer
 
 
 class Allow(AuthorizationBase):
@@ -109,7 +95,7 @@ class Checker(AuthorizationBase):
         We record the call and then return False, arbitrarily chosen, to keep
         the policy from complaining.
         """
-        self.calls.append('checkUnauthenticated')
+        self.calls.append("checkUnauthenticated")
         return False
 
     def checkAuthenticated(self, user):
@@ -118,7 +104,7 @@ class Checker(AuthorizationBase):
         We record the call and then return False, arbitrarily chosen, to keep
         the policy from complaining.
         """
-        self.calls.append(('checkAuthenticated', user))
+        self.calls.append(("checkAuthenticated", user))
         return False
 
 
@@ -144,6 +130,7 @@ class Object:
     """An arbitrary object, adaptable to `IObjectPrivacy`.
 
     For simplicity we implement `IObjectPrivacy` directly."""
+
     is_private = False
 
 
@@ -174,7 +161,8 @@ class Delegate(AuthorizationBase):
 @implementer(ILaunchpadPermission)
 class PermissionAccessLevel:
     """A minimal implementation of `ILaunchpadPermission`."""
-    access_level = 'read'
+
+    access_level = "read"
 
 
 @implementer(IPerson, IPersonRoles)
@@ -185,13 +173,15 @@ class FakePerson:
 @implementer(ILaunchpadPrincipal)
 class FakeLaunchpadPrincipal:
     """A minimal principal implementing `ILaunchpadPrincipal`"""
+
     person = FakePerson()
     scope_url = None
-    access_level = ''
+    access_level = ""
 
 
 class FakeStore:
     """Enough of a store to fool the `block_implicit_flushes` decorator."""
+
     def block_implicit_flushes(self):
         pass
 
@@ -239,11 +229,17 @@ class TestCheckPermissionCaching(TestCase):
             `Checker` created by ``checker_factory``.
         """
         permission = self.factory.getUniqueString()
-        self.useFixture(ZopeUtilityFixture(
-            PermissionAccessLevel(), ILaunchpadPermission, permission))
+        self.useFixture(
+            ZopeUtilityFixture(
+                PermissionAccessLevel(), ILaunchpadPermission, permission
+            )
+        )
         checker_factory = CheckerFactory()
-        self.useFixture(ZopeAdapterFixture(
-            checker_factory, [Object], IAuthorization, name=permission))
+        self.useFixture(
+            ZopeAdapterFixture(
+                checker_factory, [Object], IAuthorization, name=permission
+            )
+        )
         return Object(), permission, checker_factory
 
     def test_checkPermission_cache_unauthenticated(self):
@@ -251,17 +247,18 @@ class TestCheckPermissionCaching(TestCase):
         # particular object and permission.
         request = self.makeRequest()
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkPermission for the first time, the security policy
         # calls the checker.
         policy.checkPermission(permission, obj)
-        self.assertEqual(
-            ['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         # A subsequent identical call does not call the checker.
         policy.checkPermission(permission, obj)
-        self.assertEqual(
-            ['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
 
     def test_checkPermission_delegated_cache_unauthenticated(self):
         # checkPermission caches the result of checkUnauthenticated for a
@@ -272,15 +269,20 @@ class TestCheckPermissionCaching(TestCase):
         # Delegate auth for Object to AnotherObject{One,Two}.
         permission = self.factory.getUniqueString()
         self.useFixture(
-            ZopeAdapterFixture(Delegate, [Object], name=permission))
+            ZopeAdapterFixture(Delegate, [Object], name=permission)
+        )
         # Allow auth to AnotherObjectOne.
         self.useFixture(
             ZopeAdapterFixture(
-                Allow, [AnotherObjectOne], name=Delegate.permission))
+                Allow, [AnotherObjectOne], name=Delegate.permission
+            )
+        )
         # Deny auth to AnotherObjectTwo.
         self.useFixture(
             ZopeAdapterFixture(
-                Deny, [AnotherObjectTwo], name=Delegate.permission))
+                Deny, [AnotherObjectTwo], name=Delegate.permission
+            )
+        )
         # Calling checkPermission() populates the participation cache.
         objecttoauthorize = Object()
         policy.checkPermission(permission, objecttoauthorize)
@@ -291,7 +293,7 @@ class TestCheckPermissionCaching(TestCase):
             objecttoauthorize: {permission: False},
             Delegate.object_one: {Delegate.permission: True},
             Delegate.object_two: {Delegate.permission: False},
-            }
+        }
         self.assertEqual(cache_expected, dict(cache))
 
     def test_checkPermission_cache_authenticated(self):
@@ -301,38 +303,44 @@ class TestCheckPermissionCaching(TestCase):
         request = self.makeRequest()
         request.setPrincipal(principal)
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkPermission for the first time, the security policy
         # calls the checker.
         policy.checkPermission(permission, obj)
         self.assertEqual(
-            [('checkAuthenticated', principal.person)],
-            checker_factory.calls)
+            [("checkAuthenticated", principal.person)], checker_factory.calls
+        )
         # A subsequent identical call does not call the checker.
         policy.checkPermission(permission, obj)
         self.assertEqual(
-            [('checkAuthenticated', principal.person)],
-            checker_factory.calls)
+            [("checkAuthenticated", principal.person)], checker_factory.calls
+        )
 
     def test_checkPermission_clearSecurityPolicyCache_resets_cache(self):
         # Calling clearSecurityPolicyCache on the request clears the cache.
         request = self.makeRequest()
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkPermission for the first time, the security policy
         # calls checkUnauthenticated on the checker.
         policy.checkPermission(permission, obj)
-        self.assertEqual(
-            ['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         request.clearSecurityPolicyCache()
         # After clearing the cache the policy calls checkUnauthenticated
         # again.
         policy.checkPermission(permission, obj)
         self.assertEqual(
-            ['checkUnauthenticated', 'checkUnauthenticated'],
-            checker_factory.calls)
+            ["checkUnauthenticated", "checkUnauthenticated"],
+            checker_factory.calls,
+        )
 
     def test_checkPermission_setPrincipal_resets_cache(self):
         # Setting the principal on the request clears the cache of results
@@ -340,60 +348,69 @@ class TestCheckPermissionCaching(TestCase):
         principal = FakeLaunchpadPrincipal()
         request = self.makeRequest()
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkPermission before setting the principal, the
         # security policy calls checkUnauthenticated on the checker.
         policy.checkPermission(permission, obj)
-        self.assertEqual(
-            ['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         request.setPrincipal(principal)
         # After setting the principal, the policy calls checkAuthenticated
         # rather than finding a value in the cache.
         policy.checkPermission(permission, obj)
         self.assertEqual(
-            ['checkUnauthenticated', ('checkAuthenticated',
-                                      principal.person)],
-            checker_factory.calls)
+            ["checkUnauthenticated", ("checkAuthenticated", principal.person)],
+            checker_factory.calls,
+        )
 
     def test_checkPermission_commit_clears_cache(self):
         # Committing a transaction clears the cache.
         request = self.makeRequest()
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkPermission before setting the principal, the
         # security policy calls checkUnauthenticated on the checker.
         policy.checkPermission(permission, obj)
-        self.assertEqual(
-            ['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         transaction.commit()
         # After committing a transaction, the policy calls
         # checkUnauthenticated again rather than finding a value in the cache.
         policy.checkPermission(permission, obj)
         self.assertEqual(
-            ['checkUnauthenticated', 'checkUnauthenticated'],
-            checker_factory.calls)
+            ["checkUnauthenticated", "checkUnauthenticated"],
+            checker_factory.calls,
+        )
 
     def test_checkUnauthenticatedPermission_cache_unauthenticated(self):
         # checkUnauthenticatedPermission caches the result of
         # checkUnauthenticated for a particular object and permission.
         # We set a principal to ensure that it is not used even if set.
-        self.useFixture(ZopeUtilityFixture(
-            PlacelessAuthUtility(), IPlacelessAuthUtility))
+        self.useFixture(
+            ZopeUtilityFixture(PlacelessAuthUtility(), IPlacelessAuthUtility)
+        )
         principal = FakeLaunchpadPrincipal()
         request = self.makeRequest()
         request.setPrincipal(principal)
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkUnauthenticatedPermission for the first time,
         # the security policy calls the checker.
         policy.checkUnauthenticatedPermission(permission, obj)
-        self.assertEqual(['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         # A subsequent identical call does not call the checker.
         policy.checkUnauthenticatedPermission(permission, obj)
-        self.assertEqual(['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         # The result is stored in the correct cache.
         cache = request.annotations[LAUNCHPAD_SECURITY_POLICY_CACHE_UNAUTH_KEY]
         self.assertEqual({obj: {permission: False}}, dict(cache))
@@ -401,39 +418,50 @@ class TestCheckPermissionCaching(TestCase):
     def test_checkUnauthenticatedPermission_commit_clears_cache(self):
         # Committing a transaction clears the cache.
         # We set a principal to ensure that it is not used even if set.
-        self.useFixture(ZopeUtilityFixture(
-            PlacelessAuthUtility(), IPlacelessAuthUtility))
+        self.useFixture(
+            ZopeUtilityFixture(PlacelessAuthUtility(), IPlacelessAuthUtility)
+        )
         principal = FakeLaunchpadPrincipal()
         request = self.makeRequest()
         request.setPrincipal(principal)
         policy = LaunchpadSecurityPolicy(request)
-        obj, permission, checker_factory = (
-            self.getObjectPermissionAndCheckerFactory())
+        (
+            obj,
+            permission,
+            checker_factory,
+        ) = self.getObjectPermissionAndCheckerFactory()
         # When we call checkUnauthenticatedPermission before setting the
         # principal, the security policy calls checkUnauthenticated on the
         # checker.
         policy.checkUnauthenticatedPermission(permission, obj)
-        self.assertEqual(['checkUnauthenticated'], checker_factory.calls)
+        self.assertEqual(["checkUnauthenticated"], checker_factory.calls)
         transaction.commit()
         # After committing a transaction, the policy calls
         # checkUnauthenticated again rather than finding a value in the cache.
         policy.checkUnauthenticatedPermission(permission, obj)
         self.assertEqual(
-            ['checkUnauthenticated', 'checkUnauthenticated'],
-            checker_factory.calls)
+            ["checkUnauthenticated", "checkUnauthenticated"],
+            checker_factory.calls,
+        )
 
 
 class TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel(TestCase):
-
     def setUp(self):
         super().setUp()
         self.principal = LaunchpadPrincipal(
-            'foo.bar@canonical.com', 'foo', 'foo', object())
+            "foo.bar@canonical.com", "foo", "foo", object()
+        )
         self.security = LaunchpadSecurityPolicy()
-        self.useFixture(ZopeAdapterFixture(
-            adapt_loneobject_to_container, [ILoneObject], ILaunchpadContainer))
-        self.useFixture(ZopeAdapterFixture(
-            LoneObjectURL, [ILoneObject], ICanonicalUrlData))
+        self.useFixture(
+            ZopeAdapterFixture(
+                adapt_loneobject_to_container,
+                [ILoneObject],
+                ILaunchpadContainer,
+            )
+        )
+        self.useFixture(
+            ZopeAdapterFixture(LoneObjectURL, [ILoneObject], ICanonicalUrlData)
+        )
 
     def test_no_scope(self):
         """Principal's access level is used when no scope is given."""
@@ -441,38 +469,44 @@ class TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel(TestCase):
         self.principal.scope_url = None
         self.assertEqual(
             self.security._getPrincipalsAccessLevel(
-                self.principal, LoneObject()),
-            self.principal.access_level)
+                self.principal, LoneObject()
+            ),
+            self.principal.access_level,
+        )
 
     def test_object_within_scope(self):
         """Principal's access level is used when object is within scope."""
         obj = LoneObject()
         self.principal.access_level = AccessLevel.WRITE_PUBLIC
-        self.principal.scope_url = '/+loneobject/%d' % obj.id
+        self.principal.scope_url = "/+loneobject/%d" % obj.id
         self.assertEqual(
             self.security._getPrincipalsAccessLevel(self.principal, obj),
-            self.principal.access_level)
+            self.principal.access_level,
+        )
 
     def test_object_not_within_scope(self):
         """READ_PUBLIC is used when object is /not/ within scope."""
         obj = LoneObject()
         obj2 = LoneObject()  # This is out of obj's scope.
-        self.principal.scope_url = '/+loneobject/%d' % obj.id
+        self.principal.scope_url = "/+loneobject/%d" % obj.id
 
         self.principal.access_level = AccessLevel.WRITE_PUBLIC
         self.assertEqual(
             self.security._getPrincipalsAccessLevel(self.principal, obj2),
-            AccessLevel.READ_PUBLIC)
+            AccessLevel.READ_PUBLIC,
+        )
 
         self.principal.access_level = AccessLevel.READ_PRIVATE
         self.assertEqual(
             self.security._getPrincipalsAccessLevel(self.principal, obj2),
-            AccessLevel.READ_PUBLIC)
+            AccessLevel.READ_PUBLIC,
+        )
 
         self.principal.access_level = AccessLevel.WRITE_PRIVATE
         self.assertEqual(
             self.security._getPrincipalsAccessLevel(self.principal, obj2),
-            AccessLevel.READ_PUBLIC)
+            AccessLevel.READ_PUBLIC,
+        )
 
 
 class ILoneObject(Interface):
@@ -503,7 +537,7 @@ class LoneObjectURL:
 
     @property
     def path(self):
-        return '+loneobject/%d' % self.loneobject.id
+        return "+loneobject/%d" % self.loneobject.id
 
 
 def adapt_loneobject_to_container(loneobj):
@@ -521,23 +555,41 @@ class TestPrecachePermissionForObjects(TestCase):
         # policy cache for the permission specified.
         class Boring:
             """A boring, but weakref-able object."""
-        objects = [Boring(), Boring()]
+
+        viewable_objects = [Boring(), Boring()]
+        non_viewable_objects = [Boring(), Boring()]
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
-        precache_permission_for_objects(request, 'launchpad.View', objects)
+        precache_permission_for_objects(
+            request, "launchpad.View", viewable_objects
+        )
+        precache_permission_for_objects(
+            request, "launchpad.View", non_viewable_objects, result=False
+        )
         # Confirm that the objects have the permission set.
-        self.assertTrue(check_permission('launchpad.View', objects[0]))
-        self.assertTrue(check_permission('launchpad.View', objects[1]))
+        self.assertTrue(
+            check_permission("launchpad.View", viewable_objects[0])
+        )
+        self.assertTrue(
+            check_permission("launchpad.View", viewable_objects[1])
+        )
+        self.assertFalse(
+            check_permission("launchpad.View", non_viewable_objects[0])
+        )
+        self.assertFalse(
+            check_permission("launchpad.View", non_viewable_objects[1])
+        )
 
     def test_default_request(self):
         # If no request is provided, the current interaction is used.
         class Boring:
             """A boring, but weakref-able object."""
+
         obj = Boring()
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
-        precache_permission_for_objects(None, 'launchpad.View', [obj])
-        self.assertTrue(check_permission('launchpad.View', obj))
+        precache_permission_for_objects(None, "launchpad.View", [obj])
+        self.assertTrue(check_permission("launchpad.View", obj))
 
 
 class TestIterAuthorization(TestCase):
@@ -558,31 +610,38 @@ class TestIterAuthorization(TestCase):
     def allow(self):
         """Allow authorization for `Object` with `self.permission`."""
         self.useFixture(
-            ZopeAdapterFixture(Allow, [Object], name=self.permission))
+            ZopeAdapterFixture(Allow, [Object], name=self.permission)
+        )
 
     def deny(self):
         """Deny authorization for `Object` with `self.permission`."""
         self.useFixture(
-            ZopeAdapterFixture(Deny, [Object], name=self.permission))
+            ZopeAdapterFixture(Deny, [Object], name=self.permission)
+        )
 
     def explode(self):
         """Explode if auth for `Object` with `self.permission` is tried."""
         self.useFixture(
-            ZopeAdapterFixture(Explode, [Object], name=self.permission))
+            ZopeAdapterFixture(Explode, [Object], name=self.permission)
+        )
 
     def delegate(self):
         # Delegate auth for Object to AnotherObject{One,Two}.
         self.useFixture(
-            ZopeAdapterFixture(
-                Delegate, [Object], name=self.permission))
+            ZopeAdapterFixture(Delegate, [Object], name=self.permission)
+        )
         # Allow auth to AnotherObjectOne.
         self.useFixture(
             ZopeAdapterFixture(
-                Allow, [AnotherObjectOne], name=Delegate.permission))
+                Allow, [AnotherObjectOne], name=Delegate.permission
+            )
+        )
         # Deny auth to AnotherObjectTwo.
         self.useFixture(
             ZopeAdapterFixture(
-                Deny, [AnotherObjectTwo], name=Delegate.permission))
+                Deny, [AnotherObjectTwo], name=Delegate.permission
+            )
+        )
 
     #
     # Non-delegated, non-cached checks.
@@ -593,7 +652,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [False]
         observed = iter_authorization(
-            self.object, self.permission, principal=None, cache=cache)
+            self.object, self.permission, principal=None, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is not updated when there's no adapter.
         self.assertEqual({}, cache)
@@ -604,7 +664,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [True]
         observed = iter_authorization(
-            self.object, self.permission, principal=None, cache=cache)
+            self.object, self.permission, principal=None, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result.
         self.assertEqual({self.object: {self.permission: True}}, cache)
@@ -615,7 +676,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [False]
         observed = iter_authorization(
-            self.object, self.permission, principal=None, cache=cache)
+            self.object, self.permission, principal=None, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result.
         self.assertEqual({self.object: {self.permission: False}}, cache)
@@ -625,7 +687,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [False]
         observed = iter_authorization(
-            self.object, self.permission, self.principal, cache=cache)
+            self.object, self.permission, self.principal, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is not updated when there's no adapter.
         self.assertEqual({}, cache)
@@ -636,7 +699,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [True]
         observed = iter_authorization(
-            self.object, self.permission, self.principal, cache=cache)
+            self.object, self.permission, self.principal, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result.
         self.assertEqual({self.object: {self.permission: True}}, cache)
@@ -647,7 +711,8 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [False]
         observed = iter_authorization(
-            self.object, self.permission, self.principal, cache=cache)
+            self.object, self.permission, self.principal, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result.
         self.assertEqual({self.object: {self.permission: False}}, cache)
@@ -665,8 +730,11 @@ class TestIterAuthorization(TestCase):
         token = getrandbits(32)
         expected = [token]
         observed = iter_authorization(
-            self.object, self.permission, principal=None,
-            cache={self.object: {self.permission: token}})
+            self.object,
+            self.permission,
+            principal=None,
+            cache={self.object: {self.permission: token}},
+        )
         self.assertEqual(expected, list(observed))
 
     def test_normal_unauthenticated_cached(self):
@@ -676,8 +744,11 @@ class TestIterAuthorization(TestCase):
         token = getrandbits(32)
         expected = [token]
         observed = iter_authorization(
-            self.object, self.permission, principal=None,
-            cache={self.object: {self.permission: token}})
+            self.object,
+            self.permission,
+            principal=None,
+            cache={self.object: {self.permission: token}},
+        )
         self.assertEqual(expected, list(observed))
 
     def test_normal_authenticated_no_adapter_cached(self):
@@ -689,8 +760,11 @@ class TestIterAuthorization(TestCase):
         token = getrandbits(32)
         expected = [token]
         observed = iter_authorization(
-            self.object, self.permission, self.principal,
-            cache={self.object: {self.permission: token}})
+            self.object,
+            self.permission,
+            self.principal,
+            cache={self.object: {self.permission: token}},
+        )
         self.assertEqual(expected, list(observed))
 
     def test_normal_authenticated_cached(self):
@@ -700,8 +774,11 @@ class TestIterAuthorization(TestCase):
         token = getrandbits(32)
         expected = [token]
         observed = iter_authorization(
-            self.object, self.permission, principal=self.principal,
-            cache={self.object: {self.permission: token}})
+            self.object,
+            self.permission,
+            principal=self.principal,
+            cache={self.object: {self.permission: token}},
+        )
         self.assertEqual(expected, list(observed))
 
     #
@@ -715,14 +792,15 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [True, False]
         observed = iter_authorization(
-            self.object, self.permission, principal=None, cache=cache)
+            self.object, self.permission, principal=None, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result of the leaf checks and not the
         # delegated check.
         cache_expected = {
             Delegate.object_one: {Delegate.permission: True},
             Delegate.object_two: {Delegate.permission: False},
-            }
+        }
         self.assertEqual(cache_expected, cache)
 
     def test_delegated_authenticated(self):
@@ -732,26 +810,27 @@ class TestIterAuthorization(TestCase):
         cache = {}
         expected = [True, False]
         observed = iter_authorization(
-            self.object, self.permission, self.principal, cache=cache)
+            self.object, self.permission, self.principal, cache=cache
+        )
         self.assertEqual(expected, list(observed))
         # The cache is updated with the result of the leaf checks and not the
         # delegated check.
         cache_expected = {
             Delegate.object_one: {Delegate.permission: True},
             Delegate.object_two: {Delegate.permission: False},
-            }
+        }
         self.assertEqual(cache_expected, cache)
 
 
 @implementer(Interface)
 class AvailableWithPermissionObject:
-    """ An object used to test available_with_permission."""
+    """An object used to test available_with_permission."""
 
-    @available_with_permission('launchpad.Edit', 'foo')
+    @available_with_permission("launchpad.Edit", "foo")
     def test_function_foo(self, foo, bar=None):
         pass
 
-    @available_with_permission('launchpad.Edit', 'bar')
+    @available_with_permission("launchpad.Edit", "bar")
     def test_function_bar(self, foo, bar=None):
         pass
 
@@ -766,7 +845,7 @@ class TestAvailableWithPermission(TestCase):
         foo = Object()
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
-        precache_permission_for_objects(request, 'launchpad.Edit', [foo])
+        precache_permission_for_objects(request, "launchpad.Edit", [foo])
         obj_to_invoke = AvailableWithPermissionObject()
         bar = Object()
         obj_to_invoke.test_function_foo(foo, bar)
@@ -776,7 +855,7 @@ class TestAvailableWithPermission(TestCase):
         bar = Object()
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
-        precache_permission_for_objects(request, 'launchpad.Edit', [bar])
+        precache_permission_for_objects(request, "launchpad.Edit", [bar])
         obj_to_invoke = AvailableWithPermissionObject()
         foo = Object()
         obj_to_invoke.test_function_bar(foo=foo, bar=bar)

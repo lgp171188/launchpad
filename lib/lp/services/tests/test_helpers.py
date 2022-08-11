@@ -1,16 +1,16 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import unittest
 from doctest import DocTestSuite
 from textwrap import dedent
-import unittest
 
 from lp.services import helpers
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 
 
 def make_test_tarball_1():
-    '''
+    """
     Generate a test tarball that looks something like a source tarball which
     has exactly one directory called 'po' which is interesting (i.e. contains
     some files which look like POT/PO files).
@@ -22,27 +22,22 @@ def make_test_tarball_1():
     >>> names = tarball.getnames()
     >>> 'uberfrob-0.1/po/cy.po' in names
     True
-    '''
+    """
 
-    return LaunchpadWriteTarFile.files_to_tarfile({
-        'uberfrob-0.1/README':
-            b'Uberfrob is an advanced frobnicator.',
-        'uberfrob-0.1/po/cy.po':
-            b'# Blah.',
-        'uberfrob-0.1/po/es.po':
-            b'# Blah blah.',
-        'uberfrob-0.1/po/uberfrob.pot':
-            b'# Yowza!',
-        'uberfrob-0.1/blah/po/la':
-            b'la la',
-        'uberfrob-0.1/uberfrob.py':
-            b'import sys\n'
-            b'print("Frob!")\n',
-        })
+    return LaunchpadWriteTarFile.files_to_tarfile(
+        {
+            "uberfrob-0.1/README": b"Uberfrob is an advanced frobnicator.",
+            "uberfrob-0.1/po/cy.po": b"# Blah.",
+            "uberfrob-0.1/po/es.po": b"# Blah blah.",
+            "uberfrob-0.1/po/uberfrob.pot": b"# Yowza!",
+            "uberfrob-0.1/blah/po/la": b"la la",
+            "uberfrob-0.1/uberfrob.py": b"import sys\n" b'print("Frob!")\n',
+        }
+    )
 
 
 def make_test_tarball_2():
-    r'''
+    r"""
     Generate a test tarball string that has some interesting files in a common
     prefix.
 
@@ -59,25 +54,39 @@ def make_test_tarball_2():
     >>> print(f.readline().decode('UTF-8'))
     # Test PO file.
     <BLANKLINE>
-    '''
+    """
 
-    pot = dedent("""
+    pot = (
+        dedent(
+            """
         # Test POT file.
         msgid "foo"
         msgstr ""
-        """).strip().encode('UTF-8')
+        """
+        )
+        .strip()
+        .encode("UTF-8")
+    )
 
-    po = dedent("""
+    po = (
+        dedent(
+            """
         # Test PO file.
         msgid "foo"
         msgstr "bar"
-        """).strip().encode('UTF-8')
+        """
+        )
+        .strip()
+        .encode("UTF-8")
+    )
 
-    return LaunchpadWriteTarFile.files_to_tarfile({
-        'test/test.pot': pot,
-        'test/cy.po': po,
-        'test/es.po': po,
-    })
+    return LaunchpadWriteTarFile.files_to_tarfile(
+        {
+            "test/test.pot": pot,
+            "test/cy.po": po,
+            "test/es.po": po,
+        }
+    )
 
 
 def test_shortlist_returns_all_elements():
@@ -164,26 +173,25 @@ def test_english_list():
 
 
 class TruncateTextTest(unittest.TestCase):
-
     def test_leaves_shorter_text_unchanged(self):
         """When the text is shorter than the length, nothing is truncated."""
-        self.assertEqual('foo', helpers.truncate_text('foo', 10))
+        self.assertEqual("foo", helpers.truncate_text("foo", 10))
 
     def test_single_very_long_word(self):
         """When the first word is longer than the truncation then that word is
         included.
         """
-        self.assertEqual('foo', helpers.truncate_text('foooo', 3))
+        self.assertEqual("foo", helpers.truncate_text("foooo", 3))
 
     def test_words_arent_split(self):
         """When the truncation would leave only half of the last word, then
         the whole word is removed.
         """
-        self.assertEqual('foo', helpers.truncate_text('foo bar', 5))
+        self.assertEqual("foo", helpers.truncate_text("foo bar", 5))
 
     def test_whitespace_is_preserved(self):
         """The whitespace between words is preserved in the truncated text."""
-        text = 'foo  bar\nbaz'
+        text = "foo  bar\nbaz"
         self.assertEqual(text, helpers.truncate_text(text, len(text)))
 
 
@@ -192,5 +200,6 @@ def test_suite():
     suite.addTest(DocTestSuite())
     suite.addTest(DocTestSuite(helpers))
     suite.addTest(
-        unittest.TestLoader().loadTestsFromTestCase(TruncateTextTest))
+        unittest.TestLoader().loadTestsFromTestCase(TruncateTextTest)
+    )
     return suite

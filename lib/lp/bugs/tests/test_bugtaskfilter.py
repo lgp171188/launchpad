@@ -6,10 +6,7 @@
 from testtools.matchers import Equals
 
 from lp.bugs.interfaces.bugtaskfilter import filter_bugtasks_by_context
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
@@ -49,7 +46,8 @@ class TestFilterBugTasksByContext(TestCaseWithFactory):
         cogs = self.factory.makeProduct()
         self.factory.makeBugTask(bug=bug, target=cogs)
         self.assertFilterBugtasksByContextNoQueries(
-            bug, None, bug.getBugTask(widget))
+            bug, None, bug.getBugTask(widget)
+        )
 
     def test_two_product_tasks_case(self):
         widget = self.factory.makeProduct()
@@ -139,6 +137,7 @@ class TestFilterBugTasksByContext(TestCaseWithFactory):
         sp = self.factory.makeSourcePackage()
         task = self.factory.makeBugTask(bug=bug, target=sp.distribution)
         other_sp = self.factory.makeSourcePackage(
-            sourcepackagename=sp.sourcepackagename)
+            sourcepackagename=sp.sourcepackagename
+        )
         self.factory.makeBugTask(bug=bug, target=other_sp)
         self.assertFilterBugtasksByContextNoQueries(bug, sp, task)

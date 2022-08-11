@@ -4,16 +4,13 @@
 """Tests for things found directly in `lp.services.twistedsupport`."""
 
 from testtools.twistedsupport import (
-    assert_fails_with,
     AsynchronousDeferredRunTest,
-    )
+    assert_fails_with,
+)
 from twisted.internet import defer
 from twisted.internet.task import Clock
 
-from lp.services.twistedsupport import (
-    cancel_on_timeout,
-    extract_result,
-    )
+from lp.services.twistedsupport import cancel_on_timeout, extract_result
 from lp.testing import TestCase
 
 

@@ -4,15 +4,14 @@
 """Generic code for XML-RPC in Launchpad."""
 
 __all__ = [
-    'LaunchpadFault',
-    'Transport',
-    ]
+    "LaunchpadFault",
+    "Transport",
+]
 
 import socket
 import xmlrpc.client
 
 from defusedxml.xmlrpc import monkey_patch
-
 
 # Protect against various XML parsing vulnerabilities.
 monkey_patch()
@@ -29,10 +28,12 @@ class LaunchpadFault(xmlrpc.client.Fault):
     msg_template = None
 
     def __init__(self, **kw):
-        assert self.error_code is not None, (
-            "Subclasses must define error_code.")
-        assert self.msg_template is not None, (
-            "Subclasses must define msg_template.")
+        assert (
+            self.error_code is not None
+        ), "Subclasses must define error_code."
+        assert (
+            self.msg_template is not None
+        ), "Subclasses must define msg_template."
         msg = self.msg_template % kw
         xmlrpc.client.Fault.__init__(self, self.error_code, msg)
 
@@ -41,7 +42,8 @@ class LaunchpadFault(xmlrpc.client.Fault):
             return False
         return (
             self.faultCode == other.faultCode
-            and self.faultString == other.faultString)
+            and self.faultString == other.faultString
+        )
 
     def __ne__(self, other):
         return not (self == other)
@@ -54,8 +56,7 @@ class Transport(xmlrpc.client.Transport):
     xmlrpc.client.ServerProxy initialization.
     """
 
-    def __init__(self,
-                 use_datetime=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    def __init__(self, use_datetime=0, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         xmlrpc.client.Transport.__init__(self, use_datetime)
         self.timeout = timeout
 

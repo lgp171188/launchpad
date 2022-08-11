@@ -4,38 +4,38 @@
 """Archive uploader utilities."""
 
 __all__ = [
-    'determine_binary_file_type',
-    'determine_source_file_type',
-    'DpkgSourceError',
-    'extract_dpkg_source',
-    'get_source_file_extension',
-    'parse_and_merge_file_lists',
-    'parse_maintainer_bytes',
-    'ParseMaintError',
-    'prefix_multi_line_string',
-    're_taint_free',
-    're_isadeb',
-    're_isbuildinfo',
-    're_issource',
-    're_is_component_orig_tar_ext',
-    're_is_component_orig_tar_ext_sig',
-    're_no_epoch',
-    're_no_revision',
-    're_valid_version',
-    're_valid_pkg_name',
-    're_changes_file_name',
-    're_extract_src_version',
-    'rfc822_encode_address',
-    'UploadError',
-    'UploadWarning',
-    ]
+    "determine_binary_file_type",
+    "determine_source_file_type",
+    "DpkgSourceError",
+    "extract_dpkg_source",
+    "get_source_file_extension",
+    "parse_and_merge_file_lists",
+    "parse_maintainer_bytes",
+    "ParseMaintError",
+    "prefix_multi_line_string",
+    "re_taint_free",
+    "re_isadeb",
+    "re_isbuildinfo",
+    "re_issource",
+    "re_is_component_orig_tar_ext",
+    "re_is_component_orig_tar_ext_sig",
+    "re_no_epoch",
+    "re_no_revision",
+    "re_valid_version",
+    "re_valid_pkg_name",
+    "re_changes_file_name",
+    "re_extract_src_version",
+    "rfc822_encode_address",
+    "UploadError",
+    "UploadWarning",
+]
 
 
-from collections import defaultdict
 import os
 import re
 import signal
 import subprocess
+from collections import defaultdict
 
 import six
 
@@ -57,8 +57,9 @@ class DpkgSourceError(Exception):
 
     def __init__(self, command, output, result):
         super().__init__(
-            self._fmt % {
-                "output": output, "result": result, "command": command})
+            self._fmt
+            % {"output": output, "result": result, "command": command}
+        )
         self.output = output
         self.result = result
         self.command = command
@@ -70,13 +71,18 @@ re_isadeb = re.compile(r"(.+?)_(.+?)_(.+)\.(u?d?deb)$")
 re_isbuildinfo = re.compile(r"(.+?)_(.+?)_(.+)\.buildinfo$")
 
 source_file_exts = [
-    r'orig(?:-.+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?', 'diff.gz',
-    r'(?:debian\.)?tar\.(?:gz|bz2|xz)', 'dsc']
+    r"orig(?:-.+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?",
+    "diff.gz",
+    r"(?:debian\.)?tar\.(?:gz|bz2|xz)",
+    "dsc",
+]
 re_issource = re.compile(
-    r"([^_]+)_(.+?)\.(%s)" % "|".join(ext for ext in source_file_exts))
+    r"([^_]+)_(.+?)\.(%s)" % "|".join(ext for ext in source_file_exts)
+)
 re_is_component_orig_tar_ext = re.compile(r"^orig-(.+).tar.(?:gz|bz2|xz)$")
 re_is_component_orig_tar_ext_sig = re.compile(
-    r"^orig-(.+).tar.(?:gz|bz2|xz)\.asc$")
+    r"^orig-(.+).tar.(?:gz|bz2|xz)\.asc$"
+)
 re_is_orig_tar_ext = re.compile(r"^orig.tar.(?:gz|bz2|xz)$")
 re_is_orig_tar_ext_sig = re.compile(r"^orig.tar.(?:gz|bz2|xz)\.asc$")
 re_is_debian_tar_ext = re.compile(r"^debian.tar.(?:gz|bz2|xz)$")
@@ -147,7 +153,7 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
     Each line with a token or tag. Can be used for quoting text etc.
     """
     out = ""
-    for line in str.split('\n'):
+    for line in str.split("\n"):
         line = line.strip()
         if line or include_blank_lines:
             out += "%s%s\n" % (prefix, line)
@@ -168,8 +174,7 @@ def extract_component_from_section(section, default_component="main"):
 
 
 class ParseMaintError(Exception):
-    """Exception raised for errors in parsing a maintainer field.
-    """
+    """Exception raised for errors in parsing a maintainer field."""
 
 
 def parse_maintainer(maintainer, field_name="Maintainer"):
@@ -179,19 +184,21 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
     """
     maintainer = maintainer.strip()
     if not maintainer:
-        return ('', '')
+        return ("", "")
 
     if maintainer.find("<") == -1:
         email = maintainer
         name = ""
-    elif (maintainer[0] == "<" and maintainer[-1:] == ">"):
+    elif maintainer[0] == "<" and maintainer[-1:] == ">":
         email = maintainer[1:-1]
         name = ""
     else:
         m = re_parse_maintainer.match(maintainer)
         if not m:
-            raise ParseMaintError("%s: doesn't parse as a valid %s field."
-                                  % (maintainer, field_name))
+            raise ParseMaintError(
+                "%s: doesn't parse as a valid %s field."
+                % (maintainer, field_name)
+            )
         name = m.group(1)
         email = m.group(2)
         # Just in case the maintainer ended up with nested angles; check...
@@ -199,8 +206,9 @@ def parse_maintainer(maintainer, field_name="Maintainer"):
             email = email[1:]
 
     if email.find("@") == -1 and email.find("buildd_") != 0:
-        raise ParseMaintError("%s: no @ found in email address part."
-                              % maintainer)
+        raise ParseMaintError(
+            "%s: no @ found in email address part." % maintainer
+        )
 
     return (name, email)
 
@@ -231,7 +239,7 @@ def rfc822_encode_address(name, email):
     # not work directly as an email address due to a misfeature in the syntax
     # specified in RFC822; see Debian policy 5.6.2 (Maintainer field syntax)
     # for details.
-    if name.find(',') != -1 or name.find('.') != -1:
+    if name.find(",") != -1 or name.find(".") != -1:
         return "%s (%s)" % (email, name)
     else:
         return "%s <%s>" % (name, email)
@@ -250,18 +258,25 @@ def extract_dpkg_source(dsc_filepath, target, vendor=None):
         # http://www.chiark.greenend.org.uk/ucgi/~cjwatson/ \
         #   blosxom/2009-07-02-python-sigpipe.html
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
     args = ["dpkg-source", "-sn", "-x", dsc_filepath]
     env = dict(os.environ)
     if vendor is not None:
         env["DEB_VENDOR"] = vendor
     dpkg_source = subprocess.Popen(
-        args, stdout=subprocess.PIPE, cwd=target, stderr=subprocess.PIPE,
-        preexec_fn=subprocess_setup, env=env)
+        args,
+        stdout=subprocess.PIPE,
+        cwd=target,
+        stderr=subprocess.PIPE,
+        preexec_fn=subprocess_setup,
+        env=env,
+    )
     output, unused = dpkg_source.communicate()
     result = dpkg_source.wait()
     if result != 0:
         dpkg_output = prefix_multi_line_string(
-            output.decode("UTF-8", errors="replace"), "  ")
+            output.decode("UTF-8", errors="replace"), "  "
+        )
         raise DpkgSourceError(result=result, output=dpkg_output, command=args)
 
 
@@ -269,11 +284,12 @@ def parse_file_list(s, field_name, count):
     if s is None:
         return None
     processed = []
-    for line in six.ensure_text(s).strip().split('\n'):
+    for line in six.ensure_text(s).strip().split("\n"):
         split = line.strip().split()
         if len(split) != count:
             raise UploadError(
-                "Wrong number of fields in %s field line." % field_name)
+                "Wrong number of fields in %s field line." % field_name
+            )
         processed.append(split)
     return processed
 
@@ -295,7 +311,9 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
     file_hashes = defaultdict(dict)
     hash_files = defaultdict(lambda: defaultdict(int))
     for (algo, checksums) in [
-            ('SHA1', checksums_sha1), ('SHA256', checksums_sha256)]:
+        ("SHA1", checksums_sha1),
+        ("SHA256", checksums_sha256),
+    ]:
         if checksums is None:
             continue
         for hash, size, filename in checksums:
@@ -313,15 +331,15 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
             md5, size, section, priority, filename = attrs
         else:
             md5, size, filename = attrs
-        file_hashes[filename]['MD5'] = md5
+        file_hashes[filename]["MD5"] = md5
         file_counter[filename] += 1
-        hash_files['MD5'][(filename, size)] += 1
+        hash_files["MD5"][(filename, size)] += 1
         if changes:
             complete_files.append(
-                (filename, file_hashes[filename], size, section, priority))
+                (filename, file_hashes[filename], size, section, priority)
+            )
         else:
-            complete_files.append(
-                (filename, file_hashes[filename], size))
+            complete_files.append((filename, file_hashes[filename], size))
 
     # Ensure that each filename was only listed in Files once.
     if set(file_counter.values()) - {1}:
@@ -330,18 +348,24 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
     # Ensure that the Checksums-Sha1 and Checksums-Sha256 fields, if
     # present, list the same filenames and sizes as the Files field.
     for field, algo in [
-            ('Checksums-Sha1', 'SHA1'), ('Checksums-Sha256', 'SHA256')]:
-        if algo in hash_files and hash_files[algo] != hash_files['MD5']:
+        ("Checksums-Sha1", "SHA1"),
+        ("Checksums-Sha256", "SHA256"),
+    ]:
+        if algo in hash_files and hash_files[algo] != hash_files["MD5"]:
             raise UploadError("Mismatch between %s and Files fields." % field)
     return complete_files
 
 
 def parse_and_merge_file_lists(tag_dict, changes=True):
     files_lines = parse_file_list(
-        tag_dict['Files'], 'Files', 5 if changes else 3)
+        tag_dict["Files"], "Files", 5 if changes else 3
+    )
     sha1_lines = parse_file_list(
-        tag_dict.get('Checksums-Sha1'), 'Checksums-Sha1', 3)
+        tag_dict.get("Checksums-Sha1"), "Checksums-Sha1", 3
+    )
     sha256_lines = parse_file_list(
-        tag_dict.get('Checksums-Sha256'), 'Checksums-Sha256', 3)
+        tag_dict.get("Checksums-Sha256"), "Checksums-Sha256", 3
+    )
     return merge_file_lists(
-        files_lines, sha1_lines, sha256_lines, changes=changes)
+        files_lines, sha1_lines, sha256_lines, changes=changes
+    )

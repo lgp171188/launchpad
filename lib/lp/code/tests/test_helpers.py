@@ -3,10 +3,7 @@
 
 """Test the code test helpers found in helpers.py."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.component import getUtility
@@ -27,15 +24,20 @@ class TestMakeProjectCloudData(TestCaseWithFactory):
         # Make a single project with one commit from one person.
         now = datetime.now(pytz.UTC)
         commit_time = now - timedelta(days=2)
-        make_project_cloud_data(self.factory, [
-                ('fooix', 1, 1, commit_time),
-                ])
+        make_project_cloud_data(
+            self.factory,
+            [
+                ("fooix", 1, 1, commit_time),
+            ],
+        )
         # Make sure we have a new project called fooix.
-        fooix = getUtility(IProductSet).getByName('fooix')
+        fooix = getUtility(IProductSet).getByName("fooix")
         self.assertIsNot(None, fooix)
         # There should be one branch with one commit.
         [branch] = list(
-            getUtility(IAllBranches).inProduct(fooix).getBranches(
-                eager_load=False))
+            getUtility(IAllBranches)
+            .inProduct(fooix)
+            .getBranches(eager_load=False)
+        )
         self.assertEqual(1, branch.revision_count)
         self.assertEqual(commit_time, branch.getTipRevision().revision_date)

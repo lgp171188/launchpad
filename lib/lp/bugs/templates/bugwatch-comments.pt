@@ -22,7 +22,7 @@
 
       <div class="yui-g">
         <tal:comments repeat="comment view/comments">
-          <tal:coment tal:replace="structure comment/@@+box" />
+          <tal:comment tal:replace="structure comment/@@+box" />
         </tal:comments>
       </div>
     </div>

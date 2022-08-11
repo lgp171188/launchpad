@@ -10,6 +10,8 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
+
+    <authorizations module=".security" />
     <include
         file="vocabularies.zcml"/>
     <include
@@ -1834,6 +1836,9 @@
             interface="lp.registry.interfaces.distribution.IDistributionEditRestricted"
             set_schema="lp.app.interfaces.informationtype.IInformationType"/>
         <require
+            permission="launchpad.SecurityAdmin"
+            interface="lp.registry.interfaces.distribution.IDistributionSecurityAdminRestricted" />
+        <require
             permission="launchpad.Edit"
             set_attributes="answers_usage blueprints_usage codehosting_usage
                             bug_tracking_usage uses_launchpad"/>
@@ -1866,6 +1871,7 @@
                 package_derivatives_email
                 redirect_default_traversal
                 redirect_release_uploads
+                security_admin
                 summary
                 vcs
                 "/>

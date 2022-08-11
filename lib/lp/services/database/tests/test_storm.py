@@ -12,5 +12,5 @@ class TestStorm(TestCase):
     def test_has_cextensions(self):
         """Ensure Storm C extensions are being used."""
         self.assertTrue(
-            storm.has_cextensions,
-            'Storm not running with C extensions')
+            storm.has_cextensions, "Storm not running with C extensions"
+        )

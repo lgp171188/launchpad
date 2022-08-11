@@ -12,15 +12,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
 from lp.bugs.interfaces.bugsummary import IBugSummary
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.model.bug import BugTag
-from lp.bugs.model.bugsummary import (
-    BugSummary,
-    get_bugsummary_filter_for_user,
-    )
+from lp.bugs.model.bugsummary import BugSummary, get_bugsummary_filter_for_user
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.enums import SharingPermission
 from lp.services.database.interfaces import IMasterStore
@@ -38,7 +32,7 @@ class TestBugSummary(TestCaseWithFactory):
 
         # Some things we are testing are impossible as mere mortals,
         # but might happen from the SQL command line.
-        switch_dbuser('testadmin')
+        switch_dbuser("testadmin")
 
         self.store = IMasterStore(BugSummary)
 
@@ -67,7 +61,7 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertTrue(IBugSummary.providedBy(bug_summary))
 
     def test_addTag(self):
-        tag = 'pustular'
+        tag = "pustular"
 
         # Ensure nothing using our tag yet.
         self.assertCount(0, tag=tag)
@@ -86,8 +80,8 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertCount(3, tag=tag)
 
     def test_changeTag(self):
-        old_tag = 'pustular'
-        new_tag = 'flatulent'
+        old_tag = "pustular"
+        new_tag = "flatulent"
 
         # Ensure nothing using our tags yet.
         self.assertCount(0, tag=old_tag)
@@ -115,7 +109,7 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertCount(3, tag=new_tag)
 
     def test_removeTag(self):
-        tag = 'pustular'
+        tag = "pustular"
 
         # Ensure nothing using our tags yet.
         self.assertCount(0, tag=tag)
@@ -152,7 +146,8 @@ class TestBugSummary(TestCaseWithFactory):
 
         for count in reversed(range(3)):
             bug_task = self.store.find(
-                BugTask, product=product, _status=org_status).any()
+                BugTask, product=product, _status=org_status
+            ).any()
             bug_task._status = new_status
             self.assertCount(count, product=product, status=org_status)
             self.assertCount(3 - count, product=product, status=new_status)
@@ -168,16 +163,18 @@ class TestBugSummary(TestCaseWithFactory):
             bug_task = self.store.find(BugTask, bug=bug).one()
             bug_task.importance = org_importance
             self.assertCount(
-                count + 1, product=product, importance=org_importance)
+                count + 1, product=product, importance=org_importance
+            )
 
         for count in reversed(range(3)):
             bug_task = self.store.find(
-                BugTask, product=product, importance=org_importance).any()
+                BugTask, product=product, importance=org_importance
+            ).any()
             bug_task.importance = new_importance
+            self.assertCount(count, product=product, importance=org_importance)
             self.assertCount(
-                count, product=product, importance=org_importance)
-            self.assertCount(
-                3 - count, product=product, importance=new_importance)
+                3 - count, product=product, importance=new_importance
+            )
 
     def test_makePrivate(self):
         # The bug owner and two other people are subscribed directly to
@@ -187,9 +184,12 @@ class TestBugSummary(TestCaseWithFactory):
         person_b = self.factory.makePerson()
         person_c = self.factory.makePerson()
         product = self.factory.makeProduct()
-        getUtility(IService, 'sharing').sharePillarInformation(
-            product, person_c, product.owner,
-            {InformationType.USERDATA: SharingPermission.ALL})
+        getUtility(IService, "sharing").sharePillarInformation(
+            product,
+            person_c,
+            product.owner,
+            {InformationType.USERDATA: SharingPermission.ALL},
+        )
         bug = self.factory.makeBug(target=product, owner=person_b)
 
         bug.subscribe(person=person_a, subscribed_by=person_a)
@@ -209,7 +209,8 @@ class TestBugSummary(TestCaseWithFactory):
     def test_makePublic(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA)
+            target=product, information_type=InformationType.USERDATA
+        )
 
         person_a = self.factory.makePerson()
         person_b = self.factory.makePerson()
@@ -227,7 +228,8 @@ class TestBugSummary(TestCaseWithFactory):
     def test_subscribePrivate(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA)
+            target=product, information_type=InformationType.USERDATA
+        )
 
         person_a = self.factory.makePerson()
         person_b = self.factory.makePerson()
@@ -240,7 +242,8 @@ class TestBugSummary(TestCaseWithFactory):
     def test_unsubscribePrivate(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(
-            target=product, information_type=InformationType.USERDATA)
+            target=product, information_type=InformationType.USERDATA
+        )
 
         person_a = self.factory.makePerson()
         person_b = self.factory.makePerson()
@@ -309,8 +312,7 @@ class TestBugSummary(TestCaseWithFactory):
         product = self.factory.makeProduct()
 
         product_bug_task = self.factory.makeBugTask(target=product)
-        self.factory.makeBugTask(
-            bug=product_bug_task.bug, target=distribution)
+        self.factory.makeBugTask(bug=product_bug_task.bug, target=distribution)
 
         self.assertCount(1, distribution=distribution)
         self.assertCount(1, product=product)
@@ -337,13 +339,14 @@ class TestBugSummary(TestCaseWithFactory):
         productseries_a = self.factory.makeProductSeries(product=product)
         productseries_b = self.factory.makeProductSeries(product=product)
 
-        # You can't have a BugTask targetted to a productseries without
-        # already having a BugTask targetted to the product. Create
+        # You can't have a BugTask targeted to a productseries without
+        # already having a BugTask targeted to the product. Create
         # this task explicitly.
         product_task = self.factory.makeBugTask(target=product)
 
         series_task = self.factory.makeBugTask(
-            bug=product_task.bug, target=productseries_a)
+            bug=product_task.bug, target=productseries_a
+        )
 
         self.assertCount(1, product=product)
         self.assertCount(1, productseries=productseries_a)
@@ -444,62 +447,81 @@ class TestBugSummary(TestCaseWithFactory):
     def test_addDistributionSourcePackage(self):
         distribution = self.factory.makeDistribution()
         sourcepackage = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
 
         bug = self.factory.makeBug()
         self.factory.makeBugTask(bug=bug, target=sourcepackage)
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(
-            1, distribution=distribution,
-            sourcepackagename=sourcepackage.sourcepackagename)
+            1,
+            distribution=distribution,
+            sourcepackagename=sourcepackage.sourcepackagename,
+        )
 
     def test_changeDistributionSourcePackage(self):
         distribution = self.factory.makeDistribution()
         sourcepackage_a = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         sourcepackage_b = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
 
         bug_task = self.factory.makeBugTask(target=sourcepackage_a)
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(
-            1, distribution=distribution,
-            sourcepackagename=sourcepackage_a.sourcepackagename)
+            1,
+            distribution=distribution,
+            sourcepackagename=sourcepackage_a.sourcepackagename,
+        )
         self.assertCount(
-            0, distribution=distribution,
-            sourcepackagename=sourcepackage_b.sourcepackagename)
+            0,
+            distribution=distribution,
+            sourcepackagename=sourcepackage_b.sourcepackagename,
+        )
 
-        removeSecurityProxy(bug_task).sourcepackagename = (
-            sourcepackage_b.sourcepackagename)
+        removeSecurityProxy(
+            bug_task
+        ).sourcepackagename = sourcepackage_b.sourcepackagename
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(
-            0, distribution=distribution,
-            sourcepackagename=sourcepackage_a.sourcepackagename)
+            0,
+            distribution=distribution,
+            sourcepackagename=sourcepackage_a.sourcepackagename,
+        )
         self.assertCount(
-            1, distribution=distribution,
-            sourcepackagename=sourcepackage_b.sourcepackagename)
+            1,
+            distribution=distribution,
+            sourcepackagename=sourcepackage_b.sourcepackagename,
+        )
 
     def test_removeDistributionSourcePackage(self):
         distribution = self.factory.makeDistribution()
         sourcepackage = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
 
         bug_task = self.factory.makeBugTask(target=sourcepackage)
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(
-            1, distribution=distribution,
-            sourcepackagename=sourcepackage.sourcepackagename)
+            1,
+            distribution=distribution,
+            sourcepackagename=sourcepackage.sourcepackagename,
+        )
 
         removeSecurityProxy(bug_task).sourcepackagename = None
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(
-            0, distribution=distribution,
-            sourcepackagename=sourcepackage.sourcepackagename)
+            0,
+            distribution=distribution,
+            sourcepackagename=sourcepackage.sourcepackagename,
+        )
 
     def test_addDistroSeriesSourcePackage(self):
         distribution = self.factory.makeDistribution()
@@ -517,9 +539,11 @@ class TestBugSummary(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         series = self.factory.makeDistroSeries(distribution=distribution)
         package_a = self.factory.makeSourcePackage(
-            distroseries=series, publish=True)
+            distroseries=series, publish=True
+        )
         package_b = self.factory.makeSourcePackage(
-            distroseries=series, publish=True)
+            distroseries=series, publish=True
+        )
         spn_a = package_a.sourcepackagename
         spn_b = package_b.sourcepackagename
         bug_task = self.factory.makeBugTask(target=package_a)
@@ -532,7 +556,8 @@ class TestBugSummary(TestCaseWithFactory):
         self.assertCount(0, distroseries=series, sourcepackagename=spn_b)
 
         bug_task.transitionToTarget(
-            series.getSourcePackage(spn_b), bug_task.owner)
+            series.getSourcePackage(spn_b), bug_task.owner
+        )
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(0, distribution=distribution, sourcepackagename=spn_a)
@@ -638,7 +663,6 @@ class TestBugSummary(TestCaseWithFactory):
 
 
 class TestBugSummaryRolledUp(TestBugSummary):
-
     def _maybe_rollup(self):
         # Rollup the BugSummaryJournal into BugSummary
         # so all the records are in one place - this checks the journal

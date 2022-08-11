@@ -5,7 +5,7 @@
 
 __all__ = [
     "GitRepositoryDelta",
-    ]
+]
 
 from lazr.lifecycle.objectdelta import ObjectDelta
 from zope.interface import implementer
@@ -13,21 +13,22 @@ from zope.interface import implementer
 from lp.code.interfaces.gitrepository import (
     IGitRepository,
     IGitRepositoryDelta,
-    )
+)
 
 
 @implementer(IGitRepositoryDelta)
 class GitRepositoryDelta:
     """See `IGitRepositoryDelta`."""
 
-    delta_values = ('name', 'git_identity')
+    delta_values = ("name", "git_identity")
 
     new_values = ()
 
     interface = IGitRepository
 
-    def __init__(self, repository, user, name=None, git_identity=None,
-                 activities=None):
+    def __init__(
+        self, repository, user, name=None, git_identity=None, activities=None
+    ):
         self.repository = repository
         self.user = user
 
@@ -44,8 +45,11 @@ class GitRepositoryDelta:
         """
         delta = ObjectDelta(old_repository, new_repository)
         delta.recordNewAndOld(klass.delta_values)
-        activities = list(new_repository.getActivity(
-            changed_after=old_repository.date_last_modified))
+        activities = list(
+            new_repository.getActivity(
+                changed_after=old_repository.date_last_modified
+            )
+        )
         if delta.changes or activities:
             changes = delta.changes
             changes["repository"] = new_repository

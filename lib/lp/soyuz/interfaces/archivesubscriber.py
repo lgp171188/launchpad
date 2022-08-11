@@ -4,32 +4,23 @@
 """ArchiveSubscriber interface."""
 
 __all__ = [
-    'ArchiveSubscriptionError',
-    'IArchiveSubscriber',
-    'IArchiveSubscriberSet',
-    'IPersonalArchiveSubscription',
-    ]
+    "ArchiveSubscriptionError",
+    "IArchiveSubscriber",
+    "IArchiveSubscriberSet",
+    "IPersonalArchiveSubscription",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.app.interfaces.launchpad import IPrivacy
@@ -40,57 +31,94 @@ from lp.soyuz.interfaces.archive import IArchive
 
 
 class ArchiveSubscriptionError(Exception):
-    """Raised for various errors when creating and activating subscriptions.
-    """
+    """Raised for various errors when creating and activating subscriptions."""
 
 
 class IArchiveSubscriberView(Interface):
     """An interface for launchpad.View ops on archive subscribers."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
-    archive_id = Int(title=_('Archive ID'), required=True, readonly=True)
-    archive = exported(Reference(
-        IArchive, title=_("Archive"), required=True, readonly=True,
-        description=_("The archive for this subscription.")))
+    archive_id = Int(title=_("Archive ID"), required=True, readonly=True)
+    archive = exported(
+        Reference(
+            IArchive,
+            title=_("Archive"),
+            required=True,
+            readonly=True,
+            description=_("The archive for this subscription."),
+        )
+    )
 
-    registrant = exported(Reference(
-        IPerson, title=_("Registrant"), required=True, readonly=True,
-        description=_("The person who registered this subscription.")))
+    registrant = exported(
+        Reference(
+            IPerson,
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            description=_("The person who registered this subscription."),
+        )
+    )
 
-    date_created = exported(Datetime(
-        title=_("Date Created"), required=True, readonly=True,
-        description=_("The timestamp when the subscription was created.")))
+    date_created = exported(
+        Datetime(
+            title=_("Date Created"),
+            required=True,
+            readonly=True,
+            description=_("The timestamp when the subscription was created."),
+        )
+    )
 
-    subscriber = exported(PersonChoice(
-        title=_("Subscriber"), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam',
-        description=_("The person who is subscribed.")))
-    subscriber_id = Attribute('database ID of the subscriber.')
+    subscriber = exported(
+        PersonChoice(
+            title=_("Subscriber"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who is subscribed."),
+        )
+    )
+    subscriber_id = Attribute("database ID of the subscriber.")
 
-    date_expires = exported(Datetime(
-        title=_("Date of Expiration"), required=False,
-        description=_("The timestamp when the subscription will expire.")))
+    date_expires = exported(
+        Datetime(
+            title=_("Date of Expiration"),
+            required=False,
+            description=_("The timestamp when the subscription will expire."),
+        )
+    )
 
-    status = exported(Choice(
-        title=_("Status"), required=True,
-        vocabulary=ArchiveSubscriberStatus,
-        description=_("The status of this subscription.")))
+    status = exported(
+        Choice(
+            title=_("Status"),
+            required=True,
+            vocabulary=ArchiveSubscriberStatus,
+            description=_("The status of this subscription."),
+        )
+    )
 
-    description = exported(Text(
-        title=_("Description"), required=False,
-        description=_("Free text describing this subscription.")))
+    description = exported(
+        Text(
+            title=_("Description"),
+            required=False,
+            description=_("Free text describing this subscription."),
+        )
+    )
 
     date_cancelled = Datetime(
-        title=_("Date of Cancellation"), required=False,
-        description=_("The timestamp when the subscription was cancelled."))
+        title=_("Date of Cancellation"),
+        required=False,
+        description=_("The timestamp when the subscription was cancelled."),
+    )
 
     cancelled_by = Reference(
-        IPerson, title=_("Cancelled By"), required=False,
-        description=_("The person who cancelled the subscription."))
+        IPerson,
+        title=_("Cancelled By"),
+        required=False,
+        description=_("The person who cancelled the subscription."),
+    )
 
-    displayname = TextLine(title=_("Subscription displayname"),
-        required=False)
+    displayname = TextLine(title=_("Subscription displayname"), required=False)
 
     def getNonActiveSubscribers():
         """Return the people included in this subscription.
@@ -109,7 +137,7 @@ class IArchiveSubscriberEdit(Interface):
 
     @call_with(cancelled_by=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def cancel(cancelled_by):
         """Cancel a subscription.
 
@@ -120,7 +148,7 @@ class IArchiveSubscriberEdit(Interface):
         """
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IArchiveSubscriber(IArchiveSubscriberView, IArchiveSubscriberEdit):
     """An interface for archive subscribers."""
 
@@ -177,7 +205,8 @@ class IArchiveSubscriberSetAdmin(Interface):
 
 
 class IArchiveSubscriberSet(
-        IArchiveSubscriberSetView, IArchiveSubscriberSetAdmin):
+    IArchiveSubscriberSetView, IArchiveSubscriberSetAdmin
+):
     """An interface for the set of all archive subscribers."""
 
 
@@ -190,19 +219,25 @@ class IPersonalArchiveSubscription(Interface):
     to a p3a, irrespective of whether the ArchiveSubscriber records linking
     this individual to the archive are for teams or individuals.
     """
+
     subscriber = Reference(
-        IPerson, title=_("Person"), required=True, readonly=True,
-        description=_("The person for this individual subscription."))
+        IPerson,
+        title=_("Person"),
+        required=True,
+        readonly=True,
+        description=_("The person for this individual subscription."),
+    )
 
     archive = Reference(
-        IArchive, title=_("Archive"), required=True,
-        description=_("The archive for this subscription."))
+        IArchive,
+        title=_("Archive"),
+        required=True,
+        description=_("The archive for this subscription."),
+    )
 
-    displayname = TextLine(title=_("Subscription displayname"),
-        required=False)
+    displayname = TextLine(title=_("Subscription displayname"), required=False)
 
-    title = TextLine(title=_("Subscription title"),
-        required=False)
+    title = TextLine(title=_("Subscription title"), required=False)
 
 
 def pas_to_privacy(pas):

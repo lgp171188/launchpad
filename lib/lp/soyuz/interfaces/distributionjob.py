@@ -12,49 +12,43 @@ __all__ = [
     "InitializationPending",
 ]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Int,
-    Object,
-    Text,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
+from zope.interface import Attribute, Interface
+from zope.schema import Int, Object, Text
 
 from lp import _
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IDistributionJob(Interface):
     """A Job that initializes acts on a distribution."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number for this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number for this job."),
+    )
 
     distribution = Object(
-        title=_('The Distribution this job is about.'),
-        schema=IDistribution, required=True)
+        title=_("The Distribution this job is about."),
+        schema=IDistribution,
+        required=True,
+    )
 
     distroseries = Object(
-        title=_('The DistroSeries this job is about.'),
-        schema=IDistroSeries, required=False)
+        title=_("The DistroSeries this job is about."),
+        schema=IDistroSeries,
+        required=False,
+    )
 
     job = Object(
-        title=_('The common Job attributes'), schema=IJob, required=True)
+        title=_("The common Job attributes"), schema=IJob, required=True
+    )
 
-    metadata = Attribute('A dict of data about the job.')
+    metadata = Attribute("A dict of data about the job.")
 
     def destroySelf():
         """Destroy this object."""
@@ -62,19 +56,25 @@ class IDistributionJob(Interface):
 
 class DistributionJobType(DBEnumeratedType):
 
-    INITIALIZE_SERIES = DBItem(1, """
+    INITIALIZE_SERIES = DBItem(
+        1,
+        """
         Initialize a Distro Series.
 
         This job initializes a given distro series, creating builds, and
         populating the archive from the parent distroseries.
-        """)
+        """,
+    )
 
-    DISTROSERIESDIFFERENCE = DBItem(3, """
+    DISTROSERIESDIFFERENCE = DBItem(
+        3,
+        """
         Create, delete, or update a Distro Series Difference.
 
         Updates the status of a potential difference between a derived
         distribution release series and its parent series.
-        """)
+        """,
+    )
 
 
 class InitializationPending(Exception):
@@ -102,8 +102,15 @@ class InitializationCompleted(Exception):
 class IInitializeDistroSeriesJobSource(IJobSource):
     """An interface for acquiring IInitializeDistroSeriesJobs."""
 
-    def create(parents, arches, packagesets, rebuild, overlay,
-               overlay_pockets, overlay_components):
+    def create(
+        parents,
+        arches,
+        packagesets,
+        rebuild,
+        overlay,
+        overlay_pockets,
+        overlay_components,
+    ):
         """Create a new initialization job for a distroseries."""
 
     def get(distroseries):
@@ -120,9 +127,11 @@ class IInitializeDistroSeriesJob(IRunnableJob):
         title=_("Error description"),
         description=_(
             "A short description of the last error this "
-            "job encountered, if any."),
+            "job encountered, if any."
+        ),
         readonly=True,
-        required=False)
+        required=False,
+    )
 
 
 class IDistroSeriesDifferenceJobSource(IJobSource):

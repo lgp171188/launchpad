@@ -7,26 +7,22 @@
 
 __all__ = [
     "BzrSync",
-    'schedule_diff_updates',
-    'schedule_translation_templates_build',
-    'schedule_translation_upload',
-    ]
+    "schedule_diff_updates",
+    "schedule_translation_templates_build",
+    "schedule_translation_upload",
+]
 
 import logging
 
+import pytz
+import transaction
 from breezy.graph import DictParentsProvider
 from breezy.revision import NULL_REVISION
-import pytz
-import six
 from storm.locals import Store
-import transaction
 from zope.component import getUtility
 from zope.event import notify
 
-from lp.code.bzr import (
-    branch_revision_history,
-    get_ancestry,
-    )
+from lp.code.bzr import branch_revision_history, get_ancestry
 from lp.code.interfaces.branchjob import IRosettaUploadJobSource
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.branchrevision import BranchRevision
@@ -38,15 +34,13 @@ from lp.services.utils import iter_chunks
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuildSource,
-    )
+)
 
-
-UTC = pytz.timezone('UTC')
+UTC = pytz.timezone("UTC")
 
 
 class BzrSync:
-    """Import version control metadata from a Bazaar branch into the database.
-    """
+    """Import version control metadata from a Bazaar branch into the DB."""
 
     def __init__(self, branch, logger=None):
         self.db_branch = branch
@@ -56,8 +50,7 @@ class BzrSync:
         self.revision_set = getUtility(IRevisionSet)
 
     def syncBranchAndClose(self, bzr_branch=None):
-        """Synchronize the database with a Bazaar branch, handling locking.
-        """
+        """Synchronize the database with a Bazaar branch, handling locking."""
         if bzr_branch is None:
             bzr_branch = self.db_branch.getBzrBranch()
         bzr_branch.lock_read()
@@ -91,19 +84,24 @@ class BzrSync:
         # if something is wrong with the branch.
         self.logger.info("Retrieving history from breezy.")
         bzr_history = [
-            six.ensure_text(revid)
-            for revid in branch_revision_history(bzr_branch)]
+            revid.decode() for revid in branch_revision_history(bzr_branch)
+        ]
         # The BranchRevision, Revision and RevisionParent tables are only
         # written to by the branch-scanner, so they are not subject to
         # write-lock contention. Update them all in a single transaction to
         # improve the performance and allow garbage collection in the future.
         db_ancestry, db_history = self.retrieveDatabaseAncestry()
 
-        (new_ancestry, branchrevisions_to_delete,
-            revids_to_insert) = self.planDatabaseChanges(
-            bzr_branch, bzr_history, db_ancestry, db_history)
-        new_db_revs = (
-            new_ancestry - getUtility(IRevisionSet).onlyPresent(new_ancestry))
+        (
+            new_ancestry,
+            branchrevisions_to_delete,
+            revids_to_insert,
+        ) = self.planDatabaseChanges(
+            bzr_branch, bzr_history, db_ancestry, db_history
+        )
+        new_db_revs = new_ancestry - getUtility(IRevisionSet).onlyPresent(
+            new_ancestry
+        )
         self.logger.info("Adding %s new revisions.", len(new_db_revs))
         for revids in iter_chunks(new_db_revs, 10000):
             revisions = self.getBazaarRevisions(bzr_branch, revids)
@@ -119,7 +117,7 @@ class BzrSync:
         # Notify any listeners that the tip of the branch has changed, but
         # before we've actually updated the database branch.
         self.logger.info("Firing tip change event.")
-        initial_scan = (len(db_history) == 0)
+        initial_scan = len(db_history) == 0
         notify(events.TipChanged(self.db_branch, bzr_branch, initial_scan))
 
         # The Branch table is modified by other systems, including the web UI,
@@ -134,7 +132,9 @@ class BzrSync:
         self.logger.info("Firing scan completion event.")
         notify(
             events.ScanCompleted(
-                self.db_branch, bzr_branch, self.logger, new_ancestry))
+                self.db_branch, bzr_branch, self.logger, new_ancestry
+            )
+        )
         transaction.commit()
 
     def retrieveDatabaseAncestry(self):
@@ -146,17 +146,18 @@ class BzrSync:
     def _getRevisionGraph(self, bzr_branch, db_last):
         if bzr_branch.repository.has_revision(db_last):
             return bzr_branch.repository.get_graph()
-        revisions = Store.of(self.db_branch).find(Revision,
-                BranchRevision.branch_id == self.db_branch.id,
-                Revision.id == BranchRevision.revision_id)
+        revisions = Store.of(self.db_branch).find(
+            Revision,
+            BranchRevision.branch_id == self.db_branch.id,
+            Revision.id == BranchRevision.revision_id,
+        )
         parent_map = {
-            six.ensure_binary(r.revision_id):
-             [six.ensure_binary(revid) for revid in r.parent_ids]
-            for r in revisions}
+            r.revision_id.encode(): [revid.encode() for revid in r.parent_ids]
+            for r in revisions
+        }
         parents_provider = DictParentsProvider(parent_map)
 
         class PPSource:
-
             @staticmethod
             def _make_parents_provider():
                 return parents_provider
@@ -171,14 +172,14 @@ class BzrSync:
             added_ancestry = get_ancestry(bzr_branch.repository, bzr_last)
             removed_ancestry = set()
         else:
-            db_last = six.ensure_binary(db_last)
+            db_last = db_last.encode()
             graph = self._getRevisionGraph(bzr_branch, db_last)
-            added_ancestry, removed_ancestry = (
-                graph.find_difference(bzr_last, db_last))
+            added_ancestry, removed_ancestry = graph.find_difference(
+                bzr_last, db_last
+            )
             added_ancestry.discard(NULL_REVISION)
-        added_ancestry = {six.ensure_text(revid) for revid in added_ancestry}
-        removed_ancestry = {
-            six.ensure_text(revid) for revid in removed_ancestry}
+        added_ancestry = {revid.decode() for revid in added_ancestry}
+        removed_ancestry = {revid.decode() for revid in removed_ancestry}
         return added_ancestry, removed_ancestry
 
     def getHistoryDelta(self, bzr_history, db_history):
@@ -201,8 +202,9 @@ class BzrSync:
         added_history = bzr_history[common_len:]
         return added_history, removed_history
 
-    def planDatabaseChanges(self, bzr_branch, bzr_history, db_ancestry,
-                            db_history):
+    def planDatabaseChanges(
+        self, bzr_branch, bzr_history, db_ancestry, db_history
+    ):
         """Plan database changes to synchronize with breezy data.
 
         Use the data retrieved by `retrieveDatabaseAncestry` and
@@ -211,37 +213,46 @@ class BzrSync:
         self.logger.info("Planning changes.")
         # Find the length of the common history.
         added_history, removed_history = self.getHistoryDelta(
-            bzr_history, db_history)
+            bzr_history, db_history
+        )
         added_ancestry, removed_ancestry = self.getAncestryDelta(bzr_branch)
 
         notify(
             events.RevisionsRemoved(
-                self.db_branch, bzr_branch, removed_history))
+                self.db_branch, bzr_branch, removed_history
+            )
+        )
 
         # We must delete BranchRevision rows for all revisions which where
         # removed from the ancestry or whose sequence value has changed.
         branchrevisions_to_delete = set(removed_history)
         branchrevisions_to_delete.update(removed_ancestry)
         branchrevisions_to_delete.update(
-            set(added_history).difference(added_ancestry))
+            set(added_history).difference(added_ancestry)
+        )
 
         # We must insert BranchRevision rows for all revisions which were
         # added to the ancestry or whose sequence value has changed.
         last_revno = len(bzr_history)
         revids_to_insert = dict(
-            self.revisionsToInsert(
-                added_history, last_revno, added_ancestry))
+            self.revisionsToInsert(added_history, last_revno, added_ancestry)
+        )
         # We must remove any stray BranchRevisions that happen to already be
         # present.
         self.logger.info("Finding stray BranchRevisions.")
         existing_branchrevisions = Store.of(self.db_branch).find(
-            Revision.revision_id, BranchRevision.branch == self.db_branch,
+            Revision.revision_id,
+            BranchRevision.branch == self.db_branch,
             BranchRevision.revision_id == Revision.id,
-            Revision.revision_id.is_in(revids_to_insert))
+            Revision.revision_id.is_in(revids_to_insert),
+        )
         branchrevisions_to_delete.update(existing_branchrevisions)
 
-        return (added_ancestry, list(branchrevisions_to_delete),
-                revids_to_insert)
+        return (
+            added_ancestry,
+            list(branchrevisions_to_delete),
+            revids_to_insert,
+        )
 
     def getBazaarRevisions(self, bzr_branch, revisions):
         """Like ``get_revisions(revisions)`` but filter out ghosts first.
@@ -250,7 +261,8 @@ class BzrSync:
             Revision objects for.
         """
         revisions = bzr_branch.repository.get_parent_map(
-            [six.ensure_binary(revid) for revid in revisions])
+            [revid.encode() for revid in revisions]
+        )
         return bzr_branch.repository.get_revisions(revisions.keys())
 
     def syncRevisions(self, bzr_branch, bzr_revisions, revids_to_insert):
@@ -265,12 +277,15 @@ class BzrSync:
         self.revision_set.newFromBazaarRevisions(bzr_revisions)
         mainline_revisions = []
         for bzr_revision in bzr_revisions:
-            revision_id = six.ensure_text(bzr_revision.revision_id)
+            revision_id = bzr_revision.revision_id.decode()
             if revids_to_insert[revision_id] is None:
                 continue
             mainline_revisions.append(bzr_revision)
-        notify(events.NewMainlineRevisions(
-            self.db_branch, bzr_branch, mainline_revisions))
+        notify(
+            events.NewMainlineRevisions(
+                self.db_branch, bzr_branch, mainline_revisions
+            )
+        )
 
     @staticmethod
     def revisionsToInsert(added_history, last_revno, added_ancestry):
@@ -290,8 +305,9 @@ class BzrSync:
 
     def deleteBranchRevisions(self, revision_ids_to_delete):
         """Delete a batch of BranchRevision rows."""
-        self.logger.info("Deleting %d branchrevision records.",
-            len(revision_ids_to_delete))
+        self.logger.info(
+            "Deleting %d branchrevision records.", len(revision_ids_to_delete)
+        )
         # Use a config value to work out how many to delete at a time.
         # Deleting more than one at a time is significantly more efficient
         # than doing one at a time, but the actual optimal count is a bit up
@@ -304,8 +320,9 @@ class BzrSync:
 
     def insertBranchRevisions(self, bzr_branch, revids_to_insert):
         """Insert a batch of BranchRevision rows."""
-        self.logger.info("Inserting %d branchrevision records.",
-            len(revids_to_insert))
+        self.logger.info(
+            "Inserting %d branchrevision records.", len(revids_to_insert)
+        )
         revid_seq_pairs = revids_to_insert.items()
         for revid_seq_pair_chunk in iter_chunks(revid_seq_pairs, 10000):
             self.db_branch.createBranchRevisionFromIDs(revid_seq_pair_chunk)
@@ -320,13 +337,15 @@ class BzrSync:
         else:
             revision = None
         self.logger.info(
-            "Updating branch scanner status: %s revs", revision_count)
+            "Updating branch scanner status: %s revs", revision_count
+        )
         self.db_branch.updateScannedDetails(revision, revision_count)
 
 
 def schedule_translation_upload(tip_changed):
     getUtility(IRosettaUploadJobSource).create(
-        tip_changed.db_branch, tip_changed.old_tip_revision_id)
+        tip_changed.db_branch, tip_changed.old_tip_revision_id
+    )
 
 
 def schedule_translation_templates_build(tip_changed):
@@ -351,6 +370,8 @@ def trigger_webhooks(tip_changed):
     new_revid = tip_changed.new_tip_revision_id
     if getFeatureFlag("code.bzr.webhooks.enabled") and old_revid != new_revid:
         payload = tip_changed.composeWebhookPayload(
-            tip_changed.db_branch, old_revid, new_revid)
+            tip_changed.db_branch, old_revid, new_revid
+        )
         getUtility(IWebhookSet).trigger(
-            tip_changed.db_branch, "bzr:push:0.1", payload)
+            tip_changed.db_branch, "bzr:push:0.1", payload
+        )

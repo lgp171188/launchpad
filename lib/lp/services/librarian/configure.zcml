@@ -8,6 +8,7 @@
     xmlns:zope="http://namespaces.zope.org/zope"
     i18n_domain="launchpad">
 
+  <authorizations module=".security" />
   <include file="client.zcml" />
 
   <class class="lp.services.librarian.model.LibraryFileAlias">

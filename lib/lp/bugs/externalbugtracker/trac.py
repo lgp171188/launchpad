@@ -3,14 +3,14 @@
 
 """Trac ExternalBugTracker implementation."""
 
-__all__ = ['Trac', 'TracLPPlugin']
+__all__ = ["Trac", "TracLPPlugin"]
 
 import cgi
 import csv
-from datetime import datetime
-from email.utils import parseaddr
 import time
 import xmlrpc.client
+from datetime import datetime
+from email.utils import parseaddr
 
 import pytz
 import requests
@@ -28,27 +28,20 @@ from lp.bugs.externalbugtracker.base import (
     LookupTree,
     UnknownRemoteStatusError,
     UnparsableBugData,
-    )
+)
 from lp.bugs.externalbugtracker.xmlrpc import RequestsTransport
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.bugs.interfaces.externalbugtracker import (
+    UNKNOWN_REMOTE_IMPORTANCE,
     ISupportsBackLinking,
     ISupportsCommentImport,
     ISupportsCommentPushing,
-    UNKNOWN_REMOTE_IMPORTANCE,
-    )
+)
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
 from lp.services.messages.interfaces.message import IMessageSet
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+from lp.services.timeout import override_timeout, urlfetch
 from lp.services.webapp.url import urlappend
-
 
 # Symbolic constants used for the Trac LP plugin.
 LP_PLUGIN_BUG_IDS_ONLY = 0
@@ -63,15 +56,15 @@ FAULT_TICKET_NOT_FOUND = 1001
 class Trac(ExternalBugTracker):
     """An ExternalBugTracker instance for handling Trac bugtrackers."""
 
-    ticket_url = 'ticket/%i?format=csv'
-    batch_url = 'query?%s&order=resolution&format=csv'
+    ticket_url = "ticket/%i?format=csv"
+    batch_url = "query?%s&order=resolution&format=csv"
     batch_query_threshold = 10
 
     def getExternalBugTrackerToUse(self):
         """See `IExternalBugTracker`."""
-        base_auth_url = urlappend(self.baseurl, 'launchpad-auth')
+        base_auth_url = urlappend(self.baseurl, "launchpad-auth")
         # Any token will do.
-        auth_url = urlappend(base_auth_url, 'check')
+        auth_url = urlappend(base_auth_url, "check")
         try:
             with override_timeout(config.checkwatches.default_socket_timeout):
                 response = urlfetch(auth_url, use_proxy=True)
@@ -91,7 +84,7 @@ class Trac(ExternalBugTracker):
             # sent, so this check is really intended to detect broken
             # Trac instances that return HTTP 200 for a missing page.
             for cookie in response.cookies:
-                if cookie.name == 'trac_auth':
+                if cookie.name == "trac_auth":
                     return TracLPPlugin(self.baseurl)
             else:
                 return self
@@ -102,8 +95,10 @@ class Trac(ExternalBugTracker):
 
         :bug_ids: A list of bug IDs that we can use for discovery purposes.
         """
-        html_ticket_url = '%s/%s' % (
-            self.baseurl, self.ticket_url.replace('?format=csv', ''))
+        html_ticket_url = "%s/%s" % (
+            self.baseurl,
+            self.ticket_url.replace("?format=csv", ""),
+        )
 
         for bug_id in bug_ids:
             try:
@@ -127,11 +122,12 @@ class Trac(ExternalBugTracker):
                 # exports to be unsupported.
                 try:
                     response = self._getPage(
-                        "%s/%s" %
-                        (self.baseurl, self.ticket_url % ticket_id))
+                        "%s/%s" % (self.baseurl, self.ticket_url % ticket_id)
+                    )
                     ctype, _ = cgi.parse_header(
-                        response.headers.get('Content-Type', ''))
-                    return '/' in ctype and ctype.split('/')[1] == 'csv'
+                        response.headers.get("Content-Type", "")
+                    )
+                    return "/" in ctype and ctype.split("/")[1] == "csv"
                 except BugTrackerConnectError:
                     return False
         else:
@@ -151,7 +147,8 @@ class Trac(ExternalBugTracker):
         # We read the remote bugs into a list so that we can check that
         # the data we're getting back from the remote server are valid.
         csv_reader = csv.DictReader(
-            self._getPage(query_url).iter_lines(decode_unicode=True))
+            self._getPage(query_url).iter_lines(decode_unicode=True)
+        )
         remote_bugs = [next(csv_reader)]
 
         # We consider the data we're getting from the remote server to
@@ -161,12 +158,15 @@ class Trac(ExternalBugTracker):
         # filled in for each row, that error will be handled in
         # getRemoteBugStatus() (i.e.  with a BugNotFound or an
         # UnknownRemoteStatusError).
-        if ('id' not in csv_reader.fieldnames or
-            'status' not in csv_reader.fieldnames):
+        if (
+            "id" not in csv_reader.fieldnames
+            or "status" not in csv_reader.fieldnames
+        ):
             raise UnparsableBugData(
                 "External bugtracker %s does not define all the necessary "
                 "fields for bug status imports (Defined field names: %r)."
-                % (self.baseurl, csv_reader.fieldnames))
+                % (self.baseurl, csv_reader.fieldnames)
+            )
 
         remote_bugs = remote_bugs + list(csv_reader)
         return remote_bugs
@@ -185,12 +185,13 @@ class Trac(ExternalBugTracker):
         # wrong.
         raise UnparsableBugData(
             "Remote bugtracker %s returned wrong amount of data for bug "
-            "%i (expected 1 bug, got %i bugs)." %
-            (self.baseurl, bug_id, len(bug_data)))
+            "%i (expected 1 bug, got %i bugs)."
+            % (self.baseurl, bug_id, len(bug_data))
+        )
 
     def getRemoteBugBatch(self, bug_ids):
         """See `ExternalBugTracker`."""
-        id_string = '&'.join(['id=%s' % id for id in bug_ids])
+        id_string = "&".join(["id=%s" % id for id in bug_ids])
         query_url = "%s/%s" % (self.baseurl, self.batch_url % id_string)
         remote_bugs = self._fetchBugData(query_url)
 
@@ -199,10 +200,10 @@ class Trac(ExternalBugTracker):
             # We're only interested in the bug if it's one of the ones in
             # bug_ids, just in case we get all the tickets in the Trac
             # instance back instead of only the ones we want.
-            if remote_bug['id'] not in bug_ids:
+            if remote_bug["id"] not in bug_ids:
                 continue
 
-            bugs[int(remote_bug['id'])] = remote_bug
+            bugs[int(remote_bug["id"])] = remote_bug
 
         return bugs
 
@@ -222,8 +223,9 @@ class Trac(ExternalBugTracker):
         # providing it supports CSV exports per-ticket. If the Trac
         # instance doesn't support exports-per-ticket we fail over to
         # using the batch export method for retrieving bug statuses.
-        if (len(bug_ids) < self.batch_query_threshold and
-            self.supportsSingleExports(bug_ids)):
+        if len(
+            bug_ids
+        ) < self.batch_query_threshold and self.supportsSingleExports(bug_ids):
             for bug_id in bug_ids:
                 remote_id, remote_bug = self.getRemoteBug(bug_id)
                 self.bugs[remote_id] = remote_bug
@@ -253,7 +255,8 @@ class Trac(ExternalBugTracker):
             bug_id = int(bug_id)
         except ValueError:
             raise InvalidBugId(
-                "bug_id must be convertable an integer: %s" % str(bug_id))
+                "bug_id must be convertible to an integer: %s" % str(bug_id)
+            )
 
         try:
             remote_bug = self.bugs[bug_id]
@@ -262,16 +265,19 @@ class Trac(ExternalBugTracker):
 
         # If the bug has a valid resolution as well as a status then we return
         # that, since it's more informative than the status field on its own.
-        if ('resolution' in remote_bug and
-            remote_bug['resolution'] not in ['', '--', None]):
-            return remote_bug['resolution']
+        if "resolution" in remote_bug and remote_bug["resolution"] not in [
+            "",
+            "--",
+            None,
+        ]:
+            return remote_bug["resolution"]
         else:
             try:
-                return remote_bug['status']
+                return remote_bug["status"]
             except KeyError:
                 # Some Trac instances don't include the bug status in their
                 # CSV exports. In those cases we raise a error.
-                raise UnknownRemoteStatusError('Status not exported.')
+                raise UnknownRemoteStatusError("Status not exported.")
 
     def convertRemoteImportance(self, remote_importance):
         """See `ExternalBugTracker`.
@@ -282,17 +288,17 @@ class Trac(ExternalBugTracker):
         """
         return BugTaskImportance.UNKNOWN
 
-    _status_lookup_titles = 'Trac status',
+    _status_lookup_titles = ("Trac status",)
     _status_lookup = LookupTree(
-        ('new', 'open', 'reopened', BugTaskStatus.NEW),
+        ("new", "open", "reopened", BugTaskStatus.NEW),
         # XXX: Graham Binns 2007-08-06: We should follow dupes if possible.
-        ('accepted', 'assigned', 'duplicate', BugTaskStatus.CONFIRMED),
+        ("accepted", "assigned", "duplicate", BugTaskStatus.CONFIRMED),
         # Status fixverified added for bug 667340, for http://trac.yorba.org/,
         # but could be generally useful so adding here.
-        ('fixed', 'closed', 'fixverified', BugTaskStatus.FIXRELEASED),
-        ('invalid', 'worksforme', BugTaskStatus.INVALID),
-        ('wontfix', BugTaskStatus.WONTFIX),
-        )
+        ("fixed", "closed", "fixverified", BugTaskStatus.FIXRELEASED),
+        ("invalid", "worksforme", BugTaskStatus.INVALID),
+        ("wontfix", BugTaskStatus.WONTFIX),
+    )
 
     def convertRemoteStatus(self, remote_status):
         """See `IExternalBugTracker`"""
@@ -318,16 +324,23 @@ def needs_authentication(func):
                 raise
             self._authenticate()
             return func(self, *args, **kwargs)
+
     return decorator
 
 
 @implementer(
-    ISupportsBackLinking, ISupportsCommentImport, ISupportsCommentPushing)
+    ISupportsBackLinking, ISupportsCommentImport, ISupportsCommentPushing
+)
 class TracLPPlugin(Trac):
     """A Trac instance having the LP plugin installed."""
 
-    def __init__(self, baseurl, xmlrpc_transport=None,
-                 internal_xmlrpc_transport=None, cookie_jar=None):
+    def __init__(
+        self,
+        baseurl,
+        xmlrpc_transport=None,
+        internal_xmlrpc_transport=None,
+        cookie_jar=None,
+    ):
         super().__init__(baseurl)
 
         if cookie_jar is None:
@@ -339,14 +352,16 @@ class TracLPPlugin(Trac):
         self._xmlrpc_transport = xmlrpc_transport
         self._internal_xmlrpc_transport = internal_xmlrpc_transport
 
-        xmlrpc_endpoint = urlappend(self.baseurl, 'xmlrpc')
+        xmlrpc_endpoint = urlappend(self.baseurl, "xmlrpc")
         self._server = xmlrpc.client.ServerProxy(
-            xmlrpc_endpoint, transport=self._xmlrpc_transport)
+            xmlrpc_endpoint, transport=self._xmlrpc_transport
+        )
 
     def makeRequest(self, method, url, **kwargs):
         """See `ExternalBugTracker`."""
         return super().makeRequest(
-            method, url, cookies=self._cookie_jar, **kwargs)
+            method, url, cookies=self._cookie_jar, **kwargs
+        )
 
     @ensure_no_transaction
     @needs_authentication
@@ -355,25 +370,27 @@ class TracLPPlugin(Trac):
         self.bugs = {}
 
         time_snapshot, remote_bugs = self._server.launchpad.bug_info(
-            LP_PLUGIN_METADATA_AND_COMMENTS, dict(bugs=bug_ids))
+            LP_PLUGIN_METADATA_AND_COMMENTS, dict(bugs=bug_ids)
+        )
         for remote_bug in remote_bugs:
             # We only import bugs whose status isn't 'missing', since
             # those bugs don't exist on the remote system.
-            if remote_bug['status'] != 'missing':
-                self.bugs[int(remote_bug['id'])] = remote_bug
+            if remote_bug["status"] != "missing":
+                self.bugs[int(remote_bug["id"])] = remote_bug
 
     @ensure_no_transaction
     def _generateAuthenticationToken(self):
         """Create an authentication token and return it."""
         internal_xmlrpc = xmlrpc.client.ServerProxy(
             config.checkwatches.xmlrpc_url,
-            transport=self._internal_xmlrpc_transport)
+            transport=self._internal_xmlrpc_transport,
+        )
         return internal_xmlrpc.newBugTrackerToken()
 
     def _authenticate(self):
         """Authenticate with the Trac instance."""
         token_text = self._generateAuthenticationToken()
-        base_auth_url = urlappend(self.baseurl, 'launchpad-auth')
+        base_auth_url = urlappend(self.baseurl, "launchpad-auth")
         auth_url = urlappend(base_auth_url, token_text)
 
         try:
@@ -385,13 +402,16 @@ class TracLPPlugin(Trac):
     @needs_authentication
     def getCurrentDBTime(self):
         """See `IExternalBugTracker`."""
-        time_zone, local_time, utc_time = (
-            self._server.launchpad.time_snapshot())
+        (
+            time_zone,
+            local_time,
+            utc_time,
+        ) = self._server.launchpad.time_snapshot()
 
         # Return the UTC time, so we don't have to care about the time
         # zone for now.
         trac_time = datetime.utcfromtimestamp(utc_time)
-        return trac_time.replace(tzinfo=pytz.timezone('UTC'))
+        return trac_time.replace(tzinfo=pytz.timezone("UTC"))
 
     @ensure_no_transaction
     @needs_authentication
@@ -399,18 +419,18 @@ class TracLPPlugin(Trac):
         """See `IExternalBugTracker`."""
         # Convert last_checked into an integer timestamp (which is what
         # the Trac LP plugin expects).
-        last_checked_timestamp = int(
-            time.mktime(last_checked.timetuple()))
+        last_checked_timestamp = int(time.mktime(last_checked.timetuple()))
 
         # We retrieve only the IDs of the modified bugs from the server.
         criteria = {
-            'modified_since': last_checked_timestamp,
-            'bugs': remote_bug_ids,
-            }
+            "modified_since": last_checked_timestamp,
+            "bugs": remote_bug_ids,
+        }
         time_snapshot, modified_bugs = self._server.launchpad.bug_info(
-            LP_PLUGIN_BUG_IDS_ONLY, criteria)
+            LP_PLUGIN_BUG_IDS_ONLY, criteria
+        )
 
-        return [bug['id'] for bug in modified_bugs]
+        return [bug["id"] for bug in modified_bugs]
 
     def getCommentIds(self, remote_bug_id):
         """See `ISupportsCommentImport`."""
@@ -419,7 +439,7 @@ class TracLPPlugin(Trac):
         except KeyError:
             raise BugNotFound(remote_bug_id)
         else:
-            return [comment_id for comment_id in bug['comments']]
+            return [comment_id for comment_id in bug["comments"]]
 
     @ensure_no_transaction
     @needs_authentication
@@ -430,21 +450,22 @@ class TracLPPlugin(Trac):
         # Use the get_comments() method on the remote server to get the
         # comments specified.
         timestamp, remote_comments = self._server.launchpad.get_comments(
-            comment_ids)
+            comment_ids
+        )
         for remote_comment in remote_comments:
-            bug_comments[remote_comment['id']] = remote_comment
+            bug_comments[remote_comment["id"]] = remote_comment
 
         # Finally, we overwrite the bug's comments field with the
         # bug_comments dict. The nice upshot of this is that we can
         # still loop over the dict and get IDs back.
-        self.bugs[int(remote_bug_id)]['comments'] = bug_comments
+        self.bugs[int(remote_bug_id)]["comments"] = bug_comments
 
     def getPosterForComment(self, remote_bug_id, comment_id):
         """See `ISupportsCommentImport`."""
         bug = self.bugs[int(remote_bug_id)]
-        comment = bug['comments'][comment_id]
+        comment = bug["comments"][comment_id]
 
-        display_name, email = parseaddr(comment['user'])
+        display_name, email = parseaddr(comment["user"])
 
         # If the email isn't valid, return the email address as the
         # display name (a Launchpad Person will be created with this
@@ -452,8 +473,8 @@ class TracLPPlugin(Trac):
         if not valid_email(email):
             return email, None
         # If the display name is empty, set it to None so that it's
-        # useable by IPersonSet.ensurePerson().
-        elif display_name == '':
+        # usable by IPersonSet.ensurePerson().
+        elif display_name == "":
             return None, email
         # Both displayname and email are valid, return both.
         else:
@@ -462,13 +483,17 @@ class TracLPPlugin(Trac):
     def getMessageForComment(self, remote_bug_id, comment_id, poster):
         """See `ISupportsCommentImport`."""
         bug = self.bugs[int(remote_bug_id)]
-        comment = bug['comments'][comment_id]
+        comment = bug["comments"][comment_id]
 
         comment_datecreated = datetime.fromtimestamp(
-            comment['timestamp'], pytz.timezone('UTC'))
+            comment["timestamp"], pytz.timezone("UTC")
+        )
         message = getUtility(IMessageSet).fromText(
-            subject='', content=comment['comment'],
-            datecreated=comment_datecreated, owner=poster)
+            subject="",
+            content=comment["comment"],
+            datecreated=comment_datecreated,
+            owner=poster,
+        )
 
         return message
 
@@ -477,7 +502,8 @@ class TracLPPlugin(Trac):
     def addRemoteComment(self, remote_bug, comment_body, rfc822msgid):
         """See `ISupportsCommentPushing`."""
         timestamp, comment_id = self._server.launchpad.add_comment(
-            remote_bug, comment_body)
+            remote_bug, comment_body
+        )
 
         return comment_id
 
@@ -490,7 +516,8 @@ class TracLPPlugin(Trac):
         """
         try:
             timestamp, lp_bug_id = self._server.launchpad.get_launchpad_bug(
-                remote_bug)
+                remote_bug
+            )
         except xmlrpc.client.Fault as fault:
             # Deal with "Ticket does not exist" faults. We re-raise
             # anything else, since they're a sign of a bigger problem.
@@ -508,8 +535,9 @@ class TracLPPlugin(Trac):
 
     @ensure_no_transaction
     @needs_authentication
-    def setLaunchpadBugId(self, remote_bug, launchpad_bug_id,
-                          launchpad_bug_url):
+    def setLaunchpadBugId(
+        self, remote_bug, launchpad_bug_id, launchpad_bug_url
+    ):
         """Set the Launchpad bug ID for a given remote bug.
 
         :raises BugNotFound: When `remote_bug` doesn't exist.
@@ -521,7 +549,8 @@ class TracLPPlugin(Trac):
 
         try:
             self._server.launchpad.set_launchpad_bug(
-                remote_bug, launchpad_bug_id)
+                remote_bug, launchpad_bug_id
+            )
         except xmlrpc.client.Fault as fault:
             # Deal with "Ticket does not exist" faults. We re-raise
             # anything else, since they're a sign of a bigger problem.

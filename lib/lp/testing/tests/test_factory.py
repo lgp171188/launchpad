@@ -10,15 +10,9 @@ from testtools.matchers import StartsWith
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.cve import (
-    CveStatus,
-    ICve,
-    )
+from lp.bugs.interfaces.cve import CveStatus, ICve
 from lp.buildmaster.enums import BuildStatus
-from lp.code.enums import (
-    BranchType,
-    CodeImportReviewStatus,
-    )
+from lp.code.enums import BranchType, CodeImportReviewStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
@@ -33,34 +27,27 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
     PackageUploadCustomFormat,
     PackageUploadStatus,
-    )
+)
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
 from lp.soyuz.interfaces.binarypackagerelease import IBinaryPackageRelease
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     ISourcePackageReleaseFile,
-    )
+)
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     ISourcePackagePublishingHistory,
     PackagePublishingPocket,
-    )
+)
 from lp.soyuz.interfaces.queue import IPackageUpload
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.component import ComponentSelection
 from lp.testing import TestCaseWithFactory
 from lp.testing.factory import is_security_proxied_or_harmless
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
-from lp.testing.matchers import (
-    IsProxied,
-    Provides,
-    ProvidesAndIsProxied,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.matchers import IsProxied, Provides, ProvidesAndIsProxied
 
 
 class TestFactory(TestCaseWithFactory):
@@ -71,13 +58,16 @@ class TestFactory(TestCaseWithFactory):
     def test_getOrMakeBinaryPackageName_returns_proxied_IBPN(self):
         binarypackagename = self.factory.getOrMakeBinaryPackageName()
         self.assertThat(
-            binarypackagename, ProvidesAndIsProxied(IBinaryPackageName))
+            binarypackagename, ProvidesAndIsProxied(IBinaryPackageName)
+        )
 
     def test_getOrMakeBinaryPackageName_returns_existing_name(self):
         binarypackagename1 = self.factory.getOrMakeBinaryPackageName(
-            name="foo")
+            name="foo"
+        )
         binarypackagename2 = self.factory.getOrMakeBinaryPackageName(
-            name="foo")
+            name="foo"
+        )
         self.assertEqual(binarypackagename1, binarypackagename2)
 
     # loginAsAnyone
@@ -92,7 +82,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeBinaryPackageBuild_returns_IBinaryPackageBuild(self):
         bpb = self.factory.makeBinaryPackageBuild()
         self.assertThat(
-            removeSecurityProxy(bpb), Provides(IBinaryPackageBuild))
+            removeSecurityProxy(bpb), Provides(IBinaryPackageBuild)
+        )
 
     def test_makeBinaryPackageBuild_returns_proxy(self):
         bpb = self.factory.makeBinaryPackageBuild()
@@ -104,19 +95,23 @@ class TestFactory(TestCaseWithFactory):
         # SPR is also published.
         bpb = self.factory.makeBinaryPackageBuild()
         self.assertIn(
-            bpb.archive, bpb.source_package_release.published_archives)
+            bpb.archive, bpb.source_package_release.published_archives
+        )
 
     def test_makeBinaryPackageBuild_uses_status(self):
         bpb = self.factory.makeBinaryPackageBuild(
-            status=BuildStatus.NEEDSBUILD)
+            status=BuildStatus.NEEDSBUILD
+        )
         self.assertEqual(BuildStatus.NEEDSBUILD, bpb.status)
         bpb = self.factory.makeBinaryPackageBuild(
-            status=BuildStatus.FULLYBUILT)
+            status=BuildStatus.FULLYBUILT
+        )
         self.assertEqual(BuildStatus.FULLYBUILT, bpb.status)
 
     def test_makeBinaryPackageBuild_uses_pocket(self):
         bpb = self.factory.makeBinaryPackageBuild(
-            pocket=PackagePublishingPocket.UPDATES)
+            pocket=PackagePublishingPocket.UPDATES
+        )
         self.assertEqual(PackagePublishingPocket.UPDATES, bpb.pocket)
 
     def test_makeBinaryPackageBuild_can_be_queued(self):
@@ -129,14 +124,16 @@ class TestFactory(TestCaseWithFactory):
     def test_makeBinaryPackageName_returns_proxied_IBinaryPackageName(self):
         binarypackagename = self.factory.makeBinaryPackageName()
         self.assertThat(
-            binarypackagename, ProvidesAndIsProxied(IBinaryPackageName))
+            binarypackagename, ProvidesAndIsProxied(IBinaryPackageName)
+        )
 
     # makeBinaryPackagePublishingHistory
     def test_makeBinaryPackagePublishingHistory_returns_IBPPH(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory()
         self.assertThat(
             removeSecurityProxy(bpph),
-            Provides(IBinaryPackagePublishingHistory))
+            Provides(IBinaryPackagePublishingHistory),
+        )
 
     def test_makeBinaryPackagePublishingHistory_returns_proxied(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory()
@@ -144,30 +141,36 @@ class TestFactory(TestCaseWithFactory):
 
     def test_makeBinaryPackagePublishingHistory_uses_status(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            status=PackagePublishingStatus.PENDING)
+            status=PackagePublishingStatus.PENDING
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, bpph.status)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)
 
     def test_makeBinaryPackagePublishingHistory_uses_dateremoved(self):
         dateremoved = datetime.now(pytz.UTC)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            dateremoved=dateremoved)
+            dateremoved=dateremoved
+        )
         self.assertEqual(dateremoved, bpph.dateremoved)
 
     def test_makeBinaryPackagePublishingHistory_scheduleddeletiondate(self):
         scheduleddeletiondate = datetime.now(pytz.UTC)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            scheduleddeletiondate=scheduleddeletiondate)
+            scheduleddeletiondate=scheduleddeletiondate
+        )
         self.assertEqual(scheduleddeletiondate, bpph.scheduleddeletiondate)
 
     def test_makeBinaryPackagePublishingHistory_uses_priority(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            priority=PackagePublishingPriority.OPTIONAL)
+            priority=PackagePublishingPriority.OPTIONAL
+        )
         self.assertEqual(PackagePublishingPriority.OPTIONAL, bpph.priority)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            priority=PackagePublishingPriority.EXTRA)
+            priority=PackagePublishingPriority.EXTRA
+        )
         self.assertEqual(PackagePublishingPriority.EXTRA, bpph.priority)
 
     def test_makeBinaryPackagePublishingHistory_sets_datecreated(self):
@@ -177,17 +180,20 @@ class TestFactory(TestCaseWithFactory):
     def test_makeBinaryPackagePublishingHistory_uses_datecreated(self):
         datecreated = self.factory.getUniqueDate()
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            datecreated=datecreated)
+            datecreated=datecreated
+        )
         self.assertEqual(datecreated, bpph.datecreated)
 
     def test_makeBinaryPackagePublishingHistory_sets_datepub_PENDING(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            status=PackagePublishingStatus.PENDING)
+            status=PackagePublishingStatus.PENDING
+        )
         self.assertEqual(None, bpph.datepublished)
 
     def test_makeBinaryPackagePublishingHistory_sets_datepub_PUBLISHED(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertNotEqual(None, bpph.datepublished)
 
     # makeBinaryPackageRelease
@@ -203,35 +209,31 @@ class TestFactory(TestCaseWithFactory):
     def test_makeBinaryPackageRelease_uses_build_version(self):
         build = self.factory.makeBinaryPackageBuild()
         bpr = self.factory.makeBinaryPackageRelease(build=build)
-        self.assertEqual(
-            build.source_package_release.version, bpr.version)
+        self.assertEqual(build.source_package_release.version, bpr.version)
 
     def test_makeBinaryPackageRelease_uses_build_component(self):
         build = self.factory.makeBinaryPackageBuild()
         bpr = self.factory.makeBinaryPackageRelease(build=build)
-        self.assertEqual(
-            build.source_package_release.component, bpr.component)
+        self.assertEqual(build.source_package_release.component, bpr.component)
 
     def test_makeBinaryPackageRelease_uses_build_section(self):
         build = self.factory.makeBinaryPackageBuild()
         bpr = self.factory.makeBinaryPackageRelease(build=build)
-        self.assertEqual(
-            build.source_package_release.section, bpr.section)
+        self.assertEqual(build.source_package_release.section, bpr.section)
 
     def test_makeBinaryPackageRelease_matches_build_version(self):
         bpr = self.factory.makeBinaryPackageRelease()
-        self.assertEqual(
-            bpr.build.source_package_release.version, bpr.version)
+        self.assertEqual(bpr.build.source_package_release.version, bpr.version)
 
     def test_makeBinaryPackageRelease_matches_build_component(self):
         bpr = self.factory.makeBinaryPackageRelease()
         self.assertEqual(
-            bpr.build.source_package_release.component, bpr.component)
+            bpr.build.source_package_release.component, bpr.component
+        )
 
     def test_makeBinaryPackageRelease_matches_build_section(self):
         bpr = self.factory.makeBinaryPackageRelease()
-        self.assertEqual(
-            bpr.build.source_package_release.section, bpr.section)
+        self.assertEqual(bpr.build.source_package_release.section, bpr.section)
 
     def test_makeBinaryPackageRelease_uses_shlibdeps(self):
         bpr = self.factory.makeBinaryPackageRelease(shlibdeps="foo bar")
@@ -325,15 +327,16 @@ class TestFactory(TestCaseWithFactory):
 
     def test_makeBinaryPackageName_uses_date_created(self):
         date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
-        bpr = self.factory.makeBinaryPackageRelease(
-            date_created=date_created)
+        bpr = self.factory.makeBinaryPackageRelease(date_created=date_created)
         self.assertEqual(date_created, bpr.datecreated)
 
     def test_makeBinaryPackageName_uses_debug_package(self):
         debug_package = self.factory.makeBinaryPackageRelease(
-            binpackageformat=BinaryPackageFormat.DDEB)
+            binpackageformat=BinaryPackageFormat.DDEB
+        )
         bpr = self.factory.makeBinaryPackageRelease(
-            debug_package=debug_package)
+            debug_package=debug_package
+        )
         self.assertEqual(debug_package, bpr.debug_package)
 
     def test_makeBinaryPackageName_allows_None_debug_package(self):
@@ -353,7 +356,8 @@ class TestFactory(TestCaseWithFactory):
         # it defaults to REVIEWED.
         code_import = self.factory.makeCodeImport()
         self.assertEqual(
-            CodeImportReviewStatus.REVIEWED, code_import.review_status)
+            CodeImportReviewStatus.REVIEWED, code_import.review_status
+        )
 
     def test_makeCodeImportReviewStatus(self):
         # If makeCodeImport is given a review status, then that is the status
@@ -366,7 +370,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeDistribution_returns_IDistribution(self):
         distribution = self.factory.makeDistribution()
         self.assertThat(
-            removeSecurityProxy(distribution), Provides(IDistribution))
+            removeSecurityProxy(distribution), Provides(IDistribution)
+        )
 
     def test_makeDistribution_returns_proxy(self):
         distribution = self.factory.makeDistribution()
@@ -383,7 +388,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeDistroSeries_returns_IDistroSeries(self):
         distroseries = self.factory.makeDistroSeries()
         self.assertThat(
-            removeSecurityProxy(distroseries), Provides(IDistroSeries))
+            removeSecurityProxy(distroseries), Provides(IDistroSeries)
+        )
 
     def test_makeDistroSeries_returns_proxy(self):
         distroseries = self.factory.makeDistroSeries()
@@ -405,7 +411,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeComponentSelection_uses_distroseries(self):
         distroseries = self.factory.makeDistroSeries()
         selection = self.factory.makeComponentSelection(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         self.assertEqual(distroseries, selection.distroseries)
 
     def test_makeComponentSelection_uses_component(self):
@@ -416,7 +423,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeComponentSelection_finds_component(self):
         component = self.factory.makeComponent()
         selection = self.factory.makeComponentSelection(
-            component=component.name)
+            component=component.name
+        )
         self.assertEqual(component, selection.component)
 
     # makeLanguage
@@ -425,25 +433,25 @@ class TestFactory(TestCaseWithFactory):
         # starting with 'lang'.
         language = self.factory.makeLanguage()
         self.assertTrue(ILanguage.providedBy(language))
-        self.assertTrue(language.code.startswith('lang'))
+        self.assertTrue(language.code.startswith("lang"))
         # And name is constructed from code as 'Language %(code)s'.
-        self.assertEqual('Language %s' % language.code, language.englishname)
+        self.assertEqual("Language %s" % language.code, language.englishname)
 
     def test_makeLanguage_with_code(self):
         # With language code passed in, that's used for the language.
-        language = self.factory.makeLanguage('sr@test')
-        self.assertEqual('sr@test', language.code)
+        language = self.factory.makeLanguage("sr@test")
+        self.assertEqual("sr@test", language.code)
         # And name is constructed from code as 'Language %(code)s'.
-        self.assertEqual('Language sr@test', language.englishname)
+        self.assertEqual("Language sr@test", language.englishname)
 
     def test_makeLanguage_with_name(self):
         # Language name can be passed in to makeLanguage (useful for
         # use in page tests).
-        language = self.factory.makeLanguage(name='Test language')
+        language = self.factory.makeLanguage(name="Test language")
         self.assertTrue(ILanguage.providedBy(language))
-        self.assertTrue(language.code.startswith('lang'))
+        self.assertTrue(language.code.startswith("lang"))
         # And name is constructed from code as 'Language %(code)s'.
-        self.assertEqual('Test language', language.englishname)
+        self.assertEqual("Test language", language.englishname)
 
     def test_makeLanguage_with_pluralforms(self):
         # makeLanguage takes a number of plural forms for the language.
@@ -451,12 +459,14 @@ class TestFactory(TestCaseWithFactory):
             language = self.factory.makeLanguage(pluralforms=number_of_forms)
             self.assertEqual(number_of_forms, language.pluralforms)
             self.assertEqual(
-                number_of_forms is None, language.pluralexpression is None)
+                number_of_forms is None, language.pluralexpression is None
+            )
 
     def test_makeLanguage_with_plural_expression(self):
-        expression = '(n+1) % 5'
+        expression = "(n+1) % 5"
         language = self.factory.makeLanguage(
-            pluralforms=5, plural_expression=expression)
+            pluralforms=5, plural_expression=expression
+        )
         self.assertEqual(expression, language.pluralexpression)
 
     # makeSourcePackagePublishingHistory
@@ -464,7 +474,8 @@ class TestFactory(TestCaseWithFactory):
         spph = self.factory.makeSourcePackagePublishingHistory()
         self.assertThat(
             removeSecurityProxy(spph),
-            Provides(ISourcePackagePublishingHistory))
+            Provides(ISourcePackagePublishingHistory),
+        )
 
     def test_makeSourcePackagePublishingHistory_returns_proxied(self):
         spph = self.factory.makeSourcePackagePublishingHistory()
@@ -473,43 +484,51 @@ class TestFactory(TestCaseWithFactory):
     def test_makeSourcePackagePublishingHistory_uses_spr(self):
         spr = self.factory.makeSourcePackageRelease()
         spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagerelease=spr)
+            sourcepackagerelease=spr
+        )
         self.assertEqual(spr, spph.sourcepackagerelease)
 
     def test_makeSourcePackagePublishingHistory_uses_status(self):
         spph = self.factory.makeSourcePackagePublishingHistory(
-            status=PackagePublishingStatus.PENDING)
+            status=PackagePublishingStatus.PENDING
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, spph.status)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertEqual(PackagePublishingStatus.PUBLISHED, spph.status)
 
     def test_makeSourcePackagePublishingHistory_uses_date_uploaded(self):
         date_uploaded = datetime.now(pytz.UTC)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            date_uploaded=date_uploaded)
+            date_uploaded=date_uploaded
+        )
         self.assertEqual(date_uploaded, spph.datecreated)
 
     def test_makeSourcePackagePublishingHistory_uses_dateremoved(self):
         dateremoved = datetime.now(pytz.UTC)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            dateremoved=dateremoved)
+            dateremoved=dateremoved
+        )
         self.assertEqual(dateremoved, spph.dateremoved)
 
     def test_makeSourcePackagePublishingHistory_scheduleddeletiondate(self):
         scheduleddeletiondate = datetime.now(pytz.UTC)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            scheduleddeletiondate=scheduleddeletiondate)
+            scheduleddeletiondate=scheduleddeletiondate
+        )
         self.assertEqual(scheduleddeletiondate, spph.scheduleddeletiondate)
 
     def test_makeSourcePackagePublishingHistory_datepublished_PENDING(self):
         spph = self.factory.makeSourcePackagePublishingHistory(
-            status=PackagePublishingStatus.PENDING)
+            status=PackagePublishingStatus.PENDING
+        )
         self.assertIsNone(spph.datepublished)
 
     def test_makeSourcePackagePublishingHistory_datepublished_PUBLISHED(self):
         spph = self.factory.makeSourcePackagePublishingHistory(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertNotEqual(None, spph.datepublished)
 
     # makeSourcePackageRelease
@@ -520,7 +539,8 @@ class TestFactory(TestCaseWithFactory):
     def test_makeSourcePackageRelease_uses_dsc_maintainer_rfc822(self):
         maintainer = "James Westby <james.westby@canonical.com>"
         spr = self.factory.makeSourcePackageRelease(
-            dsc_maintainer_rfc822=maintainer)
+            dsc_maintainer_rfc822=maintainer
+        )
         self.assertEqual(maintainer, spr.dsc_maintainer_rfc822)
 
     # makeSPPHForBPPH
@@ -530,7 +550,8 @@ class TestFactory(TestCaseWithFactory):
         self.assertThat(spph, IsProxied())
         self.assertThat(
             removeSecurityProxy(spph),
-            Provides(ISourcePackagePublishingHistory))
+            Provides(ISourcePackagePublishingHistory),
+        )
 
     def test_makeSPPHForBPPH_returns_SPPH_for_BPPH(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory()
@@ -552,8 +573,11 @@ class TestFactory(TestCaseWithFactory):
 
     def test_makeCurrentTranslationMessage_makes_current_upstream(self):
         pofile = self.factory.makePOFile(
-            'ka', potemplate=self.factory.makePOTemplate(
-                productseries=self.factory.makeProductSeries()))
+            "ka",
+            potemplate=self.factory.makePOTemplate(
+                productseries=self.factory.makeProductSeries()
+            ),
+        )
 
         tm = self.factory.makeCurrentTranslationMessage(pofile=pofile)
 
@@ -563,9 +587,12 @@ class TestFactory(TestCaseWithFactory):
     def test_makeCurrentTranslationMessage_makes_current_ubuntu(self):
         package = self.factory.makeSourcePackage()
         pofile = self.factory.makePOFile(
-            'kk', self.factory.makePOTemplate(
+            "kk",
+            self.factory.makePOTemplate(
                 sourcepackagename=package.sourcepackagename,
-                distroseries=package.distroseries))
+                distroseries=package.distroseries,
+            ),
+        )
 
         tm = self.factory.makeCurrentTranslationMessage(pofile=pofile)
 
@@ -582,13 +609,15 @@ class TestFactory(TestCaseWithFactory):
         translations = [
             self.factory.getUniqueString(),
             self.factory.getUniqueString(),
-            ]
+        ]
 
         tm = self.factory.makeCurrentTranslationMessage(
-            translations=translations)
+            translations=translations
+        )
 
         self.assertEqual(
-            translations, [tm.msgstr0.translation, tm.msgstr1.translation])
+            translations, [tm.msgstr0.translation, tm.msgstr1.translation]
+        )
         self.assertIs(None, tm.msgstr2)
 
     def test_makeCurrentTranslationMessage_sets_reviewer(self):
@@ -604,7 +633,7 @@ class TestFactory(TestCaseWithFactory):
         self.assertNotEqual(None, tm.reviewer)
 
     def test_makeDivergedTranslationMessage_upstream(self):
-        pofile = self.factory.makePOFile('ca')
+        pofile = self.factory.makePOFile("ca")
 
         tm = self.factory.makeDivergedTranslationMessage(pofile=pofile)
 
@@ -616,8 +645,9 @@ class TestFactory(TestCaseWithFactory):
     def test_makeDivergedTranslationMessage_ubuntu(self):
         potemplate = self.factory.makePOTemplate(
             distroseries=self.factory.makeDistroSeries(),
-            sourcepackagename=self.factory.makeSourcePackageName())
-        pofile = self.factory.makePOFile('eu', potemplate=potemplate)
+            sourcepackagename=self.factory.makeSourcePackageName(),
+        )
+        pofile = self.factory.makePOFile("eu", potemplate=potemplate)
 
         tm = self.factory.makeDivergedTranslationMessage(pofile=pofile)
 
@@ -628,29 +658,22 @@ class TestFactory(TestCaseWithFactory):
 
     # makeCVE
     def test_makeCVE_returns_cve(self):
-        cve = self.factory.makeCVE(sequence='2000-1234')
+        cve = self.factory.makeCVE(sequence="2000-1234")
         self.assertThat(cve, ProvidesAndIsProxied(ICve))
 
     def test_makeCVE_uses_sequence(self):
-        cve = self.factory.makeCVE(sequence='2000-1234')
-        self.assertEqual('2000-1234', cve.sequence)
+        cve = self.factory.makeCVE(sequence="2000-1234")
+        self.assertEqual("2000-1234", cve.sequence)
 
     def test_makeCVE_uses_description(self):
-        cve = self.factory.makeCVE(sequence='2000-1234', description='foo')
-        self.assertEqual('foo', cve.description)
+        cve = self.factory.makeCVE(sequence="2000-1234", description="foo")
+        self.assertEqual("foo", cve.description)
 
     def test_makeCVE_uses_cve_status(self):
         cve = self.factory.makeCVE(
-            sequence='2000-1234', cvestate=CveStatus.DEPRECATED)
+            sequence="2000-1234", cvestate=CveStatus.DEPRECATED
+        )
         self.assertEqual(CveStatus.DEPRECATED, cve.status)
-
-    # dir() support.
-    def test_dir(self):
-        # LaunchpadObjectFactory supports dir() even though all of its
-        # attributes are pseudo-attributes.
-        self.assertEqual(
-            dir(self.factory._factory),
-            dir(self.factory))
 
     def test_getUniqueString_with_prefix(self):
         s = self.factory.getUniqueString("with-my-prefix")
@@ -660,8 +683,7 @@ class TestFactory(TestCaseWithFactory):
         # With no name given, the default prefix gives a clue as to the
         # source location that called it.
         s = self.factory.getUniqueString()
-        self.assertTrue(s.startswith("unique-from-test-factory-py-line"),
-            s)
+        self.assertTrue(s.startswith("unique-from-test-factory-py-line"), s)
 
 
 class TestFactoryWithLibrarian(TestCaseWithFactory):
@@ -676,21 +698,23 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
     def test_makeBinaryPackageFile_uses_binarypackagerelease(self):
         binarypackagerelease = self.factory.makeBinaryPackageRelease()
         bpf = self.factory.makeBinaryPackageFile(
-            binarypackagerelease=binarypackagerelease)
+            binarypackagerelease=binarypackagerelease
+        )
         self.assertEqual(binarypackagerelease, bpf.binarypackagerelease)
 
     def test_makeBinaryPackageFile_uses_library_file(self):
         library_file = self.factory.makeLibraryFileAlias()
-        bpf = self.factory.makeBinaryPackageFile(
-            library_file=library_file)
+        bpf = self.factory.makeBinaryPackageFile(library_file=library_file)
         self.assertEqual(library_file, bpf.libraryfile)
 
     def test_makeBinaryPackageFile_uses_filetype(self):
         bpf = self.factory.makeBinaryPackageFile(
-            filetype=BinaryPackageFileType.DEB)
+            filetype=BinaryPackageFileType.DEB
+        )
         self.assertEqual(BinaryPackageFileType.DEB, bpf.filetype)
         bpf = self.factory.makeBinaryPackageFile(
-            filetype=BinaryPackageFileType.DDEB)
+            filetype=BinaryPackageFileType.DDEB
+        )
         self.assertEqual(BinaryPackageFileType.DDEB, bpf.filetype)
 
     # makePackageUpload
@@ -717,14 +741,17 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
         changes_filename = "foo"
         pu = self.factory.makePackageUpload(changes_filename=changes_filename)
         self.assertEqual(
-            changes_filename, removeSecurityProxy(pu).changesfile.filename)
+            changes_filename, removeSecurityProxy(pu).changesfile.filename
+        )
 
     def test_makePackageUpload_uses_pocket(self):
         pu = self.factory.makePackageUpload(
-            pocket=PackagePublishingPocket.RELEASE)
+            pocket=PackagePublishingPocket.RELEASE
+        )
         self.assertEqual(PackagePublishingPocket.RELEASE, pu.pocket)
         pu = self.factory.makePackageUpload(
-            pocket=PackagePublishingPocket.PROPOSED)
+            pocket=PackagePublishingPocket.PROPOSED
+        )
         self.assertEqual(PackagePublishingPocket.PROPOSED, pu.pocket)
 
     def test_makePackageUpload_uses_signing_key(self):
@@ -743,7 +770,8 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
 
     def test_makePackageUpload_sets_status_ACCEPTED(self):
         pu = self.factory.makePackageUpload(
-            status=PackageUploadStatus.ACCEPTED)
+            status=PackageUploadStatus.ACCEPTED
+        )
         self.assertEqual(PackageUploadStatus.ACCEPTED, pu.status)
 
     # makeSourcePackageUpload
@@ -759,7 +787,8 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         spn = self.factory.makeSourcePackageName()
         pu = self.factory.makeSourcePackageUpload(
-            distroseries=distroseries, sourcepackagename=spn)
+            distroseries=distroseries, sourcepackagename=spn
+        )
         spr = list(pu.sources)[0].sourcepackagerelease
         self.assertEqual(distroseries, pu.distroseries)
         self.assertEqual(distroseries.distribution, pu.archive.distribution)
@@ -780,16 +809,22 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
         spr = self.factory.makeSourcePackageRelease()
         component = self.factory.makeComponent()
         pu = self.factory.makeBuildPackageUpload(
-            distroseries=distroseries, pocket=PackagePublishingPocket.PROPOSED,
-            binarypackagename=bpn, source_package_release=spr,
-            component=component)
+            distroseries=distroseries,
+            pocket=PackagePublishingPocket.PROPOSED,
+            binarypackagename=bpn,
+            source_package_release=spr,
+            component=component,
+        )
         build = list(pu.builds)[0].build
         self.assertEqual(distroseries, pu.distroseries)
         self.assertEqual(distroseries.distribution, pu.archive.distribution)
         self.assertEqual(PackagePublishingPocket.PROPOSED, pu.pocket)
         self.assertEqual(spr, build.source_package_release)
-        release = IStore(distroseries).find(
-            BinaryPackageRelease, BinaryPackageRelease.build == build).one()
+        release = (
+            IStore(distroseries)
+            .find(BinaryPackageRelease, BinaryPackageRelease.build == build)
+            .one()
+        )
         self.assertEqual(bpn, release.binarypackagename)
         self.assertEqual(component, release.component)
 
@@ -808,9 +843,12 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
         custom_type = PackageUploadCustomFormat.ROSETTA_TRANSLATIONS
         filename = self.factory.getUniqueString()
         pu = self.factory.makeCustomPackageUpload(
-            distroseries=distroseries, archive=archive,
-            pocket=PackagePublishingPocket.PROPOSED, custom_type=custom_type,
-            filename=filename)
+            distroseries=distroseries,
+            archive=archive,
+            pocket=PackagePublishingPocket.PROPOSED,
+            custom_type=custom_type,
+            filename=filename,
+        )
         custom = list(pu.customfiles)[0]
         self.assertEqual(distroseries, pu.distroseries)
         self.assertEqual(archive, pu.archive)
@@ -832,8 +870,10 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
         spn = self.factory.makeSourcePackageName()
         source_archive = self.factory.makeArchive()
         pu = self.factory.makeCopyJobPackageUpload(
-            distroseries=distroseries, sourcepackagename=spn,
-            source_archive=source_archive)
+            distroseries=distroseries,
+            sourcepackagename=spn,
+            source_archive=source_archive,
+        )
         job = removeSecurityProxy(pu.package_copy_job)
         self.assertEqual(distroseries, pu.distroseries)
         self.assertEqual(distroseries.distribution, pu.archive.distribution)
@@ -845,26 +885,31 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
     def test_makeSourcePackageReleaseFile_returns_ISPRF(self):
         spr_file = self.factory.makeSourcePackageReleaseFile()
         self.assertThat(
-            spr_file, ProvidesAndIsProxied(ISourcePackageReleaseFile))
+            spr_file, ProvidesAndIsProxied(ISourcePackageReleaseFile)
+        )
 
     def test_makeSourcePackageReleaseFile_uses_sourcepackagerelease(self):
         spr = self.factory.makeSourcePackageRelease()
         spr_file = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=spr)
+            sourcepackagerelease=spr
+        )
         self.assertEqual(spr, spr_file.sourcepackagerelease)
 
     def test_makeSourcePackageReleaseFile_uses_library_file(self):
         library_file = self.factory.makeLibraryFileAlias()
         spr_file = self.factory.makeSourcePackageReleaseFile(
-            library_file=library_file)
+            library_file=library_file
+        )
         self.assertEqual(library_file, spr_file.libraryfile)
 
     def test_makeSourcePackageReleaseFile_uses_filetype(self):
         spr_file = self.factory.makeSourcePackageReleaseFile(
-            filetype=SourcePackageFileType.DIFF)
+            filetype=SourcePackageFileType.DIFF
+        )
         self.assertEqual(SourcePackageFileType.DIFF, spr_file.filetype)
         spr_file = self.factory.makeSourcePackageReleaseFile(
-            filetype=SourcePackageFileType.DSC)
+            filetype=SourcePackageFileType.DSC
+        )
         self.assertEqual(SourcePackageFileType.DSC, spr_file.filetype)
 
 
@@ -885,12 +930,12 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
     def test_is_security_proxied_or_harmless__string(self):
         # is_security_proxied_or_harmless() considers strings
         # to be harmless.
-        self.assertTrue(is_security_proxied_or_harmless('abc'))
+        self.assertTrue(is_security_proxied_or_harmless("abc"))
 
     def test_is_security_proxied_or_harmless__unicode(self):
         # is_security_proxied_or_harmless() considers unicode objects
         # to be harmless.
-        self.assertTrue(is_security_proxied_or_harmless('abc'))
+        self.assertTrue(is_security_proxied_or_harmless("abc"))
 
     def test_is_security_proxied_or_harmless__proxied_object(self):
         # is_security_proxied_or_harmless() treats security proxied
@@ -910,13 +955,16 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
         # the sequence.
         proxied_person = self.factory.makePerson()
         self.assertTrue(
-            is_security_proxied_or_harmless([1, '2', proxied_person]))
+            is_security_proxied_or_harmless([1, "2", proxied_person])
+        )
+        self.assertTrue(
+            is_security_proxied_or_harmless({1, "2", proxied_person})
+        )
         self.assertTrue(
             is_security_proxied_or_harmless(
-                {1, '2', proxied_person}))
-        self.assertTrue(
-            is_security_proxied_or_harmless(
-                frozenset([1, '2', proxied_person])))
+                frozenset([1, "2", proxied_person])
+            )
+        )
 
     def test_is_security_proxied_or_harmless__sequence_harmful_content(self):
         # is_security_proxied_or_harmless() checks all elements of a sequence
@@ -924,28 +972,31 @@ class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
         # so is the sequence.
         unproxied_person = removeSecurityProxy(self.factory.makePerson())
         self.assertFalse(
-            is_security_proxied_or_harmless([1, '2', unproxied_person]))
+            is_security_proxied_or_harmless([1, "2", unproxied_person])
+        )
+        self.assertFalse(
+            is_security_proxied_or_harmless({1, "2", unproxied_person})
+        )
         self.assertFalse(
             is_security_proxied_or_harmless(
-                {1, '2', unproxied_person}))
-        self.assertFalse(
-            is_security_proxied_or_harmless(
-                frozenset([1, '2', unproxied_person])))
+                frozenset([1, "2", unproxied_person])
+            )
+        )
 
     def test_is_security_proxied_or_harmless__mapping_harmless_content(self):
         # is_security_proxied_or_harmless() checks all keys and values in a
         # mapping. If all elements are harmless, so is the mapping.
         proxied_person = self.factory.makePerson()
-        self.assertTrue(
-            is_security_proxied_or_harmless({1: proxied_person}))
-        self.assertTrue(
-            is_security_proxied_or_harmless({proxied_person: 1}))
+        self.assertTrue(is_security_proxied_or_harmless({1: proxied_person}))
+        self.assertTrue(is_security_proxied_or_harmless({proxied_person: 1}))
 
     def test_is_security_proxied_or_harmless__mapping_harmful_content(self):
         # is_security_proxied_or_harmless() checks all keys and values in a
         # mapping. If at least one element is harmful, so is the mapping.
         unproxied_person = removeSecurityProxy(self.factory.makePerson())
         self.assertFalse(
-            is_security_proxied_or_harmless({1: unproxied_person}))
+            is_security_proxied_or_harmless({1: unproxied_person})
+        )
         self.assertFalse(
-            is_security_proxied_or_harmless({unproxied_person: 1}))
+            is_security_proxied_or_harmless({unproxied_person: 1})
+        )

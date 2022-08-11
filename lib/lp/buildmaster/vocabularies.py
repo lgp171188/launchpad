@@ -4,8 +4,8 @@
 """Soyuz vocabularies."""
 
 __all__ = [
-    'ProcessorVocabulary',
-    ]
+    "ProcessorVocabulary",
+]
 
 from lp.buildmaster.model.processor import Processor
 from lp.services.webapp.vocabulary import NamedSQLObjectVocabulary
@@ -13,6 +13,6 @@ from lp.services.webapp.vocabulary import NamedSQLObjectVocabulary
 
 class ProcessorVocabulary(NamedSQLObjectVocabulary):
 
-    displayname = 'Select a processor'
+    displayname = "Select a processor"
     _table = Processor
-    _orderBy = 'name'
+    _orderBy = "name"

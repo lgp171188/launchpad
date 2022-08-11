@@ -4,73 +4,64 @@
 """LiveFS views."""
 
 __all__ = [
-    'LiveFSAddView',
-    'LiveFSDeleteView',
-    'LiveFSEditView',
-    'LiveFSNavigation',
-    'LiveFSNavigationMenu',
-    'LiveFSView',
-    ]
+    "LiveFSAddView",
+    "LiveFSDeleteView",
+    "LiveFSEditView",
+    "LiveFSNavigation",
+    "LiveFSNavigationMenu",
+    "LiveFSView",
+]
 
 import json
 
 from lazr.restful import ResourceJSONEncoder
-from lazr.restful.interface import (
-    copy_field,
-    use_template,
-    )
+from lazr.restful.interface import copy_field, use_template
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.schema import (
-    Choice,
-    Text,
-    )
+from zope.schema import Choice, Text
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.browser.lazrjs import (
     InlinePersonEditPickerWidget,
     TextLineEditorWidget,
-    )
+)
 from lp.app.browser.tales import format_link
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.code.vocabularies.sourcepackagerecipe import BuildableDistroSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.features import getFeatureFlag
 from lp.services.webapp import (
-    canonical_url,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
+    canonical_url,
+    enabled_with_permission,
     stepthrough,
-    )
+)
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.breadcrumb import (
-    Breadcrumb,
-    NameBreadcrumb,
-    )
+from lp.services.webapp.breadcrumb import Breadcrumb, NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.livefs import (
-    ILiveFS,
-    ILiveFSSet,
     LIVEFS_FEATURE_FLAG,
     LIVEFS_WEBHOOKS_FEATURE_FLAG,
+    ILiveFS,
+    ILiveFSSet,
     LiveFSFeatureDisabled,
     NoSuchLiveFS,
-    )
+)
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuildSet
 
 
 class LiveFSNavigation(WebhookTargetNavigationMixin, Navigation):
     usedfor = ILiveFS
 
-    @stepthrough('+build')
+    @stepthrough("+build")
     def traverse_build(self, name):
         build = get_build_by_id_str(ILiveFSBuildSet, name)
         if build is None or build.livefs != self.context:
@@ -79,13 +70,14 @@ class LiveFSNavigation(WebhookTargetNavigationMixin, Navigation):
 
 
 class LiveFSBreadcrumb(NameBreadcrumb):
-
     @property
     def inside(self):
         return Breadcrumb(
             self.context.owner,
             url=canonical_url(self.context.owner, view_name="+livefs"),
-            text="Live filesystems", inside=self.context.owner)
+            text="Live filesystems",
+            inside=self.context.owner,
+        )
 
 
 class LiveFSNavigationMenu(NavigationMenu):
@@ -93,27 +85,30 @@ class LiveFSNavigationMenu(NavigationMenu):
 
     usedfor = ILiveFS
 
-    facet = 'overview'
+    facet = "overview"
 
-    links = ('admin', 'edit', 'webhooks', 'delete')
+    links = ("admin", "edit", "webhooks", "delete")
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def admin(self):
-        return Link('+admin', 'Administer live filesystem', icon='edit')
+        return Link("+admin", "Administer live filesystem", icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        return Link('+edit', 'Edit live filesystem', icon='edit')
+        return Link("+edit", "Edit live filesystem", icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
         return Link(
-            '+webhooks', 'Manage webhooks', icon='edit',
-            enabled=bool(getFeatureFlag(LIVEFS_WEBHOOKS_FEATURE_FLAG)))
+            "+webhooks",
+            "Manage webhooks",
+            icon="edit",
+            enabled=bool(getFeatureFlag(LIVEFS_WEBHOOKS_FEATURE_FLAG)),
+        )
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def delete(self):
-        return Link('+delete', 'Delete live filesystem', icon='trash-icon')
+        return Link("+delete", "Delete live filesystem", icon="trash-icon")
 
 
 class LiveFSView(LaunchpadView):
@@ -122,10 +117,10 @@ class LiveFSView(LaunchpadView):
     @property
     def page_title(self):
         return "%(name)s's %(livefs_name)s live filesystem in %(series)s" % {
-            'name': self.context.owner.displayname,
-            'livefs_name': self.context.name,
-            'series': self.context.distro_series.fullseriesname,
-            }
+            "name": self.context.owner.displayname,
+            "livefs_name": self.context.name,
+            "series": self.context.distro_series.fullseriesname,
+        }
 
     label = page_title
 
@@ -136,18 +131,24 @@ class LiveFSView(LaunchpadView):
     @property
     def person_picker(self):
         field = copy_field(
-            ILiveFS['owner'],
-            vocabularyName='UserTeamsParticipationPlusSelfSimpleDisplay')
+            ILiveFS["owner"],
+            vocabularyName="UserTeamsParticipationPlusSelfSimpleDisplay",
+        )
         return InlinePersonEditPickerWidget(
-            self.context, field, format_link(self.context.owner),
-            header='Change owner', step_title='Select a new owner')
+            self.context,
+            field,
+            format_link(self.context.owner),
+            header="Change owner",
+            step_title="Select a new owner",
+        )
 
     @property
     def name_widget(self):
-        name = ILiveFS['name']
+        name = ILiveFS["name"]
         title = "Edit the live filesystem name"
         return TextLineEditorWidget(
-            self.context, name, title, 'h1', max_width='95%', truncate_lines=1)
+            self.context, name, title, "h1", max_width="95%", truncate_lines=1
+        )
 
     @property
     def sorted_metadata_items(self):
@@ -169,10 +170,12 @@ def builds_for_livefs(livefs):
     Builds that the user does not have permission to see are excluded.
     """
     builds = [
-        build for build in livefs.pending_builds
-        if check_permission('launchpad.View', build)]
+        build
+        for build in livefs.pending_builds
+        if check_permission("launchpad.View", build)
+    ]
     for build in livefs.completed_builds:
-        if not check_permission('launchpad.View', build):
+        if not check_permission("launchpad.View", build):
             continue
         builds.append(build)
         if len(builds) >= 10:
@@ -183,40 +186,46 @@ def builds_for_livefs(livefs):
 class ILiveFSEditSchema(Interface):
     """Schema for adding or editing a live filesystem."""
 
-    use_template(ILiveFS, include=[
-        'owner',
-        'name',
-        'require_virtualized',
-        'relative_build_score',
-        'keep_binary_files_days',
-        ])
+    use_template(
+        ILiveFS,
+        include=[
+            "owner",
+            "name",
+            "require_virtualized",
+            "relative_build_score",
+            "keep_binary_files_days",
+        ],
+    )
     distro_series = Choice(
-        vocabulary='BuildableDistroSeries', title='Distribution series')
+        vocabulary="BuildableDistroSeries", title="Distribution series"
+    )
     metadata = Text(
-        title='Live filesystem build metadata',
+        title="Live filesystem build metadata",
         description=(
-            'A JSON dictionary of data about the image.  Entries here will '
-            'be passed to the builder.'))
+            "A JSON dictionary of data about the image.  Entries here will "
+            "be passed to the builder."
+        ),
+    )
 
 
 class LiveFSMetadataValidatorMixin:
     """Class to validate that live filesystem properties are valid."""
 
     def validate(self, data):
-        if data['metadata']:
+        if data["metadata"]:
             try:
-                json.loads(data['metadata'])
+                json.loads(data["metadata"])
             except Exception as e:
-                self.setFieldError('metadata', str(e))
+                self.setFieldError("metadata", str(e))
 
 
 class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
     """View for creating live filesystems."""
 
-    title = label = 'Create a new live filesystem'
+    title = label = "Create a new live filesystem"
 
     schema = ILiveFSEditSchema
-    field_names = ['owner', 'name', 'distro_series', 'metadata']
+    field_names = ["owner", "name", "distro_series", "metadata"]
     custom_widget_distro_series = LaunchpadRadioWidget
 
     def initialize(self):
@@ -228,38 +237,45 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
     @property
     def initial_values(self):
         series = [
-            term.value for term in BuildableDistroSeries()
-            if term.value.status in (
-                SeriesStatus.CURRENT, SeriesStatus.DEVELOPMENT)][0]
+            term.value
+            for term in BuildableDistroSeries()
+            if term.value.status
+            in (SeriesStatus.CURRENT, SeriesStatus.DEVELOPMENT)
+        ][0]
         return {
-            'owner': self.user,
-            'distro_series': series,
-            'metadata': '{}',
-            }
+            "owner": self.user,
+            "distro_series": series,
+            "metadata": "{}",
+        }
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
 
-    @action('Create live filesystem', name='create')
+    @action("Create live filesystem", name="create")
     def request_action(self, action, data):
         livefs = getUtility(ILiveFSSet).new(
-            self.user, data['owner'], data['distro_series'], data['name'],
-            json.loads(data['metadata']))
+            self.user,
+            data["owner"],
+            data["distro_series"],
+            data["name"],
+            json.loads(data["metadata"]),
+        )
         self.next_url = canonical_url(livefs)
 
     def validate(self, data):
         super().validate(data)
-        owner = data.get('owner', None)
-        distro_series = data['distro_series']
-        name = data.get('name', None)
+        owner = data.get("owner", None)
+        distro_series = data["distro_series"]
+        name = data.get("name", None)
         if owner and name:
             if getUtility(ILiveFSSet).exists(owner, distro_series, name):
                 self.setFieldError(
-                    'name',
-                    'There is already a live filesystem for %s owned by %s '
-                    'with this name.' % (
-                        distro_series.displayname, owner.displayname))
+                    "name",
+                    "There is already a live filesystem for %s owned by %s "
+                    "with this name."
+                    % (distro_series.displayname, owner.displayname),
+                )
 
 
 class BaseLiveFSEditView(LaunchpadEditFormView):
@@ -270,7 +286,7 @@ class BaseLiveFSEditView(LaunchpadEditFormView):
     def cancel_url(self):
         return canonical_url(self.context)
 
-    @action('Update live filesystem', name='update')
+    @action("Update live filesystem", name="update")
     def request_action(self, action, data):
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
@@ -286,23 +302,23 @@ class LiveFSAdminView(BaseLiveFSEditView):
 
     @property
     def title(self):
-        return 'Administer %s live filesystem' % self.context.name
+        return "Administer %s live filesystem" % self.context.name
 
     label = title
 
     field_names = [
-        'require_virtualized',
-        'relative_build_score',
-        'keep_binary_files_days',
-        ]
+        "require_virtualized",
+        "relative_build_score",
+        "keep_binary_files_days",
+    ]
 
     @property
     def initial_values(self):
         return {
-            'require_virtualized': self.context.require_virtualized,
-            'relative_build_score': self.context.relative_build_score,
-            'keep_binary_files_days': self.context.keep_binary_files_days,
-            }
+            "require_virtualized": self.context.require_virtualized,
+            "relative_build_score": self.context.relative_build_score,
+            "keep_binary_files_days": self.context.keep_binary_files_days,
+        }
 
 
 class LiveFSEditView(LiveFSMetadataValidatorMixin, BaseLiveFSEditView):
@@ -310,44 +326,49 @@ class LiveFSEditView(LiveFSMetadataValidatorMixin, BaseLiveFSEditView):
 
     @property
     def title(self):
-        return 'Edit %s live filesystem' % self.context.name
+        return "Edit %s live filesystem" % self.context.name
 
     label = title
 
-    field_names = ['owner', 'name', 'distro_series', 'metadata']
+    field_names = ["owner", "name", "distro_series", "metadata"]
     custom_widget_distro_series = LaunchpadRadioWidget
 
     @property
     def initial_values(self):
         return {
-            'distro_series': self.context.distro_series,
-            'metadata': json.dumps(
-                self.context.metadata, ensure_ascii=False,
-                cls=ResourceJSONEncoder),
-            }
+            "distro_series": self.context.distro_series,
+            "metadata": json.dumps(
+                self.context.metadata,
+                ensure_ascii=False,
+                cls=ResourceJSONEncoder,
+            ),
+        }
 
     def updateContextFromData(self, data, context=None, notify_modified=True):
         """See `LaunchpadEditFormView`."""
-        if 'metadata' in data:
-            data['metadata'] = json.loads(data['metadata'])
+        if "metadata" in data:
+            data["metadata"] = json.loads(data["metadata"])
         super().updateContextFromData(
-            data, context=context, notify_modified=notify_modified)
+            data, context=context, notify_modified=notify_modified
+        )
 
     def validate(self, data):
         super().validate(data)
-        owner = data.get('owner', None)
-        distro_series = data['distro_series']
-        name = data.get('name', None)
+        owner = data.get("owner", None)
+        distro_series = data["distro_series"]
+        name = data.get("name", None)
         if owner and name:
             try:
                 livefs = getUtility(ILiveFSSet).getByName(
-                    owner, distro_series, name)
+                    owner, distro_series, name
+                )
                 if livefs != self.context:
                     self.setFieldError(
-                        'name',
-                        'There is already a live filesystem for %s owned by '
-                        '%s with this name.' % (
-                            distro_series.displayname, owner.displayname))
+                        "name",
+                        "There is already a live filesystem for %s owned by "
+                        "%s with this name."
+                        % (distro_series.displayname, owner.displayname),
+                    )
             except NoSuchLiveFS:
                 pass
 
@@ -357,7 +378,7 @@ class LiveFSDeleteView(BaseLiveFSEditView):
 
     @property
     def title(self):
-        return 'Delete %s live filesystem' % self.context.name
+        return "Delete %s live filesystem" % self.context.name
 
     label = title
 
@@ -367,7 +388,7 @@ class LiveFSDeleteView(BaseLiveFSEditView):
     def has_builds(self):
         return not self.context.builds.is_empty()
 
-    @action('Delete live filesystem', name='delete')
+    @action("Delete live filesystem", name="delete")
     def delete_action(self, action, data):
         owner = self.context.owner
         self.context.destroySelf()

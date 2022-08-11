@@ -5,12 +5,9 @@
 
 from datetime import timedelta
 
-from psycopg2.extensions import TransactionRollbackError
-from storm.expr import (
-    Cast,
-    Or,
-    )
 import transaction
+from psycopg2.extensions import TransactionRollbackError
+from storm.expr import Cast, Or
 
 from lp.code.enums import GitRepositoryStatus
 from lp.code.errors import CannotRepackRepository
@@ -18,10 +15,7 @@ from lp.code.model.gitrepository import GitRepository
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.looptuner import (
-    LoopTuner,
-    TunableLoop,
-    )
+from lp.services.looptuner import LoopTuner, TunableLoop
 
 
 class RepackTunableLoop(TunableLoop):
@@ -40,24 +34,24 @@ class RepackTunableLoop(TunableLoop):
         self.store = IStore(GitRepository)
 
     def findRepackCandidates(self):
-        threshold_date = (
-            UTC_NOW - Cast(
-                timedelta(minutes=config.codehosting.auto_repack_frequency),
-                "interval"))
+        threshold_date = UTC_NOW - Cast(
+            timedelta(minutes=config.codehosting.auto_repack_frequency),
+            "interval",
+        )
         repos = self.store.find(
             GitRepository,
             Or(
-                GitRepository.loose_object_count >=
-                    config.codehosting.loose_objects_threshold,
-                GitRepository.pack_count >=
-                    config.codehosting.packs_threshold,
-                ),
+                GitRepository.loose_object_count
+                >= config.codehosting.loose_objects_threshold,
+                GitRepository.pack_count >= config.codehosting.packs_threshold,
+            ),
             # XXX cjwatson 2021-06-22: Despite the confusing name,
             # date_last_repacked is actually when the repack was last
             # requested, not when it was completed.
             Or(
                 GitRepository.date_last_repacked == None,
-                GitRepository.date_last_repacked < threshold_date),
+                GitRepository.date_last_repacked < threshold_date,
+            ),
             GitRepository.status == GitRepositoryStatus.AVAILABLE,
             GitRepository.id > self.start_at,
         ).order_by(GitRepository.id)
@@ -66,13 +60,15 @@ class RepackTunableLoop(TunableLoop):
     def isDone(self):
         # we stop at maximum 1000 or when we have no repositories
         # that are valid repack candidates
-        result = (self.findRepackCandidates().is_empty() or
-                  self.num_repacked + self.maximum_chunk_size >= self.targets)
+        result = (
+            self.findRepackCandidates().is_empty()
+            or self.num_repacked + self.maximum_chunk_size >= self.targets
+        )
         if result and not self.dry_run:
             self.logger.info(
-                'Requested a total of %d automatic git repository repacks '
-                'in this run of the Automated Repack Job.'
-                % self.num_repacked)
+                "Requested a total of %d automatic git repository repacks "
+                "in this run of the Automated Repack Job." % self.num_repacked
+            )
         return result
 
     def __call__(self, chunk_size):
@@ -81,11 +77,12 @@ class RepackTunableLoop(TunableLoop):
         for repo in repackable_repos:
             try:
                 if self.dry_run:
-                    print('Would repack %s' % repo.identity)
+                    print("Would repack %s" % repo.identity)
                 else:
                     self.logger.info(
-                        'Requesting automatic git repository repack for %s.'
-                        % repo.identity)
+                        "Requesting automatic git repository repack for %s."
+                        % repo.identity
+                    )
                     counter += 1
                     # we count the total number of requests for a job run
                     # before making the call to turnip as we want to ensure
@@ -96,28 +93,32 @@ class RepackTunableLoop(TunableLoop):
                     repo.repackRepository()
             except CannotRepackRepository as e:
                 self.logger.error(
-                    'An error occurred while requesting repository repack %s'
-                    % e.args[0])
+                    "An error occurred while requesting repository repack %s"
+                    % e.args[0]
+                )
                 continue
             except TransactionRollbackError as error:
                 self.logger.error(
-                    'An error occurred while requesting repository repack %s'
-                    % str(error))
+                    "An error occurred while requesting repository repack %s"
+                    % str(error)
+                )
                 if transaction is not None:
                     transaction.abort()
                 continue
 
         if self.dry_run:
             print(
-                'Reporting %d automatic git repository repacks '
-                'would have been requested as part of this run '
-                'out of the %d qualifying for repack.'
-                % (counter, len(repackable_repos)))
+                "Reporting %d automatic git repository repacks "
+                "would have been requested as part of this run "
+                "out of the %d qualifying for repack."
+                % (counter, len(repackable_repos))
+            )
         else:
             self.logger.info(
-                'Requested %d automatic git repository repacks '
-                'out of the %d qualifying for repack.'
-                % (counter, len(repackable_repos)))
+                "Requested %d automatic git repository repacks "
+                "out of the %d qualifying for repack."
+                % (counter, len(repackable_repos))
+            )
 
         if repackable_repos:
             self.start_at = repackable_repos[-1].id

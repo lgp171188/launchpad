@@ -7,11 +7,7 @@ import io
 
 from twisted.application import service
 from twisted.internet.defer import Deferred
-from twisted.internet.protocol import (
-    Factory,
-    FileWrapper,
-    Protocol,
-    )
+from twisted.internet.protocol import Factory, FileWrapper, Protocol
 from twisted.web import http
 
 from lp.services.twistedsupport import gracefulshutdown
@@ -19,7 +15,6 @@ from lp.testing import TestCase
 
 
 class TestConnTrackingFactoryWrapper(TestCase):
-
     def test_isAvailable_initial_state(self):
         """Initially a ConnTrackingFactoryWrapper is available."""
         ctf = gracefulshutdown.ConnTrackingFactoryWrapper(Factory())
@@ -97,7 +92,6 @@ class TestConnTrackingFactoryWrapper(TestCase):
 
 
 class TestServerAvailableResource(TestCase):
-
     def make_dummy_http_request(self):
         """Make a dummy HTTP request for tests."""
         transport = FileWrapper(io.BytesIO())
@@ -116,7 +110,7 @@ class TestServerAvailableResource(TestCase):
         request = self.make_dummy_http_request()
         body = r.render_GET(request)
         self.assertEqual(200, request.code)
-        self.assertTrue(body.startswith(b'Available\n'))
+        self.assertTrue(body.startswith(b"Available\n"))
 
     def test_503_after_shutdown_starts(self):
         """
@@ -133,7 +127,7 @@ class TestServerAvailableResource(TestCase):
         request = self.make_dummy_http_request()
         body = r.render_GET(request)
         self.assertEqual(503, request.code)
-        self.assertTrue(body.startswith(b'Unavailable\n'))
+        self.assertTrue(body.startswith(b"Unavailable\n"))
 
 
 class TestService(service.Service):
@@ -144,10 +138,10 @@ class TestService(service.Service):
         self._call_log = call_log
 
     def startService(self):
-        self._call_log.append(('startService', self.name))
+        self._call_log.append(("startService", self.name))
 
     def stopService(self):
-        self._call_log.append(('stopService', self.name))
+        self._call_log.append(("stopService", self.name))
 
 
 class ServiceWithAsyncStop(service.Service):
@@ -172,14 +166,15 @@ class TestOrderedMultiService(TestCase):
         """startService starts services in the order they are attached."""
         oms = gracefulshutdown.OrderedMultiService()
         call_log = []
-        service1 = TestService('svc one', call_log)
+        service1 = TestService("svc one", call_log)
         service1.setServiceParent(oms)
-        service2 = TestService('svc two', call_log)
+        service2 = TestService("svc two", call_log)
         service2.setServiceParent(oms)
         oms.startService()
         self.assertEqual(
-            [('startService', 'svc one'), ('startService', 'svc two')],
-            call_log)
+            [("startService", "svc one"), ("startService", "svc two")],
+            call_log,
+        )
 
     def test_stopService_stops_in_reverse_order(self):
         """
@@ -188,16 +183,16 @@ class TestOrderedMultiService(TestCase):
         """
         oms = gracefulshutdown.OrderedMultiService()
         call_log = []
-        service1 = TestService('svc one', call_log)
+        service1 = TestService("svc one", call_log)
         service1.setServiceParent(oms)
-        service2 = TestService('svc two', call_log)
+        service2 = TestService("svc two", call_log)
         service2.setServiceParent(oms)
         oms.startService()
         del call_log[:]
         oms.stopService()
         self.assertEqual(
-            [('stopService', 'svc two'), ('stopService', 'svc one')],
-            call_log)
+            [("stopService", "svc two"), ("stopService", "svc one")], call_log
+        )
 
     def test_services_are_stopped_in_series_not_parallel(self):
         """

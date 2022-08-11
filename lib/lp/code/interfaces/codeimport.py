@@ -4,13 +4,14 @@
 """Code import interfaces."""
 
 __all__ = [
-    'ICodeImport',
-    'ICodeImportSet',
-    ]
+    "ICodeImport",
+    "ICodeImportSet",
+]
 
 import re
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
@@ -18,21 +19,11 @@ from lazr.restful.declarations import (
     mutator_for,
     operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import ReferenceChoice
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    TextLine,
-    Timedelta,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, TextLine, Timedelta
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
@@ -40,25 +31,23 @@ from lp.code.enums import (
     CodeImportReviewStatus,
     RevisionControlSystems,
     TargetRevisionControlSystems,
-    )
+)
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.services.fields import (
-    PublicPersonChoice,
-    URIField,
-    )
-
+from lp.services.fields import PublicPersonChoice, URIField
 
 # CVSROOT parsing based on cscvs.
+
 
 class CVSRootError(Exception):
     """Raised when trying to use a CVSROOT with invalid syntax."""
 
     def __init__(self, root):
-        super().__init__(self, 'bad CVSROOT: %r' % root)
+        super().__init__(self, "bad CVSROOT: %r" % root)
 
 
-_cvs_root_parser = re.compile(r"""
+_cvs_root_parser = re.compile(
+    r"""
     ^:(?P<method>[^:]+):
     (?:
         (?:
@@ -69,7 +58,9 @@ _cvs_root_parser = re.compile(r"""
         (?::(?P<port>\\d+))?
     :?)?
     (?P<path>/.*)$
-    """, flags=re.X)
+    """,
+    flags=re.X,
+)
 
 
 def _normalise_cvs_root(root):
@@ -82,9 +73,9 @@ def _normalise_cvs_root(root):
     if root.startswith("/"):
         return ":local:%s" % root
     if ":" not in root:
-        if '/' not in root:
+        if "/" not in root:
             raise CVSRootError(root)
-        root = "%s:%s" % (root[:root.find("/")-1], root[root.find("/"):])
+        root = "%s:%s" % (root[: root.find("/") - 1], root[root.find("/") :])
     return ":ext:%s" % root
 
 
@@ -96,124 +87,184 @@ def validate_cvs_root(cvsroot):
         method, username, password, hostname, port, path = match.groups()
     except CVSRootError as e:
         raise LaunchpadValidationError(e)
-    if method == 'local':
-        raise LaunchpadValidationError('Local CVS roots are not allowed.')
+    if method == "local":
+        raise LaunchpadValidationError("Local CVS roots are not allowed.")
     if not hostname:
-        raise LaunchpadValidationError('CVS root is invalid.')
-    if hostname.count('.') == 0:
+        raise LaunchpadValidationError("CVS root is invalid.")
+    if hostname.count(".") == 0:
         raise LaunchpadValidationError(
-            'Please use a fully qualified host name.')
+            "Please use a fully qualified host name."
+        )
     return True
 
 
 def validate_cvs_module(cvsmodule):
-    valid_module = re.compile('^[a-zA-Z][a-zA-Z0-9_/.+-]*$')
+    valid_module = re.compile("^[a-zA-Z][a-zA-Z0-9_/.+-]*$")
     if not valid_module.match(cvsmodule):
         raise LaunchpadValidationError(
-            'The CVS module contains illegal characters.')
-    if cvsmodule == 'CVS':
-        raise LaunchpadValidationError(
-            'A CVS module can not be called "CVS".')
+            "The CVS module contains illegal characters."
+        )
+    if cvsmodule == "CVS":
+        raise LaunchpadValidationError('A CVS module can not be called "CVS".')
     return True
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class ICodeImport(Interface):
     """A code import to a Bazaar branch or Git repository."""
 
     id = Int(readonly=True, required=True)
     date_created = Datetime(
-        title=_("Date Created"), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )
 
     branch = exported(
         ReferenceChoice(
-            title=_('Branch'), required=False, readonly=True,
-            vocabulary='Branch', schema=IBranch,
-            description=_("The Bazaar branch produced by the "
-                "import system.")))
+            title=_("Branch"),
+            required=False,
+            readonly=True,
+            vocabulary="Branch",
+            schema=IBranch,
+            description=_(
+                "The Bazaar branch produced by the " "import system."
+            ),
+        )
+    )
     git_repository = exported(
         ReferenceChoice(
-            title=_('Git repository'), required=False, readonly=True,
-            vocabulary='GitRepository', schema=IGitRepository,
-            description=_(
-                "The Git repository produced by the import system.")))
+            title=_("Git repository"),
+            required=False,
+            readonly=True,
+            vocabulary="GitRepository",
+            schema=IGitRepository,
+            description=_("The Git repository produced by the import system."),
+        )
+    )
     target = Attribute(
-        "The branch/repository produced by the import system (VCS-agnostic).")
+        "The branch/repository produced by the import system (VCS-agnostic)."
+    )
 
     registrant = PublicPersonChoice(
-        title=_('Registrant'), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam',
-        description=_("The person who initially requested this import."))
+        title=_("Registrant"),
+        required=True,
+        readonly=True,
+        vocabulary="ValidPersonOrTeam",
+        description=_("The person who initially requested this import."),
+    )
 
     review_status = exported(
         Choice(
-            title=_("Review Status"), vocabulary=CodeImportReviewStatus,
-            default=CodeImportReviewStatus.REVIEWED, readonly=True,
-            description=_("Only reviewed imports are processed.")))
+            title=_("Review Status"),
+            vocabulary=CodeImportReviewStatus,
+            default=CodeImportReviewStatus.REVIEWED,
+            readonly=True,
+            description=_("Only reviewed imports are processed."),
+        )
+    )
 
     rcs_type = exported(
         Choice(
-            title=_("Type of RCS"), readonly=True,
-            required=True, vocabulary=RevisionControlSystems,
-            description=_("The revision control system to import from.")))
+            title=_("Type of RCS"),
+            readonly=True,
+            required=True,
+            vocabulary=RevisionControlSystems,
+            description=_("The revision control system to import from."),
+        )
+    )
 
     target_rcs_type = exported(
         Choice(
-            title=_("Type of target RCS"), readonly=True,
-            required=True, vocabulary=TargetRevisionControlSystems,
-            description=_("The revision control system to import to.")))
+            title=_("Type of target RCS"),
+            readonly=True,
+            required=True,
+            vocabulary=TargetRevisionControlSystems,
+            description=_("The revision control system to import to."),
+        )
+    )
 
     url = exported(
-        URIField(title=_("URL"), required=False, readonly=True,
+        URIField(
+            title=_("URL"),
+            required=False,
+            readonly=True,
             description=_("The URL of the VCS branch."),
             allowed_schemes=["http", "https", "svn", "git", "bzr", "ftp"],
             allow_userinfo=True,
             allow_port=True,
-            allow_query=False,      # Query makes no sense in Subversion.
-            allow_fragment=False,   # Fragment makes no sense in Subversion.
-            trailing_slash=False))  # See http://launchpad.net/bugs/56357.
+            allow_query=False,  # Query makes no sense in Subversion.
+            allow_fragment=False,  # Fragment makes no sense in Subversion.
+            trailing_slash=False,
+        )
+    )  # See http://launchpad.net/bugs/56357.
 
     cvs_root = exported(
-        TextLine(title=_("Repository"), required=False, readonly=True,
+        TextLine(
+            title=_("Repository"),
+            required=False,
+            readonly=True,
             constraint=validate_cvs_root,
-            description=_("The CVSROOT. "
-                "Example: :pserver:anonymous@anoncvs.gnome.org:/cvs/gnome")))
+            description=_(
+                "The CVSROOT. "
+                "Example: :pserver:anonymous@anoncvs.gnome.org:/cvs/gnome"
+            ),
+        )
+    )
 
     cvs_module = exported(
-        TextLine(title=_("Module"), required=False, readonly=True,
+        TextLine(
+            title=_("Module"),
+            required=False,
+            readonly=True,
             constraint=validate_cvs_module,
-            description=_("The path to import within the repository."
-                " Usually, it is the name of the project.")))
+            description=_(
+                "The path to import within the repository."
+                " Usually, it is the name of the project."
+            ),
+        )
+    )
 
     date_last_successful = exported(
-        Datetime(title=_("Last successful"), required=False, readonly=True))
+        Datetime(title=_("Last successful"), required=False, readonly=True)
+    )
 
     update_interval = Timedelta(
-        title=_("Update interval"), required=False, description=_(
-        "The user-specified time between automatic updates of this import. "
-        "If this is unspecified, the effective update interval is a default "
-        "value selected by Launchpad administrators."))
+        title=_("Update interval"),
+        required=False,
+        description=_(
+            "The user-specified time between automatic updates of this "
+            "import. If this is unspecified, the effective update interval is "
+            "a default value selected by Launchpad administrators."
+        ),
+    )
 
     effective_update_interval = Timedelta(
-        title=_("Effective update interval"), required=True, readonly=True,
+        title=_("Effective update interval"),
+        required=True,
+        readonly=True,
         description=_(
-        "The effective time between automatic updates of this import. "
-        "If the user did not specify an update interval, this is a default "
-        "value selected by Launchpad administrators."))
+            "The effective time between automatic updates of this import. "
+            "If the user did not specify an update interval, this is a "
+            "default value selected by Launchpad administrators."
+        ),
+    )
 
     def getImportDetailsForDisplay():
         """Get a one-line summary of the location this import is from."""
 
     import_job = Choice(
         title=_("Current job"),
-        readonly=True, vocabulary='CodeImportJob',
+        readonly=True,
+        vocabulary="CodeImportJob",
         description=_(
-            "The current job for this import, either pending or running."))
+            "The current job for this import, either pending or running."
+        ),
+    )
 
     results = Attribute("The results for this code import.")
 
     consecutive_failure_count = Attribute(
-        "How many times in a row this import has failed.")
+        "How many times in a row this import has failed."
+    )
 
     def updateFromData(data, user):
         """Modify attributes of the `CodeImport`.
@@ -270,6 +321,7 @@ class ICodeImport(Interface):
 
     @call_with(requester=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def requestImport(requester, error_if_already_requested=False):
         """Request that an import be tried soon.
 
@@ -299,9 +351,18 @@ class ICodeImport(Interface):
 class ICodeImportSet(Interface):
     """Interface representing the set of code imports."""
 
-    def new(registrant, context, branch_name, rcs_type, target_rcs_type,
-            url=None, cvs_root=None, cvs_module=None, review_status=None,
-            owner=None):
+    def new(
+        registrant,
+        context,
+        branch_name,
+        rcs_type,
+        target_rcs_type,
+        url=None,
+        cvs_root=None,
+        cvs_module=None,
+        review_status=None,
+        owner=None,
+    ):
         """Create a new CodeImport.
 
         :param context: An `IHasCodeImports` that the code is associated with.

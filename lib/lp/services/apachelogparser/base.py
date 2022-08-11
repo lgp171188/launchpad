@@ -1,18 +1,15 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
 import gzip
 import os
 import struct
+from datetime import datetime
 
-from contrib import apachelog
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
 import pytz
 import six
+from contrib import apachelog
+from lazr.uri import URI, InvalidURIError
 from zope.component import getUtility
 
 from lp.services.apachelogparser.model.parsedapachelog import ParsedApacheLog
@@ -20,8 +17,7 @@ from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.geoip.interfaces import IGeoIP
 
-
-parser = apachelog.parser(apachelog.formats['extended'])
+parser = apachelog.parser(apachelog.formats["extended"])
 
 
 def get_files_to_parse(file_paths):
@@ -36,7 +32,7 @@ def get_files_to_parse(file_paths):
     file_paths = sorted(file_paths, key=lambda path: os.stat(path).st_mtime)
     for file_path in file_paths:
         fd, file_size = get_fd_and_file_size(file_path)
-        first_line = six.ensure_text(fd.readline(), errors='replace')
+        first_line = six.ensure_text(fd.readline(), errors="replace")
         parsed_file = store.find(ParsedApacheLog, first_line=first_line).one()
         position = 0
         if parsed_file is not None:
@@ -63,16 +59,16 @@ def get_fd_and_file_size(file_path):
     The file size returned is that of the uncompressed file, in case the given
     file_path points to a gzipped file.
     """
-    if file_path.endswith('.gz'):
+    if file_path.endswith(".gz"):
         # The last 4 bytes of the file contains the uncompressed file's
         # size, modulo 2**32.  This code is somewhat stolen from the gzip
         # module in Python 2.6.
         fd = gzip.open(file_path)
         fd.fileobj.seek(-4, os.SEEK_END)
-        file_size = struct.unpack('<I', fd.fileobj.read(4))[0]
+        file_size = struct.unpack("<I", fd.fileobj.read(4))[0]
         fd.fileobj.seek(0)
     else:
-        fd = open(file_path, 'rb')
+        fd = open(file_path, "rb")
         file_size = os.path.getsize(file_path)
     return fd, file_size
 
@@ -99,14 +95,15 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
 
     # Check for an optional max_parsed_lines config option.
     max_parsed_lines = getattr(
-        config.launchpad, 'logparser_max_parsed_lines', None)
+        config.launchpad, "logparser_max_parsed_lines", None
+    )
 
     while next_line:
         if max_parsed_lines is not None and parsed_lines >= max_parsed_lines:
             break
 
         line = next_line
-        line_text = six.ensure_text(line, errors='replace')
+        line_text = six.ensure_text(line, errors="replace")
 
         # Always skip the last line as it may be truncated since we're
         # rsyncing live logs, unless there is only one line for us to
@@ -123,14 +120,15 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             parsed_lines += 1
             parsed_bytes += len(line)
             host, date, status, request = get_host_date_status_and_request(
-                line_text)
+                line_text
+            )
 
-            if status != '200':
+            if status != "200":
                 continue
 
             method, path = get_method_and_path(request)
 
-            if method != 'GET':
+            if method != "GET":
                 continue
 
             download_key = get_download_key(path)
@@ -163,17 +161,22 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             break
 
     if parsed_lines > 0:
-        logger.info('Parsed %d lines resulting in %d download stats.' % (
-            parsed_lines, len(downloads)))
+        logger.info(
+            "Parsed %d lines resulting in %d download stats."
+            % (parsed_lines, len(downloads))
+        )
 
     return downloads, parsed_bytes, parsed_lines
 
 
 def create_or_update_parsedlog_entry(first_line, parsed_bytes):
     """Create or update the ParsedApacheLog with the given first_line."""
-    first_line = six.ensure_text(first_line, errors='replace')
-    parsed_file = IStore(ParsedApacheLog).find(
-        ParsedApacheLog, first_line=first_line).one()
+    first_line = six.ensure_text(first_line, errors="replace")
+    parsed_file = (
+        IStore(ParsedApacheLog)
+        .find(ParsedApacheLog, first_line=first_line)
+        .one()
+    )
     if parsed_file is None:
         ParsedApacheLog(first_line, parsed_bytes)
     else:
@@ -194,26 +197,26 @@ def get_host_date_status_and_request(line):
     """Extract the host, date, status and request from the given line."""
     # The keys in the 'data' dictionary below are the Apache log format codes.
     data = parser.parse(line)
-    return data['%h'], data['%t'], data['%>s'], data['%r']
+    return data["%h"], data["%t"], data["%>s"], data["%r"]
 
 
 def get_method_and_path(request):
     """Extract the method of the request and path of the requested file."""
-    method, ignore, rest = request.partition(' ')
+    method, ignore, rest = request.partition(" ")
     # In the below, the common case is that `first` is the path and `last` is
     # the protocol.
-    first, ignore, last = rest.rpartition(' ')
-    if first == '':
+    first, ignore, last = rest.rpartition(" ")
+    if first == "":
         # HTTP 1.0 requests might omit the HTTP version so we cope with them.
         path = last
-    elif not last.startswith('HTTP'):
+    elif not last.startswith("HTTP"):
         # We cope with HTTP 1.0 protocol without HTTP version *and* a
         # space in the path (see bug 676489 for example).
         path = rest
     else:
         # This is the common case.
         path = first
-    if path.startswith('http://') or path.startswith('https://'):
+    if path.startswith("http://") or path.startswith("https://"):
         try:
             uri = URI(path)
             path = uri.path

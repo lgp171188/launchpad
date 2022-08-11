@@ -12,23 +12,20 @@ entries remain untouched.
 """
 
 __all__ = [
-    'PopulateDistroSeriesDiff',
-    ]
+    "PopulateDistroSeriesDiff",
+]
 
 from collections import defaultdict
-from optparse import (
-    Option,
-    OptionValueError,
-    )
+from optparse import Option, OptionValueError
 
-from storm.locals import ClassAlias
 import transaction
+from storm.locals import ClassAlias
 from zope.component import getUtility
 
 from lp.registry.enums import (
     DistroSeriesDifferenceStatus,
     DistroSeriesDifferenceType,
-    )
+)
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -36,10 +33,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.distroseriesdifference import DistroSeriesDifference
 from lp.registry.model.distroseriesparent import DistroSeriesParent
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    quote,
-    quote_identifier,
-    )
+from lp.services.database.sqlbase import quote, quote_identifier
 from lp.services.looptuner import TunableLoop
 from lp.services.scripts.base import LaunchpadScript
 from lp.soyuz.interfaces.publishing import active_publishing_status
@@ -60,12 +54,13 @@ def compose_sql_find_latest_source_package_releases(distroseries):
     :return: SQL query, as a string.
     """
     parameters = {
-        'active_status': quote(active_publishing_status),
-        'distroseries': quote(distroseries),
-        'main_archive': quote(distroseries.distribution.main_archive),
-        'release_pocket': quote(PackagePublishingPocket.RELEASE),
+        "active_status": quote(active_publishing_status),
+        "distroseries": quote(distroseries),
+        "main_archive": quote(distroseries.distribution.main_archive),
+        "release_pocket": quote(PackagePublishingPocket.RELEASE),
     }
-    return """
+    return (
+        """
         SELECT DISTINCT ON (SPR.sourcepackagename)
             SPR.sourcepackagename,
             SPR.id As sourcepackagerelease,
@@ -78,7 +73,9 @@ def compose_sql_find_latest_source_package_releases(distroseries):
             SPPH.pocket = %(release_pocket)s AND
             SPPH.status IN %(active_status)s
         ORDER BY SPR.sourcepackagename, SPPH.id DESC
-        """ % parameters
+        """
+        % parameters
+    )
 
 
 def compose_sql_find_differences(derived_series, parent_series):
@@ -94,12 +91,15 @@ def compose_sql_find_differences(derived_series, parent_series):
     :return: SQL query, as a string.
     """
     parameters = {
-        'derived_query': compose_sql_find_latest_source_package_releases(
-            derived_series),
-        'parent_query': compose_sql_find_latest_source_package_releases(
-            parent_series),
+        "derived_query": compose_sql_find_latest_source_package_releases(
+            derived_series
+        ),
+        "parent_query": compose_sql_find_latest_source_package_releases(
+            parent_series
+        ),
     }
-    return """
+    return (
+        """
         SELECT DISTINCT
             COALESCE(
                 parent.sourcepackagename,
@@ -109,7 +109,9 @@ def compose_sql_find_differences(derived_series, parent_series):
         FROM (%(parent_query)s) AS parent
         FULL OUTER JOIN (%(derived_query)s) AS derived
         ON derived.sourcepackagename = parent.sourcepackagename
-        """ % parameters
+        """
+        % parameters
+    )
 
 
 def compose_sql_difference_type():
@@ -121,14 +123,18 @@ def compose_sql_difference_type():
     :return: SQL query, as a string.
     """
     parameters = {
-        'unique_to_derived_series': quote(
-            DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES),
-        'missing_from_derived_series': quote(
-            DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES),
-        'different_versions': quote(
-            DistroSeriesDifferenceType.DIFFERENT_VERSIONS),
+        "unique_to_derived_series": quote(
+            DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES
+        ),
+        "missing_from_derived_series": quote(
+            DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES
+        ),
+        "different_versions": quote(
+            DistroSeriesDifferenceType.DIFFERENT_VERSIONS
+        ),
     }
-    return """
+    return (
+        """
         CASE
             WHEN parent_source_version IS NULL THEN
                 %(unique_to_derived_series)s
@@ -136,11 +142,14 @@ def compose_sql_difference_type():
                 %(missing_from_derived_series)s
             ELSE %(different_versions)s
         END
-        """ % parameters
+        """
+        % parameters
+    )
 
 
-def compose_sql_populate_distroseriesdiff(derived_series, parent_series,
-                                          temp_table):
+def compose_sql_populate_distroseriesdiff(
+    derived_series, parent_series, temp_table
+):
     """Create `DistroSeriesDifference` rows based on found differences.
 
     Uses field values that describe the difference, as produced by the
@@ -157,14 +166,14 @@ def compose_sql_populate_distroseriesdiff(derived_series, parent_series,
     :return: SQL query, as a string.
     """
     parameters = {
-        'derived_series': quote(derived_series),
-        'parent_series': quote(parent_series),
-        'difference_type_expression': compose_sql_difference_type(),
-        'needs_attention': quote(
-            DistroSeriesDifferenceStatus.NEEDS_ATTENTION),
-        'temp_table': quote_identifier(temp_table),
+        "derived_series": quote(derived_series),
+        "parent_series": quote(parent_series),
+        "difference_type_expression": compose_sql_difference_type(),
+        "needs_attention": quote(DistroSeriesDifferenceStatus.NEEDS_ATTENTION),
+        "temp_table": quote_identifier(temp_table),
     }
-    return """
+    return (
+        """
         INSERT INTO DistroSeriesDifference (
             derived_series,
             parent_series,
@@ -186,7 +195,9 @@ def compose_sql_populate_distroseriesdiff(derived_series, parent_series,
             SELECT source_package_name
             FROM DistroSeriesDifference
             WHERE derived_series = %(derived_series)s)
-        """ % parameters
+        """
+        % parameters
+    )
 
 
 def drop_table(store, table):
@@ -205,23 +216,32 @@ def populate_distroseriesdiff(logger, derived_series, parent_series):
     store = IStore(derived_series)
     drop_table(store, temp_table)
     quoted_temp_table = quote_identifier(temp_table)
-    store.execute("""
+    store.execute(
+        """
         CREATE TEMP TABLE %s(
             sourcepackagename INTEGER,
             source_version debversion,
             parent_source_version debversion)
             ON COMMIT DROP
-        """ % (
-        quoted_temp_table))
-    store.execute("INSERT INTO %s %s" % (
-        quoted_temp_table,
-        compose_sql_find_differences(derived_series, parent_series)))
+        """
+        % (quoted_temp_table)
+    )
+    store.execute(
+        "INSERT INTO %s %s"
+        % (
+            quoted_temp_table,
+            compose_sql_find_differences(derived_series, parent_series),
+        )
+    )
     logger.info(
         "Found %d potential difference(s).",
-        store.execute("SELECT count(*) FROM %s" % temp_table).get_one()[0])
+        store.execute("SELECT count(*) FROM %s" % temp_table).get_one()[0],
+    )
     store.execute(
         compose_sql_populate_distroseriesdiff(
-            derived_series, parent_series, temp_table))
+            derived_series, parent_series, temp_table
+        )
+    )
 
 
 def find_derived_series():
@@ -231,7 +251,8 @@ def find_derived_series():
     relations = IStore(DistroSeries).find(
         (Child, Parent),
         DistroSeriesParent.derived_series_id == Child.id,
-        DistroSeriesParent.parent_series_id == Parent.id)
+        DistroSeriesParent.parent_series_id == Parent.id,
+    )
     collated = defaultdict(list)
     for child, parent in relations:
         collated[child].append(parent)
@@ -281,7 +302,8 @@ class DSDUpdater(TunableLoop):
     def _getBatch(self, ids):
         """Retrieve a batch of `DistroSeriesDifference`s with given ids."""
         return self.store.find(
-            DistroSeriesDifference, DistroSeriesDifference.id.is_in(ids))
+            DistroSeriesDifference, DistroSeriesDifference.id.is_in(ids)
+        )
 
     def __call__(self, chunk_size):
         """See `ITunableLoop`."""
@@ -295,22 +317,48 @@ class PopulateDistroSeriesDiff(LaunchpadScript):
 
     def add_my_options(self):
         """Register options specific to this script."""
-        self.parser.add_options([
-            Option(
-                '-a', '--all', dest='all', action='store_true', default=False,
-                help="Populate all derived distribution series."),
-            Option(
-                '-d', '--distribution', dest='distribution', default=None,
-                help="Derived distribution."),
-            Option(
-                '-l', '--list', dest='list', action='store_true',
-                default=False, help="List derived distroseries, then exit."),
-            Option(
-                '-s', '--series', dest='series', default=None,
-                help="Derived distribution series."),
-            Option(
-                '-x', '--dry-run', dest='dry_run', action='store_true',
-                default=False, help="Pretend; don't commit changes.")])
+        self.parser.add_options(
+            [
+                Option(
+                    "-a",
+                    "--all",
+                    dest="all",
+                    action="store_true",
+                    default=False,
+                    help="Populate all derived distribution series.",
+                ),
+                Option(
+                    "-d",
+                    "--distribution",
+                    dest="distribution",
+                    default=None,
+                    help="Derived distribution.",
+                ),
+                Option(
+                    "-l",
+                    "--list",
+                    dest="list",
+                    action="store_true",
+                    default=False,
+                    help="List derived distroseries, then exit.",
+                ),
+                Option(
+                    "-s",
+                    "--series",
+                    dest="series",
+                    default=None,
+                    help="Derived distribution series.",
+                ),
+                Option(
+                    "-x",
+                    "--dry-run",
+                    dest="dry_run",
+                    action="store_true",
+                    default=False,
+                    help="Pretend; don't commit changes.",
+                ),
+            ]
+        )
 
     def getDistroSeries(self):
         """Return the `DistroSeries` that are to be processed."""
@@ -318,29 +366,32 @@ class PopulateDistroSeriesDiff(LaunchpadScript):
             return find_derived_series()
         else:
             distro = getUtility(IDistributionSet).getByName(
-                self.options.distribution)
+                self.options.distribution
+            )
             series = distro.getSeries(self.options.series)
             augmented_series = defaultdict(list)
             if series is None:
                 raise OptionValueError(
-                    "Could not find %s series %s." % (
-                        self.options.distribution, self.options.series))
-            dsp = getUtility(IDistroSeriesParentSet).getByDerivedSeries(
-                series)
+                    "Could not find %s series %s."
+                    % (self.options.distribution, self.options.series)
+                )
+            dsp = getUtility(IDistroSeriesParentSet).getByDerivedSeries(series)
             for rel in dsp:
-                augmented_series[rel.derived_series].append(
-                    rel.parent_series)
+                augmented_series[rel.derived_series].append(rel.parent_series)
             if len(augmented_series) == 0:
                 raise OptionValueError(
-                    "%s series %s is not derived." % (
-                        self.options.distribution, self.options.series))
+                    "%s series %s is not derived."
+                    % (self.options.distribution, self.options.series)
+                )
             return augmented_series
 
     def processDistroSeries(self, distroseries, parent):
         """Generate `DistroSeriesDifference`s for `distroseries`."""
         self.logger.info(
             "Looking for differences in %s with regards to %s.",
-            distroseries, parent)
+            distroseries,
+            parent,
+        )
         populate_distroseriesdiff(self.logger, distroseries, parent)
         self.commit()
         self.logger.info("Updating base_versions.")
@@ -361,21 +412,27 @@ class PopulateDistroSeriesDiff(LaunchpadScript):
         for child in relationships:
             for parent in relationships[child]:
                 self.logger.info(
-                    "%s %s with a parent of %s %s", child.distribution.name,
-                    child.name, parent.distribution.name, parent.name)
+                    "%s %s with a parent of %s %s",
+                    child.distribution.name,
+                    child.name,
+                    parent.distribution.name,
+                    parent.name,
+                )
 
     def checkOptions(self):
         """Verify command-line options."""
         if self.options.list:
             return
-        specified_distro = (self.options.distribution is not None)
-        specified_series = (self.options.series is not None)
+        specified_distro = self.options.distribution is not None
+        specified_series = self.options.series is not None
         if specified_distro != specified_series:
             raise OptionValueError(
-                "Specify both a distribution and a series, or use --all.")
+                "Specify both a distribution and a series, or use --all."
+            )
         if specified_distro == self.options.all:
             raise OptionValueError(
-                "Either specify a distribution and series, or use --all.")
+                "Either specify a distribution and series, or use --all."
+            )
 
     def main(self):
         """Do the script's work."""
@@ -403,15 +460,15 @@ class PopulateDistroSeriesDiff(LaunchpadScript):
         Only instances where the source package is published in both the
         parent series and the derived series need to have this done.
         """
-        self.logger.info(
-            "Updating DSDs for %s.", distroseries.title)
+        self.logger.info("Updating DSDs for %s.", distroseries.title)
         store = IStore(distroseries)
         dsd_ids = store.find(
             DistroSeriesDifference.id,
             DistroSeriesDifference.derived_series == distroseries,
-            DistroSeriesDifference.status ==
-                DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
-            DistroSeriesDifference.difference_type ==
-                DistroSeriesDifferenceType.DIFFERENT_VERSIONS,
-            DistroSeriesDifference.base_version == None)
+            DistroSeriesDifference.status
+            == DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
+            DistroSeriesDifference.difference_type
+            == DistroSeriesDifferenceType.DIFFERENT_VERSIONS,
+            DistroSeriesDifference.base_version == None,
+        )
         DSDUpdater(self.logger, store, self.commit, dsd_ids).run()

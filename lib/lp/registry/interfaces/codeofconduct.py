@@ -7,24 +7,15 @@ https://launchpad.canonical.com/CodeOfConduct
 """
 
 __all__ = [
-    'ICodeOfConduct',
-    'ISignedCodeOfConduct',
-    'ICodeOfConductSet',
-    'ISignedCodeOfConductSet',
-    'ICodeOfConductConf',
-    ]
+    "ICodeOfConduct",
+    "ISignedCodeOfConduct",
+    "ICodeOfConductSet",
+    "ISignedCodeOfConductSet",
+    "ICodeOfConductConf",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Text
 
 from lp import _
 
@@ -42,53 +33,59 @@ class ICodeOfConduct(Interface):
 class ISignedCodeOfConduct(Interface):
     """The Signed Code of Conduct."""
 
-    id = Int(title=_("Signed CoC ID"),
-             required=True,
-             readonly=True
-             )
+    id = Int(title=_("Signed CoC ID"), required=True, readonly=True)
 
     owner = Choice(
-        title=_('Owner'), required=True, vocabulary='ValidOwner',
+        title=_("Owner"),
+        required=True,
+        vocabulary="ValidOwner",
         description=_(
             """The person who signed the code of conduct by mail or fax."""
-        )
-        )
+        ),
+    )
 
     signedcode = Text(title=_("Signed Code"))
 
-    signingkey = Choice(title=_('Signing OpenPGP Key'),
-                        description=_("""OpenPGP key ID used to sign the
+    signingkey = Choice(
+        title=_("Signing OpenPGP Key"),
+        description=_(
+            """OpenPGP key ID used to sign the
                         document. It must be valid inside the Launchpad
-                        context."""),
-                        vocabulary='ValidGPGKey',
-                        required=True
-                        )
+                        context."""
+        ),
+        vocabulary="ValidGPGKey",
+        required=True,
+    )
 
-    datecreated = Datetime(title=_("Date Created"),
-                           description=_("Original Request Timestamp")
-                           )
+    datecreated = Datetime(
+        title=_("Date Created"), description=_("Original Request Timestamp")
+    )
 
-    recipient = Int(title=_("Recipient"),
-                    description=_("Person Authorizing.")
-                    )
+    recipient = Int(title=_("Recipient"), description=_("Person Authorizing."))
 
     admincomment = Text(
         title=_("Admin Comment"),
-        description=_("Admin comment, to e.g. describe the reasons why "
-                      "this registration was approved or rejected.")
-        )
+        description=_(
+            "Admin comment, to e.g. describe the reasons why "
+            "this registration was approved or rejected."
+        ),
+    )
 
-    active = Bool(title=_("Active"),
-                  description=_("Whether or not this Signed CoC "
-                                "is considered active.")
-                  )
+    active = Bool(
+        title=_("Active"),
+        description=_(
+            "Whether or not this Signed CoC " "is considered active."
+        ),
+    )
 
     version = Text(title=_("Version"))
 
     displayname = Attribute("Fancy Title for CoC.")
 
-    affirmed = Bool(title=_("Affirmed"),
-                    description=_("Whether this CoC has been affirmed."))
+    affirmed = Bool(
+        title=_("Affirmed"),
+        description=_("Whether this CoC has been affirmed."),
+    )
 
     def sendAdvertisementEmail(subject, content):
         """Send Advertisement email to signature owner preferred address
@@ -105,8 +102,8 @@ class ISignedCodeOfConduct(Interface):
 class ICodeOfConductSet(Interface):
     """Unsigned (original) Codes of Conduct container."""
 
-    title = Attribute('Page Title propose')
-    current_code_of_conduct = Attribute('The current Code of Conduct')
+    title = Attribute("Page Title propose")
+    current_code_of_conduct = Attribute("The current Code of Conduct")
 
     def __getitem__(version):
         """Get a original CoC Release by its version
@@ -124,7 +121,7 @@ class ICodeOfConductSet(Interface):
 class ISignedCodeOfConductSet(Interface):
     """A container for Signed CoC."""
 
-    title = Attribute('Page Title propose')
+    title = Attribute("Page Title propose")
 
     def __getitem__(id):
         """Get a Signed CoC by id."""

@@ -4,8 +4,8 @@
 """Simple memoization decorator for functions and methods"""
 
 __all__ = [
-    'memoize',
-    ]
+    "memoize",
+]
 
 
 class memoize:
@@ -14,6 +14,7 @@ class memoize:
     This decorator doesn't work with kwargs, nor mutable objects like lists
     or dicts as arguments.
     """
+
     def __init__(self, function):
         self.memo = {}
         self.function = function

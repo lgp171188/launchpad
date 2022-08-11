@@ -18,14 +18,22 @@ class HtaccessTokenGenerator(LaunchpadCronScript):
     def add_my_options(self):
         """Add script command line options."""
         self.parser.add_option(
-            "-n", "--dry-run", action="store_true",
-            dest="dryrun", default=False,
+            "-n",
+            "--dry-run",
+            action="store_true",
+            dest="dryrun",
+            default=False,
             help="If set, no files are changed and no tokens are "
-                 "deactivated.")
+            "deactivated.",
+        )
         self.parser.add_option(
-            "-d", "--no-deactivation", action="store_true",
-            dest="no_deactivation", default=False,
-            help="If set, tokens are not deactivated.")
+            "-d",
+            "--no-deactivation",
+            action="store_true",
+            dest="no_deactivation",
+            default=False,
+            help="If set, tokens are not deactivated.",
+        )
 
     def main(self):
         """Script entry point."""

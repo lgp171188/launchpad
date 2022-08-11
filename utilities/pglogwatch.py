@@ -7,30 +7,39 @@
 Watch live PostgreSQL logs for interesting stuff
 """
 
-from optparse import OptionParser
 import re
 import subprocess
 import sys
+from optparse import OptionParser
 
 
 def get_options(args=None):
     parser = OptionParser()
-    parser.add_option("-l", "--logfile", dest="logfile",
-            default="/var/log/postgresql/postgres.log",
-            metavar="LOG", help="Monitor LOG instead of the default"
-            )
-    parser.add_option("--slow", dest="slow",
-            type="float", default=100.0, metavar="TIME",
-            help="Report slow queries taking over TIME seconds",
-            )
+    parser.add_option(
+        "-l",
+        "--logfile",
+        dest="logfile",
+        default="/var/log/postgresql/postgres.log",
+        metavar="LOG",
+        help="Monitor LOG instead of the default",
+    )
+    parser.add_option(
+        "--slow",
+        dest="slow",
+        type="float",
+        default=100.0,
+        metavar="TIME",
+        help="Report slow queries taking over TIME seconds",
+    )
     (options, args) = parser.parse_args(args)
     return options
+
 
 def generate_loglines(logfile):
     """Generator returning the next line in the logfile (blocking)"""
     cmd = subprocess.Popen(
-            ['tail', '-f', logfile],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ["tail", "-f", logfile], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     while cmd.poll() is None:
         yield cmd.stdout.readline()
     if cmd.returncode != 0:
@@ -49,34 +58,55 @@ class Process:
 
 
 class Watcher:
-    _line_re = re.compile(r"""
+    _line_re = re.compile(
+        r"""
         ^\d{4}-\d\d-\d\d \s \d\d:\d\d:\d\d \s
         \[(?P<pid>\d+)\] \s (?P<type>LOG|ERROR|DETAIL): \s+ (?P<rest>.*)$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _statement_re = re.compile(r"""
+    _statement_re = re.compile(
+        r"""
         ^statement: \s (?P<statement>.*)$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _duration_re = re.compile(r"""
+    _duration_re = re.compile(
+        r"""
         ^duration: \s (?P<duration>\d+\.\d+) \s ms$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _connection_received_re = re.compile(r"""
+    _connection_received_re = re.compile(
+        r"""
         ^connection \s received: \s+ (?P<connection>.*)$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _connection_authorized_re = re.compile(r"""
+    _connection_authorized_re = re.compile(
+        r"""
         ^connection \s authorized: \s+ (?P<auth>.*)$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _ignored_rest_re = re.compile(r"""
+    _ignored_rest_re = re.compile(
+        r"""
         ^(received \s | ERROR: \s | unexpected \s EOF \s) .*$
-        """, re.X)
+        """,
+        re.X,
+    )
 
-    _ignored_statements_re = re.compile(r"""
+    _ignored_statements_re = re.compile(
+        r"""
         ^(BEGIN.*|END)$
-        """, re.X)
+        """,
+        re.X,
+    )
 
     def __init__(self, options):
         self.processes = {}
@@ -91,23 +121,23 @@ class Watcher:
     def feed(self, line):
 
         # Handle continuations of previous statement
-        if line.startswith('\t'):
+        if line.startswith("\t"):
             if self.previous_process is not None:
-                self.previous_process.statement += '\n%s' % line[1:-1]
+                self.previous_process.statement += "\n%s" % line[1:-1]
             return
 
         match = self._line_re.search(line)
         if match is None:
-            raise ValueError('Badly formatted line %r' % (line,))
+            raise ValueError("Badly formatted line %r" % (line,))
 
-        t = match.group('type')
-        if t in ['ERROR', 'DETAIL']:
+        t = match.group("type")
+        if t in ["ERROR", "DETAIL"]:
             return
-        if t != 'LOG':
-            raise ValueError('Unknown line type %s (%r)' % (t, line))
+        if t != "LOG":
+            raise ValueError("Unknown line type %s (%r)" % (t, line))
 
-        pid = int(match.group('pid'))
-        rest = match.group('rest')
+        pid = int(match.group("pid"))
+        rest = match.group("rest")
 
         process = self.processes.get(pid, None)
         if process is None:
@@ -117,16 +147,16 @@ class Watcher:
 
         match = self._statement_re.search(rest)
         if match is not None:
-            statement = match.group('statement')
+            statement = match.group("statement")
             if process.statement:
-                process.statement += '\n%s' % statement
+                process.statement += "\n%s" % statement
             else:
                 process.statement = statement
             return
 
         match = self._duration_re.search(rest)
         if match is not None:
-            process.duration = float(match.group('duration'))
+            process.duration = float(match.group("duration"))
             self.reportDuration(process)
             self.previous_process = None
             del self.processes[process.pid]
@@ -134,19 +164,19 @@ class Watcher:
 
         match = self._connection_received_re.search(rest)
         if match is not None:
-            process.connection = match.group('connection')
+            process.connection = match.group("connection")
             return
 
         match = self._connection_authorized_re.search(rest)
         if match is not None:
-            process.auth = match.group('auth')
+            process.auth = match.group("auth")
             return
 
         match = self._ignored_rest_re.search(rest)
         if match is not None:
             return
 
-        raise ValueError('Unknown entry: %r' % (rest,))
+        raise ValueError("Unknown entry: %r" % (rest,))
 
     def reportDuration(self, process):
         """Report a slow statement if it is above a threshold"""
@@ -158,11 +188,11 @@ class Watcher:
             return
 
         if process.duration > options.slow:
-            print('[%5d] %s' % (process.pid, process.statement))
-            print('        Duration: %0.3f' % (process.duration,))
+            print("[%5d] %s" % (process.pid, process.statement))
+            print("        Duration: %0.3f" % (process.duration,))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     options = get_options()
 
     watcher = Watcher(options)

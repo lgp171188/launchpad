@@ -4,10 +4,12 @@
 """Classes that implement LaunchpadStatistics."""
 
 __all__ = [
-    'LaunchpadStatistic',
-    'LaunchpadStatisticSet',
-    ]
+    "LaunchpadStatistic",
+    "LaunchpadStatisticSet",
+]
 
+import pytz
+from storm.locals import DateTime, Int, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -22,20 +24,13 @@ from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    cursor,
-    SQLBase,
-    )
-from lp.services.database.sqlobject import (
-    IntCol,
-    StringCol,
-    )
+from lp.services.database.sqlbase import cursor
+from lp.services.database.stormbase import StormBase
 from lp.services.statistics.interfaces.statistic import (
     ILaunchpadStatistic,
     ILaunchpadStatisticSet,
-    )
+)
 from lp.services.worlddata.model.language import Language
 from lp.translations.model.pofile import POFile
 from lp.translations.model.pomsgid import POMsgID
@@ -43,45 +38,56 @@ from lp.translations.model.potemplate import POTemplate
 
 
 @implementer(ILaunchpadStatistic)
-class LaunchpadStatistic(SQLBase):
+class LaunchpadStatistic(StormBase):
     """A table of Launchpad Statistics."""
 
-    _table = 'LaunchpadStatistic'
-    _defaultOrder = 'name'
+    __storm_table__ = "LaunchpadStatistic"
+    __storm_order__ = "name"
 
-    # db field names
-    name = StringCol(notNull=True, alternateID=True, unique=True)
-    value = IntCol(notNull=True)
-    dateupdated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
+
+    name = Unicode(allow_none=False)
+    value = Int(allow_none=False)
+    dateupdated = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+
+    def __init__(self, name, value):
+        super().__init__()
+        self.name = name
+        self.value = value
 
 
 @implementer(ILaunchpadStatisticSet)
 class LaunchpadStatisticSet:
-    """See`ILaunchpadStatisticSet`."""
+    """See `ILaunchpadStatisticSet`."""
 
     def __iter__(self):
         """See ILaunchpadStatisticSet."""
-        return iter(LaunchpadStatistic.select(orderBy='name'))
+        store = IStore(LaunchpadStatistic)
+        return iter(store.find(LaunchpadStatistic).order_by("name"))
 
     def update(self, name, value):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             stat = LaunchpadStatistic(name=name, value=value)
+            store.add(stat)
         else:
             stat.value = value
             stat.dateupdated = UTC_NOW
 
     def dateupdated(self, name):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             return None
         return stat.dateupdated
 
     def value(self, name):
         """See ILaunchpadStatisticSet."""
-        stat = LaunchpadStatistic.selectOneBy(name=name)
+        store = IStore(LaunchpadStatistic)
+        stat = store.find(LaunchpadStatistic, name=name).one()
         if stat is None:
             return None
         return stat.value
@@ -97,22 +103,24 @@ class LaunchpadStatisticSet:
         getUtility(IPersonSet).updateStatistics()
 
     def _updateMaloneStatistics(self, ztm):
-        self.update('bug_count', Bug.select().count())
+        self.update("bug_count", Bug.select().count())
         ztm.commit()
 
         store = IStore(BugTask)
-        self.update('bugtask_count', store.find(BugTask).count())
+        self.update("bugtask_count", store.find(BugTask).count())
         ztm.commit()
 
         self.update(
-                'products_using_malone',
-                Product.selectBy(official_malone=True).count())
+            "products_using_malone",
+            Product.selectBy(official_malone=True).count(),
+        )
         ztm.commit()
 
         cur = cursor()
         cur.execute(
             "SELECT COUNT(DISTINCT product) + COUNT(DISTINCT distribution) "
-            "FROM BugTask")
+            "FROM BugTask"
+        )
         self.update("projects_with_bugs", cur.fetchone()[0] or 0)
         ztm.commit()
 
@@ -122,123 +130,158 @@ class LaunchpadStatisticSet:
             "                             COUNT(distinct distribution) "
             "                             AS places "
             "                             FROM BugTask GROUP BY bug) "
-            "                      AS temp WHERE places > 1")
+            "                      AS temp WHERE places > 1"
+        )
         self.update("shared_bug_count", cur.fetchone()[0] or 0)
         ztm.commit()
 
     def _updateRegistryStatistics(self, ztm):
         self.update(
-            'active_products',
-            Product.select("active IS TRUE", distinct=True).count())
+            "active_products",
+            Product.select("active IS TRUE", distinct=True).count(),
+        )
         self.update(
-            'products_with_translations',
-            Product.select('''
+            "products_with_translations",
+            Product.select(
+                """
                 POTemplate.productseries = ProductSeries.id AND
                 Product.id = ProductSeries.product AND
                 Product.active = TRUE
-                ''',
-                clauseTables=['ProductSeries', 'POTemplate'],
-                distinct=True).count())
+                """,
+                clauseTables=["ProductSeries", "POTemplate"],
+                distinct=True,
+            ).count(),
+        )
         self.update(
-            'products_with_blueprints',
+            "products_with_blueprints",
             Product.select(
                 "Specification.product=Product.id AND Product.active IS TRUE",
-                distinct=True, clauseTables=['Specification']).count())
+                distinct=True,
+                clauseTables=["Specification"],
+            ).count(),
+        )
         self.update(
-            'products_with_branches',
+            "products_with_branches",
             Product.select(
                 "Branch.product=Product.id AND Product.active IS TRUE",
-                distinct=True, clauseTables=['Branch']).count())
+                distinct=True,
+                clauseTables=["Branch"],
+            ).count(),
+        )
         self.update(
-            'products_with_bugs',
+            "products_with_bugs",
             Product.select(
                 "BugTask.product=Product.id AND Product.active IS TRUE",
-                distinct=True, clauseTables=['BugTask']).count())
+                distinct=True,
+                clauseTables=["BugTask"],
+            ).count(),
+        )
         self.update(
-            'products_with_questions',
+            "products_with_questions",
             Product.select(
                 "Question.product=Product.id AND Product.active IS TRUE",
-                distinct=True, clauseTables=['Question']).count())
+                distinct=True,
+                clauseTables=["Question"],
+            ).count(),
+        )
         self.update(
-            'reviewed_products',
-            Product.selectBy(project_reviewed=True, active=True).count())
+            "reviewed_products",
+            Product.selectBy(project_reviewed=True, active=True).count(),
+        )
 
     def _updateRosettaStatistics(self, ztm):
         self.update(
-                'products_using_rosetta',
-                Product.selectBy(
-                    translations_usage=ServiceUsage.LAUNCHPAD).count())
-        self.update('potemplate_count', POTemplate.select().count())
+            "products_using_rosetta",
+            Product.selectBy(
+                translations_usage=ServiceUsage.LAUNCHPAD
+            ).count(),
+        )
+        self.update("potemplate_count", POTemplate.select().count())
         ztm.commit()
-        self.update('pofile_count', POFile.select().count())
+        self.update("pofile_count", POFile.select().count())
         ztm.commit()
-        self.update('pomsgid_count', IStore(POMsgID).find(POMsgID).count())
+        self.update("pomsgid_count", IStore(POMsgID).find(POMsgID).count())
         ztm.commit()
-        self.update('language_count', Language.select(
-            "POFile.language=Language.id",
-            clauseTables=['POFile'],
-            distinct=True).count())
+        self.update(
+            "language_count",
+            Language.select(
+                "POFile.language=Language.id",
+                clauseTables=["POFile"],
+                distinct=True,
+            ).count(),
+        )
+        ztm.commit()
+
+        cur = cursor()
+        cur.execute("SELECT COUNT(DISTINCT submitter) FROM TranslationMessage")
+        self.update("translator_count", cur.fetchone()[0] or 0)
         ztm.commit()
 
         cur = cursor()
         cur.execute(
-            "SELECT COUNT(DISTINCT submitter) FROM TranslationMessage")
-        self.update('translator_count', cur.fetchone()[0] or 0)
-        ztm.commit()
-
-        cur = cursor()
-        cur.execute("""
+            """
             SELECT COUNT(DISTINCT submitter)
             FROM TranslationMessage
             WHERE origin=2
-            """)
-        self.update('rosetta_translator_count', cur.fetchone()[0] or 0)
+            """
+        )
+        self.update("rosetta_translator_count", cur.fetchone()[0] or 0)
         ztm.commit()
 
         cur = cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT COUNT(DISTINCT product) FROM ProductSeries,POTemplate
             WHERE ProductSeries.id = POTemplate.productseries
-            """)
-        self.update('products_with_potemplates', cur.fetchone()[0] or 0)
+            """
+        )
+        self.update("products_with_potemplates", cur.fetchone()[0] or 0)
         ztm.commit()
 
     def _updateQuestionStatistics(self, ztm):
         store = IStore(Question)
-        self.update('question_count', store.find(Question).count())
+        self.update("question_count", store.find(Question).count())
         ztm.commit()
 
         self.update(
-            'answered_question_count',
+            "answered_question_count",
             store.find(
-                Question, Question.status == QuestionStatus.ANSWERED).count())
+                Question, Question.status == QuestionStatus.ANSWERED
+            ).count(),
+        )
         ztm.commit()
 
         self.update(
-            'solved_question_count',
+            "solved_question_count",
             store.find(
-                Question, Question.status == QuestionStatus.SOLVED).count())
+                Question, Question.status == QuestionStatus.SOLVED
+            ).count(),
+        )
         ztm.commit()
 
         cur = cursor()
         cur.execute(
             "SELECT COUNT(DISTINCT product) + COUNT(DISTINCT distribution) "
-            "FROM Question")
+            "FROM Question"
+        )
         self.update("projects_with_questions_count", cur.fetchone()[0] or 0)
         ztm.commit()
 
     def _updateBlueprintStatistics(self, ztm):
         self.update(
-            'public_specification_count',
-            getUtility(ISpecificationSet).specificationCount(None))
+            "public_specification_count",
+            getUtility(ISpecificationSet).specificationCount(None),
+        )
         ztm.commit()
 
     def _updateCodeStatistics(self, ztm):
         self.update(
-            'public_branch_count',
-            getUtility(IAllBranches).visibleByUser(None).count())
+            "public_branch_count",
+            getUtility(IAllBranches).visibleByUser(None).count(),
+        )
         ztm.commit()
         self.update(
-            'public_git_repository_count',
-            getUtility(IAllGitRepositories).visibleByUser(None).count())
+            "public_git_repository_count",
+            getUtility(IAllGitRepositories).visibleByUser(None).count(),
+        )
         ztm.commit()

@@ -3,7 +3,7 @@
 
 """List all team members: name, preferred email address."""
 
-__all__ = ['process_team']
+__all__ = ["process_team"]
 
 import re
 
@@ -11,29 +11,28 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.person import IPersonSet
 
-
 OUTPUT_TEMPLATES = {
-    'simple': '%(name)s, %(email)s',
-    'email': '%(email)s',
-    'full': '%(teamname)s|%(id)s|%(name)s|%(email)s|'
-            '%(displayname)s|%(ubuntite)s',
-    'sshkeys': '%(name)s: %(sshkey)s',
-    }
+    "simple": "%(name)s, %(email)s",
+    "email": "%(email)s",
+    "full": "%(teamname)s|%(id)s|%(name)s|%(email)s|"
+    "%(displayname)s|%(ubuntite)s",
+    "sshkeys": "%(name)s: %(sshkey)s",
+}
 
 
 class NoSuchTeamError(Exception):
     """Used if non-existent team name is specified."""
 
 
-bad_ssh_pattern = re.compile('[\r\n\f]')
+bad_ssh_pattern = re.compile("[\r\n\f]")
 
 
 def make_sshkey_params(member, key):
-    sshkey = bad_ssh_pattern.sub('', key.getFullKeyText()).strip()
+    sshkey = bad_ssh_pattern.sub("", key.getFullKeyText()).strip()
     return dict(name=member.name, sshkey=sshkey)
 
 
-def process_team(teamname, display_option='simple'):
+def process_team(teamname, display_option="simple"):
     output = []
     people = getUtility(IPersonSet)
     memberset = people.getByName(teamname)
@@ -46,16 +45,16 @@ def process_team(teamname, display_option='simple'):
         if member.preferredemail is not None:
             email = member.preferredemail.email
         else:
-            email = '--none--'
-        if display_option == 'email':
+            email = "--none--"
+        if display_option == "email":
             for validatedemail in member.validatedemails:
                 params = dict(
                     email=validatedemail.email,
-                    )
+                )
                 output.append(template % params)
         # SSH Keys
-        sshkey = '--none--'
-        if display_option == 'sshkeys':
+        sshkey = "--none--"
+        if display_option == "sshkeys":
             for key in member.sshkeys:
                 params = make_sshkey_params(member, key)
                 output.append(template % params)
@@ -74,14 +73,14 @@ def process_team(teamname, display_option='simple'):
             displayname=member.displayname,
             ubuntite=ubuntite,
             sshkey=sshkey,
-            )
+        )
         output.append(template % params)
     # If we're only looking at email, remove --none-- entries
     # as we're only interested in emails
-    if display_option == 'email':
-        output = [line for line in output if line != '--none--']
+    if display_option == "email":
+        output = [line for line in output if line != "--none--"]
     # If we're only looking at sshkeys, remove --none-- entries
     # as we're only interested in sshkeys
-    if display_option == 'sshkeys':
-        output = [line for line in output if line[-8:] != '--none--']
+    if display_option == "sshkeys":
+        output = [line for line in output if line[-8:] != "--none--"]
     return sorted(output)

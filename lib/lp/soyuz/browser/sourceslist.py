@@ -8,10 +8,7 @@ from zope.component import getUtility
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidget
 from zope.schema import Choice
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
 from lp import _
 from lp.services.browser_helpers import get_user_agent_distroseries
@@ -35,10 +32,11 @@ class SourcesListEntries:
 class SourcesListEntriesView(LaunchpadView):
     """Renders sources.list entries with a Javascript menu."""
 
-    template = ViewPageTemplateFile('../templates/sources-list-entries.pt')
+    template = ViewPageTemplateFile("../templates/sources-list-entries.pt")
 
-    def __init__(self, context, request, initially_without_selection=False,
-        comment=None):
+    def __init__(
+        self, context, request, initially_without_selection=False, comment=None
+    ):
         self._initially_without_selection = initially_without_selection
         self.comment = comment
         super().__init__(context, request)
@@ -47,9 +45,9 @@ class SourcesListEntriesView(LaunchpadView):
         self.terms = []
         for series in self.context.valid_series:
             distro_version = "%(series_name)s (%(series_version)s)" % {
-                'series_name': series.displayname,
-                'series_version': series.version
-                }
+                "series_name": series.displayname,
+                "series_version": series.version,
+            }
             self.terms.append(SimpleTerm(series, series.name, distro_version))
 
         # If the call-site requested that the widget be displayed initially
@@ -58,20 +56,31 @@ class SourcesListEntriesView(LaunchpadView):
         # a distroseries.
         if self._initially_without_selection or self.default_series is None:
             initial_selection = "Choose your %s version" % (
-                    self.context.distribution.displayname)
-            self.terms.insert(0, SimpleTerm(
-                None, self.initial_value_without_selection,
-                initial_selection))
+                self.context.distribution.displayname
+            )
+            self.terms.insert(
+                0,
+                SimpleTerm(
+                    None,
+                    self.initial_value_without_selection,
+                    initial_selection,
+                ),
+            )
 
-        field = Choice(__name__='series', title=_("Distro Series"),
-                       vocabulary=SimpleVocabulary(self.terms), required=True)
-        setUpWidget(self, 'series',  field, IInputWidget)
+        field = Choice(
+            __name__="series",
+            title=_("Distro Series"),
+            vocabulary=SimpleVocabulary(self.terms),
+            required=True,
+        )
+        setUpWidget(self, "series", field, IInputWidget)
         self.series_widget.extra = "onChange='updateSeries(this);'"
 
     @property
     def initial_value_without_selection(self):
         return "YOUR_%s_VERSION_HERE" % (
-            self.context.distribution.displayname.upper())
+            self.context.distribution.displayname.upper()
+        )
 
     @property
     def plain_series_widget(self):
@@ -104,15 +113,18 @@ class SourcesListEntriesView(LaunchpadView):
         # number, we check for a corresponding valid distroseries and, if one
         # is found, return it's name.
         version_number = get_user_agent_distroseries(
-            self.request.getHeader('HTTP_USER_AGENT'))
+            self.request.getHeader("HTTP_USER_AGENT")
+        )
 
         if version_number is not None:
 
             # Finally, check if this version is one of the available
             # distroseries for this archive:
             for term in self.terms:
-                if (term.value is not None and
-                    term.value.version == version_number):
+                if (
+                    term.value is not None
+                    and term.value.version == version_number
+                ):
                     return term.value
 
         # If we were not able to get the users distribution series, then
@@ -143,25 +155,33 @@ class SourcesListEntriesWidget:
         """Setup and return the sources list entries widget."""
         if self.active_token is None:
             entries = SourcesListEntries(
-                self.archive.distribution, self.archive_url,
-                self.archive.series_with_sources)
+                self.archive.distribution,
+                self.archive_url,
+                self.archive.series_with_sources,
+            )
             return SourcesListEntriesView(entries, self.request)
         else:
             comment = "Personal access of %s (%s) to %s" % (
                 self.sources_list_user.displayname,
-                self.sources_list_user.name, self.archive.displayname)
+                self.sources_list_user.name,
+                self.archive.displayname,
+            )
             entries = SourcesListEntries(
-                self.archive.distribution, self.active_token.archive_url,
-                self.archive.series_with_sources)
+                self.archive.distribution,
+                self.active_token.archive_url,
+                self.archive.series_with_sources,
+            )
             return SourcesListEntriesView(
-                entries, self.request, comment=comment)
+                entries, self.request, comment=comment
+            )
 
     @cachedproperty
     def active_token(self):
         """Return the corresponding current token for this subscription."""
         token_set = getUtility(IArchiveAuthTokenSet)
         return token_set.getActiveTokenForArchiveAndPerson(
-            self.archive, self.sources_list_user)
+            self.archive, self.sources_list_user
+        )
 
     @property
     def archive_url(self):

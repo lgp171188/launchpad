@@ -4,16 +4,16 @@
 """Translation-related formatting functions."""
 
 __all__ = [
-    'contract_rosetta_escapes',
-    'convert_newlines_to_web_form',
-    'count_lines',
-    'expand_rosetta_escapes',
-    'parse_cformat_string',
-    'text_to_html',
-    ]
+    "contract_rosetta_escapes",
+    "convert_newlines_to_web_form",
+    "count_lines",
+    "expand_rosetta_escapes",
+    "parse_cformat_string",
+    "text_to_html",
+]
 
-from math import ceil
 import re
+from math import ceil
 
 from lp.services import helpers
 from lp.services.webapp.escaping import html_escape
@@ -26,40 +26,50 @@ class UnrecognisedCFormatString(ValueError):
 
 def contract_rosetta_escapes(text):
     """Replace Rosetta escape sequences with the real characters."""
-    return helpers.text_replaced(text, {'[tab]': '\t',
-                                        r'\[tab]': '[tab]',
-                                        '[nbsp]': '\u00a0',
-                                        r'\[nbsp]': '[nbsp]',
-                                        '[nnbsp]': '\u202f',
-                                        r'\[nnbsp]': '[nnbsp]'})
+    return helpers.text_replaced(
+        text,
+        {
+            "[tab]": "\t",
+            r"\[tab]": "[tab]",
+            "[nbsp]": "\u00a0",
+            r"\[nbsp]": "[nbsp]",
+            "[nnbsp]": "\u202f",
+            r"\[nnbsp]": "[nnbsp]",
+        },
+    )
 
 
 def expand_rosetta_escapes(unicode_text):
     """Replace characters needing a Rosetta escape sequences."""
-    escapes = {'\t': TranslationConstants.TAB_CHAR,
-               '[tab]': TranslationConstants.TAB_CHAR_ESCAPED,
-               '\u00a0': TranslationConstants.NO_BREAK_SPACE_CHAR,
-               '[nbsp]': TranslationConstants.NO_BREAK_SPACE_CHAR_ESCAPED,
-               '\u202f': TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR,
-               '[nnbsp]':
-    TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR_ESCAPED}
+    escapes = {
+        "\t": TranslationConstants.TAB_CHAR,
+        "[tab]": TranslationConstants.TAB_CHAR_ESCAPED,
+        "\u00a0": TranslationConstants.NO_BREAK_SPACE_CHAR,
+        "[nbsp]": TranslationConstants.NO_BREAK_SPACE_CHAR_ESCAPED,
+        "\u202f": TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR,
+        "[nnbsp]": TranslationConstants.NARROW_NO_BREAK_SPACE_CHAR_ESCAPED,
+    }
     return helpers.text_replaced(unicode_text, escapes)
 
 
-def text_to_html(text, flags, space=TranslationConstants.SPACE_CHAR,
-               newline=TranslationConstants.NEWLINE_CHAR):
+def text_to_html(
+    text,
+    flags,
+    space=TranslationConstants.SPACE_CHAR,
+    newline=TranslationConstants.NEWLINE_CHAR,
+):
     """Convert a unicode text to a HTML representation."""
     if text is None:
         return None
 
     markup_lines = []
     # Replace leading and trailing spaces on each line with special markup.
-    if '\r\n' in text:
-        newline_chars = '\r\n'
-    elif '\r' in text:
-        newline_chars = '\r'
+    if "\r\n" in text:
+        newline_chars = "\r\n"
+    elif "\r" in text:
+        newline_chars = "\r"
     else:
-        newline_chars = '\n'
+        newline_chars = "\n"
     for line in text.split(newline_chars):
         # Pattern:
         # - group 1: zero or more spaces: leading whitespace
@@ -67,33 +77,35 @@ def text_to_html(text, flags, space=TranslationConstants.SPACE_CHAR,
         #   more spaces followed by one or more non-spaces): maximal string
         #   which doesn't begin or end with whitespace
         # - group 3: zero or more spaces: trailing whitespace
-        match = re.match('^( *)((?: *[^ ]+)*)( *)$', line)
+        match = re.match("^( *)((?: *[^ ]+)*)( *)$", line)
 
         if match:
             format_segments = None
-            if 'c-format' in flags:
+            if "c-format" in flags:
                 try:
                     format_segments = parse_cformat_string(match.group(2))
                 except UnrecognisedCFormatString:
                     pass
             if format_segments is not None:
-                markup = ''
+                markup = ""
                 for segment in format_segments:
                     type, content = segment
 
-                    if type == 'interpolation':
-                        markup += ('<code>%s</code>' % html_escape(content))
-                    elif type == 'string':
+                    if type == "interpolation":
+                        markup += "<code>%s</code>" % html_escape(content)
+                    elif type == "string":
                         markup += html_escape(content)
             else:
                 markup = html_escape(match.group(2))
             markup_lines.append(
                 space * len(match.group(1))
                 + markup
-                + space * len(match.group(3)))
+                + space * len(match.group(3))
+            )
         else:
             raise AssertionError(
-                "A regular expression that should always match didn't.")
+                "A regular expression that should always match didn't."
+            )
 
     return expand_rosetta_escapes(newline.join(markup_lines))
 
@@ -107,18 +119,19 @@ def convert_newlines_to_web_form(unicode_text):
     if unicode_text is None:
         return None
 
-    assert isinstance(unicode_text, str), (
-        "The given text must be unicode instead of %s" % type(unicode_text))
+    assert isinstance(
+        unicode_text, str
+    ), "The given text must be unicode instead of %s" % type(unicode_text)
 
     if unicode_text is None:
         return None
-    elif '\r\n' in unicode_text:
+    elif "\r\n" in unicode_text:
         # The text is already using the windows newline chars
         return unicode_text
-    elif '\n' in unicode_text:
-        return helpers.text_replaced(unicode_text, {'\n': '\r\n'})
+    elif "\n" in unicode_text:
+        return helpers.text_replaced(unicode_text, {"\n": "\r\n"})
     else:
-        return helpers.text_replaced(unicode_text, {'\r': '\r\n'})
+        return helpers.text_replaced(unicode_text, {"\r": "\r\n"})
 
 
 def count_lines(text):
@@ -133,7 +146,7 @@ def count_lines(text):
     CHARACTERS_PER_LINE = 60
     count = 0
 
-    for line in text.split('\n'):
+    for line in text.split("\n"):
         if len(line) == 0:
             count += 1
         else:
@@ -161,24 +174,24 @@ def parse_cformat_string(string):
     # interpolations, or a string beginning with an interpolation.
     segments = []
     end = string
-    plain_re = re.compile('(%%|[^%])+')
-    interpolation_re = re.compile('%[^diouxXeEfFgGcspmn]*[diouxXeEfFgGcspmn]')
+    plain_re = re.compile("(%%|[^%])+")
+    interpolation_re = re.compile("%[^diouxXeEfFgGcspmn]*[diouxXeEfFgGcspmn]")
 
     while end:
         # Check for a interpolation-less prefix.
         match = plain_re.match(end)
         if match:
             segment = match.group(0)
-            segments.append(('string', segment))
-            end = end[len(segment):]
+            segments.append(("string", segment))
+            end = end[len(segment) :]
             continue
 
         # Check for an interpolation sequence at the beginning.
         match = interpolation_re.match(end)
         if match:
             segment = match.group(0)
-            segments.append(('interpolation', segment))
-            end = end[len(segment):]
+            segments.append(("interpolation", segment))
+            end = end[len(segment) :]
             continue
 
         # Give up.

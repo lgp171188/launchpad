@@ -10,16 +10,13 @@ on. If the branch is a junk branch, then the target is the branch owner.
 """
 
 __all__ = [
-    'check_default_stacked_on',
-    'IBranchTarget',
-    'IHasBranchTarget',
-    ]
+    "check_default_stacked_on",
+    "IBranchTarget",
+    "IHasBranchTarget",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -66,14 +63,15 @@ class IBranchTarget(Interface):
     branches, and a person contains 'junk' branches.
     """
 
-    context = Attribute('The primary context.')
+    context = Attribute("The primary context.")
 
     name = Attribute("The name of the target.")
 
     components = Attribute(
         "An iterable of the objects that make up this branch target, from "
         "most-general to most-specific. In a URL, these would normally "
-        "appear from left to right.")
+        "appear from left to right."
+    )
 
     displayname = Attribute("The display name of this branch target.")
 
@@ -81,25 +79,33 @@ class IBranchTarget(Interface):
         # Should be an IBranch, but circular imports prevent it.
         schema=Interface,
         title=_("Default stacked-on branch"),
-        required=True, readonly=True,
+        required=True,
+        readonly=True,
         description=_(
-            'The branch that new branches will be stacked on by default.'))
+            "The branch that new branches will be stacked on by default."
+        ),
+    )
 
     default_merge_target = Attribute(
-        "The branch to merge other branches into for this target.")
+        "The branch to merge other branches into for this target."
+    )
 
     supports_merge_proposals = Attribute(
-        "Does this target support merge proposals at all?")
+        "Does this target support merge proposals at all?"
+    )
 
     supports_short_identities = Attribute(
-        "Does this target support shortened bazaar identities?")
+        "Does this target support shortened bazaar identities?"
+    )
 
     supports_code_imports = Attribute(
-        "Does this target support code imports at all?")
+        "Does this target support code imports at all?"
+    )
 
     allow_recipe_name_from_target = Attribute(
         "Can recipe names reasonably be generated from the target name "
-        "rather than the branch name?")
+        "rather than the branch name?"
+    )
 
     def areBranchesMergeable(other_target):
         """Are branches from other_target mergeable into this target?"""

@@ -10,14 +10,15 @@ from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import db
 from lp.services.librarianserver.storage import (
-    _relFileLocation,
     LibrarianStorage,
-    )
+    _relFileLocation,
+)
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class LibrarianStorageTestCase(unittest.TestCase):
     """Librarian test cases that don't involve the database"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -54,10 +55,10 @@ class LibrarianStorageTestCase(unittest.TestCase):
 
     def test_prefixDirectories(self):
         # _relFileLocation splits eight hex digits across four path segments
-        self.assertEqual('12/34/56/78', _relFileLocation(0x12345678))
+        self.assertEqual("12/34/56/78", _relFileLocation(0x12345678))
 
         # less than eight hex digits will be padded
-        self.assertEqual('00/00/01/23', _relFileLocation(0x123))
+        self.assertEqual("00/00/01/23", _relFileLocation(0x123))
 
         # more than eight digits will make the final segment longer, if that
         # were to ever happen
@@ -74,16 +75,16 @@ class LibrarianStorageTestCase(unittest.TestCase):
         # correctly -- i.e that creating a file works both if the directory
         # already exists, and if the directory doesn't already exist.
         self.storage.library = StubLibrary()
-        data = b'data ' * 50
-        newfile = self.storage.startAddFile('file', len(data))
+        data = b"data " * 50
+        newfile = self.storage.startAddFile("file", len(data))
         newfile.contentID = 0x11111111
         newfile.append(data)
         fileid1, aliasid = newfile.store()
         # First id from stub library should be 0x11111111
         self.assertEqual(0x11111111, fileid1)
 
-        data += b'more data'
-        newfile = self.storage.startAddFile('file', len(data))
+        data += b"more data"
+        newfile = self.storage.startAddFile("file", len(data))
         newfile.contentID = 0x11111112
         newfile.append(data)
         fileid2, aliasid = newfile.store()
@@ -96,12 +97,12 @@ class LibrarianStorageTestCase(unittest.TestCase):
 
     def test_hashes(self):
         # Check that the MD5, SHA1 and SHA256 hashes are correct.
-        data = b'i am some data'
+        data = b"i am some data"
         md5 = hashlib.md5(data).hexdigest()
         sha1 = hashlib.sha1(data).hexdigest()
         sha256 = hashlib.sha256(data).hexdigest()
 
-        newfile = self.storage.startAddFile('file', len(data))
+        newfile = self.storage.startAddFile("file", len(data))
         newfile.append(data)
         lfc_id, lfa_id = newfile.store()
         lfc = LibraryFileContent.get(lfc_id)

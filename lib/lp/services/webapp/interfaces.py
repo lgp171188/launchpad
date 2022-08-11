@@ -1,24 +1,29 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+#
+# Portions from zope.session, which is:
+#
+# Copyright (c) 2004 Zope Foundation and Contributors.
+# All Rights Reserved.
+#
+# This software is subject to the provisions of the Zope Public License,
+# Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
+# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
+# WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
+# FOR A PARTICULAR PURPOSE.
 
 import logging
 
 from lazr.batchnavigator.interfaces import IBatchNavigator
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    use_template,
-    )
+from lazr.enum import DBEnumeratedType, DBItem, use_template
 from zope.authentication.interfaces import (
     IAuthentication,
     IPrincipal,
     IPrincipalSource,
-    )
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+)
+from zope.interface import Attribute, Interface, implementer
+from zope.interface.common.mapping import IMapping, IReadMapping, IWriteMapping
 from zope.interface.interfaces import IObjectEvent
 from zope.publisher.interfaces.browser import IBrowserApplicationRequest
 from zope.schema import (
@@ -30,7 +35,7 @@ from zope.schema import (
     Object,
     Text,
     TextLine,
-    )
+)
 from zope.traversing.interfaces import IContainmentRoot
 
 from lp import _
@@ -57,7 +62,8 @@ class ILaunchpadApplication(Interface):
     application objects will provide an interface that extends this
     interface.
     """
-    title = Attribute('Title')
+
+    title = Attribute("Title")
 
 
 class ILaunchpadProtocolError(Interface):
@@ -79,6 +85,7 @@ class UnsafeFormGetSubmissionError(Exception):
 #
 # Menus and Facets
 #
+
 
 class IFacet(Interface):
     """Interface for metadata about facets."""
@@ -103,9 +110,9 @@ class IMenu(Interface):
 class IMenuBase(IMenu):
     """Common interface for facets, menus, extra facets and extra menus."""
 
-    context = Attribute('The object that has this menu.')
+    context = Attribute("The object that has this menu.")
 
-    request = Attribute('The request the menus is used in.')
+    request = Attribute("The request the menus is used in.")
 
 
 class IFacetMenu(IMenuBase):
@@ -125,7 +132,8 @@ class IFacetMenu(IMenuBase):
     defaultlink = Attribute(
         "The name of the default link in this menu.  That is, the one that "
         "will be selected if no others are selected.  It is None if there "
-        "is no default link.")
+        "is no default link."
+    )
 
 
 class IApplicationMenu(IMenuBase):
@@ -147,36 +155,42 @@ class ILinkData(Interface):
     programmer provides about a link in a menu.
     """
 
-    target = Attribute("The place this link should link to.  This may be "
+    target = Attribute(
+        "The place this link should link to.  This may be "
         "a path relative to the context of the menu this link appears in, "
-        "or an absolute path, or an absolute URL.")
+        "or an absolute path, or an absolute URL."
+    )
 
-    text = Attribute(
-        "The text of this link, as appears underlined on a page.")
+    text = Attribute("The text of this link, as appears underlined on a page.")
 
     summary = Attribute(
-        "The summary text of this link, as appears as a tooltip on the link.")
+        "The summary text of this link, as appears as a tooltip on the link."
+    )
 
     icon = Attribute("The name of the icon to use.")
 
     enabled = Attribute("Boolean to say whether this link is enabled.")
 
     site = Attribute(
-        "The name of the site this link is to, or None for the current site.")
+        "The name of the site this link is to, or None for the current site."
+    )
 
     menu = Attribute(
-        "The `INavigationMenu` associated with the page this link points to.")
+        "The `INavigationMenu` associated with the page this link points to."
+    )
 
     # CarlosPerelloMarin 20080131 bugs=187837: This should be removed once
     # action menu is not used anymore and we move to use inline navigation.
     sort_key = Attribute(
-        "The sort key to use when rendering it with a group of links.")
+        "The sort key to use when rendering it with a group of links."
+    )
 
     hidden = Attribute(
         "Boolean to say whether this link is hidden.  This is separate from "
         "being enabled and is used to support links which need to be "
         "enabled but not viewable in the rendered HTML.  The link may be "
-        "changed to visible by JavaScript or some other means.")
+        "changed to visible by JavaScript or some other means."
+    )
 
 
 class ILink(ILinkData):
@@ -190,22 +204,26 @@ class ILink(ILinkData):
 
     url = Attribute(
         "The full url this link points to.  Set by the menus infrastructure. "
-        "None before it is set.")
+        "None before it is set."
+    )
 
     path = Attribute("The path portion of the URL.")
 
     linked = Attribute(
         "A boolean value saying whether this link should appear as a "
         "clickable link in the UI.  The general rule is that a link to "
-        "the current page should not be shown linked.  Defaults to True.")
+        "the current page should not be shown linked.  Defaults to True."
+    )
 
     enabled = Attribute(
-        "Boolean to say whether this link is enabled.  Can be read and set.")
+        "Boolean to say whether this link is enabled.  Can be read and set."
+    )
 
     escapedtext = Attribute("Text string, escaped as necessary.")
 
     icon_url = Attribute(
-        "The full URL for this link's associated icon, if it has one.")
+        "The full URL for this link's associated icon, if it has one."
+    )
 
     def render():
         """Return a HTML representation of the link."""
@@ -220,7 +238,8 @@ class IFacetLink(ILink):
 
     selected = Attribute(
         "A boolean value saying whether this link is the selected facet menu "
-        "item.  Defaults to False.")
+        "item.  Defaults to False."
+    )
 
 
 class IStructuredString(Interface):
@@ -234,14 +253,15 @@ class IStructuredString(Interface):
 class IBreadcrumb(Interface):
     """A breadcrumb link."""
 
-    url = Attribute('Absolute url of this breadcrumb.')
+    url = Attribute("Absolute url of this breadcrumb.")
 
-    text = Attribute('Text of this breadcrumb.')
+    text = Attribute("Text of this breadcrumb.")
 
-    detail = Attribute('Detailed text of this breadcrumb.')
+    detail = Attribute("Detailed text of this breadcrumb.")
 
     inside = Attribute(
-        'Next object up the chain. If not specified, the URL parent is used.')
+        "Next object up the chain. If not specified, the URL parent is used."
+    )
 
 
 class IMultiFacetedBreadcrumb(Interface):
@@ -252,14 +272,16 @@ class IMultiFacetedBreadcrumb(Interface):
 # Canonical URLs
 #
 
+
 class ICanonicalUrlData(Interface):
     """Tells you how to work out a canonical url for an object."""
 
     rootsite = Attribute(
-        'The root id to use.  None means to use the base of the current '
-        'request.')
+        "The root id to use.  None means to use the base of the current "
+        "request."
+    )
 
-    inside = Attribute('The object this path is relative to.  None for root.')
+    inside = Attribute("The object this path is relative to.  None for root.")
 
     path = Attribute('The path relative to "inside", not starting with a /.')
 
@@ -271,10 +293,13 @@ class NoCanonicalUrl(TypeError):
       - The object for which a URL was sought
       - The object that did not have ICanonicalUrlData
     """
+
     def __init__(self, object_url_requested_for, broken_link_in_chain):
-        TypeError.__init__(self, 'No url for %r because %r broke the chain.' %
-            (object_url_requested_for, broken_link_in_chain)
-            )
+        TypeError.__init__(
+            self,
+            "No url for %r because %r broke the chain."
+            % (object_url_requested_for, broken_link_in_chain),
+        )
 
 
 class IFavicon(Interface):
@@ -282,7 +307,8 @@ class IFavicon(Interface):
 
     path = TextLine(
         title="The name of the file containing the favicon data.",
-        required=True)
+        required=True,
+    )
     data = Bytes(title="The favicon data.", required=True)
 
 
@@ -292,44 +318,48 @@ class IFavicon(Interface):
 # is very Launchpad-specific. I suggest we split the interface and
 # implementation into two parts, having a different name for the webapp/ bits.
 class ILaunchBag(Interface):
-    person = Attribute('IPerson, or None')
-    projectgroup = Attribute('IProjectGroup, or None')
-    product = Attribute('IProduct, or None')
-    distribution = Attribute('IDistribution, or None')
-    distroseries = Attribute('IDistroSeries, or None')
-    distroarchseries = Attribute('IDistroArchSeries, or None')
-    sourcepackage = Attribute('ISourcepackage, or None')
+    person = Attribute("IPerson, or None")
+    projectgroup = Attribute("IProjectGroup, or None")
+    product = Attribute("IProduct, or None")
+    distribution = Attribute("IDistribution, or None")
+    distroseries = Attribute("IDistroSeries, or None")
+    distroarchseries = Attribute("IDistroArchSeries, or None")
+    sourcepackage = Attribute("ISourcepackage, or None")
     sourcepackagereleasepublishing = Attribute(
-        'ISourcepackageReleasePublishing, or None')
-    bug = Attribute('IBug, or None')
-    bugtask = Attribute('IBugTask, or None')
+        "ISourcepackageReleasePublishing, or None"
+    )
+    bug = Attribute("IBug, or None")
+    bugtask = Attribute("IBugTask, or None")
 
-    account = Attribute('Currently authenticated IAccount, or None')
-    user = Attribute('Currently authenticated IPerson, or None')
-    login = Attribute('The login used by the authenticated person, or None')
+    account = Attribute("Currently authenticated IAccount, or None")
+    user = Attribute("Currently authenticated IPerson, or None")
+    login = Attribute("The login used by the authenticated person, or None")
 
     time_zone = Attribute("The user's time zone")
 
     developer = Bool(
-        title='True if a member of the launchpad developers celebrity'
-        )
+        title="True if a member of the launchpad developers celebrity"
+    )
 
 
 class IOpenLaunchBag(ILaunchBag):
     def add(ob):
-        '''Stick the object into the correct attribute of the ILaunchBag,
-        or ignored, or whatever'''
+        """Stick the object into the correct attribute of the ILaunchBag,
+        or ignored, or whatever"""
+
     def clear():
-        '''Empty the bag'''
+        """Empty the bag"""
+
     def setLogin(login):
-        '''Set the login to the given value.'''
+        """Set the login to the given value."""
+
     def setDeveloper():
-        '''Set the developer flag.
+        """Set the developer flag.
 
         Because we use this during exception handling, we need this set
         and cached at the start of the transaction in case our database
         connection blows up.
-        '''
+        """
 
 
 class IInteractionExtras(Interface):
@@ -348,30 +378,39 @@ class IInteractionExtras(Interface):
         flag.  We can't check the feature flags early on in request processing
         because this can trigger nested db lookups.  See the docstring of
         `lp.services.webapp.servers.set_permit_timeout_from_features`
-        for more.""")
+        for more."""
+    )
 
     access_token = Attribute(
-        "The `IAccessToken` used to authenticate this interaction, if any.")
+        "The `IAccessToken` used to authenticate this interaction, if any."
+    )
 
 
 #
 # Request
 #
 
+
 class IBasicLaunchpadRequest(Interface):
     stepstogo = Attribute(
-        'The StepsToGo object for this request, allowing you to inspect and'
-        ' alter the remaining traversal steps.')
+        "The StepsToGo object for this request, allowing you to inspect and"
+        " alter the remaining traversal steps."
+    )
 
     traversed_objects = Attribute(
-        'List of traversed objects.  This is appended to during traversal.')
+        "List of traversed objects.  This is appended to during traversal."
+    )
 
     query_string_params = Attribute(
-        'A dictionary of the query string parameters.')
+        "A dictionary of the query string parameters."
+    )
 
     is_ajax = Bool(
-        title=_('Is ajax'), required=False, readonly=True,
-        description=_("Indicates whether the request is an XMLHttpRequest."))
+        title=_("Is ajax"),
+        required=False,
+        readonly=True,
+        description=_("Indicates whether the request is an XMLHttpRequest."),
+    )
 
     def getRootURL(rootsite):
         """Return this request's root URL.
@@ -428,22 +467,26 @@ class IBrowserFormNG(Interface):
 
 
 class ILaunchpadBrowserApplicationRequest(
-    IBasicLaunchpadRequest, IBrowserApplicationRequest):
+    IBasicLaunchpadRequest, IBrowserApplicationRequest
+):
     """The request interface to the application for LP browser requests."""
 
     form_ng = Object(
-        title='IBrowserFormNG object containing the submitted form data',
-        schema=IBrowserFormNG)
+        title="IBrowserFormNG object containing the submitted form data",
+        schema=IBrowserFormNG,
+    )
 
 
 class IPrincipalIdentifiedEvent(Interface):
     """An event that is sent after a principal has been recovered from the
     request's credentials.
     """
-    principal = Attribute('The principal')
-    request = Attribute('The request')
+
+    principal = Attribute("The principal")
+    request = Attribute("The request")
     login = Attribute(
-        'The login id that was used.  For example, an email address.')
+        "The login id that was used.  For example, an email address."
+    )
 
 
 class ILoggedInEvent(Interface):
@@ -452,14 +495,15 @@ class ILoggedInEvent(Interface):
     Exactly what this means will vary according to the type of login,
     primarily as to whether it is per-request or session-based.
     """
-    request = Attribute('The request')
+
+    request = Attribute("The request")
     login = Attribute(
-        'The login id that was used.  For example, an email address.')
+        "The login id that was used.  For example, an email address."
+    )
 
 
 @implementer(ILoggedInEvent)
 class CookieAuthLoggedInEvent:
-
     def __init__(self, request, login):
         self.request = request
         self.login = login
@@ -467,7 +511,6 @@ class CookieAuthLoggedInEvent:
 
 @implementer(IPrincipalIdentifiedEvent)
 class CookieAuthPrincipalIdentifiedEvent:
-
     def __init__(self, principal, request, login):
         self.principal = principal
         self.request = request
@@ -476,7 +519,6 @@ class CookieAuthPrincipalIdentifiedEvent:
 
 @implementer(ILoggedInEvent, IPrincipalIdentifiedEvent)
 class BasicAuthLoggedInEvent:
-
     def __init__(self, request, login, principal):
         # these one from ILoggedInEvent
         self.login = login
@@ -492,7 +534,6 @@ class ILoggedOutEvent(Interface):
 
 @implementer(ILoggedOutEvent)
 class LoggedOutEvent:
-
     def __init__(self, request):
         self.request = request
 
@@ -530,54 +571,73 @@ class IPlacelessLoginSource(IPrincipalSource):
 class OAuthPermission(DBEnumeratedType):
     """The permission granted by the user to the OAuth consumer."""
 
-    UNAUTHORIZED = DBItem(10, """
+    UNAUTHORIZED = DBItem(
+        10,
+        """
         No Access
 
         The application will not be allowed to access Launchpad on your
         behalf.
-        """)
+        """,
+    )
 
-    READ_PUBLIC = DBItem(20, """
+    READ_PUBLIC = DBItem(
+        20,
+        """
         Read Non-Private Data
 
         The application will be able to access Launchpad on your behalf
         but only for reading non-private data.
-        """)
+        """,
+    )
 
-    WRITE_PUBLIC = DBItem(30, """
+    WRITE_PUBLIC = DBItem(
+        30,
+        """
         Change Non-Private Data
 
         The application will be able to access Launchpad on your behalf
         for reading and changing non-private data.
-        """)
+        """,
+    )
 
-    READ_PRIVATE = DBItem(40, """
+    READ_PRIVATE = DBItem(
+        40,
+        """
         Read Anything
 
         The application will be able to access Launchpad on your behalf
         for reading anything, including private data.
-        """)
+        """,
+    )
 
-    WRITE_PRIVATE = DBItem(50, """
+    WRITE_PRIVATE = DBItem(
+        50,
+        """
         Change Anything
 
         The application will be able to access Launchpad on your behalf
         for reading and changing anything, including private data.
-        """)
+        """,
+    )
 
-    DESKTOP_INTEGRATION = DBItem(60, """
+    DESKTOP_INTEGRATION = DBItem(
+        60,
+        """
         Integrate an entire system
 
         Every application running on your desktop will have read-write
         access to your Launchpad account, including to your private
         data. You should not allow this unless you trust the computer
         you're using right now.
-        """)
+        """,
+    )
 
 
 class AccessLevel(DBEnumeratedType):
     """The level of access any given principal has."""
-    use_template(OAuthPermission, exclude='UNAUTHORIZED')
+
+    use_template(OAuthPermission, exclude="UNAUTHORIZED")
 
 
 class ILaunchpadPrincipal(IPrincipal):
@@ -588,22 +648,27 @@ class ILaunchpadPrincipal(IPrincipal):
 
     access_level = Choice(
         title=_("The level of access this principal has."),
-        vocabulary=AccessLevel, default=AccessLevel.WRITE_PRIVATE)
+        vocabulary=AccessLevel,
+        default=AccessLevel.WRITE_PRIVATE,
+    )
 
     account = Attribute("The IAccount the principal represents.")
 
     person = Attribute("The IPerson the principal represents.")
 
     person_name = Attribute(
-        "The name of the IPerson the principal represents.")
+        "The name of the IPerson the principal represents."
+    )
 
 
 #
 # Browser notifications
 #
 
+
 class BrowserNotificationLevel:
     """Matches the standard logging levels."""
+
     DEBUG = logging.DEBUG  # debugging message
     INFO = logging.INFO  # simple confirmation of a change
     WARNING = logging.WARNING  # action will not be successful unless you ...
@@ -613,13 +678,13 @@ class BrowserNotificationLevel:
 
 
 class INotification(Interface):
-    level = Int(title=_('Level of notification'), required=True)
-    message = Text(title=_('Message as an XHTML snippet'), required=True)
+    level = Int(title=_("Level of notification"), required=True)
+    message = Text(title=_("Message as an XHTML snippet"), required=True)
 
 
 class INotificationList(Interface):
 
-    created = Datetime(title=_('Time this notification was created'))
+    created = Datetime(title=_("Time this notification was created"))
 
     def append(notification):
         """Add an INotification to the list of notifications"""
@@ -640,8 +705,8 @@ class INotificationRequest(Interface):
             Notifications received from previous request as well as any
             notifications added in the current request
             """,
-        schema=INotificationList
-        )
+        schema=INotificationList,
+    )
 
 
 class INotificationResponse(Interface):
@@ -672,9 +737,9 @@ class INotificationResponse(Interface):
         """
 
     notifications = Object(
-            description="Notifications generated by current request",
-            schema=INotificationList
-            )
+        description="Notifications generated by current request",
+        schema=INotificationList,
+    )
 
     def addDebugNotification(msg):
         """Shortcut to addNotification(msg, DEBUG)."""
@@ -708,12 +773,14 @@ class IErrorReportEvent(IObjectEvent):
 class IErrorReportRequest(Interface):
     oopsid = TextLine(
         description="""an identifier for the exception, or None if no
-        exception has occurred""")
+        exception has occurred"""
+    )
 
 
 #
 # Batch Navigation
 #
+
 
 class ITableBatchNavigator(IBatchNavigator):
     """A batch navigator for tabular listings."""
@@ -723,12 +790,14 @@ class ITableBatchNavigator(IBatchNavigator):
     # <tal:foo condition="batch_nav/show_column/foo">
     show_column = Attribute(
         "A dict keyed by column name. If the value is True, that column will "
-        "be shown in the list, otherwise it won't.")
+        "be shown in the list, otherwise it won't."
+    )
 
 
 #
 # LaunchpadFormView widget layout
 #
+
 
 class IAlwaysSubmittedWidget(Interface):
     """A widget that is always submitted (such as a checkbox or radio
@@ -769,4 +838,88 @@ class FinishReadOnlyRequestEvent:
 class StormRangeFactoryError(Exception):
     """Raised when a Storm result set cannot be used for slicing by a
     StormRangeFactory.
+    """
+
+
+class IClientIdManager(Interface):
+    """Manages client identifiers."""
+
+    def getClientId(request):
+        """
+        Return the client id for the given request as a string.
+
+        If the request doesn't have an attached sessionId a new one will be
+        generated.
+
+        This will do whatever is possible to do the HTTP request to ensure
+        the session id will be preserved.  Depending on the specific method,
+        further action might be necessary on the part of the user.  See the
+        documentation for the specific implementation and its interfaces.
+        """
+
+
+class ISessionDataContainer(IReadMapping, IWriteMapping):
+    """
+    Stores data objects for sessions.
+
+    The object implementing this interface is responsible for expiring data
+    as it feels appropriate.
+
+    Usage::
+
+      session_data_container[client_id][product_id][key] = value
+
+    Note that this interface does not support the full mapping interface -
+    the keys need to remain secret so we can't give access to :meth:`keys`,
+    :meth:`values` etc.
+    """
+
+    def __getitem__(self, product_id):
+        """Return an `ISessionPkgData`."""
+
+    def __setitem__(self, product_id, value):
+        """Store an `ISessionPkgData`."""
+
+
+class ISession(Interface):
+    """A user session, indexed by client (from the request) and product."""
+
+    def __getitem__(product_id):
+        """Return the `ISessionPkgData` for this product ID.
+
+        .. caution::
+               This method implicitly creates a new session for the user if
+               it does not exist yet.
+        """
+
+    def get(product_id, default=None):
+        """
+        Return the relevant `ISessionPkgData` for this product ID, or
+        *default* if not available.
+        """
+
+
+class ISessionData(IReadMapping, IWriteMapping):
+    """
+    Storage for a particular client ID's session data.
+
+    Contains 0 or more `ISessionPkgData` instances.
+    """
+
+    # Note that only IReadMapping and IWriteMapping are implemented.
+    # We cannot give access to the keys, as they need to remain secret.
+
+    def __getitem__(self, client_id):
+        """Return an `ISessionPkgData`."""
+
+    def __setitem__(self, client_id, session_pkg_data):
+        """Store an `ISessionPkgData`."""
+
+
+class ISessionPkgData(IMapping):
+    """
+    Storage for a particular client ID and product ID's session data.
+
+    Data is stored persistently and transactionally.  Data stored must
+    be persistent or picklable.
     """

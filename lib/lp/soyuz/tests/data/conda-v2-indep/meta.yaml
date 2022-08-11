@@ -1,0 +1,11 @@
+package:
+    name: conda-v2-indep
+    version: 0.1
+build:
+    noarch: generic
+outputs:
+    - name: conda-v2-indep
+      type: conda_v2
+about:
+    summary: Example summary
+    description: Example description

@@ -4,9 +4,9 @@
 """A class for the top-level link to the services factory."""
 
 __all__ = [
-    'IServicesLink',
-    'ServicesLink',
-    ]
+    "IServicesLink",
+    "ServicesLink",
+]
 
 from lazr.restful.interfaces import ITopLevelEntryLink
 from zope.interface import implementer
@@ -23,9 +23,9 @@ class IServicesLink(ITopLevelEntryLink, ICanonicalUrlData):
 class ServicesLink:
     """The top-level link to the services factory."""
 
-    link_name = 'services'
+    link_name = "services"
     entry_type = IServiceFactory
 
     inside = None
-    path = 'services'
-    rootsite = 'api'
+    path = "services"
+    rootsite = "api"

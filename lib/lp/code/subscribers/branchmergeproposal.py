@@ -15,7 +15,7 @@ from lp.code.interfaces.branchmergeproposal import (
     IMergeProposalUpdatedEmailJobSource,
     IReviewRequestedEmailJobSource,
     IUpdatePreviewDiffJobSource,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 from lp.services.features import getFeatureFlag
 from lp.services.utils import text_delta
@@ -41,21 +41,24 @@ def _compose_merge_proposal_webhook_payload(merge_proposal):
         "whiteboard",
         "description",
         "preview_diff",
-        ]
+    ]
     return compose_webhook_payload(
-        IBranchMergeProposal, merge_proposal, fields)
+        IBranchMergeProposal, merge_proposal, fields
+    )
 
 
 def _trigger_webhook(merge_proposal, payload):
     payload = dict(payload)
     payload["merge_proposal"] = canonical_url(
-        merge_proposal, force_local_path=True)
+        merge_proposal, force_local_path=True
+    )
     if merge_proposal.target_branch is not None:
         target = merge_proposal.target_branch
     else:
         target = merge_proposal.target_git_repository
     getUtility(IWebhookSet).trigger(
-        target, "merge-proposal:0.1", payload, context=merge_proposal)
+        target, "merge-proposal:0.1", payload, context=merge_proposal
+    )
 
 
 def merge_proposal_created(merge_proposal, event):
@@ -68,7 +71,7 @@ def merge_proposal_created(merge_proposal, event):
         payload = {
             "action": "created",
             "new": _compose_merge_proposal_webhook_payload(merge_proposal),
-            }
+        }
         _trigger_webhook(merge_proposal, payload)
 
 
@@ -78,8 +81,7 @@ def merge_proposal_needs_review(merge_proposal, event):
     This event is raised when the proposal moves from work in progress to
     needs review.
     """
-    getUtility(IMergeProposalNeedsReviewEmailJobSource).create(
-        merge_proposal)
+    getUtility(IMergeProposalNeedsReviewEmailJobSource).create(merge_proposal)
 
 
 def merge_proposal_modified(merge_proposal, event):
@@ -96,30 +98,37 @@ def merge_proposal_modified(merge_proposal, event):
 
     in_progress_states = (
         BranchMergeProposalStatus.WORK_IN_PROGRESS,
-        BranchMergeProposalStatus.NEEDS_REVIEW)
+        BranchMergeProposalStatus.NEEDS_REVIEW,
+    )
 
     # If the merge proposal was work in progress and is now needs review,
     # then we don't want to send out an email as the needs review email will
     # cover that.
-    if (old_status != BranchMergeProposalStatus.WORK_IN_PROGRESS or
-            new_status not in in_progress_states):
+    if (
+        old_status != BranchMergeProposalStatus.WORK_IN_PROGRESS
+        or new_status not in in_progress_states
+    ):
         # Create a delta of the changes.  If there are no changes to report,
         # then we're done.
         delta = BranchMergeProposalNoPreviewDiffDelta.construct(
-            event.object_before_modification, merge_proposal)
+            event.object_before_modification, merge_proposal
+        )
         if delta is not None:
             changes = text_delta(
-                delta, delta.delta_values, delta.new_values, delta.interface)
+                delta, delta.delta_values, delta.new_values, delta.interface
+            )
             # Now create the job to send the email.
             getUtility(IMergeProposalUpdatedEmailJobSource).create(
-                merge_proposal, changes, from_person)
+                merge_proposal, changes, from_person
+            )
     if getFeatureFlag(BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG):
         payload = {
             "action": "modified",
             "old": _compose_merge_proposal_webhook_payload(
-                event.object_before_modification),
+                event.object_before_modification
+            ),
             "new": _compose_merge_proposal_webhook_payload(merge_proposal),
-            }
+        }
         # Some fields may not be in the before-modification snapshot; take
         # values for these from the new object instead.
         for field in payload["old"]:
@@ -145,5 +154,5 @@ def merge_proposal_deleted(merge_proposal, event):
         payload = {
             "action": "deleted",
             "old": _compose_merge_proposal_webhook_payload(merge_proposal),
-            }
+        }
         _trigger_webhook(merge_proposal, payload)

@@ -6,17 +6,11 @@
 __all__ = [
     "IBugBranch",
     "IBugBranchSet",
-    ]
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import ReferenceChoice
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Object
 
 from lp import _
@@ -26,27 +20,30 @@ from lp.registry.interfaces.person import IPerson
 from lp.services.fields import BugField
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugBranch(IHasBug):
     """A branch linked to a bug."""
 
-    bug = exported(
-        BugField(
-            title=_("Bug #"),
-            required=True, readonly=True))
+    bug = exported(BugField(title=_("Bug #"), required=True, readonly=True))
     branch = exported(
         ReferenceChoice(
-            title=_("Branch"), schema=IBranch,
-            vocabulary="Branch", required=True))
+            title=_("Branch"),
+            schema=IBranch,
+            vocabulary="Branch",
+            required=True,
+        )
+    )
 
     datecreated = Attribute("The date on which I was created.")
     registrant = Object(
-        schema=IPerson, readonly=True, required=True,
-        title=_("The person who linked the bug to the branch"))
+        schema=IPerson,
+        readonly=True,
+        required=True,
+        title=_("The person who linked the bug to the branch"),
+    )
 
 
 class IBugBranchSet(Interface):
-
     def getBranchesWithVisibleBugs(branches, user):
         """Find which of `branches` are for bugs that `user` can see.
 

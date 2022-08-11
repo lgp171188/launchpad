@@ -4,9 +4,9 @@
 """Interface for the XML-RPC authentication server."""
 
 __all__ = [
-    'IAuthServer',
-    'IAuthServerApplication',
-    ]
+    "IAuthServer",
+    "IAuthServerApplication",
+]
 
 
 from zope.interface import Interface

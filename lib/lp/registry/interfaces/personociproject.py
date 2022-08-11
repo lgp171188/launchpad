@@ -4,9 +4,9 @@
 """A person's view on an OCI project."""
 
 __all__ = [
-    'IPersonOCIProject',
-    'IPersonOCIProjectFactory',
-    ]
+    "IPersonOCIProject",
+    "IPersonOCIProjectFactory",
+]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface

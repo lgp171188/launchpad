@@ -7,29 +7,18 @@ Pillars are currently Product, ProjectGroup and Distribution.
 """
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_read_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    List,
-    TextLine,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Int, List, TextLine
 
 from lp import _
 from lp.app.interfaces.launchpad import IHeadingContext
@@ -37,39 +26,46 @@ from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
     SpecificationSharingPolicy,
-    )
-
+)
 
 __all__ = [
-    'IHasAliases',
-    'IHasSharingPolicies',
-    'IPillar',
-    'IPillarName',
-    'IPillarNameSet',
-    'IPillarPerson',
-    'IPillarPersonFactory',
-    ]
+    "IHasAliases",
+    "IHasSharingPolicies",
+    "IPillar",
+    "IPillarName",
+    "IPillarNameSet",
+    "IPillarPerson",
+    "IPillarPersonFactory",
+]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IPillar(IHeadingContext):
     """An object that might be a project, a project group, or a distribution.
 
     This is a polymorphic object served by the pillar set. Check the
     individual object to see what type it is.
     """
+
     active = exported(
-        Bool(title=_('Active'),
-             description=_("Whether or not this item is active.")))
-    pillar_category = Attribute('The category title applicable to the pillar')
+        Bool(
+            title=_("Active"),
+            description=_("Whether or not this item is active."),
+        )
+    )
+    pillar_category = Attribute("The category title applicable to the pillar")
 
 
 class IHasAliases(Interface):
 
     aliases = List(
-        title=_('Aliases'), required=False, readonly=True,
+        title=_("Aliases"),
+        required=False,
+        readonly=True,
         description=_(
-            "The names (as strings) which are aliases to this pillar."))
+            "The names (as strings) which are aliases to this pillar."
+        ),
+    )
 
     # Instead of a method for setting aliases we could make the 'aliases'
     # attribute writable, but we decided to go with a method because this
@@ -90,21 +86,37 @@ class IHasAliases(Interface):
 
 class IHasSharingPolicies(Interface):
     """Sharing policies used to define bug and branch visibility rules."""
-    branch_sharing_policy = exported(Choice(
-        title=_('Branch sharing policy'),
-        description=_("Sharing policy for this pillar's branches."),
-        required=False, readonly=True, vocabulary=BranchSharingPolicy),
-        as_of='devel')
-    bug_sharing_policy = exported(Choice(
-        title=_('Bug sharing policy'),
-        description=_("Sharing policy for this pillar's bugs."),
-        required=False, readonly=True, vocabulary=BugSharingPolicy),
-        as_of='devel')
-    specification_sharing_policy = exported(Choice(
-        title=_('Blueprint sharing policy'),
-        description=_("Sharing policy for this project's specifications."),
-        required=False, readonly=True, vocabulary=SpecificationSharingPolicy),
-        as_of='devel')
+
+    branch_sharing_policy = exported(
+        Choice(
+            title=_("Branch sharing policy"),
+            description=_("Sharing policy for this pillar's branches."),
+            required=False,
+            readonly=True,
+            vocabulary=BranchSharingPolicy,
+        ),
+        as_of="devel",
+    )
+    bug_sharing_policy = exported(
+        Choice(
+            title=_("Bug sharing policy"),
+            description=_("Sharing policy for this pillar's bugs."),
+            required=False,
+            readonly=True,
+            vocabulary=BugSharingPolicy,
+        ),
+        as_of="devel",
+    )
+    specification_sharing_policy = exported(
+        Choice(
+            title=_("Blueprint sharing policy"),
+            description=_("Sharing policy for this project's specifications."),
+            required=False,
+            readonly=True,
+            vocabulary=SpecificationSharingPolicy,
+        ),
+        as_of="devel",
+    )
 
 
 class IPillarName(Interface):
@@ -113,16 +125,17 @@ class IPillarName(Interface):
     This includes the pillar object, as well as information about whether
     it's a project, project group, or distribution.
     """
-    id = Int(title=_('The PillarName ID'))
+
+    id = Int(title=_("The PillarName ID"))
     name = TextLine(title="The name.")
-    product = Attribute('The project that has this name, or None')
-    projectgroup = Attribute('The project group that has this name, or None')
-    distribution = Attribute('The distribution that has this name, or None')
-    active = Attribute('The pillar is active')
-    pillar = Attribute('The pillar object')
+    product = Attribute("The project that has this name, or None")
+    projectgroup = Attribute("The project group that has this name, or None")
+    distribution = Attribute("The distribution that has this name, or None")
+    active = Attribute("The pillar is active")
+    pillar = Attribute("The pillar object")
 
 
-@exported_as_webservice_entry('pillars')
+@exported_as_webservice_entry("pillars", as_of="beta")
 class IPillarNameSet(Interface):
     """An object for searching across projects, project groups, and distros.
 
@@ -154,14 +167,19 @@ class IPillarNameSet(Interface):
         """Return the total number of Pillars matching :text:"""
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(text=TextLine(title="Search text"),
-                          limit=Int(title="Maximum number of items to "
-                                    "return. This is a hard limit: any "
-                                    "pagination you request will happen "
-                                    "within this limit.",
-                                    required=False))
+    @operation_parameters(
+        text=TextLine(title="Search text"),
+        limit=Int(
+            title="Maximum number of items to "
+            "return. This is a hard limit: any "
+            "pagination you request will happen "
+            "within this limit.",
+            required=False,
+        ),
+    )
     @operation_returns_collection_of(IPillar)
     @export_read_operation()
+    @operation_for_version("beta")
     def search(user, text, limit):
         """Return Projects/Project groups/Distros matching :text:.
 
@@ -178,11 +196,14 @@ class IPillarNameSet(Interface):
 
     featured_projects = exported(
         CollectionField(
-            title=_('Projects, project groups, and distributions that are '
-                    'featured on the site.'),
-            value_type=Reference(schema=IPillar)),
-        exported_as="featured_pillars"
-        )
+            title=_(
+                "Projects, project groups, and distributions that are "
+                "featured on the site."
+            ),
+            value_type=Reference(schema=IPillar),
+        ),
+        exported_as="featured_pillars",
+    )
 
 
 class IPillarPerson(Interface):

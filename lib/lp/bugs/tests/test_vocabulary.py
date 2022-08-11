@@ -6,16 +6,14 @@
 from lp.bugs.vocabularies import (
     BugTaskMilestoneVocabulary,
     UsesBugsDistributionVocabulary,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class UsesBugsDistributionVocabularyTestCase(TestCaseWithFactory):
     """Test that the vocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def test_init_with_distribution(self):
@@ -44,21 +42,24 @@ class UsesBugsDistributionVocabularyTestCase(TestCaseWithFactory):
         vocabulary = UsesBugsDistributionVocabulary()
         self.assertFalse(
             distro_less_bugs in vocabulary,
-            "Vocabulary contains distros that do not use Launchpad Bugs.")
+            "Vocabulary contains distros that do not use Launchpad Bugs.",
+        )
         self.assertTrue(
             distro_uses_bugs in vocabulary,
-            "Vocabulary missing distros that use Launchpad Bugs.")
+            "Vocabulary missing distros that use Launchpad Bugs.",
+        )
 
     def test_contains_context_distro(self):
         # The vocabulary contains the context distro even it it does not
         # use Launchpad to track bugs. The distro may have tracked bugs
-        # in the past so it is a legitimate choise for historic data.
+        # in the past so it is a legitimate choice for historic data.
         distro_less_bugs = self.factory.makeDistribution()
         vocabulary = UsesBugsDistributionVocabulary(distro_less_bugs)
         self.assertFalse(distro_less_bugs.official_malone)
         self.assertTrue(
             distro_less_bugs in vocabulary,
-            "Vocabulary missing context distro.")
+            "Vocabulary missing context distro.",
+        )
 
     def test_contains_missing_context(self):
         # The vocabulary does not contain the context if the
@@ -66,19 +67,21 @@ class UsesBugsDistributionVocabularyTestCase(TestCaseWithFactory):
         thing = self.factory.makeProduct()
         vocabulary = UsesBugsDistributionVocabulary(thing)
         self.assertFalse(
-            thing in vocabulary,
-            "Vocabulary contains a non-distribution.")
+            thing in vocabulary, "Vocabulary contains a non-distribution."
+        )
 
 
 class TestBugTaskMilestoneVocabulary(TestCaseWithFactory):
     """Test that the BugTaskMilestoneVocabulary behaves as expected."""
+
     layer = DatabaseFunctionalLayer
 
     def _assert_milestones(self, target, milestone):
         bugtask = self.factory.makeBugTask(target=target)
         vocabulary = BugTaskMilestoneVocabulary(bugtask)
         self.assertEqual(
-            [term.title for term in vocabulary], [milestone.displayname])
+            [term.title for term in vocabulary], [milestone.displayname]
+        )
 
     def testUpstreamBugTaskMilestoneVocabulary(self):
         """Test of MilestoneVocabulary for a upstraem bugtask."""
@@ -119,7 +122,8 @@ class TestBugTaskMilestoneVocabulary(TestCaseWithFactory):
         # Only active milestones are returned.
         self.factory.makeMilestone(distribution=distro, active=False)
         distro_sourcepackage = self.factory.makeDistributionSourcePackage(
-            distribution=distro)
+            distribution=distro
+        )
         self._assert_milestones(distro_sourcepackage, milestone)
 
     def testSourcePackageBugTaskMilestoneVocabulary(self):
@@ -129,7 +133,8 @@ class TestBugTaskMilestoneVocabulary(TestCaseWithFactory):
         # Only active milestones are returned.
         self.factory.makeMilestone(distroseries=distroseries, active=False)
         sourcepackage = self.factory.makeSourcePackage(
-            distroseries=distroseries)
+            distroseries=distroseries
+        )
         self._assert_milestones(sourcepackage, milestone)
 
     def test_sorted(self):
@@ -141,6 +146,11 @@ class TestBugTaskMilestoneVocabulary(TestCaseWithFactory):
         bugtask = self.factory.makeBugTask(target=product)
         vocabulary = BugTaskMilestoneVocabulary(bugtask)
         self.assertEqual(
-            [milestone2.displayname, milestone4.displayname,
-             milestone3.displayname, milestone1.displayname],
-            [term.title for term in vocabulary])
+            [
+                milestone2.displayname,
+                milestone4.displayname,
+                milestone3.displayname,
+                milestone1.displayname,
+            ],
+            [term.title for term in vocabulary],
+        )

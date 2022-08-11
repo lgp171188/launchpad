@@ -16,15 +16,19 @@ class TestPOFileTranslator(TestCaseWithFactory):
     def test_getForPersonPOFile_returns_None_if_not_found(self):
         self.assertIsNone(
             getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-                self.factory.makePerson(), self.factory.makePOFile()))
+                self.factory.makePerson(), self.factory.makePOFile()
+            )
+        )
 
     def test_getForPersonPOFile_finds_record(self):
         pofile = self.factory.makePOFile()
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         tm = self.factory.makeCurrentTranslationMessage(
-            potmsgset=potmsgset, language=pofile.language)
+            potmsgset=potmsgset, language=pofile.language
+        )
         poft = getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-            tm.submitter, pofile)
+            tm.submitter, pofile
+        )
         self.assertEqual(pofile, poft.pofile)
         self.assertEqual(tm.submitter, poft.person)
 
@@ -32,27 +36,35 @@ class TestPOFileTranslator(TestCaseWithFactory):
         pofile = self.factory.makePOFile()
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         self.factory.makeCurrentTranslationMessage(
-            potmsgset=potmsgset, language=pofile.language)
+            potmsgset=potmsgset, language=pofile.language
+        )
         self.assertIsNone(
             getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-                self.factory.makePerson(), pofile))
+                self.factory.makePerson(), pofile
+            )
+        )
 
     def test_getForPersonPOFile_ignores_other_POFiles(self):
-        pofile = self.factory.makePOFile('nl')
+        pofile = self.factory.makePOFile("nl")
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         tm = self.factory.makeCurrentTranslationMessage(
-            potmsgset=potmsgset, language=pofile.language)
-        other_pofile = self.factory.makePOFile('de', pofile.potemplate)
+            potmsgset=potmsgset, language=pofile.language
+        )
+        other_pofile = self.factory.makePOFile("de", pofile.potemplate)
         self.assertIsNone(
             getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-                tm.submitter, other_pofile))
+                tm.submitter, other_pofile
+            )
+        )
 
     def test_getForTemplate_finds_all_for_template(self):
         pofile = self.factory.makePOFile()
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         tm = self.factory.makeCurrentTranslationMessage(
-            potmsgset=potmsgset, language=pofile.language)
+            potmsgset=potmsgset, language=pofile.language
+        )
         [poft] = list(
-            getUtility(IPOFileTranslatorSet).getForTemplate(pofile.potemplate))
+            getUtility(IPOFileTranslatorSet).getForTemplate(pofile.potemplate)
+        )
         self.assertEqual(pofile.potemplate, poft.pofile.potemplate)
         self.assertEqual(tm.submitter, poft.person)

@@ -14,9 +14,11 @@ class KarmaSampleDataTestCase(unittest.TestCase):
         # the past that they won't decay over time.
         con = self.layer.connect()
         cur = con.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT COUNT(*) FROM Karma
             WHERE datecreated > '2002-01-01 00:00'::timestamp
-            """)
+            """
+        )
         dud_rows = cur.fetchone()[0]
-        self.assertEqual(dud_rows, 0, 'Karma time bombs added to sampledata')
+        self.assertEqual(dud_rows, 0, "Karma time bombs added to sampledata")

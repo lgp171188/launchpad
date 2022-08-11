@@ -45,7 +45,7 @@
       proposal.
     </p>
     <p tal:condition="view/is_series">
-      You can also use this sytem for <strong>release management</strong>,
+      You can also use this system for <strong>release management</strong>,
       identifying the specific feature goals of any major release and then
       tracking your progress towards completion of all of those goals.
       Currently, no blueprints have been proposed as feature goals

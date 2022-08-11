@@ -7,30 +7,16 @@ import email.message
 import errno
 import os
 
-from testtools.matchers import (
-    Equals,
-    IsInstance,
-    raises,
-    )
+from testtools.matchers import Equals, IsInstance, raises
 
-from lp.bugs.externalbugtracker.debbugs import (
-    DebBugs,
-    DebBugsDatabaseNotFound,
-    )
-from lp.bugs.interfaces.bugtask import (
-    BugTaskImportance,
-    BugTaskStatus,
-    )
-from lp.bugs.scripts.debbugs import (
-    SummaryParseError,
-    SummaryVersionError,
-    )
+from lp.bugs.externalbugtracker.debbugs import DebBugs, DebBugsDatabaseNotFound
+from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
+from lp.bugs.scripts.debbugs import SummaryParseError, SummaryVersionError
 from lp.services.compat import message_as_bytes
 from lp.testing import TestCase
 
 
 class TestDebBugs(TestCase):
-
     def setUp(self):
         super().setUp()
         self.tempdir = self.makeTemporaryDirectory()
@@ -78,9 +64,12 @@ class TestDebBugs(TestCase):
         self.check_status("1", BugTaskStatus.CONFIRMED)
 
     def test_status_forwarded_to(self):
-        self.make_bug_summary("1", headers={
-            "Forwarded-To": "https://bugs.launchpad.net/ubuntu/+bug/1",
-            })
+        self.make_bug_summary(
+            "1",
+            headers={
+                "Forwarded-To": "https://bugs.launchpad.net/ubuntu/+bug/1",
+            },
+        )
         self.check_status("1", BugTaskStatus.CONFIRMED)
 
     def test_status_moreinfo(self):
@@ -92,9 +81,12 @@ class TestDebBugs(TestCase):
         self.check_status("1", BugTaskStatus.WONTFIX)
 
     def test_status_done(self):
-        self.make_bug_summary("1", headers={
-            "Done": "A Maintainer <a.maintainer@example.com>",
-            })
+        self.make_bug_summary(
+            "1",
+            headers={
+                "Done": "A Maintainer <a.maintainer@example.com>",
+            },
+        )
         self.check_status("1", BugTaskStatus.FIXRELEASED)
 
     def test_severity_missing(self):
@@ -117,8 +109,9 @@ class TestDebBugs(TestCase):
         """Initial format without version marker is rejected"""
         self.make_bug_summary("1", format_version=1)
         tracker = self.get_tracker()
-        self.assertThat(lambda: tracker.getRemoteStatus("1"),
-            raises(SummaryParseError))
+        self.assertThat(
+            lambda: tracker.getRemoteStatus("1"), raises(SummaryParseError)
+        )
         tracker.getRemoteImportance("1")
 
     def test_format_version_3(self):
@@ -132,28 +125,36 @@ class TestDebBugs(TestCase):
         """A hypothetical summary format version 4 is rejected"""
         self.make_bug_summary("1", format_version=4)
         tracker = self.get_tracker()
-        self.assertThat(lambda: tracker.getRemoteStatus("1"),
-            raises(SummaryVersionError))
+        self.assertThat(
+            lambda: tracker.getRemoteStatus("1"), raises(SummaryVersionError)
+        )
         tracker.getRemoteImportance("1")
 
     def test_non_ascii_v2(self):
         """Format-Version 2 RFC 1522 encoding on headers should not break"""
-        self.make_bug_summary("1", headers={
-            "Submitter": "=?UTF-8?Q?Jes=C3=BAs?= <jesus@example.com>",
-            "Subject": "Add =?UTF-8?Q?Jes=C3=BAs?= as a Debian Maintainer",
-            "Package": "debian-maintainers",
-            })
+        self.make_bug_summary(
+            "1",
+            headers={
+                "Submitter": "=?UTF-8?Q?Jes=C3=BAs?= <jesus@example.com>",
+                "Subject": "Add =?UTF-8?Q?Jes=C3=BAs?= as a Debian Maintainer",
+                "Package": "debian-maintainers",
+            },
+        )
         tracker = self.get_tracker()
         self.assertThat(tracker.getRemoteStatus("1"), IsInstance(str))
         self.assertThat(tracker.getRemoteImportance("1"), IsInstance(str))
 
     def test_non_ascii_v3(self):
         """Format-Version 2 UTF-8 encoding on headers should not break"""
-        self.make_bug_summary("1", format_version=3, headers={
-            "Submitter": "Jes\xc3\xbas <jesus@example.com>",
-            "Subject": "Add Jes\xc3\xbas as a Debian Maintainer",
-            "Package": "debian-maintainers",
-            })
+        self.make_bug_summary(
+            "1",
+            format_version=3,
+            headers={
+                "Submitter": "Jes\xc3\xbas <jesus@example.com>",
+                "Subject": "Add Jes\xc3\xbas as a Debian Maintainer",
+                "Package": "debian-maintainers",
+            },
+        )
         tracker = self.get_tracker()
         self.assertThat(tracker.getRemoteStatus("1"), IsInstance(str))
         self.assertThat(tracker.getRemoteImportance("1"), IsInstance(str))

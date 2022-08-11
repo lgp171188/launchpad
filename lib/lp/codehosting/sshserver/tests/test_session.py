@@ -8,17 +8,14 @@ from twisted.conch.ssh import connection
 from twisted.internet.process import ProcessExitedAlready
 from twisted.internet.protocol import ProcessProtocol
 
-from lp.codehosting import (
-    get_brz_path,
-    get_BRZ_PLUGIN_PATH_for_subprocess,
-    )
+from lp.codehosting import get_brz_path, get_BRZ_PLUGIN_PATH_for_subprocess
 from lp.codehosting.sshserver.daemon import CodehostingAvatar
 from lp.codehosting.sshserver.session import (
     ExecOnlySession,
     ForbiddenCommand,
-    lookup_command_template,
     RestrictedExecOnlySession,
-    )
+    lookup_command_template,
+)
 from lp.codehosting.tests.helpers import AvatarTestCase
 from lp.services.config import config
 from lp.testing import TestCase
@@ -32,14 +29,25 @@ class MockReactor:
     def __init__(self):
         self.log = []
 
-    def spawnProcess(self, protocol, executable, args, env=None, path=None,
-                     uid=None, gid=None, usePTY=0, childFDs=None):
-        self.log.append((protocol, executable, args, env, path, uid, gid,
-                         usePTY, childFDs))
+    def spawnProcess(
+        self,
+        protocol,
+        executable,
+        args,
+        env=None,
+        path=None,
+        uid=None,
+        gid=None,
+        usePTY=0,
+        childFDs=None,
+    ):
+        self.log.append(
+            (protocol, executable, args, env, path, uid, gid, usePTY, childFDs)
+        )
         return MockProcessTransport(executable)
 
     def addReader(self, reader):
-        self.log.append(('addReader', reader))
+        self.log.append(("addReader", reader))
 
 
 class MockSSHSession:
@@ -49,7 +57,7 @@ class MockSSHSession:
         self.log = log
 
     def writeExtended(self, channel, data):
-        self.log.append(('writeExtended', channel, data))
+        self.log.append(("writeExtended", channel, data))
 
 
 class MockProcessTransport:
@@ -64,26 +72,26 @@ class MockProcessTransport:
         self.status = None
 
     def closeStdin(self):
-        self.log.append(('closeStdin',))
+        self.log.append(("closeStdin",))
 
     def loseConnection(self):
-        self.log.append(('loseConnection',))
+        self.log.append(("loseConnection",))
 
     def childConnectionLost(self, childFD, reason=None):
-        self.log.append(('childConnectionLost', childFD, reason))
+        self.log.append(("childConnectionLost", childFD, reason))
 
     def signalProcess(self, signal):
-        if self._executable == b'raise-os-error':
+        if self._executable == b"raise-os-error":
             raise OSError()
-        if self._executable == b'already-terminated':
+        if self._executable == b"already-terminated":
             raise ProcessExitedAlready()
-        self.log.append(('signalProcess', signal))
+        self.log.append(("signalProcess", signal))
 
     def write(self, data):
-        self.log.append(('write', data))
+        self.log.append(("write", data))
 
     def processEnded(self, status):
-        self.log.append(('processEnded', status))
+        self.log.append(("processEnded", status))
 
 
 class TestExecOnlySession(AvatarTestCase):
@@ -112,24 +120,33 @@ class TestExecOnlySession(AvatarTestCase):
 
     def test_openShellNotImplemented(self):
         # openShell closes the connection.
-        protocol = MockProcessTransport(b'bash')
+        protocol = MockProcessTransport(b"bash")
         self.session.openShell(protocol)
         self.assertEqual(
-            [('writeExtended', connection.EXTENDED_DATA_STDERR,
-              'No shells on this server.\r\n'),
-             ('loseConnection',)],
-            protocol.log)
+            [
+                (
+                    "writeExtended",
+                    connection.EXTENDED_DATA_STDERR,
+                    "No shells on this server.\r\n",
+                ),
+                ("loseConnection",),
+            ],
+            protocol.log,
+        )
 
     def test_windowChangedNotImplemented(self):
         # windowChanged raises a NotImplementedError. It doesn't matter what
         # we pass it.
-        self.assertRaises(NotImplementedError,
-                          self.session.windowChanged, None)
+        self.assertRaises(
+            NotImplementedError, self.session.windowChanged, None
+        )
 
     def test_providesISession(self):
         # ExecOnlySession must provide ISession.
-        self.assertTrue(ISession.providedBy(self.session),
-                        "ExecOnlySession doesn't implement ISession")
+        self.assertTrue(
+            ISession.providedBy(self.session),
+            "ExecOnlySession doesn't implement ISession",
+        )
 
     def test_closedDoesNothingWhenNoCommand(self):
         # When no process has been created, 'closed' is a no-op.
@@ -144,11 +161,12 @@ class TestExecOnlySession(AvatarTestCase):
         # inside, it tells the process transport to end the connection between
         # the SSH server and the child process.
         protocol = ProcessProtocol()
-        self.session.execCommand(protocol, b'cat /etc/hostname')
+        self.session.execCommand(protocol, b"cat /etc/hostname")
         self.session.closed()
         self.assertEqual(
-            [('signalProcess', 'HUP'), ('loseConnection',)],
-            self.session._transport.log)
+            [("signalProcess", "HUP"), ("loseConnection",)],
+            self.session._transport.log,
+        )
 
     def test_closedDisconnectsIfProcessCantBeTerminated(self):
         # 'closed' still calls 'loseConnection' on the transport, even if the
@@ -156,11 +174,9 @@ class TestExecOnlySession(AvatarTestCase):
         protocol = ProcessProtocol()
         # MockTransport will raise an OSError on signalProcess if the executed
         # command is 'raise-os-error'.
-        self.session.execCommand(protocol, b'raise-os-error')
+        self.session.execCommand(protocol, b"raise-os-error")
         self.session.closed()
-        self.assertEqual(
-            [('loseConnection',)],
-            self.session._transport.log)
+        self.assertEqual([("loseConnection",)], self.session._transport.log)
 
     def test_closedDisconnectsIfProcessAlreadyTerminated(self):
         # 'closed' still calls 'loseConnection' on the transport, even if the
@@ -168,27 +184,40 @@ class TestExecOnlySession(AvatarTestCase):
         protocol = ProcessProtocol()
         # MockTransport will raise a ProcessExitedAlready on signalProcess if
         # the executed command is 'already-terminated'.
-        self.session.execCommand(protocol, b'already-terminated')
+        self.session.execCommand(protocol, b"already-terminated")
         self.session.closed()
-        self.assertEqual([('loseConnection',)], self.session._transport.log)
+        self.assertEqual([("loseConnection",)], self.session._transport.log)
 
     def test_getCommandToRunSplitsCommandLine(self):
         # getCommandToRun takes a command line and splits it into the name of
         # an executable to run and a sequence of arguments.
-        command = b'cat foo bar'
+        command = b"cat foo bar"
         executable, arguments = self.session.getCommandToRun(command)
-        self.assertEqual(b'cat', executable)
-        self.assertEqual([b'cat', b'foo', b'bar'], list(arguments))
+        self.assertEqual(b"cat", executable)
+        self.assertEqual([b"cat", b"foo", b"bar"], list(arguments))
 
     def test_execCommandSpawnsProcess(self):
         # ExecOnlySession.execCommand spawns the appropriate process.
         protocol = ProcessProtocol()
-        command = b'cat /etc/hostname'
+        command = b"cat /etc/hostname"
         self.session.execCommand(protocol, command)
         executable, arguments = self.session.getCommandToRun(command)
-        self.assertEqual([(protocol, executable, arguments, None, None,
-                           None, None, 0, None)],
-                         self.reactor.log)
+        self.assertEqual(
+            [
+                (
+                    protocol,
+                    executable,
+                    arguments,
+                    None,
+                    None,
+                    None,
+                    None,
+                    0,
+                    None,
+                )
+            ],
+            self.reactor.log,
+        )
 
     def test_eofReceivedDoesNothingWhenNoCommand(self):
         # When no process has been created, 'eofReceived' is a no-op.
@@ -200,20 +229,23 @@ class TestExecOnlySession(AvatarTestCase):
         # 'eofReceived' closes standard input when called while a command is
         # running.
         protocol = ProcessProtocol()
-        self.session.execCommand(protocol, b'cat /etc/hostname')
+        self.session.execCommand(protocol, b"cat /etc/hostname")
         self.session.eofReceived()
-        self.assertEqual([('closeStdin',)], self.session._transport.log)
+        self.assertEqual([("closeStdin",)], self.session._transport.log)
 
     def test_getAvatarAdapter(self):
         # getAvatarAdapter is a convenience classmethod so that
         # ExecOnlySession can be easily registered as an adapter for Conch
         # avatars.
         from twisted.internet import reactor
+
         adapter = ExecOnlySession.getAvatarAdapter()
         session = adapter(self.avatar)
-        self.assertTrue(isinstance(session, ExecOnlySession),
-                        "ISession(avatar) doesn't adapt to ExecOnlySession. "
-                        "Got %r instead." % (session,))
+        self.assertTrue(
+            isinstance(session, ExecOnlySession),
+            "ISession(avatar) doesn't adapt to ExecOnlySession. "
+            "Got %r instead." % (session,),
+        )
         self.assertIs(self.avatar, session.avatar)
         self.assertIs(reactor, session.reactor)
 
@@ -221,22 +253,34 @@ class TestExecOnlySession(AvatarTestCase):
         # The environment for the executed process can be specified in the
         # ExecOnlySession constructor.
         session = ExecOnlySession(
-            self.avatar, self.reactor, environment={'FOO': 'BAR'})
+            self.avatar, self.reactor, environment={"FOO": "BAR"}
+        )
         protocol = ProcessProtocol()
-        session.execCommand(protocol, b'yes')
-        self.assertEqual({'FOO': 'BAR'}, session.environment)
+        session.execCommand(protocol, b"yes")
+        self.assertEqual({"FOO": "BAR"}, session.environment)
         self.assertEqual(
-            [(protocol, b'yes', [b'yes'], {'FOO': 'BAR'}, None, None, None, 0,
-              None)],
-            self.reactor.log)
+            [
+                (
+                    protocol,
+                    b"yes",
+                    [b"yes"],
+                    {"FOO": "BAR"},
+                    None,
+                    None,
+                    None,
+                    0,
+                    None,
+                )
+            ],
+            self.reactor.log,
+        )
 
     def test_environmentInGetAvatarAdapter(self):
         # We can pass the environment into getAvatarAdapter so that it is used
         # when we adapt the session.
-        adapter = ExecOnlySession.getAvatarAdapter(
-            environment={'FOO': 'BAR'})
+        adapter = ExecOnlySession.getAvatarAdapter(environment={"FOO": "BAR"})
         session = adapter(self.avatar)
-        self.assertEqual({'FOO': 'BAR'}, session.environment)
+        self.assertEqual({"FOO": "BAR"}, session.environment)
 
 
 class TestRestrictedExecOnlySession(AvatarTestCase):
@@ -257,12 +301,13 @@ class TestRestrictedExecOnlySession(AvatarTestCase):
         self.reactor = MockReactor()
 
         def lookup_template(command):
-            if command == 'foo':
-                return 'bar baz %(user_id)s'
+            if command == "foo":
+                return "bar baz %(user_id)s"
             raise ForbiddenCommand("Not allowed to execute %r." % command)
 
         self.session = RestrictedExecOnlySession(
-            self.avatar, self.reactor, lookup_template)
+            self.avatar, self.reactor, lookup_template
+        )
 
     def test_makeRestrictedExecOnlySession(self):
         # A RestrictedExecOnlySession is constructed with an avatar, a reactor
@@ -270,13 +315,16 @@ class TestRestrictedExecOnlySession(AvatarTestCase):
         self.assertTrue(
             isinstance(self.session, RestrictedExecOnlySession),
             "%r not an instance of RestrictedExecOnlySession"
-            % (self.session,))
+            % (self.session,),
+        )
         self.assertEqual(self.avatar, self.session.avatar)
         self.assertEqual(self.reactor, self.session.reactor)
-        self.assertEqual('bar baz %(user_id)s',
-                         self.session.lookup_command_template('foo'))
-        self.assertRaises(ForbiddenCommand,
-            self.session.lookup_command_template, 'notfoo')
+        self.assertEqual(
+            "bar baz %(user_id)s", self.session.lookup_command_template("foo")
+        )
+        self.assertRaises(
+            ForbiddenCommand, self.session.lookup_command_template, "notfoo"
+        )
 
     def test_execCommandRejectsUnauthorizedCommands(self):
         # execCommand rejects all commands except for the command specified in
@@ -285,24 +333,30 @@ class TestRestrictedExecOnlySession(AvatarTestCase):
         # Note that Conch doesn't have a well-defined way of rejecting
         # commands. Disconnecting in execCommand will do. We don't raise
         # an exception to avoid logging an OOPS.
-        protocol = MockProcessTransport(b'cat')
+        protocol = MockProcessTransport(b"cat")
+        self.assertEqual(None, self.session.execCommand(protocol, b"cat"))
         self.assertEqual(
-            None, self.session.execCommand(protocol, b'cat'))
-        self.assertEqual(
-            [('writeExtended', connection.EXTENDED_DATA_STDERR,
-             "Not allowed to execute %r.\r\n" % b'cat'),
-             ('loseConnection',)],
-            protocol.log)
+            [
+                (
+                    "writeExtended",
+                    connection.EXTENDED_DATA_STDERR,
+                    "Not allowed to execute %r.\r\n" % b"cat",
+                ),
+                ("loseConnection",),
+            ],
+            protocol.log,
+        )
 
     def test_getCommandToRunReturnsTemplateCommand(self):
         # When passed the allowed command, getCommandToRun always returns the
         # executable and arguments corresponding to the provided executed
         # command template.
-        executable, arguments = self.session.getCommandToRun('foo')
-        self.assertEqual(b'bar', executable)
+        executable, arguments = self.session.getCommandToRun("foo")
+        self.assertEqual(b"bar", executable)
         self.assertEqual(
-            [b'bar', b'baz', str(self.avatar.user_id).encode('UTF-8')],
-            list(arguments))
+            [b"bar", b"baz", str(self.avatar.user_id).encode("UTF-8")],
+            list(arguments),
+        )
 
     def test_getAvatarAdapter(self):
         # getAvatarAdapter is a convenience classmethod so that
@@ -311,23 +365,23 @@ class TestRestrictedExecOnlySession(AvatarTestCase):
         from twisted.internet import reactor
 
         def lookup_template(command):
-            if command == 'foo':
-                return 'bar baz'
+            if command == "foo":
+                return "bar baz"
             raise ForbiddenCommand(command)
 
-        adapter = RestrictedExecOnlySession.getAvatarAdapter(
-            lookup_template)
+        adapter = RestrictedExecOnlySession.getAvatarAdapter(lookup_template)
         session = adapter(self.avatar)
         self.assertTrue(
             isinstance(session, RestrictedExecOnlySession),
             "ISession(avatar) doesn't adapt to RestrictedExecOnlySession. "
-            "Got %r instead." % (session,))
+            "Got %r instead." % (session,),
+        )
         self.assertIs(self.avatar, session.avatar)
         self.assertIs(reactor, session.reactor)
-        self.assertEqual('bar baz',
-                         session.lookup_command_template('foo'))
-        self.assertRaises(ForbiddenCommand,
-            session.lookup_command_template, 'notfoo')
+        self.assertEqual("bar baz", session.lookup_command_template("foo"))
+        self.assertRaises(
+            ForbiddenCommand, session.lookup_command_template, "notfoo"
+        )
 
 
 class TestSessionIntegration(AvatarTestCase):
@@ -345,41 +399,59 @@ class TestSessionIntegration(AvatarTestCase):
         self.assertTrue(
             isinstance(session, RestrictedExecOnlySession),
             "ISession(avatar) doesn't adapt to ExecOnlySession. "
-            "Got %r instead." % (session,))
+            "Got %r instead." % (session,),
+        )
         self.assertEqual(
             get_BRZ_PLUGIN_PATH_for_subprocess(),
-            session.environment['BRZ_PLUGIN_PATH'])
+            session.environment["BRZ_PLUGIN_PATH"],
+        )
         self.assertEqual(
-            '%s@bazaar.launchpad.test' % self.avatar.username,
-            session.environment['BRZ_EMAIL'])
+            "%s@bazaar.launchpad.test" % self.avatar.username,
+            session.environment["BRZ_EMAIL"],
+        )
 
         executable, arguments = session.getCommandToRun(
-            b'bzr serve --inet --directory=/ --allow-writes')
-        interpreter = ('%s/bin/py' % config.root).encode('UTF-8')
+            b"bzr serve --inet --directory=/ --allow-writes"
+        )
+        interpreter = ("%s/bin/py" % config.root).encode("UTF-8")
         self.assertEqual(interpreter, executable)
         self.assertEqual(
-            [interpreter, get_brz_path().encode('UTF-8'), b'lp-serve',
-             b'--inet', str(self.avatar.user_id).encode('UTF-8')],
-            list(arguments))
+            [
+                interpreter,
+                get_brz_path().encode("UTF-8"),
+                b"lp-serve",
+                b"--inet",
+                str(self.avatar.user_id).encode("UTF-8"),
+            ],
+            list(arguments),
+        )
         self.assertRaises(
-            ForbiddenCommand, session.getCommandToRun, b'rm -rf /')
+            ForbiddenCommand, session.getCommandToRun, b"rm -rf /"
+        )
 
 
 class TestLookupCommand(TestCase):
-
     def test_other(self):
-        self.assertRaises(ForbiddenCommand, lookup_command_template, 'foo')
+        self.assertRaises(ForbiddenCommand, lookup_command_template, "foo")
 
     def test_bzr(self):
         self.assertEqual(
-            config.root + '/bin/py ' + get_brz_path() +
-            ' lp-serve --inet %(user_id)s',
+            config.root
+            + "/bin/py "
+            + get_brz_path()
+            + " lp-serve --inet %(user_id)s",
             lookup_command_template(
-                b'bzr serve --inet --directory=/ --allow-writes'))
+                b"bzr serve --inet --directory=/ --allow-writes"
+            ),
+        )
 
     def test_brz(self):
         self.assertEqual(
-            config.root + '/bin/py ' + get_brz_path() +
-            ' lp-serve --inet %(user_id)s',
+            config.root
+            + "/bin/py "
+            + get_brz_path()
+            + " lp-serve --inet %(user_id)s",
             lookup_command_template(
-                b'brz serve --inet --directory=/ --allow-writes'))
+                b"brz serve --inet --directory=/ --allow-writes"
+            ),
+        )

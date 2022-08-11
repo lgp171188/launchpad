@@ -17,7 +17,7 @@ from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
-    )
+)
 from lp.soyuz.model.distroseriespackagecache import DistroSeriesPackageCache
 
 
@@ -55,59 +55,71 @@ class PackageCacheUpdater(LaunchpadCronScript):
                 self.updateDistroSeriesCache(distroseries, archive)
 
         DistributionSourcePackageCache.removeOld(
-            distribution, archive, log=self.logger)
+            distribution, archive, log=self.logger
+        )
 
         updates = DistributionSourcePackageCache.updateAll(
-            distribution, archive=archive, ztm=self.txn, log=self.logger)
+            distribution, archive=archive, ztm=self.txn, log=self.logger
+        )
 
         if updates > 0:
             self.txn.commit()
 
     def updateDistroSeriesCache(self, distroseries, archive):
         """Update package caches for the given location."""
-        self.logger.info('%s %s %s starting' % (
-            distroseries.distribution.name, distroseries.name,
-            archive.displayname))
+        self.logger.info(
+            "%s %s %s starting"
+            % (
+                distroseries.distribution.name,
+                distroseries.name,
+                archive.displayname,
+            )
+        )
 
         DistroSeriesPackageCache.removeOld(
-            distroseries, archive=archive, log=self.logger)
+            distroseries, archive=archive, log=self.logger
+        )
 
         updates = DistroSeriesPackageCache.updateAll(
-            distroseries, archive=archive, ztm=self.txn, log=self.logger)
+            distroseries, archive=archive, ztm=self.txn, log=self.logger
+        )
 
         if updates > 0:
             self.txn.commit()
 
     def main(self):
-        self.logger.debug('Starting the package cache update')
+        self.logger.debug("Starting the package cache update")
 
         # Do the package counter and cache update for each distribution.
         distroset = getUtility(IDistributionSet)
         for distribution in distroset:
             self.logger.info(
-                'Updating %s package counters' % distribution.name)
+                "Updating %s package counters" % distribution.name
+            )
             self.updateDistributionPackageCounters(distribution)
 
-            self.logger.info(
-                'Updating %s main archives' % distribution.name)
+            self.logger.info("Updating %s main archives" % distribution.name)
             for archive in distribution.all_distro_archives:
                 self.updateDistributionCache(distribution, archive)
 
             self.logger.info(
-                'Updating %s official branch links' % distribution.name)
+                "Updating %s official branch links" % distribution.name
+            )
             self.updateDistributionCache(distribution, None)
 
-            self.logger.info(
-                'Updating %s PPAs' % distribution.name)
+            self.logger.info("Updating %s PPAs" % distribution.name)
             archives = getUtility(IArchiveSet).getArchivesForDistribution(
-                distribution, purposes=[ArchivePurpose.PPA],
-                check_permissions=False, exclude_pristine=True)
+                distribution,
+                purposes=[ArchivePurpose.PPA],
+                check_permissions=False,
+                exclude_pristine=True,
+            )
             for archive in archives:
                 self.updateDistributionCache(distribution, archive)
                 archive.updateArchiveCache()
 
             # Commit any remaining update for a distribution.
             self.txn.commit()
-            self.logger.info('%s done' % distribution.name)
+            self.logger.info("%s done" % distribution.name)
 
-        self.logger.debug('Finished the package cache update')
+        self.logger.debug("Finished the package cache update")

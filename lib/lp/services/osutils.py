@@ -4,27 +4,24 @@
 """Utilities for doing the sort of thing the os module does."""
 
 __all__ = [
-    'ensure_directory_exists',
-    'get_pid_from_file',
-    'kill_by_pidfile',
-    'open_for_writing',
-    'override_environ',
-    'process_exists',
-    'remove_if_exists',
-    'remove_tree',
-    'two_stage_kill',
-    'write_file',
-    ]
+    "ensure_directory_exists",
+    "get_pid_from_file",
+    "kill_by_pidfile",
+    "open_for_writing",
+    "override_environ",
+    "process_exists",
+    "remove_if_exists",
+    "remove_tree",
+    "two_stage_kill",
+    "write_file",
+]
 
-from contextlib import contextmanager
 import errno
 import os.path
 import shutil
-from signal import (
-    SIGKILL,
-    SIGTERM,
-    )
 import time
+from contextlib import contextmanager
+from signal import SIGKILL, SIGTERM
 
 
 def remove_tree(path):
@@ -185,7 +182,7 @@ def remove_if_exists(path):
 
 
 def write_file(path, content):
-    with open_for_writing(path, 'wb') as f:
+    with open_for_writing(path, "wb") as f:
         f.write(content)
 
 

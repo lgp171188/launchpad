@@ -3,19 +3,12 @@
 
 """Test Build features."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from pymacaroons import Macaroon
 import pytz
+from pymacaroons import Macaroon
 from simplejson import dumps
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    MatchesStructure,
-    )
+from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
@@ -33,41 +26,35 @@ from lp.services.log.logger import DevNullLogger
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
-    )
+)
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import (
     IBinaryPackageBuild,
     IBinaryPackageBuildSet,
     UnparsableDependencies,
-    )
+)
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.model.binarypackagebuild import (
-    BinaryPackageBuildSet,
     COPY_ARCHIVE_SCORE_PENALTY,
     PRIVATE_ARCHIVE_SCORE_BONUS,
     SCORE_BY_COMPONENT,
     SCORE_BY_POCKET,
     SCORE_BY_URGENCY,
-    )
+    BinaryPackageBuildSet,
+)
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    TestCaseWithFactory,
     anonymous_logged_in,
     api_url,
     login,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.pages import webservice_for_person
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -79,7 +66,8 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY))
+            archive=self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        )
 
     def test_providesInterfaces(self):
         # Build provides IPackageBuild and IBuild.
@@ -91,7 +79,8 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         bq = self.build.queueBuild()
         self.assertProvides(bq, IBuildQueue)
         self.assertEqual(
-            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job)
+            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job
+        )
         self.assertEqual(self.build, bq.specific_build)
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
@@ -105,12 +94,16 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
     def create_previous_build(self, duration):
         spr = self.build.source_package_release
         build = getUtility(IBinaryPackageBuildSet).new(
-            spr, self.build.archive, self.build.distro_arch_series,
-            self.build.pocket)
+            spr,
+            self.build.archive,
+            self.build.distro_arch_series,
+            self.build.pocket,
+        )
         now = datetime.now(pytz.UTC)
         build.updateStatus(
             BuildStatus.BUILDING,
-            date_started=now - timedelta(seconds=duration))
+            date_started=now - timedelta(seconds=duration),
+        )
         build.updateStatus(BuildStatus.FULLYBUILT, date_finished=now)
         return build
 
@@ -121,10 +114,10 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
 
     def test_build_cookie(self):
         build = self.factory.makeBinaryPackageBuild()
-        self.assertEqual('PACKAGEBUILD-%d' % build.id, build.build_cookie)
+        self.assertEqual("PACKAGEBUILD-%d" % build.id, build.build_cookie)
 
     def addFakeBuildLog(self, build):
-        build.setLog(self.factory.makeLibraryFileAlias('mybuildlog.txt'))
+        build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))
 
     def test_log_url(self):
         # The log URL for a binary package build will use
@@ -132,25 +125,35 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         # is not a PPA or a copy archive.
         self.addFakeBuildLog(self.build)
         self.assertEqual(
-            'http://launchpad.test/%s/+source/'
-            '%s/%s/+build/%d/+files/mybuildlog.txt' % (
+            "http://launchpad.test/%s/+source/"
+            "%s/%s/+build/%d/+files/mybuildlog.txt"
+            % (
                 self.build.distribution.name,
                 self.build.source_package_release.sourcepackagename.name,
-                self.build.source_package_release.version, self.build.id),
-            self.build.log_url)
+                self.build.source_package_release.version,
+                self.build.id,
+            ),
+            self.build.log_url,
+        )
 
     def test_log_url_ppa(self):
         # On the other hand, ppa or copy builds will have a url in the
         # context of the archive.
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(purpose=ArchivePurpose.PPA))
+            archive=self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        )
         self.addFakeBuildLog(build)
         self.assertEqual(
-            'http://launchpad.test/~%s/+archive/%s/'
-            '%s/+build/%d/+files/mybuildlog.txt' % (
-                build.archive.owner.name, build.archive.distribution.name,
-                build.archive.name, build.id),
-            build.log_url)
+            "http://launchpad.test/~%s/+archive/%s/"
+            "%s/+build/%d/+files/mybuildlog.txt"
+            % (
+                build.archive.owner.name,
+                build.archive.distribution.name,
+                build.archive.name,
+                build.id,
+            ),
+            build.log_url,
+        )
 
     def test_getUploader(self):
         # For ACL purposes the uploader is the changes file signer.
@@ -158,8 +161,10 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         class MockChanges:
             signer = "Somebody <somebody@ubuntu.com>"
 
-        self.assertEqual("Somebody <somebody@ubuntu.com>",
-            self.build.getUploader(MockChanges()))
+        self.assertEqual(
+            "Somebody <somebody@ubuntu.com>",
+            self.build.getUploader(MockChanges()),
+        )
 
     def test_can_be_cancelled(self):
         # For all states that can be cancelled, assert can_be_cancelled
@@ -167,7 +172,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
-            ]
+        ]
         for status in BuildStatus.items:
             build = self.factory.makeBinaryPackageBuild()
             build.queueBuild()
@@ -209,18 +214,25 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
     def test_getLatestSourcePublication(self):
         distroseries = self.factory.makeDistroSeries()
         archive = self.factory.makeArchive(
-            distribution=distroseries.distribution)
+            distribution=distroseries.distribution
+        )
         other_archive = self.factory.makeArchive(
-            distribution=distroseries.distribution)
+            distribution=distroseries.distribution
+        )
         spph = self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, archive=archive)
+            distroseries=distroseries, archive=archive
+        )
         self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries, archive=other_archive,
-            sourcepackagerelease=spph.sourcepackagerelease)
+            distroseries=distroseries,
+            archive=other_archive,
+            sourcepackagerelease=spph.sourcepackagerelease,
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.factory.makeBinaryPackageBuild(
             source_package_release=spph.sourcepackagerelease,
-            distroarchseries=das, archive=archive)
+            distroarchseries=das,
+            archive=archive,
+        )
         self.assertEqual(spph, build.getLatestSourcePublication())
 
 
@@ -238,16 +250,18 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         self.publisher.prepareBreezyAutotest()
 
         depwait_source = self.publisher.getPubSource(
-            sourcename='depwait-source')
+            sourcename="depwait-source"
+        )
 
         self.publisher.getPubBinaries(
-            binaryname='dep-bin',
-            status=PackagePublishingStatus.PUBLISHED)
+            binaryname="dep-bin", status=PackagePublishingStatus.PUBLISHED
+        )
 
         [depwait_build] = depwait_source.createMissingBuilds()
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin'})
+            worker_status={"dependencies": "dep-bin"},
+        )
         return depwait_build
 
     def testUpdateDependenciesWorks(self):
@@ -256,14 +270,16 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         depwait_build = self._setupSimpleDepwaitContext()
         self.layer.txn.commit()
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
 
     def assertRaisesUnparsableDependencies(self, depwait_build, dependencies):
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': dependencies})
+            worker_status={"dependencies": dependencies},
+        )
         self.assertRaises(
-            UnparsableDependencies, depwait_build.updateDependencies)
+            UnparsableDependencies, depwait_build.updateDependencies
+        )
 
     def testInvalidDependencies(self):
         # Calling `IBinaryPackageBuild.updateDependencies` on a build with
@@ -275,13 +291,13 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         self.assertRaisesUnparsableDependencies(depwait_build, None)
 
         # Missing 'name'.
-        self.assertRaisesUnparsableDependencies(depwait_build, '(>> version)')
+        self.assertRaisesUnparsableDependencies(depwait_build, "(>> version)")
 
         # Missing 'version'.
-        self.assertRaisesUnparsableDependencies(depwait_build, 'name (>>)')
+        self.assertRaisesUnparsableDependencies(depwait_build, "name (>>)")
 
         # Missing comma between dependencies.
-        self.assertRaisesUnparsableDependencies(depwait_build, 'name1 name2')
+        self.assertRaisesUnparsableDependencies(depwait_build, "name1 name2")
 
     def testBug378828(self):
         # `IBinaryPackageBuild.updateDependencies` copes with the
@@ -291,14 +307,13 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         depwait_build = self._setupSimpleDepwaitContext()
 
         spr = depwait_build.source_package_release
-        depwait_build.current_source_publication.requestDeletion(
-            spr.creator)
-        contrib = getUtility(IComponentSet).new('contrib')
+        depwait_build.current_source_publication.requestDeletion(spr.creator)
+        contrib = getUtility(IComponentSet).new("contrib")
         removeSecurityProxy(spr).component = contrib
 
         self.layer.txn.commit()
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
 
     def testVersionedDependencies(self):
         # `IBinaryPackageBuild.updateDependencies` supports versioned
@@ -311,14 +326,16 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (>> 666)'})
+            worker_status={"dependencies": "dep-bin (>> 666)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, 'dep-bin (>> 666)')
+        self.assertEqual(depwait_build.dependencies, "dep-bin (>> 666)")
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (>= 666)'})
+            worker_status={"dependencies": "dep-bin (>= 666)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
 
     def testVersionedDependencyOnOldPublication(self):
         # `IBinaryPackageBuild.updateDependencies` doesn't just consider
@@ -328,33 +345,38 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         # and = 999 are satisfied.
         depwait_build = self._setupSimpleDepwaitContext()
         self.publisher.getPubBinaries(
-            binaryname='dep-bin', version='999',
-            status=PackagePublishingStatus.PUBLISHED)
+            binaryname="dep-bin",
+            version="999",
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         self.layer.txn.commit()
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (= 666)'})
+            worker_status={"dependencies": "dep-bin (= 666)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (= 999)'})
+            worker_status={"dependencies": "dep-bin (= 999)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
 
     def testStrictInequalities(self):
         depwait_build = self._setupSimpleDepwaitContext()
         self.layer.txn.commit()
 
         for dep, expected in (
-                ('dep-bin (<< 444)', 'dep-bin (<< 444)'),
-                ('dep-bin (>> 444)', ''),
-                ('dep-bin (<< 888)', ''),
-                ('dep-bin (>> 888)', 'dep-bin (>> 888)'),
-                ):
+            ("dep-bin (<< 444)", "dep-bin (<< 444)"),
+            ("dep-bin (>> 444)", ""),
+            ("dep-bin (<< 888)", ""),
+            ("dep-bin (>> 888)", "dep-bin (>> 888)"),
+        ):
             depwait_build.updateStatus(
-                BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': dep})
+                BuildStatus.MANUALDEPWAIT, worker_status={"dependencies": dep}
+            )
             depwait_build.updateDependencies()
             self.assertEqual(expected, depwait_build.dependencies)
 
@@ -367,18 +389,21 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
             worker_status={
-                'dependencies': 'dep-bin (>= 999) | alt-bin, dep-tools'})
+                "dependencies": "dep-bin (>= 999) | alt-bin, dep-tools"
+            },
+        )
         depwait_build.updateDependencies()
         self.assertEqual(
-            'dep-bin (>= 999) | alt-bin, dep-tools',
-            depwait_build.dependencies)
+            "dep-bin (>= 999) | alt-bin, dep-tools", depwait_build.dependencies
+        )
 
         self.publisher.getPubBinaries(
-            binaryname='alt-bin', status=PackagePublishingStatus.PUBLISHED)
+            binaryname="alt-bin", status=PackagePublishingStatus.PUBLISHED
+        )
         self.layer.txn.commit()
 
         depwait_build.updateDependencies()
-        self.assertEqual('dep-tools', depwait_build.dependencies)
+        self.assertEqual("dep-tools", depwait_build.dependencies)
 
     def testAptVersionConstraints(self):
         # launchpad-buildd can return apt-style version constraints
@@ -388,14 +413,16 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (> 666), dep-bin (< 777)'})
+            worker_status={"dependencies": "dep-bin (> 666), dep-bin (< 777)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, 'dep-bin (> 666)')
+        self.assertEqual(depwait_build.dependencies, "dep-bin (> 666)")
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'dep-bin (> 665)'})
+            worker_status={"dependencies": "dep-bin (> 665)"},
+        )
         depwait_build.updateDependencies()
-        self.assertEqual(depwait_build.dependencies, '')
+        self.assertEqual(depwait_build.dependencies, "")
 
 
 class BaseTestCaseWithThreeBuilds(TestCaseWithFactory):
@@ -407,20 +434,27 @@ class BaseTestCaseWithThreeBuilds(TestCaseWithFactory):
         super().setUp()
         self.ds = self.factory.makeDistroSeries()
         i386_das = self.factory.makeDistroArchSeries(
-            distroseries=self.ds, architecturetag='i386')
+            distroseries=self.ds, architecturetag="i386"
+        )
         hppa_das = self.factory.makeDistroArchSeries(
-            distroseries=self.ds, architecturetag='hppa')
+            distroseries=self.ds, architecturetag="hppa"
+        )
         self.builds = [
             self.factory.makeBinaryPackageBuild(
-                archive=self.ds.main_archive, distroarchseries=i386_das),
+                archive=self.ds.main_archive, distroarchseries=i386_das
+            ),
             self.factory.makeBinaryPackageBuild(
-                archive=self.ds.main_archive, distroarchseries=i386_das,
-                pocket=PackagePublishingPocket.PROPOSED),
+                archive=self.ds.main_archive,
+                distroarchseries=i386_das,
+                pocket=PackagePublishingPocket.PROPOSED,
+            ),
             self.factory.makeBinaryPackageBuild(
-                archive=self.ds.main_archive, distroarchseries=hppa_das),
-            ]
+                archive=self.ds.main_archive, distroarchseries=hppa_das
+            ),
+        ]
         self.sources = [
-            build.current_source_publication for build in self.builds]
+            build.current_source_publication for build in self.builds
+        ]
 
 
 class TestBuildSet(TestCaseWithFactory):
@@ -432,29 +466,34 @@ class TestBuildSet(TestCaseWithFactory):
         self.assertEqual(
             bpb,
             getUtility(IBinaryPackageBuildSet).getByBuildFarmJob(
-                bpb.build_farm_job))
+                bpb.build_farm_job
+            ),
+        )
 
     def test_getByBuildFarmJob_returns_none_when_missing(self):
         sprb = self.factory.makeSourcePackageRecipeBuild()
         self.assertIsNone(
             getUtility(IBinaryPackageBuildSet).getByBuildFarmJob(
-                sprb.build_farm_job))
+                sprb.build_farm_job
+            )
+        )
 
     def test_getByBuildFarmJobs_works(self):
         bpbs = [self.factory.makeBinaryPackageBuild() for i in range(10)]
         self.assertContentEqual(
             bpbs,
             getUtility(IBinaryPackageBuildSet).getByBuildFarmJobs(
-                [bpb.build_farm_job for bpb in bpbs]))
+                [bpb.build_farm_job for bpb in bpbs]
+            ),
+        )
 
     def test_getByBuildFarmJobs_works_empty(self):
         self.assertContentEqual(
-            [],
-            getUtility(IBinaryPackageBuildSet).getByBuildFarmJobs([]))
+            [], getUtility(IBinaryPackageBuildSet).getByBuildFarmJobs([])
+        )
 
 
 class TestBuildSetGetBuildsForArchive(BaseTestCaseWithThreeBuilds):
-
     def setUp(self):
         """Publish some builds for the test archive."""
         super().setUp()
@@ -471,13 +510,13 @@ class TestBuildSetGetBuildsForArchive(BaseTestCaseWithThreeBuilds):
     def test_getBuildsForArchive_by_arch_tag(self):
         # Results can be filtered by architecture tag.
         i386_builds = self.builds[:2]
-        builds = self.build_set.getBuildsForArchive(self.archive,
-                                                    arch_tag="i386")
+        builds = self.build_set.getBuildsForArchive(
+            self.archive, arch_tag="i386"
+        )
         self.assertContentEqual(builds, i386_builds)
 
 
 class TestBuildSetGetBuildsForBuilder(BaseTestCaseWithThreeBuilds):
-
     def setUp(self):
         super().setUp()
 
@@ -499,17 +538,20 @@ class TestBuildSetGetBuildsForBuilder(BaseTestCaseWithThreeBuilds):
     def test_getBuildsForBuilder_by_arch_tag(self):
         # Results can be filtered by architecture tag.
         i386_builds = self.builds[:2]
-        builds = self.build_set.getBuildsForBuilder(self.builder.id,
-                                                    arch_tag="i386")
+        builds = self.build_set.getBuildsForBuilder(
+            self.builder.id, arch_tag="i386"
+        )
         self.assertContentEqual(builds, i386_builds)
 
     def test_getBuildsForBuilder_by_pocket(self):
         # Results can be filtered by pocket.
         builds = self.build_set.getBuildsForBuilder(
-            self.builder.id, pocket=PackagePublishingPocket.RELEASE)
+            self.builder.id, pocket=PackagePublishingPocket.RELEASE
+        )
         self.assertContentEqual([self.builds[0], self.builds[2]], builds)
         builds = self.build_set.getBuildsForBuilder(
-            self.builder.id, pocket=PackagePublishingPocket.PROPOSED)
+            self.builder.id, pocket=PackagePublishingPocket.PROPOSED
+        )
         self.assertContentEqual([self.builds[1]], builds)
 
 
@@ -517,7 +559,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
     """Test cases for BinaryPackageBuild on the webservice.
 
     NB. Note that most tests are currently in
-    lib/lp/soyuz/stories/webservice/xx-builds.txt but unit tests really
+    lib/lp/soyuz/stories/webservice/xx-builds.rst but unit tests really
     ought to be here instead.
     """
 
@@ -528,7 +570,8 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         self.ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         self.build = self.factory.makeBinaryPackageBuild(archive=self.ppa)
         self.webservice = webservice_for_person(
-            self.ppa.owner, permission=OAuthPermission.WRITE_PUBLIC)
+            self.ppa.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         login(ANONYMOUS)
 
     def test_can_be_cancelled_is_exported(self):
@@ -536,56 +579,60 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         expected = self.build.can_be_cancelled
         entry_url = api_url(self.build)
         logout()
-        entry = self.webservice.get(entry_url, api_version='devel').jsonBody()
-        self.assertEqual(expected, entry['can_be_cancelled'])
+        entry = self.webservice.get(entry_url, api_version="devel").jsonBody()
+        self.assertEqual(expected, entry["can_be_cancelled"])
 
     def test_cancel_is_exported(self):
         # Check that the cancel() named op is exported.
         build_url = api_url(self.build)
         self.build.queueBuild()
         logout()
-        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
+        entry = self.webservice.get(build_url, api_version="devel").jsonBody()
         response = self.webservice.named_post(
-            entry['self_link'], 'cancel', api_version='devel')
+            entry["self_link"], "cancel", api_version="devel"
+        )
         self.assertEqual(200, response.status)
-        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
-        self.assertEqual(BuildStatus.CANCELLED.title, entry['buildstate'])
+        entry = self.webservice.get(build_url, api_version="devel").jsonBody()
+        self.assertEqual(BuildStatus.CANCELLED.title, entry["buildstate"])
 
     def test_cancel_security(self):
         # Check that unauthorised users cannot call cancel()
         build_url = api_url(self.build)
         webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         logout()
 
-        entry = webservice.get(build_url, api_version='devel').jsonBody()
+        entry = webservice.get(build_url, api_version="devel").jsonBody()
         response = webservice.named_post(
-            entry['self_link'], 'cancel', api_version='devel')
+            entry["self_link"], "cancel", api_version="devel"
+        )
         self.assertEqual(401, response.status)
 
     def test_builder_is_exported(self):
         # The builder property is exported.
         self.build.updateStatus(
-            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder())
+            BuildStatus.FULLYBUILT, builder=self.factory.makeBuilder()
+        )
         build_url = api_url(self.build)
         builder_url = api_url(self.build.builder)
         logout()
-        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
-        self.assertEndsWith(entry['builder_link'], builder_url)
+        entry = self.webservice.get(build_url, api_version="devel").jsonBody()
+        self.assertEndsWith(entry["builder_link"], builder_url)
 
     def test_source_package_name(self):
         name = self.build.source_package_release.name
         build_url = api_url(self.build)
         logout()
-        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
-        self.assertEqual(name, entry['source_package_name'])
+        entry = self.webservice.get(build_url, api_version="devel").jsonBody()
+        self.assertEqual(name, entry["source_package_name"])
 
     def test_source_package_version(self):
         version = self.build.source_package_release.version
         build_url = api_url(self.build)
         logout()
-        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
-        self.assertEqual(version, entry['source_package_version'])
+        entry = self.webservice.get(build_url, api_version="devel").jsonBody()
+        self.assertEqual(version, entry["source_package_version"])
 
     def test_external_dependencies_random_user(self):
         # Normal users can look but not touch.
@@ -593,12 +640,15 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         build_url = api_url(self.build)
         logout()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(build_url, api_version="devel").jsonBody()
         self.assertIsNone(entry["external_dependencies"])
         response = webservice.patch(
-            entry["self_link"], "application/json",
-            dumps({"external_dependencies": "random"}))
+            entry["self_link"],
+            "application/json",
+            dumps({"external_dependencies": "random"}),
+        )
         self.assertEqual(401, response.status)
 
     def test_external_dependencies_owner(self):
@@ -608,8 +658,10 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         entry = self.webservice.get(build_url, api_version="devel").jsonBody()
         self.assertIsNone(entry["external_dependencies"])
         response = self.webservice.patch(
-            entry["self_link"], "application/json",
-            dumps({"external_dependencies": "random"}))
+            entry["self_link"],
+            "application/json",
+            dumps({"external_dependencies": "random"}),
+        )
         self.assertEqual(401, response.status)
 
     def test_external_dependencies_ppa_owner_invalid(self):
@@ -619,12 +671,15 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         build_url = api_url(self.build)
         logout()
         webservice = webservice_for_person(
-            ppa_admin, permission=OAuthPermission.WRITE_PUBLIC)
+            ppa_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(build_url, api_version="devel").jsonBody()
         self.assertIsNone(entry["external_dependencies"])
         response = webservice.patch(
-            entry["self_link"], "application/json",
-            dumps({"external_dependencies": "random"}))
+            entry["self_link"],
+            "application/json",
+            dumps({"external_dependencies": "random"}),
+        )
         self.assertEqual(400, response.status)
         self.assertIn(b"Invalid external dependencies", response.body)
 
@@ -635,16 +690,20 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         build_url = api_url(self.build)
         logout()
         webservice = webservice_for_person(
-            ppa_admin, permission=OAuthPermission.WRITE_PUBLIC)
+            ppa_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(build_url, api_version="devel").jsonBody()
         self.assertIsNone(entry["external_dependencies"])
         dependencies = "deb http://example.org suite components"
         response = webservice.patch(
-            entry["self_link"], "application/json",
-            dumps({"external_dependencies": dependencies}))
+            entry["self_link"],
+            "application/json",
+            dumps({"external_dependencies": dependencies}),
+        )
         self.assertEqual(209, response.status)
         self.assertEqual(
-            dependencies, response.jsonBody()["external_dependencies"])
+            dependencies, response.jsonBody()["external_dependencies"]
+        )
 
 
 class TestPostprocessCandidate(TestCaseWithFactory):
@@ -690,37 +749,62 @@ class TestCalculateScore(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def makeBuild(self, purpose=None, private=False, component="main",
-                  urgency="high", pocket="RELEASE", section_name=None):
+    def makeBuild(
+        self,
+        purpose=None,
+        private=False,
+        component="main",
+        urgency="high",
+        pocket="RELEASE",
+        section_name=None,
+    ):
         if purpose is not None or private:
             archive = self.factory.makeArchive(
-                purpose=purpose, private=private)
+                purpose=purpose, private=private
+            )
         else:
             archive = None
         spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive, component=component, urgency=urgency,
-            section_name=section_name)
+            archive=archive,
+            component=component,
+            urgency=urgency,
+            section_name=section_name,
+        )
         naked_spph = removeSecurityProxy(spph)  # needed for private archives
         return removeSecurityProxy(
             self.factory.makeBinaryPackageBuild(
                 source_package_release=naked_spph.sourcepackagerelease,
-                pocket=pocket))
+                pocket=pocket,
+            )
+        )
 
     # The defaults for pocket, component, and urgency here match those in
     # makeBuildJob.
-    def assertCorrectScore(self, build, pocket="RELEASE", component="main",
-                           urgency="high", other_bonus=0):
+    def assertCorrectScore(
+        self,
+        build,
+        pocket="RELEASE",
+        component="main",
+        urgency="high",
+        other_bonus=0,
+    ):
         self.assertEqual(
-            (SCORE_BY_POCKET[PackagePublishingPocket.items[pocket.upper()]] +
-             SCORE_BY_COMPONENT[component] +
-             SCORE_BY_URGENCY[SourcePackageUrgency.items[urgency.upper()]] +
-             other_bonus), build.calculateScore())
+            (
+                SCORE_BY_POCKET[PackagePublishingPocket.items[pocket.upper()]]
+                + SCORE_BY_COMPONENT[component]
+                + SCORE_BY_URGENCY[SourcePackageUrgency.items[urgency.upper()]]
+                + other_bonus
+            ),
+            build.calculateScore(),
+        )
 
     def test_score_unusual_component(self):
         spph = self.factory.makeSourcePackagePublishingHistory(
-            component="unusual")
+            component="unusual"
+        )
         build = self.factory.makeBinaryPackageBuild(
-            source_package_release=spph.sourcepackagerelease)
+            source_package_release=spph.sourcepackagerelease
+        )
         # For now just test that it doesn't raise an Exception
         build.calculateScore()
 
@@ -733,20 +817,19 @@ class TestCalculateScore(TestCaseWithFactory):
         # 1500 (RELEASE) + 1000 (main) + 5 (low) - 2600 (copy archive) = -95.
         # With this penalty, even language-packs and build retries will be
         # built before copy archives.
-        build = self.makeBuild(
-            purpose="COPY", component="main", urgency="low")
+        build = self.makeBuild(purpose="COPY", component="main", urgency="low")
         self.assertCorrectScore(
-            build, "RELEASE", "main", "low", -COPY_ARCHIVE_SCORE_PENALTY)
+            build, "RELEASE", "main", "low", -COPY_ARCHIVE_SCORE_PENALTY
+        )
 
     def test_copy_archive_relative_score_is_applied(self):
         # Per-archive relative build scores are applied, in this case
         # exactly offsetting the copy-archive penalty.
-        build = self.makeBuild(
-            purpose="COPY", component="main", urgency="low")
+        build = self.makeBuild(purpose="COPY", component="main", urgency="low")
         removeSecurityProxy(build.archive).relative_build_score = 2600
         self.assertCorrectScore(
-            build, "RELEASE", "main", "low",
-            -COPY_ARCHIVE_SCORE_PENALTY + 2600)
+            build, "RELEASE", "main", "low", -COPY_ARCHIVE_SCORE_PENALTY + 2600
+        )
 
     def test_archive_negative_relative_score_is_applied(self):
         # Negative per-archive relative build scores are allowed.
@@ -758,7 +841,8 @@ class TestCalculateScore(TestCaseWithFactory):
         # Private archives get a bonus of 10000.
         build = self.makeBuild(private=True, component="main", urgency="high")
         self.assertCorrectScore(
-            build, "RELEASE", "main", "high", PRIVATE_ARCHIVE_SCORE_BONUS)
+            build, "RELEASE", "main", "high", PRIVATE_ARCHIVE_SCORE_BONUS
+        )
 
     def test_main_release_low_recent_score(self):
         # 1500 (RELEASE) + 1000 (main) + 5 (low) = 2505.
@@ -815,22 +899,28 @@ class TestCalculateScore(TestCaseWithFactory):
         # Package sets alter the score of official packages for their
         # series.
         build = self.makeBuild(
-            component="main", urgency="low", purpose=ArchivePurpose.PRIMARY)
+            component="main", urgency="low", purpose=ArchivePurpose.PRIMARY
+        )
         packageset = self.factory.makePackageset(
-            distroseries=build.distro_series)
+            distroseries=build.distro_series
+        )
         removeSecurityProxy(packageset).add(
-            [build.source_package_release.sourcepackagename])
+            [build.source_package_release.sourcepackagename]
+        )
         removeSecurityProxy(packageset).relative_build_score = 100
         self.assertCorrectScore(build, "RELEASE", "main", "low", 100)
 
     def test_score_packageset_in_ppa(self):
         # Package set score boosts don't affect PPA packages.
         build = self.makeBuild(
-            component="main", urgency="low", purpose=ArchivePurpose.PPA)
+            component="main", urgency="low", purpose=ArchivePurpose.PPA
+        )
         packageset = self.factory.makePackageset(
-            distroseries=build.distro_series)
+            distroseries=build.distro_series
+        )
         removeSecurityProxy(packageset).add(
-            [build.source_package_release.sourcepackagename])
+            [build.source_package_release.sourcepackagename]
+        )
         removeSecurityProxy(packageset).relative_build_score = 100
         self.assertCorrectScore(build, "RELEASE", "main", "low", 0)
 
@@ -838,7 +928,7 @@ class TestCalculateScore(TestCaseWithFactory):
         # Language packs (the translations section) don't get any
         # package-specific score bumps. They always have the archive's
         # base score.
-        build = self.makeBuild(section_name='translations')
+        build = self.makeBuild(section_name="translations")
         removeSecurityProxy(build.archive).relative_build_score = 666
         self.assertEqual(666, build.calculateScore())
 
@@ -848,7 +938,8 @@ class TestCalculateScore(TestCaseWithFactory):
             obj_url = api_url(obj)
         removeSecurityProxy(obj).relative_build_score = 100
         webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(obj_url, api_version="devel").jsonBody()
         self.assertEqual(100, entry["relative_build_score"])
 
@@ -861,11 +952,14 @@ class TestCalculateScore(TestCaseWithFactory):
         with person_logged_in(obj.owner):
             obj_url = api_url(obj)
         webservice = webservice_for_person(
-            obj.owner, permission=OAuthPermission.WRITE_PUBLIC)
+            obj.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(obj_url, api_version="devel").jsonBody()
         response = webservice.patch(
-            entry["self_link"], "application/json",
-            dumps(dict(relative_build_score=100)))
+            entry["self_link"],
+            "application/json",
+            dumps(dict(relative_build_score=100)),
+        )
         self.assertEqual(401, response.status)
         new_entry = webservice.get(obj_url, api_version="devel").jsonBody()
         self.assertEqual(0, new_entry["relative_build_score"])
@@ -876,11 +970,14 @@ class TestCalculateScore(TestCaseWithFactory):
             obj_url = api_url(obj)
         person = self.factory.makePerson(member_of=[team])
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         entry = webservice.get(obj_url, api_version="devel").jsonBody()
         response = webservice.patch(
-            entry["self_link"], "application/json",
-            dumps(dict(relative_build_score=100)))
+            entry["self_link"],
+            "application/json",
+            dumps(dict(relative_build_score=100)),
+        )
         self.assertEqual(209, response.status)
         self.assertEqual(100, response.jsonBody()["relative_build_score"])
 
@@ -899,7 +996,8 @@ class TestCalculateScore(TestCaseWithFactory):
         # Buildd admins can change a packageset's build score.
         packageset = self.factory.makePackageset()
         self.assertScoreWriteableByTeam(
-            packageset, getUtility(ILaunchpadCelebrities).buildd_admin)
+            packageset, getUtility(ILaunchpadCelebrities).buildd_admin
+        )
 
     def test_score_archive_readable(self):
         # An archive's build score is readable by anyone.
@@ -916,14 +1014,17 @@ class TestCalculateScore(TestCaseWithFactory):
         # Buildd and PPA admins can change an archive's build score.
         archive = self.factory.makeArchive()
         self.assertScoreWriteableByTeam(
-            archive, getUtility(ILaunchpadCelebrities).buildd_admin)
+            archive, getUtility(ILaunchpadCelebrities).buildd_admin
+        )
         with anonymous_logged_in():
             self.assertScoreWriteableByTeam(
-                archive, getUtility(ILaunchpadCelebrities).ppa_admin)
+                archive, getUtility(ILaunchpadCelebrities).ppa_admin
+            )
 
 
 class TestBinaryPackageBuildMacaroonIssuer(
-        MacaroonTestMixin, TestCaseWithFactory):
+    MacaroonTestMixin, TestCaseWithFactory
+):
     """Test BinaryPackageBuild macaroon issuing and verification."""
 
     layer = LaunchpadZopelessLayer
@@ -931,159 +1032,236 @@ class TestBinaryPackageBuildMacaroonIssuer(
     def setUp(self):
         super().setUp()
         self.pushConfig(
-            "launchpad", internal_macaroon_secret_key="some-secret")
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
 
     def test_issueMacaroon_refuses_public_archive(self):
         build = self.factory.makeBinaryPackageBuild()
         issuer = getUtility(IMacaroonIssuer, "binary-package-build")
         self.assertRaises(
-            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
-            build)
+            BadMacaroonContext,
+            removeSecurityProxy(issuer).issueMacaroon,
+            build,
+        )
 
     def test_issueMacaroon_good(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         issuer = getUtility(IMacaroonIssuer, "binary-package-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
         self.assertEqual("launchpad.test", macaroon.location)
         self.assertEqual("binary-package-build", macaroon.identifier)
-        self.assertThat(macaroon.caveats, MatchesListwise([
-            MatchesStructure.byEquality(
-                caveat_id="lp.principal.binary-package-build %s" % build.id),
-            ]))
+        self.assertThat(
+            macaroon.caveats,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        caveat_id="lp.principal.binary-package-build %s"
+                        % build.id
+                    ),
+                ]
+            ),
+        )
 
     def test_issueMacaroon_via_authserver(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         private_root = getUtility(IPrivateApplication)
         authserver = AuthServerAPIView(private_root.authserver, TestRequest())
         macaroon = Macaroon.deserialize(
             authserver.issueMacaroon(
-                "binary-package-build", "BinaryPackageBuild", build.id))
-        self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.test"),
-            identifier=Equals("binary-package-build"),
-            caveats=MatchesListwise([
-                MatchesStructure.byEquality(
-                    caveat_id=(
-                        "lp.principal.binary-package-build %s" % build.id)),
-                ])))
+                "binary-package-build", "BinaryPackageBuild", build.id
+            )
+        )
+        self.assertThat(
+            macaroon,
+            MatchesStructure(
+                location=Equals("launchpad.test"),
+                identifier=Equals("binary-package-build"),
+                caveats=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            caveat_id=(
+                                "lp.principal.binary-package-build %s"
+                                % build.id
+                            )
+                        ),
+                    ]
+                ),
+            ),
+        )
 
     def test_verifyMacaroon_good_file(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         sprf = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, sprf.libraryfile)
 
     def test_verifyMacaroon_good_direct_archive(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, build.archive)
 
     def test_verifyMacaroon_good_indirect_archive(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         dependency = self.factory.makeArchive(
-            distribution=build.archive.distribution, private=True)
+            distribution=build.archive.distribution, private=True
+        )
         build.archive.addArchiveDependency(
-            dependency, PackagePublishingPocket.RELEASE)
+            dependency, PackagePublishingPocket.RELEASE
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(issuer, macaroon, dependency)
 
     def test_verifyMacaroon_wrong_location(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         sprf = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = Macaroon(
-            location="another-location", key=issuer._root_secret)
+            location="another-location", key=issuer._root_secret
+        )
         self.assertMacaroonDoesNotVerify(
             ["Macaroon has unknown location 'another-location'."],
-            issuer, macaroon, sprf.libraryfile)
+            issuer,
+            macaroon,
+            sprf.libraryfile,
+        )
 
     def test_verifyMacaroon_wrong_key(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         sprf = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = Macaroon(
-            location=config.vhost.mainsite.hostname, key="another-secret")
+            location=config.vhost.mainsite.hostname, key="another-secret"
+        )
         self.assertMacaroonDoesNotVerify(
-            ["Signatures do not match"], issuer, macaroon, sprf.libraryfile)
+            ["Signatures do not match"], issuer, macaroon, sprf.libraryfile
+        )
 
     def test_verifyMacaroon_not_building(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         sprf = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.principal.binary-package-build %s' "
-             "failed." % build.id],
-            issuer, macaroon, sprf.libraryfile)
+            [
+                "Caveat check for 'lp.principal.binary-package-build %s' "
+                "failed." % build.id
+            ],
+            issuer,
+            macaroon,
+            sprf.libraryfile,
+        )
 
     def test_verifyMacaroon_wrong_build(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         sprf = self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         build.updateStatus(BuildStatus.BUILDING)
         other_build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         other_build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(other_build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.principal.binary-package-build %s' "
-             "failed." % other_build.id],
-            issuer, macaroon, sprf.libraryfile)
+            [
+                "Caveat check for 'lp.principal.binary-package-build %s' "
+                "failed." % other_build.id
+            ],
+            issuer,
+            macaroon,
+            sprf.libraryfile,
+        )
 
     def test_verifyMacaroon_wrong_file(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         self.factory.makeSourcePackageReleaseFile(
-            sourcepackagerelease=build.source_package_release)
+            sourcepackagerelease=build.source_package_release
+        )
         lfa = self.factory.makeLibraryFileAlias()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.principal.binary-package-build %s' "
-             "failed." % build.id],
-            issuer, macaroon, lfa)
+            [
+                "Caveat check for 'lp.principal.binary-package-build %s' "
+                "failed." % build.id
+            ],
+            issuer,
+            macaroon,
+            lfa,
+        )
 
     def test_verifyMacaroon_wrong_archive(self):
         build = self.factory.makeBinaryPackageBuild(
-            archive=self.factory.makeArchive(private=True))
+            archive=self.factory.makeArchive(private=True)
+        )
         archive = self.factory.makeArchive(
-            distribution=build.archive.distribution, private=True)
+            distribution=build.archive.distribution, private=True
+        )
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "binary-package-build"))
+            getUtility(IMacaroonIssuer, "binary-package-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.principal.binary-package-build %s' "
-             "failed." % build.id],
-            issuer, macaroon, archive)
+            [
+                "Caveat check for 'lp.principal.binary-package-build %s' "
+                "failed." % build.id
+            ],
+            issuer,
+            macaroon,
+            archive,
+        )

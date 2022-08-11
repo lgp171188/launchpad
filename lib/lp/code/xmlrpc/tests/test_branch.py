@@ -16,15 +16,11 @@ from lp.code.interfaces.codehosting import BRANCH_ALIAS_PREFIX
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.xmlrpc.branch import PublicCodehostingAPI
 from lp.services.xmlrpc import LaunchpadFault
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.xmlrpc import faults
 
-
-NON_ASCII_NAME = 'nam\N{LATIN SMALL LETTER E WITH ACUTE}'
+NON_ASCII_NAME = "nam\N{LATIN SMALL LETTER E WITH ACUTE}"
 
 
 class TestExpandURL(TestCaseWithFactory):
@@ -37,7 +33,8 @@ class TestExpandURL(TestCaseWithFactory):
         product = self.factory.makeProduct()
         # BranchType is only signficiant insofar as it is not a REMOTE branch.
         trunk = self.factory.makeProductBranch(
-            branch_type=BranchType.HOSTED, product=product)
+            branch_type=BranchType.HOSTED, product=product
+        )
         with person_logged_in(product.owner):
             ICanHasLinkedBranch(product).setBranch(trunk)
         return product, trunk
@@ -56,19 +53,19 @@ class TestExpandURL(TestCaseWithFactory):
         if lp_path is None:
             ssh_branch_path = public_branch_path
         else:
-            if lp_path.startswith('~'):
+            if lp_path.startswith("~"):
                 ssh_branch_path = lp_path
             else:
-                ssh_branch_path = '%s/%s' % (BRANCH_ALIAS_PREFIX, lp_path)
+                ssh_branch_path = "%s/%s" % (BRANCH_ALIAS_PREFIX, lp_path)
         # This improves the error message if results happens to be a fault.
         if isinstance(results, LaunchpadFault):
             raise results
-        for url in results['urls']:
+        for url in results["urls"]:
             uri = URI(url)
-            if uri.scheme == 'http':
-                self.assertEqual('/' + public_branch_path, uri.path)
+            if uri.scheme == "http":
+                self.assertEqual("/" + public_branch_path, uri.path)
             else:
-                self.assertEqual('/' + ssh_branch_path, uri.path)
+                self.assertEqual("/" + ssh_branch_path, uri.path)
 
     def assertOnlyWritableResolves(self, lp_url_path):
         """Only the bzr+ssh url is returned."""
@@ -81,7 +78,8 @@ class TestExpandURL(TestCaseWithFactory):
         self.assertTrue(
             isinstance(fault, xmlrpc.client.Fault),
             "resolve_lp_path(%r) returned %r, not a Fault."
-            % (lp_url_path, fault))
+            % (lp_url_path, fault),
+        )
         self.assertEqual(expected_fault.__class__, fault.__class__)
         self.assertEqual(expected_fault.faultString, fault.faultString)
         return fault
@@ -96,18 +94,19 @@ class TestExpandURL(TestCaseWithFactory):
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
         urls = [
-            'bzr+ssh://bazaar.launchpad.test/+branch/%s' % product.name,
-            'http://bazaar.launchpad.test/%s' % trunk.unique_name]
+            "bzr+ssh://bazaar.launchpad.test/+branch/%s" % product.name,
+            "http://bazaar.launchpad.test/%s" % trunk.unique_name,
+        ]
         self.assertEqual(dict(urls=urls), results)
 
     def test_resultDictForHotProduct(self):
         # If 'project-name' is in the config.codehosting.hot_products list,
         # lp:project-name will only resolve to the http url.
         product, trunk = self.makeProdutWithTrunk()
-        self.pushConfig('codehosting', hot_products=product.name)
+        self.pushConfig("codehosting", hot_products=product.name)
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
-        http_url = 'http://bazaar.launchpad.test/%s' % trunk.unique_name
+        http_url = "http://bazaar.launchpad.test/%s" % trunk.unique_name
         self.assertEqual(dict(urls=[http_url]), results)
 
     def test_product_only(self):
@@ -123,13 +122,13 @@ class TestExpandURL(TestCaseWithFactory):
         # development focus of the product for the anonymous public access,
         # just to the aliased short name for bzr+ssh access.
         product, trunk = self.makeProdutWithTrunk()
-        lp_path = '%s/%s' % (product.name, product.development_focus.name)
+        lp_path = "%s/%s" % (product.name, product.development_focus.name)
         self.assertResolves(lp_path, trunk.unique_name, lp_path)
 
     def test_target_doesnt_exist(self):
         # The resolver doesn't care if the product exists or not.
-        self.assertOnlyWritableResolves('doesntexist')
-        self.assertOnlyWritableResolves('doesntexist/trunk')
+        self.assertOnlyWritableResolves("doesntexist")
+        self.assertOnlyWritableResolves("doesntexist/trunk")
 
     def test_product_and_series(self):
         # lp:product/series expands to the writable alias for product/series
@@ -137,9 +136,8 @@ class TestExpandURL(TestCaseWithFactory):
         # 'product'.
         product = self.factory.makeProduct()
         branch = self.factory.makeProductBranch(product=product)
-        series = self.factory.makeProductSeries(
-            product=product, branch=branch)
-        lp_path = '%s/%s' % (product.name, series.name)
+        series = self.factory.makeProductSeries(product=product, branch=branch)
+        lp_path = "%s/%s" % (product.name, series.name)
         self.assertResolves(lp_path, branch.unique_name, lp_path)
 
     def test_development_focus_has_no_branch(self):
@@ -151,13 +149,14 @@ class TestExpandURL(TestCaseWithFactory):
         # A series with no branch resolves to the writable alias.
         series = self.factory.makeProductSeries(branch=None)
         self.assertOnlyWritableResolves(
-            '%s/%s' % (series.product.name, series.name))
+            "%s/%s" % (series.product.name, series.name)
+        )
 
     def test_no_such_product_series_non_ascii(self):
         # lp:product/<non-ascii-string> resolves to the branch alias with the
         # name escaped.
         product = self.factory.makeProduct()
-        lp_path = '%s/%s' % (product.name, NON_ASCII_NAME)
+        lp_path = "%s/%s" % (product.name, NON_ASCII_NAME)
         escaped_name = urlutils.escape(lp_path)
         self.assertResolves(lp_path, None, escaped_name)
 
@@ -184,8 +183,7 @@ class TestExpandURL(TestCaseWithFactory):
         # We do this so that users can push new branches to lp: URLs.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        nonexistent_branch = '~%s/%s/doesntexist' % (
-            owner.name, product.name)
+        nonexistent_branch = "~%s/%s/doesntexist" % (owner.name, product.name)
         self.assertResolves(nonexistent_branch, nonexistent_branch)
 
     def test_no_such_branch_product_non_ascii(self):
@@ -193,17 +191,21 @@ class TestExpandURL(TestCaseWithFactory):
         # find a branch, but it still resolves rather than erroring.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        nonexistent_branch = '~%s/%s/%s' % (
-            owner.name, product.name, NON_ASCII_NAME)
+        nonexistent_branch = "~%s/%s/%s" % (
+            owner.name,
+            product.name,
+            NON_ASCII_NAME,
+        )
         self.assertResolves(
-            nonexistent_branch, urlutils.escape(nonexistent_branch))
+            nonexistent_branch, urlutils.escape(nonexistent_branch)
+        )
 
     def test_no_such_branch_personal(self):
         # Resolve paths to junk branches.
         # This test added to make sure we don't raise a fault when looking for
         # the '+junk' project, which doesn't actually exist.
         owner = self.factory.makePerson()
-        nonexistent_branch = '~%s/+junk/doesntexist' % owner.name
+        nonexistent_branch = "~%s/+junk/doesntexist" % owner.name
         self.assertResolves(nonexistent_branch, nonexistent_branch)
 
     def test_no_such_branch_package(self):
@@ -211,8 +213,10 @@ class TestExpandURL(TestCaseWithFactory):
         # name, so that we can push new branches using lp: URLs.
         owner = self.factory.makePerson()
         sourcepackage = self.factory.makeSourcePackage()
-        nonexistent_branch = '~%s/%s/doesntexist' % (
-            owner.name, sourcepackage.path)
+        nonexistent_branch = "~%s/%s/doesntexist" % (
+            owner.name,
+            sourcepackage.path,
+        )
         self.assertResolves(nonexistent_branch, nonexistent_branch)
 
     def test_resolve_branch_with_no_such_product(self):
@@ -220,28 +224,37 @@ class TestExpandURL(TestCaseWithFactory):
         # then we return a NoSuchProduct fault.
         owner = self.factory.makePerson()
         nonexistent_product_branch = "~%s/doesntexist/%s" % (
-            owner.name, self.factory.getUniqueString())
+            owner.name,
+            self.factory.getUniqueString(),
+        )
         self.assertFault(
-            nonexistent_product_branch, faults.NoSuchProduct('doesntexist'))
+            nonexistent_product_branch, faults.NoSuchProduct("doesntexist")
+        )
 
     def test_resolve_branch_with_no_such_owner(self):
         # If we try to resolve a branch that refers to a non-existent owner,
         # then we return a NoSuchPerson fault.
         nonexistent_owner_branch = "~doesntexist/%s/%s" % (
-            self.factory.getUniqueString(), self.factory.getUniqueString())
+            self.factory.getUniqueString(),
+            self.factory.getUniqueString(),
+        )
         self.assertFault(
             nonexistent_owner_branch,
-            faults.NoSuchPersonWithName('doesntexist'))
+            faults.NoSuchPersonWithName("doesntexist"),
+        )
 
     def test_resolve_branch_with_no_such_owner_non_ascii(self):
         # lp:~<non-ascii-string>/product/name returns NoSuchPersonWithName
         # with the name escaped.
         nonexistent_owner_branch = "~%s/%s/%s" % (
-            NON_ASCII_NAME, self.factory.getUniqueString(),
-            self.factory.getUniqueString())
+            NON_ASCII_NAME,
+            self.factory.getUniqueString(),
+            self.factory.getUniqueString(),
+        )
         self.assertFault(
             nonexistent_owner_branch,
-            faults.NoSuchPersonWithName(urlutils.escape(NON_ASCII_NAME)))
+            faults.NoSuchPersonWithName(urlutils.escape(NON_ASCII_NAME)),
+        )
 
     def test_too_many_segments(self):
         # If we have more segments than are necessary to refer to a branch,
@@ -249,7 +262,7 @@ class TestExpandURL(TestCaseWithFactory):
         # We do this so that users can do operations like 'bzr cat
         # lp:path/to/branch/README.txt'.
         arbitrary_branch = self.factory.makeAnyBranch()
-        longer_path = os.path.join(arbitrary_branch.unique_name, 'qux')
+        longer_path = os.path.join(arbitrary_branch.unique_name, "qux")
         self.assertResolves(longer_path, longer_path)
 
     def test_too_many_segments_no_such_branch(self):
@@ -265,44 +278,48 @@ class TestExpandURL(TestCaseWithFactory):
         branch_name = self.factory.getUniqueString()
         extra_path = self.factory.getUniqueString()
         longer_path = os.path.join(
-            '~' + person.name, product.name, branch_name, extra_path)
+            "~" + person.name, product.name, branch_name, extra_path
+        )
         self.assertResolves(longer_path, longer_path)
 
     def test_empty_path(self):
         # An empty path is an invalid identifier.
-        self.assertFault('', faults.InvalidBranchIdentifier(''))
+        self.assertFault("", faults.InvalidBranchIdentifier(""))
 
     def test_too_short(self):
         # Return a nice fault if the unique name is too short.
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
-        path = '%s/%s' % (owner.name, product.name)
-        self.assertFault('~' + path, faults.InvalidBranchUniqueName(path))
+        path = "%s/%s" % (owner.name, product.name)
+        self.assertFault("~" + path, faults.InvalidBranchUniqueName(path))
 
     def test_all_slashes(self):
         # A path of all slashes is an invalid identifier.
-        self.assertFault('///', faults.InvalidBranchIdentifier('///'))
+        self.assertFault("///", faults.InvalidBranchIdentifier("///"))
 
     def test_trailing_slashes(self):
         # Trailing slashes are trimmed.
         # Trailing slashes on lp:product//
         product, trunk = self.makeProdutWithTrunk()
         self.assertResolves(
-            product.name + '/', trunk.unique_name, product.name)
+            product.name + "/", trunk.unique_name, product.name
+        )
         self.assertResolves(
-            product.name + '//', trunk.unique_name, product.name)
+            product.name + "//", trunk.unique_name, product.name
+        )
 
         # Trailing slashes on lp:~owner/product/branch//
         branch = self.factory.makeAnyBranch()
-        self.assertResolves(branch.unique_name + '/', branch.unique_name)
-        self.assertResolves(branch.unique_name + '//', branch.unique_name)
+        self.assertResolves(branch.unique_name + "/", branch.unique_name)
+        self.assertResolves(branch.unique_name + "//", branch.unique_name)
 
     def test_private_branch(self):
         # Invisible branches are resolved as if they didn't exist, so that we
         # reveal the least possile amount of information about them.
         # For fully specified branch names, this means resolving the lp url.
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         # Removing security proxy to get at the unique_name attribute of a
         # private branch, and tests are currently running as an anonymous
         # user.
@@ -316,16 +333,16 @@ class TestExpandURL(TestCaseWithFactory):
         # attributes of a private branch and these tests are running as an
         # anonymous user.
         branch = self.factory.makeAnyBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         series = self.factory.makeProductSeries(branch=branch)
-        lp_path = '%s/%s' % (series.product.name, series.name)
+        lp_path = "%s/%s" % (series.product.name, series.name)
         self.assertOnlyWritableResolves(lp_path)
 
     def test_private_branch_as_development_focus(self):
         # We resolve private linked branches using the writable alias.
         product, trunk = self.makeProdutWithTrunk()
-        removeSecurityProxy(trunk).information_type = (
-            InformationType.USERDATA)
+        removeSecurityProxy(trunk).information_type = InformationType.USERDATA
         self.assertOnlyWritableResolves(product.name)
 
     def test_private_branch_as_user(self):
@@ -340,7 +357,8 @@ class TestExpandURL(TestCaseWithFactory):
         # resorting to removeSecurityProxy.
         owner = self.factory.makePerson()
         branch = self.factory.makeAnyBranch(
-            owner=owner, information_type=InformationType.USERDATA)
+            owner=owner, information_type=InformationType.USERDATA
+        )
         path = removeSecurityProxy(branch).unique_name
         self.assertOnlyWritableResolves(path)
 
@@ -350,12 +368,13 @@ class TestExpandURL(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(branch_type=BranchType.REMOTE)
         api = PublicCodehostingAPI(None, None)
         result = api.resolve_lp_path(branch.unique_name)
-        self.assertEqual([branch.url], result['urls'])
+        self.assertEqual([branch.url], result["urls"])
 
     def test_remote_branch_no_url(self):
         # Raise a Fault for remote branches with no URL.
         branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.REMOTE, url=None)
+            branch_type=BranchType.REMOTE, url=None
+        )
         self.assertFault(
-            branch.unique_name,
-            faults.NoUrlForBranch(branch.unique_name))
+            branch.unique_name, faults.NoUrlForBranch(branch.unique_name)
+        )

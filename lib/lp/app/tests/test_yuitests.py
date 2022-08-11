@@ -2,22 +2,20 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Run YUI.test tests."""
+from typing import List
 
-__all__ = []
-
-from lp.testing import (
-    build_yui_unittest_suite,
-    YUIUnitTestCase,
-    )
+from lp.testing import YUIUnitTestCase, build_yui_unittest_suite
 from lp.testing.layers import YUITestLayer
+
+__all__ = []  # type: List[str]
 
 
 class AppYUIUnitTestCase(YUIUnitTestCase):
 
     layer = YUITestLayer
-    suite_name = 'AppYUIUnitTests'
+    suite_name = "AppYUIUnitTests"
 
 
 def test_suite():
-    app_testing_path = 'lp/app'
+    app_testing_path = "lp/app"
     return build_yui_unittest_suite(app_testing_path, AppYUIUnitTestCase)

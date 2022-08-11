@@ -4,10 +4,12 @@
 """Views for SpecificationSubscription."""
 
 __all__ = [
-    'SpecificationSubscriptionAddView',
-    'SpecificationSubscriptionAddSubscriberView',
-    'SpecificationSubscriptionEditView',
-    ]
+    "SpecificationSubscriptionAddView",
+    "SpecificationSubscriptionAddSubscriberView",
+    "SpecificationSubscriptionEditView",
+]
+
+from typing import List
 
 from lazr.delegates import delegate_to
 from simplejson import dumps
@@ -15,13 +17,13 @@ from zope.component import getUtility
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.blueprints.interfaces.specificationsubscription import (
     ISpecificationSubscription,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authorization import precache_permission_for_objects
@@ -33,99 +35,113 @@ class SpecificationSubscriptionAddView(LaunchpadFormView):
     """Used to subscribe the current user to a blueprint."""
 
     schema = ISpecificationSubscription
-    field_names = ['essential']
-    label = 'Subscribe to blueprint'
+    field_names = ["essential"]
+    label = "Subscribe to blueprint"
+
+    @property
+    def next_url(self):
+        return canonical_url(self.context)
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context)
-
-    next_url = cancel_url
+        return self.next_url
 
     def _subscribe(self, person, essential):
         self.context.subscribe(person, self.user, essential)
 
-    @action(_('Subscribe'), name='subscribe')
+    @action(_("Subscribe"), name="subscribe")
     def subscribe_action(self, action, data):
-        self._subscribe(self.user, data['essential'])
+        self._subscribe(self.user, data["essential"])
         self.request.response.addInfoNotification(
-            "You have subscribed to this blueprint.")
+            "You have subscribed to this blueprint."
+        )
 
 
 class SpecificationSubscriptionAddSubscriberView(
-    SpecificationSubscriptionAddView):
+    SpecificationSubscriptionAddView
+):
     """Used to subscribe someone else to a blueprint."""
 
-    field_names = ['person', 'essential']
-    label = 'Subscribe someone else'
+    field_names = ["person", "essential"]
+    label = "Subscribe someone else"
     for_input = True
 
-    @action(_('Subscribe'), name='subscribe')
+    @action(_("Subscribe"), name="subscribe")
     def subscribe_action(self, action, data):
-        person = data['person']
-        self._subscribe(person, data['essential'])
+        person = data["person"]
+        self._subscribe(person, data["essential"])
         self.request.response.addInfoNotification(
-            "%s has been subscribed to this blueprint." % person.displayname)
+            "%s has been subscribed to this blueprint." % person.displayname
+        )
 
 
 class SpecificationSubscriptionDeleteView(LaunchpadFormView):
     """Used to unsubscribe someone from a blueprint."""
 
     schema = ISpecificationSubscription
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
-        return ("Unsubscribe %s from %s"
-                    % (self.context.person.displayname,
-                       self.context.specification.title))
+        return "Unsubscribe %s from %s" % (
+            self.context.person.displayname,
+            self.context.specification.title,
+        )
 
     page_title = label
 
     @property
-    def cancel_url(self):
+    def next_url(self):
         return canonical_url(self.context.specification)
 
-    next_url = cancel_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
-    @action('Unsubscribe', name='unsubscribe')
+    @action("Unsubscribe", name="unsubscribe")
     def unsubscribe_action(self, action, data):
         self.context.specification.unsubscribe(self.context.person, self.user)
         if self.context.person == self.user:
             self.request.response.addInfoNotification(
-                "You have unsubscribed from this blueprint.")
+                "You have unsubscribed from this blueprint."
+            )
         else:
             self.request.response.addInfoNotification(
                 "%s has been unsubscribed from this blueprint."
-                % self.context.person.displayname)
+                % self.context.person.displayname
+            )
 
 
 class SpecificationSubscriptionEditView(LaunchpadEditFormView):
 
     schema = ISpecificationSubscription
-    field_names = ['essential']
+    field_names = ["essential"]
 
     @property
     def label(self):
         return "Modify subscription to %s" % self.context.specification.title
 
     @property
-    def cancel_url(self):
+    def next_url(self):
         return canonical_url(self.context.specification)
 
-    next_url = cancel_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
-    @action(_('Change'), name='change')
+    @action(_("Change"), name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
         is_current_user_subscription = self.user == self.context.person
         if is_current_user_subscription:
             self.request.response.addInfoNotification(
-                "Your subscription has been updated.")
+                "Your subscription has been updated."
+            )
         else:
             self.request.response.addInfoNotification(
                 "The subscription for %s has been updated."
-                % self.context.person.displayname)
+                % self.context.person.displayname
+            )
 
 
 class SpecificationPortletSubcribersContents(LaunchpadView):
@@ -158,7 +174,8 @@ class SpecificationPortletSubcribersContents(LaunchpadView):
         # The security adaptor will do the job also but we don't want or need
         # the expense of running several complex SQL queries.
         precache_permission_for_objects(
-                    self.request, 'launchpad.LimitedView', subscribers)
+            self.request, "launchpad.LimitedView", subscribers
+        )
 
         sorted_subscriptions = can_unsubscribe + cannot_unsubscribe
         return sorted_subscriptions
@@ -167,9 +184,9 @@ class SpecificationPortletSubcribersContents(LaunchpadView):
     def current_user_subscription_class(self):
         is_subscribed = self.context.isSubscribed(self.user)
         if is_subscribed:
-            return 'subscribed-true'
+            return "subscribed-true"
         else:
-            return 'subscribed-false'
+            return "subscribed-false"
 
 
 class SpecificationPortletSubcribersIds(LaunchpadView):
@@ -188,7 +205,7 @@ class SpecificationPortletSubcribersIds(LaunchpadView):
 
         ids = {}
         for sub in subscribers:
-            ids[sub.name] = 'subscriber-%s' % sub.id
+            ids[sub.name] = "subscriber-%s" % sub.id
         return ids
 
     @property
@@ -198,11 +215,11 @@ class SpecificationPortletSubcribersIds(LaunchpadView):
 
     def render(self):
         """Override the default render() to return only JSON."""
-        self.request.response.setHeader('content-type', 'application/json')
+        self.request.response.setHeader("content-type", "application/json")
         return self.subscriber_ids_js
 
 
-@delegate_to(ISpecificationSubscription, context='subscription')
+@delegate_to(ISpecificationSubscription, context="subscription")
 class SubscriptionAttrDecorator:
     """A SpecificationSubscription with added attributes for HTML/JS."""
 
@@ -211,4 +228,4 @@ class SubscriptionAttrDecorator:
 
     @property
     def css_name(self):
-        return 'subscriber-%s' % self.subscription.person.id
+        return "subscriber-%s" % self.subscription.person.id

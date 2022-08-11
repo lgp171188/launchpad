@@ -2,39 +2,25 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GitRef',
-    'GitRefDefault',
-    'GitRefFrozen',
-    'GitRefRemote',
-    ]
+    "GitRef",
+    "GitRefDefault",
+    "GitRefFrozen",
+    "GitRefRemote",
+]
 
-from functools import partial
 import re
-from urllib.parse import (
-    quote,
-    quote_plus,
-    urlsplit,
-    )
+from functools import partial
+from urllib.parse import quote, quote_plus, urlsplit
 
-from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import requests
 import six
-from storm.expr import And
-from storm.locals import (
-    DateTime,
-    Int,
-    Not,
-    Reference,
-    Store,
-    Unicode,
-    )
+from lazr.lifecycle.event import ObjectCreatedEvent
+from storm.expr import And, Or
+from storm.locals import DateTime, Int, Not, Reference, Store, Unicode
 from zope.component import getUtility
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -43,21 +29,21 @@ from lp.code.enums import (
     BranchMergeProposalStatus,
     GitObjectType,
     GitRepositoryType,
-    )
+)
 from lp.code.errors import (
     BranchMergeProposalExists,
     GitRepositoryBlobNotFound,
     GitRepositoryBlobUnsupportedRemote,
     GitRepositoryScanFault,
     InvalidBranchMergeProposal,
-    )
+)
 from lp.code.event.branchmergeproposal import (
     BranchMergeProposalNeedsReviewEvent,
-    )
+)
 from lp.code.interfaces.branch import WrongNumberOfReviewTypeArguments
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES,
-    )
+)
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitlookup import IGitLookup
@@ -66,16 +52,13 @@ from lp.code.interfaces.gitref import (
     IGitRefRemote,
     IGitRefRemoteSet,
     IGitRefSet,
-    )
+)
 from lp.code.interfaces.gitrule import describe_git_permissions
 from lp.code.model.branchmergeproposal import (
     BranchMergeProposal,
     BranchMergeProposalGetter,
-    )
-from lp.code.model.gitrule import (
-    GitRule,
-    GitRuleGrant,
-    )
+)
+from lp.code.model.gitrule import GitRule, GitRuleGrant
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -84,11 +67,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.memcache.interfaces import IMemcacheClient
-from lp.services.timeout import (
-    reduced_timeout,
-    TimeoutError,
-    urlfetch,
-    )
+from lp.services.timeout import TimeoutError, reduced_timeout, urlfetch
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.interfaces import ILaunchBag
 
@@ -104,19 +83,21 @@ class GitRefMixin:
 
     def __eq__(self, other):
         return (
-            IGitRef.providedBy(other) and
-            not IGitRefRemote.providedBy(other) and
-            self.repository == other.repository and
-            self.repository_url == other.repository_url and
-            self.path == other.path and
-            self.commit_sha1 == other.commit_sha1)
+            IGitRef.providedBy(other)
+            and not IGitRefRemote.providedBy(other)
+            and self.repository == other.repository
+            and self.repository_url == other.repository_url
+            and self.path == other.path
+            and self.commit_sha1 == other.commit_sha1
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((
-            self.repository, self.repository_url, self.path, self.commit_sha1))
+        return hash(
+            (self.repository, self.repository_url, self.path, self.commit_sha1)
+        )
 
     @property
     def display_name(self):
@@ -130,7 +111,7 @@ class GitRefMixin:
     def name(self):
         """See `IGitRef`."""
         if self.path.startswith("refs/heads/"):
-            return self.path[len("refs/heads/"):]
+            return self.path[len("refs/heads/") :]
         else:
             return self.path
 
@@ -173,7 +154,8 @@ class GitRefMixin:
         """See `IGitRef`."""
         return "%s?h=%s" % (
             self.repository.getCodebrowseUrl(),
-            quote_plus(self.name.encode("UTF-8")))
+            quote_plus(self.name.encode("UTF-8")),
+        )
 
     def getCodebrowseUrlForRevision(self, commit):
         """See `IGitRef`."""
@@ -196,10 +178,12 @@ class GitRefMixin:
         """See `IGitRef`."""
         return self.repository.visibleByUser(user)
 
-    def transitionToInformationType(self, information_type, user,
-                                    verify_policy=True):
+    def transitionToInformationType(
+        self, information_type, user, verify_policy=True
+    ):
         return self.repository.transitionToInformationType(
-            information_type, user, verify_policy=verify_policy)
+            information_type, user, verify_policy=verify_policy
+        )
 
     @property
     def reviewer(self):
@@ -231,12 +215,22 @@ class GitRefMixin:
         """See `IGitRef`."""
         return self.repository.subscribers
 
-    def subscribe(self, person, notification_level, max_diff_lines,
-                  code_review_level, subscribed_by):
+    def subscribe(
+        self,
+        person,
+        notification_level,
+        max_diff_lines,
+        code_review_level,
+        subscribed_by,
+    ):
         """See `IGitRef`."""
         return self.repository.subscribe(
-            person, notification_level, max_diff_lines, code_review_level,
-            subscribed_by)
+            person,
+            notification_level,
+            max_diff_lines,
+            code_review_level,
+            subscribed_by,
+        )
 
     def getSubscription(self, person):
         """See `IGitRef`."""
@@ -256,7 +250,8 @@ class GitRefMixin:
         return Store.of(self).find(
             BranchMergeProposal,
             BranchMergeProposal.source_git_repository == self.repository,
-            BranchMergeProposal.source_git_path == self.path)
+            BranchMergeProposal.source_git_path == self.path,
+        )
 
     def getPrecachedLandingTargets(self, user):
         """See `IGitRef`."""
@@ -274,14 +269,19 @@ class GitRefMixin:
             BranchMergeProposal,
             BranchMergeProposal.target_git_repository == self.repository,
             BranchMergeProposal.target_git_path == self.path,
-            Not(BranchMergeProposal.queue_status.is_in(
-                BRANCH_MERGE_PROPOSAL_FINAL_STATES)))
+            Not(
+                BranchMergeProposal.queue_status.is_in(
+                    BRANCH_MERGE_PROPOSAL_FINAL_STATES
+                )
+            ),
+        )
 
     def getPrecachedLandingCandidates(self, user):
         """See `IGitRef`."""
         loader = partial(BranchMergeProposal.preloadDataForBMPs, user=user)
         return DecoratedResultSet(
-            self.landing_candidates, pre_iter_hook=loader)
+            self.landing_candidates, pre_iter_hook=loader
+        )
 
     @property
     def _api_landing_candidates(self):
@@ -294,61 +294,93 @@ class GitRefMixin:
             BranchMergeProposal,
             BranchMergeProposal.prerequisite_git_repository == self.repository,
             BranchMergeProposal.prerequisite_git_path == self.path,
-            Not(BranchMergeProposal.queue_status.is_in(
-                BRANCH_MERGE_PROPOSAL_FINAL_STATES)))
+            Not(
+                BranchMergeProposal.queue_status.is_in(
+                    BRANCH_MERGE_PROPOSAL_FINAL_STATES
+                )
+            ),
+        )
 
-    def getMergeProposals(self, status=None, visible_by_user=None,
-                          merged_revision_ids=None, eager_load=False):
+    def getMergeProposals(
+        self,
+        status=None,
+        visible_by_user=None,
+        merged_revision_ids=None,
+        eager_load=False,
+    ):
         """See `IGitRef`."""
         if not status:
             status = (
                 BranchMergeProposalStatus.CODE_APPROVED,
                 BranchMergeProposalStatus.NEEDS_REVIEW,
-                BranchMergeProposalStatus.WORK_IN_PROGRESS)
+                BranchMergeProposalStatus.WORK_IN_PROGRESS,
+            )
 
         collection = getUtility(IAllGitRepositories).visibleByUser(
-            visible_by_user)
+            visible_by_user
+        )
         return collection.getMergeProposals(
-            status, target_repository=self.repository, target_path=self.path,
-            merged_revision_ids=merged_revision_ids, eager_load=eager_load)
+            status,
+            target_repository=self.repository,
+            target_path=self.path,
+            merged_revision_ids=merged_revision_ids,
+            eager_load=eager_load,
+        )
 
-    def getDependentMergeProposals(self, status=None, visible_by_user=None,
-                                   eager_load=False):
+    def getDependentMergeProposals(
+        self, status=None, visible_by_user=None, eager_load=False
+    ):
         """See `IGitRef`."""
         if not status:
             status = (
                 BranchMergeProposalStatus.CODE_APPROVED,
                 BranchMergeProposalStatus.NEEDS_REVIEW,
-                BranchMergeProposalStatus.WORK_IN_PROGRESS)
+                BranchMergeProposalStatus.WORK_IN_PROGRESS,
+            )
 
         collection = getUtility(IAllGitRepositories).visibleByUser(
-            visible_by_user)
+            visible_by_user
+        )
         return collection.getMergeProposals(
-            status, prerequisite_repository=self.repository,
-            prerequisite_path=self.path, eager_load=eager_load)
+            status,
+            prerequisite_repository=self.repository,
+            prerequisite_path=self.path,
+            eager_load=eager_load,
+        )
 
     @property
     def pending_updates(self):
         """See `IGitRef`."""
         return self.repository.pending_updates
 
-    def _getLog(self, start, limit=None, stop=None, union_repository=None,
-                enable_hosting=None, enable_memcache=None, logger=None):
+    def _getLog(
+        self,
+        start,
+        limit=None,
+        stop=None,
+        union_repository=None,
+        enable_hosting=None,
+        enable_memcache=None,
+        logger=None,
+    ):
         if enable_hosting is None:
-            enable_hosting = not getFeatureFlag(
-                "code.git.log.disable_hosting")
+            enable_hosting = not getFeatureFlag("code.git.log.disable_hosting")
         if enable_memcache is None:
             enable_memcache = not getFeatureFlag(
-                "code.git.log.disable_memcache")
+                "code.git.log.disable_memcache"
+            )
         path = self.repository.getInternalPath()
-        if (union_repository is not None and
-                union_repository != self.repository):
+        if (
+            union_repository is not None
+            and union_repository != self.repository
+        ):
             path = "%s:%s" % (union_repository.getInternalPath(), path)
         log = None
         if enable_memcache:
             memcache_client = getUtility(IMemcacheClient)
             instance_name = urlsplit(
-                config.codehosting.internal_git_api_endpoint).hostname
+                config.codehosting.internal_git_api_endpoint
+            ).hostname
             memcache_key = "%s:git-log:%s:%s" % (instance_name, path, start)
             if limit is not None:
                 memcache_key += ":limit=%s" % limit
@@ -362,55 +394,82 @@ class GitRefMixin:
         if log is None:
             if enable_hosting:
                 hosting_client = getUtility(IGitHostingClient)
-                log = removeSecurityProxy(hosting_client.getLog(
-                    path, start, limit=limit, stop=stop, logger=logger))
+                log = removeSecurityProxy(
+                    hosting_client.getLog(
+                        path, start, limit=limit, stop=stop, logger=logger
+                    )
+                )
                 if enable_memcache:
                     memcache_client.set_json(memcache_key, log, logger=logger)
             else:
                 # Fall back to synthesising something reasonable based on
                 # information in our own database.
-                log = [{
-                    "sha1": self.commit_sha1,
-                    "message": self.commit_message,
-                    "author": None if self.author is None else {
-                        "name": self.author.name_without_email,
-                        "email": self.author.email,
-                        "time": seconds_since_epoch(self.author_date),
+                log = [
+                    {
+                        "sha1": self.commit_sha1,
+                        "message": self.commit_message,
+                        "author": None
+                        if self.author is None
+                        else {
+                            "name": self.author.name_without_email,
+                            "email": self.author.email,
+                            "time": seconds_since_epoch(self.author_date),
                         },
-                    "committer": None if self.committer is None else {
-                        "name": self.committer.name_without_email,
-                        "email": self.committer.email,
-                        "time": seconds_since_epoch(self.committer_date),
+                        "committer": None
+                        if self.committer is None
+                        else {
+                            "name": self.committer.name_without_email,
+                            "email": self.committer.email,
+                            "time": seconds_since_epoch(self.committer_date),
                         },
-                    }]
+                    }
+                ]
         return log
 
-    def getCommits(self, start, limit=None, stop=None, union_repository=None,
-                   start_date=None, end_date=None, handle_timeout=False,
-                   logger=None):
+    def getCommits(
+        self,
+        start,
+        limit=None,
+        stop=None,
+        union_repository=None,
+        start_date=None,
+        end_date=None,
+        handle_timeout=False,
+        logger=None,
+    ):
         # Circular import.
         from lp.code.model.gitrepository import parse_git_commits
 
         with reduced_timeout(1.0 if handle_timeout else 0.0):
             try:
                 log = self._getLog(
-                    start, limit=limit, stop=stop,
-                    union_repository=union_repository, logger=logger)
+                    start,
+                    limit=limit,
+                    stop=stop,
+                    union_repository=union_repository,
+                    logger=logger,
+                )
                 commit_oids = [
-                    commit["sha1"] for commit in log if "sha1" in commit]
+                    commit["sha1"] for commit in log if "sha1" in commit
+                ]
                 parsed_commits = parse_git_commits(log)
             except TimeoutError:
                 if not handle_timeout:
                     raise
                 if logger is not None:
                     logger.exception(
-                        "Timeout fetching commits for %s" % self.identity)
+                        "Timeout fetching commits for %s" % self.identity
+                    )
                 # Synthesise a response based on what we have in the database.
                 commit_oids = [self.commit_sha1]
                 tip = {"sha1": self.commit_sha1, "synthetic": True}
                 optional_fields = (
-                    "author", "author_date", "committer", "committer_date",
-                    "commit_message")
+                    "author",
+                    "author_date",
+                    "committer",
+                    "committer_date",
+                    "commit_message",
+                )
                 for field in optional_fields:
                     if getattr(self, field) is not None:
                         tip[field] = getattr(self, field)
@@ -428,24 +487,37 @@ class GitRefMixin:
             commits.append(parsed_commit)
         return commits
 
-    def getLatestCommits(self, quantity=10, extended_details=False, user=None,
-                         handle_timeout=False, logger=None):
+    def getLatestCommits(
+        self,
+        quantity=10,
+        extended_details=False,
+        user=None,
+        handle_timeout=False,
+        logger=None,
+    ):
         commits = self.getCommits(
-            self.commit_sha1, limit=quantity, handle_timeout=handle_timeout,
-            logger=logger)
+            self.commit_sha1,
+            limit=quantity,
+            handle_timeout=handle_timeout,
+            logger=logger,
+        )
         if extended_details:
             # XXX cjwatson 2016-05-09: Add support for linked bugtasks once
             # those are supported for Git.
             collection = getUtility(IAllGitRepositories).visibleByUser(user)
             merge_proposals = collection.getMergeProposals(
-                target_repository=self.repository, target_path=self.path,
+                target_repository=self.repository,
+                target_path=self.path,
                 merged_revision_ids=[commit["sha1"] for commit in commits],
-                statuses=[BranchMergeProposalStatus.MERGED])
+                statuses=[BranchMergeProposalStatus.MERGED],
+            )
             merge_proposal_commits = {
-                mp.merged_revision_id: mp for mp in merge_proposals}
+                mp.merged_revision_id: mp for mp in merge_proposals
+            }
             for commit in commits:
                 commit["merge_proposal"] = merge_proposal_commits.get(
-                    commit["sha1"])
+                    commit["sha1"]
+                )
         return commits
 
     def getBlob(self, filename):
@@ -458,21 +530,27 @@ class GitRefMixin:
         from lp.code.model.sourcepackagerecipe import SourcePackageRecipe
         from lp.code.model.sourcepackagerecipedata import (
             SourcePackageRecipeData,
-            )
+        )
+
         revspecs = {self.path, self.name}
         if self.path == self.repository.default_branch:
             revspecs.add(None)
         recipes = SourcePackageRecipeData.findRecipes(
-            self.repository, revspecs=list(revspecs))
+            self.repository, revspecs=list(revspecs)
+        )
         hook = SourcePackageRecipe.preLoadDataForSourcePackageRecipes
         return DecoratedResultSet(recipes, pre_iter_hook=hook)
 
     def getGrants(self):
         """See `IGitRef`."""
-        return list(Store.of(self).find(
-            GitRuleGrant, GitRuleGrant.rule_id == GitRule.id,
-            GitRule.repository_id == self.repository_id,
-            GitRule.ref_pattern == self.path))
+        return list(
+            Store.of(self).find(
+                GitRuleGrant,
+                GitRuleGrant.rule_id == GitRule.id,
+                GitRule.repository_id == self.repository_id,
+                GitRule.ref_pattern == self.path,
+            )
+        )
 
     def setGrants(self, grants, user):
         """See `IGitRef`."""
@@ -486,8 +564,8 @@ class GitRefMixin:
     def checkPermissions(self, person):
         """See `IGitRef`."""
         return describe_git_permissions(
-            self.repository.checkRefPermissions(
-                person, [self.path])[self.path])
+            self.repository.checkRefPermissions(person, [self.path])[self.path]
+        )
 
     def getLatestScanJob(self):
         """See `IGitRef`."""
@@ -503,29 +581,31 @@ class GitRefMixin:
 class GitRef(GitRefMixin, StormBase):
     """See `IGitRef`."""
 
-    __storm_table__ = 'GitRef'
-    __storm_primary__ = ('repository_id', 'path')
+    __storm_table__ = "GitRef"
+    __storm_primary__ = ("repository_id", "path")
 
-    repository_id = Int(name='repository', allow_none=False)
-    repository = Reference(repository_id, 'GitRepository.id')
+    repository_id = Int(name="repository", allow_none=False)
+    repository = Reference(repository_id, "GitRepository.id")
 
-    path = Unicode(name='path', allow_none=False)
+    path = Unicode(name="path", allow_none=False)
 
-    commit_sha1 = Unicode(name='commit_sha1', allow_none=False)
+    commit_sha1 = Unicode(name="commit_sha1", allow_none=False)
 
     object_type = DBEnum(enum=GitObjectType, allow_none=False)
 
-    author_id = Int(name='author', allow_none=True)
-    author = Reference(author_id, 'RevisionAuthor.id')
+    author_id = Int(name="author", allow_none=True)
+    author = Reference(author_id, "RevisionAuthor.id")
     author_date = DateTime(
-        name='author_date', tzinfo=pytz.UTC, allow_none=True)
+        name="author_date", tzinfo=pytz.UTC, allow_none=True
+    )
 
-    committer_id = Int(name='committer', allow_none=True)
-    committer = Reference(committer_id, 'RevisionAuthor.id')
+    committer_id = Int(name="committer", allow_none=True)
+    committer = Reference(committer_id, "RevisionAuthor.id")
     committer_date = DateTime(
-        name='committer_date', tzinfo=pytz.UTC, allow_none=True)
+        name="committer_date", tzinfo=pytz.UTC, allow_none=True
+    )
 
-    commit_message = Unicode(name='commit_message', allow_none=True)
+    commit_message = Unicode(name="commit_message", allow_none=True)
 
     @property
     def commit_message_first_line(self):
@@ -538,39 +618,54 @@ class GitRef(GitRefMixin, StormBase):
     def has_commits(self):
         return self.commit_message is not None
 
-    def addLandingTarget(self, registrant, merge_target,
-                         merge_prerequisite=None, whiteboard=None,
-                         date_created=None, needs_review=None,
-                         description=None, review_requests=None,
-                         commit_message=None):
+    def addLandingTarget(
+        self,
+        registrant,
+        merge_target,
+        merge_prerequisite=None,
+        whiteboard=None,
+        date_created=None,
+        needs_review=None,
+        description=None,
+        review_requests=None,
+        commit_message=None,
+    ):
         """See `IGitRef`."""
         if not self.namespace.supports_merge_proposals:
             raise InvalidBranchMergeProposal(
-                "%s repositories do not support merge proposals." %
-                self.namespace.name)
+                "%s repositories do not support merge proposals."
+                % self.namespace.name
+            )
         if self == merge_target:
             raise InvalidBranchMergeProposal(
-                "Source and target references must be different.")
+                "Source and target references must be different."
+            )
         if not merge_target.repository.isRepositoryMergeable(self.repository):
             raise InvalidBranchMergeProposal(
-                "%s is not mergeable into %s" % (
-                    self.identity, merge_target.identity))
+                "%s is not mergeable into %s"
+                % (self.identity, merge_target.identity)
+            )
         if merge_prerequisite is not None:
             if not merge_target.repository.isRepositoryMergeable(
-                    merge_prerequisite.repository):
+                merge_prerequisite.repository
+            ):
                 raise InvalidBranchMergeProposal(
-                    "%s is not mergeable into %s" % (
-                        merge_prerequisite.identity, self.identity))
+                    "%s is not mergeable into %s"
+                    % (merge_prerequisite.identity, self.identity)
+                )
             if self == merge_prerequisite:
                 raise InvalidBranchMergeProposal(
-                    "Source and prerequisite references must be different.")
+                    "Source and prerequisite references must be different."
+                )
             if merge_target == merge_prerequisite:
                 raise InvalidBranchMergeProposal(
-                    "Target and prerequisite references must be different.")
+                    "Target and prerequisite references must be different."
+                )
 
         getter = BranchMergeProposalGetter
         for existing_proposal in getter.activeProposalsForBranches(
-                self, merge_target):
+            self, merge_target
+        ):
             raise BranchMergeProposalExists(existing_proposal)
 
         if date_created is None:
@@ -592,24 +687,30 @@ class GitRef(GitRefMixin, StormBase):
 
         kwargs = {}
         for prefix, obj in (
-                ("source", self),
-                ("target", merge_target),
-                ("prerequisite", merge_prerequisite)):
+            ("source", self),
+            ("target", merge_target),
+            ("prerequisite", merge_prerequisite),
+        ):
             if obj is not None:
                 kwargs["%s_git_repository" % prefix] = obj.repository
                 kwargs["%s_git_path" % prefix] = obj.path
                 kwargs["%s_git_commit_sha1" % prefix] = obj.commit_sha1
 
         bmp = BranchMergeProposal(
-            registrant=registrant, whiteboard=whiteboard,
+            registrant=registrant,
+            whiteboard=whiteboard,
             date_created=date_created,
             date_review_requested=date_review_requested,
-            queue_status=queue_status, commit_message=commit_message,
-            description=description, **kwargs)
+            queue_status=queue_status,
+            commit_message=commit_message,
+            description=description,
+            **kwargs,
+        )
 
         for reviewer, review_type in review_requests:
             bmp.nominateReviewer(
-                reviewer, registrant, review_type, _notify_listeners=False)
+                reviewer, registrant, review_type, _notify_listeners=False
+            )
 
         notify(ObjectCreatedEvent(bmp, user=registrant))
         if needs_review:
@@ -617,10 +718,17 @@ class GitRef(GitRefMixin, StormBase):
 
         return bmp
 
-    def createMergeProposal(self, registrant, merge_target,
-                            merge_prerequisite=None, needs_review=True,
-                            initial_comment=None, commit_message=None,
-                            reviewers=None, review_types=None):
+    def createMergeProposal(
+        self,
+        registrant,
+        merge_target,
+        merge_prerequisite=None,
+        needs_review=True,
+        initial_comment=None,
+        commit_message=None,
+        reviewers=None,
+        review_types=None,
+    ):
         """See `IGitRef`."""
         if reviewers is None:
             reviewers = []
@@ -628,30 +736,41 @@ class GitRef(GitRefMixin, StormBase):
             review_types = []
         if len(reviewers) != len(review_types):
             raise WrongNumberOfReviewTypeArguments(
-                'reviewers and review_types must be equal length.')
+                "reviewers and review_types must be equal length."
+            )
         review_requests = list(zip(reviewers, review_types))
         return self.addLandingTarget(
-            registrant, merge_target, merge_prerequisite,
-            needs_review=needs_review, description=initial_comment,
-            commit_message=commit_message, review_requests=review_requests)
+            registrant,
+            merge_target,
+            merge_prerequisite,
+            needs_review=needs_review,
+            description=initial_comment,
+            commit_message=commit_message,
+            review_requests=review_requests,
+        )
 
     @classmethod
     def findByReposAndPaths(cls, repos_and_paths):
         """See `IGitRefSet`"""
+
         def full_path(path):
             if path.startswith("refs/heads/"):
                 return path
             return "refs/heads/%s" % path
 
-        condition = None
+        clauses = []
         for repo, path in repos_and_paths:
-            clause = And(
-                GitRef.path.is_in([path, full_path(path)]),
-                (GitRef.repository_id == repo.id))
-            condition = clause if condition is None else condition | clause
-        result = {}
+            clauses.append(
+                And(
+                    GitRef.path.is_in([path, full_path(path)]),
+                    (GitRef.repository_id == repo.id),
+                )
+            )
+        if not clauses:
+            return {}
 
-        for row in IStore(GitRef).find(GitRef, condition):
+        result = {}
+        for row in IStore(GitRef).find(GitRef, Or(*clauses)):
             result[(row.repository_id, row.path)] = row
 
         return_value = {}
@@ -715,12 +834,14 @@ class GitRefDefault(GitRefDatabaseBackedMixin):
         path = self.repository.default_branch
         if path is None:
             raise NotFoundError(
-                "Repository '%s' has no default branch" % self.repository)
+                "Repository '%s' has no default branch" % self.repository
+            )
         ref = IStore(GitRef).get(GitRef, (self.repository_id, path))
         if ref is None:
             raise NotFoundError(
                 "Repository '%s' has default branch '%s', but there is no "
-                "such reference" % (self.repository, path))
+                "such reference" % (self.repository, path)
+            )
         return ref
 
 
@@ -743,7 +864,11 @@ class GitRefFrozen(GitRefDatabaseBackedMixin):
         self.commit_sha1 = commit_sha1
 
     _non_database_attributes = (
-        "repository_id", "repository", "path", "commit_sha1")
+        "repository_id",
+        "repository",
+        "path",
+        "commit_sha1",
+    )
 
     @property
     def _self_in_database(self):
@@ -752,59 +877,74 @@ class GitRefFrozen(GitRefDatabaseBackedMixin):
         if ref is None:
             raise NotFoundError(
                 "Repository '%s' does not currently contain a reference named "
-                "'%s'" % (self.repository, self.path))
+                "'%s'" % (self.repository, self.path)
+            )
         return ref
 
 
 def _fetch_blob_from_github(repository_url, ref_path, filename):
     repo_path = urlsplit(repository_url).path.strip("/")
     if repo_path.endswith(".git"):
-        repo_path = repo_path[:-len(".git")]
+        repo_path = repo_path[: -len(".git")]
     try:
         response = urlfetch(
-            "https://raw.githubusercontent.com/%s/%s/%s" % (
+            "https://raw.githubusercontent.com/%s/%s/%s"
+            % (
                 repo_path,
                 # GitHub supports either branch or tag names here, but both
                 # must be shortened.  (If both a branch and a tag exist with
                 # the same name, it appears to pick the branch.)
                 quote(re.sub(r"^refs/(?:heads|tags)/", "", ref_path)),
-                quote(filename)),
-            use_proxy=True)
+                quote(filename),
+            ),
+            use_proxy=True,
+        )
     except requests.RequestException as e:
-        if (e.response is not None and
-                e.response.status_code == requests.codes.NOT_FOUND):
+        if (
+            e.response is not None
+            and e.response.status_code == requests.codes.NOT_FOUND
+        ):
             raise GitRepositoryBlobNotFound(
-                repository_url, filename, rev=ref_path)
+                repository_url, filename, rev=ref_path
+            )
         else:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository at %s: %s" %
-                (repository_url, str(e)))
+                "Failed to get file from Git repository at %s: %s"
+                % (repository_url, str(e))
+            )
     return response.content
 
 
 def _fetch_blob_from_gitlab(repository_url, ref_path, filename):
     repo_url = repository_url.strip("/")
     if repo_url.endswith(".git"):
-        repo_url = repo_url[:-len(".git")]
+        repo_url = repo_url[: -len(".git")]
     try:
         response = urlfetch(
-            "%s/-/raw/%s/%s" % (
+            "%s/-/raw/%s/%s"
+            % (
                 repo_url,
                 # GitLab supports either branch or tag names here, but both
                 # must be shortened.  (If both a branch and a tag exist with
                 # the same name, it appears to pick the tag.)
                 quote(re.sub(r"^refs/(?:heads|tags)/", "", ref_path)),
-                quote(filename)),
-            use_proxy=True)
+                quote(filename),
+            ),
+            use_proxy=True,
+        )
     except requests.RequestException as e:
-        if (e.response is not None and
-                e.response.status_code == requests.codes.NOT_FOUND):
+        if (
+            e.response is not None
+            and e.response.status_code == requests.codes.NOT_FOUND
+        ):
             raise GitRepositoryBlobNotFound(
-                repository_url, filename, rev=ref_path)
+                repository_url, filename, rev=ref_path
+            )
         else:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository at %s: %s" %
-                (repository_url, str(e)))
+                "Failed to get file from Git repository at %s: %s"
+                % (repository_url, str(e))
+            )
     return response.content
 
 
@@ -815,25 +955,30 @@ _gitlab_hostnames = {
     "gitlab.freedesktop.org",
     "gitlab.gnome.org",
     "salsa.debian.org",
-    }
+}
 
 
 def _fetch_blob_from_launchpad(repository_url, ref_path, filename):
     repo_path = urlsplit(repository_url).path.strip("/")
     try:
         response = urlfetch(
-            "https://git.launchpad.net/%s/plain/%s" % (
-                repo_path, quote(filename)),
-            params={"h": ref_path})
+            "https://git.launchpad.net/%s/plain/%s"
+            % (repo_path, quote(filename)),
+            params={"h": ref_path},
+        )
     except requests.RequestException as e:
-        if (e.response is not None and
-                e.response.status_code == requests.codes.NOT_FOUND):
+        if (
+            e.response is not None
+            and e.response.status_code == requests.codes.NOT_FOUND
+        ):
             raise GitRepositoryBlobNotFound(
-                repository_url, filename, rev=ref_path)
+                repository_url, filename, rev=ref_path
+            )
         else:
             raise GitRepositoryScanFault(
-                "Failed to get file from Git repository at %s: %s" %
-                (repository_url, str(e)))
+                "Failed to get file from Git repository at %s: %s"
+                % (repository_url, str(e))
+            )
     return response.content
 
 
@@ -858,9 +1003,10 @@ class GitRefRemote(GitRefMixin):
 
     def __eq__(self, other):
         return (
-            IGitRefRemote.providedBy(other) and
-            self.repository_url == other.repository_url and
-            self.path == other.path)
+            IGitRefRemote.providedBy(other)
+            and self.repository_url == other.repository_url
+            and self.path == other.path
+        )
 
     def __ne__(self, other):
         return not self == other
@@ -948,15 +1094,21 @@ class GitRefRemote(GitRefMixin):
         # so.  For now, we just special-case some providers where we know
         # how to fetch a blob on its own.
         url = urlsplit(self.repository_url)
-        if (url.hostname == "github.com" and
-                len(url.path.strip("/").split("/")) == 2):
+        if (
+            url.hostname == "github.com"
+            and len(url.path.strip("/").split("/")) == 2
+        ):
             return _fetch_blob_from_github(
-                self.repository_url, self.path, filename)
+                self.repository_url, self.path, filename
+            )
         if url.hostname in _gitlab_hostnames:
             return _fetch_blob_from_gitlab(
-                self.repository_url, self.path, filename)
-        if (url.hostname == "git.launchpad.net" and
-                config.vhost.mainsite.hostname != "launchpad.net"):
+                self.repository_url, self.path, filename
+            )
+        if (
+            url.hostname == "git.launchpad.net"
+            and config.vhost.mainsite.hostname != "launchpad.net"
+        ):
             # Even if this isn't launchpad.net, we can still retrieve files
             # from git.launchpad.net by URL, as a QA convenience.  (We check
             # config.vhost.mainsite.hostname rather than
@@ -964,7 +1116,8 @@ class GitRefRemote(GitRefMixin):
             # points git_*_root to git.launchpad.net but doesn't share the
             # production database.)
             return _fetch_blob_from_launchpad(
-                self.repository_url, self.path, filename)
+                self.repository_url, self.path, filename
+            )
         codehosting_host = urlsplit(config.codehosting.git_anon_root).hostname
         if url.hostname == codehosting_host:
             repository = getUtility(IGitLookup).getByUrl(self.repository_url)

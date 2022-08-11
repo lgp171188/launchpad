@@ -4,11 +4,11 @@
 """Mixin classes to implement methods for IHas<code related bits>."""
 
 __all__ = [
-    'HasBranchesMixin',
-    'HasCodeImportsMixin',
-    'HasMergeProposalsMixin',
-    'HasRequestedReviewsMixin',
-    ]
+    "HasBranchesMixin",
+    "HasCodeImportsMixin",
+    "HasMergeProposalsMixin",
+    "HasRequestedReviewsMixin",
+]
 
 from functools import partial
 
@@ -18,17 +18,14 @@ from zope.security.proxy import removeSecurityProxy
 from lp.code.enums import (
     BranchMergeProposalStatus,
     TargetRevisionControlSystems,
-    )
+)
 from lp.code.interfaces.branch import DEFAULT_BRANCH_STATUS_IN_LISTING
-from lp.code.interfaces.branchcollection import (
-    IAllBranches,
-    IBranchCollection,
-    )
+from lp.code.interfaces.branchcollection import IAllBranches, IBranchCollection
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.gitcollection import (
     IAllGitRepositories,
     IGitCollection,
-    )
+)
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.database.decoratedresultset import DecoratedResultSet
 
@@ -36,8 +33,13 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 class HasBranchesMixin:
     """A mixin implementation for `IHasBranches`."""
 
-    def getBranches(self, status=None, visible_by_user=None,
-                    modified_since=None, eager_load=False):
+    def getBranches(
+        self,
+        status=None,
+        visible_by_user=None,
+        modified_since=None,
+        eager_load=False,
+    ):
         """See `IHasBranches`."""
         if status is None:
             status = DEFAULT_BRANCH_STATUS_IN_LISTING
@@ -52,8 +54,9 @@ class HasBranchesMixin:
 class HasMergeProposalsMixin:
     """A mixin implementation class for `IHasMergeProposals`."""
 
-    def getMergeProposals(self, status=None, visible_by_user=None,
-                          eager_load=False):
+    def getMergeProposals(
+        self, status=None, visible_by_user=None, eager_load=False
+    ):
         """See `IHasMergeProposals`."""
         # Circular import.
         from lp.code.model.branchmergeproposal import BranchMergeProposal
@@ -62,7 +65,8 @@ class HasMergeProposalsMixin:
             status = (
                 BranchMergeProposalStatus.CODE_APPROVED,
                 BranchMergeProposalStatus.NEEDS_REVIEW,
-                BranchMergeProposalStatus.WORK_IN_PROGRESS)
+                BranchMergeProposalStatus.WORK_IN_PROGRESS,
+            )
 
         def _getProposals(interface):
             collection = removeSecurityProxy(interface(self))
@@ -75,12 +79,14 @@ class HasMergeProposalsMixin:
             proposals = _getProposals(IBranchCollection)
         else:
             proposals = _getProposals(IBranchCollection).union(
-                _getProposals(IGitCollection))
+                _getProposals(IGitCollection)
+            )
         if not eager_load:
             return proposals
         else:
             loader = partial(
-                BranchMergeProposal.preloadDataForBMPs, user=visible_by_user)
+                BranchMergeProposal.preloadDataForBMPs, user=visible_by_user
+            )
             return DecoratedResultSet(proposals, pre_iter_hook=loader)
 
 
@@ -93,11 +99,13 @@ class HasRequestedReviewsMixin:
             status = (BranchMergeProposalStatus.NEEDS_REVIEW,)
 
         visible_branches = getUtility(IAllBranches).visibleByUser(
-            visible_by_user)
+            visible_by_user
+        )
         return visible_branches.getMergeProposalsForReviewer(self, status)
 
-    def getOwnedAndRequestedReviews(self, status=None, visible_by_user=None,
-                                    project=None, eager_load=False):
+    def getOwnedAndRequestedReviews(
+        self, status=None, visible_by_user=None, project=None, eager_load=False
+    ):
         """See `IHasRequestedReviews`."""
         # Circular import.
         from lp.code.model.branchmergeproposal import BranchMergeProposal
@@ -108,7 +116,8 @@ class HasRequestedReviewsMixin:
         def _getProposals(collection):
             collection = collection.visibleByUser(visible_by_user)
             return collection.getMergeProposalsForPerson(
-                self, status, eager_load=False)
+                self, status, eager_load=False
+            )
 
         bzr_collection = removeSecurityProxy(getUtility(IAllBranches))
         git_collection = removeSecurityProxy(getUtility(IAllGitRepositories))
@@ -116,23 +125,40 @@ class HasRequestedReviewsMixin:
             bzr_collection = bzr_collection.inProduct(project)
             git_collection = git_collection.inProject(project)
         proposals = _getProposals(bzr_collection).union(
-            _getProposals(git_collection))
+            _getProposals(git_collection)
+        )
         if not eager_load:
             return proposals
         else:
             loader = partial(
-                BranchMergeProposal.preloadDataForBMPs, user=visible_by_user)
+                BranchMergeProposal.preloadDataForBMPs, user=visible_by_user
+            )
             return DecoratedResultSet(proposals, pre_iter_hook=loader)
 
 
 class HasCodeImportsMixin:
-
-    def newCodeImport(self, registrant=None, branch_name=None,
-            rcs_type=None, target_rcs_type=None, url=None,
-            cvs_root=None, cvs_module=None, owner=None):
+    def newCodeImport(
+        self,
+        registrant=None,
+        branch_name=None,
+        rcs_type=None,
+        target_rcs_type=None,
+        url=None,
+        cvs_root=None,
+        cvs_module=None,
+        owner=None,
+    ):
         """See `IHasCodeImports`."""
         if target_rcs_type is None:
             target_rcs_type = TargetRevisionControlSystems.BZR
         return getUtility(ICodeImportSet).new(
-            registrant, self, branch_name, rcs_type, target_rcs_type,
-            url=url, cvs_root=cvs_root, cvs_module=cvs_module, owner=owner)
+            registrant,
+            self,
+            branch_name,
+            rcs_type,
+            target_rcs_type,
+            url=url,
+            cvs_root=cvs_root,
+            cvs_module=cvs_module,
+            owner=owner,
+        )

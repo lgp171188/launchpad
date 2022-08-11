@@ -2,37 +2,31 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Revision',
-    'RevisionAuthor',
-    'RevisionCache',
-    'RevisionParent',
-    'RevisionProperty',
-    'RevisionSet']
+    "Revision",
+    "RevisionAuthor",
+    "RevisionCache",
+    "RevisionParent",
+    "RevisionProperty",
+    "RevisionSet",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import email
+from datetime import datetime, timedelta
+from operator import itemgetter
 
-from breezy.revision import NULL_REVISION
 import pytz
-import six
-from storm.expr import (
-    And,
-    Asc,
-    Desc,
-    Join,
-    Or,
-    Select,
-    )
+from breezy.revision import NULL_REVISION
+from storm.expr import And, Asc, Desc, Join, Or, Select
 from storm.locals import (
     Bool,
+    DateTime,
     Int,
     Min,
     Reference,
+    ReferenceSet,
     Storm,
-    )
+    Unicode,
+)
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -46,61 +40,72 @@ from lp.code.interfaces.revision import (
     IRevisionParent,
     IRevisionProperty,
     IRevisionSet,
-    )
+)
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.bulk import create
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
-from lp.services.database.sqlbase import (
-    quote,
-    SQLBase,
-    )
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    StringCol,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
+from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
-    )
+)
 
 
 @implementer(IRevision)
-class Revision(SQLBase):
+class Revision(StormBase):
     """See IRevision."""
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    log_body = StringCol(notNull=True)
+    __storm_table__ = "Revision"
 
-    revision_author_id = Int(name='revision_author', allow_none=False)
-    revision_author = Reference(revision_author_id, 'RevisionAuthor.id')
+    id = Int(primary=True)
 
-    revision_id = StringCol(notNull=True, alternateID=True,
-                            alternateMethodName='byRevisionID')
-    revision_date = UtcDateTimeCol(notNull=False)
+    date_created = DateTime(
+        name="date_created", allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+    )
+    log_body = Unicode(name="log_body", allow_none=False)
 
-    karma_allocated = BoolCol(default=False, notNull=True)
+    revision_author_id = Int(name="revision_author", allow_none=False)
+    revision_author = Reference(revision_author_id, "RevisionAuthor.id")
 
-    properties = SQLMultipleJoin('RevisionProperty', joinColumn='revision')
+    revision_id = Unicode(name="revision_id", allow_none=False)
+    revision_date = DateTime(
+        name="revision_date", allow_none=True, tzinfo=pytz.UTC
+    )
+
+    karma_allocated = Bool(
+        name="karma_allocated", default=False, allow_none=False
+    )
+
+    properties = ReferenceSet("id", "RevisionProperty.revision_id")
+
+    def __init__(
+        self,
+        log_body,
+        revision_author,
+        revision_id,
+        revision_date=None,
+        date_created=DEFAULT,
+    ):
+        super().__init__()
+        self.log_body = log_body
+        self.revision_author = revision_author
+        self.revision_id = revision_id
+        self.revision_date = revision_date
+        self.date_created = date_created
 
     @property
     def parents(self):
         """See IRevision.parents"""
-        return shortlist(RevisionParent.selectBy(
-            revision=self, orderBy='sequence'))
+        return shortlist(
+            IStore(RevisionParent)
+            .find(RevisionParent, revision=self)
+            .order_by(RevisionParent.sequence)
+        )
 
     @property
     def parent_ids(self):
@@ -139,7 +144,8 @@ class Revision(SQLBase):
             # currently does its karma degradation over time.
             karma_date = min(self.revision_date, self.date_created)
             karma = branch.target.assignKarma(
-                author, 'revisionadded', karma_date)
+                author, "revisionadded", karma_date
+            )
             return karma
         else:
             return None
@@ -153,10 +159,12 @@ class Revision(SQLBase):
 
         query = And(
             self.id == BranchRevision.revision_id,
-            BranchRevision.branch_id == Branch.id)
+            BranchRevision.branch_id == Branch.id,
+        )
         if not allow_private:
             query = And(
-                query, Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES))
+                query, Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES)
+            )
         if not allow_junk:
             query = And(
                 query,
@@ -166,24 +174,45 @@ class Revision(SQLBase):
                     (Branch.product != None),
                     And(
                         Branch.sourcepackagename != None,
-                        Branch.distroseries != None)))
+                        Branch.distroseries != None,
+                    ),
+                ),
+            )
         result_set = store.find(Branch, query)
         if self.revision_author.person is None:
             result_set.order_by(Asc(BranchRevision.sequence))
         else:
             result_set.order_by(
-                Branch.ownerID != self.revision_author.personID,
-                Asc(BranchRevision.sequence))
+                Branch.ownerID != self.revision_author.person_id,
+                Asc(BranchRevision.sequence),
+            )
 
         return result_set.first()
 
 
 @implementer(IRevisionAuthor)
-class RevisionAuthor(SQLBase):
+class RevisionAuthor(StormBase):
 
-    _table = 'RevisionAuthor'
+    __storm_table__ = "RevisionAuthor"
 
-    name = StringCol(notNull=True, alternateID=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+
+    email = Unicode(name="email", allow_none=True, default=None)
+
+    person_id = Int(
+        name="person",
+        allow_none=True,
+        validator=validate_public_person,
+        default=None,
+    )
+    person = Reference(person_id, "Person.id")
+
+    def __init__(self, name, email=None):
+        super().__init__()
+        self.name = name
+        self.email = email
 
     @property
     def name_without_email(self):
@@ -192,13 +221,9 @@ class RevisionAuthor(SQLBase):
         If there is no name information (i.e. when the revision author only
         supplied their email address), return None.
         """
-        if '@' not in self.name:
+        if "@" not in self.name:
             return self.name
         return email.utils.parseaddr(self.name)[0]
-
-    email = StringCol(notNull=False, default=None)
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=False,
-                        storm_validator=validate_public_person, default=None)
 
     def linkToLaunchpadPerson(self):
         """See `IRevisionAuthor`."""
@@ -210,56 +235,83 @@ class RevisionAuthor(SQLBase):
             return False
         # Only accept an email address that is validated.
         if lp_email.status != EmailAddressStatus.NEW:
-            self.personID = lp_email.personID
+            self.person_id = lp_email.personID
             return True
         else:
             return False
 
 
 @implementer(IRevisionParent)
-class RevisionParent(SQLBase):
+class RevisionParent(StormBase):
     """The association between a revision and its parent."""
 
-    _table = 'RevisionParent'
+    __storm_table__ = "RevisionParent"
 
-    revision = ForeignKey(
-        dbName='revision', foreignKey='Revision', notNull=True)
+    id = Int(primary=True)
 
-    sequence = IntCol(notNull=True)
-    parent_id = StringCol(notNull=True)
+    revision_id = Int(name="revision", allow_none=False)
+    revision = Reference(revision_id, "Revision.id")
+
+    sequence = Int(allow_none=False)
+    parent_id = Unicode(allow_none=False)
+
+    def __init__(self, revision, sequence, parent_id):
+        super().__init__()
+        self.revision = revision
+        self.sequence = sequence
+        self.parent_id = parent_id
 
 
 @implementer(IRevisionProperty)
-class RevisionProperty(SQLBase):
+class RevisionProperty(StormBase):
     """A property on a revision. See IRevisionProperty."""
 
-    _table = 'RevisionProperty'
+    __storm_table__ = "RevisionProperty"
 
-    revision = ForeignKey(
-        dbName='revision', foreignKey='Revision', notNull=True)
-    name = StringCol(notNull=True)
-    value = StringCol(notNull=True)
+    id = Int(primary=True)
+
+    revision_id = Int(name="revision", allow_none=False)
+    revision = Reference(revision_id, "Revision.id")
+
+    name = Unicode(allow_none=False)
+    value = Unicode(allow_none=False)
+
+    def __init__(self, revision, name, value):
+        super().__init__()
+        self.revision = revision
+        self.name = name
+        self.value = value
 
 
 @implementer(IRevisionSet)
 class RevisionSet:
-
     def getByRevisionId(self, revision_id):
-        return Revision.selectOneBy(revision_id=revision_id)
+        return IStore(Revision).find(Revision, revision_id=revision_id).one()
 
     def _createRevisionAuthor(self, revision_author):
         """Extract out the email and check to see if it matches a Person."""
         email_address = email.utils.parseaddr(revision_author)[1]
         # If there is no @, then it isn't a real email address.
-        if '@' not in email_address:
+        if "@" not in email_address:
             email_address = None
 
+        store = IMasterStore(RevisionAuthor)
         author = RevisionAuthor(name=revision_author, email=email_address)
+        store.add(author)
         author.linkToLaunchpadPerson()
+        store.flush()
         return author
 
-    def new(self, revision_id, log_body, revision_date, revision_author,
-            parent_ids, properties, _date_created=None):
+    def new(
+        self,
+        revision_id,
+        log_body,
+        revision_date,
+        revision_author,
+        parent_ids,
+        properties,
+        _date_created=None,
+    ):
         """See IRevisionSet.new()"""
         if properties is None:
             properties = {}
@@ -272,7 +324,8 @@ class RevisionSet:
             log_body=log_body,
             revision_date=revision_date,
             revision_author=authors[revision_author],
-            date_created=_date_created)
+            date_created=_date_created,
+        )
         # Don't create future revisions.
         if revision.revision_date > revision.date_created:
             revision.revision_date = revision.date_created
@@ -282,8 +335,9 @@ class RevisionSet:
             if parent_id in seen_parents:
                 continue
             seen_parents.add(parent_id)
-            RevisionParent(revision=revision, sequence=sequence,
-                           parent_id=parent_id)
+            RevisionParent(
+                revision=revision, sequence=sequence, parent_id=parent_id
+            )
 
         # Create revision properties.
         for name, value in properties.items():
@@ -306,8 +360,9 @@ class RevisionSet:
         store = IMasterStore(Revision)
         author_names = set(author_names)
         authors = {}
-        for author in store.find(RevisionAuthor,
-                RevisionAuthor.name.is_in(author_names)):
+        for author in store.find(
+            RevisionAuthor, RevisionAuthor.name.is_in(author_names)
+        ):
             authors[author.name] = author
         missing = author_names - set(authors.keys())
         # create missing RevisionAuthors
@@ -328,7 +383,7 @@ class RevisionSet:
         """
         # Work around Python bug #1646728.
         # See https://launchpad.net/bugs/81544.
-        UTC = pytz.timezone('UTC')
+        UTC = pytz.timezone("UTC")
         int_timestamp = int(timestamp)
         revision_date = datetime.fromtimestamp(int_timestamp, tz=UTC)
         revision_date += timedelta(seconds=timestamp - int_timestamp)
@@ -348,44 +403,58 @@ class RevisionSet:
             author_names.append(author)
         # Get or make every RevisionAuthor for these revisions.
         revision_authors = {
-            name: author.id for name, author in
-            self.acquireRevisionAuthors(author_names).items()}
+            name: author.id
+            for name, author in self.acquireRevisionAuthors(
+                author_names
+            ).items()
+        }
 
         # Collect all data for making Revision objects.
         data = []
         for bzr_revision, author_name in zip(revisions, author_names):
-            revision_id = six.ensure_text(bzr_revision.revision_id)
+            revision_id = bzr_revision.revision_id.decode()
             revision_date = self._timestampToDatetime(bzr_revision.timestamp)
             revision_author = revision_authors[author_name]
 
             data.append(
-                (revision_id, bzr_revision.message, revision_date,
-                revision_author))
+                (
+                    revision_id,
+                    bzr_revision.message,
+                    revision_date,
+                    revision_author,
+                )
+            )
         # Create all Revision objects.
-        db_revisions = create((
-            Revision.revision_id, Revision.log_body, Revision.revision_date,
-            Revision.revision_author_id), data, get_objects=True)
+        db_revisions = create(
+            (
+                Revision.revision_id,
+                Revision.log_body,
+                Revision.revision_date,
+                Revision.revision_author_id,
+            ),
+            data,
+            get_objects=True,
+        )
 
         # Map revision_id to Revision database ID.
-        revision_db_id = {
-            rev.revision_id: rev.id for rev in db_revisions}
+        revision_db_id = {rev.revision_id: rev.id for rev in db_revisions}
 
         # Collect all data for making RevisionParent and RevisionProperty
         # objects.
         parent_data = []
         property_data = []
         for bzr_revision in revisions:
-            db_id = revision_db_id[six.ensure_text(bzr_revision.revision_id)]
+            db_id = revision_db_id[bzr_revision.revision_id.decode()]
             # Property data: revision DB id, name, value.
             for name, value in bzr_revision.properties.items():
                 # pristine-tar properties can be huge, and storing them
                 # in the database provides no value. Exclude them.
-                if name.startswith('deb-pristine-delta'):
+                if name.startswith("deb-pristine-delta"):
                     continue
                 property_data.append((db_id, name, value))
             parent_ids = [
-                six.ensure_text(parent_id)
-                for parent_id in bzr_revision.parent_ids]
+                parent_id.decode() for parent_id in bzr_revision.parent_ids
+            ]
             # Parent data: revision DB id, sequence, revision_id
             seen_parents = set()
             for sequence, parent_id in enumerate(parent_ids):
@@ -394,14 +463,24 @@ class RevisionSet:
                 seen_parents.add(parent_id)
                 parent_data.append((db_id, sequence, parent_id))
         # Create all RevisionParent objects.
-        create((
-            RevisionParent.revisionID, RevisionParent.sequence,
-            RevisionParent.parent_id), parent_data)
+        create(
+            (
+                RevisionParent.revision_id,
+                RevisionParent.sequence,
+                RevisionParent.parent_id,
+            ),
+            parent_data,
+        )
 
         # Create all RevisionProperty objects.
-        create((
-            RevisionProperty.revisionID, RevisionProperty.name,
-            RevisionProperty.value), property_data)
+        create(
+            (
+                RevisionProperty.revision_id,
+                RevisionProperty.name,
+                RevisionProperty.value,
+            ),
+            property_data,
+        )
 
     @staticmethod
     def onlyPresent(revids):
@@ -413,15 +492,22 @@ class RevisionSet:
 
     def getTipRevisionsForBranches(self, branches):
         """See `IRevisionSet`."""
+        # Circular import.
+        from lp.code.model.branch import Branch
+
         # If there are no branch_ids, then return None.
         branch_ids = [branch.id for branch in branches]
         if not branch_ids:
             return None
-        return Revision.select("""
-            Branch.id in %s AND
-            Revision.revision_id = Branch.last_scanned_id
-            """ % quote(branch_ids),
-            clauseTables=['Branch'], prejoins=['revision_author'])
+        return DecoratedResultSet(
+            IStore(Revision).find(
+                (Revision, RevisionAuthor),
+                Branch.id.is_in(branch_ids),
+                Revision.revision_id == Branch.last_scanned_id,
+                Revision.revision_author_id == RevisionAuthor.id,
+            ),
+            result_decorator=itemgetter(0),
+        )
 
     @staticmethod
     def getRecentRevisionsForProduct(product, days):
@@ -431,7 +517,8 @@ class RevisionSet:
         from lp.code.model.branchrevision import BranchRevision
 
         revision_subselect = Select(
-            Min(Revision.id), revision_time_limit(days))
+            Min(Revision.id), revision_time_limit(days)
+        )
         # Only look in active branches.
         result_set = Store.of(product).find(
             (Revision, RevisionAuthor),
@@ -441,7 +528,8 @@ class RevisionSet:
             BranchRevision.branch == Branch.id,
             Branch.product == product,
             Branch.lifecycle_status.is_in(DEFAULT_BRANCH_STATUS_IN_LISTING),
-            BranchRevision.revision_id >= revision_subselect)
+            BranchRevision.revision_id >= revision_subselect,
+        )
         result_set.config(distinct=True)
         return result_set.order_by(Desc(Revision.revision_date))
 
@@ -449,9 +537,9 @@ class RevisionSet:
     def getRevisionsNeedingKarmaAllocated(limit=None):
         """See `IRevisionSet`."""
         store = IStore(Revision)
-        results = store.find(
-            Revision,
-            Revision.karma_allocated == False)[:limit]
+        results = store.find(Revision, Revision.karma_allocated == False)[
+            :limit
+        ]
         return results
 
     @staticmethod
@@ -468,23 +556,30 @@ class RevisionSet:
             Revision,
             Join(BranchRevision, BranchRevision.revision == Revision.id),
             Join(Branch, BranchRevision.branch == Branch.id),
-            Join(RevisionAuthor,
-                 Revision.revision_author == RevisionAuthor.id),
-            ]
+            Join(
+                RevisionAuthor, Revision.revision_author == RevisionAuthor.id
+            ),
+        ]
 
         if person.is_team:
             origin.append(
-                Join(TeamParticipation,
-                     RevisionAuthor.personID == TeamParticipation.personID))
+                Join(
+                    TeamParticipation,
+                    RevisionAuthor.person_id == TeamParticipation.personID,
+                )
+            )
             person_condition = TeamParticipation.team == person
         else:
             person_condition = RevisionAuthor.person == person
 
         result_set = store.using(*origin).find(
             Revision,
-            And(revision_time_limit(day_limit),
+            And(
+                revision_time_limit(day_limit),
                 person_condition,
-                Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES)))
+                Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES),
+            ),
+        )
         result_set.config(distinct=True)
         return result_set.order_by(Desc(Revision.revision_date))
 
@@ -500,11 +595,12 @@ class RevisionSet:
             Revision,
             Join(BranchRevision, BranchRevision.revision == Revision.id),
             Join(Branch, BranchRevision.branch == Branch.id),
-            ]
+        ]
 
         conditions = And(
             revision_time_limit(day_limit),
-            Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES))
+            Branch.information_type.is_in(PUBLIC_INFORMATION_TYPES),
+        )
 
         if IProduct.providedBy(obj):
             conditions = And(conditions, Branch.product == obj)
@@ -512,11 +608,9 @@ class RevisionSet:
             origin.append(Join(Product, Branch.product == Product.id))
             conditions = And(conditions, Product.projectgroup == obj)
         else:
-            raise AssertionError(
-                "Not an IProduct or IProjectGroup: %r" % obj)
+            raise AssertionError("Not an IProduct or IProjectGroup: %r" % obj)
 
-        result_set = Store.of(obj).using(*origin).find(
-            Revision, conditions)
+        result_set = Store.of(obj).using(*origin).find(Revision, conditions)
         result_set.config(distinct=True)
         return result_set.order_by(Desc(Revision.revision_date))
 
@@ -540,32 +634,40 @@ class RevisionSet:
         # Remove the security proxy to get access to the ID columns.
         naked_branch = removeSecurityProxy(branch)
 
-        insert_columns = ['Revision.id', 'revision_author', 'revision_date']
+        insert_columns = ["Revision.id", "revision_author", "revision_date"]
         subselect_clauses = []
         if branch.product is None:
-            insert_columns.append('NULL')
-            subselect_clauses.append('product IS NULL')
+            insert_columns.append("NULL")
+            subselect_clauses.append("product IS NULL")
         else:
             insert_columns.append(str(naked_branch.productID))
-            subselect_clauses.append('product = %s' % naked_branch.productID)
+            subselect_clauses.append("product = %s" % naked_branch.productID)
 
         if branch.distroseries is None:
-            insert_columns.extend(['NULL', 'NULL'])
+            insert_columns.extend(["NULL", "NULL"])
             subselect_clauses.extend(
-                ['distroseries IS NULL', 'sourcepackagename IS NULL'])
+                ["distroseries IS NULL", "sourcepackagename IS NULL"]
+            )
         else:
             insert_columns.extend(
-                [str(naked_branch.distroseriesID),
-                 str(naked_branch.sourcepackagenameID)])
+                [
+                    str(naked_branch.distroseriesID),
+                    str(naked_branch.sourcepackagenameID),
+                ]
+            )
             subselect_clauses.extend(
-                ['distroseries = %s' % naked_branch.distroseriesID,
-                 'sourcepackagename = %s' % naked_branch.sourcepackagenameID])
+                [
+                    "distroseries = %s" % naked_branch.distroseriesID,
+                    "sourcepackagename = %s"
+                    % naked_branch.sourcepackagenameID,
+                ]
+            )
 
         insert_columns.append(str(branch.private))
         if branch.private:
-            subselect_clauses.append('private IS TRUE')
+            subselect_clauses.append("private IS TRUE")
         else:
-            subselect_clauses.append('private IS FALSE')
+            subselect_clauses.append("private IS FALSE")
 
         insert_statement = """
             INSERT INTO RevisionCache
@@ -580,10 +682,10 @@ class RevisionSet:
                 SELECT revision FROM RevisionCache
                 WHERE %(subselect_where)s)
             """ % {
-            'columns': ', '.join(insert_columns),
-            'branch_id': branch.id,
-            'subselect_where': ' AND '.join(subselect_clauses),
-            }
+            "columns": ", ".join(insert_columns),
+            "branch_id": branch.id,
+            "subselect_where": " AND ".join(subselect_clauses),
+        }
         Store.of(branch).execute(insert_statement)
 
     @staticmethod
@@ -596,7 +698,8 @@ class RevisionSet:
         subquery = Select(
             [RevisionCache.id],
             RevisionCache.revision_date < epoch,
-            limit=limit)
+            limit=limit,
+        )
         store.find(RevisionCache, RevisionCache.id.is_in(subquery)).remove()
 
 
@@ -606,34 +709,33 @@ def revision_time_limit(day_limit):
     earliest = now - timedelta(days=day_limit)
 
     return And(
-        Revision.revision_date <= now,
-        Revision.revision_date > earliest)
+        Revision.revision_date <= now, Revision.revision_date > earliest
+    )
 
 
 class RevisionCache(Storm):
     """A cached version of a recent revision."""
 
-    __storm_table__ = 'RevisionCache'
+    __storm_table__ = "RevisionCache"
 
     id = Int(primary=True)
 
-    revision_id = Int(name='revision', allow_none=False)
-    revision = Reference(revision_id, 'Revision.id')
+    revision_id = Int(name="revision", allow_none=False)
+    revision = Reference(revision_id, "Revision.id")
 
-    revision_author_id = Int(name='revision_author', allow_none=False)
-    revision_author = Reference(revision_author_id, 'RevisionAuthor.id')
+    revision_author_id = Int(name="revision_author", allow_none=False)
+    revision_author = Reference(revision_author_id, "RevisionAuthor.id")
 
-    revision_date = UtcDateTimeCol(notNull=True)
+    revision_date = DateTime(allow_none=False, tzinfo=pytz.UTC)
 
-    product_id = Int(name='product', allow_none=True)
-    product = Reference(product_id, 'Product.id')
+    product_id = Int(name="product", allow_none=True)
+    product = Reference(product_id, "Product.id")
 
-    distroseries_id = Int(name='distroseries', allow_none=True)
-    distroseries = Reference(distroseries_id, 'DistroSeries.id')
+    distroseries_id = Int(name="distroseries", allow_none=True)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
 
-    sourcepackagename_id = Int(name='sourcepackagename', allow_none=True)
-    sourcepackagename = Reference(
-        sourcepackagename_id, 'SourcePackageName.id')
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
 
     private = Bool(allow_none=False, default=False)
 

@@ -7,8 +7,6 @@ This would normally be done in a doctest but TestCaseWithFactory has all the
 provisions to handle Bazaar branches.
 """
 
-from breezy.revision import NULL_REVISION
-import six
 import transaction
 from zope.component import getUtility
 
@@ -20,10 +18,10 @@ from lp.testing.layers import ZopelessAppServerLayer
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
-    )
+)
 
 
 class TestRosettaBranchesScript(TestCaseWithFactory):
@@ -46,14 +44,15 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
         tree.add(pot_path)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BRZ_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL="me@example.com"):
             revision_id = tree.commit("first commit")
-        branch.last_scanned_id = six.ensure_text(revision_id)
-        branch.last_mirrored_id = six.ensure_text(revision_id)
+        branch.last_scanned_id = revision_id.decode()
+        branch.last_mirrored_id = revision_id.decode()
         series = self.factory.makeProductSeries()
         series.branch = branch
         series.translations_autoimport_mode = (
-            TranslationsBranchImportMode.IMPORT_TEMPLATES)
+            TranslationsBranchImportMode.IMPORT_TEMPLATES
+        )
         return branch
 
     def test_rosetta_branches_script(self):
@@ -62,11 +61,12 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
         self._clear_import_queue()
         pot_path = self.factory.getUniqueString() + ".pot"
         branch = self._setup_series_branch(pot_path)
-        RosettaUploadJob.create(branch, NULL_REVISION)
+        RosettaUploadJob.create(branch, None)
         transaction.commit()
 
         return_code, stdout, stderr = run_script(
-            'cronscripts/process-job-source.py', ['IRosettaUploadJobSource'])
+            "cronscripts/process-job-source.py", ["IRosettaUploadJobSource"]
+        )
         self.assertEqual(0, return_code)
 
         queue = getUtility(ITranslationImportQueue)

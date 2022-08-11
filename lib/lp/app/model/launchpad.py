@@ -4,17 +4,17 @@
 """Common implementation of interfaces.launchpad interfaces."""
 
 __all__ = [
-    'ExceptionPrivacy',
-    'InformationTypeMixin',
-    'Privacy',
-    ]
+    "ExceptionPrivacy",
+    "InformationTypeMixin",
+    "Privacy",
+]
 
 from zope.interface import implementer
 from zope.security.interfaces import (
     Forbidden,
     ForbiddenAttribute,
     Unauthorized,
-    )
+)
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import IPrivacy

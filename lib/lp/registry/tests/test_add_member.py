@@ -4,10 +4,7 @@
 """Test team membership changes."""
 
 from lp.registry.interfaces.teammembership import CyclicalTeamMembershipError
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -29,11 +26,12 @@ class CircularMemberAdditionTestCase(TestCaseWithFactory):
 
         # A-team accepts B's kind invitation.
         with person_logged_in(self.a_team.teamowner):
-            self.a_team.acceptInvitationToBeMemberOf(
-                self.b_team, None)
+            self.a_team.acceptInvitationToBeMemberOf(self.b_team, None)
         # B-team accepts A's kind invitation.
         with person_logged_in(self.b_team.teamowner):
             self.assertRaises(
                 CyclicalTeamMembershipError,
                 self.b_team.acceptInvitationToBeMemberOf,
-                self.a_team, None)
+                self.a_team,
+                None,
+            )

@@ -14,17 +14,9 @@ import transaction
 from lp.services.config import config
 from lp.testing import logout
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.pages import PageTestSuite
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,12 +35,12 @@ def lobotomize_stevea():
     code that did not use the ValidPersonOrTeamCache to determine
     validity.
     """
-    from lp.services.identity.interfaces.emailaddress import (
-        EmailAddressStatus,
-        )
+    from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
     from lp.services.identity.model.emailaddress import EmailAddress
+
     stevea_emailaddress = EmailAddress.byEmail(
-            'steve.alexander@ubuntulinux.com')
+        "steve.alexander@ubuntulinux.com"
+    )
     stevea_emailaddress.status = EmailAddressStatus.NEW
     transaction.commit()
 
@@ -56,12 +48,12 @@ def lobotomize_stevea():
 def uploaderSetUp(test):
     """setup the package uploader script tests."""
     setUp(test)
-    switch_dbuser('uploader')
+    switch_dbuser("uploader")
 
 
 def statisticianSetUp(test):
     test_dbuser = config.statistician.dbuser
-    test.globs['test_dbuser'] = test_dbuser
+    test.globs["test_dbuser"] = test_dbuser
     switch_dbuser(test_dbuser)
     setUp(test)
 
@@ -75,7 +67,7 @@ def uploadQueueSetUp(test):
     test_dbuser = config.uploadqueue.dbuser
     switch_dbuser(test_dbuser)
     setUp(test)
-    test.globs['test_dbuser'] = test_dbuser
+    test.globs["test_dbuser"] = test_dbuser
 
 
 def uploaderBugsSetUp(test):
@@ -89,7 +81,7 @@ def uploaderBugsSetUp(test):
     test_dbuser = config.uploader.dbuser
     switch_dbuser(test_dbuser)
     setUp(test)
-    test.globs['test_dbuser'] = test_dbuser
+    test.globs["test_dbuser"] = test_dbuser
 
 
 def uploaderBugsTearDown(test):
@@ -101,69 +93,75 @@ def uploadQueueTearDown(test):
 
 
 special = {
-    'package-cache.txt': LayeredDocFileSuite(
-        '../doc/package-cache.txt',
-        setUp=statisticianSetUp, tearDown=statisticianTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'distroarchseriesbinarypackage.txt': LayeredDocFileSuite(
-        '../doc/distroarchseriesbinarypackage.txt',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'closing-bugs-from-changelogs.txt': LayeredDocFileSuite(
-        '../doc/closing-bugs-from-changelogs.txt',
+    "package-cache.rst": LayeredDocFileSuite(
+        "../doc/package-cache.rst",
+        setUp=statisticianSetUp,
+        tearDown=statisticianTearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "distroarchseriesbinarypackage.rst": LayeredDocFileSuite(
+        "../doc/distroarchseriesbinarypackage.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "closing-bugs-from-changelogs.rst": LayeredDocFileSuite(
+        "../doc/closing-bugs-from-changelogs.rst",
         setUp=uploadQueueSetUp,
         tearDown=uploadQueueTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'closing-bugs-from-changelogs.txt-uploader': LayeredDocFileSuite(
-        '../doc/closing-bugs-from-changelogs.txt',
-        id_extensions=['closing-bugs-from-changelogs.txt-uploader'],
+        layer=LaunchpadZopelessLayer,
+    ),
+    "closing-bugs-from-changelogs.rst-uploader": LayeredDocFileSuite(
+        "../doc/closing-bugs-from-changelogs.rst",
+        id_extensions=["closing-bugs-from-changelogs.rst-uploader"],
         setUp=uploaderBugsSetUp,
         tearDown=uploaderBugsTearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'soyuz-set-of-uploads.txt': LayeredDocFileSuite(
-        '../doc/soyuz-set-of-uploads.txt',
+        layer=LaunchpadZopelessLayer,
+    ),
+    "soyuz-set-of-uploads.rst": LayeredDocFileSuite(
+        "../doc/soyuz-set-of-uploads.rst",
         setUp=setUp,
         layer=LaunchpadZopelessLayer,
-        ),
-    'package-relationship.txt': LayeredDocFileSuite(
-        '../doc/package-relationship.txt',
-        stdout_logging=False, layer=None),
-    'publishing.txt': LayeredDocFileSuite(
-        '../doc/publishing.txt',
+    ),
+    "package-relationship.rst": LayeredDocFileSuite(
+        "../doc/package-relationship.rst", stdout_logging=False, layer=None
+    ),
+    "publishing.rst": LayeredDocFileSuite(
+        "../doc/publishing.rst",
         setUp=setUp,
         layer=LaunchpadZopelessLayer,
-        ),
-    'build-failedtoupload-workflow.txt': LayeredDocFileSuite(
-        '../doc/build-failedtoupload-workflow.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "build-failedtoupload-workflow.rst": LayeredDocFileSuite(
+        "../doc/build-failedtoupload-workflow.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'distroseriesqueue.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "distroseriesqueue.rst": LayeredDocFileSuite(
+        "../doc/distroseriesqueue.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'distroseriesqueue-notify.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue-notify.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "distroseriesqueue-notify.rst": LayeredDocFileSuite(
+        "../doc/distroseriesqueue-notify.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'distroseriesqueue-translations.txt': LayeredDocFileSuite(
-        '../doc/distroseriesqueue-translations.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "distroseriesqueue-translations.rst": LayeredDocFileSuite(
+        "../doc/distroseriesqueue-translations.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    }
+    ),
+}
 
 
 def test_suite():
     suite = unittest.TestSuite()
 
-    stories_dir = os.path.join(os.path.pardir, 'stories')
+    stories_dir = os.path.join(os.path.pardir, "stories")
     suite.addTest(PageTestSuite(stories_dir))
     stories_path = os.path.join(here, stories_dir)
     for story_entry in os.scandir(stories_path):
@@ -178,22 +176,27 @@ def test_suite():
         suite.addTest(special_suite)
 
     testsdir = os.path.abspath(
-        os.path.normpath(os.path.join(here, os.path.pardir, 'doc')))
+        os.path.normpath(os.path.join(here, os.path.pardir, "doc"))
+    )
 
     # Add tests using default setup/teardown
-    filenames = [filename
-                 for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt') and filename not in special]
+    filenames = [
+        filename
+        for filename in os.listdir(testsdir)
+        if filename.endswith(".rst") and filename not in special
+    ]
 
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:
-        path = os.path.join('../doc', filename)
+        path = os.path.join("../doc", filename)
         one_test = LayeredDocFileSuite(
             path,
-            setUp=setUp, tearDown=tearDown,
+            setUp=setUp,
+            tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
-            stdout_logging_level=logging.WARNING)
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(one_test)
 
     return suite

@@ -28,8 +28,8 @@ class Parser:
 
     def __init__(self):
         self.lines = []
-        self.buffer = ''
-        self.line = ''
+        self.buffer = ""
+        self.line = ""
 
     def parse_quoted_string(self, string):
         """Parse strings enclosed in single quote marks.
@@ -55,9 +55,12 @@ class Parser:
         ValueError: Couldn't parse quoted string
         """
 
-        quoted_pattern = re.compile('''
+        quoted_pattern = re.compile(
+            """
             ' (?: [^'] | '' )* '
-            ''', re.X | re.S)
+            """,
+            re.X | re.S,
+        )
 
         match = quoted_pattern.match(string)
 
@@ -72,7 +75,7 @@ class Parser:
         statement."""
 
         while statement:
-            if statement == ');\n':
+            if statement == ");\n":
                 return True
             elif statement[0] == "'":
                 string, statement = self.parse_quoted_string(statement)
@@ -114,15 +117,18 @@ class Parser:
         "INSERT INTO foo (name)\nVALUES ('Foo');\n")
         """
 
-        if not line.startswith('INSERT '):
+        if not line.startswith("INSERT "):
             return (0, None), line
 
         if not self.is_complete_insert_statement(line):
             raise ValueError("Incomplete line")
 
-        insert_pattern = re.compile(r'''
+        insert_pattern = re.compile(
+            r"""
             ^INSERT \s+ INTO \s+ \S+ \s+ \([^)]+\) \s+ VALUES \s+ \((\d+)
-            ''', re.X)
+            """,
+            re.X,
+        )
         match = insert_pattern.match(line)
 
         if match:
@@ -135,9 +141,9 @@ class Parser:
 
         self.buffer += s
 
-        while '\n' in self.buffer:
-            line, self.buffer = self.buffer.split('\n', 1)
-            self.line += line + '\n'
+        while "\n" in self.buffer:
+            line, self.buffer = self.buffer.split("\n", 1)
+            self.line += line + "\n"
 
             try:
                 value, line = self.parse_line(self.line)
@@ -145,7 +151,7 @@ class Parser:
                 pass
             else:
                 self.lines.append((value, self.line[:-1]))
-                self.line = ''
+                self.line = ""
 
 
 def print_lines_sorted(file, lines):
@@ -192,12 +198,12 @@ def print_lines_sorted(file, lines):
     for line in lines:
         sort_value, string = line
 
-        if string == '':
+        if string == "":
             if block:
                 print_block(block)
                 block = []
 
-            file.write('\n')
+            file.write("\n")
         else:
             block.append(line)
 

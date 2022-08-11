@@ -6,8 +6,8 @@
 import logging
 import os
 import stat
-from textwrap import dedent
 import time
+from textwrap import dedent
 
 from apt_pkg import TagFile
 from fixtures import MonkeyPatch
@@ -20,28 +20,22 @@ from testtools.matchers import (
     PathExists,
     Raises,
     StartsWith,
-    )
+)
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.scripts.publish_ftpmaster import (
+    PublishFTPMaster,
     get_working_dists,
     newer_mtime,
-    PublishFTPMaster,
-    )
+)
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
-from lp.registry.interfaces.pocket import (
-    PackagePublishingPocket,
-    pocketsuffix,
-    )
+from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.interfaces import IMasterStore
-from lp.services.log.logger import (
-    BufferLogger,
-    DevNullLogger,
-    )
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.osutils import write_file
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.services.utils import file_exists
@@ -49,13 +43,9 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     PackagePublishingStatus,
     PackageUploadCustomFormat,
-    )
+)
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    run_script,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory, run_script
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -136,7 +126,8 @@ class HelpersMixin:
         will be cleaned up after the test.
         """
         return self.factory.makeDistribution(
-            publish_root_dir=self.makeTemporaryDirectory())
+            publish_root_dir=self.makeTemporaryDirectory()
+        )
 
     def makeScript(self, distro=None, extra_args=[]):
         """Produce instance of the `PublishFTPMaster` script."""
@@ -154,7 +145,6 @@ class HelpersMixin:
 
 
 class TestNewerMtime(TestCase):
-
     def setUp(self):
         super().setUp()
         tempdir = self.useTempDir()
@@ -194,7 +184,8 @@ class TestNewerMtime(TestCase):
 
 
 class TestPublishFTPMasterScript(
-        TestCaseWithFactory, RunPartsMixin, HelpersMixin):
+    TestCaseWithFactory, RunPartsMixin, HelpersMixin
+):
     layer = LaunchpadZopelessLayer
 
     # Location of shell script.
@@ -239,8 +230,7 @@ class TestPublishFTPMasterScript(
     def test_script_runs_successfully(self):
         self.prepareUbuntu()
         self.layer.txn.commit()
-        stdout, stderr, retval = run_script(
-            self.SCRIPT_PATH + " -d ubuntu")
+        stdout, stderr, retval = run_script(self.SCRIPT_PATH + " -d ubuntu")
         self.assertEqual(0, retval, "Script failure:\n" + stderr)
 
     def test_getConfigs_maps_distro_and_purpose_to_matching_config(self):
@@ -250,8 +240,11 @@ class TestPublishFTPMasterScript(
         reference_config = getPubConfig(distro.main_archive)
         config = script.getConfigs()[distro][ArchivePurpose.PRIMARY]
         self.assertThat(
-            config, MatchesStructure.fromExample(
-                reference_config, 'temproot', 'distroroot', 'archiveroot'))
+            config,
+            MatchesStructure.fromExample(
+                reference_config, "temproot", "distroroot", "archiveroot"
+            ),
+        )
 
     def test_getConfigs_maps_distros(self):
         distro = self.makeDistroWithPublishDirectory()
@@ -278,9 +271,11 @@ class TestPublishFTPMasterScript(
         distroseries = test_publisher.setUpDefaultDistroSeries()
         distro = distroseries.distribution
         self.factory.makeComponentSelection(
-            distroseries=distroseries, component="main")
+            distroseries=distroseries, component="main"
+        )
         self.factory.makeArchive(
-            distribution=distro, purpose=ArchivePurpose.PARTNER)
+            distribution=distro, purpose=ArchivePurpose.PARTNER
+        )
         test_publisher.getPubSource()
 
         self.setUpForScriptRun(distro)
@@ -293,9 +288,11 @@ class TestPublishFTPMasterScript(
         distro = distroseries.distribution
         pub_config = get_pub_config(distro)
         self.factory.makeComponentSelection(
-            distroseries=distroseries, component="main")
+            distroseries=distroseries, component="main"
+        )
         self.factory.makeArchive(
-            distribution=distro, purpose=ArchivePurpose.PARTNER)
+            distribution=distro, purpose=ArchivePurpose.PARTNER
+        )
         test_publisher.getPubSource()
 
         self.setUpForScriptRun(distro)
@@ -305,26 +302,33 @@ class TestPublishFTPMasterScript(
         dists_root = get_dists_root(pub_config)
 
         dsc = os.path.join(
-            archive_root, 'pool', 'main', 'f', 'foo', 'foo_666.dsc')
+            archive_root, "pool", "main", "f", "foo", "foo_666.dsc"
+        )
         with open(dsc) as dsc_file:
             self.assertEqual("I do not care about sources.", dsc_file.read())
         overrides = os.path.join(
-            archive_root + '-overrides', distroseries.name + '_main_source')
+            archive_root + "-overrides", distroseries.name + "_main_source"
+        )
         with open(overrides) as overrides_file:
             self.assertEqual(dsc, overrides_file.read().rstrip())
-        self.assertTrue(path_exists(
-            dists_root, distroseries.name, 'main', 'source', 'Sources.gz'))
-        self.assertTrue(path_exists(
-            dists_root, distroseries.name, 'main', 'source', 'Sources.bz2'))
+        self.assertTrue(
+            path_exists(
+                dists_root, distroseries.name, "main", "source", "Sources.gz"
+            )
+        )
+        self.assertTrue(
+            path_exists(
+                dists_root, distroseries.name, "main", "source", "Sources.bz2"
+            )
+        )
 
         distcopyseries = os.path.join(dists_root, distroseries.name)
-        release = self.readReleaseFile(
-            os.path.join(distcopyseries, "Release"))
-        self.assertEqual(distro.displayname, release['Origin'])
-        self.assertEqual(distro.displayname, release['Label'])
-        self.assertEqual(distroseries.name, release['Suite'])
-        self.assertEqual(distroseries.name, release['Codename'])
-        self.assertEqual("main", release['Components'])
+        release = self.readReleaseFile(os.path.join(distcopyseries, "Release"))
+        self.assertEqual(distro.displayname, release["Origin"])
+        self.assertEqual(distro.displayname, release["Label"])
+        self.assertEqual(distroseries.name, release["Suite"])
+        self.assertEqual(distroseries.name, release["Codename"])
+        self.assertEqual("main", release["Components"])
         self.assertEqual("", release["Architectures"])
         self.assertIn("Date", release)
         self.assertIn("Description", release)
@@ -333,7 +337,8 @@ class TestPublishFTPMasterScript(
         self.assertNotEqual("", release["SHA256"])
 
         main_release = self.readReleaseFile(
-            os.path.join(distcopyseries, 'main', 'source', "Release"))
+            os.path.join(distcopyseries, "main", "source", "Release")
+        )
         self.assertEqual(distroseries.name, main_release["Archive"])
         self.assertEqual("main", main_release["Component"])
         self.assertEqual(distro.displayname, main_release["Origin"])
@@ -346,25 +351,29 @@ class TestPublishFTPMasterScript(
         script = self.makeScript(spph.distroseries.distribution)
         script.setUp()
         self.assertContentEqual(
-            [name_pph_suite(spph)], script.getDirtySuites(distro))
+            [name_pph_suite(spph)], script.getDirtySuites(distro)
+        )
 
     def test_getDirtySuites_returns_suites_with_pending_publications(self):
         distro = self.makeDistroWithPublishDirectory()
         spphs = [
             self.factory.makeSourcePackagePublishingHistory(
-                distroseries=self.factory.makeDistroSeries(
-                    distribution=distro))
-            for counter in range(2)]
+                distroseries=self.factory.makeDistroSeries(distribution=distro)
+            )
+            for counter in range(2)
+        ]
 
         script = self.makeScript(distro)
         script.setUp()
         self.assertContentEqual(
             [name_pph_suite(spph) for spph in spphs],
-            script.getDirtySuites(distro))
+            script.getDirtySuites(distro),
+        )
 
     def test_getDirtySuites_ignores_suites_without_pending_publications(self):
         spph = self.factory.makeSourcePackagePublishingHistory(
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED
+        )
         distro = spph.distroseries.distribution
         script = self.makeScript(spph.distroseries.distribution)
         script.setUp()
@@ -376,22 +385,27 @@ class TestPublishFTPMasterScript(
         script = self.makeScript(bpph.distroseries.distribution)
         script.setUp()
         self.assertContentEqual(
-            [name_pph_suite(bpph)], script.getDirtySuites(distro))
+            [name_pph_suite(bpph)], script.getDirtySuites(distro)
+        )
 
     def test_getDirtySecuritySuites_returns_security_suites(self):
         distro = self.makeDistroWithPublishDirectory()
         spphs = [
             self.factory.makeSourcePackagePublishingHistory(
                 distroseries=self.factory.makeDistroSeries(
-                    distribution=distro),
-                pocket=PackagePublishingPocket.SECURITY)
-            for counter in range(2)]
+                    distribution=distro
+                ),
+                pocket=PackagePublishingPocket.SECURITY,
+            )
+            for counter in range(2)
+        ]
 
         script = self.makeScript(distro)
         script.setUp()
         self.assertContentEqual(
             [name_pph_suite(spph) for spph in spphs],
-            script.getDirtySecuritySuites(distro))
+            script.getDirtySecuritySuites(distro),
+        )
 
     def test_getDirtySecuritySuites_ignores_non_security_suites(self):
         distroseries = self.factory.makeDistroSeries()
@@ -400,14 +414,16 @@ class TestPublishFTPMasterScript(
             PackagePublishingPocket.UPDATES,
             PackagePublishingPocket.PROPOSED,
             PackagePublishingPocket.BACKPORTS,
-            ]
+        ]
         for pocket in pockets:
             self.factory.makeSourcePackagePublishingHistory(
-                distroseries=distroseries, pocket=pocket)
+                distroseries=distroseries, pocket=pocket
+            )
         script = self.makeScript(distroseries.distribution)
         script.setUp()
         self.assertEqual(
-            [], script.getDirtySecuritySuites(distroseries.distribution))
+            [], script.getDirtySecuritySuites(distroseries.distribution)
+        )
 
     def test_rsync_copies_files(self):
         distro = self.makeDistroWithPublishDirectory()
@@ -415,20 +431,23 @@ class TestPublishFTPMasterScript(
         script.setUp()
         dists_root = get_dists_root(get_pub_config(distro))
         dists_backup = os.path.join(
-            get_distscopy_root(get_pub_config(distro)), "dists")
+            get_distscopy_root(get_pub_config(distro)), "dists"
+        )
         os.makedirs(dists_backup)
         os.makedirs(dists_root)
         write_marker_file([dists_root, "new-file"], "New file")
         script.rsyncBackupDists(distro)
         self.assertEqual(
-            "New file", read_marker_file([dists_backup, "new-file"]))
+            "New file", read_marker_file([dists_backup, "new-file"])
+        )
 
     def test_rsync_cleans_up_obsolete_files(self):
         distro = self.makeDistroWithPublishDirectory()
         script = self.makeScript(distro)
         script.setUp()
         dists_backup = os.path.join(
-            get_distscopy_root(get_pub_config(distro)), "dists")
+            get_distscopy_root(get_pub_config(distro)), "dists"
+        )
         os.makedirs(dists_backup)
         old_file = [dists_backup, "old-file"]
         write_marker_file(old_file, "old-file")
@@ -465,9 +484,12 @@ class TestPublishFTPMasterScript(
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
-        run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
-            FakeMethod()))
+        run_parts_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
+                FakeMethod(),
+            )
+        )
         script.publishDistroArchive(distro, distro.main_archive)
         self.assertEqual(1, run_parts_fixture.new_value.call_count)
         args, _ = run_parts_fixture.new_value.calls[0]
@@ -480,19 +502,31 @@ class TestPublishFTPMasterScript(
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
-        run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
-            FakeMethod()))
+        run_parts_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
+                FakeMethod(),
+            )
+        )
         script.runPublishDistroParts(distro, distro.main_archive)
         _, kwargs = run_parts_fixture.new_value.calls[0]
         distro_config = get_pub_config(distro)
-        self.assertThat(kwargs["env"], ContainsDict({
-            "ARCHIVEROOT": Equals(get_archive_root(distro_config)),
-            "DISTSROOT": Equals(
-                os.path.join(get_distscopy_root(distro_config), "dists")),
-            "OVERRIDEROOT": Equals(
-                get_archive_root(distro_config) + "-overrides"),
-            }))
+        self.assertThat(
+            kwargs["env"],
+            ContainsDict(
+                {
+                    "ARCHIVEROOT": Equals(get_archive_root(distro_config)),
+                    "DISTSROOT": Equals(
+                        os.path.join(
+                            get_distscopy_root(distro_config), "dists"
+                        )
+                    ),
+                    "OVERRIDEROOT": Equals(
+                        get_archive_root(distro_config) + "-overrides"
+                    ),
+                }
+            ),
+        )
 
     def test_clearEmptyDirs_cleans_up_empty_directories(self):
         distro = self.makeDistroWithPublishDirectory()
@@ -500,7 +534,8 @@ class TestPublishFTPMasterScript(
         script.setUp()
         script.setUpDirs()
         empty_dir = os.path.join(
-            get_dists_root(get_pub_config(distro)), 'empty-dir')
+            get_dists_root(get_pub_config(distro)), "empty-dir"
+        )
         os.makedirs(empty_dir)
         script.clearEmptyDirs(distro)
         self.assertFalse(file_exists(empty_dir))
@@ -511,7 +546,8 @@ class TestPublishFTPMasterScript(
         script.setUp()
         script.setUpDirs()
         nonempty_dir = os.path.join(
-            get_dists_root(get_pub_config(distro)), 'nonempty-dir')
+            get_dists_root(get_pub_config(distro)), "nonempty-dir"
+        )
         os.makedirs(nonempty_dir)
         write_marker_file([nonempty_dir, "placeholder"], "Data here!")
         script.clearEmptyDirs(distro)
@@ -526,13 +562,13 @@ class TestPublishFTPMasterScript(
 
     def test_processOptions_for_all_derived_finds_derived_distros(self):
         dsp = self.factory.makeDistroSeriesParent()
-        script = PublishFTPMaster(test_args=['--all-derived'])
+        script = PublishFTPMaster(test_args=["--all-derived"])
         script.processOptions()
         self.assertIn(dsp.derived_series.distribution, script.distributions)
 
     def test_processOptions_for_all_derived_ignores_nonderived_distros(self):
         distro = self.factory.makeDistribution()
-        script = PublishFTPMaster(test_args=['--all-derived'])
+        script = PublishFTPMaster(test_args=["--all-derived"])
         script.processOptions()
         self.assertNotIn(distro, script.distributions)
 
@@ -545,9 +581,12 @@ class TestPublishFTPMasterScript(
         script = self.makeScript(self.prepareUbuntu())
         script.setUp()
         distro = script.distributions[0]
-        run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
-            FakeMethod()))
+        run_parts_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.scripts.publish_ftpmaster.run_parts",
+                FakeMethod(),
+            )
+        )
         script.runFinalizeParts(distro)
         _, kwargs = run_parts_fixture.new_value.calls[0]
         env = kwargs["env"]
@@ -569,8 +608,8 @@ class TestPublishFTPMasterScript(
         distro = self.makeDistroWithPublishDirectory()
         distroseries = self.factory.makeDistroSeries(distribution=distro)
         self.factory.makeSourcePackagePublishingHistory(
-            distroseries=distroseries,
-            pocket=PackagePublishingPocket.SECURITY)
+            distroseries=distroseries, pocket=PackagePublishingPocket.SECURITY
+        )
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
@@ -582,21 +621,22 @@ class TestPublishFTPMasterScript(
         distro = self.makeDistroWithPublishDirectory()
         distroseries = self.factory.makeDistroSeries(distribution=distro)
         partner_archive = self.factory.makeArchive(
-            distribution=distro, purpose=ArchivePurpose.PARTNER)
+            distribution=distro, purpose=ArchivePurpose.PARTNER
+        )
         for archive in distro.all_distro_archives:
             self.factory.makeSourcePackagePublishingHistory(
-                distroseries=distroseries,
-                archive=archive)
+                distroseries=distroseries, archive=archive
+            )
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
         script.publishDistroArchive = FakeMethod()
         script.publishDistroUploads(distro)
         published_archives = [
-            args[1] for args, kwargs in script.publishDistroArchive.calls]
+            args[1] for args, kwargs in script.publishDistroArchive.calls
+        ]
 
-        self.assertContentEqual(
-            distro.all_distro_archives, published_archives)
+        self.assertContentEqual(distro.all_distro_archives, published_archives)
         self.assertIn(distro.main_archive, published_archives)
         self.assertIn(partner_archive, published_archives)
 
@@ -606,7 +646,7 @@ class TestPublishFTPMasterScript(
         script.logger = BufferLogger()
         script.logger.setLevel(logging.INFO)
         script.recoverWorkingDists()
-        self.assertEqual('', script.logger.getLogBuffer())
+        self.assertEqual("", script.logger.getLogBuffer())
 
     def test_recoverWorkingDists_recovers_working_directory(self):
         distro = self.makeDistroWithPublishDirectory()
@@ -617,14 +657,16 @@ class TestPublishFTPMasterScript(
         script.setUpDirs()
         archive_config = getPubConfig(distro.main_archive)
         backup_dists = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists")
+            archive_config.archiveroot + "-distscopy", "dists"
+        )
         working_dists = get_working_dists(archive_config)
         os.rename(backup_dists, working_dists)
         write_marker_file([working_dists, "marker"], "Recovered")
         script.recoverWorkingDists()
         self.assertEqual(
-            "Recovered", read_marker_file([backup_dists, "marker"]))
-        self.assertNotEqual('', script.logger.getLogBuffer())
+            "Recovered", read_marker_file([backup_dists, "marker"])
+        )
+        self.assertNotEqual("", script.logger.getLogBuffer())
 
     def test_publishes_first_security_updates_then_all_updates(self):
         script = self.makeScript()
@@ -632,22 +674,22 @@ class TestPublishFTPMasterScript(
         script.main()
         self.assertEqual(2, script.publish.call_count)
         args, kwargs = script.publish.calls[0]
-        self.assertEqual({'security_only': True}, kwargs)
+        self.assertEqual({"security_only": True}, kwargs)
         args, kwargs = script.publish.calls[1]
-        self.assertEqual(False, kwargs.get('security_only', False))
+        self.assertEqual(False, kwargs.get("security_only", False))
 
     def test_security_run_publishes_only_security_updates(self):
-        script = self.makeScript(extra_args=['--security-only'])
+        script = self.makeScript(extra_args=["--security-only"])
         script.runFinalizeParts = FakeMethod()
         script.publish = FakeMethod(result=True)
         script.main()
         self.assertEqual(1, script.publish.call_count)
         args, kwargs = script.publish.calls[0]
-        self.assertEqual({'security_only': True}, kwargs)
+        self.assertEqual({"security_only": True}, kwargs)
         self.assertEqual(1, script.runFinalizeParts.call_count)
 
     def test_security_run_empty_security_does_not_finalize(self):
-        script = self.makeScript(extra_args=['--security-only'])
+        script = self.makeScript(extra_args=["--security-only"])
         script.runFinalizeParts = FakeMethod()
         script.publish = FakeMethod(result=False)
         script.main()
@@ -657,15 +699,18 @@ class TestPublishFTPMasterScript(
     def test_publishDistroUploads_processes_all_archives(self):
         distro = self.makeDistroWithPublishDirectory()
         partner_archive = self.factory.makeArchive(
-            distribution=distro, purpose=ArchivePurpose.PARTNER)
+            distribution=distro, purpose=ArchivePurpose.PARTNER
+        )
         script = self.makeScript(distro)
         script.publishDistroArchive = FakeMethod()
         script.setUp()
         script.publishDistroUploads(distro)
         published_archives = [
-            args[1] for args, kwargs in script.publishDistroArchive.calls]
+            args[1] for args, kwargs in script.publishDistroArchive.calls
+        ]
         self.assertContentEqual(
-            [distro.main_archive, partner_archive], published_archives)
+            [distro.main_archive, partner_archive], published_archives
+        )
 
     def test_runFinalizeParts_passes_archiveroots_correctly(self):
         # The ARCHIVEROOTS environment variable may contain spaces, and
@@ -674,7 +719,8 @@ class TestPublishFTPMasterScript(
         # Unix-sensible paths.
         distro = self.makeDistroWithPublishDirectory()
         self.factory.makeArchive(
-            distribution=distro, purpose=ArchivePurpose.PARTNER)
+            distribution=distro, purpose=ArchivePurpose.PARTNER
+        )
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
@@ -684,7 +730,11 @@ class TestPublishFTPMasterScript(
         # Doesn't write to a marker file that already exists, because it
         # might be a sign that the path it received is ridiculously
         # wrong.  Don't want to go overwriting random files now do we?
-        self.installRunPartsScript(distro, "finalize.d", dedent("""\
+        self.installRunPartsScript(
+            distro,
+            "finalize.d",
+            dedent(
+                """\
             #!/bin/sh -e
             MARKER_NAME="marker file"
             for DIRECTORY in $ARCHIVEROOTS
@@ -697,7 +747,9 @@ class TestPublishFTPMasterScript(
                 fi
                 echo "This is an archive root." >"$MARKER"
             done
-            """))
+            """
+            ),
+        )
 
         script.runFinalizeParts(distro)
 
@@ -706,8 +758,8 @@ class TestPublishFTPMasterScript(
             self.assertEqual(
                 "This is an archive root.",
                 read_marker_file([archive_root, "marker file"]).rstrip(),
-                "Did not find expected marker for %s."
-                % archive.purpose.title)
+                "Did not find expected marker for %s." % archive.purpose.title,
+            )
 
     def test_updateStagedFilesForSuite_installs_changed(self):
         distro = self.makeDistroWithPublishDirectory()
@@ -719,26 +771,35 @@ class TestPublishFTPMasterScript(
         archive_config = getPubConfig(distro.main_archive)
         contents_filename = "Contents-%s" % das.architecturetag
         backup_suite = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists",
-            distroseries.name)
+            archive_config.archiveroot + "-distscopy",
+            "dists",
+            distroseries.name,
+        )
         os.makedirs(backup_suite)
         write_marker_file(
-            [backup_suite, "%s.gz" % contents_filename], "Old Contents")
+            [backup_suite, "%s.gz" % contents_filename], "Old Contents"
+        )
         os.utime(
-            os.path.join(backup_suite, "%s.gz" % contents_filename), (0, 0))
+            os.path.join(backup_suite, "%s.gz" % contents_filename), (0, 0)
+        )
         staging_suite = os.path.join(
-            archive_config.stagingroot, distroseries.name)
+            archive_config.stagingroot, distroseries.name
+        )
         os.makedirs(staging_suite)
         write_marker_file(
-            [staging_suite, "%s.gz" % contents_filename], "Contents")
-        self.assertTrue(script.updateStagedFilesForSuite(
-            archive_config, distroseries.name))
+            [staging_suite, "%s.gz" % contents_filename], "Contents"
+        )
+        self.assertTrue(
+            script.updateStagedFilesForSuite(archive_config, distroseries.name)
+        )
         self.assertEqual(
             "Contents",
-            read_marker_file([backup_suite, "%s.gz" % contents_filename]))
+            read_marker_file([backup_suite, "%s.gz" % contents_filename]),
+        )
         self.assertThat(
             os.path.join(staging_suite, "%s.gz" % contents_filename),
-            Not(PathExists()))
+            Not(PathExists()),
+        )
 
     def test_updateStagedFilesForSuite_installs_changed_dep11(self):
         # updateStagedFilesForSuite installs changed files other than
@@ -750,23 +811,30 @@ class TestPublishFTPMasterScript(
         script.setUpDirs()
         archive_config = getPubConfig(distro.main_archive)
         backup_dep11 = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists",
-            distroseries.name, "main", "dep11")
+            archive_config.archiveroot + "-distscopy",
+            "dists",
+            distroseries.name,
+            "main",
+            "dep11",
+        )
         os.makedirs(backup_dep11)
         write_marker_file([backup_dep11, "a"], "Old A")
         os.utime(os.path.join(backup_dep11, "a"), (0, 0))
         staging_dep11 = os.path.join(
-            archive_config.stagingroot, distroseries.name, "main", "dep11")
+            archive_config.stagingroot, distroseries.name, "main", "dep11"
+        )
         os.makedirs(os.path.join(staging_dep11, "subdir"))
         write_marker_file([staging_dep11, "a"], "A")
         write_marker_file([staging_dep11, "subdir", "b"], "B")
-        self.assertTrue(script.updateStagedFilesForSuite(
-            archive_config, distroseries.name))
+        self.assertTrue(
+            script.updateStagedFilesForSuite(archive_config, distroseries.name)
+        )
         self.assertEqual("A", read_marker_file([backup_dep11, "a"]))
         self.assertEqual("B", read_marker_file([backup_dep11, "subdir", "b"]))
         self.assertThat(os.path.join(staging_dep11, "a"), Not(PathExists()))
         self.assertThat(
-            os.path.join(staging_dep11, "subdir", "b"), Not(PathExists()))
+            os.path.join(staging_dep11, "subdir", "b"), Not(PathExists())
+        )
 
     def test_updateStagedFilesForSuite_twice(self):
         # If updateStagedFilesForSuite is run twice in a row, it does not
@@ -780,18 +848,24 @@ class TestPublishFTPMasterScript(
         archive_config = getPubConfig(distro.main_archive)
         contents_filename = "Contents-%s" % das.architecturetag
         backup_suite = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists",
-            distroseries.name)
+            archive_config.archiveroot + "-distscopy",
+            "dists",
+            distroseries.name,
+        )
         os.makedirs(backup_suite)
         staging_suite = os.path.join(
-            archive_config.stagingroot, distroseries.name)
+            archive_config.stagingroot, distroseries.name
+        )
         os.makedirs(staging_suite)
         write_marker_file(
-            [staging_suite, "%s.gz" % contents_filename], "Contents")
-        self.assertTrue(script.updateStagedFilesForSuite(
-            archive_config, distroseries.name))
-        self.assertFalse(script.updateStagedFilesForSuite(
-            archive_config, distroseries.name))
+            [staging_suite, "%s.gz" % contents_filename], "Contents"
+        )
+        self.assertTrue(
+            script.updateStagedFilesForSuite(archive_config, distroseries.name)
+        )
+        self.assertFalse(
+            script.updateStagedFilesForSuite(archive_config, distroseries.name)
+        )
 
     def test_updateStagedFilesForSuite_ensures_world_readable(self):
         # updateStagedFilesForSuite ensures that files it stages have
@@ -803,23 +877,31 @@ class TestPublishFTPMasterScript(
         script.setUpDirs()
         archive_config = getPubConfig(distro.main_archive)
         backup_suite = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists",
-            distroseries.name)
+            archive_config.archiveroot + "-distscopy",
+            "dists",
+            distroseries.name,
+        )
         os.makedirs(backup_suite)
         staging_suite = os.path.join(
-            archive_config.stagingroot, distroseries.name)
+            archive_config.stagingroot, distroseries.name
+        )
         os.makedirs(staging_suite)
         for name, mode in (
-                ("Commands-amd64", 0o644), ("Commands-i386", 0o600)):
+            ("Commands-amd64", 0o644),
+            ("Commands-i386", 0o600),
+        ):
             write_marker_file([staging_suite, name], name, mode=mode)
-        self.assertTrue(script.updateStagedFilesForSuite(
-            archive_config, distroseries.name))
+        self.assertTrue(
+            script.updateStagedFilesForSuite(archive_config, distroseries.name)
+        )
         for name in ("Commands-amd64", "Commands-i386"):
             self.assertEqual(name, read_marker_file([backup_suite, name]))
             self.assertEqual(
                 0o644,
                 stat.S_IMODE(
-                    os.stat(os.path.join(backup_suite, name)).st_mode))
+                    os.stat(os.path.join(backup_suite, name)).st_mode
+                ),
+            )
 
     def test_updateStagedFiles_marks_suites_dirty(self):
         # updateStagedFiles marks the suites for which it updated staged
@@ -833,14 +915,18 @@ class TestPublishFTPMasterScript(
         archive_config = getPubConfig(distro.main_archive)
         contents_filename = "Contents-%s" % das.architecturetag
         backup_suite = os.path.join(
-            archive_config.archiveroot + "-distscopy", "dists",
-            distroseries.name)
+            archive_config.archiveroot + "-distscopy",
+            "dists",
+            distroseries.name,
+        )
         os.makedirs(backup_suite)
         staging_suite = os.path.join(
-            archive_config.stagingroot, distroseries.name)
+            archive_config.stagingroot, distroseries.name
+        )
         os.makedirs(staging_suite)
         write_marker_file(
-            [staging_suite, "%s.gz" % contents_filename], "Contents")
+            [staging_suite, "%s.gz" % contents_filename], "Contents"
+        )
         script.updateStagedFiles(distro)
         self.assertEqual([distroseries.name], distro.main_archive.dirty_suites)
 
@@ -849,10 +935,13 @@ class TestPublishFTPMasterScript(
         # primary archive.
         distro = self.makeDistroWithPublishDirectory()
         self.factory.makeArchive(
-            distribution=distro, owner=distro.owner,
-            purpose=ArchivePurpose.PARTNER)
+            distribution=distro,
+            owner=distro.owner,
+            purpose=ArchivePurpose.PARTNER,
+        )
         distroseries = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.DEVELOPMENT)
+            distribution=distro, status=SeriesStatus.DEVELOPMENT
+        )
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
@@ -860,30 +949,41 @@ class TestPublishFTPMasterScript(
         script.updateStagedFiles(distro)
         expected_args = []
         for purpose in ArchivePurpose.PRIMARY, ArchivePurpose.PARTNER:
-            expected_args.extend([
-                (script.configs[distro][purpose],
-                 distroseries.getSuite(pocket))
-                for pocket in PackagePublishingPocket.items])
+            expected_args.extend(
+                [
+                    (
+                        script.configs[distro][purpose],
+                        distroseries.getSuite(pocket),
+                    )
+                    for pocket in PackagePublishingPocket.items
+                ]
+            )
         self.assertEqual(
-            expected_args, script.updateStagedFilesForSuite.extract_args())
+            expected_args, script.updateStagedFilesForSuite.extract_args()
+        )
 
     def test_updateStagedFiles_skips_immutable_suites(self):
         # updateStagedFiles does not update files for immutable suites.
         distro = self.makeDistroWithPublishDirectory()
         distroseries = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.CURRENT)
+            distribution=distro, status=SeriesStatus.CURRENT
+        )
         script = self.makeScript(distro)
         script.setUp()
         script.setUpDirs()
         script.updateStagedFilesForSuite = FakeMethod()
         script.updateStagedFiles(distro)
         expected_args = [
-            (script.configs[distro][ArchivePurpose.PRIMARY],
-             distroseries.getSuite(pocket))
+            (
+                script.configs[distro][ArchivePurpose.PRIMARY],
+                distroseries.getSuite(pocket),
+            )
             for pocket in PackagePublishingPocket.items
-            if pocket != PackagePublishingPocket.RELEASE]
+            if pocket != PackagePublishingPocket.RELEASE
+        ]
         self.assertEqual(
-            expected_args, script.updateStagedFilesForSuite.extract_args())
+            expected_args, script.updateStagedFilesForSuite.extract_args()
+        )
 
     def test_publish_always_returns_true_for_primary(self):
         script = self.makeScript()
@@ -894,7 +994,7 @@ class TestPublishFTPMasterScript(
         self.assertTrue(result)
 
     def test_publish_returns_true_for_non_empty_security(self):
-        script = self.makeScript(extra_args=['--security-only'])
+        script = self.makeScript(extra_args=["--security-only"])
         script.setUp()
         script.setUpDirs()
         script.installDists = FakeMethod()
@@ -903,7 +1003,7 @@ class TestPublishFTPMasterScript(
         self.assertTrue(result)
 
     def test_publish_returns_false_for_empty_security(self):
-        script = self.makeScript(extra_args=['--security-only'])
+        script = self.makeScript(extra_args=["--security-only"])
         script.setUp()
         script.setUpDirs()
         script.installDists = FakeMethod()
@@ -921,11 +1021,12 @@ class TestPublishFTPMasterScript(
         message = self.factory.getUniqueString()
         script = self.makeScript()
         script.publishDistroUploads = FakeMethod(
-            failure=MoonPhaseError(message))
+            failure=MoonPhaseError(message)
+        )
         script.setUp()
         self.assertRaisesWithContent(
-            MoonPhaseError, message,
-            script.publish, script.distributions[0])
+            MoonPhaseError, message, script.publish, script.distributions[0]
+        )
 
     def test_publish_obeys_keyboard_interrupt(self):
         # Similar to an Exception, a keyboard interrupt does not get
@@ -933,11 +1034,12 @@ class TestPublishFTPMasterScript(
         message = self.factory.getUniqueString()
         script = self.makeScript()
         script.publishDistroUploads = FakeMethod(
-            failure=KeyboardInterrupt(message))
+            failure=KeyboardInterrupt(message)
+        )
         script.setUp()
         self.assertRaisesWithContent(
-            KeyboardInterrupt, message,
-            script.publish, script.distributions[0])
+            KeyboardInterrupt, message, script.publish, script.distributions[0]
+        )
 
     def test_publish_recovers_working_dists_on_exception(self):
         # If an Exception comes up while publishing, the publish method
@@ -980,14 +1082,25 @@ class TestPublishFTPMasterScript(
         # If cron-control switches to the disabled state in the middle of a
         # publisher run, all the subsidiary scripts are still run.
         script = self.makeScript()
-        self.useFixture(MonkeyPatch(
-            "lp.services.scripts.base.cronscript_enabled", FakeMethod(False)))
-        process_accepted_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.scripts.processaccepted.ProcessAccepted.main",
-            FakeMethod()))
-        publish_distro_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.scripts.publishdistro.PublishDistro.main",
-            FakeMethod()))
+        self.useFixture(
+            MonkeyPatch(
+                "lp.services.scripts.base.cronscript_enabled",
+                FakeMethod(False),
+            )
+        )
+        process_accepted_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.scripts.processaccepted"
+                ".ProcessAccepted.main",
+                FakeMethod(),
+            )
+        )
+        publish_distro_fixture = self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.scripts.publishdistro.PublishDistro.main",
+                FakeMethod(),
+            )
+        )
         self.assertThat(script.main, Not(Raises(MatchesException(SystemExit))))
         self.assertEqual(1, process_accepted_fixture.new_value.call_count)
         self.assertEqual(1, publish_distro_fixture.new_value.call_count)
@@ -995,18 +1108,21 @@ class TestPublishFTPMasterScript(
 
 class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
     """Test initial creation of archive indexes for a `DistroSeries`."""
+
     layer = LaunchpadZopelessLayer
 
     def createIndexesMarkerDir(self, script, distroseries):
         """Create the directory for `distroseries`'s indexes marker."""
         marker = script.locateIndexesMarker(
-            distroseries.distribution, get_a_suite(distroseries))
+            distroseries.distribution, get_a_suite(distroseries)
+        )
         os.makedirs(os.path.dirname(marker))
 
     def makeDistroSeriesNeedingIndexes(self, distribution=None):
         """Create `DistroSeries` that needs indexes created."""
         return self.factory.makeDistroSeries(
-            status=SeriesStatus.FROZEN, distribution=distribution)
+            status=SeriesStatus.FROZEN, distribution=distribution
+        )
 
     def test_listSuitesNeedingIndexes_is_nonempty_for_new_frozen_series(self):
         # If a distroseries is Frozen and has not had its indexes
@@ -1025,7 +1141,8 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script.setUp()
         self.assertContentEqual(
             [series.getSuite(pocket) for pocket in pocketsuffix],
-            script.listSuitesNeedingIndexes(series))
+            script.listSuitesNeedingIndexes(series),
+        )
 
     def test_listSuitesNeedingIndexes_is_empty_for_nonfrozen_series(self):
         # listSuitesNeedingIndexes only returns suites for Frozen
@@ -1059,7 +1176,8 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script.markIndexCreationComplete(distro, suite)
         needful_suites.remove(suite)
         self.assertContentEqual(
-            needful_suites, script.listSuitesNeedingIndexes(series))
+            needful_suites, script.listSuitesNeedingIndexes(series)
+        )
 
     def test_listSuitesNeedingIndexes_ignores_other_series(self):
         # listSuitesNeedingIndexes only returns suites for series that
@@ -1083,7 +1201,8 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         suite = get_a_suite(series)
         script.createIndexes(distro, [suite])
         self.assertEqual(
-            [((distro, suite), {})], script.markIndexCreationComplete.calls)
+            [((distro, suite), {})], script.markIndexCreationComplete.calls
+        )
 
     def test_failed_index_creation_is_not_marked_complete(self):
         # If index creation fails, it is not marked as having been
@@ -1110,8 +1229,10 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         archive_root = getPubConfig(series.main_archive).archiveroot
         self.assertThat(
             script.locateIndexesMarker(
-                series.distribution, get_a_suite(series)),
-            StartsWith(os.path.normpath(archive_root)))
+                series.distribution, get_a_suite(series)
+            ),
+            StartsWith(os.path.normpath(archive_root)),
+        )
 
     def test_locateIndexesMarker_uses_separate_files_per_suite(self):
         # Each suite in a distroseries gets its own marker file for
@@ -1143,9 +1264,11 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script.setUp()
         suite = get_a_suite(series)
         self.assertThat(
-            os.path.basename(script.locateIndexesMarker(
-                series.distribution, suite)),
-            StartsWith("."))
+            os.path.basename(
+                script.locateIndexesMarker(series.distribution, suite)
+            ),
+            StartsWith("."),
+        )
 
     def test_script_calls_createIndexes_for_new_series(self):
         # If the script's main() finds a distroseries that needs its
@@ -1159,8 +1282,8 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         [((given_distro, given_suites), kwargs)] = script.createIndexes.calls
         self.assertEqual(distro, given_distro)
         self.assertContentEqual(
-            [series.getSuite(pocket) for pocket in pocketsuffix],
-            given_suites)
+            [series.getSuite(pocket) for pocket in pocketsuffix], given_suites
+        )
 
     def test_createIndexes_ignores_other_series(self):
         # createIndexes does not accidentally also touch other
@@ -1177,33 +1300,40 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script.createIndexes(distro, [suite])
 
         args, kwargs = script.runPublishDistro.calls[0]
-        self.assertEqual([suite], kwargs['suites'])
-        self.assertThat(kwargs['suites'][0], StartsWith(series.name))
+        self.assertEqual([suite], kwargs["suites"])
+        self.assertThat(kwargs["suites"][0], StartsWith(series.name))
 
     def test_prepareFreshSeries_copies_custom_uploads(self):
         distro = self.makeDistroWithPublishDirectory()
         old_series = self.factory.makeDistroSeries(
-            distribution=distro, status=SeriesStatus.CURRENT)
+            distribution=distro, status=SeriesStatus.CURRENT
+        )
         new_series = self.factory.makeDistroSeries(
-            distribution=distro, previous_series=old_series,
-            status=SeriesStatus.FROZEN)
+            distribution=distro,
+            previous_series=old_series,
+            status=SeriesStatus.FROZEN,
+        )
         self.factory.makeDistroArchSeries(
-            distroseries=new_series, architecturetag='i386')
+            distroseries=new_series, architecturetag="i386"
+        )
         custom_upload = self.factory.makeCustomPackageUpload(
             distroseries=old_series,
             custom_type=PackageUploadCustomFormat.DEBIAN_INSTALLER,
-            filename='debian-installer-images_1.0-20110805_i386.tar.gz')
+            filename="debian-installer-images_1.0-20110805_i386.tar.gz",
+        )
         script = self.makeScript(distro)
         script.createIndexes = FakeMethod()
         script.setUp()
         have_fresh_series = script.prepareFreshSeries(distro)
         self.assertTrue(have_fresh_series)
         [copied_upload] = new_series.getPackageUploads(
-            name='debian-installer-images', exact_match=False)
+            name="debian-installer-images", exact_match=False
+        )
         [copied_custom] = copied_upload.customfiles
         self.assertEqual(
             custom_upload.customfiles[0].libraryfilealias.filename,
-            copied_custom.libraryfilealias.filename)
+            copied_custom.libraryfilealias.filename,
+        )
 
     def test_script_creates_indexes(self):
         # End-to-end test: the script creates indexes for distroseries
@@ -1212,7 +1342,8 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         series = test_publisher.setUpDefaultDistroSeries()
         series.status = SeriesStatus.FROZEN
         self.factory.makeComponentSelection(
-            distroseries=series, component="main")
+            distroseries=series, component="main"
+        )
         self.layer.txn.commit()
         self.setUpForScriptRun(series.distribution)
         script = self.makeScript(series.distribution)
@@ -1220,5 +1351,9 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         self.assertEqual([], script.listSuitesNeedingIndexes(series))
         sources = os.path.join(
             getPubConfig(series.main_archive).distsroot,
-            series.name, "main", "source", "Sources.gz")
+            series.name,
+            "main",
+            "source",
+            "Sources.gz",
+        )
         self.assertTrue(file_exists(sources))

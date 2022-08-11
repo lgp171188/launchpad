@@ -2,27 +2,25 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the exclude_conjoined_tasks param for BugTaskSearchParams."""
-
-__all__ = []
+from typing import List
 
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTaskSet,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus, IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.registry.interfaces.series import SeriesStatus
 from lp.testing import (
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
+
+__all__ = []  # type: List[str]
 
 
 class TestSearchBase(TestCaseWithFactory):
@@ -32,7 +30,8 @@ class TestSearchBase(TestCaseWithFactory):
         bug = self.factory.makeBug(target=milestone.target)
         with person_logged_in(milestone.target.owner):
             bug.default_bugtask.transitionToMilestone(
-                milestone, milestone.target.owner)
+                milestone, milestone.target.owner
+            )
         return bug
 
 
@@ -46,19 +45,21 @@ class TestProjectExcludeConjoinedPrimarySearch(TestSearchBase):
         self.bugtask_set = getUtility(IBugTaskSet)
         self.product = self.factory.makeProduct()
         self.milestone = self.factory.makeMilestone(
-            product=self.product, name='foo')
+            product=self.product, name="foo"
+        )
         self.bug_count = 2
         self.bugs = [
-            self.makeBug(self.milestone)
-            for i in range(self.bug_count)]
+            self.makeBug(self.milestone) for i in range(self.bug_count)
+        ]
         self.params = BugTaskSearchParams(
-            user=None, milestone=self.milestone, exclude_conjoined_tasks=True)
+            user=None, milestone=self.milestone, exclude_conjoined_tasks=True
+        )
 
     def test_search_results_count_simple(self):
         # Verify number of results with no conjoined primaries.
         self.assertEqual(
-            self.bug_count,
-            self.bugtask_set.search(self.params).count())
+            self.bug_count, self.bugtask_set.search(self.params).count()
+        )
 
     def test_search_query_count(self):
         # Verify query count.
@@ -79,10 +80,12 @@ class TestProjectExcludeConjoinedPrimarySearch(TestSearchBase):
             bugtask = self.factory.makeBugTask(bug=bug, target=productseries)
             with person_logged_in(self.product.owner):
                 bugtask.transitionToMilestone(
-                    self.milestone, self.product.owner)
+                    self.milestone, self.product.owner
+                )
             self.assertEqual(
                 self.bug_count + extra_bugtasks,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
 
     def test_search_results_count_with_conjoined_primarys(self):
         # Test with increasing numbers of conjoined primaries.
@@ -94,39 +97,48 @@ class TestProjectExcludeConjoinedPrimarySearch(TestSearchBase):
             # primary is added.
             self.assertIn(
                 (bug.id, self.product),
-                [(task.bug.id, task.product) for task in tasks])
+                [(task.bug.id, task.product) for task in tasks],
+            )
             self.factory.makeBugTask(
-                bug=bug, target=self.product.development_focus)
+                bug=bug, target=self.product.development_focus
+            )
             tasks = list(self.bugtask_set.search(self.params))
             # The product bugtask is excluded from the results.
             self.assertEqual(self.bug_count, len(tasks))
             self.assertNotIn(
                 (bug.id, self.product),
-                [(task.bug.id, task.product) for task in tasks])
+                [(task.bug.id, task.product) for task in tasks],
+            )
 
     def test_search_results_count_with_wontfix_conjoined_primarys(self):
         # Test that conjoined primary bugtasks in the WONTFIX status
         # don't cause the bug to be excluded.
         primaries = [
             self.factory.makeBugTask(
-                bug=bug, target=self.product.development_focus)
-            for bug in self.bugs]
+                bug=bug, target=self.product.development_focus
+            )
+            for bug in self.bugs
+        ]
         tasks = list(self.bugtask_set.search(self.params))
         wontfix_primaries_count = 0
         for bugtask in primaries:
             wontfix_primaries_count += 1
             self.assertNotIn(
                 (bugtask.bug.id, self.product),
-                [(task.bug.id, task.product) for task in tasks])
+                [(task.bug.id, task.product) for task in tasks],
+            )
             with person_logged_in(self.product.owner):
                 bugtask.transitionToStatus(
-                    BugTaskStatus.WONTFIX, self.product.owner)
+                    BugTaskStatus.WONTFIX, self.product.owner
+                )
             tasks = list(self.bugtask_set.search(self.params))
-            self.assertEqual(self.bug_count + wontfix_primaries_count,
-                             len(tasks))
+            self.assertEqual(
+                self.bug_count + wontfix_primaries_count, len(tasks)
+            )
             self.assertIn(
                 (bugtask.bug.id, self.product),
-                [(task.bug.id, task.product) for task in tasks])
+                [(task.bug.id, task.product) for task in tasks],
+            )
 
 
 class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
@@ -143,18 +155,20 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
         for i in range(self.bug_count):
             product = self.factory.makeProduct(projectgroup=self.projectgroup)
             product_milestone = self.factory.makeMilestone(
-                product=product, name='foo')
+                product=product, name="foo"
+            )
             bug = self.makeBug(product_milestone)
             self.bug_products[bug] = product
-        self.milestone = self.projectgroup.getMilestone('foo')
+        self.milestone = self.projectgroup.getMilestone("foo")
         self.params = BugTaskSearchParams(
-            user=None, milestone=self.milestone, exclude_conjoined_tasks=True)
+            user=None, milestone=self.milestone, exclude_conjoined_tasks=True
+        )
 
     def test_search_results_count_simple(self):
         # Verify number of results with no conjoined primaries.
         self.assertEqual(
-            self.bug_count,
-            self.bugtask_set.search(self.params).count())
+            self.bug_count, self.bugtask_set.search(self.params).count()
+        )
 
     def test_search_query_count(self):
         # Verify query count.
@@ -175,10 +189,12 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
             bugtask = self.factory.makeBugTask(bug=bug, target=productseries)
             with person_logged_in(product.owner):
                 bugtask.transitionToMilestone(
-                    product.getMilestone(self.milestone.name), product.owner)
+                    product.getMilestone(self.milestone.name), product.owner
+                )
             self.assertEqual(
                 self.bug_count + extra_bugtasks,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
 
     def test_search_results_count_with_conjoined_primarys(self):
         # Test with increasing numbers of conjoined primaries.
@@ -186,16 +202,17 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
         for bug, product in self.bug_products.items():
             self.assertIn(
                 (bug.id, product),
-                [(task.bug.id, task.product) for task in tasks])
-            self.factory.makeBugTask(
-                bug=bug, target=product.development_focus)
+                [(task.bug.id, task.product) for task in tasks],
+            )
+            self.factory.makeBugTask(bug=bug, target=product.development_focus)
             tasks = list(self.bugtask_set.search(self.params))
             self.assertEqual(
-                self.bug_count,
-                self.bugtask_set.search(self.params).count())
+                self.bug_count, self.bugtask_set.search(self.params).count()
+            )
             self.assertNotIn(
                 (bug.id, product),
-                [(task.bug.id, task.product) for task in tasks])
+                [(task.bug.id, task.product) for task in tasks],
+            )
 
     def test_search_results_count_with_irrelevant_conjoined_primarys(self):
         # Verify that a conjoined primary in one project of the project
@@ -205,42 +222,49 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
         for bug, product in self.bug_products.items():
             extra_bugtasks += 1
             other_product = self.factory.makeProduct(
-                projectgroup=self.projectgroup)
+                projectgroup=self.projectgroup
+            )
             # Create a new milestone with the same name.
             other_product_milestone = self.factory.makeMilestone(
-                product=other_product,
-                name=bug.default_bugtask.milestone.name)
+                product=other_product, name=bug.default_bugtask.milestone.name
+            )
             # Add bugtask on the new product and select the milestone.
             other_product_bugtask = self.factory.makeBugTask(
-                bug=bug, target=other_product)
+                bug=bug, target=other_product
+            )
             with person_logged_in(other_product.owner):
                 other_product_bugtask.transitionToMilestone(
-                    other_product_milestone, other_product.owner)
+                    other_product_milestone, other_product.owner
+                )
             # Add conjoined primary for the milestone on the new product.
             self.factory.makeBugTask(
-                bug=bug, target=other_product.development_focus)
+                bug=bug, target=other_product.development_focus
+            )
             # The bug count should not change, since we are just adding
             # bugtasks on existing bugs.
             self.assertEqual(
                 self.bug_count + extra_bugtasks,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
 
     def test_search_results_count_with_wontfix_conjoined_primarys(self):
         # Test that conjoined primary bugtasks in the WONTFIX status
         # don't cause the bug to be excluded.
         primaries = [
-            self.factory.makeBugTask(
-                bug=bug, target=product.development_focus)
-            for bug, product in self.bug_products.items()]
+            self.factory.makeBugTask(bug=bug, target=product.development_focus)
+            for bug, product in self.bug_products.items()
+        ]
         unexcluded_count = 0
         for bugtask in primaries:
             unexcluded_count += 1
             with person_logged_in(bugtask.target.owner):
                 bugtask.transitionToStatus(
-                    BugTaskStatus.WONTFIX, bugtask.target.owner)
+                    BugTaskStatus.WONTFIX, bugtask.target.owner
+                )
             self.assertEqual(
                 self.bug_count + unexcluded_count,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
 
 
 class TestDistributionExcludeConjoinedPrimarySearch(TestSearchBase):
@@ -253,19 +277,21 @@ class TestDistributionExcludeConjoinedPrimarySearch(TestSearchBase):
         self.bugtask_set = getUtility(IBugTaskSet)
         self.distro = getUtility(ILaunchpadCelebrities).ubuntu
         self.milestone = self.factory.makeMilestone(
-            distribution=self.distro, name='foo')
+            distribution=self.distro, name="foo"
+        )
         self.bug_count = 2
         self.bugs = [
-            self.makeBug(self.milestone)
-            for i in range(self.bug_count)]
+            self.makeBug(self.milestone) for i in range(self.bug_count)
+        ]
         self.params = BugTaskSearchParams(
-            user=None, milestone=self.milestone, exclude_conjoined_tasks=True)
+            user=None, milestone=self.milestone, exclude_conjoined_tasks=True
+        )
 
     def test_search_results_count_simple(self):
         # Verify number of results with no conjoined primaries.
         self.assertEqual(
-            self.bug_count,
-            self.bugtask_set.search(self.params).count())
+            self.bug_count, self.bugtask_set.search(self.params).count()
+        )
 
     def test_search_query_count(self):
         # Verify query count.
@@ -281,17 +307,20 @@ class TestDistributionExcludeConjoinedPrimarySearch(TestSearchBase):
         # Test with zero conjoined primaries and bugtasks targeted to
         # productseries that are not the development focus.
         distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro, status=SeriesStatus.SUPPORTED)
+            distribution=self.distro, status=SeriesStatus.SUPPORTED
+        )
         extra_bugtasks = 0
         for bug in self.bugs:
             extra_bugtasks += 1
             bugtask = self.factory.makeBugTask(bug=bug, target=distroseries)
             with person_logged_in(self.distro.owner):
                 bugtask.transitionToMilestone(
-                    self.milestone, self.distro.owner)
+                    self.milestone, self.distro.owner
+                )
             self.assertEqual(
                 self.bug_count + extra_bugtasks,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
 
     def test_search_results_count_with_conjoined_primarys(self):
         # Test with increasing numbers of conjoined primaries.
@@ -301,23 +330,24 @@ class TestDistributionExcludeConjoinedPrimarySearch(TestSearchBase):
             # primary is added.
             self.assertIn(
                 (bug.id, self.distro),
-                [(task.bug.id, task.distribution) for task in tasks])
-            self.factory.makeBugTask(
-                bug=bug, target=self.distro.currentseries)
+                [(task.bug.id, task.distribution) for task in tasks],
+            )
+            self.factory.makeBugTask(bug=bug, target=self.distro.currentseries)
             tasks = list(self.bugtask_set.search(self.params))
             # The product bugtask is excluded from the results.
             self.assertEqual(self.bug_count, len(tasks))
             self.assertNotIn(
                 (bug.id, self.distro),
-                [(task.bug.id, task.distribution) for task in tasks])
+                [(task.bug.id, task.distribution) for task in tasks],
+            )
 
     def test_search_results_count_with_wontfix_conjoined_primarys(self):
         # Test that conjoined primary bugtasks in the WONTFIX status
         # don't cause the bug to be excluded.
         primaries = [
-            self.factory.makeBugTask(
-                bug=bug, target=self.distro.currentseries)
-            for bug in self.bugs]
+            self.factory.makeBugTask(bug=bug, target=self.distro.currentseries)
+            for bug in self.bugs
+        ]
         wontfix_primaries_count = 0
         tasks = list(self.bugtask_set.search(self.params))
         for bugtask in primaries:
@@ -326,16 +356,20 @@ class TestDistributionExcludeConjoinedPrimarySearch(TestSearchBase):
             # primary.
             self.assertNotIn(
                 (bugtask.bug.id, self.distro),
-                [(task.bug.id, task.distribution) for task in tasks])
+                [(task.bug.id, task.distribution) for task in tasks],
+            )
             with person_logged_in(self.distro.owner):
                 bugtask.transitionToStatus(
-                    BugTaskStatus.WONTFIX, self.distro.owner)
+                    BugTaskStatus.WONTFIX, self.distro.owner
+                )
             tasks = list(self.bugtask_set.search(self.params))
             self.assertEqual(
                 self.bug_count + wontfix_primaries_count,
-                self.bugtask_set.search(self.params).count())
+                self.bugtask_set.search(self.params).count(),
+            )
             # The distro bugtask is no longer excluded by the conjoined
             # primary, since its status is WONTFIX.
             self.assertIn(
                 (bugtask.bug.id, self.distro),
-                [(task.bug.id, task.distribution) for task in tasks])
+                [(task.bug.id, task.distribution) for task in tasks],
+            )

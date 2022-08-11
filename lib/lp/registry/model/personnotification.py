@@ -4,18 +4,14 @@
 """Person notifications."""
 
 __all__ = [
-    'PersonNotification',
-    'PersonNotificationSet',
-    ]
+    "PersonNotification",
+    "PersonNotificationSet",
+]
 
 from datetime import datetime
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Unicode,
-    )
+from storm.locals import DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
 from zope.interface import implementer
@@ -23,15 +19,12 @@ from zope.interface import implementer
 from lp.registry.interfaces.personnotification import (
     IPersonNotification,
     IPersonNotificationSet,
-    )
+)
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.mail.sendmail import (
-    format_address,
-    simple_sendmail,
-    )
+from lp.services.mail.sendmail import format_address, simple_sendmail
 from lp.services.propertycache import cachedproperty
 
 
@@ -39,18 +32,20 @@ from lp.services.propertycache import cachedproperty
 class PersonNotification(StormBase):
     """See `IPersonNotification`."""
 
-    __storm_table__ = 'PersonNotification'
+    __storm_table__ = "PersonNotification"
     id = Int(primary=True)
-    person_id = Int('person', allow_none=False)
+    person_id = Int("person", allow_none=False)
     person = Reference(person_id, "Person.id")
 
-    date_created = DateTime(tzinfo=pytz.UTC, name='date_created',
-                            allow_none=False, default=UTC_NOW)
-    date_emailed = DateTime(tzinfo=pytz.UTC, name='date_emailed',
-                            allow_none=True)
+    date_created = DateTime(
+        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+    )
+    date_emailed = DateTime(
+        tzinfo=pytz.UTC, name="date_emailed", allow_none=True
+    )
 
-    body = Unicode(name='body', allow_none=False)
-    subject = Unicode(name='subject', allow_none=False)
+    body = Unicode(name="body", allow_none=False)
+    subject = Unicode(name="subject", allow_none=False)
 
     def __init__(self, person, subject, body):
         self.person = person
@@ -65,8 +60,11 @@ class PersonNotification(StormBase):
         elif self.person.preferredemail is None:
             return []
         else:
-            return [format_address(
-                self.person.displayname, self.person.preferredemail.email)]
+            return [
+                format_address(
+                    self.person.displayname, self.person.preferredemail.email
+                )
+            ]
 
     @property
     def can_send(self):
@@ -77,13 +75,14 @@ class PersonNotification(StormBase):
         """See `IPersonNotification`."""
         if not self.can_send:
             raise AssertionError(
-                "Can't send a notification to a person without an email.")
+                "Can't send a notification to a person without an email."
+            )
         to_addresses = self.to_addresses
         if logger:
             logger.info("Sending notification to %r." % to_addresses)
         from_addr = config.canonical.bounce_address
         simple_sendmail(from_addr, to_addresses, self.subject, self.body)
-        self.date_emailed = datetime.now(pytz.timezone('UTC'))
+        self.date_emailed = datetime.now(pytz.timezone("UTC"))
 
     def destroySelf(self):
         """See `IPersonNotification`."""
@@ -98,11 +97,8 @@ class PersonNotificationSet:
         """See `IPersonNotificationSet`."""
         store = IStore(PersonNotification)
         return store.find(
-            PersonNotification,
-            PersonNotification.date_emailed == None
-        ).order_by(
-            PersonNotification.date_created,
-            PersonNotification.id)
+            PersonNotification, PersonNotification.date_emailed == None
+        ).order_by(PersonNotification.date_created, PersonNotification.id)
 
     def addNotification(self, person, subject, body):
         """See `IPersonNotificationSet`."""
@@ -112,5 +108,5 @@ class PersonNotificationSet:
         """See `IPersonNotificationSet`."""
         store = IStore(PersonNotification)
         return store.find(
-            PersonNotification,
-            PersonNotification.date_created < time_limit)
+            PersonNotification, PersonNotification.date_created < time_limit
+        )

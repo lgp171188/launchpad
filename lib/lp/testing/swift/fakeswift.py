@@ -7,10 +7,6 @@ Not all functionality is provided; just enough to test the client.
 """
 
 import base64
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import hashlib
 import io
 import json
@@ -18,16 +14,11 @@ import logging
 import os.path
 import time
 import uuid
+from datetime import datetime, timedelta
 
-from twisted.web import (
-    http,
-    resource,
-    server,
-    static,
-    )
+from twisted.web import http, resource, server, static
 
-
-logger = logging.getLogger('lp.testing.swift.fakeswift')
+logger = logging.getLogger("lp.testing.swift.fakeswift")
 
 
 KEYSTONE_PATH = "/keystone/v2.0"
@@ -49,12 +40,10 @@ class FakeKeystone(resource.Resource):
             self.users[DEFAULT_USERNAME] = {
                 "id": uuid.uuid4().hex,
                 "name": DEFAULT_USERNAME,
-                "roles": [{
-                    "name": "swiftaccess"
-                    }],
+                "roles": [{"name": "swiftaccess"}],
                 "roles_links": [],
                 "username": DEFAULT_USERNAME,
-                }
+            }
 
     def getUser(self, username):
         """Get information about a specific user."""
@@ -62,7 +51,7 @@ class FakeKeystone(resource.Resource):
 
     def _isValidToken(self, token, tenant_name):
         """Validate a given token for expiration."""
-        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         if token["expires"] > now and token["tenant"]["name"] == tenant_name:
             return True
         return False
@@ -85,14 +74,14 @@ class FakeKeystone(resource.Resource):
             token_id = uuid.uuid4().hex
             default_expires = datetime.utcnow() + timedelta(hours=24)
             self.tokens[token_id] = {
-                "expires": default_expires.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "expires": default_expires.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "id": token_id,
                 "tenant": self.root.tenants[tenant_name],
-                }
+            }
 
     def validateToken(self, request, tenant_name):
         """Validate token from request against valid tokens."""
-        token = request.getHeader('x-auth-token')
+        token = request.getHeader("x-auth-token")
         valid_token = self.getValidToken(tenant_name, token)
         return valid_token is not None
 
@@ -115,7 +104,7 @@ class FakeKeystone(resource.Resource):
 
     def render_POST(self, request):
         """Validate provided credentials and return service catalog."""
-        if "application/json" not in request.getHeader('content-type'):
+        if "application/json" not in request.getHeader("content-type"):
             request.setResponseCode(http.BAD_REQUEST)
             return b""
         # XXX cjwatson 2020-06-15: Python 3.5 doesn't allow this to be a
@@ -124,8 +113,10 @@ class FakeKeystone(resource.Resource):
         if "auth" not in credentials:
             request.setResponseCode(http.FORBIDDEN)
             return b""
-        if ("tenantName" not in credentials["auth"] or
-            "passwordCredentials" not in credentials["auth"]):
+        if (
+            "tenantName" not in credentials["auth"]
+            or "passwordCredentials" not in credentials["auth"]
+        ):
             request.setResponseCode(http.FORBIDDEN)
             return b""
         tenant_name = credentials["auth"]["tenantName"]
@@ -146,30 +137,33 @@ class FakeKeystone(resource.Resource):
         self.ensureValidToken(tenant_name)
 
         request.setResponseCode(200)
-        return json.dumps({
-            "access": {
-                "serviceCatalog": self.root.getCatalog(
-                    tenant_name, request),
-                "token": self.getValidToken(tenant_name),
-                "user": self.getUser(username),
+        return json.dumps(
+            {
+                "access": {
+                    "serviceCatalog": self.root.getCatalog(
+                        tenant_name, request
+                    ),
+                    "token": self.getValidToken(tenant_name),
+                    "user": self.getUser(username),
                 }
-            }).encode("UTF-8")
+            }
+        ).encode("UTF-8")
 
 
 def parse_range_header(range):
     """Modelled after `twisted.web.static.File._parseRangeHeader`."""
-    if '=' in range:
-        type, value = range.split('=', 1)
+    if "=" in range:
+        type, value = range.split("=", 1)
     else:
         raise ValueError("Invalid range header, no '='")
-    if type != 'bytes':
+    if type != "bytes":
         raise ValueError("Invalid range header, must be a 'bytes' range")
-    raw_ranges = [bytes.strip() for bytes in value.split(',')]
+    raw_ranges = [bytes.strip() for bytes in value.split(",")]
     ranges = []
     for current_range in raw_ranges:
-        if '-' not in current_range:
+        if "-" not in current_range:
             raise ValueError("Illegal byte range: %r" % current_range)
-        begin, end = current_range.split('-')
+        begin, end = current_range.split("-")
         if begin:
             begin = int(begin)
         else:
@@ -184,6 +178,7 @@ def parse_range_header(range):
 
 class EmptyPage(resource.Resource):
     """Return an empty document."""
+
     isLeaf = True
 
     def __init__(self, retcode=http.OK, headers=None, body=b""):
@@ -211,15 +206,23 @@ class SwiftObject(resource.Resource):
     contents = None
     _etag = None
 
-    def __init__(self, container, name, contents=None,
-                 content_type="application/octet-stream", content_md5=None):
+    def __init__(
+        self,
+        container,
+        name,
+        contents=None,
+        content_type="application/octet-stream",
+        content_md5=None,
+    ):
         resource.Resource.__init__(self)
         self.container = container
         self.name = name
         if contents is not None:
             self.set_contents(
-                contents=contents, content_type=content_type,
-                content_md5=content_md5)
+                contents=contents,
+                content_type=content_type,
+                content_md5=content_md5,
+            )
         self._date = time.asctime()
 
     def __getstate__(self):
@@ -227,8 +230,7 @@ class SwiftObject(resource.Resource):
         del d["children"]
         return d
 
-    def set_contents(self, contents=None, content_type=None,
-                     content_md5=None):
+    def set_contents(self, contents=None, content_type=None, content_md5=None):
         self.content_type = content_type
         self.contents = contents
         if content_md5:
@@ -263,7 +265,7 @@ class SwiftObject(resource.Resource):
             request.setHeader("ETag", self._etag)
         range = request.getHeader("Range")
         size = len(self.contents)
-        if request.method == b'HEAD':
+        if request.method == b"HEAD":
             request.setHeader("Content-Length", str(size))
             return b""
         if range:
@@ -273,30 +275,32 @@ class SwiftObject(resource.Resource):
                 begin, end = ranges[0]
                 if begin is None:
                     request.setResponseCode(
-                        http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                    return b''
+                        http.REQUESTED_RANGE_NOT_SATISFIABLE
+                    )
+                    return b""
                 if not end:
                     end = size
                 elif end < size:
                     end += 1
                 if begin >= size:
                     request.setResponseCode(
-                        http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                    request.setHeader(
-                        'content-range', 'bytes */%d' % size)
-                    return b''
+                        http.REQUESTED_RANGE_NOT_SATISFIABLE
+                    )
+                    request.setHeader("content-range", "bytes */%d" % size)
+                    return b""
                 else:
                     request.setHeader(
-                        'content-range',
-                        'bytes %d-%d/%d' % (begin, end-1, size))
-                length = (end - begin)
+                        "content-range",
+                        "bytes %d-%d/%d" % (begin, end - 1, size),
+                    )
+                length = end - begin
                 request.setHeader("Content-Length", str(length))
                 request.setResponseCode(http.PARTIAL_CONTENT)
                 contents = io.BytesIO(self.contents[begin:end])
             else:
                 # multiple ranges should be returned in a multipart response
                 request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                return b''
+                return b""
 
         else:
             request.setHeader("Content-Length", str(size))
@@ -314,21 +318,24 @@ class SwiftObject(resource.Resource):
         data = request.content.read()
         content_type = request.getHeader("Content-Type")
         content_md5 = request.getHeader("Content-MD5")
-        if content_md5: # check if the data is good
+        if content_md5:  # check if the data is good
             header_md5 = base64.decodestring(content_md5)
-            data_md5  = hashlib.md5(data)
-            assert (data_md5.digest() == header_md5), "md5 check failed!"
+            data_md5 = hashlib.md5(data)
+            assert data_md5.digest() == header_md5, "md5 check failed!"
             content_md5 = data_md5
         self.set_contents(
-            contents=data, content_type=content_type, content_md5=content_md5)
+            contents=data, content_type=content_type, content_md5=content_md5
+        )
         date = request.getHeader("Date")
         if not date:
             date = time.ctime()
         self.set_date(date)
         self.container.container_children[self.name] = self
         request.setHeader("ETag", self.get_etag())
-        logger.debug("created object container=%s name=%s size=%d" % (
-            self.container, self.name, len(data)))
+        logger.debug(
+            "created object container=%s name=%s size=%d"
+            % (self.container, self.name, len(data))
+        )
         return b""
 
 
@@ -337,6 +344,7 @@ class SwiftContainer(resource.Resource):
 
     Containers hold objects with data and receive uploads in case of PUT.
     """
+
     def __init__(self, name, tenant_name):
         resource.Resource.__init__(self)
         # Can't use children: resource already has that name and it would
@@ -359,8 +367,8 @@ class SwiftContainer(resource.Resource):
         # avoid recursion into the key names
         # (which can contain / as a valid char!)
         if name and request.postpath:
-            name = os.path.join(*((name,)+tuple(request.postpath)))
-        assert (name), "Wrong call stack for name='%s'" % (name,)
+            name = os.path.join(*((name,) + tuple(request.postpath)))
+        assert name, "Wrong call stack for name='%s'" % (name,)
         if request.method == b"PUT":
             child = SwiftObject(self, name)
         elif request.method in (b"GET", b"HEAD"):
@@ -373,7 +381,8 @@ class SwiftContainer(resource.Resource):
             return EmptyPage(http.NO_CONTENT)
         else:
             logger.error(
-                "UNHANDLED request method %s" % request.method.decode("UTF-8"))
+                "UNHANDLED request method %s" % request.method.decode("UTF-8")
+            )
             return EmptyPage(http.METHOD_NOT_ALLOWED)
         if child is None:
             return EmptyPage(http.NOT_FOUND)
@@ -381,25 +390,25 @@ class SwiftContainer(resource.Resource):
 
     def render_GET(self, request):
         """Return list of keys in response to GET on container."""
-        if request.args.get(b'format', [])[0] != b"json":
+        if request.args.get(b"format", [])[0] != b"json":
             raise NotImplementedError()
 
         results = []
-        marker = request.args.get(b'marker', [None])[0]
-        end_marker = request.args.get(b'end_marker', [None])[0]
-        prefix = request.args.get(b'prefix', [None])[0]
-        format_ = request.args.get(b'format', [None])[0]
-        delimiter = request.args.get(b'delimiter', None)
-        path = request.args.get(b'path', None)
+        marker = request.args.get(b"marker", [None])[0]
+        end_marker = request.args.get(b"end_marker", [None])[0]
+        prefix = request.args.get(b"prefix", [None])[0]
+        format_ = request.args.get(b"format", [None])[0]
+        delimiter = request.args.get(b"delimiter", None)
+        path = request.args.get(b"path", None)
 
-        if format_ != b'json' or delimiter or path:
+        if format_ != b"json" or delimiter or path:
             raise NotImplementedError()
 
         # According to the docs, limit will be 10000 if no query
         # parameters are passed. However, as we require at least the
         # 'format' query parameter above, the default is always
         # unlimited.
-        limit = int(request.args.get(b'limit', [2 ** 31 - 1])[0])
+        limit = int(request.args.get(b"limit", [2**31 - 1])[0])
 
         results = []
         for name, child in sorted(self.iter_children()):
@@ -415,17 +424,20 @@ class SwiftContainer(resource.Resource):
             # Convert the ascii local time to UTC ISO format.
             local_mod_time = time.mktime(time.strptime(child.get_date()))
             mod_time = datetime.utcfromtimestamp(local_mod_time).strftime(
-                '%Y-%m-%dT%H:%M:%S.%f')
+                "%Y-%m-%dT%H:%M:%S.%f"
+            )
 
-            results.append({
-                'name': name.decode('UTF-8'),
-                'bytes': child.get_size(),
-                'hash': child._etag,
-                'content-type': child.content_type,
-                'last_modified': mod_time,
-                })
+            results.append(
+                {
+                    "name": name.decode("UTF-8"),
+                    "bytes": child.get_size(),
+                    "hash": child._etag,
+                    "content-type": child.content_type,
+                    "last_modified": mod_time,
+                }
+            )
 
-        return json.dumps(results).encode('UTF-8')
+        return json.dumps(results).encode("UTF-8")
 
 
 class FakeContent(io.IOBase):
@@ -440,7 +452,7 @@ class FakeContent(io.IOBase):
     def __getitem__(self, slice):
         """Get a piece of the content."""
         size = min(slice.stop, self.size) - slice.start
-        return self.char*size
+        return self.char * size
 
     def hexdigest(self):
         """Send a fake hexdigest.
@@ -448,9 +460,9 @@ class FakeContent(io.IOBase):
         For big contents this takes too much time to calculate, so we just
         fake it.
         """
-        block_size = 2 ** 16
+        block_size = 2**16
         start = 0
-        data = self[start:start+block_size]
+        data = self[start : start + block_size]
         md5calc = hashlib.md5()
         md5calc.update(data)
         return md5calc.hexdigest()
@@ -461,7 +473,7 @@ class FakeContent(io.IOBase):
 
     def read(self, size):
         """Read a block of data."""
-        block = self[self.position:self.position + size]
+        block = self[self.position : self.position + size]
         self.position = min(self.position + size, self.size)
         return block
 
@@ -487,7 +499,7 @@ class FakeSwift(resource.Resource):
         self.root = root
         self.containers = {
             b"size": SizeContainer(b"size", DEFAULT_TENANT_NAME),
-            }
+        }
 
     def addContainer(self, name):
         """Create a new container."""
@@ -502,8 +514,9 @@ class FakeSwift(resource.Resource):
         container = self.containers.get(name, None)
 
         # if we operate on a key, pass control
-        if ((request.postpath and request.postpath[0]) or
-             (not request.postpath and request.method == b"GET")):
+        if (request.postpath and request.postpath[0]) or (
+            not request.postpath and request.method == b"GET"
+        ):
             if container is None:
                 # container does not exist, yet we attempt operation on
                 # an object from that container
@@ -559,10 +572,12 @@ class Root(resource.Resource):
             "id": uuid.uuid4().hex,
             "enabled": True,
             "description": "Tenant %s" % DEFAULT_TENANT_NAME,
-            "name": DEFAULT_TENANT_NAME}
+            "name": DEFAULT_TENANT_NAME,
+        }
 
         self.keystone = FakeKeystone(
-            self, allow_default_access=allow_default_access)
+            self, allow_default_access=allow_default_access
+        )
         self.swift = FakeSwift(self)
         self.putChild(b"keystone", self.keystone)
         self.putChild(b"swift", self.swift)
@@ -576,28 +591,32 @@ class Root(resource.Resource):
         swift_base_url = "%s/swift/v1" % base_url
         catalog = [
             {
-                "endpoints": [{
-                    "adminURL": keystone_base_url,
-                    "id": uuid.uuid4().hex,
-                    "internalURL": keystone_base_url,
-                    "publicURL": keystone_base_url,
-                    "region": DEFAULT_REGION,
-                    }],
+                "endpoints": [
+                    {
+                        "adminURL": keystone_base_url,
+                        "id": uuid.uuid4().hex,
+                        "internalURL": keystone_base_url,
+                        "publicURL": keystone_base_url,
+                        "region": DEFAULT_REGION,
+                    }
+                ],
                 "endpoints_links": [],
                 "name": "keystone",
                 "type": "identity",
-                },
+            },
             {
-                "endpoints": [{
-                    "adminURL": swift_base_url,
-                    "id": uuid.uuid4().hex,
-                    "internalURL": swift_base_url + "/AUTH_" + tenant_id,
-                    "publicURL": swift_base_url + "/AUTH_" + tenant_id,
-                    "region": DEFAULT_REGION,
-                    }],
+                "endpoints": [
+                    {
+                        "adminURL": swift_base_url,
+                        "id": uuid.uuid4().hex,
+                        "internalURL": swift_base_url + "/AUTH_" + tenant_id,
+                        "publicURL": swift_base_url + "/AUTH_" + tenant_id,
+                        "region": DEFAULT_REGION,
+                    }
+                ],
                 "endpoints_links": [],
                 "name": "swift",
                 "type": "object-store",
-                },
-            ]
+            },
+        ]
         return catalog

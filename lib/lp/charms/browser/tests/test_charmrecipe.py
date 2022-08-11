@@ -4,24 +4,19 @@
 """Test charm recipe views."""
 
 import base64
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import json
 import re
-from urllib.parse import (
-    parse_qs,
-    urlsplit,
-    )
+from datetime import datetime, timedelta
+from urllib.parse import parse_qs, urlsplit
 
+import pytz
+import responses
+import soupmatchers
+import transaction
 from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
-import pytz
-import responses
-import soupmatchers
 from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
@@ -30,8 +25,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
@@ -46,12 +40,12 @@ from lp.charms.browser.charmrecipe import (
     CharmRecipeAdminView,
     CharmRecipeEditView,
     CharmRecipeView,
-    )
+)
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CharmRecipeBuildRequestStatus,
     ICharmRecipeSet,
-    )
+)
 from lp.registry.enums import PersonVisibility
 from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import UTC_NOW
@@ -62,33 +56,24 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     BrowserTestCase,
+    TestCaseWithFactory,
     login,
     login_admin,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
     time_counter,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
-from lp.testing.matchers import (
-    MatchesPickerText,
-    MatchesTagText,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
+from lp.testing.matchers import MatchesPickerText, MatchesTagText
 from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tag_by_id,
     find_tags_by_class,
     get_feedback_messages,
-    )
+)
 from lp.testing.publication import test_traverse
-from lp.testing.views import (
-    create_initialized_view,
-    create_view,
-    )
+from lp.testing.views import create_initialized_view, create_view
 
 
 class TestCharmRecipeNavigation(TestCaseWithFactory):
@@ -103,16 +88,19 @@ class TestCharmRecipeNavigation(TestCaseWithFactory):
         owner = self.factory.makePerson(name="person")
         project = self.factory.makeProduct(name="project")
         recipe = self.factory.makeCharmRecipe(
-            registrant=owner, owner=owner, project=project, name="charm")
+            registrant=owner, owner=owner, project=project, name="charm"
+        )
         self.assertEqual(
             "http://launchpad.test/~person/project/+charm/charm",
-            canonical_url(recipe))
+            canonical_url(recipe),
+        )
 
     def test_charm_recipe(self):
         recipe = self.factory.makeCharmRecipe()
         obj, _, _ = test_traverse(
-            "http://launchpad.test/~%s/%s/+charm/%s" % (
-                recipe.owner.name, recipe.project.name, recipe.name))
+            "http://launchpad.test/~%s/%s/+charm/%s"
+            % (recipe.owner.name, recipe.project.name, recipe.name)
+        )
         self.assertEqual(recipe, obj)
 
 
@@ -125,25 +113,32 @@ class BaseTestCharmRecipeView(BrowserTestCase):
         self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(
-            name="test-person", displayname="Test Person")
+            name="test-person", displayname="Test Person"
+        )
 
 
 class TestCharmRecipeAddView(BaseTestCharmRecipeView):
-
     def test_create_new_recipe_not_logged_in(self):
         [git_ref] = self.factory.makeGitRefs()
         self.assertRaises(
-            Unauthorized, self.getViewBrowser, git_ref,
-            view_name="+new-charm-recipe", no_login=True)
+            Unauthorized,
+            self.getViewBrowser,
+            git_ref,
+            view_name="+new-charm-recipe",
+            no_login=True,
+        )
 
     def test_create_new_recipe_git(self):
         self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         [git_ref] = self.factory.makeGitRefs(
-            owner=self.person, target=self.person)
+            owner=self.person, target=self.person
+        )
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
-            git_ref, view_name="+new-charm-recipe", user=self.person)
+            git_ref, view_name="+new-charm-recipe", user=self.person
+        )
         browser.getControl(name="field.name").value = "charm-name"
         self.assertEqual("", browser.getControl(name="field.project").value)
         browser.getControl(name="field.project").value = "test-project"
@@ -152,129 +147,161 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         content = find_main_content(browser.contents)
         self.assertEqual("charm-name", extract_text(content.h1))
         self.assertThat(
-            "Test Person", MatchesPickerText(content, "edit-owner"))
+            "Test Person", MatchesPickerText(content, "edit-owner")
+        )
         self.assertThat(
             "Project:\nTest Project\nEdit charm recipe",
-            MatchesTagText(content, "project"))
+            MatchesTagText(content, "project"),
+        )
         self.assertThat(
             "Source:\n%s\nEdit charm recipe" % source_display,
-            MatchesTagText(content, "source"))
+            MatchesTagText(content, "source"),
+        )
         self.assertThat(
             "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"))
+            MatchesTagText(content, "auto_build"),
+        )
         self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
         self.assertThat(
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
-            MatchesTagText(content, "store_upload"))
+            MatchesTagText(content, "store_upload"),
+        )
 
     def test_create_new_recipe_git_project_namespace(self):
         # If the Git repository is already in a project namespace, then that
         # project is the default for the new recipe.
         project = self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         [git_ref] = self.factory.makeGitRefs(target=project)
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
-            git_ref, view_name="+new-charm-recipe", user=self.person)
+            git_ref, view_name="+new-charm-recipe", user=self.person
+        )
         browser.getControl(name="field.name").value = "charm-name"
         self.assertEqual(
-            "test-project", browser.getControl(name="field.project").value)
+            "test-project", browser.getControl(name="field.project").value
+        )
         browser.getControl("Create charm recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual("charm-name", extract_text(content.h1))
         self.assertThat(
-            "Test Person", MatchesPickerText(content, "edit-owner"))
+            "Test Person", MatchesPickerText(content, "edit-owner")
+        )
         self.assertThat(
             "Project:\nTest Project\nEdit charm recipe",
-            MatchesTagText(content, "project"))
+            MatchesTagText(content, "project"),
+        )
         self.assertThat(
             "Source:\n%s\nEdit charm recipe" % source_display,
-            MatchesTagText(content, "source"))
+            MatchesTagText(content, "source"),
+        )
         self.assertThat(
             "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"))
+            MatchesTagText(content, "auto_build"),
+        )
         self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
         self.assertThat(
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
-            MatchesTagText(content, "store_upload"))
+            MatchesTagText(content, "store_upload"),
+        )
 
     def test_create_new_recipe_project(self):
         project = self.factory.makeProduct(displayname="Test Project")
         [git_ref] = self.factory.makeGitRefs()
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
-            project, view_name="+new-charm-recipe", user=self.person)
+            project, view_name="+new-charm-recipe", user=self.person
+        )
         browser.getControl(name="field.name").value = "charm-name"
-        browser.getControl(name="field.git_ref.repository").value = (
-            git_ref.repository.shortened_path)
+        browser.getControl(
+            name="field.git_ref.repository"
+        ).value = git_ref.repository.shortened_path
         browser.getControl(name="field.git_ref.path").value = git_ref.path
         browser.getControl("Create charm recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual("charm-name", extract_text(content.h1))
         self.assertThat(
-            "Test Person", MatchesPickerText(content, "edit-owner"))
+            "Test Person", MatchesPickerText(content, "edit-owner")
+        )
         self.assertThat(
             "Project:\nTest Project\nEdit charm recipe",
-            MatchesTagText(content, "project"))
+            MatchesTagText(content, "project"),
+        )
         self.assertThat(
             "Source:\n%s\nEdit charm recipe" % source_display,
-            MatchesTagText(content, "source"))
+            MatchesTagText(content, "source"),
+        )
         self.assertThat(
             "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"))
+            MatchesTagText(content, "auto_build"),
+        )
         self.assertIsNone(find_tag_by_id(content, "auto_build_channels"))
         self.assertThat(
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
-            MatchesTagText(content, "store_upload"))
+            MatchesTagText(content, "store_upload"),
+        )
 
     def test_create_new_recipe_users_teams_as_owner_options(self):
         # Teams that the user is in are options for the charm recipe owner.
         self.factory.makeTeam(
-            name="test-team", displayname="Test Team", members=[self.person])
+            name="test-team", displayname="Test Team", members=[self.person]
+        )
         [git_ref] = self.factory.makeGitRefs()
         browser = self.getViewBrowser(
-            git_ref, view_name="+new-charm-recipe", user=self.person)
+            git_ref, view_name="+new-charm-recipe", user=self.person
+        )
         options = browser.getControl("Owner").displayOptions
         self.assertEqual(
             ["Test Person (test-person)", "Test Team (test-team)"],
-            sorted(str(option) for option in options))
+            sorted(str(option) for option in options),
+        )
 
     def test_create_new_recipe_auto_build(self):
         # Creating a new recipe and asking for it to be automatically built
         # sets all the appropriate fields.
         self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         [git_ref] = self.factory.makeGitRefs()
         browser = self.getViewBrowser(
-            git_ref, view_name="+new-charm-recipe", user=self.person)
+            git_ref, view_name="+new-charm-recipe", user=self.person
+        )
         browser.getControl(name="field.name").value = "charm-name"
         browser.getControl(name="field.project").value = "test-project"
         browser.getControl(
-            "Automatically build when branch changes").selected = True
+            "Automatically build when branch changes"
+        ).selected = True
         browser.getControl(
-            name="field.auto_build_channels.charmcraft").value = "edge"
+            name="field.auto_build_channels.charmcraft"
+        ).value = "edge"
         browser.getControl(
-            name="field.auto_build_channels.core").value = "stable"
+            name="field.auto_build_channels.core"
+        ).value = "stable"
         browser.getControl(
-            name="field.auto_build_channels.core18").value = "beta"
+            name="field.auto_build_channels.core18"
+        ).value = "beta"
         browser.getControl(
-            name="field.auto_build_channels.core20").value = "edge/feature"
+            name="field.auto_build_channels.core20"
+        ).value = "edge/feature"
         browser.getControl("Create charm recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertThat(
             "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"))
+            MatchesTagText(content, "auto_build"),
+        )
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit charm recipe\n"
             "charmcraft\nedge\ncore\nstable\ncore18\nbeta\n"
             "core20\nedge/feature\n",
-            MatchesTagText(content, "auto_build_channels"))
+            MatchesTagText(content, "auto_build_channels"),
+        )
 
     @responses.activate
     def test_create_new_recipe_store_upload(self):
@@ -285,9 +312,11 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         self.pushConfig(
             "launchpad",
             candid_service_root="https://candid.test/",
-            csrf_secret="test secret")
+            csrf_secret="test secret",
+        )
         project = self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         [git_ref] = self.factory.makeGitRefs()
         view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
@@ -300,91 +329,144 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Edge").selected = True
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
-            "https://candid.test/", "", "identity")
+            "https://candid.test/", "", "identity"
+        )
         caveat = root_macaroon.caveats[0]
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens",
-            json={"macaroon": root_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
         responses.add(
-            "POST", "https://candid.test/discharge", status=401,
+            "POST",
+            "https://candid.test/discharge",
+            status=401,
             json={
                 "Code": "interaction required",
                 "Message": (
-                    "macaroon discharge required: authentication required"),
+                    "macaroon discharge required: authentication required"
+                ),
                 "Info": {
                     "InteractionMethods": {
                         "browser-redirect": {
                             "LoginURL": "https://candid.test/login-redirect",
-                            },
                         },
                     },
-                })
+                },
+            },
+        )
         browser.getControl("Create charm recipe").click()
         login_person(self.person)
         recipe = getUtility(ICharmRecipeSet).getByName(
-            self.person, project, "charm-name")
-        self.assertThat(recipe, MatchesStructure.byEquality(
-            owner=self.person, project=project, name="charm-name",
-            source=git_ref, store_upload=True, store_name="charmhub-name",
-            store_secrets={"root": root_macaroon_raw},
-            store_channels=["track/edge"]))
-        self.assertThat(responses.calls, MatchesListwise([
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("http://charmhub.example/v1/tokens"),
-                    method=Equals("POST"),
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()),
-                        Equals({
-                            "description": "charmhub-name for launchpad.test",
-                            "packages": [
-                                {"type": "charm", "name": "charmhub-name"},
-                                ],
-                            "permissions": [
-                                "package-manage-releases",
-                                "package-manage-revisions",
-                                "package-view-revisions",
-                                ],
-                            })))),
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("https://candid.test/discharge"),
-                    headers=ContainsDict({
-                        "Content-Type": Equals(
-                            "application/x-www-form-urlencoded"),
-                        }),
-                    body=AfterPreprocessing(parse_qs, MatchesDict({
+            self.person, project, "charm-name"
+        )
+        self.assertThat(
+            recipe,
+            MatchesStructure.byEquality(
+                owner=self.person,
+                project=project,
+                name="charm-name",
+                source=git_ref,
+                store_upload=True,
+                store_name="charmhub-name",
+                store_secrets={"root": root_macaroon_raw},
+                store_channels=["track/edge"],
+            ),
+        )
+        tokens_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens"),
+            method=Equals("POST"),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()),
+                Equals(
+                    {
+                        "description": ("charmhub-name for launchpad.test"),
+                        "packages": [
+                            {
+                                "type": "charm",
+                                "name": "charmhub-name",
+                            },
+                        ],
+                        "permissions": [
+                            "package-manage-releases",
+                            "package-manage-revisions",
+                            "package-view-revisions",
+                        ],
+                    }
+                ),
+            ),
+        )
+        discharge_matcher = MatchesStructure(
+            url=Equals("https://candid.test/discharge"),
+            headers=ContainsDict(
+                {
+                    "Content-Type": Equals(
+                        "application/x-www-form-urlencoded"
+                    ),
+                }
+            ),
+            body=AfterPreprocessing(
+                parse_qs,
+                MatchesDict(
+                    {
                         "id64": Equals(
-                            [base64.b64encode(
-                                caveat.caveat_id_bytes).decode()]),
-                        })))),
-            ]))
+                            [base64.b64encode(caveat.caveat_id_bytes).decode()]
+                        ),
+                    }
+                ),
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise(
+                [
+                    MatchesStructure(request=tokens_matcher),
+                    MatchesStructure(request=discharge_matcher),
+                ]
+            ),
+        )
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        return_to_matcher = AfterPreprocessing(
+            urlsplit,
+            MatchesStructure(
+                scheme=Equals("http"),
+                netloc=Equals("launchpad.test"),
+                path=Equals("/+candid-callback"),
+                query=AfterPreprocessing(
+                    parse_qs,
+                    MatchesDict(
+                        {
+                            "starting_url": Equals(
+                                [canonical_url(recipe) + "/+authorize"]
+                            ),
+                            "discharge_macaroon_action": Equals(
+                                ["field.actions.complete"]
+                            ),
+                            "discharge_macaroon_field": Equals(
+                                ["field.discharge_macaroon"]
+                            ),
+                        }
+                    ),
+                ),
+                fragment=Equals(""),
+            ),
+        )
         self.assertThat(
             urlsplit(browser.headers["Location"]),
             MatchesStructure(
                 scheme=Equals("https"),
                 netloc=Equals("candid.test"),
                 path=Equals("/login-redirect"),
-                query=AfterPreprocessing(parse_qs, ContainsDict({
-                    "return_to": MatchesListwise([
-                        AfterPreprocessing(urlsplit, MatchesStructure(
-                            scheme=Equals("http"),
-                            netloc=Equals("launchpad.test"),
-                            path=Equals("/+candid-callback"),
-                            query=AfterPreprocessing(parse_qs, MatchesDict({
-                                "starting_url": Equals(
-                                    [canonical_url(recipe) + "/+authorize"]),
-                                "discharge_macaroon_action": Equals(
-                                    ["field.actions.complete"]),
-                                "discharge_macaroon_field": Equals(
-                                    ["field.discharge_macaroon"]),
-                                })),
-                            fragment=Equals(""))),
-                        ]),
-                    })),
-                fragment=Equals("")))
+                query=AfterPreprocessing(
+                    parse_qs,
+                    ContainsDict(
+                        {"return_to": MatchesListwise([return_to_matcher])}
+                    ),
+                ),
+                fragment=Equals(""),
+            ),
+        )
 
     @responses.activate
     def test_create_new_recipe_multiple_tracks(self):
@@ -408,7 +490,6 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
 
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
-
     def test_unauthorized(self):
         # A non-admin user cannot administer a charm recipe.
         login_person(self.person)
@@ -416,16 +497,21 @@ class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
         recipe_url = canonical_url(recipe)
         browser = self.getViewBrowser(recipe, user=self.person)
         self.assertRaises(
-            LinkNotFoundError, browser.getLink, "Administer charm recipe")
+            LinkNotFoundError, browser.getLink, "Administer charm recipe"
+        )
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, recipe_url + "/+admin",
-            user=self.person)
+            Unauthorized,
+            self.getUserBrowser,
+            recipe_url + "/+admin",
+            user=self.person,
+        )
 
     def test_admin_recipe(self):
         # Admins can change require_virtualized.
         login("admin@canonical.com")
         admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).admin])
+            member_of=[getUtility(ILaunchpadCelebrities).admin]
+        )
         login_person(self.person)
         recipe = self.factory.makeCharmRecipe(registrant=self.person)
         self.assertTrue(recipe.require_virtualized)
@@ -442,41 +528,47 @@ class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
         # Administering a charm recipe sets the date_last_modified property.
         login("admin@canonical.com")
         ppa_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).ppa_admin])
+            member_of=[getUtility(ILaunchpadCelebrities).ppa_admin]
+        )
         login_person(self.person)
         date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, date_created=date_created)
+            registrant=self.person, date_created=date_created
+        )
         login_person(ppa_admin)
         view = CharmRecipeAdminView(recipe, LaunchpadTestRequest())
         view.initialize()
         view.request_action.success({"require_virtualized": False})
         self.assertSqlAttributeEqualsDate(
-            recipe, "date_last_modified", UTC_NOW)
+            recipe, "date_last_modified", UTC_NOW
+        )
 
 
 class TestCharmRecipeEditView(BaseTestCharmRecipeView):
-
     def test_edit_recipe(self):
         [old_git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person, owner=self.person, git_ref=old_git_ref,
             store_channels=["track1/stable/branch1", "track2/edge/branch1"])
         self.factory.makeTeam(
-            name="new-team", displayname="New Team", members=[self.person])
+            name="new-team", displayname="New Team", members=[self.person]
+        )
         [new_git_ref] = self.factory.makeGitRefs()
 
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
-        browser.getControl(name="field.git_ref.repository").value = (
-            new_git_ref.repository.identity)
+        browser.getControl(
+            name="field.git_ref.repository"
+        ).value = new_git_ref.repository.identity
         browser.getControl(name="field.git_ref.path").value = new_git_ref.path
         browser.getControl(
-            "Automatically build when branch changes").selected = True
+            "Automatically build when branch changes"
+        ).selected = True
         browser.getControl(
-            name="field.auto_build_channels.charmcraft").value = "edge"
+            name="field.auto_build_channels.charmcraft"
+        ).value = "edge"
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
@@ -484,18 +576,22 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
         self.assertThat(
             "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
-            MatchesTagText(content, "source"))
+            MatchesTagText(content, "source"),
+        )
         self.assertThat(
             "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"))
+            MatchesTagText(content, "auto_build"),
+        )
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit charm recipe\n"
             "charmcraft\nedge",
-            MatchesTagText(content, "auto_build_channels"))
+            MatchesTagText(content, "auto_build_channels"),
+        )
         self.assertThat(
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
-            MatchesTagText(content, "store_upload"))
+            MatchesTagText(content, "store_upload"),
+        )
 
     def test_edit_recipe_add_store_channel(self):
         [old_git_ref] = self.factory.makeGitRefs()
@@ -647,25 +743,35 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         # Editing a charm recipe sets the date_last_modified property.
         date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, date_created=date_created)
+            registrant=self.person, date_created=date_created
+        )
         with person_logged_in(self.person):
             view = CharmRecipeEditView(recipe, LaunchpadTestRequest())
             view.initialize()
-            view.request_action.success({
-                "owner": recipe.owner,
-                "name": "changed",
-                })
+            view.request_action.success(
+                {
+                    "owner": recipe.owner,
+                    "name": "changed",
+                }
+            )
         self.assertSqlAttributeEqualsDate(
-            recipe, "date_last_modified", UTC_NOW)
+            recipe, "date_last_modified", UTC_NOW
+        )
 
     def test_edit_recipe_already_exists(self):
         project = self.factory.makeProduct(displayname="Test Project")
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, project=project, owner=self.person,
-            name="one")
+            registrant=self.person,
+            project=project,
+            owner=self.person,
+            name="one",
+        )
         self.factory.makeCharmRecipe(
-            registrant=self.person, project=project, owner=self.person,
-            name="two")
+            registrant=self.person,
+            project=project,
+            owner=self.person,
+            name="two",
+        )
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
         browser.getControl(name="field.name").value = "two"
@@ -673,14 +779,17 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.assertEqual(
             "There is already a charm recipe owned by Test Person in "
             "Test Project with this name.",
-            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+        )
 
     def test_edit_public_recipe_private_owner(self):
         login_person(self.person)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person)
+            registrant=self.person, owner=self.person
+        )
         private_team = self.factory.makeTeam(
-            owner=self.person, visibility=PersonVisibility.PRIVATE)
+            owner=self.person, visibility=PersonVisibility.PRIVATE
+        )
         private_team_name = private_team.name
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
@@ -688,49 +797,60 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl("Update charm recipe").click()
         self.assertEqual(
             "A public charm recipe cannot have a private owner.",
-            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+        )
 
     def test_edit_public_recipe_private_git_ref(self):
         login_person(self.person)
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person,
-            git_ref=self.factory.makeGitRefs()[0])
+            registrant=self.person,
+            owner=self.person,
+            git_ref=self.factory.makeGitRefs()[0],
+        )
         login_person(self.person)
         [private_ref] = self.factory.makeGitRefs(
-            owner=self.person,
-            information_type=InformationType.PRIVATESECURITY)
+            owner=self.person, information_type=InformationType.PRIVATESECURITY
+        )
         private_ref_identity = private_ref.repository.identity
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
-        browser.getControl(name="field.git_ref.repository").value = (
-            private_ref_identity)
+        browser.getControl(
+            name="field.git_ref.repository"
+        ).value = private_ref_identity
         browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update charm recipe").click()
         self.assertEqual(
             "A public charm recipe cannot have a private repository.",
-            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+        )
 
 
 class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
-
     def setUp(self):
         super().setUp()
         self.pushConfig("charms", charmhub_url="http://charmhub.example/")
         self.pushConfig(
             "launchpad",
             candid_service_root="https://candid.test/",
-            csrf_secret="test secret")
+            csrf_secret="test secret",
+        )
         self.recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person, store_upload=True,
-            store_name=self.factory.getUniqueUnicode())
+            registrant=self.person,
+            owner=self.person,
+            store_upload=True,
+            store_name=self.factory.getUniqueUnicode(),
+        )
 
     def test_unauthorized(self):
         # A user without edit access cannot authorize charm recipe uploads.
         other_person = self.factory.makePerson()
         self.assertRaises(
-            Unauthorized, self.getUserBrowser,
-            canonical_url(self.recipe) + "/+authorize", user=other_person)
+            Unauthorized,
+            self.getUserBrowser,
+            canonical_url(self.recipe) + "/+authorize",
+            user=other_person,
+        )
 
     @responses.activate
     def test_begin_authorization(self):
@@ -739,93 +859,139 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
         # an existing charm recipe without having to edit it.
         recipe_url = canonical_url(self.recipe)
         owner = self.recipe.owner
+        store_name = self.recipe.store_name
         browser = self.getNonRedirectingBrowser(
-            url=recipe_url + "/+authorize", user=self.recipe.owner)
+            url=recipe_url + "/+authorize", user=self.recipe.owner
+        )
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
-            "https://candid.test/", "", "identity")
+            "https://candid.test/", "", "identity"
+        )
         caveat = root_macaroon.caveats[0]
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens",
-            json={"macaroon": root_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
         responses.add(
-            "POST", "https://candid.test/discharge", status=401,
+            "POST",
+            "https://candid.test/discharge",
+            status=401,
             json={
                 "Code": "interaction required",
                 "Message": (
-                    "macaroon discharge required: authentication required"),
+                    "macaroon discharge required: authentication required"
+                ),
                 "Info": {
                     "InteractionMethods": {
                         "browser-redirect": {
                             "LoginURL": "https://candid.test/login-redirect",
-                            },
                         },
                     },
-                })
+                },
+            },
+        )
         browser.getControl("Begin authorization").click()
+        tokens_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens"),
+            method=Equals("POST"),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()),
+                Equals(
+                    {
+                        "description": (
+                            "{} for launchpad.test".format(store_name)
+                        ),
+                        "packages": [
+                            {
+                                "type": "charm",
+                                "name": store_name,
+                            },
+                        ],
+                        "permissions": [
+                            "package-manage-releases",
+                            "package-manage-revisions",
+                            "package-view-revisions",
+                        ],
+                    }
+                ),
+            ),
+        )
+        discharge_matcher = MatchesStructure(
+            url=Equals("https://candid.test/discharge"),
+            headers=ContainsDict(
+                {
+                    "Content-Type": Equals(
+                        "application/x-www-form-urlencoded"
+                    ),
+                }
+            ),
+            body=AfterPreprocessing(
+                parse_qs,
+                MatchesDict(
+                    {
+                        "id64": Equals(
+                            [base64.b64encode(caveat.caveat_id_bytes).decode()]
+                        ),
+                    }
+                ),
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise(
+                [
+                    MatchesStructure(request=tokens_matcher),
+                    MatchesStructure(request=discharge_matcher),
+                ]
+            ),
+        )
         with person_logged_in(owner):
-            self.assertThat(responses.calls, MatchesListwise([
-                MatchesStructure(
-                    request=MatchesStructure(
-                        url=Equals("http://charmhub.example/v1/tokens"),
-                        method=Equals("POST"),
-                        body=AfterPreprocessing(
-                            lambda b: json.loads(b.decode()),
-                            Equals({
-                                "description": (
-                                    "{} for launchpad.test".format(
-                                        self.recipe.store_name)),
-                                "packages": [
-                                    {"type": "charm",
-                                     "name": self.recipe.store_name},
-                                    ],
-                                "permissions": [
-                                    "package-manage-releases",
-                                    "package-manage-revisions",
-                                    "package-view-revisions",
-                                    ],
-                                })))),
-                MatchesStructure(
-                    request=MatchesStructure(
-                        url=Equals("https://candid.test/discharge"),
-                        headers=ContainsDict({
-                            "Content-Type": Equals(
-                                "application/x-www-form-urlencoded"),
-                            }),
-                        body=AfterPreprocessing(parse_qs, MatchesDict({
-                            "id64": Equals(
-                                [base64.b64encode(
-                                    caveat.caveat_id_bytes).decode()]),
-                            })))),
-                ]))
             self.assertEqual(
-                {"root": root_macaroon_raw}, self.recipe.store_secrets)
+                {"root": root_macaroon_raw}, self.recipe.store_secrets
+            )
         self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        return_to_matcher = AfterPreprocessing(
+            urlsplit,
+            MatchesStructure(
+                scheme=Equals("http"),
+                netloc=Equals("launchpad.test"),
+                path=Equals("/+candid-callback"),
+                query=AfterPreprocessing(
+                    parse_qs,
+                    MatchesDict(
+                        {
+                            "starting_url": Equals(
+                                [recipe_url + "/+authorize"]
+                            ),
+                            "discharge_macaroon_action": Equals(
+                                ["field.actions.complete"]
+                            ),
+                            "discharge_macaroon_field": Equals(
+                                ["field.discharge_macaroon"]
+                            ),
+                        }
+                    ),
+                ),
+                fragment=Equals(""),
+            ),
+        )
         self.assertThat(
             urlsplit(browser.headers["Location"]),
             MatchesStructure(
                 scheme=Equals("https"),
                 netloc=Equals("candid.test"),
                 path=Equals("/login-redirect"),
-                query=AfterPreprocessing(parse_qs, ContainsDict({
-                    "return_to": MatchesListwise([
-                        AfterPreprocessing(urlsplit, MatchesStructure(
-                            scheme=Equals("http"),
-                            netloc=Equals("launchpad.test"),
-                            path=Equals("/+candid-callback"),
-                            query=AfterPreprocessing(parse_qs, MatchesDict({
-                                "starting_url": Equals(
-                                    [recipe_url + "/+authorize"]),
-                                "discharge_macaroon_action": Equals(
-                                    ["field.actions.complete"]),
-                                "discharge_macaroon_field": Equals(
-                                    ["field.discharge_macaroon"]),
-                                })),
-                            fragment=Equals(""))),
-                        ]),
-                    })),
-                fragment=Equals("")))
+                query=AfterPreprocessing(
+                    parse_qs,
+                    ContainsDict(
+                        {"return_to": MatchesListwise([return_to_matcher])}
+                    ),
+                ),
+                fragment=Equals(""),
+            ),
+        )
 
     def test_complete_authorization_missing_discharge_macaroon(self):
         # If the form does not include a discharge macaroon, the "complete"
@@ -833,17 +999,22 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
         with person_logged_in(self.recipe.owner):
             self.recipe.store_secrets = {
                 "root": Macaroon(version=2).serialize(JsonSerializer()),
-                }
+            }
             transaction.commit()
             form = {"field.actions.complete": "1"}
             view = create_initialized_view(
-                self.recipe, "+authorize", form=form, method="POST",
-                principal=self.recipe.owner)
+                self.recipe,
+                "+authorize",
+                form=form,
+                method="POST",
+                principal=self.recipe.owner,
+            )
             html = view()
             self.assertEqual(
-                "Uploads of %s to Charmhub were not authorized." %
-                self.recipe.name,
-                get_feedback_messages(html)[1])
+                "Uploads of %s to Charmhub were not authorized."
+                % self.recipe.name,
+                get_feedback_messages(html)[1],
+            )
             self.assertNotIn("exchanged_encrypted", self.recipe.store_secrets)
 
     @responses.activate
@@ -855,86 +1026,122 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
         self.pushConfig(
             "charms",
             charmhub_secrets_public_key=base64.b64encode(
-                bytes(private_key.public_key)).decode())
+                bytes(private_key.public_key)
+            ).decode(),
+        )
         root_macaroon = Macaroon(version=2)
         root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
         unbound_discharge_macaroon = Macaroon(version=2)
         unbound_discharge_macaroon_raw = unbound_discharge_macaroon.serialize(
-            JsonSerializer())
+            JsonSerializer()
+        )
         discharge_macaroon_raw = root_macaroon.prepare_for_request(
-            unbound_discharge_macaroon).serialize(JsonSerializer())
+            unbound_discharge_macaroon
+        ).serialize(JsonSerializer())
         exchanged_macaroon = Macaroon(version=2)
         exchanged_macaroon_raw = exchanged_macaroon.serialize(JsonSerializer())
         responses.add(
-            "POST", "http://charmhub.example/v1/tokens/exchange",
-            json={"macaroon": exchanged_macaroon_raw})
+            "POST",
+            "http://charmhub.example/v1/tokens/exchange",
+            json={"macaroon": exchanged_macaroon_raw},
+        )
         with person_logged_in(self.recipe.owner):
             self.recipe.store_secrets = {"root": root_macaroon_raw}
             transaction.commit()
             form = {
                 "field.actions.complete": "1",
                 "field.discharge_macaroon": unbound_discharge_macaroon_raw,
-                }
+            }
             view = create_initialized_view(
-                self.recipe, "+authorize", form=form, method="POST",
-                principal=self.recipe.owner)
+                self.recipe,
+                "+authorize",
+                form=form,
+                method="POST",
+                principal=self.recipe.owner,
+            )
             self.assertEqual(302, view.request.response.getStatus())
             self.assertEqual(
                 canonical_url(self.recipe),
-                view.request.response.getHeader("Location"))
+                view.request.response.getHeader("Location"),
+            )
             self.assertEqual(
-                "Uploads of %s to Charmhub are now authorized." %
-                self.recipe.name,
-                view.request.response.notifications[0].message)
+                "Uploads of %s to Charmhub are now authorized."
+                % self.recipe.name,
+                view.request.response.notifications[0].message,
+            )
             self.pushConfig(
                 "charms",
                 charmhub_secrets_private_key=base64.b64encode(
-                    bytes(private_key)).decode())
+                    bytes(private_key)
+                ).decode(),
+            )
             container = getUtility(IEncryptedContainer, "charmhub-secrets")
-            self.assertThat(self.recipe.store_secrets, MatchesDict({
-                "exchanged_encrypted": AfterPreprocessing(
-                    lambda data: container.decrypt(data).decode(),
-                    Equals(exchanged_macaroon_raw)),
-                }))
-        self.assertThat(responses.calls, MatchesListwise([
-            MatchesStructure(
-                request=MatchesStructure(
-                    url=Equals("http://charmhub.example/v1/tokens/exchange"),
-                    method=Equals("POST"),
-                    headers=ContainsDict({
-                        "Macaroons": AfterPreprocessing(
-                            lambda v: json.loads(
-                                base64.b64decode(v.encode()).decode()),
-                            Equals([
-                                json.loads(m) for m in (
+            self.assertThat(
+                self.recipe.store_secrets,
+                MatchesDict(
+                    {
+                        "exchanged_encrypted": AfterPreprocessing(
+                            lambda data: container.decrypt(data).decode(),
+                            Equals(exchanged_macaroon_raw),
+                        ),
+                    }
+                ),
+            )
+        exchange_matcher = MatchesStructure(
+            url=Equals("http://charmhub.example/v1/tokens/exchange"),
+            method=Equals("POST"),
+            headers=ContainsDict(
+                {
+                    "Macaroons": AfterPreprocessing(
+                        lambda v: json.loads(
+                            base64.b64decode(v.encode()).decode()
+                        ),
+                        Equals(
+                            [
+                                json.loads(m)
+                                for m in (
                                     root_macaroon_raw,
-                                    discharge_macaroon_raw)])),
-                        }),
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()),
-                        Equals({})))),
-            ]))
+                                    discharge_macaroon_raw,
+                                )
+                            ]
+                        ),
+                    ),
+                }
+            ),
+            body=AfterPreprocessing(
+                lambda b: json.loads(b.decode()), Equals({})
+            ),
+        )
+        self.assertThat(
+            responses.calls,
+            MatchesListwise([MatchesStructure(request=exchange_matcher)]),
+        )
 
 
 class TestCharmRecipeDeleteView(BaseTestCharmRecipeView):
-
     def test_unauthorized(self):
         # A user without edit access cannot delete a charm recipe.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person)
+            registrant=self.person, owner=self.person
+        )
         recipe_url = canonical_url(recipe)
         other_person = self.factory.makePerson()
         browser = self.getViewBrowser(recipe, user=other_person)
         self.assertRaises(
-            LinkNotFoundError, browser.getLink, "Delete charm recipe")
+            LinkNotFoundError, browser.getLink, "Delete charm recipe"
+        )
         self.assertRaises(
-            Unauthorized, self.getUserBrowser, recipe_url + "/+delete",
-            user=other_person)
+            Unauthorized,
+            self.getUserBrowser,
+            recipe_url + "/+delete",
+            user=other_person,
+        )
 
     def test_delete_recipe_without_builds(self):
         # A charm recipe without builds can be deleted.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person)
+            registrant=self.person, owner=self.person
+        )
         recipe_url = canonical_url(recipe)
         owner_url = canonical_url(self.person)
         browser = self.getViewBrowser(recipe, user=self.person)
@@ -946,7 +1153,8 @@ class TestCharmRecipeDeleteView(BaseTestCharmRecipeView):
     def test_delete_recipe_with_builds(self):
         # A charm recipe with builds can be deleted.
         recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person)
+            registrant=self.person, owner=self.person
+        )
         build = self.factory.makeCharmRecipeBuild(recipe=recipe)
         self.factory.makeCharmFile(build=build)
         recipe_url = canonical_url(recipe)
@@ -959,18 +1167,21 @@ class TestCharmRecipeDeleteView(BaseTestCharmRecipeView):
 
 
 class TestCharmRecipeView(BaseTestCharmRecipeView):
-
     def setUp(self):
         super().setUp()
         self.project = self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.ubuntu)
+            distribution=self.ubuntu
+        )
         processor = getUtility(IProcessorSet).getByName("386")
         self.distroarchseries = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, architecturetag="i386",
-            processor=processor)
+            distroseries=self.distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         self.factory.makeBuilder(virtualized=True)
 
     def makeCharmRecipe(self, **kwargs):
@@ -979,8 +1190,11 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         if "git_ref" not in kwargs:
             kwargs["git_ref"] = self.factory.makeGitRefs()[0]
         return self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person, name="charm-name",
-            **kwargs)
+            registrant=self.person,
+            owner=self.person,
+            name="charm-name",
+            **kwargs,
+        )
 
     def makeBuild(self, recipe=None, date_created=None, **kwargs):
         if recipe is None:
@@ -988,11 +1202,15 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         if date_created is None:
             date_created = datetime.now(pytz.UTC) - timedelta(hours=1)
         build = self.factory.makeCharmRecipeBuild(
-            requester=self.person, recipe=recipe,
+            requester=self.person,
+            recipe=recipe,
             distro_arch_series=self.distroarchseries,
-            date_created=date_created, **kwargs)
+            date_created=date_created,
+            **kwargs,
+        )
         job = removeSecurityProxy(
-            removeSecurityProxy(build.build_request)._job)
+            removeSecurityProxy(build.build_request)._job
+        )
         job.job._status = JobStatus.COMPLETED
         return build
 
@@ -1001,34 +1219,53 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         view = create_view(recipe, "+index")
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = [
-            recipe.owner, recipe.project, recipe, view]
+            recipe.owner,
+            recipe.project,
+            recipe,
+            view,
+        ]
         view.initialize()
         breadcrumbs_tag = soupmatchers.Tag(
-            "breadcrumbs", "ol", attrs={"class": "breadcrumbs"})
+            "breadcrumbs", "ol", attrs={"class": "breadcrumbs"}
+        )
         self.assertThat(
             view(),
             soupmatchers.HTMLContains(
                 soupmatchers.Within(
                     breadcrumbs_tag,
                     soupmatchers.Tag(
-                        "project breadcrumb", "a",
+                        "project breadcrumb",
+                        "a",
                         text="Test Project",
-                        attrs={"href": re.compile(r"/test-project$")})),
+                        attrs={"href": re.compile(r"/test-project$")},
+                    ),
+                ),
                 soupmatchers.Within(
                     breadcrumbs_tag,
                     soupmatchers.Tag(
-                        "charm breadcrumb", "li",
-                        text=re.compile(r"\scharm-name\s")))))
+                        "charm breadcrumb",
+                        "li",
+                        text=re.compile(r"\scharm-name\s"),
+                    ),
+                ),
+            ),
+        )
 
     def test_index_git(self):
         [ref] = self.factory.makeGitRefs(
-            owner=self.person, target=self.project, name="charm-repository",
-            paths=["refs/heads/master"])
+            owner=self.person,
+            target=self.project,
+            name="charm-repository",
+            paths=["refs/heads/master"],
+        )
         recipe = self.makeCharmRecipe(git_ref=ref)
         build = self.makeBuild(
-            recipe=recipe, status=BuildStatus.FULLYBUILT,
-            duration=timedelta(minutes=30))
-        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+            recipe=recipe,
+            status=BuildStatus.FULLYBUILT,
+            duration=timedelta(minutes=30),
+        )
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""\
             Test Project
             charm-name
             .*
@@ -1043,46 +1280,59 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago i386
-            """, self.getMainText(build.recipe))
+            """,
+            self.getMainText(build.recipe),
+        )
 
     def test_index_success_with_buildlog(self):
         # The build log is shown if it is there.
         build = self.makeBuild(
-            status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30))
+            status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=30)
+        )
         build.setLog(self.factory.makeLibraryFileAlias())
-        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""\
             Latest builds
             Status When complete Architecture
             Successfully built 30 minutes ago buildlog \(.*\) i386
-            """, self.getMainText(build.recipe))
+            """,
+            self.getMainText(build.recipe),
+        )
 
     def test_index_no_builds(self):
         # A message is shown when there are no builds.
         recipe = self.makeCharmRecipe()
         self.assertIn(
             "This charm recipe has not been built yet.",
-            self.getMainText(recipe))
+            self.getMainText(recipe),
+        )
 
     def test_index_pending_build(self):
         # A pending build is listed as such.
         build = self.makeBuild()
         build.queueBuild()
-        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""\
             Latest builds
             Status When complete Architecture
             Needs building in .* \(estimated\) i386
-            """, self.getMainText(build.recipe))
+            """,
+            self.getMainText(build.recipe),
+        )
 
     def test_index_pending_build_request(self):
         # A pending build request is listed as such.
         recipe = self.makeCharmRecipe()
         with person_logged_in(recipe.owner):
             recipe.requestBuilds(recipe.owner)
-        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            """\
             Latest builds
             Status When complete Architecture
             Pending build request
-            """, self.getMainText(recipe))
+            """,
+            self.getMainText(recipe),
+        )
 
     def test_index_failed_build_request(self):
         # A failed build request is listed as such, with its error message.
@@ -1093,17 +1343,22 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         job.job._status = JobStatus.FAILED
         job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
         job.error_message = "Boom"
-        self.assertTextMatchesExpressionIgnoreWhitespace(r"""\
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""\
             Latest builds
             Status When complete Architecture
             Failed build request 1 hour ago \(Boom\)
-            """, self.getMainText(recipe))
+            """,
+            self.getMainText(recipe),
+        )
 
     def setStatus(self, build, status):
         build.updateStatus(
-            BuildStatus.BUILDING, date_started=build.date_created)
+            BuildStatus.BUILDING, date_started=build.date_created
+        )
         build.updateStatus(
-            status, date_finished=build.date_started + timedelta(minutes=30))
+            status, date_finished=build.date_started + timedelta(minutes=30)
+        )
 
     def test_builds_and_requests(self):
         # CharmRecipeView.builds_and_requests produces reasonable results,
@@ -1111,10 +1366,12 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         recipe = self.makeCharmRecipe()
         # Create oldest builds first so that they sort properly by id.
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1))
+            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+        )
         builds = [
             self.makeBuild(recipe=recipe, date_created=next(date_gen))
-            for i in range(3)]
+            for i in range(3)
+        ]
         self.setStatus(builds[2], BuildStatus.FULLYBUILT)
         with person_logged_in(recipe.owner):
             request = recipe.requestBuilds(recipe.owner)
@@ -1123,34 +1380,49 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         view = CharmRecipeView(recipe, None)
         # The pending build request is interleaved in date order with
         # pending builds, and these are followed by completed builds.
-        self.assertThat(view.builds_and_requests, MatchesListwise([
-            MatchesStructure.byEquality(id=request.id),
-            Equals(builds[1]),
-            Equals(builds[0]),
-            Equals(builds[2]),
-            ]))
+        self.assertThat(
+            view.builds_and_requests,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(id=request.id),
+                    Equals(builds[1]),
+                    Equals(builds[0]),
+                    Equals(builds[2]),
+                ]
+            ),
+        )
         transaction.commit()
         builds.append(self.makeBuild(recipe=recipe))
         del get_property_cache(view).builds_and_requests
-        self.assertThat(view.builds_and_requests, MatchesListwise([
-            Equals(builds[3]),
-            MatchesStructure.byEquality(id=request.id),
-            Equals(builds[1]),
-            Equals(builds[0]),
-            Equals(builds[2]),
-            ]))
+        self.assertThat(
+            view.builds_and_requests,
+            MatchesListwise(
+                [
+                    Equals(builds[3]),
+                    MatchesStructure.byEquality(id=request.id),
+                    Equals(builds[1]),
+                    Equals(builds[0]),
+                    Equals(builds[2]),
+                ]
+            ),
+        )
         # If we pretend that the job failed, it is still listed, but after
         # any pending builds.
         job.job._status = JobStatus.FAILED
         job.job.date_finished = job.date_created + timedelta(minutes=30)
         del get_property_cache(view).builds_and_requests
-        self.assertThat(view.builds_and_requests, MatchesListwise([
-            Equals(builds[3]),
-            Equals(builds[1]),
-            Equals(builds[0]),
-            MatchesStructure.byEquality(id=request.id),
-            Equals(builds[2]),
-            ]))
+        self.assertThat(
+            view.builds_and_requests,
+            MatchesListwise(
+                [
+                    Equals(builds[3]),
+                    Equals(builds[1]),
+                    Equals(builds[0]),
+                    MatchesStructure.byEquality(id=request.id),
+                    Equals(builds[2]),
+                ]
+            ),
+        )
 
     def test_store_channels_empty(self):
         recipe = self.factory.makeCharmRecipe()
@@ -1159,35 +1431,44 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
 
     def test_store_channels_display(self):
         recipe = self.factory.makeCharmRecipe(
-            store_channels=["track/stable/fix-123", "track/edge/fix-123"])
+            store_channels=["track/stable/fix-123", "track/edge/fix-123"]
+        )
         view = create_initialized_view(recipe, "+index")
         self.assertEqual(
-            "track/stable/fix-123, track/edge/fix-123", view.store_channels)
+            "track/stable/fix-123, track/edge/fix-123", view.store_channels
+        )
 
 
 class TestCharmRecipeRequestBuildsView(BaseTestCharmRecipeView):
-
     def setUp(self):
         super().setUp()
         self.project = self.factory.makeProduct(
-            name="test-project", displayname="Test Project")
+            name="test-project", displayname="Test Project"
+        )
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.ubuntu)
+            distribution=self.ubuntu
+        )
         self.architectures = []
         for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
             das = self.factory.makeDistroArchSeries(
-                distroseries=self.distroseries, architecturetag=architecture,
-                processor=getUtility(IProcessorSet).getByName(processor))
+                distroseries=self.distroseries,
+                architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor),
+            )
             das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
             self.architectures.append(das)
         self.recipe = self.factory.makeCharmRecipe(
-            registrant=self.person, owner=self.person, project=self.project,
-            name="charm-name")
+            registrant=self.person,
+            owner=self.person,
+            project=self.project,
+            name="charm-name",
+        )
 
     def test_request_builds_page(self):
         # The +request-builds page is sensible.
-        self.assertTextMatchesExpressionIgnoreWhitespace(r"""
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            r"""
             Request builds for charm-name
             Test Project
             charm-name
@@ -1203,36 +1484,45 @@ class TestCharmRecipeRequestBuildsView(BaseTestCharmRecipeView):
             or
             Cancel
             """,
-            self.getMainText(self.recipe, "+request-builds", user=self.person))
+            self.getMainText(self.recipe, "+request-builds", user=self.person),
+        )
 
     def test_request_builds_not_owner(self):
         # A user without launchpad.Edit cannot request builds.
         self.assertRaises(
-            Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
+            Unauthorized, self.getViewBrowser, self.recipe, "+request-builds"
+        )
 
     def test_request_builds_action(self):
         # Requesting a build creates a pending build request.
         browser = self.getViewBrowser(
-            self.recipe, "+request-builds", user=self.person)
+            self.recipe, "+request-builds", user=self.person
+        )
         browser.getControl("Request builds").click()
 
         login_person(self.person)
         [request] = self.recipe.pending_build_requests
-        self.assertThat(removeSecurityProxy(request), MatchesStructure(
-            recipe=Equals(self.recipe),
-            status=Equals(CharmRecipeBuildRequestStatus.PENDING),
-            error_message=Is(None),
-            builds=AfterPreprocessing(list, Equals([])),
-            _job=MatchesStructure(
-                requester=Equals(self.person),
-                channels=Equals({}),
-                architectures=Is(None))))
+        self.assertThat(
+            removeSecurityProxy(request),
+            MatchesStructure(
+                recipe=Equals(self.recipe),
+                status=Equals(CharmRecipeBuildRequestStatus.PENDING),
+                error_message=Is(None),
+                builds=AfterPreprocessing(list, Equals([])),
+                _job=MatchesStructure(
+                    requester=Equals(self.person),
+                    channels=Equals({}),
+                    architectures=Is(None),
+                ),
+            ),
+        )
 
     def test_request_builds_channels(self):
         # Selecting different channels creates a build request using those
         # channels.
         browser = self.getViewBrowser(
-            self.recipe, "+request-builds", user=self.person)
+            self.recipe, "+request-builds", user=self.person
+        )
         browser.getControl(name="field.channels.core").value = "edge"
         browser.getControl("Request builds").click()
 

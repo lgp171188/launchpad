@@ -1,7 +1,7 @@
 # Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for running the no-anonymous-session-cookies.txt tests."""
+"""Test harness for running the no-anonymous-session-cookies.rst tests."""
 
 __all__ = []
 
@@ -17,6 +17,11 @@ def test_suite():
     # We run this test on the AppServerLayer because it needs the cookie login
     # page (+login), which cannot be used through the normal testbrowser that
     # goes straight to zope's publication instead of making HTTP requests.
-    suite.addTest(LayeredDocFileSuite(
-        'no-anonymous-session-cookies.txt', setUp=setUp, layer=AppServerLayer))
+    suite.addTest(
+        LayeredDocFileSuite(
+            "no-anonymous-session-cookies.rst",
+            setUp=setUp,
+            layer=AppServerLayer,
+        )
+    )
     return suite

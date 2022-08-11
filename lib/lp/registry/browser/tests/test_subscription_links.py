@@ -10,7 +10,7 @@ from zope.component import getUtility
 
 from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionMenuMixin,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.milestone import ProjectMilestone
 from lp.services.beautifulsoup import BeautifulSoup
@@ -19,11 +19,11 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     BrowserTestCase,
+    TestCaseWithFactory,
     celebrity_logged_in,
     extract_lp_cache,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import first_tag_by_class
 from lp.testing.sampledata import ADMIN_EMAIL
@@ -35,47 +35,52 @@ class _TestResultsMixin:
 
     @property
     def old_link(self):
-        return first_tag_by_class(
-            self.contents, 'menu-link-subscribe')
+        return first_tag_by_class(self.contents, "menu-link-subscribe")
 
     @property
     def new_subscribe_link(self):
         return first_tag_by_class(
-            self.contents, 'menu-link-subscribe_to_bug_mail')
+            self.contents, "menu-link-subscribe_to_bug_mail"
+        )
 
     @property
     def new_edit_link(self):
-        return first_tag_by_class(
-            self.contents, 'menu-link-edit_bug_mail')
+        return first_tag_by_class(self.contents, "menu-link-edit_bug_mail")
 
     def assertLinksMissing(self):
         self.assertEqual(
-            None, self.old_link,
-            "Found unexpected link: %s" % self.old_link)
+            None, self.old_link, "Found unexpected link: %s" % self.old_link
+        )
         self.assertEqual(
-            None, self.new_subscribe_link,
-            "Found unexpected link: %s" % self.new_subscribe_link)
+            None,
+            self.new_subscribe_link,
+            "Found unexpected link: %s" % self.new_subscribe_link,
+        )
         self.assertEqual(
-            None, self.new_edit_link,
-            "Found unexpected link: %s" % self.new_edit_link)
+            None,
+            self.new_edit_link,
+            "Found unexpected link: %s" % self.new_edit_link,
+        )
 
     def assertLinksPresent(self):
         self.assertNotEqual(
-            None, self.new_subscribe_link,
-            "Expected subscribe_to_bug_mail link missing")
+            None,
+            self.new_subscribe_link,
+            "Expected subscribe_to_bug_mail link missing",
+        )
         self.assertNotEqual(
-            None, self.new_edit_link,
-            "Expected edit_bug_mail link missing")
+            None, self.new_edit_link, "Expected edit_bug_mail link missing"
+        )
         # Ensure the LP.cache has been populated.
         cache = extract_lp_cache(self.contents)
-        self.assertIn('administratedTeams', cache)
+        self.assertIn("administratedTeams", cache)
         # Ensure the call to setup the subscription is in the HTML.
         # Only check for the presence of setup's configuration step; more
         # detailed checking is needlessly brittle.
 
         # A yuixhr test is required to ensure that the call actually
         # succeeded, by checking the link class for 'js-action'.
-        setup = ('{content_box: "#structural-subscription-content-box"});')
+        setup = '{content_box: "#structural-subscription-content-box"});'
         self.assertTrue(setup in self.contents)
 
 
@@ -98,8 +103,12 @@ class _TestStructSubs(TestCaseWithFactory, _TestResultsMixin):
 
     def create_view(self, user):
         return create_initialized_view(
-            self.target, self.view, principal=user,
-            rootsite=self.rootsite, current_request=False)
+            self.target,
+            self.view,
+            principal=user,
+            rootsite=self.rootsite,
+            current_request=False,
+        )
 
     def test_subscribe_link_owner(self):
         # Test the subscription link.
@@ -120,7 +129,7 @@ class ProductView(_TestStructSubs):
     """Test structural subscriptions on the product view."""
 
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
@@ -130,21 +139,22 @@ class ProductView(_TestStructSubs):
 class ProductBugs(ProductView):
     """Test structural subscriptions on the product bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
 
 class ProjectGroupView(_TestStructSubs):
     """Test structural subscriptions on the project group view."""
 
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            projectgroup=self.target, official_malone=True)
+            projectgroup=self.target, official_malone=True
+        )
 
 
 class ProjectGroupMilestone(TestCaseWithFactory):
@@ -164,7 +174,8 @@ class ProjectGroupMilestone(TestCaseWithFactory):
             product = self.factory.makeProduct(projectgroup=projectgroup)
             mixin = StructuralSubscriptionMenuMixin()
             mixin.context = ProjectMilestone(
-                projectgroup, '11.04', None, True, product)
+                projectgroup, "11.04", None, True, product
+            )
             # Before bug 778689 was fixed, this would raise an exception.
             mixin._enabled
 
@@ -172,15 +183,15 @@ class ProjectGroupMilestone(TestCaseWithFactory):
 class ProjectGroupBugs(ProjectGroupView):
     """Test structural subscriptions on the project group bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
 
 class ProductSeriesView(_TestStructSubs):
     """Test structural subscriptions on the product series view."""
 
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
@@ -191,8 +202,8 @@ class ProductSeriesView(_TestStructSubs):
 class ProductSeriesBugs(ProductSeriesView):
     """Test structural subscriptions on the product series bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
     def setUp(self):
         super().setUp()
@@ -204,7 +215,7 @@ class DistributionSourcePackageView(_TestStructSubs):
     """Test structural subscriptions on the distro src pkg view."""
 
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
@@ -212,7 +223,8 @@ class DistributionSourcePackageView(_TestStructSubs):
         with person_logged_in(distro.owner):
             distro.official_malone = True
         self.target = self.factory.makeDistributionSourcePackage(
-            distribution=distro)
+            distribution=distro
+        )
         self.regular_user = self.factory.makePerson()
 
     # DistributionSourcePackages do not have owners.
@@ -222,8 +234,8 @@ class DistributionSourcePackageView(_TestStructSubs):
 class DistributionSourcePackageBugs(DistributionSourcePackageView):
     """Test structural subscriptions on the distro src pkg bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
 
 class DistroView(BrowserTestCase, _TestResultsMixin):
@@ -239,7 +251,7 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
 
     layer = DatabaseFunctionalLayer
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
@@ -256,19 +268,21 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
             logged_in_user = getUtility(ILaunchBag).user
             no_login = logged_in_user is None
             browser = self.getViewBrowser(
-                self.target, view_name=self.view,
+                self.target,
+                view_name=self.view,
                 rootsite=self.rootsite,
                 no_login=no_login,
-                user=logged_in_user)
+                user=logged_in_user,
+            )
             self.contents = browser.contents
 
     @property
     def old_link(self):
         href = canonical_url(
-            self.target, rootsite=self.rootsite,
-            view_name='+subscribe')
+            self.target, rootsite=self.rootsite, view_name="+subscribe"
+        )
         soup = BeautifulSoup(self.contents)
-        return soup.find('a', href=href)
+        return soup.find("a", href=href)
 
     def test_subscribe_link_owner(self):
         self._create_scenario(self.target.owner)
@@ -279,7 +293,7 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
         self.assertLinksPresent()
 
     def test_subscribe_link_user_with_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.target.bug_supervisor = self.factory.makePerson()
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
@@ -289,7 +303,7 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
         self.assertLinksMissing()
 
     def test_subscribe_link_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.target.bug_supervisor = self.regular_user
         self._create_scenario(self.regular_user)
         self.assertLinksPresent()
@@ -303,8 +317,8 @@ class DistroView(BrowserTestCase, _TestResultsMixin):
 class DistroBugs(DistroView):
     """Test structural subscriptions on the distro bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
     def test_subscribe_link_owner(self):
         self._create_scenario(self.target.owner)
@@ -315,7 +329,7 @@ class DistroBugs(DistroView):
         self.assertLinksPresent()
 
     def test_subscribe_link_user_with_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.target.bug_supervisor = self.factory.makePerson()
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
@@ -325,13 +339,14 @@ class DistroBugs(DistroView):
         self.assertLinksMissing()
 
     def test_subscribe_link_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.target.bug_supervisor = self.regular_user
         self._create_scenario(self.regular_user)
         self.assertLinksPresent()
 
     def test_subscribe_link_admin(self):
         from lp.testing.sampledata import ADMIN_EMAIL
+
         admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self._create_scenario(admin)
         self.assertLinksPresent()
@@ -354,7 +369,7 @@ class DistroMilestoneView(DistroView):
         self.assertLinksPresent()
 
     def test_subscribe_link_user_with_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.distro.bug_supervisor = self.factory.makePerson()
         self._create_scenario(self.regular_user)
         self.assertLinksPresent()
@@ -364,13 +379,14 @@ class DistroMilestoneView(DistroView):
         self.assertLinksMissing()
 
     def test_subscribe_link_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.distro.bug_supervisor = self.regular_user
         self._create_scenario(self.regular_user)
         self.assertLinksPresent()
 
     def test_subscribe_link_admin(self):
         from lp.testing.sampledata import ADMIN_EMAIL
+
         admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self._create_scenario(admin)
         self.assertLinksPresent()
@@ -402,6 +418,7 @@ class ProductMilestoneView(DistroView):
 
     def test_subscribe_link_admin(self):
         from lp.testing.sampledata import ADMIN_EMAIL
+
         admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self._create_scenario(admin)
         self.assertLinksPresent()
@@ -417,7 +434,8 @@ class ProductSeriesMilestoneView(ProductMilestoneView):
             self.productseries.product.official_malone = True
         self.regular_user = self.factory.makePerson()
         self.target = self.factory.makeMilestone(
-            productseries=self.productseries)
+            productseries=self.productseries
+        )
 
 
 # Tests for when the IStructuralSubscriptionTarget does not use Launchpad for
@@ -445,7 +463,6 @@ class _DoesNotUseLP(ProductView):
 
 
 class ProductDoesNotUseLPView(_DoesNotUseLP):
-
     def test_subscribe_link_no_bugtracker_parent_bugtracker(self):
         # If there is no bugtracker, do not render links, even if the
         # parent has a bugtracker (see bug 770287).
@@ -453,7 +470,8 @@ class ProductDoesNotUseLPView(_DoesNotUseLP):
         with person_logged_in(self.target.owner):
             self.target.projectgroup = projectgroup
         self.factory.makeProduct(
-            projectgroup=projectgroup, official_malone=True)
+            projectgroup=projectgroup, official_malone=True
+        )
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
 
@@ -461,40 +479,41 @@ class ProductDoesNotUseLPView(_DoesNotUseLP):
 class ProductDoesNotUseLPBugs(ProductDoesNotUseLPView):
     """Test structural subscriptions on the product bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
 
 class ProjectGroupDoesNotUseLPView(_DoesNotUseLP):
     """Test structural subscriptions on the project group view."""
 
     rootsite = None
-    view = '+index'
+    view = "+index"
 
     def setUp(self):
         super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            projectgroup=self.target, official_malone=False)
+            projectgroup=self.target, official_malone=False
+        )
 
 
 class ProjectGroupDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
     """Test structural subscriptions on the project group bugs view."""
 
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
     def setUp(self):
         super().setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            projectgroup=self.target, official_malone=False)
+            projectgroup=self.target, official_malone=False
+        )
 
     test_subscribe_link_no_bugtracker_parent_bugtracker = None
 
 
 class ProductSeriesDoesNotUseLPView(_DoesNotUseLP):
-
     def setUp(self):
         super().setUp()
         product = self.factory.makeProduct(official_malone=False)
@@ -502,7 +521,6 @@ class ProductSeriesDoesNotUseLPView(_DoesNotUseLP):
 
 
 class ProductSeriesDoesNotUseLPBugs(_DoesNotUseLP):
-
     def setUp(self):
         super().setUp()
         product = self.factory.makeProduct(official_malone=False)
@@ -516,7 +534,8 @@ class DistributionSourcePackageDoesNotUseLPView(_DoesNotUseLP):
         super().setUp()
         distro = self.factory.makeDistribution()
         self.target = self.factory.makeDistributionSourcePackage(
-            distribution=distro)
+            distribution=distro
+        )
         self.regular_user = self.factory.makePerson()
 
     # DistributionSourcePackages do not have owners.
@@ -526,14 +545,13 @@ class DistributionSourcePackageDoesNotUseLPView(_DoesNotUseLP):
 class DistributionSourcePackageDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
     """Test structural subscriptions on the distro src pkg bugs view."""
 
-    view = '+bugs'
+    view = "+bugs"
 
     # DistributionSourcePackages do not have owners.
     test_subscribe_link_owner = None
 
 
 class DistroDoesNotUseLPView(DistroView):
-
     def setUp(self):
         super().setUp()
         self.target = self.factory.makeDistribution()
@@ -545,7 +563,7 @@ class DistroDoesNotUseLPView(DistroView):
         self.assertLinksMissing()
 
     def test_subscribe_link_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.target.bug_supervisor = self.regular_user
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
@@ -570,12 +588,11 @@ class DistroDoesNotUseLPView(DistroView):
 
 
 class DistroDoesNotUseLPBugs(DistroDoesNotUseLPView):
-    rootsite = 'bugs'
-    view = '+bugs'
+    rootsite = "bugs"
+    view = "+bugs"
 
 
 class DistroMilestoneDoesNotUseLPView(DistroMilestoneView):
-
     def setUp(self):
         super().setUp()
         with person_logged_in(self.distro.owner):
@@ -587,7 +604,7 @@ class DistroMilestoneDoesNotUseLPView(DistroMilestoneView):
         self.assertLinksMissing()
 
     def test_subscribe_link_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.distro.bug_supervisor = self.regular_user
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
@@ -611,25 +628,26 @@ class DistroMilestoneDoesNotUseLPView(DistroMilestoneView):
         self.assertLinksMissing()
 
     def test_subscribe_link_user_with_bug_super(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.distro.bug_supervisor = self.factory.makePerson()
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
 
 
 class ProductMilestoneDoesNotUseLPView(ProductMilestoneView):
-
     def setUp(self):
         super().setUp()
         self.product = self.factory.makeProduct()
         with person_logged_in(self.product.owner):
             self.product.official_malone = False
         self.target = self.factory.makeMilestone(
-            name='1.0', product=self.product)
+            name="1.0", product=self.product
+        )
         self.regular_user = self.factory.makePerson()
 
     def test_subscribe_link_admin(self):
         from lp.testing.sampledata import ADMIN_EMAIL
+
         admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self._create_scenario(admin)
         self.assertLinksMissing()

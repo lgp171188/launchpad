@@ -4,85 +4,95 @@
 """Person's bug subscription information interfaces."""
 
 __all__ = [
-    'IAbstractSubscriptionInfoCollection',
-    'IPersonSubscriptions',
-    'IRealSubscriptionInfo',
-    'IRealSubscriptionInfoCollection',
-    'IVirtualSubscriptionInfo',
-    'IVirtualSubscriptionInfoCollection'
-    ]
+    "IAbstractSubscriptionInfoCollection",
+    "IPersonSubscriptions",
+    "IRealSubscriptionInfo",
+    "IRealSubscriptionInfoCollection",
+    "IVirtualSubscriptionInfo",
+    "IVirtualSubscriptionInfoCollection",
+]
 
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import Bool
 
 from lp import _
-from lp.services.fields import (
-    BugField,
-    PersonChoice,
-    )
+from lp.services.fields import BugField, PersonChoice
 
 
 class IAbstractSubscriptionInfo(Interface):
 
     bug = BugField(
-        title=_("Bug"), readonly=True, required=True,
-        description=_("A bug that this subscription is on. "
-                      "If subscription is on a duplicate "
-                      "bug, references that bug."))
+        title=_("Bug"),
+        readonly=True,
+        required=True,
+        description=_(
+            "A bug that this subscription is on. "
+            "If subscription is on a duplicate "
+            "bug, references that bug."
+        ),
+    )
 
     principal = PersonChoice(
-        title=_("Subscriber"), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam',
+        title=_("Subscriber"),
+        required=True,
+        readonly=True,
+        vocabulary="ValidPersonOrTeam",
         description=_(
-            "The person or team for which this information is gathered."))
+            "The person or team for which this information is gathered."
+        ),
+    )
 
 
 class IRealSubscriptionInfo(IAbstractSubscriptionInfo):
 
     subscription = Attribute(
         "The bug subscription.  Important attributes for our uses are the "
-        "target and the bug_notification_level.")
+        "target and the bug_notification_level."
+    )
 
     principal_is_reporter = Bool(
-       title=_("Principal is Reporter?"),
-       description=_("Is the principal the bug reporter."),
-       default=False, readonly=True)
+        title=_("Principal is Reporter?"),
+        description=_("Is the principal the bug reporter."),
+        default=False,
+        readonly=True,
+    )
 
     bug_supervisor_tasks = Attribute(
         """A collection of targets of the info's bug for which the
         principal is a bug supervisor (which causes direct subscriptions for
-        private bugs at this time).""")
+        private bugs at this time)."""
+    )
 
 
 class IVirtualSubscriptionInfo(IAbstractSubscriptionInfo):
 
     pillar = Attribute(
         """The pillar for the bugtask.  Useful for owner and
-        bug_supervisor""")
+        bug_supervisor"""
+    )
 
     tasks = Attribute("""The bugtasks pertinent to this subscription.""")
 
 
 class IAbstractSubscriptionInfoCollection(Interface):
 
-    count = Attribute(
-        'The total number of contained subscriptions.')
+    count = Attribute("The total number of contained subscriptions.")
 
     personal = Attribute(
         "List of information objects about the personal duplicate "
-        "subscriptions.")
+        "subscriptions."
+    )
 
     as_team_member = Attribute(
         "List of information objects about the subscriptions "
-        "through a team, exluding teams of which the person is an admin")
+        "through a team, excluding teams of which the person is an admin"
+    )
 
     as_team_admin = Attribute(
         "List of information objects about the subscriptions "
-        "through teams of which the person is an admin.")
+        "through teams of which the person is an admin."
+    )
 
 
 class IRealSubscriptionInfoCollection(IAbstractSubscriptionInfoCollection):
@@ -102,45 +112,58 @@ class IVirtualSubscriptionInfoCollection(IAbstractSubscriptionInfoCollection):
 class IPersonSubscriptions(Interface):
     """Subscription information for a given person and bug."""
 
-    count = Attribute(
-        'The total number of subscriptions, real and virtual')
+    count = Attribute("The total number of subscriptions, real and virtual")
 
     muted = Bool(
-       title=_("Bug is muted?"),
-       description=_("Is the bug muted?"),
-       default=False, readonly=True)
+        title=_("Bug is muted?"),
+        description=_("Is the bug muted?"),
+        default=False,
+        readonly=True,
+    )
 
     bug = BugField(
-        title=_("Bug"), readonly=True, required=True,
-        description=_("A bug that this subscription is on. "
-                      "If subscription is on a duplicate "
-                      "bug, references that bug."))
+        title=_("Bug"),
+        readonly=True,
+        required=True,
+        description=_(
+            "A bug that this subscription is on. "
+            "If subscription is on a duplicate "
+            "bug, references that bug."
+        ),
+    )
 
     person = PersonChoice(
-        title=_("Subscriber"), required=True, readonly=True,
-        vocabulary='ValidPersonOrTeam',
-        description=_("The person for which this information is gathered."))
+        title=_("Subscriber"),
+        required=True,
+        readonly=True,
+        vocabulary="ValidPersonOrTeam",
+        description=_("The person for which this information is gathered."),
+    )
 
     direct = Attribute(
         "An IRealSubscriptionInfoCollection.  Contains information about all "
         "direct subscriptions. Includes those through membership in teams "
-        "directly subscribed to a bug.")
+        "directly subscribed to a bug."
+    )
 
     from_duplicate = Attribute(
         "An IRealSubscriptionInfoCollection.  Contains information about all "
         "subscriptions through duplicate bugs. Includes those through team "
-        "membership.")
+        "membership."
+    )
 
     as_owner = Attribute(
         "An IVirtualSubscriptionInfoCollection containing information about "
         "all virtual subscriptions as target owner when no bug supervisor "
         "is defined for the target, including those through team "
-        "memberships.")
+        "memberships."
+    )
 
     as_assignee = Attribute(
         "An IVirtualSubscriptionInfoCollection containing information about "
         "all virtual subscriptions as an assignee, including those through "
-        "team memberships.")
+        "team memberships."
+    )
 
     def reload():
         """Reload subscriptions for a person/bug."""

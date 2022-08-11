@@ -2,15 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the close-account script."""
+from datetime import datetime
 
+import pytz
+import transaction
 from storm.store import Store
 from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
     Not,
     StartsWith,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -20,46 +22,32 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
-from lp.code.enums import (
-    CodeImportResultStatus,
-    TargetRevisionControlSystems,
-    )
+from lp.code.enums import CodeImportResultStatus, TargetRevisionControlSystems
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
+from lp.registry.model.productrelease import ProductRelease
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
-    )
-from lp.services.identity.interfaces.account import (
-    AccountStatus,
-    IAccountSet,
-    )
+)
+from lp.services.identity.interfaces.account import AccountStatus, IAccountSet
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.job.interfaces.job import JobType
 from lp.services.job.model.job import Job
-from lp.services.log.logger import (
-    BufferLogger,
-    DevNullLogger,
-    )
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
-from lp.soyuz.enums import (
-    ArchiveSubscriberStatus,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchiveSubscriberStatus, PackagePublishingStatus
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    login_celebrity,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_celebrity
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.pofiletranslator import IPOFileTranslatorSet
@@ -120,16 +108,16 @@ class TestCloseAccount(TestCaseWithFactory):
         # The Account row still exists, but has been anonymised, leaving
         # only a minimal audit trail.
         account = getUtility(IAccountSet).get(account_id)
-        self.assertEqual('Removed by request', account.displayname)
+        self.assertEqual("Removed by request", account.displayname)
         self.assertEqual(AccountStatus.CLOSED, account.status)
-        self.assertIn('Closed using close-account.', account.status_history)
+        self.assertIn("Closed using close-account.", account.status_history)
 
         # The Person row still exists to maintain links with information
         # that won't be removed, such as bug comments, but has been
         # anonymised.
         person = getUtility(IPersonSet).get(person_id)
-        self.assertThat(person.name, StartsWith('removed'))
-        self.assertEqual('Removed by request', person.display_name)
+        self.assertThat(person.name, StartsWith("removed"))
+        self.assertEqual("Removed by request", person.display_name)
         self.assertEqual(account, person.account)
 
         # The corresponding PersonSettings row has been reset to the
@@ -140,37 +128,43 @@ class TestCloseAccount(TestCaseWithFactory):
 
         # EmailAddress and OpenIdIdentifier rows have been removed.
         self.assertEqual(
-            [], list(getUtility(IEmailAddressSet).getByPerson(person)))
+            [], list(getUtility(IEmailAddressSet).getByPerson(person))
+        )
         self.assertEqual([], list(account.openid_identifiers))
 
     def assertNotRemoved(self, account_id, person_id):
         account = getUtility(IAccountSet).get(account_id)
-        self.assertNotEqual('Removed by request', account.displayname)
+        self.assertNotEqual("Removed by request", account.displayname)
         self.assertEqual(AccountStatus.ACTIVE, account.status)
         person = getUtility(IPersonSet).get(person_id)
         self.assertEqual(account, person.account)
-        self.assertNotEqual('Removed by request', person.display_name)
-        self.assertThat(person.name, Not(StartsWith('removed')))
+        self.assertNotEqual("Removed by request", person.display_name)
+        self.assertThat(person.name, Not(StartsWith("removed")))
         self.assertNotEqual(
-            [], list(getUtility(IEmailAddressSet).getByPerson(person)))
+            [], list(getUtility(IEmailAddressSet).getByPerson(person))
+        )
         self.assertNotEqual([], list(account.openid_identifiers))
 
     def test_nonexistent(self):
-        script = self.makeScript(['nonexistent-person'])
-        with dbuser('launchpad'):
+        script = self.makeScript(["nonexistent-person"])
+        with dbuser("launchpad"):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
-                'User nonexistent-person does not exist',
-                self.runScript, script)
+                "User nonexistent-person does not exist",
+                self.runScript,
+                script,
+            )
 
     def test_team(self):
         team = self.factory.makeTeam()
         script = self.makeScript([team.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
-                '%s is a team' % team.name,
-                self.runScript, script)
+                "%s is a team" % team.name,
+                self.runScript,
+                script,
+            )
 
     def test_unhandled_reference(self):
         person = self.factory.makePerson()
@@ -178,37 +172,41 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         self.factory.makeProduct(owner=person)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
-                'User %s is still referenced' % person.name,
-                self.runScript, script)
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
         self.assertIn(
-            'ERROR User %s is still referenced by 1 product.owner values' % (
-                person.name),
-            script.logger.getLogBuffer())
+            "ERROR User %s is still referenced by 1 product.owner values"
+            % (person.name),
+            script.logger.getLogBuffer(),
+        )
         self.assertNotRemoved(account_id, person_id)
 
     def test_dry_run(self):
         person, person_id, account_id = self.makePopulatedUser()
-        script = self.makeScript(['--dry-run', person.name])
-        with dbuser('launchpad'):
+        script = self.makeScript(["--dry-run", person.name])
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertIn(
-            'Dry run, so not committing changes', script.logger.getLogBuffer())
+            "Dry run, so not committing changes", script.logger.getLogBuffer()
+        )
         self.assertNotRemoved(account_id, person_id)
 
     def test_single_by_name(self):
         person, person_id, account_id = self.makePopulatedUser()
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
     def test_single_by_email(self):
         person, person_id, account_id = self.makePopulatedUser()
         script = self.makeScript([person.preferredemail.email])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
@@ -217,7 +215,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_ids = [person.id for person in persons]
         account_ids = [person.account.id for person in persons]
         script = self.makeScript([persons[0].name, persons[1].name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_ids[0], person_ids[0])
         self.assertRemoved(account_ids[1], person_ids[1])
@@ -225,19 +223,20 @@ class TestCloseAccount(TestCaseWithFactory):
 
     def test_multiple_email_addresses(self):
         person, person_id, account_id = self.makePopulatedUser()
-        self.factory.makeEmail('%s@another-domain.test' % person.name, person)
+        self.factory.makeEmail("%s@another-domain.test" % person.name, person)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
     def test_unactivated(self):
         person = self.factory.makePerson(
-            account_status=AccountStatus.NOACCOUNT)
+            account_status=AccountStatus.NOACCOUNT
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.guessedemails[0].email])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
@@ -246,12 +245,13 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         branch_subscription = self.factory.makeBranchSubscription(
-            subscribed_by=person)
+            subscribed_by=person
+        )
         snap = self.factory.makeSnap()
         snap_build = self.factory.makeSnapBuild(requester=person, snap=snap)
         specification = self.factory.makeSpecification(drafter=person)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, branch_subscription.subscribed_by)
@@ -264,21 +264,24 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         questions = []
         for status in (
-                QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-                QuestionStatus.ANSWERED):
+            QuestionStatus.OPEN,
+            QuestionStatus.NEEDSINFO,
+            QuestionStatus.ANSWERED,
+        ):
             question = self.factory.makeQuestion(owner=person)
             question.addComment(person, "comment")
             removeSecurityProxy(question).status = status
             questions.append(question)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         for question in questions:
             self.assertEqual(QuestionStatus.SOLVED, question.status)
             self.assertEqual(
-                'Closed by Launchpad due to owner requesting account removal',
-                question.whiteboard)
+                "Closed by Launchpad due to owner requesting account removal",
+                question.whiteboard,
+            )
 
     def test_skips_questions_in_final_states(self):
         person = self.factory.makePerson()
@@ -286,14 +289,16 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         questions = {}
         for status in (
-                QuestionStatus.SOLVED, QuestionStatus.EXPIRED,
-                QuestionStatus.INVALID):
+            QuestionStatus.SOLVED,
+            QuestionStatus.EXPIRED,
+            QuestionStatus.INVALID,
+        ):
             question = self.factory.makeQuestion(owner=person)
             question.addComment(person, "comment")
             removeSecurityProxy(question).status = status
             questions[status] = question
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         for question_status, question in questions.items():
@@ -308,7 +313,7 @@ class TestCloseAccount(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         spec.linkBranch(branch, person)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
@@ -323,15 +328,18 @@ class TestCloseAccount(TestCaseWithFactory):
         spph = publisher.getPubSource(
             status=PackagePublishingStatus.PUBLISHED,
             distroseries=ubuntu.currentseries,
-            maintainer=person, creator=person)
-        with dbuser('garbo_frequently'):
+            maintainer=person,
+            creator=person,
+        )
+        with dbuser("garbo_frequently"):
             job = PopulateLatestPersonSourcePackageReleaseCache(
-                DevNullLogger())
+                DevNullLogger()
+            )
             while not job.isDone():
                 job(chunk_size=100)
         self.assertTrue(person.hasMaintainedPackages())
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, spph.package_maintainer)
@@ -345,7 +353,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, bug.owner)
@@ -358,7 +366,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
@@ -370,7 +378,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertFalse(bug.isUserAffected(person))
@@ -382,7 +390,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertTrue(translations_person.translations_relicensing_agreement)
@@ -392,19 +400,20 @@ class TestCloseAccount(TestCaseWithFactory):
         pofile = self.factory.makePOFile()
         potmsgset = self.factory.makePOTMsgSet(pofile.potemplate)
         self.factory.makeCurrentTranslationMessage(
-            potmsgset=potmsgset, translator=person, language=pofile.language)
+            potmsgset=potmsgset, translator=person, language=pofile.language
+        )
         self.assertIsNotNone(
-            getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-                person, pofile))
+            getUtility(IPOFileTranslatorSet).getForPersonPOFile(person, pofile)
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertIsNotNone(
-            getUtility(IPOFileTranslatorSet).getForPersonPOFile(
-                person, pofile))
+            getUtility(IPOFileTranslatorSet).getForPersonPOFile(person, pofile)
+        )
 
     def test_skips_po_file_owners(self):
         person = self.factory.makePerson()
@@ -413,7 +422,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
@@ -422,30 +431,37 @@ class TestCloseAccount(TestCaseWithFactory):
         ppa = self.factory.makeArchive(private=True)
         subscription = ppa.newSubscription(person, ppa.owner)
         other_subscription = ppa.newSubscription(
-            self.factory.makePerson(), ppa.owner)
+            self.factory.makePerson(), ppa.owner
+        )
         ppa.newAuthToken(person)
         self.assertEqual(ArchiveSubscriberStatus.CURRENT, subscription.status)
         self.assertIsNotNone(ppa.getAuthToken(person))
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             now = get_transaction_timestamp(Store.of(person))
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(
-            ArchiveSubscriberStatus.CANCELLED, subscription.status)
+            ArchiveSubscriberStatus.CANCELLED, subscription.status
+        )
         self.assertEqual(now, subscription.date_cancelled)
         self.assertEqual(
-            ArchiveSubscriberStatus.CURRENT, other_subscription.status)
+            ArchiveSubscriberStatus.CURRENT, other_subscription.status
+        )
         # The token remains, but is no longer valid since the subscription
         # has been cancelled.
         self.assertIsNotNone(
-            IStore(ArchiveAuthToken).find(
+            IStore(ArchiveAuthToken)
+            .find(
                 ArchiveAuthToken,
                 ArchiveAuthToken.archive == ppa,
                 ArchiveAuthToken.date_deactivated == None,
-                ArchiveAuthToken.person == person).one())
+                ArchiveAuthToken.person == person,
+            )
+            .one()
+        )
         self.assertIsNone(ppa.getAuthToken(person))
 
     def test_handles_hardware_submissions(self):
@@ -457,20 +473,30 @@ class TestCloseAccount(TestCaseWithFactory):
         store = Store.of(person)
         date_created = get_transaction_timestamp(store)
         keys = [
-            self.factory.getUniqueUnicode('submission-key') for _ in range(2)]
+            self.factory.getUniqueUnicode("submission-key") for _ in range(2)
+        ]
         raw_submissions = [
-            self.factory.makeLibraryFileAlias(db_only=True) for _ in range(2)]
+            self.factory.makeLibraryFileAlias(db_only=True) for _ in range(2)
+        ]
         systems = [
-            self.factory.getUniqueUnicode('system-fingerprint')
-            for _ in range(2)]
+            self.factory.getUniqueUnicode("system-fingerprint")
+            for _ in range(2)
+        ]
         system_fingerprint_ids = [
-            row[0] for row in store.execute("""
+            row[0]
+            for row in store.execute(
+                """
                 INSERT INTO HWSystemFingerprint (fingerprint)
                 VALUES (?), (?)
                 RETURNING id
-                """, systems)]
+                """,
+                systems,
+            )
+        ]
         submission_ids = [
-            row[0] for row in store.execute("""
+            row[0]
+            for row in store.execute(
+                """
                 INSERT INTO HWSubmission
                     (date_created, format, private, contactable,
                      submission_key, owner, raw_submission,
@@ -480,93 +506,140 @@ class TestCloseAccount(TestCaseWithFactory):
                     (?, 1, FALSE, FALSE, ?, ?, ?, ?)
                 RETURNING id
                 """,
-                (date_created, keys[0], person.id,
-                 raw_submissions[0].id, system_fingerprint_ids[0],
-                 date_created, keys[1], self.factory.makePerson().id,
-                 raw_submissions[1].id, system_fingerprint_ids[1]))]
-        with dbuser('hwdb-submission-processor'):
-            vendor_name_id = store.execute("""
+                (
+                    date_created,
+                    keys[0],
+                    person.id,
+                    raw_submissions[0].id,
+                    system_fingerprint_ids[0],
+                    date_created,
+                    keys[1],
+                    self.factory.makePerson().id,
+                    raw_submissions[1].id,
+                    system_fingerprint_ids[1],
+                ),
+            )
+        ]
+        with dbuser("hwdb-submission-processor"):
+            vendor_name_id = store.execute(
+                """
                 INSERT INTO HWVendorName (name) VALUES (?) RETURNING id
-                """, (self.factory.getUniqueUnicode(),)).get_one()[0]
-            vendor_id = store.execute("""
+                """,
+                (self.factory.getUniqueUnicode(),),
+            ).get_one()[0]
+            vendor_id = store.execute(
+                """
                 INSERT INTO HWVendorID (bus, vendor_id_for_bus, vendor_name)
                 VALUES (1, '0x0001', ?)
                 RETURNING id
-                """, (vendor_name_id,)).get_one()[0]
-            device_id = store.execute("""
+                """,
+                (vendor_name_id,),
+            ).get_one()[0]
+            device_id = store.execute(
+                """
                 INSERT INTO HWDevice
                     (bus_vendor_id, bus_product_id, variant, name, submissions)
                 VALUES (?, '0x0002', NULL, ?, 1)
                 RETURNING id
-                """, (vendor_id, self.factory.getUniqueUnicode())).get_one()[0]
-            device_driver_link_id = store.execute("""
+                """,
+                (vendor_id, self.factory.getUniqueUnicode()),
+            ).get_one()[0]
+            device_driver_link_id = store.execute(
+                """
                 INSERT INTO HWDeviceDriverLink (device, driver)
                 VALUES (?, NULL)
                 RETURNING id
-                """, (device_id,)).get_one()[0]
-            parent_submission_device_id = store.execute("""
+                """,
+                (device_id,),
+            ).get_one()[0]
+            parent_submission_device_id = store.execute(
+                """
                 INSERT INTO HWSubmissionDevice
                     (device_driver_link, submission, parent, hal_device_id)
                 VALUES (?, ?, NULL, 1)
                 RETURNING id
                 """,
-                (device_driver_link_id, submission_ids[0])).get_one()[0]
-            store.execute("""
+                (device_driver_link_id, submission_ids[0]),
+            ).get_one()[0]
+            store.execute(
+                """
                 INSERT INTO HWSubmissionDevice
                     (device_driver_link, submission, parent, hal_device_id)
                 VALUES (?, ?, ?, 2)
                 """,
-                (device_driver_link_id, submission_ids[0],
-                 parent_submission_device_id))
-            other_submission_device_id = store.execute("""
+                (
+                    device_driver_link_id,
+                    submission_ids[0],
+                    parent_submission_device_id,
+                ),
+            )
+            other_submission_device_id = store.execute(
+                """
                 INSERT INTO HWSubmissionDevice
                     (device_driver_link, submission, hal_device_id)
                 VALUES (?, ?, 1)
                 RETURNING id
                 """,
-                (device_driver_link_id, submission_ids[1])).get_one()[0]
+                (device_driver_link_id, submission_ids[1]),
+            ).get_one()[0]
 
         def get_submissions_by_owner(person):
             return [
-                row[0] for row in store.execute("""
+                row[0]
+                for row in store.execute(
+                    """
                     SELECT HWSubmission.id
                     FROM HWSubmission, HWSystemFingerprint
                     WHERE
                         HWSubmission.owner = ?
                         AND HWSystemFingerprint.id =
                             HWSubmission.system_fingerprint
-                    """, (person.id,))]
+                    """,
+                    (person.id,),
+                )
+            ]
 
         def get_submission_by_submission_key(submission_key):
-            result = store.execute("""
+            result = store.execute(
+                """
                 SELECT id FROM HWSubmission WHERE submission_key = ?
-                """, (submission_key,))
+                """,
+                (submission_key,),
+            )
             row = result.get_one()
             self.assertIsNone(result.get_one())
             return row[0] if row else None
 
         def get_devices_by_submission(submission_id):
             return [
-                row[0] for row in store.execute("""
+                row[0]
+                for row in store.execute(
+                    """
                     SELECT id FROM HWSubmissionDevice WHERE submission = ?
-                    """, (submission_id,))]
+                    """,
+                    (submission_id,),
+                )
+            ]
 
         self.assertNotEqual([], get_submissions_by_owner(person))
         self.assertEqual(
-            submission_ids[0], get_submission_by_submission_key(keys[0]))
+            submission_ids[0], get_submission_by_submission_key(keys[0])
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual([], get_submissions_by_owner(person))
         self.assertIsNone(get_submission_by_submission_key(keys[0]))
         self.assertEqual(
-            submission_ids[1], get_submission_by_submission_key(keys[1]))
+            submission_ids[1], get_submission_by_submission_key(keys[1])
+        )
         self.assertEqual(
             [other_submission_device_id],
-            get_devices_by_submission(submission_ids[1]))
+            get_devices_by_submission(submission_ids[1]),
+        )
 
     def test_skips_bug_summary(self):
         person = self.factory.makePerson()
@@ -575,35 +648,56 @@ class TestCloseAccount(TestCaseWithFactory):
         bug.subscribe(person, bug.owner)
         bug.subscribe(other_person, bug.owner)
         store = Store.of(bug)
-        summaries = list(store.find(
-            BugSummary,
-            BugSummary.viewed_by_id.is_in([person.id, other_person.id])))
-        self.assertThat(summaries, MatchesSetwise(
-            MatchesStructure.byEquality(count=1, viewed_by=person),
-            MatchesStructure.byEquality(count=1, viewed_by=other_person)))
+        summaries = list(
+            store.find(
+                BugSummary,
+                BugSummary.viewed_by_id.is_in([person.id, other_person.id]),
+            )
+        )
+        self.assertThat(
+            summaries,
+            MatchesSetwise(
+                MatchesStructure.byEquality(count=1, viewed_by=person),
+                MatchesStructure.byEquality(count=1, viewed_by=other_person),
+            ),
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         # BugSummaryJournal has been updated, but BugSummary hasn't yet.
-        summaries = list(store.find(
-            BugSummary,
-            BugSummary.viewed_by_id.is_in([person.id, other_person.id])))
-        self.assertThat(summaries, MatchesSetwise(
-            MatchesStructure.byEquality(count=1, viewed_by=person),
-            MatchesStructure.byEquality(count=1, viewed_by=other_person),
-            MatchesStructure.byEquality(count=-1, viewed_by=person)))
+        summaries = list(
+            store.find(
+                BugSummary,
+                BugSummary.viewed_by_id.is_in([person.id, other_person.id]),
+            )
+        )
+        self.assertThat(
+            summaries,
+            MatchesSetwise(
+                MatchesStructure.byEquality(count=1, viewed_by=person),
+                MatchesStructure.byEquality(count=1, viewed_by=other_person),
+                MatchesStructure.byEquality(count=-1, viewed_by=person),
+            ),
+        )
         # If we force an update (the equivalent of the
         # BugSummaryJournalRollup garbo job), that's enough to get rid of
         # the reference.
-        store.execute('SELECT bugsummary_rollup_journal()')
-        summaries = list(store.find(
-            BugSummary,
-            BugSummary.viewed_by_id.is_in([person.id, other_person.id])))
-        self.assertThat(summaries, MatchesSetwise(
-            MatchesStructure.byEquality(viewed_by=other_person)))
+        store.execute("SELECT bugsummary_rollup_journal()")
+        summaries = list(
+            store.find(
+                BugSummary,
+                BugSummary.viewed_by_id.is_in([person.id, other_person.id]),
+            )
+        )
+        self.assertThat(
+            summaries,
+            MatchesSetwise(
+                MatchesStructure.byEquality(viewed_by=other_person)
+            ),
+        )
 
     def test_skips_bug_nomination(self):
         person = self.factory.makePerson()
@@ -614,18 +708,26 @@ class TestCloseAccount(TestCaseWithFactory):
         bug.addNomination(person, targets[0])
         self.factory.makeBugTask(bug=bug, target=targets[1].parent)
         bug.addNomination(other_person, targets[1])
-        self.assertThat(bug.getNominations(), MatchesSetwise(
-            MatchesStructure.byEquality(owner=person),
-            MatchesStructure.byEquality(owner=other_person)))
+        self.assertThat(
+            bug.getNominations(),
+            MatchesSetwise(
+                MatchesStructure.byEquality(owner=person),
+                MatchesStructure.byEquality(owner=other_person),
+            ),
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
-        self.assertThat(bug.getNominations(), MatchesSetwise(
-            MatchesStructure.byEquality(owner=person),
-            MatchesStructure.byEquality(owner=other_person)))
+        self.assertThat(
+            bug.getNominations(),
+            MatchesSetwise(
+                MatchesStructure.byEquality(owner=person),
+                MatchesStructure.byEquality(owner=other_person),
+            ),
+        )
 
     def test_skips_inactive_product_owner(self):
         person = self.factory.makePerson()
@@ -634,7 +736,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, product.owner)
@@ -645,14 +747,17 @@ class TestCloseAccount(TestCaseWithFactory):
         team = self.factory.makeTeam(members=[person])
         code_imports = [
             self.factory.makeCodeImport(
-                registrant=person, target_rcs_type=target_rcs_type, owner=team)
+                registrant=person, target_rcs_type=target_rcs_type, owner=team
+            )
             for target_rcs_type in (
                 TargetRevisionControlSystems.BZR,
-                TargetRevisionControlSystems.GIT)]
+                TargetRevisionControlSystems.GIT,
+            )
+        ]
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, code_imports[0].registrant)
@@ -664,23 +769,28 @@ class TestCloseAccount(TestCaseWithFactory):
         team = self.factory.makeTeam(members=[person])
         code_imports = [
             self.factory.makeCodeImport(
-                registrant=person, target_rcs_type=target_rcs_type, owner=team)
+                registrant=person, target_rcs_type=target_rcs_type, owner=team
+            )
             for target_rcs_type in (
                 TargetRevisionControlSystems.BZR,
-                TargetRevisionControlSystems.GIT)]
+                TargetRevisionControlSystems.GIT,
+            )
+        ]
 
         for code_import in code_imports:
             getUtility(ICodeImportJobWorkflow).requestJob(
-                code_import.import_job, person)
+                code_import.import_job, person
+            )
             self.assertEqual(person, code_import.import_job.requesting_user)
             result = self.factory.makeCodeImportResult(
                 code_import=code_import,
                 requesting_user=person,
-                result_status=CodeImportResultStatus.SUCCESS)
+                result_status=CodeImportResultStatus.SUCCESS,
+            )
             person_id = person.id
             account_id = person.account.id
             script = self.makeScript([person.name])
-            with dbuser('launchpad'):
+            with dbuser("launchpad"):
                 self.runScript(script)
             self.assertRemoved(account_id, person_id)
             self.assertEqual(person, code_import.registrant)
@@ -694,9 +804,12 @@ class TestCloseAccount(TestCaseWithFactory):
         from_spr = self.factory.makeSourcePackageRelease(archive=ppa)
         to_spr = self.factory.makeSourcePackageRelease(archive=ppa)
         from_spr.requestDiffTo(ppa.owner, to_spr)
-        job = IStore(Job).find(
-            Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF).order_by(
-                Job.id).last()
+        job = (
+            IStore(Job)
+            .find(Job, Job.base_job_type == JobType.GENERATE_PACKAGE_DIFF)
+            .order_by(Job.id)
+            .last()
+        )
         # XXX ilasc 2021-02-23: deleting the ppa in this test by running the
         # Publisher here results in the "Can't delete non-trivial PPAs
         # for user" exception. So we just point to another owner here
@@ -708,7 +821,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, job.requester)
@@ -719,106 +832,116 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         specification = self.factory.makeSpecification(owner=person)
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, specification.owner)
 
     def test_skips_teammembership_last_changed_by(self):
-        targetteam = self.factory.makeTeam(name='target')
+        targetteam = self.factory.makeTeam(name="target")
         member = self.factory.makePerson()
-        login_celebrity('admin')
+        login_celebrity("admin")
         targetteam.addMember(member, targetteam.teamowner)
         membershipset = getUtility(ITeamMembershipSet)
         membershipset.deactivateActiveMemberships(
-            targetteam, comment='test', reviewer=member)
+            targetteam, comment="test", reviewer=member
+        )
         membership = membershipset.getByPersonAndTeam(member, targetteam)
         self.assertEqual(member, membership.last_changed_by)
 
         person_id = member.id
         account_id = member.account.id
         script = self.makeScript([member.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
     def test_skips_teamowner_merged(self):
         person = self.factory.makePerson()
         merged_person = self.factory.makePerson()
-        owned_team1 = self.factory.makeTeam(name='target', owner=person)
+        owned_team1 = self.factory.makeTeam(name="target", owner=person)
         removeSecurityProxy(owned_team1).merged = merged_person
-        owned_team2 = self.factory.makeTeam(name='target2', owner=person)
+        owned_team2 = self.factory.makeTeam(name="target2", owner=person)
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
 
         # Closing account fails as the user still owns team2
-        with dbuser('launchpad'):
-            self.assertRaises(
-                LaunchpadScriptFailure, self.runScript, script)
+        with dbuser("launchpad"):
+            self.assertRaises(LaunchpadScriptFailure, self.runScript, script)
 
         # Account will now close as the user doesn't own
         # any other teams at this point
         removeSecurityProxy(owned_team2).merged = merged_person
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
     def test_handles_login_token(self):
         person = self.factory.makePerson()
-        email = '%s@another-domain.test' % person.name
+        email = "%s@another-domain.test" % person.name
         login_token_set = getUtility(ILoginTokenSet)
         token = login_token_set.new(
-            person, person.preferredemail.email, email,
-            LoginTokenType.VALIDATEEMAIL)
+            person,
+            person.preferredemail.email,
+            email,
+            LoginTokenType.VALIDATEEMAIL,
+        )
         plaintext_token = token.token
         self.assertEqual(token, login_token_set[plaintext_token])
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertRaises(
-            KeyError, login_token_set.__getitem__, plaintext_token)
+            KeyError, login_token_set.__getitem__, plaintext_token
+        )
 
     def test_handles_oauth_request_token(self):
         person = self.factory.makePerson()
         other_person = self.factory.makePerson()
         request_token = self.factory.makeOAuthRequestToken(reviewed_by=person)
         other_request_token = self.factory.makeOAuthRequestToken(
-            reviewed_by=other_person)
+            reviewed_by=other_person
+        )
         self.assertContentEqual([request_token], person.oauth_request_tokens)
         self.assertContentEqual(
-            [other_request_token], other_person.oauth_request_tokens)
+            [other_request_token], other_person.oauth_request_tokens
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertContentEqual([], person.oauth_request_tokens)
         self.assertContentEqual(
-            [other_request_token], other_person.oauth_request_tokens)
+            [other_request_token], other_person.oauth_request_tokens
+        )
 
     def test_handles_oauth_access_token(self):
         person = self.factory.makePerson()
         other_person = self.factory.makePerson()
         access_token, _ = self.factory.makeOAuthAccessToken(owner=person)
         other_access_token, _ = self.factory.makeOAuthAccessToken(
-            owner=other_person)
+            owner=other_person
+        )
         self.assertContentEqual([access_token], person.oauth_access_tokens)
         self.assertContentEqual(
-            [other_access_token], other_person.oauth_access_tokens)
+            [other_access_token], other_person.oauth_access_tokens
+        )
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertContentEqual([], person.oauth_access_tokens)
         self.assertContentEqual(
-            [other_access_token], other_person.oauth_access_tokens)
+            [other_access_token], other_person.oauth_access_tokens
+        )
 
     def test_fails_on_undeleted_ppa(self):
         person = self.factory.makePerson()
@@ -828,15 +951,18 @@ class TestCloseAccount(TestCaseWithFactory):
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
-                'User %s is still referenced' % person.name,
-                self.runScript, script)
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
         self.assertIn(
-            'ERROR User %s is still referenced by 1 archive.owner values' % (
-                person.name),
-            script.logger.getLogBuffer())
+            "ERROR User %s is still referenced by 1 archive.owner values"
+            % (person.name),
+            script.logger.getLogBuffer(),
+        )
         self.assertNotRemoved(account_id, person_id)
 
     def test_fails_on_deleted_ppa_with_builds(self):
@@ -847,15 +973,18 @@ class TestCloseAccount(TestCaseWithFactory):
         self.factory.makeBinaryPackageBuild(archive=ppa)
         ppa.delete(person)
         Publisher(
-            DevNullLogger(), getPubConfig(ppa), None, ppa).deleteArchive()
+            DevNullLogger(), getPubConfig(ppa), None, ppa
+        ).deleteArchive()
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.assertRaisesWithContent(
                 LaunchpadScriptFailure,
                 "Can't delete non-trivial PPAs for user %s" % person.name,
-                self.runScript, script)
+                self.runScript,
+                script,
+            )
         self.assertNotRemoved(account_id, person_id)
 
     def test_handles_empty_deleted_ppa(self):
@@ -868,13 +997,242 @@ class TestCloseAccount(TestCaseWithFactory):
         ppa.setProcessors(procs)
         ppa.delete(person)
         Publisher(
-            DevNullLogger(), getPubConfig(ppa), None, ppa).deleteArchive()
+            DevNullLogger(), getPubConfig(ppa), None, ppa
+        ).deleteArchive()
         store = Store.of(ppa)
         person_id = person.id
         account_id = person.account.id
         script = self.makeScript([person.name])
-        with dbuser('launchpad'):
+        with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertIsNone(store.get(Archive, ppa_id))
         self.assertEqual(other_ppa, store.get(Archive, other_ppa_id))
+
+    def test_skips_announcements_in_deactivated_products(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        product = self.factory.makeProduct()
+        product.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
+
+        product.active = False
+        with dbuser("launchpad"):
+            self.runScript(script)
+
+        self.assertRemoved(account_id, person_id)
+
+    def test_non_product_announcements_are_not_skipped(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        distro = self.factory.makeDistribution()
+        distro.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
+
+    def test_skip_milestone_tags_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+            ({"distribution": self.factory.makeDistribution()}, False),
+            ({"distroseries": self.factory.makeDistroSeries()}, False),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            milestone.setTags(["tag"], person)
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_product_releases_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            milestone.createProductRelease(person, datetime.now(pytz.UTC))
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_product_releases_files_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            product_release = milestone.createProductRelease(
+                milestone.product.owner, datetime.now(pytz.UTC)
+            )  # type: ProductRelease
+            product_release.addReleaseFile(
+                "test.txt", b"test", "text/plain", person
+            )
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_branches_from_inactive_products(self):
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        for branch_target, expected_to_be_removed in (
+            (active_product, False),
+            (inactive_product, True),
+            (self.factory.makeSourcePackage(), False),
+        ):
+            for col_name in "owner", "reviewer":
+                person = self.factory.makePerson()
+                self.factory.makeBranch(
+                    target=branch_target, **{col_name: person}
+                )
+                person_id = person.id
+                account_id = person.account.id
+                script = self.makeScript([person.name])
+                with dbuser("launchpad"):
+                    if not expected_to_be_removed:
+                        self.assertRaisesWithContent(
+                            LaunchpadScriptFailure,
+                            "User %s is still referenced" % person.name,
+                            self.runScript,
+                            script,
+                        )
+                        self.assertNotRemoved(account_id, person_id)
+                    else:
+                        self.runScript(script)
+                        self.assertRemoved(account_id, person_id)
+
+    def test_skip_specifications_from_inactive_products(self):
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        for specification_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"distribution": self.factory.makeDistribution()}, False),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            self.factory.makeSpecification(
+                assignee=person, **specification_target
+            )
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)

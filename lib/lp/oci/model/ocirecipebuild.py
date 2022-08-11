@@ -4,10 +4,10 @@
 """A build record for OCI Recipes."""
 
 __all__ = [
-    'OCIFile',
-    'OCIRecipeBuild',
-    'OCIRecipeBuildSet',
-    ]
+    "OCIFile",
+    "OCIRecipeBuild",
+    "OCIRecipeBuildSet",
+]
 
 from datetime import timedelta
 
@@ -22,7 +22,7 @@ from storm.locals import (
     Reference,
     Store,
     Unicode,
-    )
+)
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
@@ -33,7 +33,7 @@ from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
     BuildStatus,
-    )
+)
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
@@ -46,12 +46,12 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     OCIRecipeBuildRegistryUploadStatus,
-    )
+)
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
     OCIRecipeBuildJobType,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.person import Person
@@ -60,48 +60,40 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.macaroons.interfaces import (
+    NO_USER,
     BadMacaroonContext,
     IMacaroonIssuer,
-    NO_USER,
-    )
+)
 from lp.services.macaroons.model import MacaroonIssuerBase
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
 
 
 @implementer(IOCIFile)
 class OCIFile(StormBase):
 
-    __storm_table__ = 'OCIFile'
+    __storm_table__ = "OCIFile"
 
-    id = Int(name='id', primary=True)
+    id = Int(name="id", primary=True)
 
-    build_id = Int(name='build', allow_none=False)
-    build = Reference(build_id, 'OCIRecipeBuild.id')
+    build_id = Int(name="build", allow_none=False)
+    build = Reference(build_id, "OCIRecipeBuild.id")
 
-    library_file_id = Int(name='library_file', allow_none=False)
-    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
+    library_file_id = Int(name="library_file", allow_none=False)
+    library_file = Reference(library_file_id, "LibraryFileAlias.id")
 
-    layer_file_digest = Unicode(name='layer_file_digest', allow_none=True)
+    layer_file_digest = Unicode(name="layer_file_digest", allow_none=True)
 
     date_last_used = DateTime(
-        name='date_last_used', tzinfo=pytz.UTC, allow_none=False)
+        name="date_last_used", tzinfo=pytz.UTC, allow_none=False
+    )
 
     def __init__(self, build, library_file, layer_file_digest=None):
         """Construct a `OCIFile`."""
@@ -113,67 +105,78 @@ class OCIFile(StormBase):
 
 @implementer(IOCIFileSet)
 class OCIFileSet:
-
     def getByLayerDigest(self, layer_file_digest):
-        return IStore(OCIFile).find(
-            OCIFile,
-            OCIFile.layer_file_digest == layer_file_digest).order_by(
-                OCIFile.id).first()
+        return (
+            IStore(OCIFile)
+            .find(OCIFile, OCIFile.layer_file_digest == layer_file_digest)
+            .order_by(OCIFile.id)
+            .first()
+        )
 
 
 @implementer(IOCIRecipeBuild)
 class OCIRecipeBuild(PackageBuildMixin, StormBase):
 
-    __storm_table__ = 'OCIRecipeBuild'
+    __storm_table__ = "OCIRecipeBuild"
 
     job_type = BuildFarmJobType.OCIRECIPEBUILD
 
-    id = Int(name='id', primary=True)
+    id = Int(name="id", primary=True)
 
-    build_request_id = Int(name='build_request', allow_none=True)
+    build_request_id = Int(name="build_request", allow_none=True)
 
-    requester_id = Int(name='requester', allow_none=False)
-    requester = Reference(requester_id, 'Person.id')
+    requester_id = Int(name="requester", allow_none=False)
+    requester = Reference(requester_id, "Person.id")
 
-    recipe_id = Int(name='recipe', allow_none=False)
-    recipe = Reference(recipe_id, 'OCIRecipe.id')
+    recipe_id = Int(name="recipe", allow_none=False)
+    recipe = Reference(recipe_id, "OCIRecipe.id")
 
-    processor_id = Int(name='processor', allow_none=False)
-    processor = Reference(processor_id, 'Processor.id')
+    processor_id = Int(name="processor", allow_none=False)
+    processor = Reference(processor_id, "Processor.id")
 
-    virtualized = Bool(name='virtualized')
+    virtualized = Bool(name="virtualized")
 
     date_created = DateTime(
-        name='date_created', tzinfo=pytz.UTC, allow_none=False)
-    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
-    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+        name="date_created", tzinfo=pytz.UTC, allow_none=False
+    )
+    date_started = DateTime(name="date_started", tzinfo=pytz.UTC)
+    date_finished = DateTime(name="date_finished", tzinfo=pytz.UTC)
     date_first_dispatched = DateTime(
-        name='date_first_dispatched', tzinfo=pytz.UTC)
+        name="date_first_dispatched", tzinfo=pytz.UTC
+    )
 
-    builder_id = Int(name='builder')
-    builder = Reference(builder_id, 'Builder.id')
+    builder_id = Int(name="builder")
+    builder = Reference(builder_id, "Builder.id")
 
-    status = DBEnum(name='status', enum=BuildStatus, allow_none=False)
+    status = DBEnum(name="status", enum=BuildStatus, allow_none=False)
 
-    log_id = Int(name='log')
-    log = Reference(log_id, 'LibraryFileAlias.id')
+    log_id = Int(name="log")
+    log = Reference(log_id, "LibraryFileAlias.id")
 
-    upload_log_id = Int(name='upload_log')
-    upload_log = Reference(upload_log_id, 'LibraryFileAlias.id')
+    upload_log_id = Int(name="upload_log")
+    upload_log = Reference(upload_log_id, "LibraryFileAlias.id")
 
-    dependencies = Unicode(name='dependencies')
+    dependencies = Unicode(name="dependencies")
 
-    failure_count = Int(name='failure_count', allow_none=False)
+    failure_count = Int(name="failure_count", allow_none=False)
 
-    build_farm_job_id = Int(name='build_farm_job', allow_none=False)
-    build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
+    build_farm_job_id = Int(name="build_farm_job", allow_none=False)
+    build_farm_job = Reference(build_farm_job_id, "BuildFarmJob.id")
 
     # We only care about the pocket from a building environment POV,
     # it is not a target, nor referenced in the final build.
     pocket = PackagePublishingPocket.UPDATES
 
-    def __init__(self, build_farm_job, requester, recipe,
-                 processor, virtualized, date_created, build_request=None):
+    def __init__(
+        self,
+        build_farm_job,
+        requester,
+        recipe,
+        processor,
+        virtualized,
+        date_created,
+        build_request=None,
+    ):
         """Construct an `OCIRecipeBuild`."""
         self.requester = requester
         self.recipe = recipe
@@ -193,17 +196,24 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
 
     def __repr__(self):
         return "<OCIRecipeBuild ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
-            self.recipe.owner.name, self.recipe.oci_project.pillar.name,
-            self.recipe.oci_project.name, self.recipe.name, self.id)
+            self.recipe.owner.name,
+            self.recipe.oci_project.pillar.name,
+            self.recipe.oci_project.name,
+            self.recipe.name,
+            self.id,
+        )
 
     @property
     def title(self):
         # XXX cjwatson 2020-02-19: This should use a DAS architecture tag
         # rather than a processor name once we can do that.
         return "%s build of /~%s/%s/+oci/%s/+recipe/%s" % (
-            self.processor.name, self.recipe.owner.name,
-            self.recipe.oci_project.pillar.name, self.recipe.oci_project.name,
-            self.recipe.name)
+            self.processor.name,
+            self.recipe.owner.name,
+            self.recipe.oci_project.pillar.name,
+            self.recipe.oci_project.name,
+            self.recipe.name,
+        )
 
     @property
     def score(self):
@@ -234,10 +244,11 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         # https://code.launchpad.net/
         # ~cjwatson/launchpad/snap-build-record-code/+merge/365356
         return (
-            self.recipe.private or
-            self.recipe.owner.private or
-            self.recipe.git_repository is None or
-            self.recipe.git_repository.private)
+            self.recipe.private
+            or self.recipe.owner.private
+            or self.recipe.git_repository is None
+            or self.recipe.git_repository.private
+        )
 
     private = is_private
 
@@ -259,7 +270,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             (OCIRecipeBuild.date_started, OCIRecipeBuild.date_finished),
             OCIRecipeBuild.recipe == self.recipe_id,
             OCIRecipeBuild.processor == self.processor_id,
-            OCIRecipeBuild.status == BuildStatus.FULLYBUILT)
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
+        )
         result.order_by(Desc(OCIRecipeBuild.date_finished))
         durations = [row[1] - row[0] for row in result[:9]]
         if len(durations) == 0:
@@ -273,7 +285,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
             LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID)
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+        )
         return result.order_by([LibraryFileAlias.filename, OCIFile.id])
 
     def getFileByName(self, filename):
@@ -281,13 +294,22 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         origin = [
             LibraryFileAlias,
             LeftJoin(OCIFile, LibraryFileAlias.id == OCIFile.library_file_id),
-            ]
-        file_object = Store.of(self).using(*origin).find(
-            LibraryFileAlias,
-            Or(
-                LibraryFileAlias.id.is_in((self.log_id, self.upload_log_id)),
-                OCIFile.build == self.id),
-            LibraryFileAlias.filename == filename).one()
+        ]
+        file_object = (
+            Store.of(self)
+            .using(*origin)
+            .find(
+                LibraryFileAlias,
+                Or(
+                    LibraryFileAlias.id.is_in(
+                        (self.log_id, self.upload_log_id)
+                    ),
+                    OCIFile.build == self.id,
+                ),
+                LibraryFileAlias.filename == filename,
+            )
+            .one()
+        )
 
         if file_object is not None and file_object.filename == filename:
             return file_object
@@ -353,18 +375,34 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
     @property
     def distro_arch_series(self):
         return self.recipe.distro_series.getDistroArchSeriesByProcessor(
-            self.processor)
+            self.processor
+        )
 
-    def updateStatus(self, status, builder=None, worker_status=None,
-                     date_started=None, date_finished=None,
-                     force_invalid_transition=False):
+    @property
+    def arch_tag(self):
+        """See `IOCIRecipeBuild`."""
+        return self.distro_arch_series.architecturetag
+
+    def updateStatus(
+        self,
+        status,
+        builder=None,
+        worker_status=None,
+        date_started=None,
+        date_finished=None,
+        force_invalid_transition=False,
+    ):
         """See `IBuildFarmJob`."""
         edited_fields = set()
         with notify_modified(self, edited_fields) as previous_obj:
             super().updateStatus(
-                status, builder=builder, worker_status=worker_status,
-                date_started=date_started, date_finished=date_finished,
-                force_invalid_transition=force_invalid_transition)
+                status,
+                builder=builder,
+                worker_status=worker_status,
+                date_started=date_started,
+                date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition,
+            )
             if self.status != previous_obj.status:
                 edited_fields.add("status")
         # notify_modified evaluates all attributes mentioned in the
@@ -380,19 +418,25 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         # XXX twom 2019-12-11 This should send mail
 
     def getLayerFileByDigest(self, layer_file_digest):
-        file_object = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            OCIFile.layer_file_digest == layer_file_digest).one()
+        file_object = (
+            Store.of(self)
+            .find(
+                (OCIFile, LibraryFileAlias, LibraryFileContent),
+                OCIFile.build == self.id,
+                LibraryFileAlias.id == OCIFile.library_file_id,
+                LibraryFileContent.id == LibraryFileAlias.contentID,
+                OCIFile.layer_file_digest == layer_file_digest,
+            )
+            .one()
+        )
         if file_object is not None:
             return file_object
         raise NotFoundError(layer_file_digest)
 
     def addFile(self, lfa, layer_file_digest=None):
         oci_file = OCIFile(
-            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest
+        )
         IMasterStore(OCIFile).add(oci_file)
         return oci_file
 
@@ -415,10 +459,12 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         layer_files = Store.of(self).find(
             OCIFile,
             OCIFile.build == self.id,
-            OCIFile.layer_file_digest is not None)
+            OCIFile.layer_file_digest is not None,
+        )
         layer_files_present = not layer_files.is_empty()
-        metadata_present = (self.manifest is not None
-                            and self.digests is not None)
+        metadata_present = (
+            self.manifest is not None and self.digests is not None
+        )
         return layer_files_present and metadata_present
 
     @property
@@ -426,7 +472,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         jobs = Store.of(self).find(
             OCIRecipeBuildJob,
             OCIRecipeBuildJob.build == self,
-            OCIRecipeBuildJob.job_type == OCIRecipeBuildJobType.REGISTRY_UPLOAD
+            OCIRecipeBuildJob.job_type
+            == OCIRecipeBuildJobType.REGISTRY_UPLOAD,
         )
         jobs.order_by(Desc(OCIRecipeBuildJob.job_id))
 
@@ -434,7 +481,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             load_related(Job, rows, ["job_id"])
 
         return DecoratedResultSet(
-            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs
+        )
 
     @cachedproperty
     def last_registry_upload_job(self):
@@ -469,21 +517,29 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         if not self.recipe.can_upload_to_registry:
             raise CannotScheduleRegistryUpload(
                 "Cannot upload this build to registries because the recipe is "
-                "not properly configured.")
+                "not properly configured."
+            )
         if not self.was_built or self.getFiles().is_empty():
             raise CannotScheduleRegistryUpload(
-                "Cannot upload this build because it has no files.")
-        if (self.registry_upload_status ==
-                OCIRecipeBuildRegistryUploadStatus.PENDING):
+                "Cannot upload this build because it has no files."
+            )
+        if (
+            self.registry_upload_status
+            == OCIRecipeBuildRegistryUploadStatus.PENDING
+        ):
             raise CannotScheduleRegistryUpload(
-                "An upload of this build is already in progress.")
-        elif (self.registry_upload_status ==
-                OCIRecipeBuildRegistryUploadStatus.UPLOADED):
+                "An upload of this build is already in progress."
+            )
+        elif (
+            self.registry_upload_status
+            == OCIRecipeBuildRegistryUploadStatus.UPLOADED
+        ):
             # XXX cjwatson 2020-04-22: This won't be quite right in the case
             # where a recipe has multiple push rules.
             raise CannotScheduleRegistryUpload(
                 "Cannot upload this build because it has already been "
-                "uploaded.")
+                "uploaded."
+            )
         getUtility(IOCIRegistryUploadJobSource).create(self)
 
     def hasMoreRecentBuild(self):
@@ -493,7 +549,8 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             OCIRecipeBuild.recipe == self.recipe,
             OCIRecipeBuild.processor == self.processor,
             OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
-            OCIRecipeBuild.date_created > self.date_created)
+            OCIRecipeBuild.date_created > self.date_created,
+        )
         return not recent_builds.is_empty()
 
 
@@ -501,19 +558,33 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
     """See `IOCIRecipeBuildSet`."""
 
-    def new(self, requester, recipe, distro_arch_series,
-            date_created=DEFAULT, build_request=None):
+    def new(
+        self,
+        requester,
+        recipe,
+        distro_arch_series,
+        date_created=DEFAULT,
+        build_request=None,
+    ):
         """See `IOCIRecipeBuildSet`."""
         virtualized = (
             not distro_arch_series.processor.supports_nonvirtualized
-            or recipe.require_virtualized)
+            or recipe.require_virtualized
+        )
 
         store = IMasterStore(OCIRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
-            OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created)
+            OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created
+        )
         ocirecipebuild = OCIRecipeBuild(
-            build_farm_job, requester, recipe, distro_arch_series.processor,
-            virtualized, date_created, build_request=build_request)
+            build_farm_job,
+            requester,
+            recipe,
+            distro_arch_series.processor,
+            virtualized,
+            date_created,
+            build_request=build_request,
+        )
         store.add(ocirecipebuild)
         store.flush()
         return ocirecipebuild
@@ -522,6 +593,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         """See `IOCIRecipeBuildSet`."""
         # Circular import.
         from lp.oci.model.ocirecipe import OCIRecipe
+
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
@@ -538,16 +610,22 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByBuildFarmJob(self, build_farm_job):
         """See `ISpecificBuildFarmJobSource`."""
-        return Store.of(build_farm_job).find(
-            OCIRecipeBuild, build_farm_job_id=build_farm_job.id).one()
+        return (
+            Store.of(build_farm_job)
+            .find(OCIRecipeBuild, build_farm_job_id=build_farm_job.id)
+            .one()
+        )
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""
         if len(build_farm_jobs) == 0:
             return EmptyResultSet()
         rows = Store.of(build_farm_jobs[0]).find(
-            OCIRecipeBuild, OCIRecipeBuild.build_farm_job_id.is_in(
-                bfj.id for bfj in build_farm_jobs))
+            OCIRecipeBuild,
+            OCIRecipeBuild.build_farm_job_id.is_in(
+                bfj.id for bfj in build_farm_jobs
+            ),
+        )
         return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
 
 
@@ -566,7 +644,8 @@ class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         if not removeSecurityProxy(context).is_private:
             raise BadMacaroonContext(
-                context, "Refusing to issue macaroon for public build.")
+                context, "Refusing to issue macaroon for public build."
+            )
         return removeSecurityProxy(context).id
 
     def checkVerificationContext(self, context, **kwargs):
@@ -575,8 +654,9 @@ class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         return context
 
-    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
-                            **kwargs):
+    def verifyPrimaryCaveat(
+        self, verified, caveat_value, context, user=None, **kwargs
+    ):
         """See `MacaroonIssuerBase`.
 
         For verification, the context is an `IGitRepository`.  We check that
@@ -602,9 +682,14 @@ class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
             build_id = int(caveat_value)
         except ValueError:
             return False
-        return not IStore(OCIRecipeBuild).find(
-            OCIRecipeBuild,
-            OCIRecipeBuild.id == build_id,
-            OCIRecipeBuild.recipe_id == OCIRecipe.id,
-            OCIRecipe.git_repository == context,
-            OCIRecipeBuild.status == BuildStatus.BUILDING).is_empty()
+        return (
+            not IStore(OCIRecipeBuild)
+            .find(
+                OCIRecipeBuild,
+                OCIRecipeBuild.id == build_id,
+                OCIRecipeBuild.recipe_id == OCIRecipe.id,
+                OCIRecipe.git_repository == context,
+                OCIRecipeBuild.status == BuildStatus.BUILDING,
+            )
+            .is_empty()
+        )

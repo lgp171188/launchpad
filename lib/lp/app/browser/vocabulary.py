@@ -4,41 +4,35 @@
 """Views which export vocabularies as JSON for widgets."""
 
 __all__ = [
-    'HugeVocabularyJSONView',
-    'IPickerEntrySource',
-    'get_person_picker_entry_metadata',
-    'vocabulary_filters',
-    ]
+    "HugeVocabularyJSONView",
+    "IPickerEntrySource",
+    "get_person_picker_entry_metadata",
+    "vocabulary_filters",
+]
 
-from lazr.restful.interfaces import IWebServiceClientRequest
+# This registers the registry.
+import zope.vocabularyregistry.registry  # noqa: F401  # isort: split
+
 import simplejson
-from zope.component import (
-    adapter,
-    getUtility,
-    )
+from lazr.restful.interfaces import IWebServiceClientRequest
+from zope.component import adapter, getUtility
 from zope.formlib.interfaces import MissingInputError
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from zope.interface import Attribute, Interface, implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.schema.interfaces import IVocabularyFactory
 from zope.security.interfaces import Unauthorized
-# This registers the registry.
-import zope.vocabularyregistry.registry  # noqa: F401
 
 from lp.app.browser.tales import (
     DateTimeFormatterAPI,
     IRCNicknameFormatterAPI,
     ObjectImageDisplayAPI,
-    )
+)
 from lp.app.errors import UnexpectedFormData
 from lp.code.interfaces.branch import IBranch
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
@@ -51,7 +45,6 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.vocabulary import IHugeVocabulary
 from lp.soyuz.interfaces.archive import IArchive
 
-
 # XXX: EdwinGrubbs 2009-07-27 bug=405476
 # This limits the output to one line of text, since the sprite class
 # cannot clip the background image effectively for vocabulary items
@@ -63,27 +56,38 @@ class IPickerEntry(Interface):
     """Additional fields that the vocabulary doesn't provide.
 
     These fields are needed by the Picker Ajax widget."""
-    description = Attribute('Description')
-    image = Attribute('Image URL')
-    css = Attribute('CSS Class')
-    alt_title = Attribute('Alternative title')
-    title_link = Attribute('URL used for anchor on title')
-    details = Attribute('An optional list of information about the entry')
-    alt_title_link = Attribute('URL used for anchor on alt title')
-    link_css = Attribute('CSS Class for links')
-    badges = Attribute('List of badge img attributes')
-    metadata = Attribute('Metadata about the entry')
-    target_type = Attribute('Target data for target picker entries.')
+
+    description = Attribute("Description")
+    image = Attribute("Image URL")
+    css = Attribute("CSS Class")
+    alt_title = Attribute("Alternative title")
+    title_link = Attribute("URL used for anchor on title")
+    details = Attribute("An optional list of information about the entry")
+    alt_title_link = Attribute("URL used for anchor on alt title")
+    link_css = Attribute("CSS Class for links")
+    badges = Attribute("List of badge img attributes")
+    metadata = Attribute("Metadata about the entry")
+    target_type = Attribute("Target data for target picker entries.")
 
 
 @implementer(IPickerEntry)
 class PickerEntry:
     """See `IPickerEntry`."""
 
-    def __init__(self, description=None, image=None, css=None, alt_title=None,
-                 title_link=None, details=None, alt_title_link=None,
-                 link_css='sprite new-window', badges=None, metadata=None,
-                 target_type=None):
+    def __init__(
+        self,
+        description=None,
+        image=None,
+        css=None,
+        alt_title=None,
+        title_link=None,
+        details=None,
+        alt_title_link=None,
+        link_css="sprite new-window",
+        badges=None,
+        metadata=None,
+        target_type=None,
+    ):
         self.description = description
         self.image = image
         self.css = css
@@ -124,11 +128,11 @@ class DefaultPickerEntrySourceAdapter:
         entries = []
         for term_value in term_values:
             extra = PickerEntry()
-            if hasattr(term_value, 'summary'):
+            if hasattr(term_value, "summary"):
                 extra.description = term_value.summary
             display_api = ObjectImageDisplayAPI(term_value)
             image_url = display_api.custom_icon_url() or None
-            css = display_api.sprite_css() or 'sprite bullet'
+            css = display_api.sprite_css() or "sprite bullet"
             if image_url is not None:
                 extra.image = image_url
             else:
@@ -161,21 +165,24 @@ class PersonPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
                 picker_entry.badges = []
                 for badge_info in badges:
                     picker_entry.badges.append(
-                        dict(url=badge_info.url,
-                             label=badge_info.label,
-                             role=badge_info.role))
+                        dict(
+                            url=badge_info.url,
+                            label=badge_info.label,
+                            role=badge_info.role,
+                        )
+                    )
 
         for person, picker_entry in zip(term_values, picker_entries):
             picker_entry.details = []
 
             if person.preferredemail is not None:
                 if person.hide_email_addresses:
-                    picker_entry.description = '<email address hidden>'
+                    picker_entry.description = "<email address hidden>"
                 else:
                     try:
                         picker_entry.description = person.preferredemail.email
                     except Unauthorized:
-                        picker_entry.description = '<email address hidden>'
+                        picker_entry.description = "<email address hidden>"
 
             picker_entry.metadata = get_person_picker_entry_metadata(person)
             # We will display the person's name (launchpad id) after their
@@ -184,23 +191,29 @@ class PersonPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
             # We will linkify the person's name so it can be clicked to
             # open the page for that person.
             picker_entry.alt_title_link = canonical_url(
-                                            person, rootsite='mainsite')
+                person, rootsite="mainsite"
+            )
             # We will display the person's irc nick(s) after their email
             # address in the description text.
             irc_nicks = None
             if person.ircnicknames:
                 irc_nicks = ", ".join(
-                    [IRCNicknameFormatterAPI(ircid).displayname()
-                    for ircid in person.ircnicknames])
+                    [
+                        IRCNicknameFormatterAPI(ircid).displayname()
+                        for ircid in person.ircnicknames
+                    ]
+                )
             if irc_nicks:
                 picker_entry.details.append(irc_nicks)
             if person.is_team:
                 picker_entry.details.append(
-                    'Team members: %s' % person.all_member_count)
+                    "Team members: %s" % person.all_member_count
+                )
             else:
                 picker_entry.details.append(
-                    'Member since %s' % DateTimeFormatterAPI(
-                        person.datecreated).date())
+                    "Member since %s"
+                    % DateTimeFormatterAPI(person.datecreated).date()
+                )
         return picker_entries
 
 
@@ -210,8 +223,9 @@ class BranchPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
-        entries = (
-            super().getPickerEntries(term_values, context_object, **kwarg))
+        entries = super().getPickerEntries(
+            term_values, context_object, **kwarg
+        )
         for branch, picker_entry in zip(term_values, entries):
             picker_entry.description = branch.bzr_identity
         return entries
@@ -236,60 +250,66 @@ class TargetPickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
-        entries = (
-            super().getPickerEntries(term_values, context_object, **kwarg))
+        entries = super().getPickerEntries(
+            term_values, context_object, **kwarg
+        )
         for target, picker_entry in zip(term_values, entries):
             picker_entry.description = self.getDescription(target)
             picker_entry.details = []
             summary = picker_entry.description
             if len(summary) > 45:
-                index = summary.rfind(' ', 0, 45)
-                first_line = summary[0:index + 1]
+                index = summary.rfind(" ", 0, 45)
+                first_line = summary[0 : index + 1]
                 second_line = summary[index:]
             else:
                 first_line = summary
-                second_line = ''
+                second_line = ""
 
             if len(second_line) > 90:
-                index = second_line.rfind(' ', 0, 90)
-                second_line = second_line[0:index + 1]
+                index = second_line.rfind(" ", 0, 90)
+                second_line = second_line[0 : index + 1]
             picker_entry.description = first_line
             if second_line:
                 picker_entry.details.append(second_line)
             picker_entry.alt_title = target.name
             picker_entry.alt_title_link = canonical_url(
-                target, rootsite='mainsite')
+                target, rootsite="mainsite"
+            )
             picker_entry.target_type = self.target_type
             maintainer = self.getMaintainer(target)
             if maintainer is not None:
-                picker_entry.details.append(
-                    'Maintainer: %s' % maintainer)
+                picker_entry.details.append("Maintainer: %s" % maintainer)
             commercial_subscription = self.getCommercialSubscription(target)
             if commercial_subscription is not None:
                 picker_entry.details.append(
-                    'Commercial Subscription: %s' % commercial_subscription)
+                    "Commercial Subscription: %s" % commercial_subscription
+                )
         return entries
 
 
 @adapter(ISourcePackageName)
 class SourcePackageNamePickerEntrySourceAdapter(
-                                            DefaultPickerEntrySourceAdapter):
+    DefaultPickerEntrySourceAdapter
+):
     """Adapts ISourcePackageName to IPickerEntrySource."""
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
-        entries = (
-            super().getPickerEntries(term_values, context_object, **kwarg))
+        entries = super().getPickerEntries(
+            term_values, context_object, **kwarg
+        )
         for sourcepackagename, picker_entry in zip(term_values, entries):
             descriptions = getSourcePackageDescriptions([sourcepackagename])
             picker_entry.description = descriptions.get(
-                sourcepackagename.name, "Not yet built")
+                sourcepackagename.name, "Not yet built"
+            )
         return entries
 
 
 @adapter(IDistributionSourcePackage)
 class DistributionSourcePackagePickerEntrySourceAdapter(
-    TargetPickerEntrySourceAdapter):
+    TargetPickerEntrySourceAdapter
+):
     """Adapts IDistributionSourcePackage to IPickerEntrySource."""
 
     target_type = "package"
@@ -301,9 +321,9 @@ class DistributionSourcePackagePickerEntrySourceAdapter(
     def getDescription(self, target):
         """See `TargetPickerEntrySource`"""
         if target.binary_names:
-            description = ', '.join(target.binary_names)
+            description = ", ".join(target.binary_names)
         else:
-            description = 'Not yet built.'
+            description = "Not yet built."
         return description
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
@@ -347,11 +367,11 @@ class ProductPickerEntrySourceAdapter(TargetPickerEntrySourceAdapter):
         """See `TargetPickerEntrySource`"""
         if target.commercial_subscription:
             if target.has_current_commercial_subscription:
-                return 'Active'
+                return "Active"
             else:
-                return 'Expired'
+                return "Expired"
         else:
-            return 'None'
+            return "None"
 
 
 @adapter(IDistribution)
@@ -374,11 +394,11 @@ class DistributionPickerEntrySourceAdapter(TargetPickerEntrySourceAdapter):
         """See `TargetPickerEntrySource`"""
         if target.commercial_subscription:
             if target.has_current_commercial_subscription:
-                return 'Active'
+                return "Active"
             else:
-                return 'Expired'
+                return "Expired"
         else:
-            return 'None'
+            return "None"
 
 
 @adapter(IArchive)
@@ -387,8 +407,9 @@ class ArchivePickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
 
     def getPickerEntries(self, term_values, context_object, **kwarg):
         """See `IPickerEntrySource`"""
-        entries = (
-            super().getPickerEntries(term_values, context_object, **kwarg))
+        entries = super().getPickerEntries(
+            term_values, context_object, **kwarg
+        )
         for archive, picker_entry in zip(term_values, entries):
             picker_entry.description = archive.reference
         return entries
@@ -400,6 +421,7 @@ class HugeVocabularyJSONView:
     This was needed by the Picker widget, but could be
     useful for other AJAX widgets.
     """
+
     DEFAULT_BATCH_SIZE = 10
 
     def __init__(self, context, request):
@@ -407,20 +429,19 @@ class HugeVocabularyJSONView:
         self.request = request
 
     def __call__(self):
-        name = self.request.form.get('name')
+        name = self.request.form.get("name")
         if name is None:
-            raise MissingInputError('name', '')
+            raise MissingInputError("name", "")
 
-        search_text = self.request.form.get('search_text')
+        search_text = self.request.form.get("search_text")
         if search_text is None:
-            raise MissingInputError('search_text', '')
-        search_filter = self.request.form.get('search_filter')
+            raise MissingInputError("search_text", "")
+        search_filter = self.request.form.get("search_filter")
 
         try:
             factory = getUtility(IVocabularyFactory, name)
         except ComponentLookupError:
-            raise UnexpectedFormData(
-                'Unknown vocabulary %r' % name)
+            raise UnexpectedFormData("Unknown vocabulary %r" % name)
 
         vocabulary = factory(self.context)
 
@@ -435,7 +456,7 @@ class HugeVocabularyJSONView:
 
         # We need to collate what IPickerEntrySource adapters are required for
         # the items in the current batch. We expect that the batch will be
-        # homogenous and so only one adapter instance is required, but we
+        # homogeneous and so only one adapter instance is required, but we
         # allow for the case where the batch may contain disparate entries
         # requiring different adapter implementations.
 
@@ -460,8 +481,8 @@ class HugeVocabularyJSONView:
         # corresponding picker entries by calling the adapter.
         for adapter_class, term_values in picker_entry_terms.items():
             picker_entries = adapter_cache[adapter_class].getPickerEntries(
-                term_values,
-                self.context)
+                term_values, self.context
+            )
             for term_value, picker_entry in zip(term_values, picker_entries):
                 picker_term_entries[term_value] = picker_entry
 
@@ -472,45 +493,46 @@ class HugeVocabularyJSONView:
             # be passed directly into the REST PATCH call.
             api_request = IWebServiceClientRequest(self.request)
             try:
-                entry['api_uri'] = canonical_url(
-                    term.value, request=api_request,
-                    path_only_if_possible=True)
+                entry["api_uri"] = canonical_url(
+                    term.value, request=api_request, path_only_if_possible=True
+                )
             except NoCanonicalUrl:
                 # The exception is caught, because the api_url is only
                 # needed for inplace editing via a REST call. The
                 # form picker doesn't need the api_url.
-                entry['api_uri'] = 'Could not find canonical url.'
+                entry["api_uri"] = "Could not find canonical url."
             picker_entry = picker_term_entries[term.value]
             if picker_entry.description is not None:
                 if len(picker_entry.description) > MAX_DESCRIPTION_LENGTH:
-                    entry['description'] = (
-                        picker_entry.description[:MAX_DESCRIPTION_LENGTH - 3]
-                        + '...')
+                    entry["description"] = (
+                        picker_entry.description[: MAX_DESCRIPTION_LENGTH - 3]
+                        + "..."
+                    )
                 else:
-                    entry['description'] = picker_entry.description
+                    entry["description"] = picker_entry.description
             if picker_entry.image is not None:
-                entry['image'] = picker_entry.image
+                entry["image"] = picker_entry.image
             if picker_entry.css is not None:
-                entry['css'] = picker_entry.css
+                entry["css"] = picker_entry.css
             if picker_entry.alt_title is not None:
-                entry['alt_title'] = picker_entry.alt_title
+                entry["alt_title"] = picker_entry.alt_title
             if picker_entry.title_link is not None:
-                entry['title_link'] = picker_entry.title_link
+                entry["title_link"] = picker_entry.title_link
             if picker_entry.details is not None:
-                entry['details'] = picker_entry.details
+                entry["details"] = picker_entry.details
             if picker_entry.alt_title_link is not None:
-                entry['alt_title_link'] = picker_entry.alt_title_link
+                entry["alt_title_link"] = picker_entry.alt_title_link
             if picker_entry.link_css is not None:
-                entry['link_css'] = picker_entry.link_css
+                entry["link_css"] = picker_entry.link_css
             if picker_entry.badges:
-                entry['badges'] = picker_entry.badges
+                entry["badges"] = picker_entry.badges
             if picker_entry.metadata is not None:
-                entry['metadata'] = picker_entry.metadata
+                entry["metadata"] = picker_entry.metadata
             if picker_entry.target_type is not None:
-                entry['target_type'] = picker_entry.target_type
+                entry["target_type"] = picker_entry.target_type
             result.append(entry)
 
-        self.request.response.setHeader('Content-type', 'application/json')
+        self.request.response.setHeader("Content-type", "application/json")
         return simplejson.dumps(dict(total_size=total_size, entries=result))
 
 
@@ -522,14 +544,16 @@ def vocabulary_filters(vocabulary):
     # If we have no filters or just the ALL filter, then no filtering
     # support is required.
     filters = []
-    if (len(supported_filters) == 0 or
-       (len(supported_filters) == 1
-        and supported_filters[0].name == 'ALL')):
+    if len(supported_filters) == 0 or (
+        len(supported_filters) == 1 and supported_filters[0].name == "ALL"
+    ):
         return filters
     for filter in supported_filters:
-        filters.append({
-            'name': filter.name,
-            'title': filter.title,
-            'description': filter.description,
-            })
+        filters.append(
+            {
+                "name": filter.name,
+                "title": filter.title,
+                "description": filter.description,
+            }
+        )
     return filters

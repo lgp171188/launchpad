@@ -15,12 +15,11 @@ from zope.component import getUtility
 from lp.services.librarian.interfaces.client import (
     ILibrarianClient,
     IRestrictedLibrarianClient,
-    )
+)
 from lp.services.librarian.smoketest import do_smoketest
 from lp.services.scripts import execute_zcml_for_scripts
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     execute_zcml_for_scripts()
     restricted_client = getUtility(IRestrictedLibrarianClient)
     regular_client = getUtility(ILibrarianClient)

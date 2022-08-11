@@ -3,47 +3,37 @@
 
 """Tests for the bugcomment module."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from itertools import count
 
 from pytz import utc
-from soupmatchers import (
-    HTMLContains,
-    Tag,
-    )
+from soupmatchers import HTMLContains, Tag
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.bugs.browser.bugcomment import (
-    BugComment,
-    group_comments_with_activity,
-    )
+from lp.bugs.browser.bugcomment import BugComment, group_comments_with_activity
 from lp.bugs.interfaces.bugmessage import IBugComment
 from lp.coop.answersbugs.visibility import (
     TestHideMessageControlMixin,
     TestMessageVisibilityMixin,
-    )
+)
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     BrowserTestCase,
+    TestCase,
+    TestCaseWithFactory,
     celebrity_logged_in,
     login_person,
     person_logged_in,
-    TestCase,
-    TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import find_tag_by_id
 
 
 class BugActivityStub:
-
     def __init__(self, datechanged, owner=None):
         self.datechanged = datechanged
         if owner is None:
@@ -52,11 +42,12 @@ class BugActivityStub:
 
     def __repr__(self):
         return "BugActivityStub(%r, %r)" % (
-            self.datechanged.strftime('%Y-%m-%d--%H%M'), self.person)
+            self.datechanged.strftime("%Y-%m-%d--%H%M"),
+            self.person,
+        )
 
 
 class BugCommentStub:
-
     def __init__(self, datecreated, index, owner=None):
         self.datecreated = datecreated
         if owner is None:
@@ -67,8 +58,10 @@ class BugCommentStub:
 
     def __repr__(self):
         return "BugCommentStub(%r, %d, %r)" % (
-            self.datecreated.strftime('%Y-%m-%d--%H%M'),
-            self.index, self.owner)
+            self.datecreated.strftime("%Y-%m-%d--%H%M"),
+            self.index,
+            self.owner,
+        )
 
 
 class PersonStub:
@@ -90,36 +83,40 @@ class TestGroupCommentsWithActivities(TestCase):
         self.now = datetime.now(utc)
         self.time_index = (
             (self.now + timedelta(minutes=counter), counter)
-            for counter in count(1))
+            for counter in count(1)
+        )
 
     def group(self, comments, activities):
         return list(
             group_comments_with_activity(
-                comments=comments, activities=activities))
+                comments=comments, activities=activities
+            )
+        )
 
     def test_empty(self):
         # Given no comments or activities the result is also empty.
-        self.assertEqual(
-            [], self.group(comments=[], activities=[]))
+        self.assertEqual([], self.group(comments=[], activities=[]))
 
     def test_activity_empty_no_common_actor(self):
         # When no activities are passed in, and the comments passed in don't
         # have any common actors, no grouping is possible.
         comments = [
-            BugCommentStub(*next(self.time_index))
-            for number in range(5)]
+            BugCommentStub(*next(self.time_index)) for number in range(5)
+        ]
         self.assertEqual(
-            comments, self.group(comments=comments, activities=[]))
+            comments, self.group(comments=comments, activities=[])
+        )
 
     def test_comments_empty_no_common_actor(self):
         # When no comments are passed in, and the activities passed in don't
         # have any common actors, no grouping is possible.
         activities = [
-            BugActivityStub(next(self.time_index)[0])
-            for number in range(5)]
+            BugActivityStub(next(self.time_index)[0]) for number in range(5)
+        ]
         self.assertEqual(
-            [[activity] for activity in activities], self.group(
-                comments=[], activities=activities))
+            [[activity] for activity in activities],
+            self.group(comments=[], activities=activities),
+        )
 
     def test_no_common_actor(self):
         # When each activities and comment given has a different actor then no
@@ -134,7 +131,8 @@ class TestGroupCommentsWithActivities(TestCase):
 
         self.assertEqual(
             [[activity1], comment1, [activity2], comment2],
-            self.group(comments=comments, activities=activities))
+            self.group(comments=comments, activities=activities),
+        )
 
     def test_activities_identical_timestamp_no_common_actor(self):
         # When two activities have an identical timestamp but different
@@ -145,7 +143,8 @@ class TestGroupCommentsWithActivities(TestCase):
         activities = [BugActivityStub(activity_time) for _ in range(2)]
         self.assertEqual(
             [[activity] for activity in activities],
-            self.group(comments=[], activities=activities))
+            self.group(comments=[], activities=activities),
+        )
 
     def test_comment_then_activity_close_by_common_actor(self):
         # An activity shortly after a comment by the same person is grouped
@@ -175,7 +174,8 @@ class TestGroupCommentsWithActivities(TestCase):
         comment = BugCommentStub(*next(self.time_index), owner=actor)
         activity2 = BugActivityStub(next(self.time_index)[0], owner=actor)
         grouped = self.group(
-            comments=[comment], activities=[activity1, activity2])
+            comments=[comment], activities=[activity1, activity2]
+        )
         self.assertEqual([comment], grouped)
         self.assertEqual([activity1, activity2], comment.activity)
 
@@ -185,7 +185,8 @@ class TestGroupCommentsWithActivities(TestCase):
         actor = PersonStub()
         activities = [
             BugActivityStub(next(self.time_index)[0], owner=actor)
-            for count in range(8)]
+            for count in range(8)
+        ]
         grouped = self.group(comments=[], activities=activities)
         self.assertEqual(2, len(grouped))
         self.assertEqual(activities[:5], grouped[0])
@@ -210,52 +211,50 @@ class TestGroupCommentsWithActivities(TestCase):
         activity3 = BugActivityStub(next(self.time_index)[0], owner=actor)
         grouped = self.group(
             comments=[comment1, comment2],
-            activities=[activity1, activity2, activity3])
+            activities=[activity1, activity2, activity3],
+        )
         self.assertEqual([comment1, comment2], grouped)
         self.assertEqual([activity1, activity2], comment1.activity)
         self.assertEqual([activity3], comment2.activity)
 
 
-class TestBugCommentVisibility(
-        BrowserTestCase, TestMessageVisibilityMixin):
+class TestBugCommentVisibility(BrowserTestCase, TestMessageVisibilityMixin):
 
     layer = DatabaseFunctionalLayer
 
     def makeHiddenMessage(self, comment_owner=None):
         """Required by the mixin."""
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug = self.factory.makeBug()
             comment = self.factory.makeBugComment(
-                    bug=bug, body=self.comment_text, owner=comment_owner)
+                bug=bug, body=self.comment_text, owner=comment_owner
+            )
             comment.visible = False
         return bug
 
     def getView(self, context, user=None, no_login=False):
         """Required by the mixin."""
         view = self.getViewBrowser(
-            context=context.default_bugtask,
-            user=user,
-            no_login=no_login)
+            context=context.default_bugtask, user=user, no_login=no_login
+        )
         return view
 
 
-class TestBugHideCommentControls(
-        BrowserTestCase, TestHideMessageControlMixin):
+class TestBugHideCommentControls(BrowserTestCase, TestHideMessageControlMixin):
 
     layer = DatabaseFunctionalLayer
 
     def getContext(self, comment_owner=None):
         """Required by the mixin."""
         bug = self.factory.makeBug()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.factory.makeBugComment(bug=bug, owner=comment_owner)
         return bug
 
     def getView(self, context, user=None, no_login=False):
         """Required by the mixin."""
         task = removeSecurityProxy(context).default_bugtask
-        return self.getViewBrowser(
-            context=task, user=user, no_login=no_login)
+        return self.getViewBrowser(context=task, user=user, no_login=no_login)
 
     def _test_hide_link_visible(self, context, user):
         view = self.getView(context=context, user=user)
@@ -273,10 +272,14 @@ class TestBugHideCommentControls(
         person = self.factory.makePerson()
         context = self.getContext()
         pillar = context.default_bugtask.product
-        policy = getUtility(IAccessPolicySource).find(
-            [(pillar, InformationType.USERDATA)]).one()
+        policy = (
+            getUtility(IAccessPolicySource)
+            .find([(pillar, InformationType.USERDATA)])
+            .one()
+        )
         self.factory.makeAccessPolicyGrant(
-            policy=policy, grantor=pillar.owner, grantee=person)
+            policy=policy, grantor=pillar.owner, grantee=person
+        )
         self._test_hide_link_visible(context, person)
 
 
@@ -292,13 +295,16 @@ class TestBugCommentMicroformats(BrowserTestCase):
         iso_date = bug_comment.datecreated.isoformat()
         self.assertThat(
             browser.contents,
-            HTMLContains(Tag(
-                'comment time tag',
-                'time',
-                attrs=dict(
-                    itemprop='commentTime',
-                    title=True,
-                    datetime=iso_date))))
+            HTMLContains(
+                Tag(
+                    "comment time tag",
+                    "time",
+                    attrs=dict(
+                        itemprop="commentTime", title=True, datetime=iso_date
+                    ),
+                )
+            ),
+        )
 
 
 class TestBugCommentImplementsInterface(TestCaseWithFactory):
@@ -318,7 +324,7 @@ class TestBugCommentImplementsInterface(TestCaseWithFactory):
     def test_download_url(self):
         """download_url is provided and works as expected."""
         bug_comment = make_bug_comment(self.factory)
-        url = canonical_url(bug_comment, view_name='+download')
+        url = canonical_url(bug_comment, view_name="+download")
         self.assertEqual(url, bug_comment.download_url)
 
     def test_bug_comment_canonical_url(self):
@@ -326,8 +332,11 @@ class TestBugCommentImplementsInterface(TestCaseWithFactory):
         bug_message = self.factory.makeBugComment()
         bugtask = bug_message.bugs[0].default_bugtask
         product = removeSecurityProxy(bugtask).target
-        url = 'http://bugs.launchpad.test/%s/+bug/%s/comments/%s' % (
-           product.name, bugtask.bug.id, 1)
+        url = "http://bugs.launchpad.test/%s/+bug/%s/comments/%s" % (
+            product.name,
+            bugtask.bug.id,
+            1,
+        )
         self.assertEqual(url, canonical_url(bug_message))
 
 
@@ -343,10 +352,10 @@ class TestBugCommentInBrowser(BrowserTestCase):
 
     def test_excessive_comments_redirect_to_download(self):
         """View for excessive comments redirects to download page."""
-        comment = make_bug_comment(self.factory, body='x ' * 5001)
+        comment = make_bug_comment(self.factory, body="x " * 5001)
         view_url = canonical_url(comment)
-        download_url = canonical_url(comment, view_name='+download')
+        download_url = canonical_url(comment, view_name="+download")
         browser = self.getUserBrowser(view_url)
         self.assertNotEqual(view_url, browser.url)
         self.assertEqual(download_url, browser.url)
-        self.assertEqual('x ' * 5001, browser.contents)
+        self.assertEqual("x " * 5001, browser.contents)

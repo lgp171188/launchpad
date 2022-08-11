@@ -6,8 +6,8 @@
 import os
 import shutil
 
-from testtools.twistedsupport import AsynchronousDeferredRunTest
 import treq
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet.endpoints import serverFromString
 from twisted.python.failure import Failure
 from twisted.web.server import Site
@@ -31,28 +31,33 @@ class TestWebResources(TestCase):
 
     def setUpKeysDirectory(self):
         path = self.makeTemporaryDirectory()
-        path = os.path.join(path, 'keys')
+        path = os.path.join(path, "keys")
         shutil.copytree(KEYS_DIR, path)
         return path
 
     def makeService(self):
         """Run a test key server on whatever port we have available."""
         from twisted.internet import reactor
+
         resource = KeyServerResource(self.setUpKeysDirectory())
         site = Site(resource)
-        endpoint = serverFromString(reactor, 'tcp:0')
+        endpoint = serverFromString(reactor, "tcp:0")
         return endpoint.listen(site)
 
     def fetchResource(self, listening_port, path):
-        """GET the content at 'path' from the web server at 'listening_port'.
-        """
+        """GET the content at 'path' from the server at 'listening_port'."""
         from twisted.internet import reactor
-        url = 'http://localhost:%s/%s' % (
+
+        url = "http://localhost:%s/%s" % (
             listening_port.getHost().port,
-            path.lstrip('/'))
+            path.lstrip("/"),
+        )
         client = self.useFixture(TReqFixture(reactor)).client
-        return client.get(url).addCallback(check_status).addCallback(
-            treq.text_content)
+        return (
+            client.get(url)
+            .addCallback(check_status)
+            .addCallback(treq.text_content)
+        )
 
     def getURL(self, path):
         """Start a test key server and get the content at 'path'."""
@@ -61,6 +66,7 @@ class TestWebResources(TestCase):
         def service_started(port):
             self.addCleanup(port.stopListening)
             return self.fetchResource(port, path)
+
         return d.addCallback(service_started)
 
     def assertContentMatches(self, path, content):
@@ -94,15 +100,16 @@ class TestWebResources(TestCase):
 
         def check_error_details(failure):
             if isinstance(failure.value, RegularCallbackExecuted):
-                self.fail('Response was not an HTTP error response.')
+                self.fail("Response was not an HTTP error response.")
             if not isinstance(failure, Failure):
                 raise failure
-            self.assertEqual(b'404', failure.value.status)
+            self.assertEqual(b"404", failure.value.status)
             self.assertEqual(
-                b'<html><head><title>Error handling request</title></head>\n'
-                b'<body><h1>Error handling request</h1>'
-                b'No results found: No keys found</body></html>',
-                failure.value.response)
+                b"<html><head><title>Error handling request</title></head>\n"
+                b"<body><h1>Error handling request</h1>"
+                b"No results found: No keys found</body></html>",
+                failure.value.response,
+            )
 
         d.addCallback(regular_execution_callback)
         return d.addErrback(check_error_details)
@@ -110,22 +117,23 @@ class TestWebResources(TestCase):
     def test_index_lookup(self):
         # A key index lookup form via GET.
         return self.assertContentMatches(
-            '/pks/lookup?fingerprint=on&op=index&search=0xDFD20543',
-            '''\
+            "/pks/lookup?fingerprint=on&op=index&search=0xDFD20543",
+            """\
 <html>
 ...
 <title>Results for Key 0xDFD20543</title>
 ...
 pub  1024D/DFD20543 2005-04-13 Sample Person (revoked) &lt;sample.revoked@canonical.com&gt;
 ...
-''')  # noqa: E501
+""",  # noqa: E501
+        )
 
     def test_content_lookup(self):
         # A key content lookup form via GET.
         return self.assertContentMatches(
-            '/pks/lookup?fingerprint=on&op=get&'
-            'search=0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543',
-            '''\
+            "/pks/lookup?fingerprint=on&op=get&"
+            "search=0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543",
+            """\
 <html>
 ...
 <title>Results for Key 0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543</title>
@@ -135,14 +143,15 @@ Version: GnuPG v1.4.9 (GNU/Linux)
 <BLANKLINE>
 mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 ...
-''')
+""",
+        )
 
     def test_lookup_key_id(self):
         # We can also request a key ID instead of a fingerprint, and it will
         # glob for the fingerprint.
         return self.assertContentMatches(
-            '/pks/lookup?fingerprint=on&op=get&search=0xDFD20543',
-            '''\
+            "/pks/lookup?fingerprint=on&op=get&search=0xDFD20543",
+            """\
 <html>
 ...
 <title>Results for Key 0xDFD20543</title>
@@ -152,21 +161,24 @@ Version: GnuPG v1.4.9 (GNU/Linux)
 <BLANKLINE>
 mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 ...
-''')
+""",
+        )
 
     def test_nonexistent_key(self):
         # If we request a nonexistent key, we get a nice error.
         return self.assertRaises404ErrorForKeyNotFound(
-            '/pks/lookup?fingerprint=on&op=get&search=0xDFD20544')
+            "/pks/lookup?fingerprint=on&op=get&search=0xDFD20544"
+        )
 
     def test_add_key(self):
-        # A key submit form via POST (see doc/gpghandler.txt for more
+        # A key submit form via POST (see doc/gpghandler.rst for more
         # information).
         return self.assertContentMatches(
-            '/pks/add',
-            '''\
+            "/pks/add",
+            """\
 <html>
 ...
 <title>Submit a key</title>
 ...
-''')
+""",
+        )

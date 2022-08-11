@@ -20,37 +20,41 @@ class TestDistroSeriesDifferenceCommentFragment(TestCaseWithFactory):
     def test_render(self):
         comment_text = "_123456789" * 10
         comment = self.factory.makeDistroSeriesDifferenceComment(
-            comment=comment_text)
-        view = create_initialized_view(comment, '+latest-comment-fragment')
+            comment=comment_text
+        )
+        view = create_initialized_view(comment, "+latest-comment-fragment")
         root = html.fromstring(view())
         self.assertEqual("span", root.tag)
         self.assertEqual("%s..." % comment_text[:47], root.text.strip())
         self.assertEqual(
             "/~%s" % comment.comment_author.name,
-            root.find("span").find("a").get("href"))
+            root.find("span").find("a").get("href"),
+        )
 
     def test_error_icon_does_not_appear_if_not_is_error(self):
         comment = self.factory.makeDistroSeriesDifferenceComment()
-        view = create_initialized_view(comment, '+latest-comment-fragment')
+        view = create_initialized_view(comment, "+latest-comment-fragment")
         view.is_error = False
         root = html.fromstring(view())
         self.assertNotIn("error", root.find("span").get("class"))
 
     def test_error_icon_appears_if_is_error(self):
         comment = self.factory.makeDistroSeriesDifferenceComment()
-        view = create_initialized_view(comment, '+latest-comment-fragment')
+        view = create_initialized_view(comment, "+latest-comment-fragment")
         view.is_error = True
         root = html.fromstring(view())
         self.assertIn("error", root.find("span").get("class"))
 
     def test_is_error_is_normally_False(self):
         comment = self.factory.makeDistroSeriesDifferenceComment(
-            comment=self.factory.getUniqueString())
-        view = create_initialized_view(comment, '+latest-comment-fragment')
+            comment=self.factory.getUniqueString()
+        )
+        view = create_initialized_view(comment, "+latest-comment-fragment")
         self.assertFalse(view.is_error)
 
     def test_is_error_is_True_if_comment_comes_from_janitor(self):
         comment = self.factory.makeDistroSeriesDifferenceComment(
-            owner=getUtility(ILaunchpadCelebrities).janitor)
-        view = create_initialized_view(comment, '+latest-comment-fragment')
+            owner=getUtility(ILaunchpadCelebrities).janitor
+        )
+        view = create_initialized_view(comment, "+latest-comment-fragment")
         self.assertTrue(view.is_error)

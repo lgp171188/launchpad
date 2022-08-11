@@ -8,15 +8,11 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.interfaces.ssh import (
-    ISSHKeySet,
     SSH_TEXT_TO_KEY_TYPE,
+    ISSHKeySet,
     SSHKeyAdditionError,
-    )
-from lp.testing import (
-    admin_logged_in,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+)
+from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
 
@@ -68,6 +64,13 @@ class TestSSHKey(TestCaseWithFactory):
         expected = "ssh-ed25519 %s %s" % (key.keytext, key.comment)
         self.assertEqual(expected, key.getFullKeyText())
 
+    def test_getFullKeyText_for_key_without_comment(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(person, "ssh-rsa", comment="")
+        expected = "ssh-rsa %s" % (key.keytext)
+        self.assertEqual(expected, key.getFullKeyText())
+
     def test_getFullKeyText_for_corrupt_key(self):
         # If the key text is corrupt, the type from the database is used
         # instead of the one decoded from the text.
@@ -76,7 +79,7 @@ class TestSSHKey(TestCaseWithFactory):
             key = self.factory.makeSSHKey(person, "ssh-rsa")
             # The base64 has a valid netstring, but the contents are garbage so
             # can't be a valid key type.
-            removeSecurityProxy(key).keytext = 'AAAAB3NzaC1012EAAAA='
+            removeSecurityProxy(key).keytext = "AAAAB3NzaC1012EAAAA="
         expected = "ssh-rsa %s %s" % (key.keytext, key.comment)
         self.assertEqual(expected, key.getFullKeyText())
 
@@ -87,13 +90,34 @@ class TestSSHKey(TestCaseWithFactory):
             key.destroySelf()
             [email] = pop_notifications()
             self.assertEqual(
-                email['Subject'],
-                "SSH Key removed from your Launchpad account.")
+                email["Subject"],
+                "SSH key removed from your Launchpad account.",
+            )
             self.assertThat(
                 email.get_payload(),
                 StartsWith(
-                    "The SSH Key %s was removed from your "
-                    % key.comment)
+                    "The SSH key %s was removed from your " % key.comment
+                ),
+            )
+
+    def test_destroySelf_notification_empty_comment(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(
+                person, send_notification=False, comment=""
+            )
+            key.destroySelf()
+            [email] = pop_notifications()
+            self.assertEqual(
+                "SSH key removed from your Launchpad account.",
+                email["Subject"],
+            )
+            self.assertThat(
+                email.get_payload(),
+                StartsWith(
+                    "An SSH key of type '%s' was removed "
+                    "from your account." % key.keytype.title
+                ),
             )
 
     def test_destroySelf_notifications_can_be_suppressed(self):
@@ -118,18 +142,40 @@ class TestSSHKeySet(TestCaseWithFactory):
             keyset.new(person, key_text)
             [email] = pop_notifications()
         self.assertEqual(
-            email['Subject'], "New SSH key added to your account.")
+            email["Subject"], "New SSH key added to your account."
+        )
         self.assertThat(
             email.get_payload(),
-            StartsWith("The SSH key 'comment' has been added to your account.")
+            StartsWith(
+                "The SSH key 'comment' has been added to your account."
+            ),
+        )
+
+    def test_notification_add_ssh_key_comment_empty(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = getUtility(ISSHKeySet).new(
+                person, self.factory.makeSSHKeyText(comment="")
+            )
+            [email] = pop_notifications()
+        self.assertEqual(
+            "New SSH key added to your account.", email["Subject"]
+        )
+        self.assertThat(
+            email.get_payload(),
+            StartsWith(
+                "An SSH key of type '%s' has been added "
+                "to your account." % key.keytype.title
+            ),
         )
 
     def test_does_not_send_notifications(self):
         person = self.factory.makePerson()
         with person_logged_in(person):
             keyset = getUtility(ISSHKeySet)
-            keyset.new(person, self.factory.makeSSHKeyText(),
-                       send_notification=False)
+            keyset.new(
+                person, self.factory.makeSSHKeyText(), send_notification=False
+            )
             self.assertEqual([], pop_notifications())
 
     def test_getByPersonAndKeyText_retrieves_target_key(self):
@@ -139,29 +185,32 @@ class TestSSHKeySet(TestCaseWithFactory):
             keytext = key.getFullKeyText()
 
             results = getUtility(ISSHKeySet).getByPersonAndKeyText(
-                person, keytext)
+                person, keytext
+            )
             self.assertEqual([key], list(results))
 
     def test_getByPersonAndKeyText_raises_on_invalid_key_type(self):
         person = self.factory.makePerson()
         with person_logged_in(person):
-            invalid_keytext = 'foo bar baz'
+            invalid_keytext = "foo bar baz"
             keyset = getUtility(ISSHKeySet)
             self.assertRaises(
                 SSHKeyAdditionError,
                 keyset.getByPersonAndKeyText,
-                person, invalid_keytext
+                person,
+                invalid_keytext,
             )
 
     def test_getByPersonAndKeyText_raises_on_invalid_key_data(self):
         person = self.factory.makePerson()
         with person_logged_in(person):
-            invalid_keytext = 'glorp!'
+            invalid_keytext = "glorp!"
             keyset = getUtility(ISSHKeySet)
             self.assertRaises(
                 SSHKeyAdditionError,
                 keyset.getByPersonAndKeyText,
-                person, invalid_keytext
+                person,
+                invalid_keytext,
             )
 
     def test_can_retrieve_keys_by_id(self):
@@ -178,7 +227,7 @@ class TestSSHKeySet(TestCaseWithFactory):
         keyset = getUtility(ISSHKeySet)
         person = self.factory.makePerson()
         full_key = self.factory.makeSSHKeyText()
-        keytype, keytext, comment = full_key.split(' ', 2)
+        keytype, keytext, comment = full_key.split(" ", 2)
         with person_logged_in(person):
             key = keyset.new(person, full_key)
             self.assertEqual([key], list(person.sshkeys))
@@ -193,27 +242,31 @@ class TestSSHKeySet(TestCaseWithFactory):
             SSHKeyAdditionError,
             "Invalid SSH key data: 'thiskeyhasnospaces'",
             keyset.new,
-            person, 'thiskeyhasnospaces'
+            person,
+            "thiskeyhasnospaces",
         )
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
             "Invalid SSH key type: 'bad_key_type'",
             keyset.new,
-            person, 'bad_key_type keytext comment'
+            person,
+            "bad_key_type keytext comment",
         )
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
             "Invalid SSH key data: 'ssh-rsa badkeytext comment' "
             "(Incorrect padding)",
             keyset.new,
-            person, 'ssh-rsa badkeytext comment'
+            person,
+            "ssh-rsa badkeytext comment",
         )
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
             "Invalid SSH key data: 'ssh-rsa asdfasdf comment' "
             "(unknown blob type: b'\\xc7_')",
             keyset.new,
-            person, 'ssh-rsa asdfasdf comment'
+            person,
+            "ssh-rsa asdfasdf comment",
         )
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
@@ -221,13 +274,14 @@ class TestSSHKeySet(TestCaseWithFactory):
             "data type 'ssh-dss'",
             keyset.new,
             person,
-            'ssh-rsa ' + self.factory.makeSSHKeyText(key_type='ssh-dss')[8:]
+            "ssh-rsa " + self.factory.makeSSHKeyText(key_type="ssh-dss")[8:],
         )
         self.assertRaisesWithContent(
             SSHKeyAdditionError,
             "Invalid SSH key data: 'None'",
             keyset.new,
-            person, None
+            person,
+            None,
         )
 
     def test_can_retrieve_keys_for_multiple_people(self):
@@ -242,4 +296,5 @@ class TestSSHKeySet(TestCaseWithFactory):
         keys = keyset.getByPeople([person1, person2])
         self.assertEqual(3, keys.count())
         self.assertContentEqual(
-            [person1_key1, person1_key2, person2_key1], keys)
+            [person1_key1, person1_key2, person2_key1], keys
+        )

@@ -4,17 +4,14 @@
 """BinaryPackageBuild interfaces."""
 
 __all__ = [
-    'BuildSetStatus',
-    'IBinaryPackageBuild',
-    'IBuildRescoreForm',
-    'IBinaryPackageBuildSet',
-    'UnparsableDependencies',
-    ]
+    "BuildSetStatus",
+    "IBinaryPackageBuild",
+    "IBuildRescoreForm",
+    "IBinaryPackageBuildSet",
+    "UnparsableDependencies",
+]
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
+from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import (
     export_read_operation,
     export_write_operation,
@@ -23,18 +20,10 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Int, Text, TextLine
 
 from lp import _
 from lp.buildmaster.enums import BuildStatus
@@ -42,11 +31,11 @@ from lp.buildmaster.interfaces.buildfarmjob import (
     IBuildFarmJobAdmin,
     IBuildFarmJobEdit,
     ISpecificBuildFarmJobSource,
-    )
+)
 from lp.buildmaster.interfaces.packagebuild import (
     IPackageBuild,
     IPackageBuildView,
-    )
+)
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
@@ -58,18 +47,25 @@ class UnparsableDependencies(Exception):
 
 class IBinaryPackageBuildView(IPackageBuildView):
     """A Build interface for items requiring launchpad.View."""
-    id = Int(title=_('ID'), required=True, readonly=True)
+
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     # Overridden from IBuildFarmJob to ensure required is True.
     processor = Reference(
-        title=_("Processor"), schema=IProcessor,
-        required=True, readonly=True,
-        description=_("The Processor where this build should be built."))
+        title=_("Processor"),
+        schema=IProcessor,
+        required=True,
+        readonly=True,
+        description=_("The Processor where this build should be built."),
+    )
 
     source_package_release = Reference(
-        title=_('Source'), schema=ISourcePackageRelease,
-        required=True, readonly=True,
-        description=_("The SourcePackageRelease requested to build."))
+        title=_("Source"),
+        schema=ISourcePackageRelease,
+        required=True,
+        readonly=True,
+        description=_("The SourcePackageRelease requested to build."),
+    )
 
     source_package_release_id = Int()
 
@@ -77,68 +73,91 @@ class IBinaryPackageBuildView(IPackageBuildView):
         title=_("Architecture"),
         # Really IDistroArchSeries
         schema=Interface,
-        required=True, readonly=True,
-        description=_("The DistroArchSeries context for this build."))
+        required=True,
+        readonly=True,
+        description=_("The DistroArchSeries context for this build."),
+    )
 
     distro_arch_series_id = Int()
 
     arch_indep = Bool(
         title=_("Build architecture independent packages"),
-        required=False, readonly=True)
+        required=False,
+        readonly=True,
+    )
 
     # Properties
     current_source_publication = exported(
         Reference(
             title=_("Source publication"),
             schema=ISourcePackagePublishingHistory,
-            required=False, readonly=True,
-            description=_("The current source publication for this build.")))
+            required=False,
+            readonly=True,
+            description=_("The current source publication for this build."),
+        )
+    )
     api_source_package_name = exported(
         TextLine(
-            title=_("Source package name"), required=False, readonly=True),
-        exported_as="source_package_name")
+            title=_("Source package name"), required=False, readonly=True
+        ),
+        exported_as="source_package_name",
+    )
     source_package_version = exported(
         TextLine(
-            title=_("Source package version"), required=False, readonly=True))
+            title=_("Source package version"), required=False, readonly=True
+        )
+    )
 
     distro_series = Attribute("Direct parent needed by CanonicalURL")
-    arch_tag = exported(
-        Text(title=_("Architecture tag"), required=False))
-    distributionsourcepackagerelease = Attribute("The page showing the "
-        "details for this sourcepackagerelease in this distribution.")
+    arch_tag = exported(Text(title=_("Architecture tag"), required=False))
+    distributionsourcepackagerelease = Attribute(
+        "The page showing the "
+        "details for this sourcepackagerelease in this distribution."
+    )
     binarypackages = Attribute(
         "A list of binary packages that resulted from this build, "
-        "not limited and ordered by name.")
+        "not limited and ordered by name."
+    )
     distroarchseriesbinarypackages = Attribute(
         "A list of distroarchseriesbinarypackages that resulted from this"
-        "build, ordered by name.")
+        "build, ordered by name."
+    )
 
     upload_changesfile = Attribute(
         "The `LibraryFileAlias` object containing the changes file which "
         "was originally uploaded with the results of this build. It's "
-        "'None' if it is build imported by Gina.")
+        "'None' if it is build imported by Gina."
+    )
 
     changesfile_url = exported(
         TextLine(
-            title=_("Changes File URL"), required=False,
-            description=_("The URL for the changes file for this build. "
-                          "Will be None if the build was imported by Gina.")))
+            title=_("Changes File URL"),
+            required=False,
+            description=_(
+                "The URL for the changes file for this build. "
+                "Will be None if the build was imported by Gina."
+            ),
+        )
+    )
 
     buildinfo = Attribute(
         "The `LibraryFileAlias` object containing build information for "
-        "this build, if any.")
+        "this build, if any."
+    )
 
     package_upload = Attribute(
         "The `PackageUpload` record corresponding to the original upload "
         "of the binaries resulted from this build. It's 'None' if it is "
-        "a build imported by Gina.")
+        "a build imported by Gina."
+    )
 
     api_score = exported(
         Int(
             title=_("Score of the related job (if any)"),
             readonly=True,
-            ),
-        exported_as="score")
+        ),
+        exported_as="score",
+    )
 
     def updateDependencies():
         """Update the build-dependencies line within the targeted context."""
@@ -152,12 +171,32 @@ class IBinaryPackageBuildView(IPackageBuildView):
         """
 
     def createBinaryPackageRelease(
-        binarypackagename, version, summary, description, binpackageformat,
-        component, section, priority, installedsize, architecturespecific,
-        shlibdeps=None, depends=None, recommends=None, suggests=None,
-        conflicts=None, replaces=None, provides=None, pre_depends=None,
-        enhances=None, breaks=None, built_using=None, essential=False,
-        debug_package=None, user_defined_fields=None, homepage=None):
+        binarypackagename,
+        version,
+        summary,
+        description,
+        binpackageformat,
+        component,
+        section,
+        priority,
+        installedsize,
+        architecturespecific,
+        shlibdeps=None,
+        depends=None,
+        recommends=None,
+        suggests=None,
+        conflicts=None,
+        replaces=None,
+        provides=None,
+        pre_depends=None,
+        enhances=None,
+        breaks=None,
+        built_using=None,
+        essential=False,
+        debug_package=None,
+        user_defined_fields=None,
+        homepage=None,
+    ):
         """Create and return a `BinaryPackageRelease`.
 
         The binarypackagerelease will be attached to this specific build.
@@ -248,18 +287,24 @@ class IBinaryPackageBuildRestricted(Interface):
     These attributes need launchpad.View to see, and launchpad.Moderate to
     change.
     """
+
     api_external_dependencies = exported(
         Text(
-            title=_("External dependencies"), required=False, readonly=False,
+            title=_("External dependencies"),
+            required=False,
+            readonly=False,
             description=_(
                 "Newline-separated list of repositories to be used to "
                 "retrieve any external build-dependencies when performing "
                 "this build, in the format:\n"
                 "deb http[s]://[user:pass@]<host>[/path] series[-pocket] "
                 "[components]\n"
-                "This is intended for bootstrapping build-dependency loops.")),
+                "This is intended for bootstrapping build-dependency loops."
+            ),
+        ),
         as_of="devel",
-        exported_as="external_dependencies")
+        exported_as="external_dependencies",
+    )
 
 
 class IBinaryPackageBuildAdmin(IBuildFarmJobAdmin):
@@ -274,11 +319,16 @@ class IBinaryPackageBuildAdmin(IBuildFarmJobAdmin):
         """Change the build's score."""
 
 
-@exported_as_webservice_entry(singular_name='build', plural_name='builds')
+@exported_as_webservice_entry(
+    singular_name="build", plural_name="builds", as_of="beta"
+)
 class IBinaryPackageBuild(
-    IBinaryPackageBuildView, IBinaryPackageBuildEdit,
-    IBinaryPackageBuildRestricted, IBinaryPackageBuildAdmin,
-    IPackageBuild):
+    IBinaryPackageBuildView,
+    IBinaryPackageBuildEdit,
+    IBinaryPackageBuildRestricted,
+    IBinaryPackageBuildAdmin,
+    IPackageBuild,
+):
     """A Build interface"""
 
 
@@ -289,36 +339,52 @@ class BuildSetStatus(EnumeratedType):
     'needs build' and 'dependency wait'. We sometimes provide a summary
     status of a set of builds.
     """
+
     # Until access to the name, title and description of exported types
     # is available through the API, set the title of these statuses
     # to match the name. This enables the result of API calls (which is
     # currently the title) to be used programatically (for example, as a
     # css class name).
     NEEDSBUILD = Item(
-        title='NEEDSBUILD',  # "Need building",
-        description='There are some builds waiting to be built.')
+        title="NEEDSBUILD",  # "Need building",
+        description="There are some builds waiting to be built.",
+    )
 
     FULLYBUILT_PENDING = Item(
-        title='FULLYBUILT_PENDING',
+        title="FULLYBUILT_PENDING",
         description="All builds were built successfully but have not yet "
-                    "been published.")
+        "been published.",
+    )
 
-    FULLYBUILT = Item(title='FULLYBUILT',  # "Successfully built",
-                      description="All builds were built successfully.")
+    FULLYBUILT = Item(
+        title="FULLYBUILT",  # "Successfully built",
+        description="All builds were built successfully.",
+    )
 
-    FAILEDTOBUILD = Item(title='FAILEDTOBUILD',  # "Failed to build",
-                         description="There were build failures.")
+    FAILEDTOBUILD = Item(
+        title="FAILEDTOBUILD",  # "Failed to build",
+        description="There were build failures.",
+    )
 
-    BUILDING = Item(title='BUILDING',  # "Currently building",
-                    description="There are some builds currently building.")
+    BUILDING = Item(
+        title="BUILDING",  # "Currently building",
+        description="There are some builds currently building.",
+    )
 
 
 class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
     """Interface for BinaryPackageBuildSet"""
 
-    def new(source_package_release, archive, distro_arch_series, pocket,
-            arch_indep=False, status=BuildStatus.NEEDSBUILD, builder=None,
-            buildinfo=None):
+    def new(
+        source_package_release,
+        archive,
+        distro_arch_series,
+        pocket,
+        arch_indep=False,
+        status=BuildStatus.NEEDSBUILD,
+        builder=None,
+        buildinfo=None,
+    ):
         """Create a new `IBinaryPackageBuild`.
 
         :param source_package_release: An `ISourcePackageRelease`.
@@ -332,8 +398,9 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         :param buildinfo: An optional `ILibraryFileAlias`.
         """
 
-    def getBySourceAndLocation(source_package_release, archive,
-                               distro_arch_series):
+    def getBySourceAndLocation(
+        source_package_release, archive, distro_arch_series
+    ):
         """Return a build by its source, archive and architecture.
 
         This is the natural key, and lookups don't consider copies
@@ -346,8 +413,9 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         :param distro_arch_series: The `IDistroArchSeries` built against.
         """
 
-    def getBuildsForBuilder(builder_id, status=None, name=None, pocket=None,
-                            arch_tag=None):
+    def getBuildsForBuilder(
+        builder_id, status=None, name=None, pocket=None, arch_tag=None
+    ):
         """Return build records touched by a builder.
 
         :param builder_id: The id of the builder for which to find builds.
@@ -362,8 +430,9 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         :return: a `ResultSet` representing the requested builds.
         """
 
-    def getBuildsForArchive(archive, status=None, name=None, pocket=None,
-                            arch_tag=None):
+    def getBuildsForArchive(
+        archive, status=None, name=None, pocket=None, arch_tag=None
+    ):
         """Return build records targeted to a given IArchive.
 
         :param archive: The archive for which builds will be returned.
@@ -378,8 +447,9 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         :return: a `ResultSet` representing the requested builds.
         """
 
-    def getBuildsForDistro(context, status=None, name=None, pocket=None,
-                           arch_tag=None):
+    def getBuildsForDistro(
+        context, status=None, name=None, pocket=None, arch_tag=None
+    ):
         """Retrieve `IBinaryPackageBuild`s for a given Distribution/DS/DAS.
 
         Optionally, for a given status and/or pocket, if omitted return all
@@ -387,8 +457,9 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         sourcepackagename matches (SQL LIKE).
         """
 
-    def getBuildsBySourcePackageRelease(sourcepackagerelease_ids,
-                                        buildstate=None):
+    def getBuildsBySourcePackageRelease(
+        sourcepackagerelease_ids, buildstate=None
+    ):
         """Return all builds related with the given list of source releases.
 
         Eager loads the PackageBuild and BuildFarmJob records for the builds.
@@ -440,12 +511,16 @@ class IBinaryPackageBuildSet(ISpecificBuildFarmJobSource):
         """
 
     def preloadBuildsData(builds):
-        """Prefetch the data related to the builds.
+        """Prefetch the data related to the builds."""
 
-        """
-
-    def createForSource(sourcepackagerelease, archive, distroseries, pocket,
-                        architectures_available=None, logger=None):
+    def createForSource(
+        sourcepackagerelease,
+        archive,
+        distroseries,
+        pocket,
+        architectures_available=None,
+        logger=None,
+    ):
         """Create missing build records for a source.
 
         :param architectures_available: options list of `DistroArchSeries`
@@ -462,6 +537,12 @@ class IBuildRescoreForm(Interface):
     """Form for rescoring a build."""
 
     priority = Int(
-        title=_("Priority"), required=True, min=-2 ** 31, max=2 ** 31,
-        description=_("Build priority, the build with the highest value will "
-                      "be dispatched first."))
+        title=_("Priority"),
+        required=True,
+        min=-(2**31),
+        max=2**31,
+        description=_(
+            "Build priority, the build with the highest value will "
+            "be dispatched first."
+        ),
+    )

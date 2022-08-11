@@ -1,7 +1,7 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['MessageComment']
+__all__ = ["MessageComment"]
 
 
 from lp.services.comments.browser.comment import MAX_RENDERABLE
@@ -12,7 +12,7 @@ from lp.services.propertycache import cachedproperty
 class MessageComment:
     """Mixin to partially implement IComment in terms of IMessage."""
 
-    extra_css_class = ''
+    extra_css_class = ""
 
     has_footer = False
 
@@ -24,9 +24,9 @@ class MessageComment:
         if not self.visible:
             # If a comment that isn't visible is being rendered, it's being
             # rendered for an admin or registry_expert.
-            return 'adminHiddenComment'
+            return "adminHiddenComment"
         else:
-            return ''
+            return ""
 
     @property
     def display_attachments(self):
@@ -70,6 +70,6 @@ class MessageComment:
         # the ellipsis, this breaks down when the comment limit is
         # less than 3 (which can happen in a testcase) and it makes
         # counting the strings harder.
-        return "%s..." % self.body_text[:self.comment_limit]
+        return "%s..." % self.body_text[: self.comment_limit]
 
     show_spam_controls = False

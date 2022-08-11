@@ -13,28 +13,24 @@ import psycopg2
 
 from lp.services.config import config
 from lp.services.database.postgresql import (
+    ConnectionString,
     all_sequences_in_schema,
     all_tables_in_schema,
-    ConnectionString,
     fqn,
-    )
+)
 from lp.services.database.sqlbase import (
-    connect,
     ISOLATION_LEVEL_DEFAULT,
+    connect,
     sqlvalues,
-    )
-from lp.services.scripts.logger import (
-    DEBUG2,
-    log,
-    )
-
+)
+from lp.services.scripts.logger import DEBUG2, log
 
 # The Slony-I clustername we use with Launchpad. Hardcoded because there
 # is no point changing this, ever.
-CLUSTERNAME = 'sl'
+CLUSTERNAME = "sl"
 
 # The namespace in the database used to contain all the Slony-I tables.
-CLUSTER_NAMESPACE = '_%s' % CLUSTERNAME
+CLUSTER_NAMESPACE = "_%s" % CLUSTERNAME
 
 # Replication set id constants. Don't change these without DBA help.
 LPMAIN_SET_ID = 1
@@ -44,36 +40,38 @@ LPMIRROR_SET_ID = 4
 
 # Seed tables for the lpmain replication set to be passed to
 # calculate_replication_set().
-LPMAIN_SEED = frozenset([
-    ('public', 'account'),
-    ('public', 'person'),
-    ('public', 'databasereplicationlag'),
-    ('public', 'fticache'),
-    ('public', 'nameblacklist'),
-    ('public', 'openidconsumerassociation'),
-    ('public', 'openidconsumernonce'),
-    ('public', 'codeimportmachine'),
-    ('public', 'scriptactivity'),
-    ('public', 'launchpadstatistic'),
-    ('public', 'parsedapachelog'),
-    ('public', 'databasereplicationlag'),
-    ('public', 'featureflag'),
-    ('public', 'bugtaskflat'),
-    # suggestivepotemplate can be removed when the
-    # suggestivepotemplate.potemplate foreign key constraint exists on
-    # production.
-    ('public', 'suggestivepotemplate'),
-    # These are odd. They are updated via slonik & EXECUTE SCRIPT, and
-    # the contents of these tables will be different on each node
-    # because we store timestamps when the patches were applied.
-    # However, we want the tables listed as replicated so that, when
-    # building a new replica, the data that documents the schema patch
-    # level matches the schema patch level and upgrade.py does the right
-    # thing. This is a bad thing to do, but we are safe in this
-    # particular case.
-    ('public', 'launchpaddatabaserevision'),
-    ('public', 'launchpaddatabaseupdatelog'),
-    ])
+LPMAIN_SEED = frozenset(
+    [
+        ("public", "account"),
+        ("public", "person"),
+        ("public", "databasereplicationlag"),
+        ("public", "fticache"),
+        ("public", "nameblacklist"),
+        ("public", "openidconsumerassociation"),
+        ("public", "openidconsumernonce"),
+        ("public", "codeimportmachine"),
+        ("public", "scriptactivity"),
+        ("public", "launchpadstatistic"),
+        ("public", "parsedapachelog"),
+        ("public", "databasereplicationlag"),
+        ("public", "featureflag"),
+        ("public", "bugtaskflat"),
+        # suggestivepotemplate can be removed when the
+        # suggestivepotemplate.potemplate foreign key constraint exists on
+        # production.
+        ("public", "suggestivepotemplate"),
+        # These are odd. They are updated via slonik & EXECUTE SCRIPT, and
+        # the contents of these tables will be different on each node
+        # because we store timestamps when the patches were applied.
+        # However, we want the tables listed as replicated so that, when
+        # building a new replica, the data that documents the schema patch
+        # level matches the schema patch level and upgrade.py does the right
+        # thing. This is a bad thing to do, but we are safe in this
+        # particular case.
+        ("public", "launchpaddatabaserevision"),
+        ("public", "launchpaddatabaseupdatelog"),
+    ]
+)
 
 # Explicitly list tables that should not be replicated. This includes the
 # session tables, as these might exist in developer databases but will not
@@ -81,47 +79,49 @@ LPMAIN_SEED = frozenset([
 IGNORED_TABLES = {
     # Session tables that in some situations will exist in the main lp
     # database.
-    'public.secret', 'public.sessiondata', 'public.sessionpkgdata',
+    "public.secret",
+    "public.sessiondata",
+    "public.sessionpkgdata",
     # Mirror tables, per Bug #489078. These tables have their own private
     # replication set that is setup manually.
-    'public.lp_account',
-    'public.lp_openididentifier',
-    'public.lp_person',
-    'public.lp_personlocation',
-    'public.lp_teamparticipation',
+    "public.lp_account",
+    "public.lp_openididentifier",
+    "public.lp_person",
+    "public.lp_personlocation",
+    "public.lp_teamparticipation",
     # Database statistics
-    'public.databasetablestats',
-    'public.databasecpustats',
-    'public.databasediskutilization',
+    "public.databasetablestats",
+    "public.databasecpustats",
+    "public.databasediskutilization",
     # Don't replicate OAuthNonce - too busy and no real gain.
-    'public.oauthnonce',
+    "public.oauthnonce",
     # Ubuntu SSO database. These tables where created manually by ISD
     # and the Launchpad scripts should not mess with them. Eventually
     # these tables will be in a totally separate database.
-    'public.auth_permission',
-    'public.auth_group',
-    'public.auth_user',
-    'public.auth_message',
-    'public.django_content_type',
-    'public.auth_permission',
-    'public.django_session',
-    'public.django_site',
-    'public.django_admin_log',
-    'public.ssoopenidrpconfig',
-    'public.auth_group_permissions',
-    'public.auth_user_groups',
-    'public.auth_user_user_permissions',
-    'public.oauth_nonce',
-    'public.oauth_consumer',
-    'public.oauth_token',
-    'public.api_user',
-    'public.oauth_consumer_id_seq',
-    'public.api_user_id_seq',
-    'public.oauth_nonce_id_seq',
-    }
+    "public.auth_permission",
+    "public.auth_group",
+    "public.auth_user",
+    "public.auth_message",
+    "public.django_content_type",
+    "public.auth_permission",
+    "public.django_session",
+    "public.django_site",
+    "public.django_admin_log",
+    "public.ssoopenidrpconfig",
+    "public.auth_group_permissions",
+    "public.auth_user_groups",
+    "public.auth_user_user_permissions",
+    "public.oauth_nonce",
+    "public.oauth_consumer",
+    "public.oauth_token",
+    "public.api_user",
+    "public.oauth_consumer_id_seq",
+    "public.api_user_id_seq",
+    "public.oauth_nonce_id_seq",
+}
 
 # Calculate IGNORED_SEQUENCES
-IGNORED_SEQUENCES = {'%s_id_seq' % table for table in IGNORED_TABLES}
+IGNORED_SEQUENCES = {"%s_id_seq" % table for table in IGNORED_TABLES}
 
 
 def slony_installed(con):
@@ -129,33 +129,41 @@ def slony_installed(con):
     cluster.
     """
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT TRUE FROM pg_class,pg_namespace
         WHERE
             nspname = %s
             AND relname = 'sl_table'
             AND pg_class.relnamespace = pg_namespace.oid
-        """ % sqlvalues(CLUSTER_NAMESPACE))
+        """
+        % sqlvalues(CLUSTER_NAMESPACE)
+    )
     return cur.fetchone() is not None
 
 
 class TableReplicationInfo:
     """Internal table replication details."""
+
     table_id = None
     replication_set_id = None
     primary_node_id = None
 
     def __init__(self, con, namespace, table_name):
         cur = con.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT tab_id, tab_set, set_origin
             FROM %s.sl_table, %s.sl_set
             WHERE tab_set = set_id
                 AND tab_nspname = %s
                 AND tab_relname = %s
-            """ % (
+            """
+            % (
                 (CLUSTER_NAMESPACE, CLUSTER_NAMESPACE)
-                + sqlvalues(namespace, table_name)))
+                + sqlvalues(namespace, table_name)
+            )
+        )
         row = cur.fetchone()
         if row is None:
             raise LookupError(fqn(namespace, table_name))
@@ -204,12 +212,15 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
         script = preamble() + script
 
     if sync is not None:
-        sync_script = dedent("""\
+        sync_script = dedent(
+            """\
             sync (id = @primary_node);
             wait for event (
                 origin = @primary_node, confirmed = ALL,
                 wait on = @primary_node, timeout = %d);
-            """ % sync)
+            """
+            % sync
+        )
         script = script + sync_script
 
     # Copy the script to a NamedTemporaryFile rather than just pumping it
@@ -221,8 +232,8 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
 
     # Run slonik
     log.debug("Executing slonik script %s" % script_on_disk.name)
-    log.log(DEBUG2, 'Running script:\n%s' % script)
-    returncode = subprocess.call(['slonik', script_on_disk.name])
+    log.log(DEBUG2, "Running script:\n%s" % script)
+    returncode = subprocess.call(["slonik", script_on_disk.name])
 
     if returncode != 0:
         log.error("slonik script failed")
@@ -234,6 +245,7 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
 
 class Node:
     """Simple data structure for holding information about a Slony node."""
+
     def __init__(self, node_id, nickname, connection_string, is_primary):
         self.node_id = node_id
         self.nickname = nickname
@@ -260,7 +272,9 @@ def _get_nodes(con, query):
 
 def get_primary_node(con, set_id=1):
     """Return the primary Node, or None if the cluster is still being setup."""
-    nodes = _get_nodes(con, """
+    nodes = _get_nodes(
+        con,
+        """
         SELECT DISTINCT
             set_origin AS node_id,
             'primary',
@@ -269,7 +283,9 @@ def get_primary_node(con, set_id=1):
         FROM _sl.sl_set
         LEFT OUTER JOIN _sl.sl_path ON set_origin = pa_server
         WHERE set_id = %d
-        """ % set_id)
+        """
+        % set_id,
+    )
     if not nodes:
         return None
     assert len(nodes) == 1, "More than one primary found for set %s" % set_id
@@ -278,7 +294,9 @@ def get_primary_node(con, set_id=1):
 
 def get_standby_nodes(con, set_id=1):
     """Return the list of standby Nodes."""
-    return _get_nodes(con, """
+    return _get_nodes(
+        con,
+        """
         SELECT DISTINCT
             pa_server AS node_id,
             'standby' || pa_server,
@@ -290,7 +308,9 @@ def get_standby_nodes(con, set_id=1):
         WHERE
             set_id = %d
         ORDER BY node_id
-        """ % set_id)
+        """
+        % set_id,
+    )
 
 
 def get_nodes(con, set_id=1):
@@ -310,7 +330,9 @@ def get_all_cluster_nodes(con):
     """
     if not slony_installed(con):
         return []
-    nodes = _get_nodes(con, """
+    nodes = _get_nodes(
+        con,
+        """
         SELECT DISTINCT
             pa_server AS node_id,
             'node' || pa_server || '_node',
@@ -318,7 +340,8 @@ def get_all_cluster_nodes(con):
             NULL
         FROM _sl.sl_path
         ORDER BY node_id
-        """)
+        """,
+    )
     if not nodes:
         # There are no subscriptions yet, so no paths. Generate the
         # primary Node.
@@ -330,11 +353,17 @@ def get_all_cluster_nodes(con):
         assert len(node_ids) == 1, "Multiple nodes but no paths."
         primary_node_id = node_ids[0]
         primary_connection_string = ConnectionString(
-            config.database.rw_main_primary)
-        primary_connection_string.user = 'slony'
-        return [Node(
-            primary_node_id, 'node%d_node' % primary_node_id,
-            primary_connection_string, True)]
+            config.database.rw_main_primary
+        )
+        primary_connection_string.user = "slony"
+        return [
+            Node(
+                primary_node_id,
+                "node%d_node" % primary_node_id,
+                primary_connection_string,
+                True,
+            )
+        ]
     return nodes
 
 
@@ -342,14 +371,16 @@ def preamble(con=None):
     """Return the preable needed at the start of all slonik scripts."""
 
     if con is None:
-        con = connect(user='slony')
+        con = connect(user="slony")
 
     primary_node = get_primary_node(con)
     nodes = get_all_cluster_nodes(con)
     if primary_node is None and len(nodes) == 1:
         primary_node = nodes[0]
 
-    preamble = [dedent("""\
+    preamble = [
+        dedent(
+            """\
         #
         # Every slonik script must start with a clustername, which cannot
         # be changed once the cluster is initialized.
@@ -361,26 +392,43 @@ def preamble(con=None):
         define holding_set  %d;
         define sso_set      %d;
         define lpmirror_set %d;
-        """ % (LPMAIN_SET_ID, HOLDING_SET_ID, SSO_SET_ID, LPMIRROR_SET_ID))]
+        """
+            % (LPMAIN_SET_ID, HOLDING_SET_ID, SSO_SET_ID, LPMIRROR_SET_ID)
+        )
+    ]
 
     if primary_node is not None:
-        preamble.append(dedent("""\
+        preamble.append(
+            dedent(
+                """\
         # Symbolic id for the main replication set primary node.
         define primary_node %d;
         define primary_node_conninfo '%s';
-        """ % (primary_node.node_id, primary_node.connection_string)))
+        """
+                % (primary_node.node_id, primary_node.connection_string)
+            )
+        )
 
     for node in nodes:
-        preamble.append(dedent("""\
+        preamble.append(
+            dedent(
+                """\
             define %s %d;
             define %s_conninfo '%s';
             node @%s admin conninfo = @%s_conninfo;
-            """ % (
-                node.nickname, node.node_id,
-                node.nickname, node.connection_string,
-                node.nickname, node.nickname)))
+            """
+                % (
+                    node.nickname,
+                    node.node_id,
+                    node.nickname,
+                    node.connection_string,
+                    node.nickname,
+                    node.nickname,
+                )
+            )
+        )
 
-    return '\n\n'.join(preamble)
+    return "\n\n".join(preamble)
 
 
 def calculate_replication_set(cur, seeds):
@@ -411,13 +459,16 @@ def calculate_replication_set(cur, seeds):
 
         # Skip if the table doesn't exist - we might have seeds listed that
         # have been removed or are yet to be created.
-        cur.execute("""
+        cur.execute(
+            """
             SELECT TRUE
             FROM pg_class, pg_namespace
             WHERE pg_class.relnamespace = pg_namespace.oid
                 AND pg_namespace.nspname = %s
                 AND pg_class.relname = %s
-            """ % sqlvalues(namespace, tablename))
+            """
+            % sqlvalues(namespace, tablename)
+        )
         if cur.fetchone() is None:
             log.debug("Table %s.%s doesn't exist" % (namespace, tablename))
             continue
@@ -426,7 +477,8 @@ def calculate_replication_set(cur, seeds):
 
         # Find all tables that reference the current (seed) table
         # and all tables that the seed table references.
-        cur.execute("""
+        cur.execute(
+            """
             SELECT ref_namespace.nspname, ref_class.relname
             FROM
                 -- One of the seed tables
@@ -456,11 +508,16 @@ def calculate_replication_set(cur, seeds):
                     OR (pg_constraint.conrelid = seed_class.oid
                         AND pg_constraint.confrelid = ref_class.oid)
                     )
-            """ % sqlvalues(namespace, tablename))
+            """
+            % sqlvalues(namespace, tablename)
+        )
         for namespace, tablename in cur.fetchall():
             key = (namespace, tablename)
-            if (key not in tables and key not in pending_tables
-                and '%s.%s' % (namespace, tablename) not in IGNORED_TABLES):
+            if (
+                key not in tables
+                and key not in pending_tables
+                and "%s.%s" % (namespace, tablename) not in IGNORED_TABLES
+            ):
                 pending_tables.add(key)
 
     # Generate the set of sequences that are linked to any of our set of
@@ -468,7 +525,8 @@ def calculate_replication_set(cur, seeds):
     # serial or bigserial columns, or other sequences OWNED BY a particular
     # column.
     for namespace, tablename in tables:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT seq
             FROM (
                 SELECT pg_get_serial_sequence(%s, attname) AS seq
@@ -480,8 +538,10 @@ def calculate_replication_set(cur, seeds):
                     AND pg_attribute.attisdropped IS FALSE
                 ) AS whatever
             WHERE seq IS NOT NULL;
-            """ % sqlvalues(fqn(namespace, tablename), namespace, tablename))
-        for sequence, in cur.fetchall():
+            """
+            % sqlvalues(fqn(namespace, tablename), namespace, tablename)
+        )
+        for (sequence,) in cur.fetchall():
             if sequence not in IGNORED_SEQUENCES:
                 sequences.add(sequence)
 
@@ -498,33 +558,42 @@ def discover_unreplicated(cur):
 
     :returns: (unreplicated_tables_set, unreplicated_sequences_set)
     """
-    all_tables = all_tables_in_schema(cur, 'public')
-    all_sequences = all_sequences_in_schema(cur, 'public')
+    all_tables = all_tables_in_schema(cur, "public")
+    all_sequences = all_sequences_in_schema(cur, "public")
 
     # Ignore any tables and sequences starting with temp_. These are
     # transient and not to be replicated per Bug #778338.
     all_tables = {
-        table for table in all_tables
-            if not table.startswith('public.temp_')}
+        table for table in all_tables if not table.startswith("public.temp_")
+    }
     all_sequences = {
-        sequence for sequence in all_sequences
-            if not sequence.startswith('public.temp_')}
+        sequence
+        for sequence in all_sequences
+        if not sequence.startswith("public.temp_")
+    }
 
-    cur.execute("""
+    cur.execute(
+        """
         SELECT tab_nspname, tab_relname FROM %s
         WHERE tab_nspname = 'public'
-        """ % fqn(CLUSTER_NAMESPACE, "sl_table"))
+        """
+        % fqn(CLUSTER_NAMESPACE, "sl_table")
+    )
     replicated_tables = {fqn(*row) for row in cur.fetchall()}
 
-    cur.execute("""
+    cur.execute(
+        """
         SELECT seq_nspname, seq_relname FROM %s
         WHERE seq_nspname = 'public'
-        """ % fqn(CLUSTER_NAMESPACE, "sl_sequence"))
+        """
+        % fqn(CLUSTER_NAMESPACE, "sl_sequence")
+    )
     replicated_sequences = {fqn(*row) for row in cur.fetchall()}
 
     return (
         all_tables - replicated_tables - IGNORED_TABLES,
-        all_sequences - replicated_sequences - IGNORED_SEQUENCES)
+        all_sequences - replicated_sequences - IGNORED_SEQUENCES,
+    )
 
 
 class ReplicationConfigError(Exception):
@@ -547,10 +616,13 @@ def validate_replication(cur):
     unrepl_tables, unrepl_sequences = discover_unreplicated(cur)
     if unrepl_tables:
         raise ReplicationConfigError(
-            "Unreplicated tables: %s" % repr(unrepl_tables))
+            "Unreplicated tables: %s" % repr(unrepl_tables)
+        )
     if unrepl_sequences:
         raise ReplicationConfigError(
-            "Unreplicated sequences: %s" % repr(unrepl_sequences))
+            "Unreplicated sequences: %s" % repr(unrepl_sequences)
+        )
 
     lpmain_tables, lpmain_sequences = calculate_replication_set(
-        cur, LPMAIN_SEED)
+        cur, LPMAIN_SEED
+    )

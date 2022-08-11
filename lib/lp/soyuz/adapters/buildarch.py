@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'determine_architectures_to_build',
-    ]
+    "determine_architectures_to_build",
+]
 
 
 import os
@@ -29,9 +29,10 @@ class DpkgArchitectureCache:
             action = timeline.start(
                 "dpkg-architecture",
                 "-i%s DEB_HOST_ARCH=%s" % (wildcard, arch),
-                allow_nested=True)
+                allow_nested=True,
+            )
             try:
-                ret = (subprocess.call(command, env=env) == 0)
+                ret = subprocess.call(command, env=env) == 0
             finally:
                 action.finish()
             self._matches[(arch, wildcard)] = ret
@@ -56,11 +57,18 @@ def resolve_arch_spec(hintlist, valid_archs):
     if hint_archs == {"all"}:
         return set(), True
     return (
-        set(dpkg_architecture.findAllMatches(valid_archs, hint_archs)), False)
+        set(dpkg_architecture.findAllMatches(valid_archs, hint_archs)),
+        False,
+    )
 
 
-def determine_architectures_to_build(hint_list, indep_hint_list, need_archs,
-                                     nominated_arch_indep, need_arch_indep):
+def determine_architectures_to_build(
+    hint_list,
+    indep_hint_list,
+    need_archs,
+    nominated_arch_indep,
+    need_arch_indep,
+):
     """Return a set of architectures to build.
 
     :param hint_list: a string of the architectures this source package

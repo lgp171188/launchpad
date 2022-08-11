@@ -4,25 +4,25 @@
 """Blueprints' custom publication."""
 
 __all__ = [
-    'BlueprintsBrowserRequest',
-    'BlueprintsLayer',
-    'blueprints_request_publication_factory',
-    'SpecificationsFacet',
-    ]
+    "BlueprintsBrowserRequest",
+    "BlueprintsLayer",
+    "blueprints_request_publication_factory",
+    "SpecificationsFacet",
+]
 
 
 from zope.interface import implementer
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
     IDefaultBrowserLayer,
-    )
+)
 
 from lp.services.webapp.interfaces import IFacet
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     VHostWebServiceRequestPublicationFactory,
-    )
+)
 
 
 @implementer(IFacet)
@@ -45,4 +45,5 @@ class BlueprintsBrowserRequest(LaunchpadBrowserRequest):
 
 def blueprints_request_publication_factory():
     return VHostWebServiceRequestPublicationFactory(
-        'blueprints', BlueprintsBrowserRequest, LaunchpadBrowserPublication)
+        "blueprints", BlueprintsBrowserRequest, LaunchpadBrowserPublication
+    )

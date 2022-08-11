@@ -4,24 +4,22 @@
 """Bug tracker interfaces."""
 
 __all__ = [
-    'BugTrackerType',
-    'IBugTracker',
-    'IBugTrackerAlias',
-    'IBugTrackerAliasSet',
-    'IBugTrackerComponent',
-    'IBugTrackerComponentGroup',
-    'IBugTrackerSet',
-    'IHasExternalBugTracker',
-    'IRemoteBug',
-    'SINGLE_PRODUCT_BUGTRACKERTYPES',
-    ]
+    "BugTrackerType",
+    "IBugTracker",
+    "IBugTrackerAlias",
+    "IBugTrackerAliasSet",
+    "IBugTrackerComponent",
+    "IBugTrackerComponentGroup",
+    "IBugTrackerSet",
+    "IHasExternalBugTracker",
+    "IRemoteBug",
+    "SINGLE_PRODUCT_BUGTRACKERTYPES",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     export_factory_operation,
@@ -35,40 +33,24 @@ from lazr.restful.declarations import (
     operation_returns_collection_of,
     operation_returns_entry,
     rename_parameters_as,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    List,
-    Object,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Int, List, Object, Text, TextLine
 from zope.schema.interfaces import IObject
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.name import name_validator
-from lp.services.fields import (
-    ContentNameField,
-    StrippedTextLine,
-    URIField,
-    )
-from lp.services.webservice.apihelpers import patch_reference_property
+from lp.services.fields import ContentNameField, StrippedTextLine, URIField
+from lp.services.webservice.apihelpers import (
+    patch_collection_return_type,
+    patch_entry_return_type,
+    patch_reference_property,
+)
 
-
-LOCATION_SCHEMES_ALLOWED = 'http', 'https', 'mailto'
+LOCATION_SCHEMES_ALLOWED = "http", "https", "mailto"
 
 
 class BugTrackerNameField(ContentNameField):
@@ -98,7 +80,8 @@ class BugTrackerURL(URIField):
         if bugtracker is not None and bugtracker != self.context:
             raise LaunchpadValidationError(
                 '%s is already registered in Launchpad as "%s" (%s).'
-                % (input, bugtracker.title, bugtracker.name))
+                % (input, bugtracker.title, bugtracker.name)
+            )
 
 
 class BugTrackerType(DBEnumeratedType):
@@ -108,94 +91,133 @@ class BugTrackerType(DBEnumeratedType):
     Tracker that are supported by Malone in the Launchpad.
     """
 
-    BUGZILLA = DBItem(1, """
+    BUGZILLA = DBItem(
+        1,
+        """
         Bugzilla
 
         The godfather of open source bug tracking, the Bugzilla system was
         developed for the Mozilla project and is now in widespread use. It
         is big and ugly but also comprehensive.
-        """)
+        """,
+    )
 
-    DEBBUGS = DBItem(2, """
+    DEBBUGS = DBItem(
+        2,
+        """
         Debbugs
 
         The debbugs tracker is email based, and allows you to treat every
         bug like a small mailing list.
-        """)
+        """,
+    )
 
-    ROUNDUP = DBItem(3, """
+    ROUNDUP = DBItem(
+        3,
+        """
         Roundup
 
         Roundup is a lightweight, customisable and fast web/email based bug
         tracker written in Python.
-        """)
+        """,
+    )
 
-    TRAC = DBItem(4, """
+    TRAC = DBItem(
+        4,
+        """
         Trac
 
         Trac is an enhanced wiki and issue tracking system for
         software development projects.
-        """)
+        """,
+    )
 
-    SOURCEFORGE = DBItem(5, """
+    SOURCEFORGE = DBItem(
+        5,
+        """
         SourceForge or SourceForge derivative
 
         SorceForge is a collaborative revision control and software
         development management system. It has several derivatives,
         including GForge, RubyForge, BerliOS and JavaForge.
-        """)
+        """,
+    )
 
-    MANTIS = DBItem(6, """
+    MANTIS = DBItem(
+        6,
+        """
         Mantis
 
         Mantis is a web-based bug tracking system written in PHP.
-        """)
+        """,
+    )
 
-    RT = DBItem(7, """
+    RT = DBItem(
+        7,
+        """
         Request Tracker (RT)
 
         RT is a web-based ticketing system written in Perl.
-        """)
+        """,
+    )
 
-    EMAILADDRESS = DBItem(8, """
+    EMAILADDRESS = DBItem(
+        8,
+        """
         Email Address
 
         Bugs are tracked by email, perhaps on a mailing list.
-        """)
+        """,
+    )
 
-    SAVANE = DBItem(9, """
+    SAVANE = DBItem(
+        9,
+        """
         Savane
 
         Savane is a web-based project hosting system which includes
         support and request tracking. The best-known example of Savane
         is GNU's Savannah.
-        """)
+        """,
+    )
 
-    PHPPROJECT = DBItem(10, """
+    PHPPROJECT = DBItem(
+        10,
+        """
         PHP Project Bugtracker
 
         The bug tracker developed by the PHP project.
-        """)
+        """,
+    )
 
-    GOOGLE_CODE = DBItem(11, """
+    GOOGLE_CODE = DBItem(
+        11,
+        """
         Google Code
 
         Google Code is a project hosting and issue tracking service from
         Google.
-        """)
+        """,
+    )
 
-    GITHUB = DBItem(12, """
+    GITHUB = DBItem(
+        12,
+        """
         GitHub Issues
 
         The issue tracker for projects hosted on GitHub.
-        """)
+        """,
+    )
 
-    GITLAB = DBItem(13, """
+    GITLAB = DBItem(
+        13,
+        """
         GitLab Issues
 
         GitLab is a single application for the entire software development
         lifecycle.
-        """)
+        """,
+    )
 
 
 # A list of the BugTrackerTypes that don't need a remote product to be
@@ -211,10 +233,10 @@ SINGLE_PRODUCT_BUGTRACKERTYPES = [
     BugTrackerType.PHPPROJECT,
     BugTrackerType.ROUNDUP,
     BugTrackerType.TRAC,
-    ]
+]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTracker(Interface):
     """A remote bug system.
 
@@ -235,91 +257,129 @@ class IBugTracker(Interface):
 
     """
 
-    id = Int(title=_('ID'))
+    id = Int(title=_("ID"))
     bugtrackertype = exported(
-        Choice(title=_('Bug Tracker Type'),
-               vocabulary=BugTrackerType,
-               default=BugTrackerType.BUGZILLA),
-        exported_as='bug_tracker_type')
+        Choice(
+            title=_("Bug Tracker Type"),
+            vocabulary=BugTrackerType,
+            default=BugTrackerType.BUGZILLA,
+        ),
+        exported_as="bug_tracker_type",
+    )
     name = exported(
         BugTrackerNameField(
-            title=_('Name'),
+            title=_("Name"),
             constraint=name_validator,
-            description=_('A URL-friendly name for the bug tracker, '
-                          'such as "mozilla-bugs".')))
+            description=_(
+                "A URL-friendly name for the bug tracker, "
+                'such as "mozilla-bugs".'
+            ),
+        )
+    )
     title = exported(
         TextLine(
-            title=_('Title'),
-            description=_('A descriptive label for this tracker to show '
-                          'in listings.')))
+            title=_("Title"),
+            description=_(
+                "A descriptive label for this tracker to show " "in listings."
+            ),
+        )
+    )
     summary = exported(
         Text(
-            title=_('Summary'),
+            title=_("Summary"),
             description=_(
-                'A brief introduction or overview of this bug '
-                'tracker instance.'),
-            required=False))
+                "A brief introduction or overview of this bug "
+                "tracker instance."
+            ),
+            required=False,
+        )
+    )
     baseurl = exported(
         BugTrackerURL(
-            title=_('Location'),
+            title=_("Location"),
             allowed_schemes=LOCATION_SCHEMES_ALLOWED,
             description=_(
-                'The top-level URL for the bug tracker, or an upstream email '
-                'address. This must be accurate so that Launchpad can link '
-                'to external bug reports.')),
-        exported_as='base_url')
+                "The top-level URL for the bug tracker, or an upstream email "
+                "address. This must be accurate so that Launchpad can link "
+                "to external bug reports."
+            ),
+        ),
+        exported_as="base_url",
+    )
     aliases = exported(
         List(
-            title=_('Location aliases'),
+            title=_("Location aliases"),
             description=_(
-                'A list of URLs or email addresses that all lead to the '
-                'same bug tracker, or commonly seen typos, separated by '
-                'whitespace.'),
-            value_type=BugTrackerURL(
-                allowed_schemes=LOCATION_SCHEMES_ALLOWED),
-            required=False),
-        exported_as='base_url_aliases')
+                "A list of URLs or email addresses that all lead to the "
+                "same bug tracker, or commonly seen typos, separated by "
+                "whitespace."
+            ),
+            value_type=BugTrackerURL(allowed_schemes=LOCATION_SCHEMES_ALLOWED),
+            required=False,
+        ),
+        exported_as="base_url_aliases",
+    )
     owner = exported(
-        Reference(title=_('Owner'), schema=Interface),
-        exported_as='registrant')
+        # Really IPerson, patched in lp.bugs.interfaces.webservice.
+        Reference(title=_("Owner"), schema=Interface),
+        exported_as="registrant",
+    )
     contactdetails = exported(
         Text(
-            title=_('Contact details'),
+            title=_("Contact details"),
             description=_(
-                'The contact details for the external bug tracker (so that, '
-                'for example, its administrators can be contacted about a '
-                'security breach).'),
-            required=False),
-        exported_as='contact_details')
+                "The contact details for the external bug tracker (so that, "
+                "for example, its administrators can be contacted about a "
+                "security breach)."
+            ),
+            required=False,
+        ),
+        exported_as="contact_details",
+    )
     watches = doNotSnapshot(
         exported(
             CollectionField(
-                title=_('The remote watches on this bug tracker.'),
-                value_type=Reference(schema=IObject))))
+                title=_("The remote watches on this bug tracker."),
+                value_type=Reference(schema=IObject),
+            )
+        )
+    )
     has_lp_plugin = exported(
         Bool(
-            title=_('This bug tracker has a Launchpad plugin installed.'),
-            required=False, default=False))
-    products = Attribute('The products that use this bug tracker.')
-    latestwatches = Attribute('The last 10 watches created.')
+            title=_("This bug tracker has a Launchpad plugin installed."),
+            required=False,
+            default=False,
+        )
+    )
+    products = Attribute("The products that use this bug tracker.")
+    latestwatches = Attribute("The last 10 watches created.")
     imported_bug_messages = Attribute(
-        'Bug messages that have been imported from this bug tracker.')
+        "Bug messages that have been imported from this bug tracker."
+    )
     multi_product = Attribute(
-        "This bug tracker tracks multiple remote products.")
+        "This bug tracker tracks multiple remote products."
+    )
     active = exported(
         Bool(
-            title=_('Updates for this bug tracker are enabled'),
-            required=True, default=True))
+            title=_("Updates for this bug tracker are enabled"),
+            required=True,
+            default=True,
+        )
+    )
 
     watches_ready_to_check = Attribute(
-        "The set of bug watches that are scheduled to be checked.")
+        "The set of bug watches that are scheduled to be checked."
+    )
     watches_with_unpushed_comments = Attribute(
-        "The set of bug watches that have unpushed comments.")
+        "The set of bug watches that have unpushed comments."
+    )
     watches_needing_update = Attribute(
-        "The set of bug watches that need updating.")
+        "The set of bug watches that need updating."
+    )
 
-    def getBugFilingAndSearchLinks(remote_product, summary=None,
-                                   description=None, remote_component=None):
+    def getBugFilingAndSearchLinks(
+        remote_product, summary=None, description=None, remote_component=None
+    ):
         """Return the bug filing and search links for the tracker.
 
         :param remote_product: The name of the product on which the bug
@@ -361,8 +421,7 @@ class IBugTracker(Interface):
         :return: An `IBugTrackerPerson`.
         """
 
-    def ensurePersonForSelf(
-        display_name, email, rationale, creation_comment):
+    def ensurePersonForSelf(display_name, email, rationale, creation_comment):
         """Return the correct `IPerson` for a given name on a bugtracker.
 
         :param bugtracker: The `IBugTracker` for which we should have a
@@ -375,7 +434,7 @@ class IBugTracker(Interface):
             new `IPerson` for this `name` and `bugtracker`, if necessary.
         :param creation_comment: The creation comment for the `IPerson`
             if one is created.
-         """
+        """
 
     def destroySelf():
         """Delete this bug tracker."""
@@ -391,23 +450,32 @@ class IBugTracker(Interface):
 
     @operation_parameters(
         component_group_name=TextLine(
-            title="The name of the remote component group", required=True))
+            title="The name of the remote component group", required=True
+        )
+    )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_write_operation()
+    @operation_for_version("beta")
     def addRemoteComponentGroup(component_group_name):
         """Adds a new component group to the bug tracker"""
 
     @export_read_operation()
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_collection_of(Interface)
+    @operation_for_version("beta")
     def getAllRemoteComponentGroups():
         """Return collection of all component groups for this bug tracker"""
 
     @operation_parameters(
         component_group_name=TextLine(
-            title="The name of the remote component group",
-            required=True))
+            title="The name of the remote component group", required=True
+        )
+    )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getRemoteComponentGroup(component_group_name):
         """Retrieve a given component group registered with the bug tracker.
 
@@ -416,24 +484,26 @@ class IBugTracker(Interface):
 
     @operation_parameters(
         distribution=TextLine(
-            title="The distribution for the source package",
-            required=True),
+            title="The distribution for the source package", required=True
+        ),
         sourcepackagename=TextLine(
-            title="The source package name",
-            required=True))
+            title="The source package name", required=True
+        ),
+    )
+    # Really IBugTrackerComponentGroup, patched below.
     @operation_returns_entry(Interface)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getRemoteComponentForDistroSourcePackageName(
-        distribution, sourcepackagename):
+        distribution, sourcepackagename
+    ):
         """Returns the component linked to this source package, if any.
 
         If no components have been linked, returns value of None.
         """
 
     def getRelatedPillars(user=None):
-        """Returns the `IProduct`s and `IProjectGroup`s that use this tracker.
-        """
+        """Returns the `IProduct`s and `IProjectGroup`s using this tracker."""
 
 
 @exported_as_webservice_collection(IBugTracker)
@@ -444,7 +514,7 @@ class IBugTrackerSet(Interface):
     example, bugzilla.mozilla.org is distinct from bugzilla.gnome.org.
     """
 
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     count = Attribute("The number of registered bug trackers.")
 
@@ -457,9 +527,11 @@ class IBugTrackerSet(Interface):
         """
 
     @operation_parameters(
-        name=TextLine(title="The bug tracker name", required=True))
+        name=TextLine(title="The bug tracker name", required=True)
+    )
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(name, default=None):
         """Get a BugTracker by its name.
 
@@ -476,25 +548,45 @@ class IBugTrackerSet(Interface):
     def __iter__():
         """Iterate through BugTrackers."""
 
-    @rename_parameters_as(baseurl='base_url')
+    @rename_parameters_as(baseurl="base_url")
     @operation_parameters(
         baseurl=TextLine(
-            title="The base URL of the bug tracker", required=True))
+            title="The base URL of the bug tracker", required=True
+        )
+    )
     @operation_returns_entry(IBugTracker)
     @export_read_operation()
+    @operation_for_version("beta")
     def queryByBaseURL(baseurl):
         """Return one or None BugTracker's by baseurl"""
 
     @call_with(owner=REQUEST_USER)
     @rename_parameters_as(
-        baseurl='base_url', bugtrackertype='bug_tracker_type',
-        contactdetails='contact_details')
+        baseurl="base_url",
+        bugtrackertype="bug_tracker_type",
+        contactdetails="contact_details",
+    )
     @export_factory_operation(
         IBugTracker,
-        ['baseurl', 'bugtrackertype', 'title', 'summary',
-         'contactdetails', 'name'])
-    def ensureBugTracker(baseurl, owner, bugtrackertype,
-        title=None, summary=None, contactdetails=None, name=None):
+        [
+            "baseurl",
+            "bugtrackertype",
+            "title",
+            "summary",
+            "contactdetails",
+            "name",
+        ],
+    )
+    @operation_for_version("beta")
+    def ensureBugTracker(
+        baseurl,
+        owner,
+        bugtrackertype,
+        title=None,
+        summary=None,
+        contactdetails=None,
+        name=None,
+    ):
         """Make sure that there is a bugtracker for the given base url.
 
         If not, create one using the given attributes.
@@ -530,14 +622,16 @@ class IBugTrackerAlias(Interface):
     reduce the gardening burden.
     """
 
-    id = Int(title=_('ID'))
+    id = Int(title=_("ID"))
     bugtracker = Object(
-        title=_('The bugtracker for which this is an alias.'),
-        schema=IBugTracker)
+        title=_("The bugtracker for which this is an alias."),
+        schema=IBugTracker,
+    )
     base_url = BugTrackerURL(
-        title=_('Location'),
+        title=_("Location"),
         allowed_schemes=LOCATION_SCHEMES_ALLOWED,
-        description=_('Another URL or email address for the bug tracker.'))
+        description=_("Another URL or email address for the bug tracker."),
+    )
 
 
 class IBugTrackerAliasSet(Interface):
@@ -547,7 +641,7 @@ class IBugTrackerAliasSet(Interface):
         """Query IBugTrackerAliases by BugTracker."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTrackerComponent(Interface):
     """The software component in the remote bug tracker.
 
@@ -556,42 +650,62 @@ class IBugTrackerComponent(Interface):
     to the corresponding source package in the distro.
     """
 
-    id = Int(title=_('ID'), required=True, readonly=True)
-    is_visible = exported(Bool(
-        title=_('Is Visible?'),
-        description=_("Should the component be shown in "
-                      "the Launchpad web interface?"),
-        ))
+    id = Int(title=_("ID"), required=True, readonly=True)
+    is_visible = exported(
+        Bool(
+            title=_("Is Visible?"),
+            description=_(
+                "Should the component be shown in "
+                "the Launchpad web interface?"
+            ),
+        )
+    )
     is_custom = Bool(
-        title=_('Is Custom?'),
-        description=_("Was the component added locally in "
-                      "Launchpad?  If it was, we must retain "
-                      "it across updates of bugtracker data."),
-        readonly=True)
+        title=_("Is Custom?"),
+        description=_(
+            "Was the component added locally in "
+            "Launchpad?  If it was, we must retain "
+            "it across updates of bugtracker data."
+        ),
+        readonly=True,
+    )
 
     name = exported(
         Text(
-            title=_('Name'),
-            description=_("The name of a software component "
-                          "as shown in Launchpad.")))
+            title=_("Name"),
+            description=_(
+                "The name of a software component " "as shown in Launchpad."
+            ),
+        )
+    )
     source_package_name = Choice(
-        title=_("Package"), required=False, vocabulary='SourcePackageName')
+        title=_("Package"), required=False, vocabulary="SourcePackageName"
+    )
     distribution = Choice(
-        title=_("Distribution"), required=False, vocabulary='Distribution')
+        title=_("Distribution"), required=False, vocabulary="Distribution"
+    )
 
     distro_source_package = exported(
         Reference(
+            # Really IDistributionSourcePackage, patched in
+            # lp.bugs.interfaces.webservice.
             Interface,
             title=_("Distribution Source Package"),
-            description=_("The distribution source package object that "
-                          "should be linked to this component."),
-            required=False))
+            description=_(
+                "The distribution source package object that "
+                "should be linked to this component."
+            ),
+            required=False,
+        )
+    )
 
     component_group = exported(
-        Reference(title=_('Component Group'), schema=Interface))
+        # Really IBugTrackerComponentGroup, patched below.
+        Reference(title=_("Component Group"), schema=Interface)
+    )
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugTrackerComponentGroup(Interface):
     """A collection of components in a remote bug tracker.
 
@@ -599,31 +713,53 @@ class IBugTrackerComponentGroup(Interface):
     such as Bugzilla's 'product'.
     """
 
-    id = Int(title=_('ID'))
+    id = Int(title=_("ID"))
     name = exported(
         Text(
-            title=_('Name'),
-            description=_('The name of the bug tracker product.')))
+            title=_("Name"),
+            description=_("The name of the bug tracker product."),
+        )
+    )
     components = exported(
         CollectionField(
-            title=_('Components.'),
-            value_type=Reference(schema=IBugTrackerComponent)))
+            title=_("Components."),
+            value_type=Reference(schema=IBugTrackerComponent),
+        )
+    )
     bug_tracker = exported(
-        Reference(title=_('BugTracker'), schema=IBugTracker))
+        Reference(title=_("BugTracker"), schema=IBugTracker)
+    )
 
     @operation_parameters(
         component_name=TextLine(
             title="The name of the remote software component to be added",
-            required=True))
+            required=True,
+        )
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def addComponent(component_name):
         """Adds a component to be tracked as part of this component group"""
 
 
-# Patch in a mutual reference between IBugTrackerComponent and
-# IBugTrackerComponentGroup.
+# Patch in some mutual references.
+patch_entry_return_type(
+    IBugTracker, "getRemoteComponentGroup", IBugTrackerComponentGroup
+)
+patch_entry_return_type(
+    IBugTracker, "addRemoteComponentGroup", IBugTrackerComponentGroup
+)
+patch_collection_return_type(
+    IBugTracker, "getAllRemoteComponentGroups", IBugTrackerComponentGroup
+)
+patch_entry_return_type(
+    IBugTracker,
+    "getRemoteComponentForDistroSourcePackageName",
+    IBugTrackerComponent,
+)
 patch_reference_property(
-    IBugTrackerComponent, "component_group", IBugTrackerComponentGroup)
+    IBugTrackerComponent, "component_group", IBugTrackerComponentGroup
+)
 
 
 class IHasExternalBugTracker(Interface):
@@ -644,17 +780,27 @@ class IHasExternalBugTracker(Interface):
 class IRemoteBug(Interface):
     """A remote bug for a given bug tracker."""
 
-    bugtracker = Choice(title=_('Bug System'), required=True,
-        vocabulary='BugTracker', description=_("The bug tracker in which "
-        "the remote bug is found."))
+    bugtracker = Choice(
+        title=_("Bug System"),
+        required=True,
+        vocabulary="BugTracker",
+        description=_("The bug tracker in which " "the remote bug is found."),
+    )
 
-    remotebug = StrippedTextLine(title=_('Remote Bug'), required=True,
-        readonly=False, description=_("The bug number of this bug in the "
-        "remote bug system."))
+    remotebug = StrippedTextLine(
+        title=_("Remote Bug"),
+        required=True,
+        readonly=False,
+        description=_(
+            "The bug number of this bug in the " "remote bug system."
+        ),
+    )
 
     bugs = Attribute(
-        _("A list of the Launchpad bugs watching the remote bug."))
+        _("A list of the Launchpad bugs watching the remote bug.")
+    )
 
     title = TextLine(
-        title=_('Title'),
-        description=_('A descriptive label for this remote bug'))
+        title=_("Title"),
+        description=_("A descriptive label for this remote bug"),
+    )

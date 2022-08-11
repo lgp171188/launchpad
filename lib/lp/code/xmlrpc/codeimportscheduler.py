@@ -4,8 +4,8 @@
 """The code import scheduler XML-RPC API."""
 
 __all__ = [
-    'CodeImportSchedulerAPI',
-    ]
+    "CodeImportSchedulerAPI",
+]
 
 import io
 import xmlrpc.client
@@ -20,13 +20,10 @@ from lp.code.interfaces.branch import get_blacklisted_hostnames
 from lp.code.interfaces.codeimportjob import (
     ICodeImportJobSet,
     ICodeImportJobWorkflow,
-    )
+)
 from lp.code.interfaces.codeimportscheduler import ICodeImportScheduler
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadXMLRPCView,
-    )
+from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
 from lp.xmlrpc.faults import NoSuchCodeImportJob
 from lp.xmlrpc.helpers import return_fault
 
@@ -38,7 +35,8 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
     def getJobForMachine(self, hostname, worker_limit):
         """See `ICodeImportScheduler`."""
         job = getUtility(ICodeImportJobSet).getJobForMachine(
-            six.ensure_text(hostname), worker_limit)
+            six.ensure_text(hostname), worker_limit
+        )
         if job is not None:
             return job.id
         else:
@@ -66,19 +64,20 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
     def finishJobID(self, job_id, status_name, log_file):
         """See `ICodeImportScheduler`."""
         return self._finishJobID(
-            job_id, six.ensure_text(status_name), log_file)
+            job_id, six.ensure_text(status_name), log_file
+        )
 
     @return_fault
     def _getImportDataForJobID(self, job_id):
         job = self._getJob(job_id)
         target = job.code_import.target
         return {
-            'arguments': job.makeWorkerArguments(),
-            'target_url': canonical_url(target),
-            'log_file_name': '%s.log' % (
-                target.unique_name[1:].replace('/', '-')),
-            'blacklisted_hostnames': get_blacklisted_hostnames(),
-            }
+            "arguments": job.makeWorkerArguments(),
+            "target_url": canonical_url(target),
+            "log_file_name": "%s.log"
+            % (target.unique_name[1:].replace("/", "-")),
+            "blacklisted_hostnames": get_blacklisted_hostnames(),
+        }
 
     @return_fault
     def _updateHeartbeat(self, job_id, log_tail):
@@ -94,11 +93,15 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         workflow = removeSecurityProxy(getUtility(ICodeImportJobWorkflow))
         if isinstance(log_file, xmlrpc.client.Binary):
             if log_file.data:
-                log_file_name = '%s.log' % (
-                    job.code_import.target.unique_name[1:].replace('/', '-'))
+                log_file_name = "%s.log" % (
+                    job.code_import.target.unique_name[1:].replace("/", "-")
+                )
                 log_file_alias = getUtility(ILibraryFileAliasSet).create(
-                    log_file_name, len(log_file.data),
-                    io.BytesIO(log_file.data), 'text/plain')
+                    log_file_name,
+                    len(log_file.data),
+                    io.BytesIO(log_file.data),
+                    "text/plain",
+                )
             else:
                 log_file_alias = None
         elif log_file:
@@ -108,7 +111,7 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
             # longer need this.
             library_file_alias_set = getUtility(ILibraryFileAliasSet)
             # XXX This is so so so terrible:
-            log_file_alias_id = int(six.ensure_text(log_file).split('/')[-2])
+            log_file_alias_id = int(six.ensure_text(log_file).split("/")[-2])
             log_file_alias = library_file_alias_set[log_file_alias_id]
         else:
             log_file_alias = None

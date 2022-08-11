@@ -7,19 +7,13 @@ order in which specs must be implemented. No attempt is made to prevent
 circular dependencies at present."""
 
 __all__ = [
-    'ISpecificationDependency',
-    'ISpecificationDependencyRemoval',
-    'SpecDependencyIsAlsoRemoval',
-    ]
+    "ISpecificationDependency",
+    "ISpecificationDependencyRemoval",
+    "SpecDependencyIsAlsoRemoval",
+]
 
-from zope.interface import (
-    implementer,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Int,
-    )
+from zope.interface import Interface, implementer
+from zope.schema import Choice, Int
 
 from lp import _
 
@@ -29,10 +23,15 @@ class ISpecificationDependency(Interface):
     depends.
     """
 
-    specification = Int(title=_('Specification ID'), required=True,
-        readonly=True)
-    dependency = Choice(title=_('Depends On'), required=True, readonly=True,
-        vocabulary='SpecificationDepCandidates')
+    specification = Int(
+        title=_("Specification ID"), required=True, readonly=True
+    )
+    dependency = Choice(
+        title=_("Depends On"),
+        required=True,
+        readonly=True,
+        vocabulary="SpecificationDepCandidates",
+    )
 
 
 class ISpecificationDependencyRemoval(Interface):
@@ -40,17 +39,23 @@ class ISpecificationDependencyRemoval(Interface):
     specification dependency removal form.
     """
 
-    specification = Int(title=_('Specification ID'), required=True,
-        readonly=True)
-    dependency = Choice(title=_('Dependency'), required=True, readonly=True,
-        description=_("Please select the dependency you would like to "
-        "remove from the list."),
-        vocabulary='SpecificationDependencies')
+    specification = Int(
+        title=_("Specification ID"), required=True, readonly=True
+    )
+    dependency = Choice(
+        title=_("Dependency"),
+        required=True,
+        readonly=True,
+        description=_(
+            "Please select the dependency you would like to "
+            "remove from the list."
+        ),
+        vocabulary="SpecificationDependencies",
+    )
 
 
 @implementer(ISpecificationDependencyRemoval)
 class SpecDependencyIsAlsoRemoval:
-
     def __init__(self, specdep):
         self.specdep = specdep
 

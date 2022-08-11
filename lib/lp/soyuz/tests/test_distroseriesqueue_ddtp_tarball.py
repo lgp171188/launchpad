@@ -21,18 +21,14 @@ import transaction
 from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
     NascentUpload,
-    )
-from lp.archiveuploader.tests import (
-    datadir,
-    getPolicy,
-    )
+)
+from lp.archiveuploader.tests import datadir, getPolicy
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.tests.test_publishing import TestNativePublishingBase
 from lp.testing.gpgkeys import import_public_test_keys
 
 
 class TestDistroSeriesQueueDdtpTarball(TestNativePublishingBase):
-
     def setUp(self):
         super().setUp()
         import_public_test_keys()
@@ -40,21 +36,27 @@ class TestDistroSeriesQueueDdtpTarball(TestNativePublishingBase):
         old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
         self.anything_policy = getPolicy(
-            name="anything", distro="ubuntutest", distroseries=None)
+            name="anything", distro="ubuntutest", distroseries=None
+        )
         self.absolutely_anything_policy = getPolicy(
-            name="absolutely-anything", distro="ubuntutest", distroseries=None)
+            name="absolutely-anything", distro="ubuntutest", distroseries=None
+        )
         self.logger = DevNullLogger()
 
     def test_rejects_misspelled_changesfile_name(self):
         upload = NascentUpload.from_changesfile_path(
             datadir("ddtp-tarball/translations-main_20060728.changes"),
-            self.absolutely_anything_policy, self.logger)
+            self.absolutely_anything_policy,
+            self.logger,
+        )
         self.assertRaises(EarlyReturnUploadError, upload.process)
 
     def uploadTestData(self, version):
         upload = NascentUpload.from_changesfile_path(
             datadir("ddtp-tarball/translations-main_%s_all.changes" % version),
-            self.anything_policy, self.logger)
+            self.anything_policy,
+            self.logger,
+        )
         upload.process()
         self.assertFalse(upload.is_rejected)
         self.assertTrue(upload.do_accept())
@@ -69,8 +71,18 @@ class TestDistroSeriesQueueDdtpTarball(TestNativePublishingBase):
         transaction.commit()
         upload.queue_root.realiseUpload(self.logger)
         target_dir = os.path.join(
-            self.config.distroroot, "ubuntutest", "dists", "breezy-autotest",
-            "main", "i18n")
+            self.config.distroroot,
+            "ubuntutest",
+            "dists",
+            "breezy-autotest",
+            "main",
+            "i18n",
+        )
         # In this high-level test, we only care that something was unpacked.
-        self.assertTrue([name for name in os.listdir(target_dir)
-                         if name.startswith("Translation-")])
+        self.assertTrue(
+            [
+                name
+                for name in os.listdir(target_dir)
+                if name.startswith("Translation-")
+            ]
+        )

@@ -6,23 +6,19 @@
 import os.path
 from textwrap import dedent
 
-from contrib.glock import GlobalLock
 import transaction
+from contrib.glock import GlobalLock
 from zope.component import getUtility
 
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
-    )
+)
 from lp.services.config import config
 from lp.services.job.scripts import process_job_source
 from lp.services.scripts.base import LOCK_PATH
 from lp.services.scripts.tests import run_script
-from lp.testing import (
-    login_person,
-    TestCase,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCase, TestCaseWithFactory, login_person
 from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
 
@@ -32,21 +28,25 @@ class ProcessSingleJobSourceConfigTest(TestCase):
     This test case is specific for unit testing ProcessSingleJobSource's
     usage of config.
     """
+
     def test_config_section_link(self):
         module_name = "lp.code.interfaces.branchmergeproposal"
         self.pushConfig("IBranchMergeProposalJobSource", module=module_name)
-        self.pushConfig("IUpdatePreviewDiffJobSource",
-                        link="IBranchMergeProposalJobSource")
+        self.pushConfig(
+            "IUpdatePreviewDiffJobSource", link="IBranchMergeProposalJobSource"
+        )
 
         proc = process_job_source.ProcessSingleJobSource(
-            test_args=['IUpdatePreviewDiffJobSource'])
+            test_args=["IUpdatePreviewDiffJobSource"]
+        )
         self.assertEqual(proc.config_section.module, module_name)
 
 
 class ProcessJobSourceTest(TestCaseWithFactory):
     """Test the process-job-source.py script."""
+
     layer = LaunchpadScriptLayer
-    script = 'cronscripts/process-job-source.py'
+    script = "cronscripts/process-job-source.py"
 
     def tearDown(self):
         super().tearDown()
@@ -56,18 +56,21 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         # The script should display usage info when called without any
         # arguments.
         returncode, output, error = run_script(
-            self.script, [], expect_returncode=1)
-        self.assertIn('Usage:', output)
-        self.assertIn('process-job-source.py [options] JOB_SOURCE', output)
+            self.script, [], expect_returncode=1
+        )
+        self.assertIn("Usage:", output)
+        self.assertIn("process-job-source.py [options] JOB_SOURCE", output)
 
     def test_empty_queue(self):
         # The script should just create a lockfile and exit if no jobs
         # are in the queue.
         returncode, output, error = run_script(
-            self.script, ['IMembershipNotificationJobSource'])
+            self.script, ["IMembershipNotificationJobSource"]
+        )
         expected = (
-            'INFO    Creating lockfile: .*launchpad-process-job-'
-            'source-IMembershipNotificationJobSource.lock.*')
+            "INFO    Creating lockfile: .*launchpad-process-job-"
+            "source-IMembershipNotificationJobSource.lock.*"
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(expected, error)
 
     def test_locked(self):
@@ -75,27 +78,32 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         # non-zero, but doesn't log anything above INFO.
         lock_file_path = os.path.join(
             LOCK_PATH,
-            'launchpad-process-job-source-IMembershipNotificationJobSource'
-            '.lock')
+            "launchpad-process-job-source-IMembershipNotificationJobSource"
+            ".lock",
+        )
         lock = GlobalLock(lock_file_path)
         lock.acquire()
         try:
             returncode, output, error = run_script(
-                self.script, ['IMembershipNotificationJobSource'],
-                expect_returncode=1)
-            expected = dedent('''\
+                self.script,
+                ["IMembershipNotificationJobSource"],
+                expect_returncode=1,
+            )
+            expected = dedent(
+                """\
                 INFO    Creating lockfile: {lock}
                 INFO    Lockfile {lock} in use
                 INFO    1 job sources failed.
-                ''').format(lock=lock_file_path)
+                """
+            ).format(lock=lock_file_path)
             self.assertTextMatchesExpressionIgnoreWhitespace(expected, error)
         finally:
             lock.release()
 
     def test_processed(self):
         # The script should output the number of jobs it processed.
-        person = self.factory.makePerson(name='murdock')
-        team = self.factory.makeTeam(name='a-team')
+        person = self.factory.makePerson(name="murdock")
+        team = self.factory.makeTeam(name="a-team")
         login_person(team.teamowner)
         team.addMember(person, team.teamowner)
         membership_set = getUtility(ITeamMembershipSet)
@@ -103,28 +111,35 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         tm.setStatus(TeamMembershipStatus.ADMIN, team.teamowner)
         transaction.commit()
         returncode, output, error = run_script(
-            self.script, ['-v', 'IMembershipNotificationJobSource'])
+            self.script, ["-v", "IMembershipNotificationJobSource"]
+        )
         self.assertIn(
-            ('INFO    Running <MembershipNotificationJob '
-             'about ~murdock in ~a-team; status=Waiting>'),
-            error)
-        self.assertIn('DEBUG   MembershipNotificationJob sent email', error)
-        self.assertIn('Ran 1 MembershipNotificationJob jobs.', error)
+            (
+                "INFO    Running <MembershipNotificationJob "
+                "about ~murdock in ~a-team; status=Waiting>"
+            ),
+            error,
+        )
+        self.assertIn("DEBUG   MembershipNotificationJob sent email", error)
+        self.assertIn("Ran 1 MembershipNotificationJob jobs.", error)
 
 
 class ProcessJobSourceGroupsTest(TestCaseWithFactory):
     """Test the process-job-source-groups.py script."""
+
     layer = LaunchpadScriptLayer
-    script = 'cronscripts/process-job-source-groups.py'
+    script = "cronscripts/process-job-source-groups.py"
 
     def getJobSources(self, *groups):
-        sources = config['process-job-source-groups'].job_sources
-        sources = (source.strip() for source in sources.split(','))
+        sources = config["process-job-source-groups"].job_sources
+        sources = (source.strip() for source in sources.split(","))
         sources = (source for source in sources if source in config)
         if len(groups) != 0:
             sources = (
-                source for source in sources
-                if config[source].crontab_group in groups)
+                source
+                for source in sources
+                if config[source].crontab_group in groups
+            )
         return sorted(set(sources))
 
     def tearDown(self):
@@ -135,44 +150,52 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         # The script should display usage info when called without any
         # arguments.
         returncode, output, error = run_script(
-            self.script, [], expect_returncode=1)
+            self.script, [], expect_returncode=1
+        )
         self.assertIn(
-            ('Usage: process-job-source-groups.py '
-             '[ -e JOB_SOURCE ] GROUP [GROUP]...'),
-            output)
-        self.assertIn('-e JOB_SOURCE, --exclude=JOB_SOURCE', output)
-        self.assertIn('At least one group must be specified.', output)
-        self.assertIn('Group: MAIN\n    I', output)
+            (
+                "Usage: process-job-source-groups.py "
+                "[ -e JOB_SOURCE ] GROUP [GROUP]..."
+            ),
+            output,
+        )
+        self.assertIn("-e JOB_SOURCE, --exclude=JOB_SOURCE", output)
+        self.assertIn("At least one group must be specified.", output)
+        self.assertIn("Group: MAIN\n    I", output)
 
     def test_empty_queue(self):
         # The script should just run over each job source class, and then
         # exit if no jobs are in the queue.  It should not create its own
         # lockfile.
-        returncode, output, error = run_script(self.script, ['MAIN'])
+        returncode, output, error = run_script(self.script, ["MAIN"])
         expected = (
-            '.*Creating lockfile:.*launchpad-process-job-'
-            'source-IMembershipNotificationJobSource.lock.*')
+            ".*Creating lockfile:.*launchpad-process-job-"
+            "source-IMembershipNotificationJobSource.lock.*"
+        )
         self.assertTextMatchesExpressionIgnoreWhitespace(expected, error)
         self.assertNotIn("launchpad-processjobsourcegroups.lock", error)
 
     def test_processed(self):
         # The script should output the number of jobs that have been
         # processed.
-        person = self.factory.makePerson(name='murdock')
-        team = self.factory.makeTeam(name='a-team')
+        person = self.factory.makePerson(name="murdock")
+        team = self.factory.makeTeam(name="a-team")
         login_person(team.teamowner)
         team.addMember(person, team.teamowner)
         membership_set = getUtility(ITeamMembershipSet)
         tm = membership_set.getByPersonAndTeam(person, team)
         tm.setStatus(TeamMembershipStatus.ADMIN, team.teamowner)
         transaction.commit()
-        returncode, output, error = run_script(self.script, ['-v', 'MAIN'])
+        returncode, output, error = run_script(self.script, ["-v", "MAIN"])
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            ('INFO Running <MembershipNotificationJob '
-             'about ~murdock in ~a-team; status=Waiting>'),
-            error)
-        self.assertIn('DEBUG   MembershipNotificationJob sent email', error)
-        self.assertIn('Ran 1 MembershipNotificationJob jobs.', error)
+            (
+                "INFO Running <MembershipNotificationJob "
+                "about ~murdock in ~a-team; status=Waiting>"
+            ),
+            error,
+        )
+        self.assertIn("DEBUG   MembershipNotificationJob sent email", error)
+        self.assertIn("Ran 1 MembershipNotificationJob jobs.", error)
 
     def test_exclude(self):
         # Job sources can be excluded with a --exclude switch.

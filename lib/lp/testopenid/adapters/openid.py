@@ -4,8 +4,8 @@
 """TestOpenID adapters and helpers."""
 
 __all__ = [
-    'TestOpenIDPersistentIdentity',
-    ]
+    "TestOpenIDPersistentIdentity",
+]
 
 from zope.component import adapter
 from zope.interface import implementer
@@ -24,5 +24,5 @@ class TestOpenIDPersistentIdentity(OpenIDPersistentIdentity):
     @property
     def openid_identity_url(self):
         """See `IOpenIDPersistentIdentity`."""
-        identity_root_url = allvhosts.configs['testopenid'].rooturl
+        identity_root_url = allvhosts.configs["testopenid"].rooturl
         return identity_root_url + self.openid_identifier

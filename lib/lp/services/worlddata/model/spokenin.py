@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['SpokenIn']
+__all__ = ["SpokenIn"]
 
 from zope.interface import implementer
 
@@ -17,8 +17,9 @@ class SpokenIn(SQLBase):
     This table maps a language which is SpokenIn a country.
     """
 
-    _table = 'SpokenIn'
+    _table = "SpokenIn"
 
-    country = ForeignKey(dbName='country', notNull=True, foreignKey='Country')
-    language = ForeignKey(dbName='language', notNull=True,
-                          foreignKey='Language')
+    country = ForeignKey(dbName="country", notNull=True, foreignKey="Country")
+    language = ForeignKey(
+        dbName="language", notNull=True, foreignKey="Language"
+    )

@@ -1,0 +1,354 @@
+Bug Subscriptions
+=================
+
+Package bug subscriptions allow zero, one, or more people or teams that
+get explicitly Cc'd to all public bugs filed on a package.
+
+The package bug subscriptions are obtained from looking at the
+StructuralSubscription table.
+
+The list of package bug subscriptions are accessed through the
+IDistributionSourcePackage.bug_subscriptions attribute. When there are
+no subscriptions associated with a package, an empty list is returned:
+
+    >>> from zope.component import getUtility
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
+    >>> debian_firefox = debian.getSourcePackage("mozilla-firefox")
+
+    >>> list(debian_firefox.bug_subscriptions)
+    []
+
+Adding a package subscription is done with the
+IDistributionSourcePackage.addBugSubscription method. You have to be
+logged in to call this method:
+
+    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> personset = getUtility(IPersonSet)
+    >>> sample_person = personset.getByName("name12")
+
+    >>> debian_firefox.addBugSubscription(sample_person, sample_person)
+    Traceback (most recent call last):
+      ...
+    zope.security.interfaces.Unauthorized: ...
+
+Let's login then to add a subscription:
+
+    >>> from lp.testing import login
+    >>> login("foo.bar@canonical.com")
+
+    >>> debian_firefox.addBugSubscription(sample_person, sample_person)
+    <...StructuralSubscription object at ...>
+
+    >>> for pbc in debian_firefox.bug_subscriptions:
+    ...     print(pbc.subscriber.name)
+    name12
+
+Trying to add a subscription to a package when that person or team is
+already subscribe to that package will return the existing subscription.
+
+    >>> debian_firefox.addBugSubscription(sample_person, sample_person)
+    <...StructuralSubscription object at ...>
+
+Let's add an ITeam as one of the subscribers:
+
+    >>> ubuntu_team = personset.getByName("ubuntu-team")
+    >>> debian_firefox.addBugSubscription(ubuntu_team, ubuntu_team)
+    <...StructuralSubscription object at ...>
+
+    >>> from operator import attrgetter
+
+    >>> for sub in sorted(
+    ...         debian_firefox.bug_subscriptions,
+    ...         key=attrgetter('subscriber.name')):
+    ...     print(sub.subscriber.name)
+    name12
+    ubuntu-team
+
+To remove a subscription, use
+IStructuralSubscriptionTarget.removeBugSubscription:
+
+    >>> debian_firefox.removeBugSubscription(sample_person, sample_person)
+    >>> sorted([
+    ...     sub.subscriber.id for sub in debian_firefox.bug_subscriptions])
+    [17]
+
+Trying to remove a subscription that doesn't exist on a source package
+raises a DeleteSubscriptionError.
+
+    >>> foobar = personset.getByName("name16")
+    >>> debian_firefox.removeBugSubscription(foobar, foobar)
+    Traceback (most recent call last):
+      ...
+    lp.registry.errors.DeleteSubscriptionError: ...
+
+
+Package Subscriptions and Bug Tasks
+-----------------------------------
+
+Often a bug gets reported on package foo, when it should have been
+reported on bar. When a user, likely a bug triager or developer, changes
+the source package, the subscribers for the new package get subscribed.
+The subscribers of the previous package also remain subscribed.
+
+To demonstrate, let's change the source package for bug #1 in mozilla-
+firefox in Ubuntu to be pmount in Ubuntu, and see how the subscribers
+list changes.
+
+    >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
+
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+
+    >>> ubuntu_firefox = ubuntu.getSourcePackage("mozilla-firefox")
+    >>> ubuntu_pmount = ubuntu.getSourcePackage("pmount")
+
+    >>> bug_one_in_ubuntu_firefox = getUtility(IBugTaskSet).get(17)
+
+Foo Bar, a package subscriber to ubuntu mozilla-firefox and ubuntu
+pmount is currently not subscribed to bug 1.
+
+    >>> from itertools import chain
+    >>> def subscriber_names(bug):
+    ...     subscribers = chain(
+    ...         bug.getDirectSubscribers(),
+    ...         bug.getIndirectSubscribers())
+    ...     return sorted(
+    ...         subscriber.displayname for subscriber in subscribers)
+
+    >>> names = subscriber_names(bug_one_in_ubuntu_firefox.bug)
+    >>> for name in names:
+    ...     print(name)
+    Foo Bar
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Team
+
+Changing the package for bug_one_in_ubuntu_firefox to pmount will
+implicitly subscribe the new package's subscribers to the bug. In
+demonstrating this, we'll also make Sample Person a subscriber to ubuntu
+pmount, to show that the subscription changes behave correctly when a
+subscriber to the new package is already subscribed to the bug:
+
+    >>> import transaction
+    >>> from lp.services.mail import stub
+    >>> from lp.services.webapp.snapshot import notify_modified
+
+    >>> daf = personset.getByName("daf")
+    >>> ubuntu_pmount.addBugSubscription(daf, daf)
+    <...StructuralSubscription object at ...>
+
+    >>> ubuntu_pmount.addBugSubscription(sample_person, sample_person)
+    <...StructuralSubscription object at ...>
+
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox,
+    ...         ["id", "title", "sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
+    >>> transaction.commit()
+
+With the source package changed, we can see that daf is now subscribed:
+
+    >>> for name in subscriber_names(bug_one_in_ubuntu_firefox.bug):
+    ...     print(name)
+    Dafydd Harries
+    Foo Bar
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Team
+
+daf is sent an email giving him complete information about the bug that
+has just been retargeted, including the title, description, status,
+importance, etc. The References header of the email contains the msgid
+of the initial bug report (as if daf was a original recipient of the bug
+notification). The email has the X-Launchpad-Message-Rationale header to
+track why daf received the email. The rational is repeated in the footer
+of the email with the bug title and URL.
+
+    >>> import email
+    >>> from operator import itemgetter
+
+    >>> test_emails = list(stub.test_emails)
+    >>> test_emails.sort(key=itemgetter(1))
+
+    >>> len(test_emails)
+    1
+
+    >>> from_addr, to_addr, raw_message = test_emails.pop()
+    >>> print(from_addr)
+    bounces@canonical.com
+
+    >>> print(to_addr)
+    ['daf@canonical.com']
+
+    >>> msg = email.message_from_bytes(raw_message)
+    >>> msg['References'] == (
+    ...        bug_one_in_ubuntu_firefox.bug.initial_message.rfc822msgid)
+    True
+
+    >>> msg['X-Launchpad-Message-Rationale']
+    'Subscriber (pmount in Ubuntu)'
+    >>> msg['X-Launchpad-Message-For']
+    'daf'
+
+    >>> msg['Subject']
+    '[Bug 1] [NEW] Firefox does not support SVG'
+
+    >>> print(msg.get_payload(decode=True).decode())
+    You have been subscribed to a public bug:
+    <BLANKLINE>
+    Firefox needs to support embedded SVG images, now that the standard has
+    been finalised.
+    <BLANKLINE>
+    The SVG standard 1.0 is complete, and draft implementations for Firefox
+    exist. One of these implementations needs to be integrated with the base
+    install of Firefox. Ideally, the implementation needs to include support
+    for the manipulation of SVG objects from JavaScript to enable
+    interactive and dynamic SVG drawings.
+    <BLANKLINE>
+    ** Affects: firefox
+         Importance: Low
+           Assignee: Mark Shuttleworth (mark)
+             Status: New
+    <BLANKLINE>
+    ** Affects: pmount (Ubuntu)
+         Importance: Medium
+             Status: New
+    <BLANKLINE>
+    ** Affects: mozilla-firefox (Debian)
+         Importance: Low
+             Status: Confirmed
+    <BLANKLINE>
+    --
+    Firefox does not support SVG
+    http://bugs.launchpad.test/bugs/1
+    You received this bug notification because you
+    are subscribed to pmount in Ubuntu.
+
+Since the reporter didn't do anything to trigger this change, the bug
+address is used as the From address.
+
+    >>> print(msg['From'])
+    Launchpad Bug Tracker <1@bugs.launchpad.net>
+
+    >>> stub.test_emails = []
+
+Let's see that nothing unexpected happens when we set the source package
+to None.
+
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox, ["sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu, daf)
+    >>> transaction.commit()
+    >>> stub.test_emails = []
+
+The package subscribers, Daf and Foo Bar, are implicitly unsubscribed:
+
+    >>> names = subscriber_names(bug_one_in_ubuntu_firefox.bug)
+    >>> for name in names:
+    ...     print(name)
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Team
+
+Subscriptions are not limited to persons; teams are also allowed to
+subscribe. Teams are a bit different, since they might not have a
+contact address. Let's add such a team as a subscriber.
+
+    >>> ubuntu_gnome = personset.getByName("name18")
+    >>> ubuntu_gnome.preferredemail is None
+    True
+
+    >>> ubuntu_pmount.addBugSubscription(ubuntu_gnome, ubuntu_gnome)
+    <...StructuralSubscription object at ...>
+
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox, ["sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
+    >>> transaction.commit()
+
+The Ubuntu Gnome team was subscribed to the bug:
+
+    >>> stub.test_emails = []
+    >>> for name in subscriber_names(bug_one_in_ubuntu_firefox.bug):
+    ...     print(name)
+    Dafydd Harries
+    Foo Bar
+    Mark Shuttleworth
+    Sample Person
+    Steve Alexander
+    Ubuntu Gnome Team
+    Ubuntu Team
+
+
+Product Bug Supervisors and Bug Tasks
+-------------------------------------
+
+Like reassigning a bug task to another package, reassigning a bug task
+to another product will subscribe any new product bug supervisors to the
+bug that aren't already subscribed.
+
+    >>> from lp.registry.interfaces.product import IProductSet
+
+    >>> mozilla_firefox = getUtility(IProductSet).get(4)
+
+Then we'll reassign bug #2 in Ubuntu to be in Firefox:
+
+    >>> bug_two_in_ubuntu = getUtility(IBugTaskSet).get(3)
+    >>> print(bug_two_in_ubuntu.bug.id)
+    2
+
+    >>> print(bug_two_in_ubuntu.product.name)
+    tomcat
+
+    >>> for subscription in sorted(
+    ...         bug_two_in_ubuntu.bug.subscriptions,
+    ...         key=attrgetter('person.displayname')):
+    ...     print(subscription.person.displayname)
+    Steve Alexander
+
+    >>> with notify_modified(bug_two_in_ubuntu, ["id", "title", "product"]):
+    ...     bug_two_in_ubuntu.transitionToTarget(mozilla_firefox, daf)
+    >>> transaction.commit()
+
+
+Teams as bug supervisors
+------------------------
+
+The list of teams that a user may add to a package as a bug supervisor
+will only contain those teams of which the user is an administrator.
+
+    >>> from zope.component import getMultiAdapter
+    >>> from lp.services.webapp.servers import LaunchpadTestRequest
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+
+    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> package = ubuntu.getSourcePackage('mozilla-firefox')
+
+    >>> login('test@canonical.com')
+    >>> request = LaunchpadTestRequest()
+    >>> view = getMultiAdapter((package, request), name='+subscribe')
+
+Sample Person is a member of four teams:
+
+    >>> sample_person = view.user
+    >>> for membership in sample_person.team_memberships:
+    ...     print('%s: %s' % (
+    ...         membership.team.displayname, membership.status.name))
+    HWDB Team: APPROVED
+    Landscape Developers: ADMIN
+    Launchpad Users: ADMIN
+    Warty Security Team: APPROVED
+
+But is only an administrator of Landscape Developers, so that is the
+only team that will be listed when the user is changing a package bug
+supervisor:
+
+    >>> for team in view.user.getAdministratedTeams():
+    ...        print(team.displayname)
+    Landscape Developers
+    Launchpad Users
+

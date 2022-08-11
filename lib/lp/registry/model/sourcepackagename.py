@@ -2,47 +2,41 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'SourcePackageName',
-    'SourcePackageNameSet',
-    'getSourcePackageDescriptions',
-    ]
+    "SourcePackageName",
+    "SourcePackageNameSet",
+    "getSourcePackageDescriptions",
+]
 
 import six
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.app.validators.name import valid_name
-from lp.registry.errors import (
-    InvalidName,
-    NoSuchSourcePackageName,
-    )
+from lp.registry.errors import InvalidName, NoSuchSourcePackageName
 from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageName,
     ISourcePackageNameSet,
-    )
-from lp.services.database.sqlbase import (
-    cursor,
-    SQLBase,
-    sqlvalues,
-    )
+)
+from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
 from lp.services.database.sqlobject import (
     SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
-    )
+)
 
 
 @implementer(ISourcePackageName)
 class SourcePackageName(SQLBase):
-    _table = 'SourcePackageName'
+    _table = "SourcePackageName"
 
-    name = StringCol(dbName='name', notNull=True, unique=True,
-        alternateID=True)
+    name = StringCol(
+        dbName="name", notNull=True, unique=True, alternateID=True
+    )
 
-    potemplates = SQLMultipleJoin(
-        'POTemplate', joinColumn='sourcepackagename')
+    potemplates = SQLMultipleJoin("POTemplate", joinColumn="sourcepackagename")
     packagings = SQLMultipleJoin(
-        'Packaging', joinColumn='sourcepackagename', orderBy='Packaging.id')
+        "Packaging", joinColumn="sourcepackagename", orderBy="Packaging.id"
+    )
 
     def __str__(self):
         return self.name
@@ -55,15 +49,15 @@ class SourcePackageName(SQLBase):
             return klass.byName(name)
         except SQLObjectNotFound:
             return klass(name=name)
+
     ensure = classmethod(ensure)
 
 
 @implementer(ISourcePackageNameSet)
 class SourcePackageNameSet:
-
     def __getitem__(self, name):
         """See `ISourcePackageNameSet`."""
-        name = six.ensure_text(name, 'ASCII')
+        name = six.ensure_text(name, "ASCII")
         try:
             return SourcePackageName.byName(name)
         except SQLObjectNotFound:
@@ -87,7 +81,8 @@ class SourcePackageNameSet:
     def new(self, name):
         if not valid_name(name):
             raise InvalidName(
-                "%s is not a valid name for a source package." % name)
+                "%s is not a valid name for a source package." % name
+            )
         return SourcePackageName(name=name)
 
     def getOrCreateByName(self, name):
@@ -98,7 +93,8 @@ class SourcePackageNameSet:
 
 
 def getSourcePackageDescriptions(
-    results, use_names=False, max_title_length=50):
+    results, use_names=False, max_title_length=50
+):
     """Return a dictionary with descriptions keyed on source package names.
 
     Takes an ISelectResults of a *PackageName query. The use_names
@@ -118,14 +114,17 @@ def getSourcePackageDescriptions(
     # sourcepackagename_id and binarypackagename_id depending on
     # whether the row represented one or both of those cases.
     if use_names:
-        clause = ("SourcePackageName.name in %s" %
-                 sqlvalues([pn.name for pn in results]))
+        clause = "SourcePackageName.name in %s" % sqlvalues(
+            [pn.name for pn in results]
+        )
     else:
-        clause = ("SourcePackageName.id in %s" %
-                 sqlvalues([spn.id for spn in results]))
+        clause = "SourcePackageName.id in %s" % sqlvalues(
+            [spn.id for spn in results]
+        )
 
     cur = cursor()
-    cur.execute("""SELECT DISTINCT BinaryPackageName.name,
+    cur.execute(
+        """SELECT DISTINCT BinaryPackageName.name,
                           SourcePackageName.name
                      FROM BinaryPackageRelease, SourcePackageName,
                           BinaryPackageBuild, BinaryPackageName
@@ -138,13 +137,15 @@ def getSourcePackageDescriptions(
                        %s
                    ORDER BY BinaryPackageName.name,
                             SourcePackageName.name"""
-                    % clause)
+        % clause
+    )
 
     descriptions = {}
     for binarypackagename, sourcepackagename in cur.fetchall():
         if sourcepackagename not in descriptions:
             descriptions[sourcepackagename] = (
-                "Source of: %s" % binarypackagename)
+                "Source of: %s" % binarypackagename
+            )
         else:
             if len(descriptions[sourcepackagename]) > max_title_length:
                 description = "..."

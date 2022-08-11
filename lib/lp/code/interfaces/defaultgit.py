@@ -10,13 +10,10 @@ repository for that target.
 """
 
 __all__ = [
-    'ICanHasDefaultGitRepository',
-    ]
+    "ICanHasDefaultGitRepository",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class ICanHasDefaultGitRepository(Interface):
@@ -25,4 +22,5 @@ class ICanHasDefaultGitRepository(Interface):
     context = Attribute("The object that can have a default Git repository.")
     path = Attribute(
         "The path for the default Git repository. "
-        "Note that this will be set even if there is no default repository.")
+        "Note that this will be set even if there is no default repository."
+    )

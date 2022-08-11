@@ -4,27 +4,19 @@
 """Message revision history."""
 
 __all__ = [
-    'IMessageRevision',
-    'IMessageRevisionChunk',
-    ]
+    "IMessageRevision",
+    "IMessageRevisionChunk",
+]
 
 from lazr.restful.declarations import (
     export_write_operation,
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.services.messages.interfaces.message import IMessage
@@ -32,39 +24,66 @@ from lp.services.messages.interfaces.message import IMessage
 
 class IMessageRevisionView(Interface):
     """IMessageRevision readable attributes."""
+
     id = Int(title=_("ID"), required=True, readonly=True)
 
     revision = exported(
-        Int(title=_("Revision number"), required=True, readonly=True))
+        Int(title=_("Revision number"), required=True, readonly=True)
+    )
 
-    content = exported(Text(
-        title=_("The message at the given revision"),
-        required=True, readonly=True))
+    content = exported(
+        Text(
+            title=_("The message at the given revision"),
+            required=True,
+            readonly=True,
+        )
+    )
 
     message = Reference(
-        title=_('The current message of this revision.'),
-        schema=IMessage, required=True, readonly=True)
+        title=_("The current message of this revision."),
+        schema=IMessage,
+        required=True,
+        readonly=True,
+    )
 
     message_implementation = Reference(
-        title=_('The message implementation (BugComment, QuestionMessage or '
-                'CodeReviewComment) related to this revision'),
-        schema=IMessage, required=True, readonly=True)
-
-    date_created = exported(Datetime(
-        title=_("The time when this message revision was created."),
-        required=True, readonly=True))
-
-    date_created_display = exported(TextLine(
         title=_(
-            "The time when this message revision was created, rendered in the "
-            "user's timezone for the web UI."),
-        required=True, readonly=True))
+            "The message implementation (BugComment, QuestionMessage or "
+            "CodeReviewComment) related to this revision"
+        ),
+        schema=IMessage,
+        required=True,
+        readonly=True,
+    )
 
-    date_deleted = exported(Datetime(
-        title=_("The time when this message revision was created."),
-        required=False, readonly=True))
+    date_created = exported(
+        Datetime(
+            title=_("The time when this message revision was created."),
+            required=True,
+            readonly=True,
+        )
+    )
 
-    chunks = Attribute(_('Message pieces'))
+    date_created_display = exported(
+        TextLine(
+            title=_(
+                "The time when this message revision was created, rendered in "
+                "the user's timezone for the web UI."
+            ),
+            required=True,
+            readonly=True,
+        )
+    )
+
+    date_deleted = exported(
+        Datetime(
+            title=_("The time when this message revision was created."),
+            required=False,
+            readonly=True,
+        )
+    )
+
+    chunks = Attribute(_("Message pieces"))
 
 
 class IMessageRevisionEdit(Interface):
@@ -82,8 +101,9 @@ class IMessageRevision(IMessageRevisionView, IMessageRevisionEdit):
 
 
 class IMessageRevisionChunk(Interface):
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     messagerevision = Int(
-        title=_('MessageRevision'), required=True, readonly=True)
-    sequence = Int(title=_('Sequence order'), required=True, readonly=True)
-    content = Text(title=_('Text content'), required=True, readonly=True)
+        title=_("MessageRevision"), required=True, readonly=True
+    )
+    sequence = Int(title=_("Sequence order"), required=True, readonly=True)
+    content = Text(title=_("Text content"), required=True, readonly=True)

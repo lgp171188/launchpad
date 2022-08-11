@@ -8,22 +8,22 @@ the sources and binarypackages.
 """
 
 __all__ = [
-    'BinaryPackageData',
-    'DisplayNameDecodingError',
-    'get_dsc_path',
-    'InvalidVersionError',
-    'MissingRequiredArguments',
-    'PoolFileNotFound',
-    'prioritymap',
-    'SourcePackageData',
-    ]
+    "BinaryPackageData",
+    "DisplayNameDecodingError",
+    "get_dsc_path",
+    "InvalidVersionError",
+    "MissingRequiredArguments",
+    "PoolFileNotFound",
+    "prioritymap",
+    "SourcePackageData",
+]
 
-from email.utils import parseaddr
 import glob
 import os
 import re
 import shutil
 import tempfile
+from email.utils import parseaddr
 
 import six
 
@@ -32,20 +32,13 @@ from lp.archivepublisher.diskpool import poolify
 from lp.archiveuploader.changesfile import ChangesFile
 from lp.archiveuploader.dscfile import DSCFile
 from lp.archiveuploader.nascentuploadfile import BaseBinaryUploadFile
-from lp.archiveuploader.utils import (
-    DpkgSourceError,
-    extract_dpkg_source,
-    )
+from lp.archiveuploader.utils import DpkgSourceError, extract_dpkg_source
 from lp.services import encoding
 from lp.services.database.constants import UTC_NOW
 from lp.services.scripts import log
 from lp.soyuz.enums import PackagePublishingPriority
-from lp.soyuz.scripts.gina import (
-    call,
-    ExecutionError,
-    )
+from lp.soyuz.scripts.gina import ExecutionError, call
 from lp.soyuz.scripts.gina.changelog import parse_changelog
-
 
 #
 # Data setup
@@ -66,6 +59,7 @@ prioritymap = {
 #
 # Helper functions
 #
+
 
 def stripseq(seq):
     return [s.strip() for s in seq]
@@ -101,8 +95,9 @@ def get_dsc_path(name, version, component, archive_root):
 
 
 def unpack_dsc(package, version, component, distro_name, archive_root):
-    dsc_name, dsc_path, component = get_dsc_path(package, version,
-                                                 component, archive_root)
+    dsc_name, dsc_path, component = get_dsc_path(
+        package, version, component, archive_root
+    )
     version = re.sub(r"^\d+:", "", version)
     version = re.sub(r"-[^-]+$", "", version)
     source_dir = "%s-%s" % (package, version)
@@ -117,8 +112,9 @@ def unpack_dsc(package, version, component, distro_name, archive_root):
 
 
 def read_dsc(package, version, component, distro_name, archive_root):
-    source_dir, dsc_path = unpack_dsc(package, version, component,
-                                      distro_name, archive_root)
+    source_dir, dsc_path = unpack_dsc(
+        package, version, component, distro_name, archive_root
+    )
 
     try:
         with open(dsc_path, "rb") as f:
@@ -131,7 +127,8 @@ def read_dsc(package, version, component, distro_name, archive_root):
                 changelog = f.read().strip()
         else:
             log.warning(
-                "No changelog file found for %s in %s" % (package, source_dir))
+                "No changelog file found for %s in %s" % (package, source_dir)
+            )
             changelog = None
 
         copyright = None
@@ -144,8 +141,9 @@ def read_dsc(package, version, component, distro_name, archive_root):
 
         if copyright is None:
             log.warning(
-                "No copyright file found for %s in %s" % (package, source_dir))
-            copyright = b''
+                "No copyright file found for %s in %s" % (package, source_dir)
+            )
+            copyright = b""
     finally:
         shutil.rmtree(source_dir)
 
@@ -157,7 +155,7 @@ def parse_person(val):
     # Some addresses have commas in them, as in: "Adam C. Powell, IV
     # <hazelsct@debian.example.com>". email.utils.parseaddr seems not to
     # handle this properly, so we munge them here.
-    val = val.replace(',', '')
+    val = val.replace(",", "")
     return parseaddr(val)
 
 
@@ -175,6 +173,7 @@ def parse_section(v):
 #
 # Exception classes
 #
+
 
 class MissingRequiredArguments(Exception):
     """Missing Required Arguments Exception.
@@ -209,6 +208,7 @@ class DisplayNameDecodingError(Exception):
 # Implementation classes
 #
 
+
 class AbstractPackageData:
     # This class represents information on a single package that was
     # obtained through the archive. This information comes from either a
@@ -229,15 +229,18 @@ class AbstractPackageData:
 
     def __init__(self):
         if self.version is None or not valid_debian_version(self.version):
-            raise InvalidVersionError("%s has an invalid version: %s" %
-                                      (self.package, self.version))
+            raise InvalidVersionError(
+                "%s has an invalid version: %s" % (self.package, self.version)
+            )
 
         absent = object()
         missing = []
         for attr in self._required:
             if isinstance(attr, tuple):
-                if all(getattr(self, oneattr, absent) is absent
-                       for oneattr in attr):
+                if all(
+                    getattr(self, oneattr, absent) is absent
+                    for oneattr in attr
+                ):
                     missing.append(attr)
             elif getattr(self, attr, absent) is absent:
                 missing.append(attr)
@@ -313,26 +316,26 @@ class SourcePackageData(AbstractPackageData):
     # supplied to __init__ as keyword arguments. If any are not, a
     # MissingRequiredArguments exception is raised.
     _required = [
-        'package',
-        'binaries',
-        'version',
-        'maintainer',
-        'section',
-        'architecture',
-        'directory',
-        ('files', 'checksums-sha1', 'checksums-sha256', 'checksums-sha512'),
-        'component',
-        ]
+        "package",
+        "binaries",
+        "version",
+        "maintainer",
+        "section",
+        "architecture",
+        "directory",
+        ("files", "checksums-sha1", "checksums-sha256", "checksums-sha512"),
+        "component",
+    ]
 
     _known_fields = {k.lower() for k in DSCFile.known_fields}
 
     def __init__(self, **args):
         for k, v in args.items():
-            if k == 'Binary':
+            if k == "Binary":
                 self.binaries = stripseq(six.ensure_text(v).split(","))
-            elif k == 'Section':
+            elif k == "Section":
                 self.section = parse_section(six.ensure_text(v))
-            elif k == 'Urgency':
+            elif k == "Urgency":
                 urgency = six.ensure_text(v)
                 # This is to handle cases like:
                 #   - debget: 'high (actually works)
@@ -342,15 +345,16 @@ class SourcePackageData(AbstractPackageData):
                 if "," in urgency:
                     urgency = urgency.split(",")[0]
                 self.urgency = urgency
-            elif k == 'Maintainer':
+            elif k == "Maintainer":
                 try:
                     maintainer = encoding.guess(v)
                 except UnicodeDecodeError:
                     raise DisplayNameDecodingError(
-                        "Could not decode Maintainer field %r" % v)
+                        "Could not decode Maintainer field %r" % v
+                    )
                 self.maintainer = parse_person(maintainer)
-            elif k == 'Files' or k.startswith('Checksums-'):
-                if not hasattr(self, 'files'):
+            elif k == "Files" or k.startswith("Checksums-"):
+                if not hasattr(self, "files"):
                     self.files = []
                     files = six.ensure_text(v).split("\n")
                     for f in files:
@@ -359,12 +363,14 @@ class SourcePackageData(AbstractPackageData):
                 self.set_field(k, encoding.guess(v))
 
         if self.section is None:
-            self.section = 'misc'
+            self.section = "misc"
             log.warning(
                 "Source package %s lacks section, assumed %r",
-                self.package, self.section)
+                self.package,
+                self.section,
+            )
 
-        if '/' in self.section:
+        if "/" in self.section:
             # this apparently happens with packages in universe.
             # 3dchess, for instance, uses "universe/games"
             self.section = self.section.split("/", 1)[1]
@@ -378,31 +384,37 @@ class SourcePackageData(AbstractPackageData):
         sets the changelog and urgency attributes.
         """
         dsc, changelog, copyright = read_dsc(
-            self.package, self.version, self.component, distro_name,
-            archive_root)
+            self.package,
+            self.version,
+            self.component,
+            distro_name,
+            archive_root,
+        )
 
         self.dsc = encoding.guess(dsc)
         self.copyright = encoding.guess(copyright)
         parsed_changelog = None
         if changelog:
-            parsed_changelog = parse_changelog(changelog.split(b'\n'))
+            parsed_changelog = parse_changelog(changelog.split(b"\n"))
 
         self.urgency = None
         self.changelog = None
         self.changelog_entry = None
         if parsed_changelog and parsed_changelog[0]:
             cldata = parsed_changelog[0]
-            if 'changes' in cldata:
+            if "changes" in cldata:
                 cldata_package = six.ensure_text(cldata["package"])
                 cldata_version = six.ensure_text(cldata["version"])
                 if cldata_package != self.package:
                     log.warning(
-                        "Changelog package %s differs from %s" %
-                        (cldata_package, self.package))
+                        "Changelog package %s differs from %s"
+                        % (cldata_package, self.package)
+                    )
                 if cldata_version != self.version:
                     log.warning(
-                        "Changelog version %s differs from %s" %
-                        (cldata_version, self.version))
+                        "Changelog version %s differs from %s"
+                        % (cldata_version, self.version)
+                    )
                 self.changelog_entry = encoding.guess(cldata["changes"])
                 self.changelog = changelog
                 self.urgency = cldata["urgency"]
@@ -410,8 +422,9 @@ class SourcePackageData(AbstractPackageData):
                     self.urgency = six.ensure_text(self.urgency)
             else:
                 log.warning(
-                    "Changelog empty for source %s (%s)" %
-                    (self.package, self.version))
+                    "Changelog empty for source %s (%s)"
+                    % (self.package, self.version)
+                )
 
     def ensure_complete(self):
         if self.format is None:
@@ -419,12 +432,16 @@ class SourcePackageData(AbstractPackageData):
             # it here, but we don't do anything about this in handlers.py!
             self.format = "1.0"
             log.warning(
-                "Invalid format in %s, assumed %r", self.package, self.format)
+                "Invalid format in %s, assumed %r", self.package, self.format
+            )
 
         if self.urgency not in ChangesFile.urgency_map:
             log.warning(
                 "Invalid urgency in %s, %r, assumed %r",
-                self.package, self.urgency, "low")
+                self.package,
+                self.urgency,
+                "low",
+            )
             self.urgency = "low"
 
 
@@ -435,20 +452,20 @@ class BinaryPackageData(AbstractPackageData):
     # They are passed in as keyword arguments. If any are not set, a
     # MissingRequiredArguments exception is raised.
     _required = [
-        'package',
-        'installed_size',
-        'maintainer',
-        'section',
-        'architecture',
-        'version',
-        'filename',
-        'component',
-        'size',
-        ('md5sum', 'sha1', 'sha256', 'sha512'),
-        'description',
-        'summary',
-        'priority',
-        ]
+        "package",
+        "installed_size",
+        "maintainer",
+        "section",
+        "architecture",
+        "version",
+        "filename",
+        "component",
+        "size",
+        ("md5sum", "sha1", "sha256", "sha512"),
+        "description",
+        "summary",
+        "priority",
+    ]
 
     _known_fields = {k.lower() for k in BaseBinaryUploadFile.known_fields}
 
@@ -477,29 +494,31 @@ class BinaryPackageData(AbstractPackageData):
     # Overwritten in do_package, optionally
     shlibs = None
 
-    source_version_re = re.compile(r'([^ ]+) +\(([^\)]+)\)')
+    source_version_re = re.compile(r"([^ ]+) +\(([^\)]+)\)")
 
     def __init__(self, **args):
         for k, v in args.items():
             if k == "Maintainer":
                 self.maintainer = parse_person(encoding.guess(v))
             elif k == "Essential":
-                self.essential = (v == b"yes")
-            elif k == 'Section':
+                self.essential = v == b"yes"
+            elif k == "Section":
                 self.section = parse_section(six.ensure_text(v))
             elif k == "Description":
                 self.description = encoding.guess(v)
                 summary = self.description.split("\n")[0].strip()
-                if not summary.endswith('.'):
-                    summary = summary + '.'
+                if not summary.endswith("."):
+                    summary = summary + "."
                 self.summary = summary
             elif k == "Installed-Size":
                 installed_size = six.ensure_text(v)
                 try:
                     self.installed_size = int(installed_size)
                 except ValueError:
-                    raise MissingRequiredArguments("Installed-Size is "
-                        "not a valid integer: %r" % installed_size)
+                    raise MissingRequiredArguments(
+                        "Installed-Size is "
+                        "not a valid integer: %r" % installed_size
+                    )
             elif k == "Built-Using":
                 self.built_using = six.ensure_text(v)
                 # Preserve the original form of Built-Using to avoid
@@ -533,26 +552,37 @@ class BinaryPackageData(AbstractPackageData):
             self.source = self.package
             self.source_version = self.version
 
-        if (self.source_version is None or
-            self.source_version != self.version and
-            not valid_debian_version(self.source_version)):
+        if (
+            self.source_version is None
+            or self.source_version != self.version
+            and not valid_debian_version(self.source_version)
+        ):
             raise InvalidSourceVersionError(
                 "Binary package %s (%s) refers to source package %s "
-                "with invalid version: %s" %
-                (self.package, self.version, self.source,
-                 self.source_version))
+                "with invalid version: %s"
+                % (
+                    self.package,
+                    self.version,
+                    self.source,
+                    self.source_version,
+                )
+            )
 
         if self.section is None:
-            self.section = 'misc'
+            self.section = "misc"
             log.warning(
                 "Binary package %s lacks a section, assumed %r",
-                self.package, self.section)
+                self.package,
+                self.section,
+            )
 
         if self.priority is None:
-            self.priority = 'extra'
+            self.priority = "extra"
             log.warning(
                 "Binary package %s lacks valid priority, assumed %r",
-                self.package, self.priority)
+                self.package,
+                self.priority,
+            )
 
         AbstractPackageData.__init__(self)
 
@@ -560,7 +590,7 @@ class BinaryPackageData(AbstractPackageData):
         """Grab shared library info from .deb."""
         fullpath = os.path.join(archive_root, self.filename)
         if not os.path.exists(fullpath):
-            raise PoolFileNotFound('%s not found' % fullpath)
+            raise PoolFileNotFound("%s not found" % fullpath)
 
         call("dpkg -e %s" % fullpath)
         shlibfile = os.path.join("DEBIAN", "shlibs")

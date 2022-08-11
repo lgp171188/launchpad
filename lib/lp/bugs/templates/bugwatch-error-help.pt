@@ -173,7 +173,7 @@
       <h3>Unable to set the link to the Launchpad bug on the remote server</h3>
       <h4>What went wrong?</h4>
       <p>
-        The remote bug's status and comments were synchronized sucessfully
+        The remote bug's status and comments were synchronized successfully
         with Launchpad but Launchpad was unable to set the remote bug's
         link back to the relevant Launchpad bug.
       </p>

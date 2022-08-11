@@ -8,11 +8,7 @@ from zope.component import getUtility
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.services.webapp.authorization import check_permission
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    login_person,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -24,18 +20,18 @@ class BaseIFAQTargetTests:
     def addAnswerContact(self, answer_contact):
         """Add the test person to the faq target's answer contacts."""
         language_set = getUtility(ILanguageSet)
-        answer_contact.addLanguage(language_set['en'])
+        answer_contact.addLanguage(language_set["en"])
         self.target.addAnswerContact(answer_contact, answer_contact)
 
     def assertCanAppend(self, user, target):
         """Assert that the user can add an FAQ to an FAQ target."""
-        can_append = check_permission('launchpad.Append', IFAQTarget(target))
-        self.assertTrue(can_append, 'User cannot append to %s' % target)
+        can_append = check_permission("launchpad.Append", IFAQTarget(target))
+        self.assertTrue(can_append, "User cannot append to %s" % target)
 
     def assertCannotAppend(self, user, target):
         """Assert that the user cannot add an FAQ to an FAQ target."""
-        can_append = check_permission('launchpad.Append', IFAQTarget(target))
-        self.assertFalse(can_append, 'User can append append to %s' % target)
+        can_append = check_permission("launchpad.Append", IFAQTarget(target))
+        self.assertFalse(can_append, "User can append append to %s" % target)
 
     def test_owner_can_append(self):
         # An owner of an FAQ target can add an FAQ.
@@ -56,7 +52,8 @@ class BaseIFAQTargetTests:
         direct_answer_contact = self.factory.makeTeam()
         with person_logged_in(direct_answer_contact.teamowner):
             direct_answer_contact.addMember(
-                indirect_answer_contact, direct_answer_contact.teamowner)
+                indirect_answer_contact, direct_answer_contact.teamowner
+            )
             self.addAnswerContact(direct_answer_contact)
         login_person(indirect_answer_contact)
         self.assertCanAppend(indirect_answer_contact, self.target)
@@ -95,4 +92,5 @@ class TestDSPPermissions(BaseIFAQTargetTests, TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         self.owner = distribution.owner
         self.target = self.factory.makeDistributionSourcePackage(
-            sourcepackagename='fnord', distribution=distribution)
+            sourcepackagename="fnord", distribution=distribution
+        )

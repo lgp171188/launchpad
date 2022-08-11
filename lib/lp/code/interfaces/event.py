@@ -4,11 +4,11 @@
 """Interfaces for events used in the launchpad code application."""
 
 __all__ = [
-    'IBranchMergeProposalNeedsReviewEvent',
-    'IGitRefsCreatedEvent',
-    'IGitRefsUpdatedEvent',
-    'IReviewerNominatedEvent',
-    ]
+    "IBranchMergeProposalNeedsReviewEvent",
+    "IGitRefsCreatedEvent",
+    "IGitRefsUpdatedEvent",
+    "IReviewerNominatedEvent",
+]
 
 
 from zope.interface.interfaces import IObjectEvent

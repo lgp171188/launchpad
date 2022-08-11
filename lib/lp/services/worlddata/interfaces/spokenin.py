@@ -5,7 +5,7 @@
 countries..
 """
 
-__all__ = ['ISpokenIn']
+__all__ = ["ISpokenIn"]
 
 from zope.interface import Interface
 from zope.schema import Int
@@ -17,9 +17,11 @@ class ISpokenIn(Interface):
     """The SpokenIn description."""
 
     id = Int(
-            title=_('SpokenInID'), required=True, readonly=True,
-            )
+        title=_("SpokenInID"),
+        required=True,
+        readonly=True,
+    )
 
-    country = Int(title=_('Country'), required=True, readonly=True)
+    country = Int(title=_("Country"), required=True, readonly=True)
 
-    language = Int(title=_('Language'), required=True, readonly=True)
+    language = Int(title=_("Language"), required=True, readonly=True)

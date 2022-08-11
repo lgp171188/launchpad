@@ -4,10 +4,10 @@
 """Support for XML-RPC stuff with Twisted."""
 
 __all__ = [
-    'BlockingProxy',
-    'DeferredBlockingProxy',
-    'trap_fault',
-    ]
+    "BlockingProxy",
+    "DeferredBlockingProxy",
+    "trap_fault",
+]
 
 from twisted.internet import defer
 from twisted.web import xmlrpc
@@ -46,8 +46,8 @@ class DeferredBlockingProxy(BlockingProxy):
 
     def callRemote(self, method_name, *args, **kwargs):
         return defer.maybeDeferred(
-            super().callRemote,
-            method_name, *args, **kwargs)
+            super().callRemote, method_name, *args, **kwargs
+        )
 
 
 def trap_fault(failure, *fault_classes):

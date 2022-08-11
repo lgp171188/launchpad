@@ -4,10 +4,10 @@
 """Interfaces for things which have Specifications."""
 
 __all__ = [
-    'IHasSpecifications',
-    'ISpecificationTarget',
-    'ISpecificationGoal',
-    ]
+    "IHasSpecifications",
+    "ISpecificationTarget",
+    "ISpecificationGoal",
+]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
@@ -17,11 +17,8 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Interface
 from zope.schema import TextLine
 
@@ -35,30 +32,52 @@ class IHasSpecifications(Interface):
     associated with them, and you can use this interface to query those.
     """
 
-    visible_specifications = exported(doNotSnapshot(
-        CollectionField(
-            title=_("All specifications"),
-            value_type=Reference(schema=Interface),  # ISpecification, really.
-            readonly=True,
-            description=_(
-                'A list of all specifications, regardless of status or '
-                'approval or completion, for this object.'))),
-        exported_as="all_specifications", as_of="devel")
+    visible_specifications = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("All specifications"),
+                # Really ISpecification, patched in
+                # lp.blueprints.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+                description=_(
+                    "A list of all specifications, regardless of status or "
+                    "approval or completion, for this object."
+                ),
+            )
+        ),
+        exported_as="all_specifications",
+        as_of="devel",
+    )
 
-    api_valid_specifications = exported(doNotSnapshot(
-        CollectionField(
-            title=_("Valid specifications"),
-            value_type=Reference(schema=Interface),  # ISpecification, really.
-            readonly=True,
-            description=_(
-                'All specifications that are not obsolete. When called from '
-                'an ISpecificationGoal it will also exclude the ones that '
-                'have not been accepted for that goal'))),
-        exported_as="valid_specifications", as_of="devel")
+    api_valid_specifications = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Valid specifications"),
+                # Really ISpecification, patched in
+                # lp.blueprints.interfaces.webservice.
+                value_type=Reference(schema=Interface),
+                readonly=True,
+                description=_(
+                    "All specifications that are not obsolete. When called "
+                    "from an ISpecificationGoal it will also exclude the ones "
+                    "that have not been accepted for that goal"
+                ),
+            )
+        ),
+        exported_as="valid_specifications",
+        as_of="devel",
+    )
 
-    def specifications(user, quantity=None, sort=None, filter=None,
-                       need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        user,
+        quantity=None,
+        sort=None,
+        filter=None,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         """Specifications for this target.
 
         The user specifies which user to use for calculation of visibility.
@@ -91,10 +110,12 @@ class ISpecificationTarget(IHasSpecifications):
     """
 
     @operation_parameters(
-        name=TextLine(title=_('The name of the specification')))
-    @operation_returns_entry(Interface)  # really ISpecification
+        name=TextLine(title=_("The name of the specification"))
+    )
+    # Really ISpecification, patched in lp.blueprints.interfaces.webservice.
+    @operation_returns_entry(Interface)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getSpecification(name):
         """Returns the specification with the given name, for this target,
         or None.

@@ -5,22 +5,18 @@ import datetime
 from textwrap import dedent
 
 import pytz
-import six
+import transaction
 from testtools.content import text_content
 from testtools.matchers import (
     Equals,
     LessThan,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.bug import (
-    CreateBugParams,
-    IBugSet,
-    )
+from lp.bugs.interfaces.bug import CreateBugParams, IBugSet
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -34,38 +30,35 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     PackagePublishingStatus,
     SourcePackageFormat,
-    )
+)
 from lp.soyuz.interfaces.archive import CannotCopy
 from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.publishing import (
-    active_publishing_status,
     IPublishingSet,
-    )
+    active_publishing_status,
+)
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
-    )
+)
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.scripts.packagecopier import (
-    _do_direct_copy,
     CopyChecker,
+    _do_direct_copy,
     do_copy,
     update_files_privacy,
-    )
+)
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     ExpectedException,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
-from lp.testing.dbuser import (
-    dbuser,
-    switch_dbuser,
-    )
+)
+from lp.testing.dbuser import dbuser, switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
@@ -82,6 +75,7 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
     It's executed in a way we will never have files with mixed or
     mismatching privacy according to the context they are published.
     """
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -94,38 +88,50 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # or `IBinaryPackagePublishingHistory` objects.
         self.assertRaisesWithContent(
             AssertionError,
-            'pub_record is not one of SourcePackagePublishingHistory, '
-            'BinaryPackagePublishingHistory or PackageUploadCustom.',
-            update_files_privacy, None)
+            "pub_record is not one of SourcePackagePublishingHistory, "
+            "BinaryPackagePublishingHistory or PackageUploadCustom.",
+            update_files_privacy,
+            None,
+        )
 
     def assertChangedFiles(self, expected, changed_files):
         """Check files changed during update_files_privacy."""
         self.assertEqual(
             expected,
-            sorted(changed_file.filename for changed_file in changed_files))
+            sorted(changed_file.filename for changed_file in changed_files),
+        )
 
-    def _checkSourceFilesPrivacy(self, pub_record, restricted,
-                                 expected_n_files):
+    def _checkSourceFilesPrivacy(
+        self, pub_record, restricted, expected_n_files
+    ):
         """Check if sources files match the expected privacy context."""
         n_files = 0
         source = pub_record.sourcepackagerelease
         for source_file in source.files:
             self.assertEqual(
-                source_file.libraryfile.restricted, restricted,
-                'Privacy mismatch on %s' % source_file.libraryfile.filename)
+                source_file.libraryfile.restricted,
+                restricted,
+                "Privacy mismatch on %s" % source_file.libraryfile.filename,
+            )
             n_files += 1
         self.assertEqual(
-            source.upload_changesfile.restricted, restricted,
-            'Privacy mismatch on %s' % source.upload_changesfile.filename)
+            source.upload_changesfile.restricted,
+            restricted,
+            "Privacy mismatch on %s" % source.upload_changesfile.filename,
+        )
         n_files += 1
         for diff in source.package_diffs:
             self.assertEqual(
-                diff.diff_content.restricted, restricted,
-                'Privacy mismatch on %s' % diff.diff_content.filename)
+                diff.diff_content.restricted,
+                restricted,
+                "Privacy mismatch on %s" % diff.diff_content.filename,
+            )
             n_files += 1
         self.assertEqual(
-            n_files, expected_n_files,
-            'Expected %d and got %d files' % (expected_n_files, n_files))
+            n_files,
+            expected_n_files,
+            "Expected %d and got %d files" % (expected_n_files, n_files),
+        )
 
     def assertSourceFilesArePrivate(self, pub_record, number_of_files):
         self._checkSourceFilesPrivacy(pub_record, True, number_of_files)
@@ -141,7 +147,9 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # Create a brand new PPA.
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA, private=private)
+            purpose=ArchivePurpose.PPA,
+            private=private,
+        )
 
         # Create a testing source publication with binaries
         source = self.test_publisher.getPubSource(archive=archive)
@@ -150,9 +158,11 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # Add a package diff file to the source.
         diff_pub = self.test_publisher.getPubSource()
         source_diff = diff_pub.sourcepackagerelease.requestDiffTo(
-            self.test_publisher.person, source.sourcepackagerelease)
+            self.test_publisher.person, source.sourcepackagerelease
+        )
         source_diff.diff_content = self.factory.makeLibraryFileAlias(
-            'foo.diff.gz', restricted=private)
+            "foo.diff.gz", restricted=private
+        )
 
         return source
 
@@ -180,49 +190,62 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # files related to it will remain private.
         public_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         public_source = private_source.copyTo(
-            private_source.distroseries, private_source.pocket,
-            public_archive)
+            private_source.distroseries, private_source.pocket, public_archive
+        )
         self.assertSourceFilesArePrivate(public_source, 3)
 
         # update_files_privacy on the copied source makes all files
         # unrestricted.
         changed_files = update_files_privacy(public_source)
         self.layer.commit()
-        self.assertChangedFiles([
-            'foo.diff.gz',
-            'foo_666.dsc',
-            'foo_666_source.changes',
-            ], changed_files)
+        self.assertChangedFiles(
+            [
+                "foo.diff.gz",
+                "foo_666.dsc",
+                "foo_666_source.changes",
+            ],
+            changed_files,
+        )
         self.assertSourceFilesArePublic(public_source, 3)
 
         # Note that the files from the original source are now also public,
         # since they point exactly to the same `ILibraryFileAlias` objects.
         self.assertSourceFilesArePublic(private_source, 3)
 
-    def _checkBinaryFilesPrivacy(self, pub_record, restricted,
-                                 expected_n_files):
+    def _checkBinaryFilesPrivacy(
+        self, pub_record, restricted, expected_n_files
+    ):
         """Check if binary files match the expected privacy context."""
         n_files = 0
         binary = pub_record.binarypackagerelease
         for binary_file in binary.files:
             self.assertEqual(
-                binary_file.libraryfile.restricted, restricted,
-                'Privacy mismatch on %s' % binary_file.libraryfile.filename)
+                binary_file.libraryfile.restricted,
+                restricted,
+                "Privacy mismatch on %s" % binary_file.libraryfile.filename,
+            )
             n_files += 1
         build = binary.build
         self.assertEqual(
-            build.upload_changesfile.restricted, restricted,
-            'Privacy mismatch on %s' % build.upload_changesfile.filename)
+            build.upload_changesfile.restricted,
+            restricted,
+            "Privacy mismatch on %s" % build.upload_changesfile.filename,
+        )
         n_files += 1
         self.assertEqual(
-            build.log.restricted, restricted,
-            'Privacy mismatch on %s' % build.log.filename)
+            build.log.restricted,
+            restricted,
+            "Privacy mismatch on %s" % build.log.filename,
+        )
         n_files += 1
         self.assertEqual(
-            n_files, expected_n_files,
-            'Expected %d and got %d files' % (expected_n_files, n_files))
+            n_files,
+            expected_n_files,
+            "Expected %d and got %d files" % (expected_n_files, n_files),
+        )
 
     def assertBinaryFilesArePrivate(self, pub_record, number_of_files):
         self._checkBinaryFilesPrivacy(pub_record, True, number_of_files)
@@ -255,22 +278,26 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # files related to it will remain private.
         public_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         public_binary = private_binary.copyTo(
-            private_source.distroseries, private_source.pocket,
-            public_archive)[0]
+            private_source.distroseries, private_source.pocket, public_archive
+        )[0]
         self.assertBinaryFilesArePrivate(public_binary, 3)
 
         # update_files_privacy on the copied binary makes all files
         # unrestricted.
         changed_files = update_files_privacy(public_binary)
         self.layer.commit()
-        self.assertChangedFiles([
-            'buildlog_ubuntutest-breezy-autotest-i386.'
-                'foo_666_FULLYBUILT.txt.gz',
-            'foo-bin_666_all.deb',
-            'foo-bin_666_i386.changes',
-            ], changed_files)
+        self.assertChangedFiles(
+            [
+                "buildlog_ubuntutest-breezy-autotest-i386."
+                "foo_666_FULLYBUILT.txt.gz",
+                "foo-bin_666_all.deb",
+                "foo-bin_666_i386.changes",
+            ],
+            changed_files,
+        )
         self.assertBinaryFilesArePublic(public_binary, 3)
 
         # Note that the files from the original binary are now also public,
@@ -291,14 +318,16 @@ class UpdateFilesPrivacyTestCase(TestCaseWithFactory):
         # Copy the original source and binaries to a private PPA.
         private_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA, private=True)
+            purpose=ArchivePurpose.PPA,
+            private=True,
+        )
 
         copied_source = public_source.copyTo(
-            public_source.distroseries, public_source.pocket,
-            private_archive)
+            public_source.distroseries, public_source.pocket, private_archive
+        )
         copied_binary = public_binary.copyTo(
-            public_source.distroseries, public_source.pocket,
-            private_archive)[0]
+            public_source.distroseries, public_source.pocket, private_archive
+        )[0]
 
         # Both, source and binary, files are still public and will remain
         # public after calling update_files_privacy.
@@ -330,17 +359,20 @@ class CopyCheckerHarness:
            NEEDSBUILD state.
         """
         copy_checker = CopyChecker(
-            self.archive, include_binaries=False, **kwargs)
+            self.archive, include_binaries=False, **kwargs
+        )
         self.assertIsNone(
             copy_checker.checkCopy(
-                self.source, self.series, self.pocket,
-                check_permissions=False))
+                self.source, self.series, self.pocket, check_permissions=False
+            )
+        )
         checked_copies = list(copy_checker.getCheckedCopies())
         self.assertEqual(1, len(checked_copies))
         [checked_copy] = checked_copies
         self.assertEqual(
             BuildSetStatus.NEEDSBUILD,
-            checked_copy.getStatusSummaryForBuilds()['status'])
+            checked_copy.getStatusSummaryForBuilds()["status"],
+        )
 
     def assertCanCopyBinaries(self, **kwargs):
         """Source and binary copy is allowed.
@@ -355,30 +387,41 @@ class CopyCheckerHarness:
            status, so there are binaries to be copied.
         """
         copy_checker = CopyChecker(
-            self.archive, include_binaries=True, **kwargs)
+            self.archive, include_binaries=True, **kwargs
+        )
         self.assertIsNone(
             copy_checker.checkCopy(
-                self.source, self.series, self.pocket,
-                check_permissions=False))
+                self.source, self.series, self.pocket, check_permissions=False
+            )
+        )
         checked_copies = list(copy_checker.getCheckedCopies())
         self.assertEqual(1, len(checked_copies))
         [checked_copy] = checked_copies
         self.assertTrue(
-            checked_copy.getStatusSummaryForBuilds()['status'] >=
-            BuildSetStatus.FULLYBUILT_PENDING)
+            checked_copy.getStatusSummaryForBuilds()["status"]
+            >= BuildSetStatus.FULLYBUILT_PENDING
+        )
 
-    def assertCannotCopySourceOnly(self, msg, person=None,
-                                   check_permissions=False, **kwargs):
+    def assertCannotCopySourceOnly(
+        self, msg, person=None, check_permissions=False, **kwargs
+    ):
         """`CopyChecker.checkCopy()` for source-only copy raises CannotCopy.
 
         No `CheckedCopy` is stored.
         """
         copy_checker = CopyChecker(
-            self.archive, include_binaries=False, **kwargs)
+            self.archive, include_binaries=False, **kwargs
+        )
         self.assertRaisesWithContent(
-            CannotCopy, msg,
-            copy_checker.checkCopy, self.source, self.series, self.pocket,
-            person, check_permissions)
+            CannotCopy,
+            msg,
+            copy_checker.checkCopy,
+            self.source,
+            self.series,
+            self.pocket,
+            person,
+            check_permissions,
+        )
         checked_copies = list(copy_checker.getCheckedCopies())
         self.assertEqual(0, len(checked_copies))
 
@@ -388,31 +431,39 @@ class CopyCheckerHarness:
         No `CheckedCopy` is stored.
         """
         copy_checker = CopyChecker(
-            self.archive, include_binaries=True, **kwargs)
+            self.archive, include_binaries=True, **kwargs
+        )
         self.assertRaisesWithContent(
-            CannotCopy, msg,
-            copy_checker.checkCopy, self.source, self.series, self.pocket,
-            None, False)
+            CannotCopy,
+            msg,
+            copy_checker.checkCopy,
+            self.source,
+            self.series,
+            self.pocket,
+            None,
+            False,
+        )
         checked_copies = list(copy_checker.getCheckedCopies())
         self.assertEqual(0, len(checked_copies))
 
     def test_cannot_copy_binaries_from_building(self):
         [build] = self.source.createMissingBuilds()
-        self.assertCannotCopyBinaries('source has no binaries to be copied')
+        self.assertCannotCopyBinaries("source has no binaries to be copied")
 
     def test_cannot_copy_check_perm_no_person(self):
         # If check_permissions=True and person=None is passed to
         # checkCopy, raise an error (cannot check permissions for a
         # 'None' person).
         self.assertCannotCopySourceOnly(
-            'Cannot check copy permissions (no requester).',
-            person=None, check_permissions=True)
+            "Cannot check copy permissions (no requester).",
+            person=None,
+            check_permissions=True,
+        )
 
     def test_cannot_copy_binaries_from_FTBFS(self):
         [build] = self.source.createMissingBuilds()
         build.updateStatus(BuildStatus.FAILEDTOBUILD)
-        self.assertCannotCopyBinaries(
-            'source has no binaries to be copied')
+        self.assertCannotCopyBinaries("source has no binaries to be copied")
 
     def test_can_copy_only_source_from_FTBFS(self):
         # XXX cprov 2009-06-16: This is not ideal for PPA, since
@@ -425,18 +476,17 @@ class CopyCheckerHarness:
 
     def test_cannot_copy_binaries_from_binaries_pending_publication(self):
         [build] = self.source.createMissingBuilds()
-        self.test_publisher.uploadBinaryForBuild(build, 'lazy-bin')
-        self.assertCannotCopyBinaries(
-            'source has no binaries to be copied')
+        self.test_publisher.uploadBinaryForBuild(build, "lazy-bin")
+        self.assertCannotCopyBinaries("source has no binaries to be copied")
 
     def test_can_copy_binaries_from_fullybuilt_and_published(self):
         self.test_publisher.getPubBinaries(
-            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED)
+            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertCanCopyBinaries()
 
 
-class CopyCheckerQueries(TestCaseWithFactory,
-                         CopyCheckerHarness):
+class CopyCheckerQueries(TestCaseWithFactory, CopyCheckerHarness):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -445,26 +495,31 @@ class CopyCheckerQueries(TestCaseWithFactory,
         self.test_publisher.prepareBreezyAutotest()
         self.source = self.test_publisher.getPubSource()
         self.archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         self.series = self.source.distroseries
         self.pocket = PackagePublishingPocket.RELEASE
         self.person = self.factory.makePerson()
         ArchivePermission(
-            archive=self.archive, person=self.person,
+            archive=self.archive,
+            person=self.person,
             component=getUtility(IComponentSet)["main"],
-            permission=ArchivePermissionType.UPLOAD)
+            permission=ArchivePermissionType.UPLOAD,
+        )
 
     def _setupSources(self, nb_of_sources):
         sources = []
         for i in range(nb_of_sources):
             source = self.test_publisher.getPubSource(
-                version='%d' % self.factory.getUniqueInteger(),
-                sourcename='name-%d' % self.factory.getUniqueInteger())
+                version="%d" % self.factory.getUniqueInteger(),
+                sourcename="name-%d" % self.factory.getUniqueInteger(),
+            )
             sources.append(source)
         return sources
 
-    def _recordCopyCheck(self, nb_of_sources, person=None,
-                         check_permissions=False):
+    def _recordCopyCheck(
+        self, nb_of_sources, person=None, check_permissions=False
+    ):
         flush_database_caches()
         sources = self._setupSources(nb_of_sources)
         with StormStatementRecorder() as recorder:
@@ -472,8 +527,13 @@ class CopyCheckerQueries(TestCaseWithFactory,
             for source in sources:
                 self.assertIsNone(
                     copy_checker.checkCopy(
-                        source, self.series, self.pocket, person=person,
-                        check_permissions=check_permissions))
+                        source,
+                        self.series,
+                        self.pocket,
+                        person=person,
+                        check_permissions=check_permissions,
+                    )
+                )
             checked_copies = list(copy_checker.getCheckedCopies())
             self.assertEqual(nb_of_sources, len(checked_copies))
         return recorder
@@ -485,8 +545,8 @@ class CopyCheckerQueries(TestCaseWithFactory,
         # checkCopy called without any source should not issue any query.
         recorder0 = self._recordCopyCheck(0, self.person, True)
         self.addDetail(
-            "statement-count-0-sources",
-            text_content("%d" % recorder0.count))
+            "statement-count-0-sources", text_content("%d" % recorder0.count)
+        )
         self.assertThat(recorder0, HasQueryCount(Equals(0)))
 
         # Compare the number of queries issued by calling checkCopy with
@@ -495,17 +555,21 @@ class CopyCheckerQueries(TestCaseWithFactory,
         recorder1 = self._recordCopyCheck(nb_of_sources, self.person, True)
         self.addDetail(
             "statement-count-%d-sources" % nb_of_sources,
-            text_content("%d" % recorder1.count))
-        recorder2 = self._recordCopyCheck(
-            nb_of_sources + 1, self.person, True)
+            text_content("%d" % recorder1.count),
+        )
+        recorder2 = self._recordCopyCheck(nb_of_sources + 1, self.person, True)
         self.addDetail(
             "statement-count-%d-sources" % (nb_of_sources + 1),
-            text_content("%d" % recorder2.count))
+            text_content("%d" % recorder2.count),
+        )
 
         statement_count_per_source = 13
         self.assertThat(
-            recorder2, HasQueryCount(
-                LessThan(recorder1.count + statement_count_per_source)))
+            recorder2,
+            HasQueryCount(
+                LessThan(recorder1.count + statement_count_per_source)
+            ),
+        )
 
     def test_queries_copy_check_added_queries_perm_checking(self):
         # Checking for upload permissions adds only a limited amount of
@@ -515,19 +579,21 @@ class CopyCheckerQueries(TestCaseWithFactory,
         recorder2 = self._recordCopyCheck(nb_of_sources, self.person, True)
 
         added_statement_count_per_source = (
-            (recorder2.count - recorder1.count) / float(nb_of_sources))
+            recorder2.count - recorder1.count
+        ) / float(nb_of_sources)
         self.addDetail(
             "added-statement-count-perm-check",
-            text_content("%.3f" % added_statement_count_per_source))
+            text_content("%.3f" % added_statement_count_per_source),
+        )
 
         perm_check_statement_count = 3
         self.assertThat(
-            added_statement_count_per_source, LessThan(
-                perm_check_statement_count))
+            added_statement_count_per_source,
+            LessThan(perm_check_statement_count),
+        )
 
 
-class CopyCheckerSameArchiveHarness(TestCaseWithFactory,
-                                    CopyCheckerHarness):
+class CopyCheckerSameArchiveHarness(TestCaseWithFactory, CopyCheckerHarness):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -539,36 +605,41 @@ class CopyCheckerSameArchiveHarness(TestCaseWithFactory,
         # Set copy destination to an existing distroseries in the
         # same archive.
         self.archive = self.test_publisher.ubuntutest.main_archive
-        self.series = self.test_publisher.ubuntutest.getSeries('hoary-test')
+        self.series = self.test_publisher.ubuntutest.getSeries("hoary-test")
         self.pocket = PackagePublishingPocket.RELEASE
 
     def test_cannot_copy_only_source_from_building(self):
         [build] = self.source.createMissingBuilds()
         self.assertCannotCopySourceOnly(
-            'same version already building in the destination archive '
-            'for Breezy Badger Autotest')
+            "same version already building in the destination archive "
+            "for Breezy Badger Autotest"
+        )
 
     def test_cannot_copy_only_source_from_binaries_pending_publication(self):
         [build] = self.source.createMissingBuilds()
-        self.test_publisher.uploadBinaryForBuild(build, 'lazy-bin')
+        self.test_publisher.uploadBinaryForBuild(build, "lazy-bin")
         self.assertCannotCopySourceOnly(
-            'same version has unpublished binaries in the destination '
-            'archive for Breezy Badger Autotest, please wait for them '
-            'to be published before copying')
+            "same version has unpublished binaries in the destination "
+            "archive for Breezy Badger Autotest, please wait for them "
+            "to be published before copying"
+        )
 
     def test_cannot_copy_binaries_from_binaries_published_as_pending(self):
         self.test_publisher.getPubBinaries(pub_source=self.source)
         self.assertCannotCopyBinaries(
-            'same version has unpublished binaries in the destination '
-            'archive for Breezy Badger Autotest, please wait for them '
-            'to be published before copying')
+            "same version has unpublished binaries in the destination "
+            "archive for Breezy Badger Autotest, please wait for them "
+            "to be published before copying"
+        )
 
     def test_cannot_copy_only_source_from_fullybuilt_and_published(self):
         self.test_publisher.getPubBinaries(
-            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED)
+            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertCannotCopySourceOnly(
-            'same version already has published binaries in the '
-            'destination archive')
+            "same version already has published binaries in the "
+            "destination archive"
+        )
 
     def test_cannot_copy_only_source_from_deleted(self):
         # Deleted sources cannot be resurrected (copied to the same
@@ -578,34 +649,40 @@ class CopyCheckerSameArchiveHarness(TestCaseWithFactory,
         # state.
         self.test_publisher.getPubBinaries(pub_source=self.source)
 
-        self.source.requestDeletion(self.test_publisher.person, 'Go!')
+        self.source.requestDeletion(self.test_publisher.person, "Go!")
         for binary in self.source.getPublishedBinaries():
-            binary.requestDeletion(self.test_publisher.person, 'Go!')
+            binary.requestDeletion(self.test_publisher.person, "Go!")
 
         self.series = self.source.distroseries
         self.layer.txn.commit()
 
         self.assertCannotCopySourceOnly(
-            'same version already has published binaries in the '
-            'destination archive')
+            "same version already has published binaries in the "
+            "destination archive"
+        )
 
     def test_can_copy_same_source(self):
         # checkCopy allows copying a new version of the same source.
         self.source = self.test_publisher.getPubSource(
-            sourcename='test-source', version='1.0-2',
+            sourcename="test-source",
+            version="1.0-2",
             pocket=PackagePublishingPocket.PROPOSED,
             status=PackagePublishingStatus.PUBLISHED,
-            section='net')
+            section="net",
+        )
         self.test_publisher.getPubSource(
-            sourcename='test-source', version='1.0-1',
+            sourcename="test-source",
+            version="1.0-1",
             pocket=PackagePublishingPocket.UPDATES,
             status=PackagePublishingStatus.PUBLISHED,
-            section='misc')
+            section="misc",
+        )
         self.assertCanCopySourceOnly()
 
 
-class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
-                                         CopyCheckerHarness):
+class CopyCheckerDifferentArchiveHarness(
+    TestCaseWithFactory, CopyCheckerHarness
+):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -617,7 +694,8 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # Set copy destination to a brand new PPA.
         self.archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         self.series = self.source.distroseries
         self.pocket = PackagePublishingPocket.RELEASE
 
@@ -627,7 +705,7 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
 
     def test_can_copy_only_source_from_binaries_pending_publication(self):
         [build] = self.source.createMissingBuilds()
-        self.test_publisher.uploadBinaryForBuild(build, 'lazy-bin')
+        self.test_publisher.uploadBinaryForBuild(build, "lazy-bin")
         self.assertCanCopySourceOnly()
 
     def test_can_copy_binaries_from_binaries_published_as_pending(self):
@@ -636,14 +714,17 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
 
     def test_can_copy_only_source_from_fullybuilt_and_published(self):
         self.test_publisher.getPubBinaries(
-            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED)
+            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertCanCopySourceOnly()
 
     def switchToAPrivateSource(self):
         """Override the probing source with a private one."""
         private_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA, private=True)
+            purpose=ArchivePurpose.PPA,
+            private=True,
+        )
 
         self.source = self.test_publisher.getPubSource(archive=private_archive)
 
@@ -653,7 +734,8 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         self.switchToAPrivateSource()
         self.assertCannotCopySourceOnly(
             "Cannot copy restricted files to a public archive without "
-            "explicit unembargo option.")
+            "explicit unembargo option."
+        )
         self.assertCanCopySourceOnly(unembargo=True)
 
     def test_can_copy_binaries_from_private_archives(self):
@@ -661,11 +743,12 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # are allowed, but only with unembargo=True.
         self.switchToAPrivateSource()
         self.test_publisher.getPubBinaries(
-            pub_source=self.source,
-            status=PackagePublishingStatus.PUBLISHED)
+            pub_source=self.source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.assertCannotCopyBinaries(
             "Cannot copy restricted files to a public archive without "
-            "explicit unembargo option.")
+            "explicit unembargo option."
+        )
         self.assertCanCopyBinaries(unembargo=True)
 
     def test_can_copy_ddebs_to_primary_archives(self):
@@ -676,9 +759,11 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         self.assertFalse(self.archive.build_debug_symbols)
         self.series = self.test_publisher.breezy_autotest
         self.source = self.test_publisher.getPubSource(
-            sourcename="with-ddebs", archive=ppa)
+            sourcename="with-ddebs", archive=ppa
+        )
         self.test_publisher.getPubBinaries(
-            pub_source=self.source, with_debug=True)
+            pub_source=self.source, with_debug=True
+        )
         self.assertCanCopyBinaries()
 
     def test_cannot_copy_source_twice(self):
@@ -688,24 +773,36 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # publications with versions older than or equal to the ones already
         # present in the destination.
         [copied_source] = do_copy(
-            [self.source], self.archive, self.series, self.pocket,
-            include_binaries=False, check_permissions=False)
+            [self.source],
+            self.archive,
+            self.series,
+            self.pocket,
+            include_binaries=False,
+            check_permissions=False,
+        )
         self.assertCannotCopySourceOnly(
-            "same version already building in the destination archive for %s" %
-            self.series.displayname)
+            "same version already building in the destination archive for %s"
+            % self.series.displayname
+        )
 
     def test_cannot_copy_unpublished_binaries_twice(self):
         # checkCopy refuses to copy over matching but unpublished binaries.
         self.test_publisher.getPubBinaries(pub_source=self.source)
         self.layer.txn.commit()
         copied = do_copy(
-            [self.source], self.archive, self.series, self.pocket,
-            include_binaries=True, check_permissions=False)
+            [self.source],
+            self.archive,
+            self.series,
+            self.pocket,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(3, len(copied))
         self.assertCannotCopyBinaries(
             "same version has unpublished binaries in the destination "
             "archive for %s, please wait for them to be published before "
-            "copying" % self.series.displayname)
+            "copying" % self.series.displayname
+        )
 
     def test_can_copy_published_binaries_twice(self):
         # If there are matching published binaries in the destination
@@ -714,15 +811,25 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         self.test_publisher.getPubBinaries(pub_source=self.source)
         self.layer.txn.commit()
         copied = do_copy(
-            [self.source], self.archive, self.series, self.pocket,
-            include_binaries=True, check_permissions=False)
+            [self.source],
+            self.archive,
+            self.series,
+            self.pocket,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(3, len(copied))
         for binary in copied[1:]:
             binary.setPublished()
         self.assertCanCopyBinaries()
         nothing_copied = do_copy(
-            [self.source], self.archive, self.series, self.pocket,
-            include_binaries=True, check_permissions=False)
+            [self.source],
+            self.archive,
+            self.series,
+            self.pocket,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(0, len(nothing_copied))
 
     def test_cannot_copy_conflicting_sprs(self):
@@ -731,10 +838,12 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # checks for conflicting files).
         spr = self.source.sourcepackagerelease
         self.test_publisher.getPubSource(
-            sourcename=spr.name, version=spr.version, archive=self.archive)
+            sourcename=spr.name, version=spr.version, archive=self.archive
+        )
         self.assertCannotCopySourceOnly(
             "a different source with the same version is published in the "
-            "destination archive")
+            "destination archive"
+        )
 
     def test_cannot_copy_conflicting_binaries_over_deleted_binaries(self):
         # checkCopy refuses to copy conflicting binaries even if the
@@ -743,8 +852,13 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         self.test_publisher.getPubBinaries(pub_source=self.source)
         self.layer.txn.commit()
         [copied_source] = do_copy(
-            [self.source], self.archive, self.series, self.pocket,
-            include_binaries=False, check_permissions=False)
+            [self.source],
+            self.archive,
+            self.series,
+            self.pocket,
+            include_binaries=False,
+            check_permissions=False,
+        )
 
         # Build binaries for the copied source in the destination archive.
         for build in copied_source.getBuilds():
@@ -760,41 +874,51 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # The binaries in the source archive conflict with those we just
         # deleted.
         self.assertCannotCopyBinaries(
-            "binaries conflicting with the existing ones")
+            "binaries conflicting with the existing ones"
+        )
 
     def test_cannot_copy_conflicting_files_in_PPAs(self):
         # checkCopy refuses to copy a source package if there are files on
         # either side with the same name but different contents.
         spr = self.source.sourcepackagerelease
         prev_source = self.test_publisher.getPubSource(
-            sourcename=spr.name, version='%s~' % spr.version,
-            archive=self.archive)
-        orig_tarball = 'test-source_1.0.orig.tar.gz'
+            sourcename=spr.name,
+            version="%s~" % spr.version,
+            archive=self.archive,
+        )
+        orig_tarball = "test-source_1.0.orig.tar.gz"
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'aaabbbccc')
+            orig_tarball, filecontent=b"aaabbbccc"
+        )
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'zzzyyyxxx')
+            orig_tarball, filecontent=b"zzzyyyxxx"
+        )
         spr.addFile(new_tar)
         # Commit to ensure librarian files are written.
         self.layer.txn.commit()
         self.assertCannotCopySourceOnly(
             "test-source_1.0.orig.tar.gz already exists in destination "
-            "archive with different contents.")
+            "archive with different contents."
+        )
 
     def test_can_copy_source_with_same_filenames(self):
         # checkCopy allows copying a source package if there are files on
         # either side with the same name and the same contents.
         spr = self.source.sourcepackagerelease
         prev_source = self.test_publisher.getPubSource(
-            sourcename=spr.name, version='%s~' % spr.version,
-            archive=self.archive)
-        orig_tarball = 'test-source_1.0.orig.tar.gz'
+            sourcename=spr.name,
+            version="%s~" % spr.version,
+            archive=self.archive,
+        )
+        orig_tarball = "test-source_1.0.orig.tar.gz"
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'aaabbbccc')
+            orig_tarball, filecontent=b"aaabbbccc"
+        )
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'aaabbbccc')
+            orig_tarball, filecontent=b"aaabbbccc"
+        )
         spr.addFile(new_tar)
         # Commit to ensure librarian files are written.
         self.layer.txn.commit()
@@ -805,17 +929,21 @@ class CopyCheckerDifferentArchiveHarness(TestCaseWithFactory,
         # archive has expired files with the same name.
         spr = self.source.sourcepackagerelease
         prev_source = self.test_publisher.getPubSource(
-            sourcename=spr.name, version='%s~' % spr.version,
-            archive=self.archive)
-        orig_tarball = 'test-source_1.0.orig.tar.gz'
+            sourcename=spr.name,
+            version="%s~" % spr.version,
+            archive=self.archive,
+        )
+        orig_tarball = "test-source_1.0.orig.tar.gz"
         prev_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'aaabbbccc')
+            orig_tarball, filecontent=b"aaabbbccc"
+        )
         prev_source.sourcepackagerelease.addFile(prev_tar)
         new_tar = self.test_publisher.addMockFile(
-            orig_tarball, filecontent=b'aaabbbccc')
+            orig_tarball, filecontent=b"aaabbbccc"
+        )
         spr.addFile(new_tar)
         # Set previous source tarball to be expired.
-        with dbuser('librarian'):
+        with dbuser("librarian"):
             removeSecurityProxy(prev_tar).content = None
         self.assertCanCopySourceOnly()
 
@@ -842,7 +970,8 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         # Create a fresh PPA which will be the destination copy.
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         series = source.distroseries
         pocket = source.pocket
 
@@ -850,14 +979,18 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         copy_checker = CopyChecker(archive, include_binaries=False)
         self.assertIsNone(
             copy_checker.checkCopy(
-                source, series, pocket, check_permissions=False))
+                source, series, pocket, check_permissions=False
+            )
+        )
         copy_checker = CopyChecker(archive, include_binaries=True)
         self.assertIsNone(
             copy_checker.checkCopy(
-                source, series, pocket, check_permissions=False))
+                source, series, pocket, check_permissions=False
+            )
+        )
 
         # Set the expiration date of one of the testing binary files.
-        utc = pytz.timezone('UTC')
+        utc = pytz.timezone("UTC")
         old_date = datetime.datetime(1970, 1, 1, tzinfo=utc)
         a_binary_file = binaries[0].binarypackagerelease.files[0]
         a_binary_file.libraryfile.expires = old_date
@@ -866,14 +999,22 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         copy_checker = CopyChecker(archive, include_binaries=False)
         self.assertIsNone(
             copy_checker.checkCopy(
-                source, series, pocket, check_permissions=False))
+                source, series, pocket, check_permissions=False
+            )
+        )
 
         # Copies with binaries are denied.
         copy_checker = CopyChecker(archive, include_binaries=True)
         self.assertRaisesWithContent(
             CannotCopy,
-            'source has expired binaries',
-            copy_checker.checkCopy, source, series, pocket, None, False)
+            "source has expired binaries",
+            copy_checker.checkCopy,
+            source,
+            series,
+            pocket,
+            None,
+            False,
+        )
 
     def test_checkCopy_cannot_copy_expired_sources(self):
         # checkCopy() raises CannotCopy if the copy requested includes
@@ -884,11 +1025,12 @@ class CopyCheckerTestCase(TestCaseWithFactory):
 
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         series = source.distroseries
         pocket = source.pocket
 
-        utc = pytz.timezone('UTC')
+        utc = pytz.timezone("UTC")
         expire = datetime.datetime.now(utc) + datetime.timedelta(days=365)
 
         a_source_file = source.sourcepackagerelease.files[0]
@@ -897,8 +1039,14 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         copy_checker = CopyChecker(archive, include_binaries=False)
         self.assertRaisesWithContent(
             CannotCopy,
-            'source contains expired files',
-            copy_checker.checkCopy, source, series, pocket, None, False)
+            "source contains expired files",
+            copy_checker.checkCopy,
+            source,
+            series,
+            pocket,
+            None,
+            False,
+        )
 
     def test_checkCopy_allows_copies_from_other_distributions(self):
         # It is possible to copy packages between distributions,
@@ -906,23 +1054,23 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         # distribution.
 
         # Create a testing source in ubuntu.
-        ubuntu = getUtility(IDistributionSet).getByName('debian')
-        sid = ubuntu.getSeries('sid')
+        ubuntu = getUtility(IDistributionSet).getByName("debian")
+        sid = ubuntu.getSeries("sid")
         source = self.test_publisher.getPubSource(distroseries=sid)
 
         # Create a fresh PPA for ubuntutest, which will be the copy
         # destination.
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
-        series = self.test_publisher.ubuntutest.getSeries('hoary-test')
+            purpose=ArchivePurpose.PPA,
+        )
+        series = self.test_publisher.ubuntutest.getSeries("hoary-test")
         pocket = source.pocket
 
         # Copy of sources to series in another distribution can be
         # performed.
         copy_checker = CopyChecker(archive, include_binaries=False)
-        copy_checker.checkCopy(
-            source, series, pocket, check_permissions=False)
+        copy_checker.checkCopy(source, series, pocket, check_permissions=False)
 
     def test_checkCopy_forbids_copies_to_unknown_distroseries(self):
         # We currently deny copies to series that are not for the Archive
@@ -931,15 +1079,16 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         # resources.
 
         # Create a testing source in ubuntu.
-        ubuntu = getUtility(IDistributionSet).getByName('debian')
-        sid = ubuntu.getSeries('sid')
+        ubuntu = getUtility(IDistributionSet).getByName("debian")
+        sid = ubuntu.getSeries("sid")
         source = self.test_publisher.getPubSource(distroseries=sid)
 
         # Create a fresh PPA for ubuntutest, which will be the copy
         # destination.
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         pocket = source.pocket
 
         # Copy of sources to series in another distribution, cannot be
@@ -947,25 +1096,33 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         copy_checker = CopyChecker(archive, include_binaries=False)
         self.assertRaisesWithContent(
             CannotCopy,
-            'Series debian sid not supported in archive for ubuntutest.',
-            copy_checker.checkCopy, source, sid, pocket, None, False)
+            "Series debian sid not supported in archive for ubuntutest.",
+            copy_checker.checkCopy,
+            source,
+            sid,
+            pocket,
+            None,
+            False,
+        )
 
     def test_checkCopy_respects_sourceformatselection(self):
         # A source copy should be denied if the source's dsc_format is
         # not permitted in the target series.
 
         # Get hoary, and configure it to accept 3.0 (quilt) uploads.
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        hoary = ubuntu.getSeries('hoary')
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        hoary = ubuntu.getSeries("hoary")
         getUtility(ISourcePackageFormatSelectionSet).add(
-            hoary, SourcePackageFormat.FORMAT_3_0_QUILT)
+            hoary, SourcePackageFormat.FORMAT_3_0_QUILT
+        )
 
         # Create a 3.0 (quilt) source.
         source = self.test_publisher.getPubSource(
-            distroseries=hoary, dsc_format='3.0 (quilt)')
+            distroseries=hoary, dsc_format="3.0 (quilt)"
+        )
 
         archive = source.archive
-        series = ubuntu.getSeries('warty')
+        series = ubuntu.getSeries("warty")
         pocket = source.pocket
 
         # An attempt to copy the source to warty, which only supports
@@ -974,19 +1131,25 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         self.assertRaisesWithContent(
             CannotCopy,
             "Source format '3.0 (quilt)' not supported by target series "
-            "warty.", copy_checker.checkCopy, source, series, pocket, None,
-            False)
+            "warty.",
+            copy_checker.checkCopy,
+            source,
+            series,
+            pocket,
+            None,
+            False,
+        )
 
     def test_checkCopy_identifies_conflicting_copy_candidates(self):
         # checkCopy() is able to identify conflicting candidates within
         # the copy batch.
 
         # Create a source with binaries in ubuntutest/breezy-autotest.
-        source = self.test_publisher.getPubSource(architecturehintlist='i386')
+        source = self.test_publisher.getPubSource(architecturehintlist="i386")
         binary = self.test_publisher.getPubBinaries(pub_source=source)[0]
 
         # Copy it with binaries to ubuntutest/hoary-test.
-        hoary = self.test_publisher.ubuntutest.getSeries('hoary-test')
+        hoary = self.test_publisher.ubuntutest.getSeries("hoary-test")
         self.test_publisher.addFakeChroots(hoary)
         copied_source = source.copyTo(hoary, source.pocket, source.archive)
         binary.copyTo(hoary, source.pocket, source.archive)
@@ -995,55 +1158,72 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         # destination and initialize a CopyChecker for it.
         archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
         copy_checker = CopyChecker(archive, include_binaries=False)
 
         # The first source-only copy is allowed, thus stored in the
         # copy checker inventory.
         self.assertIsNone(
             copy_checker.checkCopy(
-                source, source.distroseries, source.pocket,
-                check_permissions=False))
+                source,
+                source.distroseries,
+                source.pocket,
+                check_permissions=False,
+            )
+        )
 
         # The second source-only copy, for hoary-test, fails, since it
         # conflicts with the just-approved copy.
         self.assertRaisesWithContent(
             CannotCopy,
-            'same version already building in the destination archive '
-            'for Breezy Badger Autotest',
+            "same version already building in the destination archive "
+            "for Breezy Badger Autotest",
             copy_checker.checkCopy,
-            copied_source, copied_source.distroseries, copied_source.pocket,
-            None, False)
+            copied_source,
+            copied_source.distroseries,
+            copied_source.pocket,
+            None,
+            False,
+        )
 
     def test_copy_to_another_archive_tracks_source_archive(self):
         """Checks that creating a copy of a package publishing keeps track
         of origin archive.
         """
         # Create a source with binaries in ubuntutest/breezy-autotest.
-        source = self.test_publisher.getPubSource(architecturehintlist='i386')
+        source = self.test_publisher.getPubSource(architecturehintlist="i386")
         binary = self.test_publisher.getPubBinaries(pub_source=source)[0]
 
-        hoary = self.test_publisher.ubuntutest.getSeries('hoary-test')
+        hoary = self.test_publisher.ubuntutest.getSeries("hoary-test")
         self.test_publisher.addFakeChroots(hoary)
 
         target_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            purpose=ArchivePurpose.PPA)
+            purpose=ArchivePurpose.PPA,
+        )
 
         copied_source = source.copyTo(hoary, source.pocket, target_archive)
         self.assertThat(
-            copied_source, MatchesStructure.byEquality(
-                    archive=target_archive,
-                    copied_from_archive=source.archive))
+            copied_source,
+            MatchesStructure.byEquality(
+                archive=target_archive, copied_from_archive=source.archive
+            ),
+        )
 
         copied_binaries = binary.copyTo(hoary, source.pocket, target_archive)
 
         self.assertThat(
-            copied_binaries, MatchesListwise([
-                MatchesStructure.byEquality(
-                    archive=target_archive,
-                    copied_from_archive=binary.archive),
-            ]))
+            copied_binaries,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        archive=target_archive,
+                        copied_from_archive=binary.archive,
+                    ),
+                ]
+            ),
+        )
 
 
 class BaseDoCopyTests:
@@ -1052,8 +1232,8 @@ class BaseDoCopyTests:
 
     def setUp(self):
         super().setUp()
-        for arch in ('i386', 'hppa'):
-            self.factory.makeProcessor(name='my_%s' % arch)
+        for arch in ("i386", "hppa"):
+            self.factory.makeProcessor(name="my_%s" % arch)
 
     def createNobby(self, archs):
         """Create a new 'nobby' series with the given architecture tags.
@@ -1061,11 +1241,14 @@ class BaseDoCopyTests:
         The first is used as nominatedarchindep.
         """
         nobby = self.factory.makeDistroSeries(
-            distribution=self.test_publisher.ubuntutest, name='nobby')
+            distribution=self.test_publisher.ubuntutest, name="nobby"
+        )
         for arch in archs:
             self.factory.makeDistroArchSeries(
-                distroseries=nobby, architecturetag=arch,
-                processor=getUtility(IProcessorSet).getByName('my_%s' % arch))
+                distroseries=nobby,
+                architecturetag=arch,
+                processor=getUtility(IProcessorSet).getByName("my_%s" % arch),
+            )
         nobby.nominatedarchindep = nobby[archs[0]]
         self.test_publisher.addFakeChroots(nobby)
         return nobby
@@ -1082,25 +1265,30 @@ class BaseDoCopyTests:
 
         # Make a new architecture-specific source and binary.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, architecturehintlist='any')
+            archive=archive, architecturehintlist="any"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            archive=source.archive, pub_source=source)
+            archive=source.archive, pub_source=source
+        )
 
         # Now make a new distroseries with two architectures, one of
         # which is disabled.
-        nobby = self.createNobby(('i386', 'hppa'))
-        nobby['hppa'].enabled = False
+        nobby = self.createNobby(("i386", "hppa"))
+        nobby["hppa"].enabled = False
 
         # Now we can copy the package with binaries.
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         copies = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
+            source, target_archive, nobby, source.pocket, True
+        )
 
         # The binary should not be published for hppa.
-        self.assertCopied(copies, nobby, ('i386',))
+        self.assertCopied(copies, nobby, ("i386",))
 
     def test_does_not_copy_removed_arches(self):
         # When copying binaries to a new series, we must not try to copy
@@ -1108,27 +1296,31 @@ class BaseDoCopyTests:
 
         # Make a new architecture-specific source and binary.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, architecturehintlist='any')
+            archive=archive, architecturehintlist="any"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
 
         # Now make a new distroseries with only i386.
-        nobby = self.createNobby(('i386',))
+        nobby = self.createNobby(("i386",))
 
         # Now we can copy the package with binaries.
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         copies = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
+            source, target_archive, nobby, source.pocket, True
+        )
 
         # The copy succeeds, and no hppa publication is present.
-        self.assertCopied(copies, nobby, ('i386',))
+        self.assertCopied(copies, nobby, ("i386",))
 
 
 class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
-
     def setUp(self):
         super().setUp()
         self.test_publisher = SoyuzTestPublisher()
@@ -1136,14 +1328,18 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
     def assertCopied(self, copies, series, arch_tags):
         self.assertEqual(
-            ['foo 666 in %s' % series.name] +
-            ['foo-bin 666 in %s %s' % (series.name, arch_tag)
-             for arch_tag in arch_tags],
-            [copy.displayname for copy in copies])
+            ["foo 666 in %s" % series.name]
+            + [
+                "foo-bin 666 in %s %s" % (series.name, arch_tag)
+                for arch_tag in arch_tags
+            ],
+            [copy.displayname for copy in copies],
+        )
 
     def doCopy(self, source, archive, series, pocket, include_binaries):
-        return _do_direct_copy(source, archive, series, pocket,
-            include_binaries)
+        return _do_direct_copy(
+            source, archive, series, pocket, include_binaries
+        )
 
     def testCanCopyArchIndependentBinariesBuiltInAnUnsupportedArch(self):
         # _do_direct_copy() uses the binary candidate build architecture,
@@ -1155,31 +1351,35 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
         # Setup ubuntutest/hoary-test for building. Note that it doesn't
         # support 'hppa'.
-        hoary_test = self.test_publisher.ubuntutest.getSeries('hoary-test')
-        hoary_test.nominatedarchindep = hoary_test['i386']
+        hoary_test = self.test_publisher.ubuntutest.getSeries("hoary-test")
+        hoary_test.nominatedarchindep = hoary_test["i386"]
         self.test_publisher.addFakeChroots(hoary_test)
         self.assertNotIn(
-            'hppa',
-            [arch.architecturetag for arch in hoary_test.architectures])
+            "hppa", [arch.architecturetag for arch in hoary_test.architectures]
+        )
 
         # Create an arch-indep testing source with binaries in
         # ubuntutest/breezy-autotest which does support 'hppa'.
         source = self.test_publisher.getPubSource()
         [i386_bin, hppa_bin] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
 
         # The creation of an override (newer publication) for the hppa
         # binary will influence ISPPH.getBuiltBinary() results.
         hppa_bin.changeOverride(
-            new_component=getUtility(IComponentSet)['universe'])
+            new_component=getUtility(IComponentSet)["universe"]
+        )
         self.layer.txn.commit()
 
         # Copy succeeds.
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         copies = self.doCopy(
-            source, target_archive, hoary_test, source.pocket, True)
-        self.assertCopied(copies, hoary_test, ('amd64', 'i386'))
+            source, target_archive, hoary_test, source.pocket, True
+        )
+        self.assertCopied(copies, hoary_test, ("amd64", "i386"))
 
     def test_copying_arch_indep_binaries_with_disabled_arches(self):
         # When copying an arch-indep binary to a new series, we must not
@@ -1187,25 +1387,30 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
         # Make a new arch-all source and binary in breezy-autotest:
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, architecturehintlist='all')
+            archive=archive, architecturehintlist="all"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
 
         # Now make a new distroseries with two architectures, one of
         # which is disabled.
-        nobby = self.createNobby(('i386', 'hppa'))
-        nobby['hppa'].enabled = False
+        nobby = self.createNobby(("i386", "hppa"))
+        nobby["hppa"].enabled = False
 
         # Now we can copy the package with binaries.
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         copies = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
+            source, target_archive, nobby, source.pocket, True
+        )
 
         # The binary should not be published for hppa.
-        self.assertCopied(copies, nobby, ('i386',))
+        self.assertCopied(copies, nobby, ("i386",))
 
     def test_copies_only_new_indep_publications(self):
         # When copying  architecture-independent binaries to a series with
@@ -1214,33 +1419,42 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
         # Make a new architecture-specific source and binary.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, architecturehintlist='all')
+            archive=archive, architecturehintlist="all"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
 
         # Now make a new distroseries with two archs.
-        nobby = self.createNobby(('i386', 'hppa'))
+        nobby = self.createNobby(("i386", "hppa"))
 
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         # Manually copy the indep pub to just i386.
         BinaryPackagePublishingHistory(
             archive=target_archive,
             binarypackagename=bin_i386.binarypackagename,
             binarypackagerelease=bin_i386.binarypackagerelease,
             _binarypackageformat=bin_i386.binarypackageformat,
-            distroarchseries=nobby['i386'], pocket=bin_i386.pocket,
-            component=bin_i386.component, section=bin_i386.section,
+            distroarchseries=nobby["i386"],
+            pocket=bin_i386.pocket,
+            component=bin_i386.component,
+            section=bin_i386.section,
             priority=bin_i386.priority,
-            status=PackagePublishingStatus.PENDING, datecreated=UTC_NOW)
+            status=PackagePublishingStatus.PENDING,
+            datecreated=UTC_NOW,
+        )
         # Now we can copy the package with binaries.
         copies = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
+            source, target_archive, nobby, source.pocket, True
+        )
 
         # The copy succeeds, and no i386 publication is created.
-        self.assertCopied(copies, nobby, ('hppa',))
+        self.assertCopied(copies, nobby, ("hppa",))
 
     def assertOverrides(self, component, source, destination):
         self.assertEqual(component, destination.component)
@@ -1254,11 +1468,14 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # This is an oversimplication, in future we will also override
         # contrib/non-free to multiverse.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, architecturehintlist='any')
+            archive=archive, architecturehintlist="any"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
         component = self.factory.makeComponent()
         for kind in (source, bin_i386, bin_hppa):
             kind.component = component
@@ -1266,12 +1483,13 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # upload.
         transaction.commit()
 
-        nobby = self.createNobby(('i386', 'hppa'))
+        nobby = self.createNobby(("i386", "hppa"))
         target_archive = self.test_publisher.ubuntutest.main_archive
 
         [copied_source, copied_bin_i386, copied_bin_hppa] = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
-        universe = getUtility(IComponentSet)['universe']
+            source, target_archive, nobby, source.pocket, True
+        )
+        universe = getUtility(IComponentSet)["universe"]
         self.assertEqual(universe, copied_source.component)
         self.assertOverrides(universe, bin_i386, copied_bin_i386)
         self.assertOverrides(universe, bin_hppa, copied_bin_hppa)
@@ -1282,36 +1500,46 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # component and section when copying. This even works for ddebs
         # that are new in the target archive: they inherit their deb's
         # overrides.
-        nobby = self.createNobby(('i386', 'hppa'))
+        nobby = self.createNobby(("i386", "hppa"))
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         archive.build_debug_symbols = True
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False,
-            purpose=ArchivePurpose.PRIMARY)
+            distribution=self.test_publisher.ubuntutest,
+            virtualized=False,
+            purpose=ArchivePurpose.PRIMARY,
+        )
         target_archive.setProcessors(getUtility(IProcessorSet).getAll())
         target_archive.build_debug_symbols = True
         existing_source = self.test_publisher.getPubSource(
-            archive=target_archive, version='1.0-1', distroseries=nobby,
-            architecturehintlist='all')
+            archive=target_archive,
+            version="1.0-1",
+            distroseries=nobby,
+            architecturehintlist="all",
+        )
         existing_source.component = self.factory.makeComponent()
         [ebin_i386, ebin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=existing_source)
+            pub_source=existing_source
+        )
         section = self.factory.makeSection()
         ebin_i386.section = section
         ebin_hppa.section = section
 
         source = self.test_publisher.getPubSource(
-            archive=archive, version='1.0-2', architecturehintlist='all')
+            archive=archive, version="1.0-2", architecturehintlist="all"
+        )
         bins = self.test_publisher.getPubBinaries(
-            pub_source=source, with_debug=True)
+            pub_source=source, with_debug=True
+        )
         [bin_i386, dbg_i386, bin_hppa, dbg_hppa] = bins
         # The package copier will want the changes files associated with the
         # upload.
         transaction.commit()
 
         copied_pubs = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
+            source, target_archive, nobby, source.pocket, True
+        )
         self.assertEqual(copied_pubs[0].component, existing_source.component)
         for copied_bin in copied_pubs[1:]:
             self.assertOverrides(ebin_i386.component, ebin_i386, copied_bin)
@@ -1319,29 +1547,38 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
     def _setup_archive(self, version="1.0-2", use_nobby=False, **kwargs):
         archive = self.test_publisher.ubuntutest.main_archive
         archive.setProcessors(getUtility(IProcessorSet).getAll())
-        nobby = self.createNobby(('i386', 'hppa'))
+        nobby = self.createNobby(("i386", "hppa"))
         source = self.test_publisher.getPubSource(
-            archive=archive, version=version, architecturehintlist='any',
-            distroseries=(nobby if use_nobby else None), **kwargs)
+            archive=archive,
+            version=version,
+            architecturehintlist="any",
+            distroseries=(nobby if use_nobby else None),
+            **kwargs,
+        )
         getUtility(ISourcePackageFormatSelectionSet).add(
-            nobby, SourcePackageFormat.FORMAT_1_0)
+            nobby, SourcePackageFormat.FORMAT_1_0
+        )
         return nobby, archive, source
 
     def test_existing_publication_overrides_pockets(self):
         # When we copy source/binaries from one pocket to another, the
         # overrides are unchanged from the source publication overrides.
         nobby, archive, source = self._setup_archive(
-            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED)
+            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source, distroseries=nobby,
-            pocket=PackagePublishingPocket.PROPOSED)
+            pub_source=source,
+            distroseries=nobby,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
         component = self.factory.makeComponent()
         for kind in (source, bin_i386, bin_hppa):
             kind.component = component
         transaction.commit()
 
         [copied_source, copied_bin_i386, copied_bin_hppa] = self.doCopy(
-            source, archive, nobby, PackagePublishingPocket.UPDATES, True)
+            source, archive, nobby, PackagePublishingPocket.UPDATES, True
+        )
         self.assertEqual(copied_source.component, source.component)
         self.assertOverrides(bin_i386.component, bin_i386, copied_bin_i386)
         self.assertOverrides(bin_hppa.component, bin_hppa, copied_bin_hppa)
@@ -1350,18 +1587,23 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # When we copy source/binaries into a PPA, we don't respect their
         # component and section.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
         source = self.test_publisher.getPubSource(
-            archive=archive, version='1.0-2', architecturehintlist='all')
+            archive=archive, version="1.0-2", architecturehintlist="all"
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source)
+            pub_source=source
+        )
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=True)
-        nobby = self.createNobby(('i386', 'hppa'))
+            distribution=self.test_publisher.ubuntutest, virtualized=True
+        )
+        nobby = self.createNobby(("i386", "hppa"))
 
         [copied_source, copied_bin_i386, copied_bin_hppa] = self.doCopy(
-            source, target_archive, nobby, source.pocket, True)
-        main = getUtility(IComponentSet)['main']
+            source, target_archive, nobby, source.pocket, True
+        )
+        main = getUtility(IComponentSet)["main"]
         self.assertEqual(main, copied_source.component)
         self.assertOverrides(main, bin_i386, copied_bin_i386)
         self.assertOverrides(main, bin_hppa, copied_bin_hppa)
@@ -1369,10 +1611,13 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
     def test_deleted_publication_overrides(self):
         # Copying a deleted publication still respects its overrides.
         nobby, archive, source = self._setup_archive(
-            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED)
+            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source, distroseries=nobby,
-            pocket=PackagePublishingPocket.PROPOSED)
+            pub_source=source,
+            distroseries=nobby,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
         component = self.factory.makeComponent()
         for kind in (source, bin_i386, bin_hppa):
             kind.component = component
@@ -1380,7 +1625,8 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         transaction.commit()
 
         [copied_source, copied_bin_i386, copied_bin_hppa] = self.doCopy(
-            source, archive, nobby, PackagePublishingPocket.UPDATES, True)
+            source, archive, nobby, PackagePublishingPocket.UPDATES, True
+        )
         self.assertEqual(source.component, copied_source.component)
         self.assertOverrides(bin_i386.component, bin_i386, copied_bin_i386)
         self.assertOverrides(bin_hppa.component, bin_hppa, copied_bin_hppa)
@@ -1390,10 +1636,11 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         _, archive, source = self._setup_archive()
         dsp = self.factory.makeDistroSeriesParent()
         target_archive = dsp.derived_series.main_archive
-        switch_dbuser('archivepublisher')
+        switch_dbuser("archivepublisher")
         # The real test is that the doCopy doesn't fail.
         [copied_source] = self.doCopy(
-            source, target_archive, dsp.derived_series, source.pocket, False)
+            source, target_archive, dsp.derived_series, source.pocket, False
+        )
 
     def test_copy_with_override(self):
         # Test the override parameter for do_copy and by extension
@@ -1403,37 +1650,57 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         target_archive = dsp.derived_series.main_archive
         override = SourceOverride(
             component=self.factory.makeComponent(),
-            section=self.factory.makeSection())
+            section=self.factory.makeSection(),
+        )
         getUtility(ISourcePackageFormatSelectionSet).add(
-            dsp.derived_series, SourcePackageFormat.FORMAT_1_0)
-        switch_dbuser('archivepublisher')
+            dsp.derived_series, SourcePackageFormat.FORMAT_1_0
+        )
+        switch_dbuser("archivepublisher")
         [copied_source] = do_copy(
-            [source], target_archive, dsp.derived_series, source.pocket,
-            check_permissions=False, overrides=[override])
+            [source],
+            target_archive,
+            dsp.derived_series,
+            source.pocket,
+            check_permissions=False,
+            overrides=[override],
+        )
 
         matcher = MatchesStructure.byEquality(
-            component=override.component,
-            section=override.section)
+            component=override.component, section=override.section
+        )
         self.assertThat(copied_source, matcher)
 
     def test_copy_with_phased_update_percentage(self):
         # Test the phased_update_percentage parameter for do_copy.
         nobby, archive, source = self._setup_archive(
-            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED)
+            use_nobby=True, pocket=PackagePublishingPocket.PROPOSED
+        )
         [bin_i386, bin_hppa] = self.test_publisher.getPubBinaries(
-            pub_source=source, distroseries=nobby,
-            pocket=PackagePublishingPocket.PROPOSED)
+            pub_source=source,
+            distroseries=nobby,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
         transaction.commit()
-        switch_dbuser('archivepublisher')
+        switch_dbuser("archivepublisher")
         [copied_source, copied_bin_i386, copied_bin_hppa] = do_copy(
-            [source], archive, nobby, PackagePublishingPocket.UPDATES,
-            include_binaries=True, check_permissions=False)
+            [source],
+            archive,
+            nobby,
+            PackagePublishingPocket.UPDATES,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertIsNone(copied_bin_i386.phased_update_percentage)
         self.assertIsNone(copied_bin_hppa.phased_update_percentage)
         [copied_source, copied_bin_i386, copied_bin_hppa] = do_copy(
-            [source], archive, nobby, PackagePublishingPocket.BACKPORTS,
-            include_binaries=True, check_permissions=False,
-            phased_update_percentage=50)
+            [source],
+            archive,
+            nobby,
+            PackagePublishingPocket.BACKPORTS,
+            include_binaries=True,
+            check_permissions=False,
+            phased_update_percentage=50,
+        )
         self.assertEqual(50, copied_bin_i386.phased_update_percentage)
         self.assertEqual(50, copied_bin_hppa.phased_update_percentage)
 
@@ -1443,19 +1710,29 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         changelog = self.factory.makeChangelog(spn="foo", versions=["1.0-2"])
         source.sourcepackagerelease.changelog = changelog
         transaction.commit()
-        person = self.factory.makePerson(name='archiver')
+        person = self.factory.makePerson(name="archiver")
         target_archive = self.factory.makeArchive(
             distribution=self.test_publisher.ubuntutest,
-            owner=person, name='ppa')
+            owner=person,
+            name="ppa",
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=True)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=True,
+        )
         [notification] = pop_notifications()
         self.assertEqual(
-            target_archive.reference, notification['X-Launchpad-Archive'])
-        body = six.ensure_text(notification.get_payload(decode=True))
-        expected = dedent("""\
+            target_archive.reference, notification["X-Launchpad-Archive"]
+        )
+        body = notification.get_payload(decode=True).decode()
+        expected = dedent(
+            """\
             Accepted:
              OK: foo_1.0-2.dsc
                  -> Component: main Section: base
@@ -1467,7 +1744,9 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
             %s
             http://launchpad.test/~archiver/+archive/ubuntutest/ppa
             You are receiving this email because you made this upload.
-            """ % "-- ")
+            """
+            % "-- "
+        )
         self.assertEqual(expected, body)
 
     def test_copy_generates_notification(self):
@@ -1478,22 +1757,32 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         source.sourcepackagerelease.changelog = changelog
         # Copying to a primary archive reads the changes to close bugs.
         transaction.commit()
-        nobby.changeslist = 'nobby-changes@example.com'
+        nobby.changeslist = "nobby-changes@example.com"
         [copied_source] = do_copy(
-            [source], archive, nobby, source.pocket, False,
+            [source],
+            archive,
+            nobby,
+            source.pocket,
+            False,
             person=source.sourcepackagerelease.creator,
-            check_permissions=False, send_email=True)
+            check_permissions=False,
+            send_email=True,
+        )
         [notification, announcement] = pop_notifications()
         self.assertEqual(
-            archive.reference, notification['X-Launchpad-Archive'])
+            archive.reference, notification["X-Launchpad-Archive"]
+        )
         self.assertEqual(
-            archive.reference, announcement['X-Launchpad-Archive'])
-        self.assertEqual('Foo Bar <foo.bar@canonical.com>', notification['To'])
-        self.assertEqual('nobby-changes@example.com', announcement['To'])
+            archive.reference, announcement["X-Launchpad-Archive"]
+        )
+        self.assertEqual("Foo Bar <foo.bar@canonical.com>", notification["To"])
+        self.assertEqual("nobby-changes@example.com", announcement["To"])
         for mail in (notification, announcement):
             self.assertEqual(
-                '[ubuntutest/nobby] foo 1.0-2 (Accepted)', mail['Subject'])
-        expected_text = dedent("""\
+                "[ubuntutest/nobby] foo 1.0-2 (Accepted)", mail["Subject"]
+            )
+        expected_text = dedent(
+            """\
             foo (1.0-2) unstable; urgency=3Dlow
 
               * 1.0-2.
@@ -1501,7 +1790,9 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
             Date: %s
             Changed-By: Foo Bar <foo.bar@canonical.com>
             http://launchpad.test/ubuntutest/+source/foo/1.0-2
-            """ % source.sourcepackagerelease.dateuploaded)
+            """
+            % source.sourcepackagerelease.dateuploaded
+        )
         # Spurious newlines are a pain and don't really affect the end
         # results so stripping is the easiest route here.
         expected_text.strip()
@@ -1517,17 +1808,25 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         source.sourcepackagerelease.changelog = changelog
         # Copying to a primary archive reads the changes to close bugs.
         transaction.commit()
-        nobby.changeslist = 'nobby-changes@example.com'
+        nobby.changeslist = "nobby-changes@example.com"
         sponsored_person = self.factory.makePerson(
-            displayname="Sponsored", email="sponsored@example.com")
+            displayname="Sponsored", email="sponsored@example.com"
+        )
         [copied_source] = do_copy(
-            [source], archive, nobby, source.pocket, False,
-                    person=source.sourcepackagerelease.creator,
-                    check_permissions=False, send_email=True,
-                    sponsored=sponsored_person)
+            [source],
+            archive,
+            nobby,
+            source.pocket,
+            False,
+            person=source.sourcepackagerelease.creator,
+            check_permissions=False,
+            send_email=True,
+            sponsored=sponsored_person,
+        )
         [notification, announcement] = pop_notifications()
         self.assertEqual(
-            'Sponsored <sponsored@example.com>', announcement['From'])
+            "Sponsored <sponsored@example.com>", announcement["From"]
+        )
         self.assertEqual(sponsored_person, copied_source.creator)
 
     def test_sponsored_copy_sponsor_field(self):
@@ -1539,14 +1838,22 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # Copying to a primary archive reads the changes to close bugs.
         transaction.commit()
         sponsored_person = self.factory.makePerson(
-            displayname="Sponsored", email="sponsored@example.com")
+            displayname="Sponsored", email="sponsored@example.com"
+        )
         [copied_source] = do_copy(
-            [source], archive, nobby, source.pocket, False,
-                    person=source.sourcepackagerelease.creator,
-                    check_permissions=False, send_email=True,
-                    sponsored=sponsored_person)
-        self.assertEqual(source.sourcepackagerelease.creator,
-            copied_source.sponsor)
+            [source],
+            archive,
+            nobby,
+            source.pocket,
+            False,
+            person=source.sourcepackagerelease.creator,
+            check_permissions=False,
+            send_email=True,
+            sponsored=sponsored_person,
+        )
+        self.assertEqual(
+            source.sourcepackagerelease.creator, copied_source.sponsor
+        )
 
     def test_copy_notification_contains_aggregate_change_log(self):
         # When copying a package that generates a notification,
@@ -1554,26 +1861,37 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # all the sourcepackagereleases between the last published version
         # and the new version.
         nobby, archive, source3 = self._setup_archive(
-            sourcename="foo", version="1.2")
+            sourcename="foo", version="1.2"
+        )
         changelog = self.factory.makeChangelog(
-            spn="foo", versions=["1.2",  "1.1",  "1.0"])
+            spn="foo", versions=["1.2", "1.1", "1.0"]
+        )
         source3.sourcepackagerelease.changelog = changelog
         transaction.commit()
 
         # Now publish foo 1.0 in nobby.
-        nobby.changeslist = 'nobby-changes@example.com'
+        nobby.changeslist = "nobby-changes@example.com"
         source1 = self.factory.makeSourcePackageRelease(
-            sourcepackagename="foo", version="1.0")
+            sourcepackagename="foo", version="1.0"
+        )
         self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagerelease=source1, distroseries=nobby,
+            sourcepackagerelease=source1,
+            distroseries=nobby,
             status=PackagePublishingStatus.PUBLISHED,
-            pocket=source3.pocket)
+            pocket=source3.pocket,
+        )
 
         # Now copy foo 1.3 from ubuntutest.
         [copied_source] = do_copy(
-            [source3], nobby.main_archive, nobby, source3.pocket, False,
+            [source3],
+            nobby.main_archive,
+            nobby,
+            source3.pocket,
+            False,
             person=source3.sourcepackagerelease.creator,
-            check_permissions=False, send_email=True)
+            check_permissions=False,
+            send_email=True,
+        )
 
         [notification, announcement] = pop_notifications()
         for mail in (notification, announcement):
@@ -1589,24 +1907,34 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # get a rejection.
         self.test_publisher.getPubSource(
             sourcename=source.source_package_name,
-            archive=nobby.main_archive, version="1.0-2",
-            architecturehintlist='any')
-        with ExpectedException(CannotCopy, '.'):
+            archive=nobby.main_archive,
+            version="1.0-2",
+            architecturehintlist="any",
+        )
+        with ExpectedException(CannotCopy, "."):
             do_copy(
-                [source], archive, nobby, source.pocket, False,
+                [source],
+                archive,
+                nobby,
+                source.pocket,
+                False,
                 person=source.sourcepackagerelease.creator,
-                check_permissions=False, send_email=True)
+                check_permissions=False,
+                send_email=True,
+            )
 
         notifications = pop_notifications()
         self.assertEqual(1, len(notifications))
         [notification] = notifications
-        self.assertEqual('Foo Bar <foo.bar@canonical.com>', notification['To'])
+        self.assertEqual("Foo Bar <foo.bar@canonical.com>", notification["To"])
         self.assertEqual(
-            '[ubuntutest/nobby] foo 1.0-2 (Rejected)', notification['Subject'])
+            "[ubuntutest/nobby] foo 1.0-2 (Rejected)", notification["Subject"]
+        )
         expected_text = (
             "Rejected:\n"
             "foo 1.0-2 in breezy-autotest (a different source with the same "
-                "version is p=\nublished in the destination archive)\n")
+            "version is p=\nublished in the destination archive)\n"
+        )
         self.assertIn(expected_text, notification.as_string())
 
     def test_copy_does_not_generate_notification(self):
@@ -1614,11 +1942,18 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # generated.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=False)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
         self.assertEqual([], pop_notifications())
 
     def test_duplicate_copy_does_not_generate_notification(self):
@@ -1626,16 +1961,35 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # already in the destination, then no notification is generated.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
-        self.assertNotEqual([], do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=True))
+            distribution=self.test_publisher.ubuntutest
+        )
+        self.assertNotEqual(
+            [],
+            do_copy(
+                [source],
+                target_archive,
+                nobby,
+                source.pocket,
+                False,
+                person=target_archive.owner,
+                check_permissions=False,
+                send_email=True,
+            ),
+        )
         self.assertNotEqual([], pop_notifications())
-        self.assertEqual([], do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=True))
+        self.assertEqual(
+            [],
+            do_copy(
+                [source],
+                target_archive,
+                nobby,
+                source.pocket,
+                False,
+                person=target_archive.owner,
+                check_permissions=False,
+                send_email=True,
+            ),
+        )
         self.assertEqual([], pop_notifications())
 
     def test_copying_unsupported_arch_with_override(self):
@@ -1644,49 +1998,71 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # architecture-independent binary is copied even if the target
         # has a totally disjoint set of archs.
         archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
-        spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive)
+            distribution=self.test_publisher.ubuntutest, virtualized=False
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(archive=archive)
         das = self.factory.makeDistroArchSeries(spph.distroseries)
         spph.distroseries.nominatedarchindep = das
         self.factory.makeBinaryPackagePublishingHistory(
-            archive=archive, distroarchseries=das,
+            archive=archive,
+            distroarchseries=das,
             source_package_release=spph.sourcepackagerelease,
-            architecturespecific=True)
+            architecturespecific=True,
+        )
         bpph_indep = self.factory.makeBinaryPackagePublishingHistory(
-            archive=archive, distroarchseries=das,
+            archive=archive,
+            distroarchseries=das,
             source_package_release=spph.sourcepackagerelease,
-            architecturespecific=False)
+            architecturespecific=False,
+        )
 
         # Now make a new distroseries with only one architecture:
         # 'hppa'.
-        nobby = self.createNobby(('hppa', ))
+        nobby = self.createNobby(("hppa",))
 
         # Copy the package with binaries.
         target_archive = self.factory.makeArchive(
             purpose=ArchivePurpose.PRIMARY,
-            distribution=self.test_publisher.ubuntutest, virtualized=False)
-        copies = _do_direct_copy(spph, target_archive, nobby, spph.pocket,
-            include_binaries=True, close_bugs=False, create_dsd_job=False)
+            distribution=self.test_publisher.ubuntutest,
+            virtualized=False,
+        )
+        copies = _do_direct_copy(
+            spph,
+            target_archive,
+            nobby,
+            spph.pocket,
+            include_binaries=True,
+            close_bugs=False,
+            create_dsd_job=False,
+        )
 
         # Only the source package and the architecture-independent
         # binary have been copied.
         self.assertEqual(2, len(copies))
         self.assertEqual(
-            spph.sourcepackagerelease, copies[0].sourcepackagerelease)
+            spph.sourcepackagerelease, copies[0].sourcepackagerelease
+        )
         self.assertEqual(
-            bpph_indep.binarypackagerelease, copies[1].binarypackagerelease)
+            bpph_indep.binarypackagerelease, copies[1].binarypackagerelease
+        )
 
     def test_copy_sets_creator(self):
         # The creator for the copied SPPH is the person passed
         # to do_copy.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=False)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
 
         self.assertEqual(target_archive.owner, copied_source.creator)
 
@@ -1694,11 +2070,18 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # If the copy is not sponsored, SPPH.sponsor is none
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket, False,
-            person=target_archive.owner, check_permissions=False,
-            send_email=False)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
 
         self.assertIsNone(copied_source.sponsor)
 
@@ -1707,26 +2090,40 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # FULLYBUILT builds are copied.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [build_hppa, build_i386] = source.createMissingBuilds()
         lazy_bin = self.test_publisher.uploadBinaryForBuild(
-            build_i386, 'lazy-bin')
+            build_i386, "lazy-bin"
+        )
         self.test_publisher.publishBinaryInArchive(lazy_bin, archive)
-        changes_file_name = '%s_%s_%s.changes' % (
-            lazy_bin.name, lazy_bin.version, build_i386.arch_tag)
+        changes_file_name = "%s_%s_%s.changes" % (
+            lazy_bin.name,
+            lazy_bin.version,
+            build_i386.arch_tag,
+        )
         self.test_publisher.addPackageUpload(
-            archive, nobby, build_i386.pocket,
-            changes_file_content=b'anything',
-            changes_file_name=changes_file_name)
+            archive,
+            nobby,
+            build_i386.pocket,
+            changes_file_content=b"anything",
+            changes_file_name=changes_file_name,
+        )
 
         # Make the new library files available.
         self.layer.txn.commit()
 
         # Only the source and the fully-built binary are copied.
         copies = do_copy(
-            [source], target_archive, nobby, source.pocket,
-            include_binaries=True, person=target_archive.owner,
-            check_permissions=False, send_email=False)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            include_binaries=True,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
         self.assertEqual(2, len(copies))
         self.assertIsInstance(copies[0], SourcePackagePublishingHistory)
         self.assertIsInstance(copies[1], BinaryPackagePublishingHistory)
@@ -1737,11 +2134,18 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # intact.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket,
-            include_binaries=False, person=target_archive.owner,
-            check_permissions=False, send_email=False)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            include_binaries=False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
         self.assertEqual(PackagePublishingStatus.PENDING, source.status)
 
@@ -1749,17 +2153,26 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         # A copy with move=True deletes the source publication.
         nobby, archive, source = self._setup_archive()
         target_archive = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         [copied_source] = do_copy(
-            [source], target_archive, nobby, source.pocket,
-            include_binaries=False, person=target_archive.owner,
-            check_permissions=False, send_email=False, move=True)
+            [source],
+            target_archive,
+            nobby,
+            source.pocket,
+            include_binaries=False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+            move=True,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
         self.assertEqual(PackagePublishingStatus.DELETED, source.status)
         self.assertEqual(
-            "Moved to %s in %s" % (
-                nobby.getSuite(source.pocket), target_archive.reference),
-            source.removal_comment)
+            "Moved to %s in %s"
+            % (nobby.getSuite(source.pocket), target_archive.reference),
+            source.removal_comment,
+        )
 
     def test_copy_with_move_failure(self):
         # If a copy with move=True fails, then the source publication is
@@ -1767,13 +2180,23 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         nobby, archive, source = self._setup_archive()
         self.test_publisher.getPubSource(
             sourcename=source.source_package_name,
-            archive=nobby.main_archive, version="1.0-2",
-            architecturehintlist="any")
+            archive=nobby.main_archive,
+            version="1.0-2",
+            architecturehintlist="any",
+        )
         self.assertRaises(
-            CannotCopy, do_copy,
-            [source], archive, nobby, source.pocket,
-            include_binaries=False, person=source.sourcepackagerelease.creator,
-            check_permissions=False, send_email=False, move=True)
+            CannotCopy,
+            do_copy,
+            [source],
+            archive,
+            nobby,
+            source.pocket,
+            include_binaries=False,
+            person=source.sourcepackagerelease.creator,
+            check_permissions=False,
+            send_email=False,
+            move=True,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, source.status)
 
 
@@ -1788,7 +2211,8 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         self.test_publisher.prepareBreezyAutotest()
         self.primary = self.test_publisher.ubuntutest.main_archive
         self.ppa = self.factory.makeArchive(
-            distribution=self.test_publisher.ubuntutest)
+            distribution=self.test_publisher.ubuntutest
+        )
         self.series = self.test_publisher.distroseries
 
     def checkCopies(self, copied, target_archive, size):
@@ -1809,14 +2233,19 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         self.test_publisher.getPubBinaries(pub_source=source)
         self.layer.txn.commit()
         copied = do_copy(
-            [source], self.primary, self.series,
-            PackagePublishingPocket.RELEASE, include_binaries=False,
-            check_permissions=False)
+            [source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.RELEASE,
+            include_binaries=False,
+            check_permissions=False,
+        )
         self.checkCopies(copied, self.primary, 1)
         spr = source.sourcepackagerelease
         self.assertEqual(
             "%s %s in %s" % (spr.name, spr.version, self.series.name),
-            copied[0].displayname)
+            copied[0].displayname,
+        )
         self.assertEqual(0, copied[0].getPublishedBinaries().count())
         self.assertEqual(1, len(copied[0].getBuilds()))
 
@@ -1830,14 +2259,19 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         initial_builds = source.getBuilds()
         self.assertEqual(1, len(initial_builds))
         copied = do_copy(
-            [source], self.primary, self.series,
-            PackagePublishingPocket.RELEASE, include_binaries=True,
-            check_permissions=False)
+            [source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.RELEASE,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.checkCopies(copied, self.primary, 3)
         spr = source.sourcepackagerelease
         self.assertEqual(
             "%s %s in %s" % (spr.name, spr.version, self.series.name),
-            copied[0].displayname)
+            copied[0].displayname,
+        )
         self.assertEqual(2, copied[0].getPublishedBinaries().count())
         self.assertEqual(initial_builds, copied[0].getBuilds())
 
@@ -1845,16 +2279,21 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         """Make a new distroseries with an additional architecture."""
         new_series = self.factory.makeDistroSeries(
             distribution=self.test_publisher.ubuntutest,
-            previous_series=self.series)
+            previous_series=self.series,
+        )
         for das in self.series.architectures:
             self.factory.makeDistroArchSeries(
-                distroseries=new_series, architecturetag=das.architecturetag,
-                processor=das.processor)
+                distroseries=new_series,
+                architecturetag=das.architecturetag,
+                processor=das.processor,
+            )
         new_series.nominatedarchindep = new_series[
-            self.series.nominatedarchindep.architecturetag]
+            self.series.nominatedarchindep.architecturetag
+        ]
         new_das = self.factory.makeDistroArchSeries(distroseries=new_series)
         getUtility(ISourcePackageFormatSelectionSet).add(
-            new_series, SourcePackageFormat.FORMAT_1_0)
+            new_series, SourcePackageFormat.FORMAT_1_0
+        )
         self.test_publisher.addFakeChroots(new_series)
         return new_series, new_das
 
@@ -1864,17 +2303,25 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         # architecture-independent binaries to the new architectures.
         new_series, new_das = self.makeSeriesWithExtraArchitecture()
         self.primary.setProcessors(
-            self.primary.processors + [new_das.processor])
+            self.primary.processors + [new_das.processor]
+        )
         source = self.test_publisher.getPubSource(
-            archive=self.primary, status=PackagePublishingStatus.PUBLISHED,
-            architecturehintlist="all")
+            archive=self.primary,
+            status=PackagePublishingStatus.PUBLISHED,
+            architecturehintlist="all",
+        )
         self.test_publisher.getPubBinaries(
-            pub_source=source, status=PackagePublishingStatus.PUBLISHED)
+            pub_source=source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.layer.txn.commit()
         copied = do_copy(
-            [source], self.primary, new_series,
-            PackagePublishingPocket.RELEASE, include_binaries=True,
-            check_permissions=False)
+            [source],
+            self.primary,
+            new_series,
+            PackagePublishingPocket.RELEASE,
+            include_binaries=True,
+            check_permissions=False,
+        )
 
         # The source and the only existing binary were correctly copied.  No
         # build was created, but the architecture-independent binary was
@@ -1883,11 +2330,13 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         spr = source.sourcepackagerelease
         self.assertEqual(
             "%s %s in %s" % (spr.name, spr.version, new_series.name),
-            copied[0].displayname)
+            copied[0].displayname,
+        )
         self.assertEqual(0, len(copied[0].getBuilds()))
         architectures = [
             binary.distroarchseries
-            for binary in copied[0].getPublishedBinaries()]
+            for binary in copied[0].getPublishedBinaries()
+        ]
         self.assertContentEqual(new_series.architectures, architectures)
 
     def test_copy_creates_missing_builds(self):
@@ -1897,41 +2346,62 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         # architectures.
         new_series, new_das = self.makeSeriesWithExtraArchitecture()
         self.primary.setProcessors(
-            self.primary.processors + [new_das.processor])
+            self.primary.processors + [new_das.processor]
+        )
         source = self.test_publisher.getPubSource(
-            archive=self.primary, status=PackagePublishingStatus.PUBLISHED,
-            architecturehintlist="any")
+            archive=self.primary,
+            status=PackagePublishingStatus.PUBLISHED,
+            architecturehintlist="any",
+        )
         binaries = self.test_publisher.getPubBinaries(
-            pub_source=source, status=PackagePublishingStatus.PUBLISHED)
+            pub_source=source, status=PackagePublishingStatus.PUBLISHED
+        )
         self.layer.txn.commit()
         copied = do_copy(
-            [source], self.primary, new_series,
-            PackagePublishingPocket.RELEASE, include_binaries=True,
-            check_permissions=False)
+            [source],
+            self.primary,
+            new_series,
+            PackagePublishingPocket.RELEASE,
+            include_binaries=True,
+            check_permissions=False,
+        )
 
         # The source and the existing binaries were copied.
         self.checkCopies(copied, self.primary, 3)
         spr = source.sourcepackagerelease
         self.assertEqual(
             "%s %s in %s" % (spr.name, spr.version, new_series.name),
-            copied[0].displayname)
+            copied[0].displayname,
+        )
         expected_binaries = []
         for binary in binaries:
             bpr = binary.binarypackagerelease
             expected_binaries.append(
-                "%s %s in %s %s" % (
-                    bpr.name, bpr.version, new_series.name,
-                    binary.distroarchseries.architecturetag))
+                "%s %s in %s %s"
+                % (
+                    bpr.name,
+                    bpr.version,
+                    new_series.name,
+                    binary.distroarchseries.architecturetag,
+                )
+            )
         self.assertContentEqual(
-            expected_binaries, [copy.displayname for copy in copied[1:]])
+            expected_binaries, [copy.displayname for copy in copied[1:]]
+        )
 
         # The copier created a build in the new series for the extra
         # architecture.
         [new_build] = copied[0].getBuilds()
         self.assertEqual(
-            "%s build of %s %s in ubuntutest %s RELEASE" %
-            (new_das.architecturetag, spr.name, spr.version, new_series.name),
-            new_build.title)
+            "%s build of %s %s in ubuntutest %s RELEASE"
+            % (
+                new_das.architecturetag,
+                spr.name,
+                spr.version,
+                new_series.name,
+            ),
+            new_build.title,
+        )
 
     def checkSecurityPropagationContext(self, archive, source_name):
         """Verify publishing context after propagating a security update.
@@ -1947,8 +2417,8 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         once in a distroarchseries, independent of its targeted pocket.
         """
         [copied, original] = archive.getPublishedSources(
-            name=source_name, exact_match=True,
-            status=active_publishing_status)
+            name=source_name, exact_match=True, status=active_publishing_status
+        )
 
         self.assertEqual(PackagePublishingPocket.UPDATES, copied.pocket)
         self.assertEqual(PackagePublishingPocket.SECURITY, original.pocket)
@@ -1967,9 +2437,11 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         # mirrored, and thus cheaper to distribute) before all binaries have
         # built.
         security_source = self.test_publisher.getPubSource(
-            archive=self.primary, architecturehintlist="any",
+            archive=self.primary,
+            architecturehintlist="any",
             pocket=PackagePublishingPocket.SECURITY,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         builds = security_source.createMissingBuilds()
         self.assertEqual(2, len(builds))
 
@@ -1977,26 +2449,35 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         # This leaves the first build completed and the second pending.
         binary_one = self.test_publisher.uploadBinaryForBuild(builds[0], "foo")
         self.test_publisher.publishBinaryInArchive(
-            binary_one, self.primary, pocket=PackagePublishingPocket.SECURITY,
-            status=PackagePublishingStatus.PUBLISHED)
+            binary_one,
+            self.primary,
+            pocket=PackagePublishingPocket.SECURITY,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         self.assertEqual(BuildStatus.FULLYBUILT, builds[0].status)
         self.assertEqual(BuildStatus.NEEDSBUILD, builds[1].status)
         self.layer.txn.commit()
 
         # Copy the source and the first binary to UPDATES.
         copied = do_copy(
-            [security_source], self.primary, self.series,
-            PackagePublishingPocket.UPDATES, include_binaries=True,
-            check_permissions=False)
+            [security_source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.UPDATES,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.checkCopies(copied, self.primary, 2)
         spr = security_source.sourcepackagerelease
         self.assertEqual(
             "%s %s in %s" % (spr.name, spr.version, self.series.name),
-            copied[0].displayname)
+            copied[0].displayname,
+        )
         self.assertEqual(
-            "foo %s in %s %s" % (
-                spr.version, self.series.name, builds[0].arch_tag),
-            copied[1].displayname)
+            "foo %s in %s %s"
+            % (spr.version, self.series.name, builds[0].arch_tag),
+            copied[1].displayname,
+        )
 
         self.checkSecurityPropagationContext(security_source.archive, spr.name)
 
@@ -2006,24 +2487,36 @@ class TestCopyBuildRecords(TestCaseWithFactory):
         # source is already copied.
         binary_two = self.test_publisher.uploadBinaryForBuild(builds[1], "foo")
         nothing_copied = do_copy(
-            [security_source], self.primary, self.series,
-            PackagePublishingPocket.UPDATES, include_binaries=True,
-            check_permissions=False)
+            [security_source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.UPDATES,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(0, len(nothing_copied))
 
         # Publish the second binary and repeat the copy.  This copies only
         # the new binary.
         self.test_publisher.publishBinaryInArchive(
-            binary_two, self.primary, pocket=PackagePublishingPocket.SECURITY,
-            status=PackagePublishingStatus.PUBLISHED)
+            binary_two,
+            self.primary,
+            pocket=PackagePublishingPocket.SECURITY,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         copied_incremental = do_copy(
-            [security_source], self.primary, self.series,
-            PackagePublishingPocket.UPDATES, include_binaries=True,
-            check_permissions=False)
+            [security_source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.UPDATES,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(
-            "foo %s in %s %s" % (
-                spr.version, self.series.name, builds[1].arch_tag),
-            copied_incremental[0].displayname)
+            "foo %s in %s %s"
+            % (spr.version, self.series.name, builds[1].arch_tag),
+            copied_incremental[0].displayname,
+        )
 
         # The source and its two binaries are now available in both the
         # -security and -updates suites.
@@ -2032,9 +2525,13 @@ class TestCopyBuildRecords(TestCaseWithFactory):
 
         # A further attempted copy is a no-op.
         nothing_copied = do_copy(
-            [security_source], self.primary, self.series,
-            PackagePublishingPocket.UPDATES, include_binaries=True,
-            check_permissions=False)
+            [security_source],
+            self.primary,
+            self.series,
+            PackagePublishingPocket.UPDATES,
+            include_binaries=True,
+            check_permissions=False,
+        )
         self.assertEqual(0, len(nothing_copied))
 
 
@@ -2052,31 +2549,38 @@ class TestCopyClosesBugs(TestCaseWithFactory):
         self.test_publisher = SoyuzTestPublisher()
         self.test_publisher.prepareBreezyAutotest()
         self.ubuntutest = self.test_publisher.ubuntutest
-        self.hoary_test = self.ubuntutest.getSeries('hoary-test')
+        self.hoary_test = self.ubuntutest.getSeries("hoary-test")
         self.test_publisher.addFakeChroots(self.hoary_test)
         self.breezy_autotest = self.test_publisher.breezy_autotest
         self.person = self.factory.makePerson()
         self.ppa = self.factory.makeArchive(
-            distribution=self.ubuntutest, owner=self.person)
+            distribution=self.ubuntutest, owner=self.person
+        )
 
         # Create a dummy first package version so we can file bugs on it.
         dummy_changesfile = "Format: 1.7\n"
         self.createSource(
-            '666', self.hoary_test.main_archive,
-            PackagePublishingPocket.PROPOSED, dummy_changesfile)
+            "666",
+            self.hoary_test.main_archive,
+            PackagePublishingPocket.PROPOSED,
+            dummy_changesfile,
+        )
 
     def createSource(self, version, archive, pocket, bug_id):
-        changes_template = (
-            "Format: 1.7\n"
-            "Launchpad-bugs-fixed: %s\n")
+        changes_template = "Format: 1.7\n" "Launchpad-bugs-fixed: %s\n"
         changes_file_content = (changes_template % bug_id).encode("UTF-8")
         source = self.test_publisher.getPubSource(
-            sourcename='buggy-source', version=version,
-            distroseries=self.hoary_test, archive=archive, pocket=pocket,
+            sourcename="buggy-source",
+            version=version,
+            distroseries=self.hoary_test,
+            archive=archive,
+            pocket=pocket,
             changes_file_content=changes_file_content,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         source.sourcepackagerelease.changelog_entry = (
-            "Required for close_bugs_for_sourcepublication")
+            "Required for close_bugs_for_sourcepublication"
+        )
         self.layer.txn.commit()
         return source
 
@@ -2089,14 +2593,21 @@ class TestCopyClosesBugs(TestCaseWithFactory):
         return bug.id
 
     def test_copies_to_updates_close_bugs(self):
-        updates_bug_id = self.createBug('buggy-source', 'bug in -proposed')
+        updates_bug_id = self.createBug("buggy-source", "bug in -proposed")
         spph = self.createSource(
-            '667', self.hoary_test.main_archive,
-            PackagePublishingPocket.PROPOSED, updates_bug_id)
+            "667",
+            self.hoary_test.main_archive,
+            PackagePublishingPocket.PROPOSED,
+            updates_bug_id,
+        )
 
         [copied_source] = do_copy(
-            [spph], self.hoary_test.main_archive, self.hoary_test,
-            PackagePublishingPocket.UPDATES, check_permissions=False)
+            [spph],
+            self.hoary_test.main_archive,
+            self.hoary_test,
+            PackagePublishingPocket.UPDATES,
+            check_permissions=False,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
 
         updates_bug = getUtility(IBugSet).get(updates_bug_id)
@@ -2104,14 +2615,21 @@ class TestCopyClosesBugs(TestCaseWithFactory):
         self.assertEqual(updates_bug_task.status, BugTaskStatus.FIXRELEASED)
 
     def test_copies_to_development_close_bugs(self):
-        dev_bug_id = self.createBug('buggy-source', 'bug in development')
+        dev_bug_id = self.createBug("buggy-source", "bug in development")
         spph = self.createSource(
-            '668', self.hoary_test.main_archive,
-            PackagePublishingPocket.UPDATES, dev_bug_id)
+            "668",
+            self.hoary_test.main_archive,
+            PackagePublishingPocket.UPDATES,
+            dev_bug_id,
+        )
 
         [copied_source] = do_copy(
-            [spph], self.hoary_test.main_archive, self.breezy_autotest,
-            PackagePublishingPocket.RELEASE, check_permissions=False)
+            [spph],
+            self.hoary_test.main_archive,
+            self.breezy_autotest,
+            PackagePublishingPocket.RELEASE,
+            check_permissions=False,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
 
         dev_bug = getUtility(IBugSet).get(dev_bug_id)
@@ -2119,13 +2637,18 @@ class TestCopyClosesBugs(TestCaseWithFactory):
         self.assertEqual(dev_bug_task.status, BugTaskStatus.FIXRELEASED)
 
     def test_copies_to_proposed_do_not_close_bugs(self):
-        ppa_bug_id = self.createBug('buggy-source', 'bug in PPA')
+        ppa_bug_id = self.createBug("buggy-source", "bug in PPA")
         spph = self.createSource(
-            '669', self.ppa, PackagePublishingPocket.RELEASE, ppa_bug_id)
+            "669", self.ppa, PackagePublishingPocket.RELEASE, ppa_bug_id
+        )
 
         [copied_source] = do_copy(
-            [spph], self.hoary_test.main_archive, self.hoary_test,
-            PackagePublishingPocket.PROPOSED, check_permissions=False)
+            [spph],
+            self.hoary_test.main_archive,
+            self.hoary_test,
+            PackagePublishingPocket.PROPOSED,
+            check_permissions=False,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
 
         ppa_bug = getUtility(IBugSet).get(ppa_bug_id)
@@ -2133,14 +2656,21 @@ class TestCopyClosesBugs(TestCaseWithFactory):
         self.assertEqual(ppa_bug_task.status, BugTaskStatus.NEW)
 
     def test_copies_to_ppa_do_not_close_bugs(self):
-        proposed_bug_id = self.createBug('buggy-source', 'bug in PPA')
+        proposed_bug_id = self.createBug("buggy-source", "bug in PPA")
         spph = self.createSource(
-            '670', self.hoary_test.main_archive,
-            PackagePublishingPocket.RELEASE, proposed_bug_id)
+            "670",
+            self.hoary_test.main_archive,
+            PackagePublishingPocket.RELEASE,
+            proposed_bug_id,
+        )
 
         [copied_source] = do_copy(
-            [spph], self.ppa, self.hoary_test, PackagePublishingPocket.RELEASE,
-            check_permissions=False)
+            [spph],
+            self.ppa,
+            self.hoary_test,
+            PackagePublishingPocket.RELEASE,
+            check_permissions=False,
+        )
         self.assertEqual(PackagePublishingStatus.PENDING, copied_source.status)
 
         proposed_bug = getUtility(IBugSet).get(proposed_bug_id)

@@ -4,36 +4,20 @@
 """Interfaces for objects that can be linked to bugs."""
 
 __all__ = [
-    'IBugLinkForm',
-    'IBugLinkTarget',
-    'IObjectLinkedEvent',
-    'IObjectUnlinkedEvent',
-    'IUnlinkBugsForm',
-    ]
+    "IBugLinkForm",
+    "IBugLinkTarget",
+    "IObjectLinkedEvent",
+    "IObjectUnlinkedEvent",
+    "IUnlinkBugsForm",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface, implementer
 from zope.interface.interfaces import IObjectEvent
-from zope.schema import (
-    Choice,
-    Set,
-    )
+from zope.schema import Choice, Set
 from zope.schema.interfaces import IContextSourceBinder
-from zope.schema.vocabulary import (
-    SimpleTerm,
-    SimpleVocabulary,
-    )
+from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -63,9 +47,13 @@ class IBugLinkTarget(Interface):
     """
 
     bugs = exported(
-        CollectionField(title=_("Bugs related to this object."),
-                        value_type=Reference(schema=IBug), readonly=True),
-        as_of="devel")
+        CollectionField(
+            title=_("Bugs related to this object."),
+            value_type=Reference(schema=IBug),
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     def linkBug(bug, user=None, check_permissions=True, props=None):
         """Link the object with this bug.
@@ -91,8 +79,7 @@ class IBugLinkTarget(Interface):
 class IBugLinkForm(Interface):
     """Schema for the unlink bugs form."""
 
-    bug = BugField(
-        title=_('Bug ID'), required=True)
+    bug = BugField(title=_("Bug ID"), required=True)
 
 
 # XXX flacoste 2006-08-29: To remain consistent with the existing source
@@ -111,8 +98,9 @@ class BugLinksVocabularyFactory:
         for bug in context.bugs:
             try:
                 title = _(
-                    '#${bugid}: ${title}',
-                    mapping={'bugid': bug.id, 'title': bug.title})
+                    "#${bugid}: ${title}",
+                    mapping={"bugid": bug.id, "title": bug.title},
+                )
                 terms.append(SimpleTerm(bug, bug.id, title))
             except Unauthorized:
                 pass
@@ -122,6 +110,9 @@ class BugLinksVocabularyFactory:
 class IUnlinkBugsForm(Interface):
     """Schema for the unlink bugs form."""
 
-    bugs = Set(title=_('Bug Links'), required=True,
-               value_type=Choice(source=BugLinksVocabularyFactory()),
-               description=_('Select the bug links that you want to remove.'))
+    bugs = Set(
+        title=_("Bug Links"),
+        required=True,
+        value_type=Choice(source=BugLinksVocabularyFactory()),
+        description=_("Select the bug links that you want to remove."),
+    )

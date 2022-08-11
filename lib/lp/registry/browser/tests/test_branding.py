@@ -15,11 +15,11 @@ class TestBrandingChangeView(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.context = self.factory.makePerson(name='cow')
+        self.context = self.factory.makePerson(name="cow")
         self.view = BrandingChangeView(self.context, LaunchpadTestRequest())
 
     def test_common_attributes(self):
         # The canonical URL of a GPG key is ssh-keys
-        label = 'Change the images used to represent Cow in Launchpad'
+        label = "Change the images used to represent Cow in Launchpad"
         self.assertEqual(label, self.view.label)
-        self.assertEqual('Change branding', self.view.page_title)
+        self.assertEqual("Change branding", self.view.page_title)

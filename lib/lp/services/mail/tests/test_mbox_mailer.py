@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for running the mbox_mailer.txt tests."""
+"""Test harness for running the mbox_mailer.rst tests."""
 
 import doctest
 import os
@@ -9,10 +9,7 @@ import tempfile
 
 from zope.testing.cleanup import cleanUp
 
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setGlobs,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setGlobs
 
 
 def setup(testobj):
@@ -20,20 +17,23 @@ def setup(testobj):
     setGlobs(testobj)
     fd, mbox_filename = tempfile.mkstemp()
     os.close(fd)
-    testobj.globs['mbox_filename'] = mbox_filename
+    testobj.globs["mbox_filename"] = mbox_filename
     fd, chained_filename = tempfile.mkstemp()
     os.close(fd)
-    testobj.globs['chained_filename'] = chained_filename
+    testobj.globs["chained_filename"] = chained_filename
 
 
 def teardown(testobj):
-    os.remove(testobj.globs['mbox_filename'])
-    os.remove(testobj.globs['chained_filename'])
+    os.remove(testobj.globs["mbox_filename"])
+    os.remove(testobj.globs["chained_filename"])
     cleanUp()
 
 
 def test_suite():
     return LayeredDocFileSuite(
-        'mbox_mailer.txt',
-        setUp=setup, tearDown=teardown,
-        optionflags=doctest.ELLIPSIS, stdout_logging=False)
+        "mbox_mailer.rst",
+        setUp=setup,
+        tearDown=teardown,
+        optionflags=doctest.ELLIPSIS,
+        stdout_logging=False,
+    )

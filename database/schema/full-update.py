@@ -6,24 +6,21 @@
 
 import _pythonpath  # noqa: F401
 
+import sys
 from datetime import datetime
 from optparse import OptionParser
-import sys
 
 import psycopg2
 
-from dbcontroller import DBController
-from lp.services.scripts import (
-    logger,
-    logger_options,
-    )
-from preflight import (
-    KillConnectionsPreflight,
-    NoConnectionCheckPreflight,
-    SYSTEM_USERS,
-    )
 import security  # security.py script
 import upgrade  # upgrade.py script
+from dbcontroller import DBController
+from lp.services.scripts import logger, logger_options
+from preflight import (
+    SYSTEM_USERS,
+    KillConnectionsPreflight,
+    NoConnectionCheckPreflight,
+)
 
 
 def run_upgrade(options, log, primary_con):
@@ -41,11 +38,12 @@ def run_upgrade(options, log, primary_con):
     options.commit = False
     options.partial = False
     options.comments = False  # Saves about 1s. Apply comments manually.
+    options.separate_sessions = False
     # Invoke the database schema upgrade process.
     try:
         return upgrade.main(primary_con)
     except Exception:
-        log.exception('Unhandled exception')
+        log.exception("Unhandled exception")
         return 1
     except SystemExit as x:
         log.fatal("upgrade.py failed [%s]", x)
@@ -60,14 +58,14 @@ def run_security(options, log, primary_con):
     # Fake expected command line arguments and global log
     options.dryrun = False
     options.revoke = True
-    options.owner = 'postgres'
+    options.owner = "postgres"
     security.options = options
     security.log = log
     # Invoke the database security reset process.
     try:
         return security.main(options, primary_con)
     except Exception:
-        log.exception('Unhandled exception')
+        log.exception("Unhandled exception")
         return 1
     except SystemExit as x:
         log.fatal("security.py failed [%s]", x)
@@ -76,16 +74,26 @@ def run_security(options, log, primary_con):
 def main():
     parser = OptionParser()
     parser.add_option(
-        '--pgbouncer', dest='pgbouncer',
-        default='host=localhost port=6432 user=pgbouncer',
-        metavar='CONN_STR',
-        help="libpq connection string to administer pgbouncer")
+        "--pgbouncer",
+        dest="pgbouncer",
+        default="host=localhost port=6432 user=pgbouncer",
+        metavar="CONN_STR",
+        help="libpq connection string to administer pgbouncer",
+    )
     parser.add_option(
-        '--dbname', dest='dbname', default='launchpad_prod', metavar='DBNAME',
-        help='Database name we are updating.')
+        "--dbname",
+        dest="dbname",
+        default="launchpad_prod",
+        metavar="DBNAME",
+        help="Database name we are updating.",
+    )
     parser.add_option(
-        '--dbuser', dest='dbuser', default='postgres', metavar='USERNAME',
-        help='Connect as USERNAME to databases')
+        "--dbuser",
+        dest="dbuser",
+        default="postgres",
+        metavar="USERNAME",
+        help="Connect as USERNAME to databases",
+    )
 
     logger_options(parser, milliseconds=True)
     (options, args) = parser.parse_args()
@@ -99,7 +107,8 @@ def main():
     log = logger(options)
 
     controller = DBController(
-        log, options.pgbouncer, options.dbname, options.dbuser)
+        log, options.pgbouncer, options.dbname, options.dbuser
+    )
 
     try:
         # Primary connection, not running in autocommit to allow us to
@@ -145,21 +154,21 @@ def main():
             return 95
 
         if not KillConnectionsPreflight(
-            log, controller,
-            replication_paused=replication_paused).check_all():
+            log, controller, replication_paused=replication_paused
+        ).check_all():
             return 100
 
         log.info("Preflight check succeeded. Starting upgrade.")
         # Does not commit primary_con, even on success.
         upgrade_rc = run_upgrade(options, log, primary_con)
-        upgrade_run = (upgrade_rc == 0)
+        upgrade_run = upgrade_rc == 0
         if not upgrade_run:
             return upgrade_rc
         log.info("Database patches applied.")
 
         # Commits primary_con on success.
         security_rc = run_security(options, log, primary_con)
-        security_run = (security_rc == 0)
+        security_run = security_rc == 0
         if not security_run:
             return security_rc
 
@@ -177,20 +186,23 @@ def main():
         if replication_paused:
             log.error(
                 "Failed to resume replication. Run pg_wal_replay_pause() "
-                "on all standbys to manually resume.")
+                "on all standbys to manually resume."
+            )
         else:
             if controller.sync():
-                log.info('Standbys in sync. Updates replicated.')
+                log.info("Standbys in sync. Updates replicated.")
             else:
                 log.error(
-                    'Standbys failed to sync. Updates may not be replicated.')
+                    "Standbys failed to sync. Updates may not be replicated."
+                )
 
         if standbys_disabled:
             standbys_disabled = not controller.enable_standbys()
             if standbys_disabled:
                 log.warning(
                     "Failed to enable standby databases in pgbouncer. "
-                    "Now running in primary-only mode.")
+                    "Now running in primary-only mode."
+                )
 
         # We will start seeing connections as soon as pgbouncer is
         # reenabled, so ignore them here.
@@ -211,10 +223,12 @@ def main():
                 log.warning(
                     "Primary reenabled despite earlier failures. "
                     "Outage over %s, but we have problems",
-                    str(datetime.now() - outage_start))
+                    str(datetime.now() - outage_start),
+                )
             else:
                 log.warning(
-                    "Primary is still disabled in pgbouncer. Outage ongoing.")
+                    "Primary is still disabled in pgbouncer. Outage ongoing."
+                )
 
         if replication_paused:
             controller.resume_replication()
@@ -223,5 +237,5 @@ def main():
             controller.enable_standbys()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

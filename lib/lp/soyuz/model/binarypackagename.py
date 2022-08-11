@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BinaryPackageName',
-    'BinaryPackageNameSet',
-    ]
+    "BinaryPackageName",
+    "BinaryPackageNameSet",
+]
 
 import six
 from storm.expr import Join
@@ -14,22 +14,20 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    SQLObjectNotFound,
-    StringCol,
-    )
+from lp.services.database.sqlobject import SQLObjectNotFound, StringCol
 from lp.soyuz.interfaces.binarypackagename import (
     IBinaryPackageName,
     IBinaryPackageNameSet,
-    )
+)
 from lp.soyuz.interfaces.publishing import active_publishing_status
 
 
 @implementer(IBinaryPackageName)
 class BinaryPackageName(SQLBase):
-    _table = 'BinaryPackageName'
-    name = StringCol(dbName='name', notNull=True, unique=True,
-                     alternateID=True)
+    _table = "BinaryPackageName"
+    name = StringCol(
+        dbName="name", notNull=True, unique=True, alternateID=True
+    )
 
     def __str__(self):
         return self.name
@@ -40,7 +38,6 @@ class BinaryPackageName(SQLBase):
 
 @implementer(IBinaryPackageNameSet)
 class BinaryPackageNameSet:
-
     def __getitem__(self, name):
         """See `IBinaryPackageNameSet`."""
         try:
@@ -53,11 +50,14 @@ class BinaryPackageNameSet:
         return BinaryPackageName.select()
 
     def queryByName(self, name):
-        return IStore(BinaryPackageName).find(
-            BinaryPackageName, name=six.ensure_text(name, 'ASCII')).one()
+        return (
+            IStore(BinaryPackageName)
+            .find(BinaryPackageName, name=six.ensure_text(name, "ASCII"))
+            .one()
+        )
 
     def new(self, name):
-        return BinaryPackageName(name=six.ensure_text(name, 'ASCII'))
+        return BinaryPackageName(name=six.ensure_text(name, "ASCII"))
 
     def ensure(self, name):
         """Ensure that the given BinaryPackageName exists, creating it
@@ -65,7 +65,7 @@ class BinaryPackageNameSet:
 
         Returns the BinaryPackageName
         """
-        name = six.ensure_text(name, 'ASCII')
+        name = six.ensure_text(name, "ASCII")
         try:
             return self[name]
         except NotFoundError:
@@ -82,19 +82,31 @@ class BinaryPackageNameSet:
         if len(name_ids) == 0:
             return EmptyResultSet()
 
-        return IStore(BinaryPackagePublishingHistory).using(
-            BinaryPackagePublishingHistory,
-            Join(BinaryPackageName,
-                BinaryPackagePublishingHistory.binarypackagenameID ==
-                BinaryPackageName.id),
-            Join(DistroArchSeries,
-                BinaryPackagePublishingHistory.distroarchseriesID ==
-                DistroArchSeries.id)
-            ).find(
+        return (
+            IStore(BinaryPackagePublishingHistory)
+            .using(
+                BinaryPackagePublishingHistory,
+                Join(
+                    BinaryPackageName,
+                    BinaryPackagePublishingHistory.binarypackagenameID
+                    == BinaryPackageName.id,
+                ),
+                Join(
+                    DistroArchSeries,
+                    BinaryPackagePublishingHistory.distroarchseriesID
+                    == DistroArchSeries.id,
+                ),
+            )
+            .find(
                 BinaryPackageName,
                 DistroArchSeries.distroseries == distroseries,
                 BinaryPackagePublishingHistory.status.is_in(
-                    active_publishing_status),
+                    active_publishing_status
+                ),
                 BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
                 BinaryPackagePublishingHistory.binarypackagenameID.is_in(
-                    name_ids)).config(distinct=True)
+                    name_ids
+                ),
+            )
+            .config(distinct=True)
+        )

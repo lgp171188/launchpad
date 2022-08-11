@@ -9,10 +9,9 @@ from lazr.restful.interfaces import IServiceRootResource
 
 from lp.services.webapp.interfaces import ILaunchpadApplication
 
-
 __all__ = [
-    'IWebServiceApplication',
-    ]
+    "IWebServiceApplication",
+]
 
 
 class IWebServiceApplication(ILaunchpadApplication, IServiceRootResource):

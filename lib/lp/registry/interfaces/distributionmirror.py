@@ -2,51 +2,36 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'IDistributionMirror',
-    'IMirrorDistroArchSeries',
-    'IMirrorDistroSeriesSource',
-    'IMirrorProbeRecord',
-    'IDistributionMirrorSet',
-    'IMirrorCDImageDistroSeries',
-    'PROBE_INTERVAL',
-    'MirrorContent',
-    'MirrorSpeed',
-    'MirrorFreshness',
-    'MirrorStatus',
-    'UnableToFetchCDImageFileList',
-    ]
+    "IDistributionMirror",
+    "IMirrorDistroArchSeries",
+    "IMirrorDistroSeriesSource",
+    "IMirrorProbeRecord",
+    "IDistributionMirrorSet",
+    "IMirrorCDImageDistroSeries",
+    "PROBE_INTERVAL",
+    "MirrorContent",
+    "MirrorSpeed",
+    "MirrorFreshness",
+    "MirrorStatus",
+    "UnableToFetchCDImageFileList",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     export_read_operation,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
     mutator_for,
+    operation_for_version,
     operation_parameters,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
+)
+from lazr.restful.fields import Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    invariant,
-    )
+from zope.interface import Attribute, Interface, invariant
 from zope.interface.exceptions import Invalid
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Datetime, Int, TextLine
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
@@ -56,13 +41,9 @@ from lp.services.fields import (
     PublicPersonChoice,
     URIField,
     Whiteboard,
-    )
-from lp.services.webapp.escaping import (
-    html_escape,
-    structured,
-    )
+)
+from lp.services.webapp.escaping import html_escape, structured
 from lp.services.worlddata.interfaces.country import ICountry
-
 
 # The number of hours before we bother probing a mirror again
 PROBE_INTERVAL = 23
@@ -71,197 +52,284 @@ PROBE_INTERVAL = 23
 class MirrorContent(DBEnumeratedType):
     """The content that is mirrored."""
 
-    ARCHIVE = DBItem(1, """
+    ARCHIVE = DBItem(
+        1,
+        """
         Archive
 
         This mirror contains source and binary packages for a given
         distribution. Mainly used for APT-based system.
-        """)
+        """,
+    )
 
-    RELEASE = DBItem(2, """
+    RELEASE = DBItem(
+        2,
+        """
         CD Image
 
         Mirror containing released installation images for a given
         distribution.
-        """)
+        """,
+    )
 
 
 class MirrorSpeed(DBEnumeratedType):
     """The speed of a given mirror."""
 
-    S128K = DBItem(10, """
+    S128K = DBItem(
+        10,
+        """
         128 Kbps
 
         The upstream link of this mirror can make up to 128Kb per second.
-        """)
+        """,
+    )
 
-    S256K = DBItem(20, """
+    S256K = DBItem(
+        20,
+        """
         256 Kbps
 
         The upstream link of this mirror can make up to 256Kb per second.
-        """)
+        """,
+    )
 
-    S512K = DBItem(30, """
+    S512K = DBItem(
+        30,
+        """
         512 Kbps
 
         The upstream link of this mirror can make up to 512Kb per second.
-        """)
+        """,
+    )
 
-    S1M = DBItem(40, """
+    S1M = DBItem(
+        40,
+        """
         1 Mbps
 
         The upstream link of this mirror can make up to 1Mb per second.
-        """)
+        """,
+    )
 
-    S2M = DBItem(50, """
+    S2M = DBItem(
+        50,
+        """
         2 Mbps
 
         The upstream link of this mirror can make up to 2Mb per second.
-        """)
+        """,
+    )
 
-    S10M = DBItem(60, """
+    S10M = DBItem(
+        60,
+        """
         10 Mbps
 
         The upstream link of this mirror can make up to 10Mb per second.
-        """)
+        """,
+    )
 
-    S45M = DBItem(65, """
+    S45M = DBItem(
+        65,
+        """
         45 Mbps
 
         The upstream link of this mirror can make up to 45 Mb per second.
-        """)
+        """,
+    )
 
-    S100M = DBItem(70, """
+    S100M = DBItem(
+        70,
+        """
         100 Mbps
 
         The upstream link of this mirror can make up to 100Mb per second.
-        """)
+        """,
+    )
 
-    S1G = DBItem(80, """
+    S1G = DBItem(
+        80,
+        """
         1 Gbps
 
         The upstream link of this mirror can make up to 1 gigabit per second.
-        """)
+        """,
+    )
 
-    S2G = DBItem(90, """
+    S2G = DBItem(
+        90,
+        """
         2 Gbps
 
         The upstream link of this mirror can make up to 2 gigabits per second.
-        """)
+        """,
+    )
 
-    S4G = DBItem(100, """
+    S4G = DBItem(
+        100,
+        """
         4 Gbps
 
         The upstream link of this mirror can make up to 4 gigabits per second.
-        """)
+        """,
+    )
 
-    S10G = DBItem(110, """
+    S10G = DBItem(
+        110,
+        """
         10 Gbps
 
         The upstream link of this mirror can make up to 10 gigabits per second.
-        """)
+        """,
+    )
 
-    S20G = DBItem(120, """
+    S20G = DBItem(
+        120,
+        """
         20 Gbps
 
         The upstream link of this mirror can make up to 20 gigabits per second.
-        """)
+        """,
+    )
 
-    S50G = DBItem(130, """
+    S50G = DBItem(
+        130,
+        """
         50 Gbps
 
         The upstream link of this mirror can make up to 50 gigabits per second.
-        """)
+        """,
+    )
 
-    S100G = DBItem(140, """
+    S100G = DBItem(
+        140,
+        """
         100 Gbps
 
         The upstream link of this mirror can make up to 100 gigabits per
         second.
-        """)
+        """,
+    )
 
 
 class MirrorFreshness(DBEnumeratedType):
     """The freshness of a given mirror's content."""
 
-    UP = DBItem(1, """
+    UP = DBItem(
+        1,
+        """
         Up to date
 
         This mirror is up to date with the original content.
-        """)
+        """,
+    )
 
-    ONEHOURBEHIND = DBItem(2, """
+    ONEHOURBEHIND = DBItem(
+        2,
+        """
         One hour behind
 
         This mirror's content seems to have been last updated one hour ago.
-        """)
+        """,
+    )
 
-    TWOHOURSBEHIND = DBItem(3, """
+    TWOHOURSBEHIND = DBItem(
+        3,
+        """
         Two hours behind
 
         This mirror's content seems to have been last updated two hours ago.
-        """)
+        """,
+    )
 
-    SIXHOURSBEHIND = DBItem(4, """
+    SIXHOURSBEHIND = DBItem(
+        4,
+        """
         Six hours behind
 
         This mirror's content seems to have been last updated six hours ago.
-        """)
+        """,
+    )
 
-    ONEDAYBEHIND = DBItem(5, """
+    ONEDAYBEHIND = DBItem(
+        5,
+        """
         One day behind
 
         This mirror's content seems to have been last updated one day ago.
-        """)
+        """,
+    )
 
-    TWODAYSBEHIND = DBItem(6, """
+    TWODAYSBEHIND = DBItem(
+        6,
+        """
         Two days behind
 
         This mirror's content seems to have been last updated two days ago.
-        """)
+        """,
+    )
 
-    ONEWEEKBEHIND = DBItem(7, """
+    ONEWEEKBEHIND = DBItem(
+        7,
+        """
         One week behind
 
         This mirror's content seems to have been last updated one week ago.
-        """)
+        """,
+    )
 
-    UNKNOWN = DBItem(8, """
+    UNKNOWN = DBItem(
+        8,
+        """
         Last update unknown
 
         We couldn't determine when this mirror's content was last updated.
-        """)
+        """,
+    )
 
 
 class MirrorStatus(DBEnumeratedType):
     """The status of a mirror."""
 
-    PENDING_REVIEW = DBItem(10, """
+    PENDING_REVIEW = DBItem(
+        10,
+        """
         Pending review
 
         This mirror hasn't been reviewed by a mirror admin.
-        """)
+        """,
+    )
 
-    UNOFFICIAL = DBItem(20, """
+    UNOFFICIAL = DBItem(
+        20,
+        """
         Unofficial
 
         This mirror has been reviewed by a mirror admin and is not one of
         the official mirrors for its distribution.
-        """)
+        """,
+    )
 
-    OFFICIAL = DBItem(30, """
+    OFFICIAL = DBItem(
+        30,
+        """
         Official
 
         This mirror has been reviewed by a mirror admin and is one of
         the official mirrors for its distribution.
-        """)
+        """,
+    )
 
-    BROKEN = DBItem(40, """
+    BROKEN = DBItem(
+        40,
+        """
         Broken
 
         This mirror has been reviewed and seems to not respond or
         is otherwise misconfigured.
-        """)
+        """,
+    )
 
 
 class DistributionMirrorNameField(ContentNameField):
@@ -303,155 +371,271 @@ class DistroMirrorURIField(URIField):
         if mirror is not None:
             message = _(
                 'The distribution mirror <a href="${url}">${mirror}</a> '
-                'is already registered with this URL.',
-                mapping={'url': html_escape(canonical_url(mirror)),
-                         'mirror': html_escape(mirror.title)})
+                "is already registered with this URL.",
+                mapping={
+                    "url": html_escape(canonical_url(mirror)),
+                    "mirror": html_escape(mirror.title),
+                },
+            )
             raise LaunchpadValidationError(structured(message))
 
 
 class DistroMirrorHTTPURIField(DistroMirrorURIField):
-
     def getMirrorByURI(self, url):
         return getUtility(IDistributionMirrorSet).getByHttpUrl(url)
 
 
 class DistroMirrorHTTPSURIField(DistroMirrorURIField):
-
     def getMirrorByURI(self, url):
         return getUtility(IDistributionMirrorSet).getByHttpsUrl(url)
 
 
 class DistroMirrorFTPURIField(DistroMirrorURIField):
-
     def getMirrorByURI(self, url):
         return getUtility(IDistributionMirrorSet).getByFtpUrl(url)
 
 
 class DistroMirrorRsyncURIField(DistroMirrorURIField):
-
     def getMirrorByURI(self, url):
         return getUtility(IDistributionMirrorSet).getByRsyncUrl(url)
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IDistributionMirror(Interface):
     """A mirror of a given distribution."""
 
-    id = Int(title=_('The unique id'), required=True, readonly=True)
-    owner = exported(PublicPersonChoice(
-        title=_('Owner'), readonly=False, vocabulary='ValidOwner',
-        required=True, description=_(
-            "The person who is set as the current administrator of this"
-            "mirror.")))
+    id = Int(title=_("The unique id"), required=True, readonly=True)
+    owner = exported(
+        PublicPersonChoice(
+            title=_("Owner"),
+            readonly=False,
+            vocabulary="ValidOwner",
+            required=True,
+            description=_(
+                "The person who is set as the current administrator of this"
+                "mirror."
+            ),
+        )
+    )
     distribution = exported(
         Reference(
             Interface,
-            # Really IDistribution, circular import fixed in
-            # _schema_circular_imports.
-            title=_("Distribution"), required=True, readonly=True,
-            description=_("The distribution that is mirrored")))
-    name = exported(DistributionMirrorNameField(
-        title=_('Name'), required=True, readonly=False,
-        description=_('A short and unique name for this mirror.'),
-        constraint=name_validator))
+            # Really IDistribution, patched in
+            # lp.registry.interfaces.webservice.
+            title=_("Distribution"),
+            required=True,
+            readonly=True,
+            description=_("The distribution that is mirrored"),
+        )
+    )
+    name = exported(
+        DistributionMirrorNameField(
+            title=_("Name"),
+            required=True,
+            readonly=False,
+            description=_("A short and unique name for this mirror."),
+            constraint=name_validator,
+        )
+    )
     display_name = exported(
         TextLine(
-            title=_('Organisation'), required=False, readonly=False,
+            title=_("Organisation"),
+            required=False,
+            readonly=False,
+            description=_("The name of the organization hosting this mirror."),
+        ),
+        exported_as="displayname",
+    )
+    displayname = Attribute("Display name (deprecated)")
+    description = exported(
+        TextLine(title=_("Description"), required=False, readonly=False)
+    )
+    http_base_url = exported(
+        DistroMirrorHTTPURIField(
+            title=_("HTTP URL"),
+            required=False,
+            readonly=False,
+            allowed_schemes=["http"],
+            allow_userinfo=False,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=True,
+            description=_("e.g.: http://archive.ubuntu.com/ubuntu/"),
+        )
+    )
+    https_base_url = exported(
+        DistroMirrorHTTPSURIField(
+            title=_("HTTPS URL"),
+            required=False,
+            readonly=False,
+            allowed_schemes=["https"],
+            allow_userinfo=False,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=True,
+            # XXX: pappacena 2020-02-21: Add description field with a more
+            # suitable example once we have https for archive.ubuntu.com, like:
+            # description=_('e.g.: http://archive.ubuntu.com/ubuntu/')
+        )
+    )
+    ftp_base_url = exported(
+        DistroMirrorFTPURIField(
+            title=_("FTP URL"),
+            required=False,
+            readonly=False,
+            allowed_schemes=["ftp"],
+            allow_userinfo=False,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=True,
+            description=_("e.g.: ftp://archive.ubuntu.com/ubuntu/"),
+        )
+    )
+    rsync_base_url = exported(
+        DistroMirrorRsyncURIField(
+            title=_("Rsync URL"),
+            required=False,
+            readonly=False,
+            allowed_schemes=["rsync"],
+            allow_userinfo=False,
+            allow_query=False,
+            allow_fragment=False,
+            trailing_slash=True,
+            description=_("e.g.: rsync://archive.ubuntu.com/ubuntu/"),
+        )
+    )
+    enabled = exported(
+        Bool(
+            title=_("This mirror was probed successfully."),
+            required=False,
+            readonly=True,
+            default=False,
+        )
+    )
+    speed = exported(
+        Choice(
+            title=_("Link Speed"),
+            required=True,
+            readonly=False,
+            vocabulary=MirrorSpeed,
+        )
+    )
+    country = exported(
+        ReferenceChoice(
+            title=_("Location"),
+            description=_("The country in which this mirror is based."),
+            required=True,
+            readonly=False,
+            vocabulary="CountryName",
+            schema=ICountry,
+        )
+    )
+    content = exported(
+        Choice(
+            title=_("Content"),
+            required=True,
+            readonly=False,
             description=_(
-                'The name of the organization hosting this mirror.')),
-        exported_as='displayname')
-    displayname = Attribute('Display name (deprecated)')
-    description = exported(TextLine(
-        title=_('Description'), required=False, readonly=False))
-    http_base_url = exported(DistroMirrorHTTPURIField(
-        title=_('HTTP URL'), required=False, readonly=False,
-        allowed_schemes=['http'], allow_userinfo=False,
-        allow_query=False, allow_fragment=False, trailing_slash=True,
-        description=_('e.g.: http://archive.ubuntu.com/ubuntu/')))
-    https_base_url = exported(DistroMirrorHTTPSURIField(
-        title=_('HTTPS URL'), required=False, readonly=False,
-        allowed_schemes=['https'], allow_userinfo=False,
-        allow_query=False, allow_fragment=False, trailing_slash=True,
-        # XXX: pappacena 2020-02-21: Add description field with a more
-        # suitable example once we have https for archive.ubuntu.com, like:
-        # description=_('e.g.: http://archive.ubuntu.com/ubuntu/')
-        ))
-    ftp_base_url = exported(DistroMirrorFTPURIField(
-        title=_('FTP URL'), required=False, readonly=False,
-        allowed_schemes=['ftp'], allow_userinfo=False,
-        allow_query=False, allow_fragment=False, trailing_slash=True,
-        description=_('e.g.: ftp://archive.ubuntu.com/ubuntu/')))
-    rsync_base_url = exported(DistroMirrorRsyncURIField(
-        title=_('Rsync URL'), required=False, readonly=False,
-        allowed_schemes=['rsync'], allow_userinfo=False,
-        allow_query=False, allow_fragment=False, trailing_slash=True,
-        description=_('e.g.: rsync://archive.ubuntu.com/ubuntu/')))
-    enabled = exported(Bool(
-        title=_('This mirror was probed successfully.'),
-        required=False, readonly=True, default=False))
-    speed = exported(Choice(
-        title=_('Link Speed'), required=True, readonly=False,
-        vocabulary=MirrorSpeed))
-    country = exported(ReferenceChoice(
-        title=_('Location'), description=_(
-            "The country in which this mirror is based."),
-        required=True, readonly=False,
-        vocabulary='CountryName', schema=ICountry))
-    content = exported(Choice(
-        title=_('Content'), required=True, readonly=False,
-        description=_(
-            'Choose "CD Image" if this mirror contains CD images of '
-            'this distribution. Choose "Archive" if this is a '
-            'mirror of packages for this distribution.'),
-        vocabulary=MirrorContent))
-    status = exported(Choice(
-        title=_('Status'), required=True, readonly=False,
-        vocabulary=MirrorStatus,
-        description=_("The current status of a mirror's registration.")))
+                'Choose "CD Image" if this mirror contains CD images of '
+                'this distribution. Choose "Archive" if this is a '
+                "mirror of packages for this distribution."
+            ),
+            vocabulary=MirrorContent,
+        )
+    )
+    status = exported(
+        Choice(
+            title=_("Status"),
+            required=True,
+            readonly=False,
+            vocabulary=MirrorStatus,
+            description=_("The current status of a mirror's registration."),
+        )
+    )
 
-    title = Attribute('The title of this mirror')
-    cdimage_series = Attribute(
-        'All MirrorCDImageDistroSeries of this mirror')
-    source_series = Attribute(
-        'All MirrorDistroSeriesSources of this mirror')
-    arch_series = Attribute('All MirrorDistroArchSeries of this mirror')
+    title = Attribute("The title of this mirror")
+    cdimage_series = Attribute("All MirrorCDImageDistroSeries of this mirror")
+    source_series = Attribute("All MirrorDistroSeriesSources of this mirror")
+    arch_series = Attribute("All MirrorDistroArchSeries of this mirror")
     last_probe_record = Attribute(
-        'The last MirrorProbeRecord for this mirror.')
-    all_probe_records = Attribute('All MirrorProbeRecords for this mirror.')
+        "The last MirrorProbeRecord for this mirror."
+    )
+    all_probe_records = Attribute("All MirrorProbeRecords for this mirror.")
     arch_mirror_freshness = Attribute(
-        'The freshness of this mirror\'s archive mirrors')
+        "The freshness of this mirror's archive mirrors"
+    )
     source_mirror_freshness = Attribute(
-        'The freshness of this mirror\'s source mirrors')
-    base_url = exported(TextLine(
-        title=_('Base URL'), required=False, readonly=False,
-        description=_("The HTTP or FTP base URL of this mirror")))
-    date_created = exported(Datetime(
-        title=_('Date Created'), required=True, readonly=True,
-        description=_("The date on which this mirror was registered.")))
-    country_dns_mirror = exported(Bool(
-        title=_('Country DNS Mirror'),
-        description=_('Whether this is a country mirror in DNS.'),
-        required=False, readonly=True, default=False))
+        "The freshness of this mirror's source mirrors"
+    )
+    base_url = exported(
+        TextLine(
+            title=_("Base URL"),
+            required=False,
+            readonly=False,
+            description=_("The HTTP or FTP base URL of this mirror"),
+        )
+    )
+    date_created = exported(
+        Datetime(
+            title=_("Date Created"),
+            required=True,
+            readonly=True,
+            description=_("The date on which this mirror was registered."),
+        )
+    )
+    country_dns_mirror = exported(
+        Bool(
+            title=_("Country DNS Mirror"),
+            description=_("Whether this is a country mirror in DNS."),
+            required=False,
+            readonly=True,
+            default=False,
+        )
+    )
 
-    reviewer = exported(PublicPersonChoice(
-        title=_('Reviewer'), required=False, readonly=True,
-        vocabulary='ValidPersonOrTeam', description=_(
-            "The person who last reviewed this mirror.")))
-    date_reviewed = exported(Datetime(
-        title=_('Date reviewed'), required=False, readonly=True,
-        description=_(
-            "The date on which this mirror was last reviewed by a mirror "
-            "admin.")))
+    reviewer = exported(
+        PublicPersonChoice(
+            title=_("Reviewer"),
+            required=False,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who last reviewed this mirror."),
+        )
+    )
+    date_reviewed = exported(
+        Datetime(
+            title=_("Date reviewed"),
+            required=False,
+            readonly=True,
+            description=_(
+                "The date on which this mirror was last reviewed by a mirror "
+                "admin."
+            ),
+        )
+    )
 
-    official_candidate = exported(Bool(
-        title=_('Apply to be an official mirror of this distribution'),
-        required=False, readonly=False, default=True))
-    whiteboard = exported(Whiteboard(
-        title=_('Whiteboard'), required=False, readonly=False,
-        description=_("Notes on the current status of the mirror (only "
-                      "visible to admins and the mirror's registrant).")))
+    official_candidate = exported(
+        Bool(
+            title=_("Apply to be an official mirror of this distribution"),
+            required=False,
+            readonly=False,
+            default=True,
+        )
+    )
+    whiteboard = exported(
+        Whiteboard(
+            title=_("Whiteboard"),
+            required=False,
+            readonly=False,
+            description=_(
+                "Notes on the current status of the mirror (only "
+                "visible to admins and the mirror's registrant)."
+            ),
+        )
+    )
 
     @export_read_operation()
+    @operation_for_version("beta")
     def canTransitionToCountryMirror():
         """Verify if a mirror can be set as a country mirror or return
         False."""
@@ -459,14 +643,18 @@ class IDistributionMirror(Interface):
     @mutator_for(country_dns_mirror)
     @operation_parameters(country_dns_mirror=copy_field(country_dns_mirror))
     @export_write_operation()
+    @operation_for_version("beta")
     def transitionToCountryMirror(country_dns_mirror):
         """Method run on changing country_dns_mirror."""
 
     @invariant
     def mirrorMustHaveHTTPOrFTPURL(mirror):
-        if not (mirror.http_base_url or mirror.https_base_url or
-                mirror.ftp_base_url):
-            raise Invalid('A mirror must have at least an HTTP(S) or FTP URL.')
+        if not (
+            mirror.http_base_url
+            or mirror.https_base_url
+            or mirror.ftp_base_url
+        ):
+            raise Invalid("A mirror must have at least an HTTP(S) or FTP URL.")
 
     def getSummarizedMirroredSourceSeries():
         """Return a summarized list of this distribution_mirror's
@@ -487,6 +675,7 @@ class IDistributionMirror(Interface):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def getOverallFreshness():
         """Return this mirror's overall freshness.
 
@@ -500,6 +689,7 @@ class IDistributionMirror(Interface):
         """
 
     @export_read_operation()
+    @operation_for_version("beta")
     def isOfficial():
         """Return True if this is an official mirror."""
 
@@ -651,16 +841,25 @@ class IMirrorDistroArchSeries(Interface):
 
     distribution_mirror = Attribute(_("The Distribution Mirror"))
     distro_arch_series = Choice(
-        title=_('Version and Architecture'), required=True, readonly=True,
-        vocabulary='FilteredDistroArchSeries')
+        title=_("Version and Architecture"),
+        required=True,
+        readonly=True,
+        vocabulary="FilteredDistroArchSeries",
+    )
     freshness = Choice(
-        title=_('Freshness'), required=True, readonly=False,
-        vocabulary=MirrorFreshness)
+        title=_("Freshness"),
+        required=True,
+        readonly=False,
+        vocabulary=MirrorFreshness,
+    )
     # Is it possible to use a Choice here without specifying a vocabulary?
-    component = Int(title=_('Component'), required=True, readonly=True)
+    component = Int(title=_("Component"), required=True, readonly=True)
     pocket = Choice(
-        title=_('Pocket'), required=True, readonly=True,
-        vocabulary='PackagePublishingPocket')
+        title=_("Pocket"),
+        required=True,
+        readonly=True,
+        vocabulary="PackagePublishingPocket",
+    )
 
     def getURLsToCheckUpdateness():
         """Return a dict mapping each MirrorFreshness to a URL on this mirror.
@@ -678,16 +877,25 @@ class IMirrorDistroSeriesSource(Interface):
 
     distribution_mirror = Attribute(_("The Distribution Mirror"))
     distroseries = Choice(
-        title=_('Series'), required=True, readonly=True,
-        vocabulary='FilteredDistroSeries')
+        title=_("Series"),
+        required=True,
+        readonly=True,
+        vocabulary="FilteredDistroSeries",
+    )
     freshness = Choice(
-        title=_('Freshness'), required=True, readonly=False,
-        vocabulary=MirrorFreshness)
+        title=_("Freshness"),
+        required=True,
+        readonly=False,
+        vocabulary=MirrorFreshness,
+    )
     # Is it possible to use a Choice here without specifying a vocabulary?
-    component = Int(title=_('Component'), required=True, readonly=True)
+    component = Int(title=_("Component"), required=True, readonly=True)
     pocket = Choice(
-        title=_('Pocket'), required=True, readonly=True,
-        vocabulary='PackagePublishingPocket')
+        title=_("Pocket"),
+        required=True,
+        readonly=True,
+        vocabulary="PackagePublishingPocket",
+    )
 
     def getURLsToCheckUpdateness():
         """Return a dict mapping each MirrorFreshness to a URL on this mirror.
@@ -706,7 +914,8 @@ class IMirrorCDImageDistroSeries(Interface):
     distribution_mirror = Attribute(_("The Distribution Mirror"))
     distroseries = Attribute(_("The DistroSeries"))
     flavour = TextLine(
-        title=_("The Flavour's name"), required=True, readonly=True)
+        title=_("The Flavour's name"), required=True, readonly=True
+    )
 
 
 class IMirrorProbeRecord(Interface):
@@ -717,5 +926,6 @@ class IMirrorProbeRecord(Interface):
 
     distribution_mirror = Attribute(_("The Distribution Mirror"))
     date_created = Datetime(
-        title=_('Date Created'), required=True, readonly=True)
+        title=_("Date Created"), required=True, readonly=True
+    )
     log_file = Attribute(_("The log of this probing."))

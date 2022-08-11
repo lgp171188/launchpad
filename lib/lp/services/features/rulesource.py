@@ -4,42 +4,36 @@
 """Returns rules defining which features are active"""
 
 __all__ = [
-    'DuplicatePriorityError',
-    'FeatureRuleSource',
-    'MemoryFeatureRuleSource',
-    'NullFeatureRuleSource',
-    'StormFeatureRuleSource',
-    ]
+    "DuplicatePriorityError",
+    "FeatureRuleSource",
+    "MemoryFeatureRuleSource",
+    "NullFeatureRuleSource",
+    "StormFeatureRuleSource",
+]
 
-from collections import (
-    defaultdict,
-    namedtuple,
-    )
 import re
+from collections import defaultdict, namedtuple
 
 import six
 from storm.locals import Desc
 
-from lp.services.features.model import (
-    FeatureFlag,
-    getFeatureStore,
-    )
+from lp.services.features.model import FeatureFlag, getFeatureStore
 from lp.services.webapp import adapter
-
 
 # A convenient mapping for a feature flag rule in the database.
 Rule = namedtuple("Rule", "flag scope priority value")
 
 
 class DuplicatePriorityError(Exception):
-
     def __init__(self, flag, priority):
         self.flag = flag
         self.priority = priority
 
     def __str__(self):
         return 'duplicate priority for flag "%s": %d' % (
-            self.flag, self.priority)
+            self.flag,
+            self.priority,
+        )
 
 
 class FeatureRuleSource:
@@ -70,9 +64,9 @@ class FeatureRuleSource:
         """
         tr = []
         for (flag, scope, priority, value) in self.getAllRulesAsTuples():
-            tr.append('\t'.join((flag, scope, str(priority), value)))
-        tr.append('')
-        return '\n'.join(tr)
+            tr.append("\t".join((flag, scope, str(priority), value)))
+        tr.append("")
+        return "\n".join(tr)
 
     def setAllRulesFromText(self, text_form):
         """Update all rules from text input.
@@ -96,9 +90,9 @@ class FeatureRuleSource:
         r = []
         seen_priorities = defaultdict(set)
         for line in text_form.splitlines():
-            if line.strip() == '':
+            if line.strip() == "":
                 continue
-            flag, scope, priority_str, value = re.split('[ \t]+', line, 3)
+            flag, scope, priority_str, value = re.split("[ \t]+", line, 3)
             priority = int(priority_str)
             r.append((flag, scope, priority, six.ensure_text(value)))
             if priority in seen_priorities[flag]:
@@ -109,8 +103,7 @@ class FeatureRuleSource:
 
 
 class StormFeatureRuleSource(FeatureRuleSource):
-    """Access feature rules stored in the database via Storm.
-    """
+    """Access feature rules stored in the database via Storm."""
 
     def getAllRulesAsTuples(self):
         try:
@@ -127,11 +120,9 @@ class StormFeatureRuleSource(FeatureRuleSource):
         except adapter.RequestExpired:
             return
         store = getFeatureStore()
-        rs = (store
-                .find(FeatureFlag)
-                .order_by(
-                    FeatureFlag.flag,
-                    Desc(FeatureFlag.priority)))
+        rs = store.find(FeatureFlag).order_by(
+            FeatureFlag.flag, Desc(FeatureFlag.priority)
+        )
         for r in rs:
             yield Rule(str(r.flag), str(r.scope), r.priority, r.value)
 
@@ -143,19 +134,21 @@ class StormFeatureRuleSource(FeatureRuleSource):
         # XXX: would be slightly better to only update rules as necessary so
         # we keep timestamps, and to avoid the direct sql etc -- mbp 20100924
         store = getFeatureStore()
-        store.execute('DELETE FROM FeatureFlag')
+        store.execute("DELETE FROM FeatureFlag")
         for (flag, scope, priority, value) in new_rules:
-            store.add(FeatureFlag(
-                scope=six.ensure_text(scope),
-                flag=six.ensure_text(flag),
-                value=value,
-                priority=priority))
+            store.add(
+                FeatureFlag(
+                    scope=six.ensure_text(scope),
+                    flag=six.ensure_text(flag),
+                    value=value,
+                    priority=priority,
+                )
+            )
         store.flush()
 
 
 class MemoryFeatureRuleSource(FeatureRuleSource):
-    """Access feature rules stored in non-persistent memory.
-    """
+    """Access feature rules stored in non-persistent memory."""
 
     def __init__(self):
         self.rules = []

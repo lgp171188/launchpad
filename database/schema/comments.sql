@@ -1934,7 +1934,7 @@ COMMENT ON COLUMN ArchiveAuthToken.date_deactivated IS 'The date and time this t
 COMMENT ON COLUMN ArchiveAuthToken.token IS 'The token text for this authorisation.';
 
 -- ArchiveDependency
-COMMENT ON TABLE ArchiveDependency IS 'This table maps a given archive to all other archives it should depend on.';
+COMMENT ON TABLE ArchiveDependency IS 'This table maps a given parent (archive or snap base) to all other archives it should depend on.';
 COMMENT ON COLUMN ArchiveDependency.date_created IS 'Instant when the dependency was created.';
 COMMENT ON COLUMN ArchiveDependency.archive IS 'The archive where the dependency should be applied.';
 COMMENT ON COLUMN ArchiveDependency.dependency IS 'The archive to depend on.';

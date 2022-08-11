@@ -17,10 +17,7 @@ Recording of the PIDs is handled using the `record_pid` decorator.
 import functools
 import os
 
-from lp.testing import (
-    RunIsolatedTest,
-    TestCase,
-    )
+from lp.testing import RunIsolatedTest, TestCase
 
 
 def record_pid(method):
@@ -29,10 +26,12 @@ def record_pid(method):
     Will probably only DTRT with class methods or bound instance
     methods.
     """
+
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
-        setattr(self, 'pid_in_%s' % method.__name__, os.getpid())
+        setattr(self, "pid_in_%s" % method.__name__, os.getpid())
         return method(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -62,26 +61,30 @@ class TestRunIsolatedTestLayer:
     @record_pid
     def setUp(self):
         # Runs in the parent process.
-        assert self.pid_in___init__ == self.pid_in_setUp, (
-            "layer.setUp() not called in parent process.")
+        assert (
+            self.pid_in___init__ == self.pid_in_setUp
+        ), "layer.setUp() not called in parent process."
 
     @record_pid
     def testSetUp(self):
         # Runs in the parent process.
-        assert self.pid_in___init__ == self.pid_in_testSetUp, (
-            "layer.testSetUp() not called in parent process.")
+        assert (
+            self.pid_in___init__ == self.pid_in_testSetUp
+        ), "layer.testSetUp() not called in parent process."
 
     @record_pid
     def testTearDown(self):
         # Runs in the parent process.
-        assert self.pid_in___init__ == self.pid_in_testTearDown, (
-            "layer.testTearDown() not called in parent process.")
+        assert (
+            self.pid_in___init__ == self.pid_in_testTearDown
+        ), "layer.testTearDown() not called in parent process."
 
     @record_pid
     def tearDown(self):
         # Runs in the parent process.
-        assert self.pid_in___init__ == self.pid_in_tearDown, (
-            "layer.tearDown() not called in parent process.")
+        assert (
+            self.pid_in___init__ == self.pid_in_tearDown
+        ), "layer.tearDown() not called in parent process."
 
 
 class TestRunIsolatedTest(TestCase):
@@ -99,7 +102,7 @@ class TestRunIsolatedTest(TestCase):
     run_tests_with = RunIsolatedTest
 
     @record_pid
-    def __init__(self, method_name='runTest'):
+    def __init__(self, method_name="runTest"):
         # Runs in the parent process.
         super().__init__(method_name)
         self.layer = TestRunIsolatedTestLayer()
@@ -109,20 +112,26 @@ class TestRunIsolatedTest(TestCase):
         # Runs in the child process.
         super().setUp()
         self.assertNotEqual(
-            self.layer.pid_in___init__, self.pid_in_setUp,
-            "setUp() called in parent process.")
+            self.layer.pid_in___init__,
+            self.pid_in_setUp,
+            "setUp() called in parent process.",
+        )
 
     @record_pid
     def test(self):
         # Runs in the child process.
         self.assertEqual(
-            self.pid_in_setUp, self.pid_in_test,
-            "test method not run in same process as setUp().")
+            self.pid_in_setUp,
+            self.pid_in_test,
+            "test method not run in same process as setUp().",
+        )
 
     @record_pid
     def tearDown(self):
         # Runs in the child process.
         super().tearDown()
         self.assertEqual(
-            self.pid_in_setUp, self.pid_in_tearDown,
-            "tearDown() not run in same process as setUp().")
+            self.pid_in_setUp,
+            self.pid_in_tearDown,
+            "tearDown() not run in same process as setUp().",
+        )

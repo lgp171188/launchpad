@@ -5,10 +5,7 @@ import unittest
 
 import transaction
 
-from lp.services.database import (
-    read_transaction,
-    write_transaction,
-    )
+from lp.services.database import read_transaction, write_transaction
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import db
@@ -22,9 +19,9 @@ class TestTransactionDecorators(unittest.TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        switch_dbuser('librarian')
+        switch_dbuser("librarian")
         self.store = IStore(LibraryFileContent)
-        self.content_id = db.Library().add('deadbeef', 1234, 'abababab', 'ba')
+        self.content_id = db.Library().add("deadbeef", 1234, "abababab", "ba")
         self.file_content = self._getTestFileContent()
         transaction.commit()
 
@@ -34,53 +31,71 @@ class TestTransactionDecorators(unittest.TestCase):
 
     def test_read_transaction_reset_store(self):
         """Make sure that the store is reset after the transaction."""
+
         @read_transaction
         def no_op():
             pass
+
         no_op()
         self.assertIsNot(
-            self.file_content, self._getTestFileContent(),
-            "Store wasn't reset properly.")
+            self.file_content,
+            self._getTestFileContent(),
+            "Store wasn't reset properly.",
+        )
 
     def test_write_transaction_reset_store(self):
         """Make sure that the store is reset after the transaction."""
+
         @write_transaction
         def no_op():
             pass
+
         no_op()
         self.assertIsNot(
-            self.file_content, self._getTestFileContent(),
-            "Store wasn't reset properly.")
+            self.file_content,
+            self._getTestFileContent(),
+            "Store wasn't reset properly.",
+        )
 
     def test_write_transaction_reset_store_with_raise(self):
         """Make sure that the store is reset after the transaction."""
+
         @write_transaction
         def no_op():
-            raise RuntimeError('an error occured')
+            raise RuntimeError("an error occured")
+
         self.assertRaises(RuntimeError, no_op)
         self.assertIsNot(
-            self.file_content, self._getTestFileContent(),
-            "Store wasn't reset properly.")
+            self.file_content,
+            self._getTestFileContent(),
+            "Store wasn't reset properly.",
+        )
 
     def test_writing_transaction_reset_store_on_commit_failure(self):
-        """The store should be reset even if committing the transaction fails.
-        """
+        """The store is reset even if committing the transaction fails."""
+
         class TransactionAborter:
             """Make the next commit() fails."""
+
             def newTransaction(self, txn):
                 pass
 
             def beforeCompletion(self, txn):
-                raise RuntimeError('the commit will fail')
+                raise RuntimeError("the commit will fail")
+
         aborter = TransactionAborter()
         transaction.manager.registerSynch(aborter)
         try:
+
             @write_transaction
             def no_op():
                 pass
+
             self.assertRaises(RuntimeError, no_op)
             self.assertIsNot(
-                self.file_content, self._getTestFileContent(),
-                "Store wasn't reset properly.")
+                self.file_content,
+                self._getTestFileContent(),
+                "Store wasn't reset properly.",
+            )
         finally:
             transaction.manager.unregisterSynch(aborter)

@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'get_server_url',
-    'ITestOpenIDApplication',
-    'ITestOpenIDLoginForm',
-    'ITestOpenIDPersistentIdentity',
-    ]
+    "get_server_url",
+    "ITestOpenIDApplication",
+    "ITestOpenIDLoginForm",
+    "ITestOpenIDPersistentIdentity",
+]
 
 import six
 from zope.interface import Interface
@@ -23,7 +23,7 @@ class ITestOpenIDApplication(ILaunchpadApplication):
 
 
 class ITestOpenIDLoginForm(Interface):
-    email = TextLine(title='What is your email address?', required=True)
+    email = TextLine(title="What is your email address?", required=True)
 
 
 class ITestOpenIDPersistentIdentity(IOpenIDPersistentIdentity):
@@ -37,4 +37,5 @@ def get_server_url():
     vhost.testopenid section is not required in production configs.
     """
     return six.ensure_text(
-        urlappend(allvhosts.configs['testopenid'].rooturl, '+openid'))
+        urlappend(allvhosts.configs["testopenid"].rooturl, "+openid")
+    )

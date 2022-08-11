@@ -14,14 +14,8 @@ import _pythonpath  # noqa: F401
 
 import logging
 
-from lp.services.config import (
-    config,
-    dbconfig,
-    )
-from lp.services.database.sqlbase import (
-    connect,
-    ISOLATION_LEVEL_AUTOCOMMIT,
-    )
+from lp.services.config import config, dbconfig
+from lp.services.database.sqlbase import ISOLATION_LEVEL_AUTOCOMMIT, connect
 from lp.services.librarianserver import librariangc
 from lp.services.scripts.base import LaunchpadCronScript
 
@@ -29,36 +23,54 @@ from lp.services.scripts.base import LaunchpadCronScript
 class LibrarianGC(LaunchpadCronScript):
     def add_my_options(self):
         self.parser.add_option(
-                '', "--skip-duplicates", action="store_true", default=False,
-                dest="skip_duplicates",
-                help="Skip duplicate LibraryFileContent merging"
-                )
+            "",
+            "--skip-duplicates",
+            action="store_true",
+            default=False,
+            dest="skip_duplicates",
+            help="Skip duplicate LibraryFileContent merging",
+        )
         self.parser.add_option(
-                '', "--skip-aliases", action="store_true", default=False,
-                dest="skip_aliases",
-                help="Skip unreferenced LibraryFileAlias removal"
-                )
+            "",
+            "--skip-aliases",
+            action="store_true",
+            default=False,
+            dest="skip_aliases",
+            help="Skip unreferenced LibraryFileAlias removal",
+        )
         self.parser.add_option(
-                '', "--skip-content", action="store_true", default=False,
-                dest="skip_content",
-                help="Skip unreferenced LibraryFileContent removal"
-                )
+            "",
+            "--skip-content",
+            action="store_true",
+            default=False,
+            dest="skip_content",
+            help="Skip unreferenced LibraryFileContent removal",
+        )
         self.parser.add_option(
-                '', "--skip-blobs", action="store_true", default=False,
-                dest="skip_blobs",
-                help="Skip removing expired TemporaryBlobStorage rows"
-                )
+            "",
+            "--skip-blobs",
+            action="store_true",
+            default=False,
+            dest="skip_blobs",
+            help="Skip removing expired TemporaryBlobStorage rows",
+        )
         self.parser.add_option(
-                '', "--skip-files", action="store_true", default=False,
-                dest="skip_files",
-                help="Skip removing files on disk with no database references"
-                     " or flagged for deletion."
-                )
+            "",
+            "--skip-files",
+            action="store_true",
+            default=False,
+            dest="skip_files",
+            help="Skip removing files on disk with no database references"
+            " or flagged for deletion.",
+        )
         self.parser.add_option(
-                '', "--skip-expiry", action="store_true", default=False,
-                dest="skip_expiry",
-                help="Skip expiring aliases with an expiry date in the past."
-                )
+            "",
+            "--skip-expiry",
+            action="store_true",
+            default=False,
+            dest="skip_expiry",
+            help="Skip expiring aliases with an expiry date in the past.",
+        )
 
     def main(self):
         librariangc.log = self.logger
@@ -67,7 +79,8 @@ class LibrarianGC(LaunchpadCronScript):
             librariangc.debug = True
 
         conn = connect(
-            user=dbconfig.dbuser, isolation=ISOLATION_LEVEL_AUTOCOMMIT)
+            user=dbconfig.dbuser, isolation=ISOLATION_LEVEL_AUTOCOMMIT
+        )
 
         # Refuse to run if we have significant clock skew between the
         # librarian and the database.
@@ -93,6 +106,6 @@ class LibrarianGC(LaunchpadCronScript):
             librariangc.delete_unwanted_files(conn)
 
 
-if __name__ == '__main__':
-    script = LibrarianGC('librarian-gc', dbuser=config.librarian_gc.dbuser)
-    script.lock_and_run(isolation='autocommit')
+if __name__ == "__main__":
+    script = LibrarianGC("librarian-gc", dbuser=config.librarian_gc.dbuser)
+    script.lock_and_run(isolation="autocommit")

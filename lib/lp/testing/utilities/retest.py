@@ -16,22 +16,21 @@ report (or a part of) can be piped in, for example by pasting it:
 
   % bin/retest
   Tests with failures:
-     lib/lp/registry/browser/tests/sourcepackage-views.txt
-     lib/lp/registry/tests/../stories/product/xx-product-package-pages.txt
+     lib/lp/registry/browser/tests/sourcepackage-views.rst
+     lib/lp/registry/tests/../stories/product/xx-product-package-pages.rst
   Total: ... tests, 2 failures, 0 errors in ...
 
 """
 
-from collections import OrderedDict
 import fileinput
-from itertools import takewhile
 import os
 import re
 import sys
 import tempfile
+from collections import OrderedDict
+from itertools import takewhile
 
 from lp.services.config import config
-
 
 # The test script for this branch.
 TEST = os.path.join(config.root, "bin/test")
@@ -52,7 +51,7 @@ def get_test_name(test):
     """Get the test name of a failed test.
 
     If the test is part of a numbered story,
-    e.g. 'stories/gpg-coc/01-claimgpgp.txt', then return the directory name
+    e.g. 'stories/gpg-coc/01-claimgpgp.rst', then return the directory name
     since all of the stories must be run together.
     """
     match = STORY_RE.match(test)
@@ -64,14 +63,12 @@ def get_test_name(test):
 
 def gen_test_lines(lines):
     def p_start(line):
-        return (
-            line.startswith('Tests with failures:') or
-            line.startswith('Tests with errors:'))
+        return line.startswith("Tests with failures:") or line.startswith(
+            "Tests with errors:"
+        )
 
     def p_take(line):
-        return not (
-            line.isspace() or
-            line.startswith('Total:'))
+        return not (line.isspace() or line.startswith("Total:"))
 
     lines = iter(lines)
     for line in lines:
@@ -99,12 +96,12 @@ def run_tests(tests):
     print("Running tests:")
     for test in tests:
         print("  %s" % test)
-    args = ['-vvc'] if sys.stdout.isatty() else ['-vv']
-    with tempfile.NamedTemporaryFile(mode='w+') as test_list:
+    args = ["-vvc"] if sys.stdout.isatty() else ["-vv"]
+    with tempfile.NamedTemporaryFile(mode="w+") as test_list:
         for test in tests:
             print(test, file=test_list)
         test_list.flush()
-        args.extend(['--load-list', test_list.name])
+        args.extend(["--load-list", test_list.name])
         os.execl(TEST, TEST, *args)
 
 
@@ -116,6 +113,7 @@ def main():
     else:
         sys.stdout.write(
             "Error: no tests found\n"
-            "Usage: %s [test_output_file|-] ...\n\n%s\n\n" % (
-                sys.argv[0], __doc__.strip()))
+            "Usage: %s [test_output_file|-] ...\n\n%s\n\n"
+            % (sys.argv[0], __doc__.strip())
+        )
         sys.exit(1)

@@ -10,10 +10,7 @@ Some branches are also considered "private".  These are branches that
 are only visible to the owner of the branch, and the subscribers.
 """
 
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getAdapter, getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -23,20 +20,14 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
+)
 from lp.code.interfaces.branch import IBranchSet
+from lp.code.security import AccessBranch
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.role import IPersonRoles
-from lp.security import AccessBranch
-from lp.services.webapp.authorization import (
-    check_permission,
-    clear_cache,
-    )
+from lp.services.webapp.authorization import check_permission, clear_cache
 from lp.services.webapp.interaction import ANONYMOUS
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -46,13 +37,13 @@ class TestBranchVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_branch_permission(self):
-        #Calling check_permission is used to show that the AccessBranch is in
-        #fact configured correctly.
+        # Calling check_permission is used to show that the AccessBranch is in
+        # fact configured correctly.
         branch = self.factory.makeBranch()
         login(ANONYMOUS)
-        self.assertTrue(check_permission('launchpad.View', branch))
-        login('test@canonical.com')
-        self.assertTrue(check_permission('launchpad.View', branch))
+        self.assertTrue(check_permission("launchpad.View", branch))
+        login("test@canonical.com")
+        self.assertTrue(check_permission("launchpad.View", branch))
 
     def test_branch_access(self):
         # Accessing any attributes of the Branch content class through the
@@ -64,34 +55,36 @@ class TestBranchVisibility(TestCaseWithFactory):
         naked_branch = removeSecurityProxy(branch)
         self.assertTrue(
             isinstance(
-                getAdapter(branch, IAuthorization, name='launchpad.View'),
-                AccessBranch))
+                getAdapter(branch, IAuthorization, name="launchpad.View"),
+                AccessBranch,
+            )
+        )
         access = AccessBranch(naked_branch)
         self.assertTrue(access.checkUnauthenticated())
         person = self.factory.makePerson()
-        self.assertTrue(
-            access.checkAuthenticated(IPersonRoles(person)))
+        self.assertTrue(access.checkAuthenticated(IPersonRoles(person)))
 
     def test_visible_to_owner(self):
         # The owners of a branch always have visibility of their own branches.
 
         owner = self.factory.makePerson()
         branch = self.factory.makeBranch(
-            owner=owner, information_type=InformationType.USERDATA)
+            owner=owner, information_type=InformationType.USERDATA
+        )
         naked_branch = removeSecurityProxy(branch)
 
         clear_cache()  # Clear authorization cache for check_permission.
         access = AccessBranch(naked_branch)
         self.assertFalse(access.checkUnauthenticated())
-        self.assertTrue(
-            access.checkAuthenticated(IPersonRoles(owner)))
-        self.assertFalse(check_permission('launchpad.View', branch))
+        self.assertTrue(access.checkAuthenticated(IPersonRoles(owner)))
+        self.assertFalse(check_permission("launchpad.View", branch))
 
     def test_visible_to_administrator(self):
         # Launchpad administrators often have a need to see private
         # Launchpad things in order to fix up fubars by users.
         branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         naked_branch = removeSecurityProxy(branch)
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
         access = AccessBranch(naked_branch)
@@ -101,13 +94,16 @@ class TestBranchVisibility(TestCaseWithFactory):
         # Branches that are not public are viewable by members of the
         # visibility_team and to subscribers.
         branch = self.factory.makeBranch(
-            information_type=InformationType.USERDATA)
+            information_type=InformationType.USERDATA
+        )
         naked_branch = removeSecurityProxy(branch)
         person = self.factory.makePerson()
         teamowner = self.factory.makePerson()
         team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED,
-            owner=teamowner, members=[person])
+            owner=teamowner,
+            members=[person],
+        )
 
         # Not visible to an unsubscribed person.
         access = AccessBranch(naked_branch)
@@ -118,7 +114,9 @@ class TestBranchVisibility(TestCaseWithFactory):
             team,
             BranchSubscriptionNotificationLevel.NOEMAIL,
             BranchSubscriptionDiffSize.NODIFF,
-            CodeReviewNotificationLevel.NOEMAIL, teamowner)
+            CodeReviewNotificationLevel.NOEMAIL,
+            teamowner,
+        )
         self.assertTrue(access.checkAuthenticated(IPersonRoles(person)))
 
     def test_branchset_restricted_queries(self):
@@ -132,7 +130,7 @@ class TestBranchVisibility(TestCaseWithFactory):
         # a member of the Launchpad admin team so there are no permission
         # errors.
 
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         branch_set = getUtility(IBranchSet)
 
         # Make some test branches
@@ -143,53 +141,76 @@ class TestBranchVisibility(TestCaseWithFactory):
             information_type = InformationType.PUBLIC
             if x > 2:
                 information_type = InformationType.USERDATA
-            branch = self.factory.makeBranch(
-                information_type=information_type)
+            branch = self.factory.makeBranch(information_type=information_type)
             test_branches.append(branch)
         test_branches.append(
             self.factory.makeBranch(
-                owner=private_owner,
-                information_type=InformationType.USERDATA))
+                owner=private_owner, information_type=InformationType.USERDATA
+            )
+        )
 
         # Anonymous users see just the public branches.
-        branch_info = [(branch, branch.private)
-                for branch in branch_set.getRecentlyRegisteredBranches(3)]
-        self.assertEqual([
-            (test_branches[2], False),
-            (test_branches[1], False),
-            (test_branches[0], False),
-        ], branch_info)
+        branch_info = [
+            (branch, branch.private)
+            for branch in branch_set.getRecentlyRegisteredBranches(3)
+        ]
+        self.assertEqual(
+            [
+                (test_branches[2], False),
+                (test_branches[1], False),
+                (test_branches[0], False),
+            ],
+            branch_info,
+        )
 
         # An arbitrary person is not eligible to see any of the private
         # branches.
         person = self.factory.makePerson()
-        branch_info = [(branch, branch.private)
-                for branch in branch_set.getRecentlyRegisteredBranches(
-                    3, visible_by_user=person)]
-        self.assertEqual([
-            (test_branches[2], False),
-            (test_branches[1], False),
-            (test_branches[0], False),
-        ], branch_info)
+        branch_info = [
+            (branch, branch.private)
+            for branch in branch_set.getRecentlyRegisteredBranches(
+                3, visible_by_user=person
+            )
+        ]
+        self.assertEqual(
+            [
+                (test_branches[2], False),
+                (test_branches[1], False),
+                (test_branches[0], False),
+            ],
+            branch_info,
+        )
 
         # Private owner sees their new private branch and other public
         # branches, but not other private branches.
-        branch_info = [(branch, branch.private)
-                for branch in branch_set.getRecentlyRegisteredBranches(
-                    3, visible_by_user=private_owner)]
-        self.assertEqual([
-            (test_branches[5], True),
-            (test_branches[2], False),
-            (test_branches[1], False),
-        ], branch_info)
+        branch_info = [
+            (branch, branch.private)
+            for branch in branch_set.getRecentlyRegisteredBranches(
+                3, visible_by_user=private_owner
+            )
+        ]
+        self.assertEqual(
+            [
+                (test_branches[5], True),
+                (test_branches[2], False),
+                (test_branches[1], False),
+            ],
+            branch_info,
+        )
 
         # Launchpad admins can see all the private branches.
         admin = getUtility(ILaunchpadCelebrities).admin.teamowner
-        branch_info = [(branch, branch.private)
-                for branch in branch_set.getRecentlyRegisteredBranches(
-                    3, visible_by_user=admin)]
-        self.assertEqual([
-            (test_branches[5], True),
-            (test_branches[4], True),
-            (test_branches[3], True),
-        ], branch_info)
+        branch_info = [
+            (branch, branch.private)
+            for branch in branch_set.getRecentlyRegisteredBranches(
+                3, visible_by_user=admin
+            )
+        ]
+        self.assertEqual(
+            [
+                (test_branches[5], True),
+                (test_branches[4], True),
+                (test_branches[3], True),
+            ],
+            branch_info,
+        )

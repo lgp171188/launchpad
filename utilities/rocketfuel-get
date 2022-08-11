@@ -11,7 +11,7 @@
 set -eu
 
 # A rough measure of how much stuff we can do in parallel.
-CPU_COUNT="$(egrep -c '^processor\b' /proc/cpuinfo)"
+CPU_COUNT="$(grep -Ec '^processor\b' /proc/cpuinfo)"
 
 # Helper function to run a child process, indenting stdout to aid
 # readability.
@@ -22,6 +22,7 @@ run-child() {
 # Load local settings.
 if [ -e "$HOME/.rocketfuel-env.sh" ]
 then
+    # shellcheck disable=SC1091
     source "$HOME/.rocketfuel-env.sh"
 else
     echo "Please run rocketfuel-setup first." >&2

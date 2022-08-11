@@ -2,10 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'determine_architectures_to_build',
-    ]
+    "determine_architectures_to_build",
+]
 
 from collections import Counter
+from typing import Any, Dict, List, Optional, Union
 
 from lp.services.helpers import english_list
 
@@ -20,7 +21,9 @@ class MissingPropertyError(SnapArchitecturesParserError):
     def __init__(self, prop):
         super().__init__(
             "Architecture specification is missing the {!r} property".format(
-                prop))
+                prop
+            )
+        )
         self.property = prop
 
 
@@ -30,7 +33,8 @@ class IncompatibleArchitecturesStyleError(SnapArchitecturesParserError):
     def __init__(self):
         super().__init__(
             "'architectures' must either be a list of strings or dicts, not "
-            "both")
+            "both"
+        )
 
 
 class DuplicateBuildOnError(SnapArchitecturesParserError):
@@ -40,7 +44,9 @@ class DuplicateBuildOnError(SnapArchitecturesParserError):
         super().__init__(
             "{} {} present in the 'build-on' of multiple items".format(
                 english_list(duplicates),
-                "is" if len(duplicates) == 1 else "are"))
+                "is" if len(duplicates) == 1 else "are",
+            )
+        )
 
 
 class UnsupportedBuildOnError(SnapArchitecturesParserError):
@@ -49,30 +55,39 @@ class UnsupportedBuildOnError(SnapArchitecturesParserError):
     def __init__(self, build_on):
         super().__init__(
             "build-on specifies no supported architectures: {!r}".format(
-                build_on))
+                build_on
+            )
+        )
         self.build_on = build_on
 
 
 class SnapArchitecture:
     """A single entry in the snapcraft.yaml 'architectures' list."""
 
-    def __init__(self, build_on, run_on=None, build_error=None):
+    def __init__(
+        self,
+        build_on: Union[str, List[str]],
+        build_for: Optional[Union[str, List[str]]] = None,
+        build_error: Optional[str] = None,
+    ):
         """Create a new architecture entry.
 
         :param build_on: string or list; build-on property from
             snapcraft.yaml.
-        :param run_on: string or list; run-on property from snapcraft.yaml
-            (defaults to build_on).
+        :param build_for: string or list; build-for property from
+            snapcraft.yaml (defaults to build_on).
         :param build_error: string; build-error property from
             snapcraft.yaml.
         """
         self.build_on = (
-            [build_on] if isinstance(build_on, str) else build_on)
-        if run_on:
-            self.run_on = (
-                [run_on] if isinstance(run_on, str) else run_on)
+            [build_on] if isinstance(build_on, str) else build_on
+        )  # type: List[str]
+        if build_for:
+            self.build_for = (
+                [build_for] if isinstance(build_for, str) else build_for
+            )  # type: List[str]
         else:
-            self.run_on = self.build_on
+            self.build_for = self.build_on
         self.build_error = build_error
 
     @classmethod
@@ -83,9 +98,13 @@ class SnapArchitecture:
         except KeyError:
             raise MissingPropertyError("build-on")
 
+        build_for = properties.get("build-for", properties.get("run-on"))
+
         return cls(
-            build_on=build_on, run_on=properties.get("run-on"),
-            build_error=properties.get("build-error"))
+            build_on=build_on,
+            build_for=build_for,
+            build_error=properties.get("build-error"),
+        )
 
 
 class SnapBuildInstance:
@@ -95,11 +114,18 @@ class SnapBuildInstance:
 
       - architecture: The architecture tag that should be used to build the
             snap.
+      - target_architectures: The architecture tags of the snaps expected to
+            be produced by this recipe (which may differ from `architecture`
+            in the case of cross-building)
       - required: Whether or not failure to build should cause the entire
             set to fail.
     """
 
-    def __init__(self, architecture, supported_architectures):
+    def __init__(
+        self,
+        architecture: SnapArchitecture,
+        supported_architectures: List[str],
+    ):
         """Construct a new `SnapBuildInstance`.
 
         :param architecture: `SnapArchitecture` instance.
@@ -108,15 +134,21 @@ class SnapBuildInstance:
         """
         try:
             self.architecture = next(
-                arch for arch in supported_architectures
-                if arch in architecture.build_on)
+                arch
+                for arch in supported_architectures
+                if arch in architecture.build_on
+            )
         except StopIteration:
             raise UnsupportedBuildOnError(architecture.build_on)
 
+        self.target_architectures = architecture.build_for
         self.required = architecture.build_error != "ignore"
 
 
-def determine_architectures_to_build(snapcraft_data, supported_arches):
+def determine_architectures_to_build(
+    snapcraft_data: Dict[str, Any],
+    supported_arches: List[str],
+) -> List[SnapBuildInstance]:
     """Return a list of architectures to build based on snapcraft.yaml.
 
     :param snapcraft_data: A parsed snapcraft.yaml.
@@ -124,7 +156,9 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
         we can create builds for.
     :return: a list of `SnapBuildInstance`s.
     """
-    architectures_list = snapcraft_data.get("architectures")
+    architectures_list = snapcraft_data.get(
+        "architectures"
+    )  # type: Optional[List]
 
     if architectures_list:
         # First, determine what style we're parsing.  Is it a list of
@@ -136,7 +170,8 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
         elif all(isinstance(arch, dict) for arch in architectures_list):
             # If a list of dicts (new style), then that's multiple items.
             architectures = [
-                SnapArchitecture.from_dict(a) for a in architectures_list]
+                SnapArchitecture.from_dict(a) for a in architectures_list
+            ]
         else:
             # If a mix of both, bail.  We can't reasonably handle it.
             raise IncompatibleArchitecturesStyleError()
@@ -144,7 +179,8 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
         # If no architectures are specified, build one for each supported
         # architecture.
         architectures = [
-            SnapArchitecture(build_on=a) for a in supported_arches]
+            SnapArchitecture(build_on=a) for a in supported_arches
+        ]
 
     # Ensure that multiple `build-on` items don't include the same
     # architecture; this is ambiguous and forbidden by snapcraft.  Checking
@@ -161,7 +197,8 @@ def determine_architectures_to_build(snapcraft_data, supported_arches):
     for arch in architectures:
         try:
             architectures_to_build.append(
-                SnapBuildInstance(arch, supported_arches))
+                SnapBuildInstance(arch, supported_arches)
+            )
         except UnsupportedBuildOnError:
             # Snaps are allowed to declare that they build on architectures
             # that Launchpad doesn't currently support (perhaps they're

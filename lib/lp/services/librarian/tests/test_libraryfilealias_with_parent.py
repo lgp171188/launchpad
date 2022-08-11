@@ -8,10 +8,7 @@ from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
-from lp.testing import (
-    login_person,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
@@ -25,11 +22,13 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         self.bug_owner = self.factory.makePerson()
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(
-            owner=self.bug_owner, information_type=InformationType.USERDATA)
+            owner=self.bug_owner, information_type=InformationType.USERDATA
+        )
         self.bug_attachment = self.factory.makeBugAttachment(bug=self.bug)
         self.lfa_with_parent = getMultiAdapter(
             (self.bug_attachment.libraryfile, self.bug_attachment),
-            ILibraryFileAliasWithParent)
+            ILibraryFileAliasWithParent,
+        )
 
     def test_setRestricted_authorized_user(self):
         # A LibraryFileAlias instance can be adapted to an editable
@@ -40,7 +39,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         # LibraryFilasAlias instance.
         login_person(self.bug_attachment.message.owner)
         self.assertTrue(self.lfa_with_parent.restricted)
-        self.bug_attachment.title = 'foo'
+        self.bug_attachment.title = "foo"
         self.lfa_with_parent.restricted = False
         self.assertFalse(self.lfa_with_parent.restricted)
 
@@ -49,10 +48,12 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         other_person = self.factory.makePerson()
         login_person(other_person)
         self.assertRaises(
-            Unauthorized, setattr, self.bug_attachment, 'title', 'whatever')
+            Unauthorized, setattr, self.bug_attachment, "title", "whatever"
+        )
         # ...they also can't change the LibraryFileAlias for this bug.
         self.assertRaises(
-            Unauthorized, setattr, self.lfa_with_parent, 'restricted', True)
+            Unauthorized, setattr, self.lfa_with_parent, "restricted", True
+        )
 
     def test_createToken_authorized_user(self):
         # Persons having access to a parent object of a restricted
@@ -67,4 +68,5 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         other_person = self.factory.makePerson()
         login_person(other_person)
         self.assertRaises(
-            Unauthorized, getattr, self.lfa_with_parent, 'createToken')
+            Unauthorized, getattr, self.lfa_with_parent, "createToken"
+        )

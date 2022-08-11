@@ -9,13 +9,13 @@ breezy.transport classes.
 """
 
 __all__ = [
-    'AsyncVirtualServer',
-    'AsyncVirtualTransport',
-    'get_chrooted_transport',
-    'get_readonly_transport',
-    'SynchronousAdapter',
-    'TranslationError',
-    ]
+    "AsyncVirtualServer",
+    "AsyncVirtualTransport",
+    "get_chrooted_transport",
+    "get_readonly_transport",
+    "SynchronousAdapter",
+    "TranslationError",
+]
 
 
 from breezy import urlutils
@@ -24,15 +24,15 @@ from breezy.errors import (
     InProcessTransport,
     NoSuchFile,
     TransportNotPossible,
-    )
+)
 from breezy.transport import (
+    Server,
+    Transport,
     chroot,
     get_transport,
     register_transport,
-    Server,
-    Transport,
     unregister_transport,
-    )
+)
 from twisted.internet import defer
 from twisted.python.failure import Failure
 
@@ -40,7 +40,7 @@ from lp.services.twistedsupport import (
     extract_result,
     gatherResults,
     no_traceback_failures,
-    )
+)
 
 
 class TranslationError(BzrError):
@@ -50,7 +50,7 @@ class TranslationError(BzrError):
     the path itself.
     """
 
-    _fmt = ("Could not translate %(virtual_url_fragment)r. %(reason)s")
+    _fmt = "Could not translate %(virtual_url_fragment)r. %(reason)s"
 
     def __init__(self, virtual_url_fragment, reason=None):
         BzrError.__init__(self)
@@ -58,7 +58,7 @@ class TranslationError(BzrError):
         if reason is not None:
             self.reason = str(reason)
         else:
-            self.reason = ''
+            self.reason = ""
 
 
 def get_chrooted_transport(url, mkdir=False):
@@ -73,9 +73,9 @@ def get_chrooted_transport(url, mkdir=False):
 
 def get_readonly_transport(transport):
     """Wrap `transport` in a readonly transport."""
-    if transport.base.startswith('readonly+'):
+    if transport.base.startswith("readonly+"):
         return transport
-    return get_transport('readonly+' + transport.base)
+    return get_transport("readonly+" + transport.base)
 
 
 class AsyncVirtualTransport(Transport):
@@ -96,10 +96,10 @@ class AsyncVirtualTransport(Transport):
         raise InProcessTransport(self)
 
     def _abspath(self, relpath):
-        """Return the absolute, escaped path to `relpath` without the schema.
-        """
+        """Return the absolute, escaped path to `relpath` without scheme."""
         return urlutils.joinpath(
-            self.base[len(self.server.get_url()) - 1:], relpath)
+            self.base[len(self.server.get_url()) - 1 :], relpath
+        )
 
     def _getUnderlyingTransportAndPath(self, relpath):
         """Return the underlying transport and path for `relpath`."""
@@ -128,6 +128,7 @@ class AsyncVirtualTransport(Transport):
         then the method will be called on the backing transport decorated with
         'readonly+'.
         """
+
         def call_method(result):
             transport, path = result
             method = getattr(transport, method_name)
@@ -150,32 +151,33 @@ class AsyncVirtualTransport(Transport):
         return urlutils.join(self.base, relpath)
 
     def append_file(self, relpath, f, mode=None):
-        return self._call('append_file', relpath, f, mode)
+        return self._call("append_file", relpath, f, mode)
 
     def clone(self, relpath=None):
         if relpath is None:
             return self.__class__(self.server, self.base)
         else:
             return self.__class__(
-                self.server, urlutils.join(self.base, relpath))
+                self.server, urlutils.join(self.base, relpath)
+            )
 
     def delete(self, relpath):
-        return self._call('delete', relpath)
+        return self._call("delete", relpath)
 
     def delete_tree(self, relpath):
-        return self._call('delete_tree', relpath)
+        return self._call("delete_tree", relpath)
 
     def get(self, relpath):
-        return self._call('get', relpath)
+        return self._call("get", relpath)
 
     def get_bytes(self, relpath):
-        return self._call('get_bytes', relpath)
+        return self._call("get_bytes", relpath)
 
     def has(self, relpath):
-        return self._call('has', relpath)
+        return self._call("has", relpath)
 
     def iter_files_recursive(self):
-        deferred = self._getUnderlyingTransportAndPath('.')
+        deferred = self._getUnderlyingTransportAndPath(".")
 
         @no_traceback_failures
         def iter_files(result):
@@ -186,7 +188,7 @@ class AsyncVirtualTransport(Transport):
         return deferred
 
     def listable(self):
-        deferred = self._getUnderlyingTransportAndPath('.')
+        deferred = self._getUnderlyingTransportAndPath(".")
 
         @no_traceback_failures
         def listable(result):
@@ -197,22 +199,22 @@ class AsyncVirtualTransport(Transport):
         return deferred
 
     def list_dir(self, relpath):
-        return self._call('list_dir', relpath)
+        return self._call("list_dir", relpath)
 
     def lock_read(self, relpath):
-        return self._call('lock_read', relpath)
+        return self._call("lock_read", relpath)
 
     def lock_write(self, relpath):
-        return self._call('lock_write', relpath)
+        return self._call("lock_write", relpath)
 
     def mkdir(self, relpath, mode=None):
-        return self._call('mkdir', relpath, mode)
+        return self._call("mkdir", relpath, mode)
 
     def open_write_stream(self, relpath, mode=None):
-        return self._call('open_write_stream', relpath, mode)
+        return self._call("open_write_stream", relpath, mode)
 
     def put_file(self, relpath, f, mode=None):
-        return self._call('put_file', relpath, f, mode)
+        return self._call("put_file", relpath, f, mode)
 
     def local_realPath(self, relpath):
         # This method should return an absolute path (not URL) that points to
@@ -224,10 +226,12 @@ class AsyncVirtualTransport(Transport):
         # just return the absolute path.
         return defer.succeed(self._abspath(relpath))
 
-    def readv(self, relpath, offsets, adjust_for_latency=False,
-              upper_limit=None):
+    def readv(
+        self, relpath, offsets, adjust_for_latency=False, upper_limit=None
+    ):
         return self._call(
-            'readv', relpath, offsets, adjust_for_latency, upper_limit)
+            "readv", relpath, offsets, adjust_for_latency, upper_limit
+        )
 
     def rename(self, rel_from, rel_to):
         to_deferred = self._getUnderlyingTransportAndPath(rel_to)
@@ -238,21 +242,24 @@ class AsyncVirtualTransport(Transport):
         def check_transports_and_rename(results):
             (to_transport, to_path), (from_transport, from_path) = results
             if to_transport.base != from_transport.base:
-                return Failure(TransportNotPossible(
-                    'cannot move between underlying transports'))
-            return getattr(from_transport, 'rename')(from_path, to_path)
+                return Failure(
+                    TransportNotPossible(
+                        "cannot move between underlying transports"
+                    )
+                )
+            return getattr(from_transport, "rename")(from_path, to_path)
 
         deferred.addCallback(check_transports_and_rename)
         return deferred
 
     def rmdir(self, relpath):
-        return self._call('rmdir', relpath)
+        return self._call("rmdir", relpath)
 
     def stat(self, relpath):
-        return self._call('stat', relpath)
+        return self._call("stat", relpath)
 
     def writeChunk(self, relpath, offset, data):
-        return self._call('writeChunk', relpath, offset, data)
+        return self._call("writeChunk", relpath, offset, data)
 
 
 class SynchronousAdapter(Transport):
@@ -290,7 +297,8 @@ class SynchronousAdapter(Transport):
     def append_file(self, relpath, f, mode=None):
         """See `breezy.transport.Transport`."""
         return extract_result(
-            self._async_transport.append_file(relpath, f, mode))
+            self._async_transport.append_file(relpath, f, mode)
+        )
 
     def delete(self, relpath):
         """See `breezy.transport.Transport`."""
@@ -314,8 +322,7 @@ class SynchronousAdapter(Transport):
 
     def iter_files_recursive(self):
         """See `breezy.transport.Transport`."""
-        return extract_result(
-            self._async_transport.iter_files_recursive())
+        return extract_result(self._async_transport.iter_files_recursive())
 
     def listable(self):
         """See `breezy.transport.Transport`."""
@@ -340,29 +347,30 @@ class SynchronousAdapter(Transport):
     def open_write_stream(self, relpath, mode=None):
         """See `breezy.transport.Transport`."""
         return extract_result(
-            self._async_transport.open_write_stream(relpath, mode))
+            self._async_transport.open_write_stream(relpath, mode)
+        )
 
     def put_file(self, relpath, f, mode=None):
         """See `breezy.transport.Transport`."""
-        return extract_result(
-            self._async_transport.put_file(relpath, f, mode))
+        return extract_result(self._async_transport.put_file(relpath, f, mode))
 
     def local_realPath(self, relpath):
         """See `lp.codehosting.sftp.FatLocalTransport`."""
-        return extract_result(
-            self._async_transport.local_realPath(relpath))
+        return extract_result(self._async_transport.local_realPath(relpath))
 
-    def readv(self, relpath, offsets, adjust_for_latency=False,
-              upper_limit=None):
+    def readv(
+        self, relpath, offsets, adjust_for_latency=False, upper_limit=None
+    ):
         """See `breezy.transport.Transport`."""
         return extract_result(
             self._async_transport.readv(
-                relpath, offsets, adjust_for_latency, upper_limit))
+                relpath, offsets, adjust_for_latency, upper_limit
+            )
+        )
 
     def rename(self, rel_from, rel_to):
         """See `breezy.transport.Transport`."""
-        return extract_result(
-            self._async_transport.rename(rel_from, rel_to))
+        return extract_result(self._async_transport.rename(rel_from, rel_to))
 
     def rmdir(self, relpath):
         """See `breezy.transport.Transport`."""
@@ -375,7 +383,8 @@ class SynchronousAdapter(Transport):
     def writeChunk(self, relpath, offset, data):
         """See `lp.codehosting.sftp.FatLocalTransport`."""
         return extract_result(
-            self._async_transport.writeChunk(relpath, offset, data))
+            self._async_transport.writeChunk(relpath, offset, data)
+        )
 
 
 class AsyncVirtualServer(Server):

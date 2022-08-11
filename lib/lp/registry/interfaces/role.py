@@ -4,21 +4,15 @@
 """Interfaces that define common roles associated with objects."""
 
 __all__ = [
-    'IHasAppointedDriver',
-    'IHasDrivers',
-    'IHasOwner',
-    'IPersonRoles',
-    ]
+    "IHasAppointedDriver",
+    "IHasDrivers",
+    "IHasOwner",
+    "IPersonRoles",
+]
 
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice
 
 from lp import _
 
@@ -35,6 +29,7 @@ class IHasDrivers(Interface):
     Drivers have permission to approve bugs and features for specific
     series.
     """
+
     drivers = Attribute("A list of drivers")
 
     def personHasDriverRights(person):
@@ -49,7 +44,8 @@ class IHasAppointedDriver(Interface):
     """An object that has an appointed driver."""
 
     driver = Choice(
-        title=_("Driver"), required=False, vocabulary='ValidPersonOrTeam')
+        title=_("Driver"), required=False, vocabulary="ValidPersonOrTeam"
+    )
 
 
 class IPersonRoles(Interface):
@@ -67,55 +63,87 @@ class IPersonRoles(Interface):
 
     in_admin = Bool(
         title=_("True if this person is a Launchpad admin."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_software_center_agent = Bool(
         title=_("True if this person is the Software Center Agent."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_bug_importer = Bool(
         title=_("True if this person is a bug importer."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_bug_watch_updater = Bool(
         title=_("True if this person is a bug watch updater."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_buildd_admin = Bool(
         title=_("True if this person is a buildd admin."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_commercial_admin = Bool(
         title=_("True if this person is a commercial admin."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_janitor = Bool(
         title=_("True if this person is the janitor."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_katie = Bool(
-        title=_("True if this person is Katie."),
-        required=True, readonly=True)
+        title=_("True if this person is Katie."), required=True, readonly=True
+    )
     in_launchpad_developers = Bool(
         title=_("True if this person is a Launchpad developer."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_ppa_admin = Bool(
         title=_("True if this person is a PPA admin."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_ppa_key_guard = Bool(
         title=_("True if this person is the ppa key guard."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_ppa_self_admins = Bool(
         title=_("True if this person is a PPA self admin."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_registry_experts = Bool(
         title=_("True if this person is a registry expert."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_rosetta_experts = Bool(
         title=_("True if this person is a rosetta expert."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_ubuntu_sso = Bool(
         title=_("True if this person is Ubuntu Single Sign On."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_ubuntu_techboard = Bool(
         title=_("True if this person is on the Ubuntu tech board."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
     in_vcs_imports = Bool(
         title=_("True if this person is on the vcs-imports team."),
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     def inTeam(team):
         """Is this person a member or the owner of `team`?

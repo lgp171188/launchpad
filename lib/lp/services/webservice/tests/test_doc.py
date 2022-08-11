@@ -11,15 +11,8 @@ from zope.testing.cleanup import cleanUp
 
 from lp.services.testing import build_test_suite
 from lp.testing import browser
-from lp.testing.layers import (
-    AppServerLayer,
-    LaunchpadFunctionalLayer,
-    )
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setGlobs,
-    )
-
+from lp.testing.layers import AppServerLayer, LaunchpadFunctionalLayer
+from lp.testing.systemdocs import LayeredDocFileSuite, setGlobs
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -30,20 +23,24 @@ def layerlessTearDown(test):
 
 
 special = {
-    'webservice-configuration.txt': LayeredDocFileSuite(
-        '../doc/webservice-configuration.txt',
-        setUp=setGlobs, tearDown=layerlessTearDown,
-        layer=None),
+    "webservice-configuration.rst": LayeredDocFileSuite(
+        "../doc/webservice-configuration.rst",
+        setUp=setGlobs,
+        tearDown=layerlessTearDown,
+        layer=None,
+    ),
     # This test is actually run twice to prove that the AppServerLayer
     # properly isolates the database between tests.
-    'launchpadlib.txt': LayeredDocFileSuite(
-        '../doc/launchpadlib.txt',
-        layer=AppServerLayer, setUp=browser.setUp),
-    'launchpadlib.txt-2': LayeredDocFileSuite(
-        '../doc/launchpadlib.txt',
-        id_extensions=['launchpadlib.txt-2'],
-        layer=AppServerLayer, setUp=browser.setUp),
-    }
+    "launchpadlib.rst": LayeredDocFileSuite(
+        "../doc/launchpadlib.rst", layer=AppServerLayer, setUp=browser.setUp
+    ),
+    "launchpadlib.rst-2": LayeredDocFileSuite(
+        "../doc/launchpadlib.rst",
+        id_extensions=["launchpadlib.rst-2"],
+        layer=AppServerLayer,
+        setUp=browser.setUp,
+    ),
+}
 
 
 def test_suite():

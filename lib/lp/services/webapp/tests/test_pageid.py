@@ -33,7 +33,7 @@ class FakeView:
         self.request = FakeRequest()
 
     def __call__(self):
-        return 'result'
+        return "result"
 
 
 @implementer(ICollectionResource)
@@ -43,7 +43,8 @@ class FakeCollectionResourceView(FakeView):
     def __init__(self):
         super().__init__()
         self.type_url = (
-            'https://launchpad.test/api/devel/#milestone-page-resource')
+            "https://launchpad.test/api/devel/#milestone-page-resource"
+        )
 
 
 class LaunchpadBrowserPublicationPageIDTestCase(TestCase):
@@ -57,21 +58,23 @@ class LaunchpadBrowserPublicationPageIDTestCase(TestCase):
 
     def test_pageid_without_context(self):
         # The pageid is an empty string if there is no context.
-        self.assertEqual('', self.publication.constructPageID(self.view, None))
+        self.assertEqual("", self.publication.constructPageID(self.view, None))
 
     def test_pageid_view_without_name(self):
         # The view. __class__.__name__ is used if the view does not have a
         # __name__ attribute.
         self.assertEqual(
-            'FakeContext:FakeView',
-            self.publication.constructPageID(self.view, self.context))
+            "FakeContext:FakeView",
+            self.publication.constructPageID(self.view, self.context),
+        )
 
     def test_pageid_view_with_name(self):
         # The view.__name__ is used when it exists.
-        self.view.__name__ = '+snarf'
+        self.view.__name__ = "+snarf"
         self.assertEqual(
-            'FakeContext:+snarf',
-            self.publication.constructPageID(self.view, self.context))
+            "FakeContext:+snarf",
+            self.publication.constructPageID(self.view, self.context),
+        )
 
     def test_pageid_context_is_view_from_template(self):
         # When the context is a dynamic view class of a page template,
@@ -81,7 +84,7 @@ class LaunchpadBrowserPublicationPageIDTestCase(TestCase):
             pass
 
         class FakeViewView(FakeView):
-            __name__ = '++model++'
+            __name__ = "++model++"
 
             def __init__(self):
                 self.request = FakeRequest()
@@ -89,11 +92,12 @@ class LaunchpadBrowserPublicationPageIDTestCase(TestCase):
 
         self.view = FakeViewView()
         self.context = self.view.context
-        self.context.__name__ = '+bugs'
-        self.context.__class__.__name__ = 'SimpleViewClass from template.pt'
+        self.context.__name__ = "+bugs"
+        self.context.__class__.__name__ = "SimpleViewClass from template.pt"
         self.assertEqual(
-            'FakeContext:+bugs:++model++',
-            self.publication.constructPageID(self.view, self.context))
+            "FakeContext:+bugs:++model++",
+            self.publication.constructPageID(self.view, self.context),
+        )
 
 
 class TestWebServicePageIDs(TestCase):
@@ -112,24 +116,25 @@ class TestWebServicePageIDs(TestCase):
         # When the HTTP request does not have a named operation (ws.op) field
         # (either in the body or query string), the operation is included in
         # the page ID.
-        self.assertEqual(
-            self.makePageID(), 'FakeContext:FakeView')
+        self.assertEqual(self.makePageID(), "FakeContext:FakeView")
 
     def test_pageid_without_op_in_form(self):
         # When the HTTP request does not have a named operation (ws.op) field
         # (either in the body or query string), the operation is included in
         # the page ID.
-        self.view.request.form_values['ws.op'] = 'operation-name-1'
+        self.view.request.form_values["ws.op"] = "operation-name-1"
         self.assertEqual(
-            self.makePageID(), 'FakeContext:FakeView:operation-name-1')
+            self.makePageID(), "FakeContext:FakeView:operation-name-1"
+        )
 
     def test_pageid_without_op_in_query_string(self):
         # When the HTTP request does not have a named operation (ws.op) field
         # (either in the body or query string), the operation is included in
         # the page ID.
-        self.view.request.query_string_params['ws.op'] = 'operation-name-2'
+        self.view.request.query_string_params["ws.op"] = "operation-name-2"
         self.assertEqual(
-            self.makePageID(), 'FakeContext:FakeView:operation-name-2')
+            self.makePageID(), "FakeContext:FakeView:operation-name-2"
+        )
 
 
 class TestCollectionResourcePageIDs(TestCase):
@@ -149,7 +154,8 @@ class TestCollectionResourcePageIDs(TestCase):
         # page resource is included in the page ID.
         self.assertEqual(
             self.makePageID(),
-            'FakeContext:FakeCollectionResourceView:#milestone-page-resource')
+            "FakeContext:FakeCollectionResourceView:#milestone-page-resource",
+        )
 
 
 class TestPageIdCorners(TestCase):
@@ -169,5 +175,5 @@ class TestPageIdCorners(TestCase):
         # into a list.  If those values are for "ws.op", the page ID mechanism
         # should just ignore the op altogether.  (It used to generate an
         # error, see bug 810113).
-        self.view.request.form_values['ws.op'] = ['one', 'another']
-        self.assertEqual(self.makePageID(), 'FakeContext:FakeView')
+        self.view.request.form_values["ws.op"] = ["one", "another"]
+        self.assertEqual(self.makePageID(), "FakeContext:FakeView")

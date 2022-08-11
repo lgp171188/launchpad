@@ -34,9 +34,9 @@ will be provided:
 """
 
 __all__ = [
-    'MacaroonRequest',
-    'MacaroonResponse',
-    ]
+    "MacaroonRequest",
+    "MacaroonResponse",
+]
 
 import logging
 
@@ -44,21 +44,21 @@ from openid.extension import Extension
 from openid.message import (
     NamespaceAliasRegistrationError,
     registerNamespaceAlias,
-    )
+)
 
-
-MACAROON_NS = 'http://ns.login.ubuntu.com/2016/openid-macaroon'
+MACAROON_NS = "http://ns.login.ubuntu.com/2016/openid-macaroon"
 
 
 logger = logging.getLogger(__name__)
 
 
 try:
-    registerNamespaceAlias(MACAROON_NS, 'macaroon')
+    registerNamespaceAlias(MACAROON_NS, "macaroon")
 except NamespaceAliasRegistrationError as e:
     logger.exception(
-        'registerNamespaceAlias(%r, %r) failed: %s' % (
-            MACAROON_NS, 'macaroon', e))
+        "registerNamespaceAlias(%r, %r) failed: %s"
+        % (MACAROON_NS, "macaroon", e)
+    )
 
 
 def get_macaroon_ns(message):
@@ -80,7 +80,7 @@ def get_macaroon_ns(message):
     if alias is None:
         # There is no alias, so try to add one. (OpenID version 1)
         try:
-            message.namespaces.addAlias(MACAROON_NS, 'macaroon')
+            message.namespaces.addAlias(MACAROON_NS, "macaroon")
         except KeyError as why:
             # An alias for the string 'macaroon' already exists, but it's
             # defined for something other than issuing a discharge macaroon.
@@ -114,7 +114,7 @@ class MacaroonRequest(Extension):
     @group Server: fromOpenIDRequest, parseExtensionArgs
     """
 
-    ns_alias = 'macaroon'
+    ns_alias = "macaroon"
 
     def __init__(self, caveat_id=None, macaroon_ns_uri=MACAROON_NS):
         """Initialize an empty discharge macaroon request."""
@@ -167,7 +167,7 @@ class MacaroonRequest(Extension):
 
         @returns: None; updates this object
         """
-        self.caveat_id = args.get('caveat_id')
+        self.caveat_id = args.get("caveat_id")
 
     def getExtensionArgs(self):
         """Get a dictionary of unqualified macaroon request parameters
@@ -181,7 +181,7 @@ class MacaroonRequest(Extension):
         args = {}
 
         if self.caveat_id:
-            args['caveat_id'] = self.caveat_id
+            args["caveat_id"] = self.caveat_id
 
         return args
 
@@ -204,10 +204,11 @@ class MacaroonResponse(Extension):
         __iter__, get, __getitem__, keys, has_key
     """
 
-    ns_alias = 'macaroon'
+    ns_alias = "macaroon"
 
-    def __init__(self, discharge_macaroon_raw=None,
-                 macaroon_ns_uri=MACAROON_NS):
+    def __init__(
+        self, discharge_macaroon_raw=None, macaroon_ns_uri=MACAROON_NS
+    ):
         Extension.__init__(self)
         self.discharge_macaroon_raw = discharge_macaroon_raw
         self.ns_uri = macaroon_ns_uri
@@ -251,7 +252,7 @@ class MacaroonResponse(Extension):
             args = success_response.getSignedNS(self.ns_uri)
         else:
             args = success_response.message.getArgs(self.ns_uri)
-        self.discharge_macaroon_raw = args.get('discharge')
+        self.discharge_macaroon_raw = args.get("discharge")
         return self
 
     def getExtensionArgs(self):
@@ -260,4 +261,4 @@ class MacaroonResponse(Extension):
 
         @see: openid.extension
         """
-        return {'discharge': self.discharge_macaroon_raw}
+        return {"discharge": self.discharge_macaroon_raw}

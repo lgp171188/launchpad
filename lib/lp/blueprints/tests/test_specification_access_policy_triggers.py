@@ -17,9 +17,15 @@ class TestSpecificationAccessPolicyTriggers(TestCaseWithFactory):
 
     def fetchPolicies(self, specification):
         # We may be dealing with private specs, so just ignore security.
-        return IStore(Specification).execute(
-            "SELECT access_policy, access_grants FROM specification WHERE "
-            "id = ?", (removeSecurityProxy(specification).id,)).get_one()
+        return (
+            IStore(Specification)
+            .execute(
+                "SELECT access_policy, access_grants FROM specification WHERE "
+                "id = ?",
+                (removeSecurityProxy(specification).id,),
+            )
+            .get_one()
+        )
 
     def assertAccess(self, specification, expected_policy, expected_grants):
         policy, grants = self.fetchPolicies(specification)
@@ -34,10 +40,16 @@ class TestSpecificationAccessPolicyTriggers(TestCaseWithFactory):
         # Adding a new AAG updates the specification columns via trigger.
         owner = self.factory.makePerson()
         specification = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY, owner=owner)
+            information_type=InformationType.PROPRIETARY, owner=owner
+        )
         [ap] = getUtility(IAccessPolicySource).find(
-            [(removeSecurityProxy(specification).product,
-            InformationType.PROPRIETARY)])
+            [
+                (
+                    removeSecurityProxy(specification).product,
+                    InformationType.PROPRIETARY,
+                )
+            ]
+        )
         self.assertAccess(specification, ap.id, [])
         artifact = self.factory.makeAccessArtifact(concrete=specification)
         grant = self.factory.makeAccessArtifactGrant(artifact=artifact)

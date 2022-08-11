@@ -4,20 +4,16 @@
 """Execute commands in parallel sub-processes."""
 
 __all__ = [
-    'CommandSpawner',
-    'OutputLineHandler',
-    'ReturnCodeReceiver',
-    ]
+    "CommandSpawner",
+    "OutputLineHandler",
+    "ReturnCodeReceiver",
+]
 
 import errno
-from fcntl import (
-    F_GETFL,
-    F_SETFL,
-    fcntl,
-    )
-from os import O_NONBLOCK
 import select
 import subprocess
+from fcntl import F_GETFL, F_SETFL, fcntl
+from os import O_NONBLOCK
 
 
 def get_process_output_files(process):
@@ -25,7 +21,7 @@ def get_process_output_files(process):
     return [
         process.stdout,
         process.stderr,
-        ]
+    ]
 
 
 def make_files_nonblocking(files):
@@ -40,13 +36,13 @@ def make_files_nonblocking(files):
 
 def has_pending_output(poll_event):
     """Does the given event mask from `poll` indicate there's data to read?"""
-    input_mask = (select.POLLIN | select.POLLPRI)
+    input_mask = select.POLLIN | select.POLLPRI
     return (poll_event & input_mask) != 0
 
 
 def has_terminated(poll_event):
     """Does the given event mask from `poll` indicate process death?"""
-    death_mask = (select.POLLERR | select.POLLHUP | select.POLLNVAL)
+    death_mask = select.POLLERR | select.POLLHUP | select.POLLNVAL
     return (poll_event & death_mask) != 0
 
 
@@ -81,8 +77,13 @@ class CommandSpawner:
         self.running_processes = {}
         self.poll = select.poll()
 
-    def start(self, command, stdout_handler=None, stderr_handler=None,
-              completion_handler=None):
+    def start(
+        self,
+        command,
+        stdout_handler=None,
+        stderr_handler=None,
+        completion_handler=None,
+    ):
         """Run `command` in a sub-process.
 
         This starts the command, but does not wait for it to complete.
@@ -156,8 +157,12 @@ class CommandSpawner:
     def _spawn(self, command):
         """Spawn a sub-process for `command`.  Overridable in tests."""
         return subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            close_fds=True, universal_newlines=True)
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            close_fds=True,
+            universal_newlines=True,
+        )
 
     def _handle(self, process, event, *args):
         """If we have a handler for `event` on `process`, call it."""

@@ -2,36 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BuildQueue',
-    'BuildQueueSet',
-    ]
+    "BuildQueue",
+    "BuildQueueSet",
+]
 
+import logging
 from datetime import datetime
 from itertools import groupby
-import logging
 from operator import attrgetter
 
 import pytz
-from storm.expr import (
-    And,
-    Desc,
-    Exists,
-    Or,
-    SQL,
-    )
-from storm.properties import (
-    Bool,
-    DateTime,
-    Int,
-    TimeDelta,
-    Unicode,
-    )
+from storm.expr import SQL, And, Desc, Exists, Or
+from storm.properties import Bool, DateTime, Int, TimeDelta, Unicode
 from storm.references import Reference
 from storm.store import Store
-from zope.component import (
-    getSiteManager,
-    getUtility,
-    )
+from zope.component import getSiteManager, getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -40,28 +25,16 @@ from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
     BuildStatus,
-    )
+)
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
-from lp.buildmaster.interfaces.buildqueue import (
-    IBuildQueue,
-    IBuildQueueSet,
-    )
-from lp.services.database.bulk import (
-    load_referencing,
-    load_related,
-    )
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.buildmaster.interfaces.buildqueue import IBuildQueue, IBuildQueueSet
+from lp.services.database.bulk import load_referencing, load_related
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 
 
 def specific_build_farm_job_sources():
@@ -71,7 +44,8 @@ def specific_build_farm_job_sources():
     # interface.
     components = getSiteManager()
     implementations = sorted(
-        components.getUtilitiesFor(ISpecificBuildFarmJobSource))
+        components.getUtilitiesFor(ISpecificBuildFarmJobSource)
+    )
     # The above yields a collection of 2-tuples where the first element
     # is the name of the `BuildFarmJobType` enum and the second element
     # is the implementing class respectively.
@@ -89,8 +63,14 @@ class BuildQueue(StormBase):
     __storm_table__ = "BuildQueue"
     __storm_order__ = "id"
 
-    def __init__(self, build_farm_job, estimated_duration=DEFAULT,
-                 virtualized=DEFAULT, processor=DEFAULT, lastscore=None):
+    def __init__(
+        self,
+        build_farm_job,
+        estimated_duration=DEFAULT,
+        virtualized=DEFAULT,
+        processor=DEFAULT,
+        lastscore=None,
+    ):
         super().__init__()
         self._build_farm_job = build_farm_job
         self.estimated_duration = estimated_duration
@@ -102,20 +82,20 @@ class BuildQueue(StormBase):
 
     id = Int(primary=True)
 
-    _build_farm_job_id = Int(name='build_farm_job')
-    _build_farm_job = Reference(_build_farm_job_id, 'BuildFarmJob.id')
+    _build_farm_job_id = Int(name="build_farm_job")
+    _build_farm_job = Reference(_build_farm_job_id, "BuildFarmJob.id")
     status = DBEnum(enum=BuildQueueStatus, default=BuildQueueStatus.WAITING)
     date_started = DateTime(tzinfo=pytz.UTC)
 
-    builder_id = Int(name='builder', default=None)
-    builder = Reference(builder_id, 'Builder.id')
-    logtail = Unicode(name='logtail', default=None)
-    lastscore = Int(name='lastscore', default=0)
-    manual = Bool(name='manual', default=False)
+    builder_id = Int(name="builder", default=None)
+    builder = Reference(builder_id, "Builder.id")
+    logtail = Unicode(name="logtail", default=None)
+    lastscore = Int(name="lastscore", default=0)
+    manual = Bool(name="manual", default=False)
     estimated_duration = TimeDelta()
-    processor_id = Int(name='processor')
-    processor = Reference(processor_id, 'Processor.id')
-    virtualized = Bool(name='virtualized')
+    processor_id = Int(name="processor")
+    processor = Reference(processor_id, "Processor.id")
+    virtualized = Bool(name="virtualized")
 
     @property
     def specific_source(self):
@@ -138,14 +118,16 @@ class BuildQueue(StormBase):
     @staticmethod
     def preloadSpecificBuild(queues):
         from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+
         queues = [removeSecurityProxy(bq) for bq in queues]
-        load_related(BuildFarmJob, queues, ['_build_farm_job_id'])
+        load_related(BuildFarmJob, queues, ["_build_farm_job_id"])
         bfj_to_bq = {bq._build_farm_job: bq for bq in queues}
-        key = attrgetter('_build_farm_job.job_type')
+        key = attrgetter("_build_farm_job.job_type")
         for job_type, group in groupby(sorted(queues, key=key), key=key):
             source = getUtility(ISpecificBuildFarmJobSource, job_type.name)
             builds = source.getByBuildFarmJobs(
-                [bq._build_farm_job for bq in group])
+                [bq._build_farm_job for bq in group]
+            )
             for build in builds:
                 bq = bfj_to_bq[removeSecurityProxy(build).build_farm_job]
                 get_property_cache(bq).specific_build = build
@@ -231,7 +213,8 @@ class BuildQueue(StormBase):
             self.specific_build.updateStatus(BuildStatus.CANCELLING)
         else:
             raise AssertionError(
-                "Tried to cancel %r from %s" % (self, self.status.name))
+                "Tried to cancel %r from %s" % (self, self.status.name)
+            )
 
     def markAsCancelled(self):
         """See `IBuildQueue`."""
@@ -241,6 +224,7 @@ class BuildQueue(StormBase):
     def getEstimatedJobStartTime(self, now=None):
         """See `IBuildQueue`."""
         from lp.buildmaster.queuedepth import estimate_job_start_time
+
         return estimate_job_start_time(self, now or self._now())
 
     @staticmethod
@@ -266,9 +250,8 @@ class BuildQueueSet:
 
     def preloadForBuilders(self, builders):
         # Populate builders' currentjob cachedproperty.
-        queues = load_referencing(BuildQueue, builders, ['builder_id'])
-        queue_builders = {
-            queue.builder_id: queue for queue in queues}
+        queues = load_referencing(BuildQueue, builders, ["builder_id"])
+        queue_builders = {queue.builder_id: queue for queue in queues}
         for builder in builders:
             cache = get_property_cache(builder)
             cache.currentjob = queue_builders.get(builder.id, None)
@@ -277,17 +260,24 @@ class BuildQueueSet:
     def preloadForBuildFarmJobs(self, builds):
         """See `IBuildQueueSet`."""
         from lp.buildmaster.model.builder import Builder
-        bqs = list(IStore(BuildQueue).find(
-            BuildQueue,
-            BuildQueue._build_farm_job_id.is_in(
-                [removeSecurityProxy(b).build_farm_job_id for b in builds])))
-        load_related(Builder, bqs, ['builder_id'])
+
+        bqs = list(
+            IStore(BuildQueue).find(
+                BuildQueue,
+                BuildQueue._build_farm_job_id.is_in(
+                    [removeSecurityProxy(b).build_farm_job_id for b in builds]
+                ),
+            )
+        )
+        load_related(Builder, bqs, ["builder_id"])
         prefetched_data = {
             removeSecurityProxy(buildqueue)._build_farm_job_id: buildqueue
-            for buildqueue in bqs}
+            for buildqueue in bqs
+        }
         for build in builds:
             bq = prefetched_data.get(
-                removeSecurityProxy(build).build_farm_job_id)
+                removeSecurityProxy(build).build_farm_job_id
+            )
             get_property_cache(build).buildqueue_record = bq
         return bqs
 
@@ -297,7 +287,7 @@ class BuildQueueSet:
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('worker-scanner')
+        logger = logging.getLogger("worker-scanner")
         return logger
 
     def findBuildCandidates(self, processor, virtualized, limit):
@@ -313,9 +303,8 @@ class BuildQueueSet:
             query = job_source.addCandidateSelectionCriteria()
             if query:
                 job_type_conditions.append(
-                    Or(
-                        BuildFarmJob.job_type != job_type,
-                        Exists(SQL(query))))
+                    Or(BuildFarmJob.job_type != job_type, Exists(SQL(query)))
+                )
 
         def get_int_feature_flag(flag):
             value_str = getFeatureFlag(flag)
@@ -328,9 +317,12 @@ class BuildQueueSet:
         score_conditions = []
         minimum_scores = set()
         if processor is not None:
-            minimum_scores.add(get_int_feature_flag(
-                'buildmaster.minimum_score.%s' % processor.name))
-        minimum_scores.add(get_int_feature_flag('buildmaster.minimum_score'))
+            minimum_scores.add(
+                get_int_feature_flag(
+                    "buildmaster.minimum_score.%s" % processor.name
+                )
+            )
+        minimum_scores.add(get_int_feature_flag("buildmaster.minimum_score"))
         minimum_scores.discard(None)
         # If there are minimum scores set for any of the processors
         # supported by this builder, use the highest of them.  This is a bit
@@ -338,17 +330,22 @@ class BuildQueueSet:
         # option and avoids substantially complicating the candidate query.
         if minimum_scores:
             score_conditions.append(
-                BuildQueue.lastscore >= max(minimum_scores))
+                BuildQueue.lastscore >= max(minimum_scores)
+            )
 
         store = IStore(BuildQueue)
-        return list(store.using(BuildQueue, BuildFarmJob).find(
-            BuildQueue,
-            BuildFarmJob.id == BuildQueue._build_farm_job_id,
-            BuildQueue.status == BuildQueueStatus.WAITING,
-            BuildQueue.processor == processor,
-            BuildQueue.virtualized == virtualized,
-            BuildQueue.builder == None,
-            And(*(job_type_conditions + score_conditions))
-            # This must match the ordering used in
-            # PrefetchedBuildCandidates._getSortKey.
-            ).order_by(Desc(BuildQueue.lastscore), BuildQueue.id)[:limit])
+        return list(
+            store.using(BuildQueue, BuildFarmJob)
+            .find(
+                BuildQueue,
+                BuildFarmJob.id == BuildQueue._build_farm_job_id,
+                BuildQueue.status == BuildQueueStatus.WAITING,
+                BuildQueue.processor == processor,
+                BuildQueue.virtualized == virtualized,
+                BuildQueue.builder == None,
+                And(*(job_type_conditions + score_conditions))
+                # This must match the ordering used in
+                # PrefetchedBuildCandidates._getSortKey.
+            )
+            .order_by(Desc(BuildQueue.lastscore), BuildQueue.id)[:limit]
+        )

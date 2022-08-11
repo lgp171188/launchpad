@@ -4,12 +4,11 @@
 """The way the branch scanner handles merges."""
 
 __all__ = [
-    'auto_merge_branches',
-    'auto_merge_proposals',
-    ]
+    "auto_merge_branches",
+    "auto_merge_proposals",
+]
 
 from breezy.revision import NULL_REVISION
-import six
 from zope.component import getUtility
 
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
@@ -17,7 +16,7 @@ from lp.code.enums import BranchLifecycleStatus
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES,
-    )
+)
 from lp.services.utils import CachingIterator
 
 
@@ -54,8 +53,8 @@ def merge_detected(logger, source, target, proposal=None, merge_revno=None):
     # If the target branch is not the development focus, then don't update
     # the status of the source branch.
     logger.info(
-        'Merge detected: %s => %s',
-        source.bzr_identity, target.bzr_identity)
+        "Merge detected: %s => %s", source.bzr_identity, target.bzr_identity
+    )
     if proposal is None:
         # If there's no explicit merge proposal, only change the branch's
         # status when it has been merged into the development focus.
@@ -99,7 +98,8 @@ def auto_merge_branches(scan_completed):
         BranchLifecycleStatus.DEVELOPMENT,
         BranchLifecycleStatus.EXPERIMENTAL,
         BranchLifecycleStatus.MATURE,
-        BranchLifecycleStatus.ABANDONED).getBranches(eager_load=False)
+        BranchLifecycleStatus.ABANDONED,
+    ).getBranches(eager_load=False)
     for branch in branches:
         last_scanned = branch.last_scanned_id
         # If the branch doesn't have any revisions, not any point setting
@@ -162,16 +162,20 @@ def auto_merge_proposals(scan_completed):
         # initialising it until we need it, and we cache the iterator's
         # results.
         merge_sorted = CachingIterator(
-            scan_completed.bzr_branch.iter_merge_sorted_revisions)
+            scan_completed.bzr_branch.iter_merge_sorted_revisions
+        )
     for proposal in db_branch.landing_candidates:
         tip_rev_id = proposal.source_branch.last_scanned_id
         if tip_rev_id in new_ancestry:
-            merged_revno = find_merged_revno(
-                merge_sorted, six.ensure_binary(tip_rev_id))
+            merged_revno = find_merged_revno(merge_sorted, tip_rev_id.encode())
             # Remember so we can find the merged revision number.
             merge_detected(
-                logger, proposal.source_branch, db_branch, proposal,
-                merged_revno)
+                logger,
+                proposal.source_branch,
+                db_branch,
+                proposal,
+                merged_revno,
+            )
 
     # Now check the landing targets.  We should probably get rid of this,
     # especially if we are trying to get rid of the branch revision table.
@@ -182,7 +186,9 @@ def auto_merge_proposals(scan_completed):
             # If there is a branch revision record for target branch with
             # the tip_rev_id of the source branch, then it is merged.
             branch_revision = proposal.target_branch.getBranchRevision(
-                revision_id=tip_rev_id)
+                revision_id=tip_rev_id
+            )
             if branch_revision is not None:
                 merge_detected(
-                    logger, db_branch, proposal.target_branch, proposal)
+                    logger, db_branch, proposal.target_branch, proposal
+                )

@@ -1,19 +1,11 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['PackageCopyRequest', 'PackageCopyRequestSet']
+__all__ = ["PackageCopyRequest", "PackageCopyRequestSet"]
 
 import itertools
 
-from storm.locals import (
-    Bool,
-    DateTime,
-    Enum,
-    Int,
-    Reference,
-    Storm,
-    Unicode,
-    )
+from storm.locals import Bool, DateTime, Enum, Int, Reference, Storm, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
@@ -24,7 +16,7 @@ from lp.soyuz.enums import PackageCopyStatus
 from lp.soyuz.interfaces.packagecopyrequest import (
     IPackageCopyRequest,
     IPackageCopyRequestSet,
-    )
+)
 
 
 def _construct_enum_mapping(db_item_cls):
@@ -35,36 +27,39 @@ def _construct_enum_mapping(db_item_cls):
 @implementer(IPackageCopyRequest)
 class PackageCopyRequest(Storm):
     """See `IPackageCopyRequest`."""
-    __storm_table__ = 'PackageCopyRequest'
+
+    __storm_table__ = "PackageCopyRequest"
     id = Int(primary=True)
 
-    target_archive_id = Int(name='target_archive', allow_none=False)
-    target_archive = Reference(target_archive_id, 'Archive.id')
-    target_distroseries_id = Int(name='target_distroseries', allow_none=True)
-    target_distroseries = Reference(target_distroseries_id, 'DistroSeries.id')
-    target_component_id = Int(name='target_component', allow_none=True)
-    target_component = Reference(target_component_id, 'Component.id')
+    target_archive_id = Int(name="target_archive", allow_none=False)
+    target_archive = Reference(target_archive_id, "Archive.id")
+    target_distroseries_id = Int(name="target_distroseries", allow_none=True)
+    target_distroseries = Reference(target_distroseries_id, "DistroSeries.id")
+    target_component_id = Int(name="target_component", allow_none=True)
+    target_component = Reference(target_component_id, "Component.id")
     target_pocket = Enum(map=_construct_enum_mapping(PackagePublishingPocket))
 
     copy_binaries = Bool(allow_none=False, default=False)
 
-    source_archive_id = Int(name='source_archive', allow_none=False)
-    source_archive = Reference(source_archive_id, 'Archive.id')
-    source_distroseries_id = Int(name='source_distroseries', allow_none=True)
-    source_distroseries = Reference(source_distroseries_id, 'DistroSeries.id')
-    source_component_id = Int(name='source_component', allow_none=True)
-    source_component = Reference(source_component_id, 'Component.id')
+    source_archive_id = Int(name="source_archive", allow_none=False)
+    source_archive = Reference(source_archive_id, "Archive.id")
+    source_distroseries_id = Int(name="source_distroseries", allow_none=True)
+    source_distroseries = Reference(source_distroseries_id, "DistroSeries.id")
+    source_component_id = Int(name="source_component", allow_none=True)
+    source_component = Reference(source_component_id, "Component.id")
     source_pocket = Enum(map=_construct_enum_mapping(PackagePublishingPocket))
 
-    requester_id = Int(name='requester', allow_none=False)
-    requester = Reference(requester_id, 'Person.id')
+    requester_id = Int(name="requester", allow_none=False)
+    requester = Reference(requester_id, "Person.id")
 
     requester_id = Int(
-        name='requester', allow_none=False, validator=validate_public_person)
-    requester = Reference(requester_id, 'Person.id')
+        name="requester", allow_none=False, validator=validate_public_person
+    )
+    requester = Reference(requester_id, "Person.id")
 
     status = Enum(
-        allow_none=False, map=_construct_enum_mapping(PackageCopyStatus))
+        allow_none=False, map=_construct_enum_mapping(PackageCopyStatus)
+    )
     reason = Unicode(allow_none=True)
 
     date_created = DateTime(allow_none=False, default=UTC_NOW)
@@ -74,7 +69,7 @@ class PackageCopyRequest(Storm):
     def __str__(self):
         """See `IPackageCopyRequest`."""
 
-        def get_name_or_nothing(property_name, nothing='-'):
+        def get_name_or_nothing(property_name, nothing="-"):
             """Helper method, returns property value if set or 'nothing'."""
             property = getattr(self, property_name, None)
 
@@ -83,12 +78,12 @@ class PackageCopyRequest(Storm):
                 return nothing
 
             # Does the property have a name?
-            name = getattr(property, 'name', None)
+            name = getattr(property, "name", None)
             if name is not None:
                 return str(name)
 
             # Does the property have a title?
-            title = getattr(property, 'title', None)
+            title = getattr(property, "title", None)
             if title is not None:
                 return str(title)
 
@@ -100,21 +95,24 @@ class PackageCopyRequest(Storm):
             "Package copy request\n"
             "source = %s/%s/%s/%s\ntarget = %s/%s/%s/%s\n"
             "copy binaries: %s\nrequester: %s\nstatus: %s\n"
-            "date created: %s\ndate started: %s\ndate completed: %s" %
-            (get_name_or_nothing('source_archive'),
-             get_name_or_nothing('source_distroseries'),
-             get_name_or_nothing('source_component'),
-             get_name_or_nothing('source_pocket'),
-             get_name_or_nothing('target_archive'),
-             get_name_or_nothing('target_distroseries'),
-             get_name_or_nothing('target_component'),
-             get_name_or_nothing('target_pocket'),
-             get_name_or_nothing('copy_binaries'),
-             get_name_or_nothing('requester'),
-             get_name_or_nothing('status'),
-             get_name_or_nothing('date_created'),
-             get_name_or_nothing('date_started'),
-             get_name_or_nothing('date_completed')))
+            "date created: %s\ndate started: %s\ndate completed: %s"
+            % (
+                get_name_or_nothing("source_archive"),
+                get_name_or_nothing("source_distroseries"),
+                get_name_or_nothing("source_component"),
+                get_name_or_nothing("source_pocket"),
+                get_name_or_nothing("target_archive"),
+                get_name_or_nothing("target_distroseries"),
+                get_name_or_nothing("target_component"),
+                get_name_or_nothing("target_pocket"),
+                get_name_or_nothing("copy_binaries"),
+                get_name_or_nothing("requester"),
+                get_name_or_nothing("status"),
+                get_name_or_nothing("date_created"),
+                get_name_or_nothing("date_started"),
+                get_name_or_nothing("date_completed"),
+            )
+        )
         return result
 
     def markAsInprogress(self):
@@ -146,14 +144,15 @@ def _set_location_data(pcr, location, prefix):
     """Copies source/target package location data to copy requests."""
     # Set the archive first, must be present.
     assert location.archive is not None, (
-        '%s archive must be set in package location' % prefix)
-    setattr(pcr, '%s_archive' % prefix, location.archive)
+        "%s archive must be set in package location" % prefix
+    )
+    setattr(pcr, "%s_archive" % prefix, location.archive)
     # Now set the optional data if present.
-    optional_location_data = ('distroseries', 'component', 'pocket')
+    optional_location_data = ("distroseries", "component", "pocket")
     for datum_name in optional_location_data:
         value = getattr(location, datum_name, None)
         if value is not None:
-            setattr(pcr, '%s_%s' % (prefix, datum_name), value)
+            setattr(pcr, "%s_%s" % (prefix, datum_name), value)
 
 
 @implementer(IPackageCopyRequestSet)
@@ -163,7 +162,7 @@ class PackageCopyRequestSet:
     def new(self, source, target, requester, copy_binaries=False, reason=None):
         """See `IPackageCopyRequestSet`."""
         pcr = PackageCopyRequest()
-        for location_data in ((source, 'source'), (target, 'target')):
+        for location_data in ((source, "source"), (target, "target")):
             _set_location_data(pcr, *location_data)
         pcr.requester = requester
         if copy_binaries == True:
@@ -183,22 +182,25 @@ class PackageCopyRequestSet:
         else:
             optional_clauses = ()
         return IStore(PackageCopyRequest).find(
-            PackageCopyRequest, *(base_clauses + optional_clauses))
+            PackageCopyRequest, *(base_clauses + optional_clauses)
+        )
 
     def getByTargetDistroSeries(self, distroseries):
         """See `IPackageCopyRequestSet`."""
         return IStore(PackageCopyRequest).find(
             PackageCopyRequest,
-            PackageCopyRequest.target_distroseries == distroseries)
+            PackageCopyRequest.target_distroseries == distroseries,
+        )
 
     def getBySourceDistroSeries(self, distroseries):
         """See `IPackageCopyRequestSet`."""
         return IStore(PackageCopyRequest).find(
             PackageCopyRequest,
-            PackageCopyRequest.source_distroseries == distroseries)
+            PackageCopyRequest.source_distroseries == distroseries,
+        )
 
     def getByTargetArchive(self, archive):
         """See `IPackageCopyRequestSet`."""
         return IStore(PackageCopyRequest).find(
-            PackageCopyRequest,
-            PackageCopyRequest.target_archive == archive)
+            PackageCopyRequest, PackageCopyRequest.target_archive == archive
+        )

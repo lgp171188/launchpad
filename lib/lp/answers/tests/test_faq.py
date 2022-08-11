@@ -13,11 +13,11 @@ from lp.services.database.interfaces import IStore
 from lp.services.webapp.authorization import check_permission
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -36,18 +36,18 @@ class TestFAQPermissions(TestCaseWithFactory):
     def addAnswerContact(self, answer_contact):
         """Add the test person to the faq target's answer contacts."""
         language_set = getUtility(ILanguageSet)
-        answer_contact.addLanguage(language_set['en'])
+        answer_contact.addLanguage(language_set["en"])
         self.faq.target.addAnswerContact(answer_contact, answer_contact)
 
     def assertCanEdit(self, user, faq):
         """Assert that the user can edit an FAQ."""
-        can_edit = check_permission('launchpad.Edit', faq)
-        self.assertTrue(can_edit, 'User cannot edit %s' % faq)
+        can_edit = check_permission("launchpad.Edit", faq)
+        self.assertTrue(can_edit, "User cannot edit %s" % faq)
 
     def assertCannotEdit(self, user, faq):
         """Assert that the user cannot edit an FAQ."""
-        can_edit = check_permission('launchpad.Edit', faq)
-        self.assertFalse(can_edit, 'User can edit edit %s' % faq)
+        can_edit = check_permission("launchpad.Edit", faq)
+        self.assertFalse(can_edit, "User can edit edit %s" % faq)
 
     def test_owner_can_edit(self):
         # The owner of an FAQ target can edit its FAQs.
@@ -68,7 +68,8 @@ class TestFAQPermissions(TestCaseWithFactory):
         direct_answer_contact = self.factory.makeTeam()
         with person_logged_in(direct_answer_contact.teamowner):
             direct_answer_contact.addMember(
-                indirect_answer_contact, direct_answer_contact.teamowner)
+                indirect_answer_contact, direct_answer_contact.teamowner
+            )
             self.addAnswerContact(direct_answer_contact)
         login_person(indirect_answer_contact)
         self.assertCannotEdit(indirect_answer_contact, self.faq)
@@ -82,7 +83,8 @@ class TestFAQPermissions(TestCaseWithFactory):
     def test_registry_can_edit(self):
         # A member of ~registry can edit any FAQ.
         expert = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('registry')])
+            member_of=[getUtility(IPersonSet).getByName("registry")]
+        )
         login_person(expert)
         self.assertCanEdit(expert, self.faq)
 
@@ -92,14 +94,15 @@ class TestFAQPermissions(TestCaseWithFactory):
         direct_answer_contact = self.factory.makePerson()
         with person_logged_in(direct_answer_contact):
             self.addAnswerContact(direct_answer_contact)
-            self.assertFalse(check_permission('launchpad.Delete', self.faq))
+            self.assertFalse(check_permission("launchpad.Delete", self.faq))
 
     def test_registry_can_delete(self):
         # A member of ~registry can delete any FAQ.
         expert = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('registry')])
+            member_of=[getUtility(IPersonSet).getByName("registry")]
+        )
         with person_logged_in(expert):
-            self.assertTrue(check_permission('launchpad.Delete', self.faq))
+            self.assertTrue(check_permission("launchpad.Delete", self.faq))
 
 
 class TestFAQ(TestCaseWithFactory):

@@ -2,54 +2,52 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'AdvisoryUnlock',
-    'Array',
-    'ArrayAgg',
-    'ArrayContains',
-    'ArrayIntersects',
-    'BulkUpdate',
-    'ColumnSelect',
-    'Concatenate',
-    'CountDistinct',
-    'fti_search',
-    'Greatest',
-    'get_where_for_reference',
-    'IsDistinctFrom',
-    'IsFalse',
-    'IsTrue',
-    'JSONExtract',
-    'NullCount',
-    'NullsFirst',
-    'NullsLast',
-    'RegexpMatch',
-    'rank_by_fti',
-    'TryAdvisoryLock',
-    'Unnest',
-    'Values',
-    ]
+    "AdvisoryUnlock",
+    "Array",
+    "ArrayAgg",
+    "ArrayContains",
+    "ArrayIntersects",
+    "BulkUpdate",
+    "ColumnSelect",
+    "Concatenate",
+    "CountDistinct",
+    "fti_search",
+    "Greatest",
+    "get_where_for_reference",
+    "IsDistinctFrom",
+    "IsFalse",
+    "IsTrue",
+    "JSONExtract",
+    "NullCount",
+    "NullsFirst",
+    "NullsLast",
+    "RegexpMatch",
+    "rank_by_fti",
+    "TryAdvisoryLock",
+    "Unnest",
+    "Values",
+    "WithMaterialized",
+]
 
 from storm import Undef
 from storm.exceptions import ClassInfoError
 from storm.expr import (
-    BinaryOper,
     COLUMN_NAME,
-    ComparableExpr,
-    compile,
-    CompoundOper,
     EXPR,
+    SQL,
+    TABLE,
+    BinaryOper,
+    ComparableExpr,
+    CompoundOper,
     Expr,
     In,
     Like,
     NamedFunc,
     Or,
-    SQL,
     SuffixExpr,
-    TABLE,
-    )
-from storm.info import (
-    get_cls_info,
-    get_obj_info,
-    )
+    compile,
+)
+from storm.info import get_cls_info, get_obj_info
 
 
 class BulkUpdate(Expr):
@@ -73,8 +71,13 @@ def compile_bulkupdate(compile, update, state):
     col_values = [compile(val, state) for col, val in pairs]
     sets = ["%s=%s" % (col, val) for col, val in zip(col_names, col_values)]
     state.context = TABLE
-    tokens = ["UPDATE ", compile(update.table, state, token=True), " SET ",
-              ", ".join(sets), " FROM "]
+    tokens = [
+        "UPDATE ",
+        compile(update.table, state, token=True),
+        " SET ",
+        ", ".join(sets),
+        " FROM ",
+    ]
     state.context = EXPR
     # We don't want the values expression wrapped in parenthesis.
     state.precedence = 0
@@ -100,16 +103,20 @@ def compile_values(compile, expr, state):
     col_names, col_types = zip(*expr.cols)
     first_row = ", ".join(
         "%s::%s" % (compile(value, state), type)
-        for value, type in zip(expr.values[0], col_types))
+        for value, type in zip(expr.values[0], col_types)
+    )
     rows = [first_row] + [compile(value, state) for value in expr.values[1:]]
     return "(VALUES (%s)) AS %s(%s)" % (
-        "), (".join(rows), expr.name, ', '.join(col_names))
+        "), (".join(rows),
+        expr.name,
+        ", ".join(col_names),
+    )
 
 
 class ColumnSelect(Expr):
     # Wrap a select statement in braces so that it can be used as a column
     # expression in another query.
-    __slots__ = ("select")
+    __slots__ = "select"
 
     def __init__(self, select):
         self.select = select
@@ -136,7 +143,7 @@ class CountDistinct(Expr):
     # storm's Count() implementation is broken for distinct with > 1
     # column.
 
-    __slots__ = ("columns")
+    __slots__ = "columns"
 
     def __init__(self, columns):
         self.columns = columns
@@ -152,6 +159,7 @@ def compile_countdistinct(compile, countselect, state):
 
 class Concatenate(BinaryOper):
     """Storm operator for string concatenation."""
+
     __slots__ = ()
     oper = " || "
 
@@ -172,14 +180,14 @@ class TryAdvisoryLock(NamedFunc):
 
     __slots__ = ()
 
-    name = 'PG_TRY_ADVISORY_LOCK'
+    name = "PG_TRY_ADVISORY_LOCK"
 
 
 class AdvisoryUnlock(NamedFunc):
 
     __slots__ = ()
 
-    name = 'PG_ADVISORY_UNLOCK'
+    name = "PG_ADVISORY_UNLOCK"
 
 
 @compile.when(Array)
@@ -192,24 +200,28 @@ def compile_array(compile, array, state):
 
 class ArrayAgg(NamedFunc):
     """Aggregate values (within a GROUP BY) into an array."""
+
     __slots__ = ()
     name = "ARRAY_AGG"
 
 
 class Unnest(NamedFunc):
     """Expand an array to a set of rows."""
+
     __slots__ = ()
     name = "unnest"
 
 
 class ArrayContains(CompoundOper):
     """True iff the left side is a superset of the right side."""
+
     __slots__ = ()
     oper = "@>"
 
 
 class ArrayIntersects(CompoundOper):
     """True iff the arrays have at least one element in common."""
+
     __slots__ = ()
     oper = "&&"
 
@@ -220,6 +232,7 @@ class IsTrue(SuffixExpr):
     Unlike `expr` or `expr == True`, this returns `FALSE` when
     `expr IS NULL`.
     """
+
     __slots__ = ()
     suffix = "IS TRUE"
 
@@ -230,24 +243,28 @@ class IsFalse(SuffixExpr):
     Unlike `Not(expr)` or `expr == False`, this returns `FALSE` when
     `expr IS NULL`.
     """
+
     __slots__ = ()
     suffix = "IS FALSE"
 
 
 class IsDistinctFrom(CompoundOper):
     """True iff the left side is distinct from the right side."""
+
     __slots__ = ()
     oper = " IS DISTINCT FROM "
 
 
 class NullsFirst(SuffixExpr):
     """Order null values before non-null values."""
+
     __slots__ = ()
     suffix = "NULLS FIRST"
 
 
 class NullsLast(SuffixExpr):
     """Order null values after non-null values."""
+
     __slots__ = ()
     suffix = "NULLS LAST"
 
@@ -257,12 +274,48 @@ class RegexpMatch(BinaryOper):
     oper = " ~ "
 
 
+compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
+
+
 class JSONExtract(BinaryOper):
     __slots__ = ()
     oper = "->"
 
 
-compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
+class WithMaterialized(Expr):
+    """Compiles to a materialized common table expression.
+
+    On PostgreSQL >= 12, a side-effect-free WITH query may be folded into
+    the primary query if it is used exactly once in the primary query.  This
+    defeats some of our attempts at query optimization.  The MATERIALIZED
+    keyword suppresses this folding, but unfortunately it isn't available in
+    earlier versions of PostgreSQL.  Use it if available.
+
+    Unlike most Storm expressions, this needs access to the store so that it
+    can determine the running PostgreSQL version.
+
+    See:
+     * https://www.postgresql.org/docs/12/sql-select.html#SQL-WITH
+     * https://www.postgresql.org/docs/12/release-12.html#id-1.11.6.16.5.3.4
+    """
+
+    def __init__(self, name, store, select):
+        self.name = name
+        self.store = store
+        self.select = select
+
+
+@compile.when(WithMaterialized)
+def compile_with_materialized(compile, with_expr, state):
+    tokens = []
+    tokens.append(compile(with_expr.name, state, token=True))
+    tokens.append(" AS ")
+    # XXX cjwatson 2022-07-22: Replace this version check with something
+    # like `With(materialized=True)` once we're on PostgreSQL 12 everywhere.
+    if with_expr.store._database._version >= 120000:
+        tokens.append("MATERIALIZED ")
+    tokens.append(compile(with_expr.select, state))
+    return "".join(tokens)
 
 
 def get_where_for_reference(reference, other):
@@ -277,15 +330,21 @@ def get_where_for_reference(reference, other):
     more efficient for large collections of values.
     """
     relation = reference._relation
-    if isinstance(other, (list, set, tuple,)):
+    if isinstance(
+        other,
+        (
+            list,
+            set,
+            tuple,
+        ),
+    ):
         return _get_where_for_local_many(relation, other)
     else:
         return relation.get_where_for_local(other)
 
 
 def _remote_variables(relation, obj):
-    """A helper function to extract the foreign key values of an object.
-    """
+    """A helper function to extract the foreign key values of an object."""
     try:
         get_obj_info(obj)
     except ClassInfoError:
@@ -312,7 +371,8 @@ def _get_where_for_local_many(relation, others):
     if len(relation.local_key) == 1:
         return In(
             relation.local_key[0],
-            [_remote_variables(relation, value) for value in others])
+            [_remote_variables(relation, value) for value in others],
+        )
     else:
         return Or(*[relation.get_where_for_local(value) for value in others])
 
@@ -330,13 +390,17 @@ def fti_search(table, text, ftq=True):
     """An expression ensuring that table rows match the specified text."""
     table, query_fragment = determine_table_and_fragment(table, ftq)
     return SQL(
-        '%s.fti @@ %s' % (table.name, query_fragment), params=(text,),
-        tables=(table,))
+        "%s.fti @@ %s" % (table.name, query_fragment),
+        params=(text,),
+        tables=(table,),
+    )
 
 
 def rank_by_fti(table, text, ftq=True, desc=True):
     table, query_fragment = determine_table_and_fragment(table, ftq)
     return SQL(
-        '%sts_rank(%s.fti, %s)' % (
-            '-' if desc else '', table.name, query_fragment),
-        params=(text,), tables=(table,))
+        "%sts_rank(%s.fti, %s)"
+        % ("-" if desc else "", table.name, query_fragment),
+        params=(text,),
+        tables=(table,),
+    )

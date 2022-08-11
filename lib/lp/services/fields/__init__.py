@@ -2,55 +2,55 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'AnnouncementDate',
-    'BaseImageUpload',
-    'BlacklistableContentNameField',
-    'BugField',
-    'ContentNameField',
-    'Description',
-    'Datetime',
-    'DuplicateBug',
-    'FieldNotBoundError',
-    'FormattableDate',
-    'IAnnouncementDate',
-    'IBaseImageUpload',
-    'IBugField',
-    'IDescription',
-    'IInlineObject',
-    'INoneableTextLine',
-    'IPersonChoice',
-    'IStrippedTextLine',
-    'ISummary',
-    'ITag',
-    'ITitle',
-    'IURIField',
-    'IWhiteboard',
-    'IconImageUpload',
-    'InlineObject',
-    'KEEP_SAME_IMAGE',
-    'LogoImageUpload',
-    'MugshotImageUpload',
-    'NoneableDescription',
-    'NoneableTextLine',
-    'PersonChoice',
-    'PillarAliases',
-    'PillarNameField',
-    'PrivateTeamNotAllowed',
-    'ProductBugTracker',
-    'ProductNameField',
-    'PublicPersonChoice',
-    'SearchTag',
-    'StrippedTextLine',
-    'Summary',
-    'Tag',
-    'Title',
-    'URIField',
-    'UniqueField',
-    'Whiteboard',
-    'WorkItemsText',
-    'is_public_person_or_closed_team',
-    'is_public_person',
-    ]
+    "AnnouncementDate",
+    "BaseImageUpload",
+    "BlacklistableContentNameField",
+    "BugField",
+    "ContentNameField",
+    "Description",
+    "Datetime",
+    "DuplicateBug",
+    "FieldNotBoundError",
+    "FormattableDate",
+    "IAnnouncementDate",
+    "IBaseImageUpload",
+    "IBugField",
+    "IDescription",
+    "IInlineObject",
+    "INoneableTextLine",
+    "IPersonChoice",
+    "IStrippedTextLine",
+    "ISummary",
+    "ITag",
+    "ITitle",
+    "IURIField",
+    "IWhiteboard",
+    "IconImageUpload",
+    "InlineObject",
+    "KEEP_SAME_IMAGE",
+    "LogoImageUpload",
+    "MugshotImageUpload",
+    "NoneableDescription",
+    "NoneableTextLine",
+    "PersonChoice",
+    "PillarAliases",
+    "PillarNameField",
+    "PrivateTeamNotAllowed",
+    "ProductBugTracker",
+    "ProductNameField",
+    "PublicPersonChoice",
+    "SearchTag",
+    "StrippedTextLine",
+    "Summary",
+    "Tag",
+    "Title",
+    "URIField",
+    "UniqueField",
+    "Whiteboard",
+    "WorkItemsText",
+    "is_public_person_or_closed_team",
+    "is_public_person",
+]
 
 
 import io
@@ -59,15 +59,9 @@ from textwrap import dedent
 
 from lazr.restful.fields import Reference
 from lazr.restful.interfaces import IReferenceChoice
-from lazr.uri import (
-    InvalidURIError,
-    URI,
-    )
+from lazr.uri import URI, InvalidURIError
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.schema import (
     Bool,
     Bytes,
@@ -79,7 +73,7 @@ from zope.schema import (
     Text,
     TextLine,
     Tuple,
-    )
+)
 from zope.schema.interfaces import (
     ConstraintNotSatisfied,
     IBytes,
@@ -88,36 +82,30 @@ from zope.schema.interfaces import (
     IObject,
     IText,
     ITextLine,
-    )
+)
 from zope.security.interfaces import ForbiddenAttribute
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
-from lp.app.validators.name import (
-    name_validator,
-    valid_name,
-    )
+from lp.app.validators.name import name_validator, valid_name
 from lp.blueprints.enums import SpecificationWorkItemStatus
 from lp.bugs.errors import InvalidDuplicateValue
-from lp.registry.enums import (
-    EXCLUSIVE_TEAM_POLICY,
-    PersonVisibility,
-    )
+from lp.registry.enums import EXCLUSIVE_TEAM_POLICY, PersonVisibility
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.services.webapp.interfaces import ILaunchBag
-
 
 # Marker object to tell BaseImageUpload to keep the existing image.
 KEEP_SAME_IMAGE = object()
 # Regexp for detecting milestone headers in work items text.
-MILESTONE_RE = re.compile(r'^work items(.*)\s*:\s*$', re.I)
+MILESTONE_RE = re.compile(r"^work items(.*)\s*:\s*$", re.I)
 # Regexp for work items.
 WORKITEM_RE = re.compile(
-    r'^(\[(?P<assignee>.*?)\])?\s*(?P<title>.*)\s*:\s*(?P<status>.*)\s*$',
-    re.I)
+    r"^(\[(?P<assignee>.*?)\])?\s*(?P<title>.*)\s*:\s*(?P<status>.*)\s*$", re.I
+)
 
 
 # Field Interfaces
+
 
 class IStrippedTextLine(ITextLine):
     """A field with leading and trailing whitespaces stripped."""
@@ -173,42 +161,52 @@ class IURIField(ITextLine):
 
     A text line that holds a URI.
     """
+
     trailing_slash = Bool(
-        title=_('Whether a trailing slash is required for this field'),
+        title=_("Whether a trailing slash is required for this field"),
         required=False,
-        description=_('If set to True, then the path component of the URI '
-                      'will be automatically normalized to end in a slash. '
-                      'If set to False, any trailing slash will be '
-                      'automatically removed. If set to None, URIs will '
-                      'not be normalized.'))
+        description=_(
+            "If set to True, then the path component of the URI "
+            "will be automatically normalized to end in a slash. "
+            "If set to False, any trailing slash will be "
+            "automatically removed. If set to None, URIs will "
+            "not be normalized."
+        ),
+    )
 
     def normalize(input):
         """Normalize a URI.
 
-         * whitespace is stripped from the input value
-         * if the field requires (or forbids) a trailing slash on the URI,
-           ensures that the widget ends in a slash (or doesn't end in a
-           slash).
-         * the URI is canonicalized.
-         """
+        * whitespace is stripped from the input value
+        * if the field requires (or forbids) a trailing slash on the URI,
+          ensures that the widget ends in a slash (or doesn't end in a
+          slash).
+        * the URI is canonicalized.
+        """
 
 
 class IBaseImageUpload(IBytes):
     """Marker interface for ImageUpload fields."""
 
     dimensions = Tuple(
-        title=_('Maximum dimensions'),
-        description=_('A two-tuple with the maximum width and height (in '
-                      'pixels) of this image.'))
+        title=_("Maximum dimensions"),
+        description=_(
+            "A two-tuple with the maximum width and height (in "
+            "pixels) of this image."
+        ),
+    )
     max_size = Int(
-        title=_('Maximum size'),
-        description=_('The maximum size (in bytes) of this image.'))
+        title=_("Maximum size"),
+        description=_("The maximum size (in bytes) of this image."),
+    )
 
     default_image_resource = TextLine(
-        title=_('The default image'),
+        title=_("The default image"),
         description=_(
-            'The URL of the zope3 resource of the default image that should '
-            'be used. Something of the form /@@/team-mugshot'))
+            "The URL of the zope3 resource of the default image that should "
+            "be used. Something of the form /@@/team-mugshot"
+        ),
+    )
 
     def getCurrentImage():
         """Return the value of the field for the object bound to it.
@@ -219,7 +217,6 @@ class IBaseImageUpload(IBytes):
 
 @implementer(IStrippedTextLine)
 class StrippedTextLine(TextLine):
-
     def set(self, object, value):
         """Strip the value and pass up."""
         if value is not None:
@@ -234,6 +231,7 @@ class NoneableTextLine(StrippedTextLine):
 
 # Title
 # A field to capture a launchpad object title
+
 
 @implementer(ITitle)
 class Title(StrippedTextLine):
@@ -271,6 +269,7 @@ class StrippableText(Text):
 # Summary
 # A field capture a Launchpad object summary
 
+
 @implementer(ISummary)
 class Summary(StrippableText):
     pass
@@ -278,6 +277,7 @@ class Summary(StrippableText):
 
 # Description
 # A field capture a Launchpad object description
+
 
 @implementer(IDescription)
 class Description(StrippableText):
@@ -291,6 +291,7 @@ class NoneableDescription(Description):
 
 # Whiteboard
 # A field capture a Launchpad object whiteboard
+
 
 @implementer(IWhiteboard)
 class Whiteboard(StrippableText):
@@ -306,15 +307,17 @@ class FormattableDate(Date):
     """
 
     def _validate(self, value):
-        error_msg = ("Date could not be formatted. Provide a date formatted "
-            "like YYYY-MM-DD format. The year must be after 1900.")
+        error_msg = (
+            "Date could not be formatted. Provide a date formatted "
+            "like YYYY-MM-DD format. The year must be after 1900."
+        )
 
         super()._validate(value)
         # The only thing of interest here is whether or the input can be
         # formatted properly, not whether it makes sense otherwise.
         # As a minimal sanity check, just raise an error if it fails.
         try:
-            value.strftime('%Y')
+            value.strftime("%Y")
             if value.year < 1900:
                 # Unlike Python 2, Python 3's `date.strftime` works fine on
                 # years earlier than 1900.  However, we carry on refusing it
@@ -322,7 +325,7 @@ class FormattableDate(Date):
                 # at the time of writing this is only used for the targeted
                 # date of milestones and so dates before 1900 aren't
                 # interesting anyway.
-                raise ValueError('year=%d is before 1900' % value.year)
+                raise ValueError("year=%d is before 1900" % value.year)
         except ValueError:
             raise LaunchpadValidationError(error_msg)
 
@@ -334,7 +337,6 @@ class AnnouncementDate(Datetime):
 
 @implementer(IBugField)
 class BugField(Reference):
-
     def __init__(self, *args, **kwargs):
         """The schema will always be `IBug`."""
         super().__init__(Interface, *args, **kwargs)
@@ -342,6 +344,7 @@ class BugField(Reference):
     def _get_schema(self):
         """Get the schema here to avoid circular imports."""
         from lp.bugs.interfaces.bug import IBug
+
         return IBug
 
     def _set_schema(self, schema):
@@ -366,22 +369,36 @@ class DuplicateBug(BugField):
         current_bug = self.context
         dup_target = value
         if current_bug == dup_target:
-            raise InvalidDuplicateValue(_(dedent("""
-                You can't mark a bug as a duplicate of itself.""")))
+            raise InvalidDuplicateValue(
+                _(
+                    dedent(
+                        """
+                You can't mark a bug as a duplicate of itself."""
+                    )
+                )
+            )
         elif dup_target.duplicateof is not None:
-            raise InvalidDuplicateValue(_(dedent("""
+            raise InvalidDuplicateValue(
+                _(
+                    dedent(
+                        """
                 Bug ${dup} is already a duplicate of bug ${orig}. You
                 can only mark a bug report as duplicate of one that
                 isn't a duplicate itself.
-                """), mapping={'dup': dup_target.id,
-                               'orig': dup_target.duplicateof.id}))
+                """
+                    ),
+                    mapping={
+                        "dup": dup_target.id,
+                        "orig": dup_target.duplicateof.id,
+                    },
+                )
+            )
         else:
             return True
 
 
 @implementer(ITag)
 class Tag(TextLine):
-
     def constraint(self, value):
         """Make sure that the value is a valid name."""
         super_constraint = TextLine.constraint(self, value)
@@ -389,7 +406,6 @@ class Tag(TextLine):
 
 
 class SearchTag(Tag):
-
     def constraint(self, value):
         """Make sure the value is a valid search tag.
 
@@ -397,9 +413,9 @@ class SearchTag(Tag):
         with a minus, denoting "not this tag". A simple wildcard - an
         asterisk - is also valid, with or without a leading minus.
         """
-        if value in ('*', '-*'):
+        if value in ("*", "-*"):
             return True
-        elif value.startswith('-'):
+        elif value.startswith("-"):
             return super().constraint(value[1:])
         else:
             return super().constraint(value)
@@ -427,15 +443,15 @@ class UniqueField(TextLine):
         raise NotImplementedError
 
     def _isValueTaken(self, value):
-        """Returns true if and only if the specified value is already taken.
-        """
+        """Returns true if and only if the specified value is already taken."""
         return self._getByAttribute(value) is not None
 
     def unchanged(self, input):
         """Return True if the attribute on the object is unchanged."""
         _marker = object()
-        if (self._content_iface.providedBy(self.context) and
-            input == getattr(self.context, self.attribute, _marker)):
+        if self._content_iface.providedBy(self.context) and input == getattr(
+            self.context, self.attribute, _marker
+        ):
             return True
         return False
 
@@ -464,7 +480,7 @@ class UniqueField(TextLine):
 class ContentNameField(UniqueField):
     """Base class for fields that are used by unique 'name' attributes."""
 
-    attribute = 'name'
+    attribute = "name"
 
     def _getByAttribute(self, input):
         """Return the content object with the given attribute."""
@@ -486,9 +502,11 @@ class ContentNameField(UniqueField):
 class BlacklistableContentNameField(ContentNameField):
     """ContentNameField that also checks that a name is not blacklisted"""
 
-    blacklistmessage = _("The name '%s' has been blocked by the Launchpad "
-                         "administrators. Contact Launchpad Support if you "
-                         "want to use this name.")
+    blacklistmessage = _(
+        "The name '%s' has been blocked by the Launchpad "
+        "administrators. Contact Launchpad Support if you "
+        "want to use this name."
+    )
 
     def _validate(self, input):
         """Check that the given name is valid, unique and not blacklisted."""
@@ -503,6 +521,7 @@ class BlacklistableContentNameField(ContentNameField):
 
         # Need a local import because of circular dependencies.
         from lp.registry.interfaces.person import IPersonSet
+
         user = getUtility(ILaunchBag).user
         if getUtility(IPersonSet).isNameBlacklisted(input, user):
             raise LaunchpadValidationError(self.blacklistmessage % input)
@@ -514,7 +533,7 @@ class PillarAliases(TextLine):
     def _split_input(self, input):
         if input is None:
             return []
-        return re.sub(r'\s+', ' ', input).split()
+        return re.sub(r"\s+", " ", input).split()
 
     def _validate(self, input):
         """Make sure all the aliases are valid for the field's pillar.
@@ -526,19 +545,20 @@ class PillarAliases(TextLine):
         from lp.registry.interfaces.distribution import IDistribution
         from lp.registry.interfaces.product import IProduct
         from lp.registry.interfaces.projectgroup import IProjectGroup
+
         if IProduct.providedBy(context):
-            name_field = IProduct['name']
+            name_field = IProduct["name"]
         elif IProjectGroup.providedBy(context):
-            name_field = IProjectGroup['name']
+            name_field = IProjectGroup["name"]
         elif IDistribution.providedBy(context):
-            name_field = IDistribution['name']
+            name_field = IDistribution["name"]
         else:
             raise AssertionError("Unexpected context type.")
         name_field.bind(context)
         existing_aliases = context.aliases
         for name in self._split_input(input):
             if name == context.name:
-                raise LaunchpadValidationError('This is your name: %s' % name)
+                raise LaunchpadValidationError("This is your name: %s" % name)
             elif name in existing_aliases:
                 # This is already an alias to this pillar, so there's no need
                 # to validate it.
@@ -562,12 +582,14 @@ class ProductBugTracker(Choice):
     This field uses two attributes on the Product to model its state:
     'official_malone' and 'bugtracker'
     """
+
     malone_marker = object()
 
     @property
     def schema(self):
         # The IBugTracker needs to be imported here to avoid an import loop.
         from lp.bugs.interfaces.bugtracker import IBugTracker
+
         return IBugTracker
 
     def get(self, ob):
@@ -589,10 +611,16 @@ class ProductBugTracker(Choice):
 
 @implementer(IURIField)
 class URIField(TextLine):
-
-    def __init__(self, allowed_schemes=(), allow_userinfo=True,
-                 allow_port=True, allow_query=True, allow_fragment=True,
-                 trailing_slash=None, **kwargs):
+    def __init__(
+        self,
+        allowed_schemes=(),
+        allow_userinfo=True,
+        allow_port=True,
+        allow_query=True,
+        allow_fragment=True,
+        trailing_slash=None,
+        **kwargs
+    ):
         super().__init__(**kwargs)
         self.allowed_schemes = set(allowed_schemes)
         self.allow_userinfo = allow_userinfo
@@ -634,24 +662,29 @@ class URIField(TextLine):
         if self.allowed_schemes and uri.scheme not in self.allowed_schemes:
             raise LaunchpadValidationError(
                 'The URI scheme "%s" is not allowed.  Only URIs with '
-                'the following schemes may be used: %s'
-                % (uri.scheme, ', '.join(sorted(self.allowed_schemes))))
+                "the following schemes may be used: %s"
+                % (uri.scheme, ", ".join(sorted(self.allowed_schemes)))
+            )
 
         if not self.allow_userinfo and uri.userinfo is not None:
             raise LaunchpadValidationError(
-                'A username may not be specified in the URI.')
+                "A username may not be specified in the URI."
+            )
 
         if not self.allow_port and uri.port is not None:
             raise LaunchpadValidationError(
-                'Non-default ports are not allowed.')
+                "Non-default ports are not allowed."
+            )
 
         if not self.allow_query and uri.query is not None:
             raise LaunchpadValidationError(
-                'URIs with query strings are not allowed.')
+                "URIs with query strings are not allowed."
+            )
 
         if not self.allow_fragment and uri.fragment is not None:
             raise LaunchpadValidationError(
-                'URIs with fragment identifiers are not allowed.')
+                "URIs with fragment identifiers are not allowed."
+            )
 
         super()._validate(value)
 
@@ -680,8 +713,7 @@ class BaseImageUpload(Bytes):
         # class constructor can be used in the same way as other
         # Interface attribute specifiers.
         if default_image_resource is None:
-            raise AssertionError(
-                "You must specify a default image resource.")
+            raise AssertionError("You must specify a default image resource.")
 
         self.default_image_resource = default_image_resource
         Bytes.__init__(self, **kw)
@@ -703,35 +735,64 @@ class BaseImageUpload(Bytes):
         """Check that the given image is under the given constraints."""
         # No global import to avoid hard dependency on PIL being installed
         import PIL.Image
+
         if len(image) > self.max_size:
-            raise LaunchpadValidationError(_(dedent("""
-                This image exceeds the maximum allowed size in bytes.""")))
+            raise LaunchpadValidationError(
+                _(
+                    dedent(
+                        """
+                This image exceeds the maximum allowed size in bytes."""
+                    )
+                )
+            )
         try:
             pil_image = PIL.Image.open(io.BytesIO(image))
         except (OSError, ValueError):
-            raise LaunchpadValidationError(_(dedent("""
+            raise LaunchpadValidationError(
+                _(
+                    dedent(
+                        """
                 The file uploaded was not recognized as an image; please
-                check it and retry.""")))
+                check it and retry."""
+                    )
+                )
+            )
         width, height = pil_image.size
         required_width, required_height = self.dimensions
         if self.exact_dimensions:
             if width != required_width or height != required_height:
-                raise LaunchpadValidationError(_(dedent("""
+                raise LaunchpadValidationError(
+                    _(
+                        dedent(
+                            """
                     This image is not exactly ${width}x${height}
-                    pixels in size."""),
-                    mapping={'width': required_width,
-                             'height': required_height}))
+                    pixels in size."""
+                        ),
+                        mapping={
+                            "width": required_width,
+                            "height": required_height,
+                        },
+                    )
+                )
         else:
             if width > required_width or height > required_height:
-                raise LaunchpadValidationError(_(dedent("""
+                raise LaunchpadValidationError(
+                    _(
+                        dedent(
+                            """
                     This image is larger than ${width}x${height}
-                    pixels in size."""),
-                    mapping={'width': required_width,
-                             'height': required_height}))
+                    pixels in size."""
+                        ),
+                        mapping={
+                            "width": required_width,
+                            "height": required_height,
+                        },
+                    )
+                )
         return True
 
     def _validate(self, value):
-        if hasattr(value, 'seek'):
+        if hasattr(value, "seek"):
             value.seek(0)
             content = value.read()
         else:
@@ -778,12 +839,14 @@ class ProductNameField(PillarNameField):
     def _content_iface(self):
         # Local import to avoid circular dependencies.
         from lp.registry.interfaces.product import IProduct
+
         return IProduct
 
 
 def is_public_person(person):
     """Return True if the person is public."""
     from lp.registry.interfaces.person import IPerson
+
     if not IPerson.providedBy(person):
         return False
     return person.visibility == PersonVisibility.PUBLIC
@@ -792,6 +855,7 @@ def is_public_person(person):
 def is_public_person_or_closed_team(person):
     """Return True if person is a Person or not an open or delegated team."""
     from lp.registry.interfaces.person import IPerson
+
     if not IPerson.providedBy(person):
         return False
     if not person.is_team:
@@ -814,7 +878,8 @@ class PersonChoice(Choice):
     This is useful as a superclass and provides a clearer error message than
     "Constraint not satisfied".
     """
-    schema = IObject    # Will be set to IPerson once IPerson is defined.
+
+    schema = IObject  # Will be set to IPerson once IPerson is defined.
 
 
 class PublicPersonChoice(PersonChoice):
@@ -829,25 +894,30 @@ class PublicPersonChoice(PersonChoice):
 
 
 class WorkItemsText(Text):
-
     def parseLine(self, line):
         workitem_match = WORKITEM_RE.search(line)
         if workitem_match:
-            assignee = workitem_match.group('assignee')
-            title = workitem_match.group('title')
-            status = workitem_match.group('status')
+            assignee = workitem_match.group("assignee")
+            title = workitem_match.group("title")
+            status = workitem_match.group("status")
         else:
             raise LaunchpadValidationError(
-                'Invalid work item format: "%s"' % line)
-        if title == '':
+                'Invalid work item format: "%s"' % line
+            )
+        if title == "":
             raise LaunchpadValidationError(
-                'No work item title found on "%s"' % line)
-        if title.startswith('['):
+                'No work item title found on "%s"' % line
+            )
+        if title.startswith("["):
             raise LaunchpadValidationError(
-                'Missing closing "]" for assignee on "%s".' % line)
+                'Missing closing "]" for assignee on "%s".' % line
+            )
 
-        return {'title': title, 'status': status.strip().upper(),
-                'assignee': assignee}
+        return {
+            "title": title,
+            "status": status.strip().upper(),
+            "assignee": assignee,
+        }
 
     def parse(self, text):
         sequence = 0
@@ -855,19 +925,19 @@ class WorkItemsText(Text):
         work_items = []
         if text is not None:
             for line in text.splitlines():
-                if line.strip() == '':
+                if line.strip() == "":
                     continue
                 milestone_match = MILESTONE_RE.search(line)
                 if milestone_match:
                     milestone_part = milestone_match.group(1).strip()
-                    if milestone_part == '':
+                    if milestone_part == "":
                         milestone = None
                     else:
                         milestone = milestone_part.split()[-1]
                 else:
                     new_work_item = self.parseLine(line)
-                    new_work_item['milestone'] = milestone
-                    new_work_item['sequence'] = sequence
+                    new_work_item["milestone"] = milestone
+                    new_work_item["sequence"] = sequence
                     sequence += 1
                     work_items.append(new_work_item)
         return work_items
@@ -878,25 +948,27 @@ class WorkItemsText(Text):
     def parseAndValidate(self, text):
         work_items = self.parse(text)
         for work_item in work_items:
-            work_item['status'] = self.getStatus(work_item['status'])
-            work_item['assignee'] = self.getAssignee(work_item['assignee'])
-            work_item['milestone'] = self.getMilestone(work_item['milestone'])
+            work_item["status"] = self.getStatus(work_item["status"])
+            work_item["assignee"] = self.getAssignee(work_item["assignee"])
+            work_item["milestone"] = self.getMilestone(work_item["milestone"])
         return work_items
 
     def getStatus(self, text):
         valid_statuses = SpecificationWorkItemStatus.items
         if text.lower() not in [item.name.lower() for item in valid_statuses]:
-            raise LaunchpadValidationError('Unknown status: %s' % text)
+            raise LaunchpadValidationError("Unknown status: %s" % text)
         return valid_statuses[text.upper()]
 
     def getAssignee(self, assignee_name):
         if assignee_name is None:
             return None
         from lp.registry.interfaces.person import IPersonSet
+
         assignee = getUtility(IPersonSet).getByName(assignee_name)
         if assignee is None:
             raise LaunchpadValidationError(
-                "Unknown person name: %s" % assignee_name)
+                "Unknown person name: %s" % assignee_name
+            )
         return assignee
 
     def getMilestone(self, milestone_name):
@@ -909,19 +981,23 @@ class WorkItemsText(Text):
         from lp.registry.interfaces.distribution import IDistribution
         from lp.registry.interfaces.milestone import IMilestoneSet
         from lp.registry.interfaces.product import IProduct
+
         if IProduct.providedBy(target):
             milestone = getUtility(IMilestoneSet).getByNameAndProduct(
-                milestone_name, target)
+                milestone_name, target
+            )
         elif IDistribution.providedBy(target):
             milestone = getUtility(IMilestoneSet).getByNameAndDistribution(
-                milestone_name, target)
+                milestone_name, target
+            )
         else:
             raise AssertionError("Unexpected target type.")
 
         if milestone is None:
-            raise LaunchpadValidationError("The milestone '%s' is not valid "
-                                           "for the target '%s'." %
-                                           (milestone_name, target.name))
+            raise LaunchpadValidationError(
+                "The milestone '%s' is not valid "
+                "for the target '%s'." % (milestone_name, target.name)
+            )
         return milestone
 
 

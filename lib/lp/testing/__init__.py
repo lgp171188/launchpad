@@ -2,115 +2,103 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'AbstractYUITestCase',
-    'ANONYMOUS',
-    'admin_logged_in',
-    'anonymous_logged_in',
-    'api_url',
-    'BrowserTestCase',
-    'build_yui_unittest_suite',
-    'celebrity_logged_in',
-    'clean_up_reactor',
-    'ExpectedException',
-    'extract_lp_cache',
-    'FakeAdapterMixin',
-    'FakeLaunchpadRequest',
-    'FakeTime',
-    'launchpadlib_credentials_for',
-    'launchpadlib_for',
-    'login',
-    'login_admin',
-    'login_as',
-    'login_celebrity',
-    'login_person',
-    'login_team',
-    'logout',
-    'map_branch_contents',
-    'normalize_whitespace',
-    'nonblocking_readline',
-    'oauth_access_token_for',
-    'person_logged_in',
-    'record_statements',
-    'reset_logging',
-    'run_process',
-    'run_script',
-    'run_with_login',
-    'run_with_storm_debug',
-    'RunIsolatedTest',
-    'StormStatementRecorder',
-    'test_tales',
-    'TestCase',
-    'TestCaseWithFactory',
-    'time_counter',
-    'unlink_source_packages',
-    'verifyObject',
-    'with_anonymous_login',
-    'with_celebrity_logged_in',
-    'with_person_logged_in',
-    'ws_object',
-    'YUIUnitTestCase',
-    ]
+    "AbstractYUITestCase",
+    "ANONYMOUS",
+    "admin_logged_in",
+    "anonymous_logged_in",
+    "api_url",
+    "BrowserTestCase",
+    "build_yui_unittest_suite",
+    "celebrity_logged_in",
+    "clean_up_reactor",
+    "ExpectedException",
+    "extract_lp_cache",
+    "FakeAdapterMixin",
+    "FakeLaunchpadRequest",
+    "FakeTime",
+    "launchpadlib_credentials_for",
+    "launchpadlib_for",
+    "login",
+    "login_admin",
+    "login_as",
+    "login_celebrity",
+    "login_person",
+    "login_team",
+    "logout",
+    "map_branch_contents",
+    "normalize_whitespace",
+    "nonblocking_readline",
+    "oauth_access_token_for",
+    "person_logged_in",
+    "record_statements",
+    "reset_logging",
+    "run_process",
+    "run_script",
+    "run_with_login",
+    "run_with_storm_debug",
+    "RunIsolatedTest",
+    "StormStatementRecorder",
+    "test_tales",
+    "TestCase",
+    "TestCaseWithFactory",
+    "time_counter",
+    "unlink_source_packages",
+    "verifyObject",
+    "with_anonymous_login",
+    "with_celebrity_logged_in",
+    "with_person_logged_in",
+    "ws_object",
+    "YUIUnitTestCase",
+]
 
-from contextlib import contextmanager
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from fnmatch import fnmatchcase
-from functools import partial
 import io
 import logging
 import os
 import re
-from select import select
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
-import unittest
-
-from breezy import trace
-from breezy.controldir import (
-    ControlDir,
-    format_registry,
+from typing import (
+    Type,
+    TYPE_CHECKING,
     )
+import unittest
+from contextlib import contextmanager
+from datetime import datetime, timedelta
+from fnmatch import fnmatchcase
+from functools import partial
+from select import select
+
 import fixtures
-from lazr.restful.testing.tales import test_tales
-from lazr.restful.testing.webservice import FakeRequest
 import lp_sitecustomize
 import oops_datedir_repo.serializer_rfc822
 import pytz
 import simplejson
 import six
-from storm.store import Store
 import subunit
 import testtools
+import transaction
+import zope.event
+from breezy import trace
+from breezy.controldir import ControlDir, format_registry
+from lazr.restful.testing.tales import test_tales
+from lazr.restful.testing.webservice import FakeRequest
+from storm.store import Store
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
-from testtools.matchers import (
-    Equals,
-    MatchesRegex,
-    MatchesSetwise,
-    )
+from testtools.matchers import Equals, MatchesRegex, MatchesSetwise
 from testtools.testcase import ExpectedException as TTExpectedException
-import transaction
-from zope.component import (
-    getMultiAdapter,
-    getSiteManager,
-    getUtility,
-    )
-import zope.event
+from zope.component import getMultiAdapter, getSiteManager, getUtility
 from zope.interface import Interface
 from zope.interface.interfaces import ComponentLookupError
 from zope.interface.verify import verifyObject as zope_verifyObject
 from zope.publisher.interfaces import IEndRequestEvent
 from zope.publisher.interfaces.browser import IBrowserRequest
 from zope.security.management import queryInteraction
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -120,10 +108,7 @@ from lp.services import features
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.flags import FeatureController
-from lp.services.features.model import (
-    FeatureFlag,
-    getFeatureStore,
-    )
+from lp.services.features.model import FeatureFlag, getFeatureStore
 from lp.services.features.webapp import ScopesFromRequest
 from lp.services.osutils import override_environ
 from lp.services.webapp import canonical_url
@@ -132,16 +117,17 @@ from lp.services.webapp.adapter import (
     print_queries,
     start_sql_logging,
     stop_sql_logging,
-    )
+)
 from lp.services.webapp.authorization import (
     clear_cache as clear_permission_cache,
-    )
+)
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.servers import (
     LaunchpadTestRequest,
     StepsToGo,
     WebServiceTestRequest,
-    )
+)
+
 # Import the login helper functions here as it is a much better
 # place to import them from in tests.
 from lp.testing._login import (
@@ -160,21 +146,21 @@ from lp.testing._login import (
     with_anonymous_login,
     with_celebrity_logged_in,
     with_person_logged_in,
-    )
+)
 from lp.testing._webservice import (
     api_url,
     launchpadlib_credentials_for,
     launchpadlib_for,
     oauth_access_token_for,
-    )
+)
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.fixture import (
-    CaptureOops,
-    ZopeEventHandlerFixture,
-    )
+from lp.testing.fixture import CaptureOops, ZopeEventHandlerFixture
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
 
+
+if TYPE_CHECKING:
+    from lp.testing.layers import BaseLayer
 
 # The following names have been imported for the purpose of being
 # exported. They are referred to here to silence lint warnings.
@@ -207,7 +193,7 @@ def reset_logging():
     # Remove all handlers from non-root loggers, and remove the loggers too.
     loggerDict = logging.Logger.manager.loggerDict
     for name, logger in list(loggerDict.items()):
-        if name == 'pagetests-access':
+        if name == "pagetests-access":
             # Don't reset the hit logger used by the test infrastructure.
             continue
         if not isinstance(logger, logging.PlaceHolder):
@@ -216,7 +202,7 @@ def reset_logging():
         del loggerDict[name]
 
     # Remove all handlers from the root logger
-    root = logging.getLogger('')
+    root = logging.getLogger("")
     for handler in root.handlers:
         root.removeHandler(handler)
 
@@ -232,6 +218,7 @@ def reset_logging():
     # Reset the setup
     from zope.testrunner.logsupport import Logging
     from zope.testrunner.runner import Runner
+
     Logging(Runner()).global_setup()
     lp_sitecustomize.customize_logger()
 
@@ -324,6 +311,7 @@ class StormStatementRecorder:
     of every SQL query, or a callable that takes the SQL query string and
     returns a boolean decision as to whether a traceback is desired.
     """
+
     # Note that tests for this are in lp.services.webapp.tests.
     # test_statementtracer, because this is really just a small wrapper of
     # the functionality found there.
@@ -334,7 +322,7 @@ class StormStatementRecorder:
 
     @property
     def queries(self):
-        return [record['sql'] for record in self.query_data]
+        return [record["sql"] for record in self.query_data]
 
     @property
     def count(self):
@@ -342,7 +330,7 @@ class StormStatementRecorder:
 
     @property
     def statements(self):
-        return [record['sql'][3] for record in self.query_data]
+        return [record["sql"][3] for record in self.query_data]
 
     def __enter__(self):
         self.query_data = start_sql_logging(self.tracebacks_if)
@@ -387,7 +375,8 @@ class RequestTimelineCollector:
         After each web request the count and queries attributes are updated.
         """
         self._event_fixture = ZopeEventHandlerFixture(
-            self, (IEndRequestEvent, ))
+            self, (IEndRequestEvent,)
+        )
         self._event_fixture.setUp()
         self._active = True
 
@@ -421,9 +410,14 @@ def record_statements(function, *args, **kwargs):
     return (ret, recorder.statements)
 
 
-def record_two_runs(tested_method, item_creator, first_round_number,
-                    second_round_number=None, login_method=None,
-                    record_request=False):
+def record_two_runs(
+    tested_method,
+    item_creator,
+    first_round_number,
+    second_round_number=None,
+    login_method=None,
+    record_request=False,
+):
     """A helper that returns the two storm statement recorders
     obtained when running tested_method after having run the
     method {item_creator} {first_round_number} times and then
@@ -477,6 +471,7 @@ def record_two_runs(tested_method, item_creator, first_round_number,
 def run_with_storm_debug(function, *args, **kwargs):
     """A helper function to run a function with storm debug tracing on."""
     from storm.tracer import debug
+
     debug(True)
     try:
         return function(*args, **kwargs)
@@ -534,10 +529,12 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
     def assertProvides(self, obj, interface):
         """Assert 'obj' correctly provides 'interface'."""
         from lp.testing.matchers import Provides
+
         self.assertThat(obj, Provides(interface))
 
-    def assertNotifies(self, event_types, propagate, callable_obj,
-                       *args, **kwargs):
+    def assertNotifies(
+        self, event_types, propagate, callable_obj, *args, **kwargs
+    ):
         """Assert that a callable performs a given notification.
 
         :param event_type: One or more event types that notification is
@@ -555,7 +552,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         with EventRecorder(propagate=propagate) as recorder:
             result = callable_obj(*args, **kwargs)
         if len(recorder.events) == 0:
-            raise AssertionError('No notification was performed.')
+            raise AssertionError("No notification was performed.")
         self.assertEqual(len(event_types), len(recorder.events))
         for event, expected_type in zip(recorder.events, event_types):
             self.assertIsInstance(event, expected_type)
@@ -572,12 +569,11 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
             result = callable_obj(*args, **kwargs)
         if len(recorder.events) == 1:
             raise AssertionError(
-                'An event was generated: %r.' % recorder.events[0])
+                "An event was generated: %r." % recorder.events[0]
+            )
         elif len(recorder.events) > 1:
-            event_list = ', '.join(
-                [repr(event) for event in recorder.events])
-            raise AssertionError(
-                'Events were generated: %s.' % event_list)
+            event_list = ", ".join([repr(event) for event in recorder.events])
+            raise AssertionError("Events were generated: %s." % event_list)
         return result
 
     def assertSqlAttributeEqualsDate(self, sql_object, attribute_name, date):
@@ -599,22 +595,26 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         sql_class = type(sql_object)
         store = Store.of(sql_object)
         found_object = store.find(
-            sql_class, **({'id': sql_object.id, attribute_name: date})).one()
+            sql_class, **({"id": sql_object.id, attribute_name: date})
+        ).one()
         if found_object is None:
             self.fail(
                 "Expected %s to be %s, but it was %s."
-                % (attribute_name, date, getattr(sql_object, attribute_name)))
+                % (attribute_name, date, getattr(sql_object, attribute_name))
+            )
 
-    def assertTextMatchesExpressionIgnoreWhitespace(self,
-                                                    regular_expression_txt,
-                                                    text):
-
+    def assertTextMatchesExpressionIgnoreWhitespace(
+        self, regular_expression_txt, text
+    ):
         def normalise_whitespace(text):
-            return ' '.join(text.split())
+            return " ".join(text.split())
+
         pattern = re.compile(
-            normalise_whitespace(regular_expression_txt), re.S)
+            normalise_whitespace(regular_expression_txt), re.S
+        )
         self.assertIsNot(
-            None, pattern.search(normalise_whitespace(text)), text)
+            None, pattern.search(normalise_whitespace(text)), text
+        )
 
     def assertIsInstance(self, instance, assert_class, msg=None):
         """Assert that an instance is an instance of assert_class.
@@ -623,7 +623,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         to isinstance.
         """
         if msg is None:
-            msg = '%r is not an instance of %r' % (instance, assert_class)
+            msg = "%r is not an instance of %r" % (instance, assert_class)
         self.assertTrue(zope_isinstance(instance, assert_class), msg)
 
     def assertIsNot(self, expected, observed, msg=None):
@@ -636,8 +636,9 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         """Assert that 'iter1' has the same content as 'iter2'."""
         self.assertThat(iter1, MatchesSetwise(*(map(Equals, iter2))))
 
-    def assertRaisesWithContent(self, exception, exception_content,
-                                func, *args, **kwargs):
+    def assertRaisesWithContent(
+        self, exception, exception_content, func, *args, **kwargs
+    ):
         """Check if the given exception is raised with given content.
 
         If the exception isn't raised or the exception_content doesn't
@@ -650,7 +651,8 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         """Assert that 'variable' is strictly between two boundaries."""
         self.assertTrue(
             lower_bound < variable < upper_bound,
-            "%r < %r < %r" % (lower_bound, variable, upper_bound))
+            "%r < %r < %r" % (lower_bound, variable, upper_bound),
+        )
 
     def assertVectorEqual(self, *args):
         """Apply assertEqual to all given pairs in one go.
@@ -681,32 +683,36 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         The config values will be restored during test tearDown.
         """
         name = self.factory.getUniqueString()
-        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.items())
+        body = "\n".join("%s: %s" % (k, v) for k, v in kwargs.items())
         config.push(name, "\n[%s]\n%s\n" % (section, body))
         self.addCleanup(config.pop, name)
 
     def attachOopses(self):
         if len(self.oopses) > 0:
             for (i, report) in enumerate(self.oopses):
-                content = Content(UTF8_TEXT,
-                    partial(oops_datedir_repo.serializer_rfc822.to_chunks,
-                    report))
+                content = Content(
+                    UTF8_TEXT,
+                    partial(
+                        oops_datedir_repo.serializer_rfc822.to_chunks, report
+                    ),
+                )
                 self.addDetail("oops-%d" % i, content)
 
     def attachLibrarianLog(self, fixture):
         """Include the logChunks from fixture in the test details."""
         # Evaluate the log when called, not later, to permit the librarian to
         # be shutdown before the detail is rendered.
-        if 'librarian-log' not in self.getDetails():
+        if "librarian-log" not in self.getDetails():
             chunks = fixture.getLogChunks()
             content = Content(UTF8_TEXT, lambda: chunks)
-            self.addDetail('librarian-log', content)
+            self.addDetail("librarian-log", content)
 
     def setUp(self):
         super().setUp()
         # Circular imports.
         from lp.testing.factory import ObjectFactory
         from lp.testing.layers import LibrarianLayer
+
         self.factory = ObjectFactory()
         # Record the oopses generated during the test run.
         # You can call self.oops_capture.sync() to collect oopses from
@@ -716,8 +722,8 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         self.addCleanup(self.attachOopses)
         if LibrarianLayer.librarian_fixture is not None:
             self.addCleanup(
-                self.attachLibrarianLog,
-                LibrarianLayer.librarian_fixture)
+                self.attachLibrarianLog, LibrarianLayer.librarian_fixture
+            )
         # Remove all log handlers, tests should not depend on global logging
         # config but should make their own config instead.
         logger = logging.getLogger()
@@ -733,7 +739,8 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         if len(statements) != expected_count:
             self.fail(
                 "Expected %d statements, got %d:\n%s"
-                % (expected_count, len(statements), "\n".join(statements)))
+                % (expected_count, len(statements), "\n".join(statements))
+            )
         return ret
 
     def useTempDir(self):
@@ -746,8 +753,8 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
 
     def _unfoldEmailHeader(self, header):
         """Unfold a multiline email header."""
-        header = ''.join(header.splitlines())
-        return header.replace('\t', ' ')
+        header = "".join(header.splitlines())
+        return header.replace("\t", " ")
 
     def assertEmailHeadersEqual(self, expected, observed):
         """Assert that two email headers are equal.
@@ -756,21 +763,23 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         """
         return self.assertEqual(
             self._unfoldEmailHeader(expected),
-            self._unfoldEmailHeader(observed))
+            self._unfoldEmailHeader(observed),
+        )
 
     def assertStartsWith(self, s, prefix):
         if not s.startswith(prefix):
             raise AssertionError(
-                'string %r does not start with %r' % (s, prefix))
+                "string %r does not start with %r" % (s, prefix)
+            )
 
     def assertEndsWith(self, s, suffix):
         """Asserts that s ends with suffix."""
         if not s.endswith(suffix):
             raise AssertionError(
-                'string %r does not end with %r' % (s, suffix))
+                "string %r does not end with %r" % (s, suffix)
+            )
 
-    def checkPermissions(self, expected_permissions, used_permissions,
-                          type_):
+    def checkPermissions(self, expected_permissions, used_permissions, type_):
         """Check if the used_permissions match expected_permissions.
 
         :param expected_permissions: A dictionary mapping a permission
@@ -781,23 +790,29 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         """
         expected = set(expected_permissions.keys())
         self.assertEqual(
-            expected, set(used_permissions.values()),
-            'Unexpected %s permissions' % type_)
+            expected,
+            set(used_permissions.values()),
+            "Unexpected %s permissions" % type_,
+        )
         for permission in expected_permissions:
             attribute_names = {
-                name for name, value in used_permissions.items()
-                if value == permission}
+                name
+                for name, value in used_permissions.items()
+                if value == permission
+            }
             self.assertEqual(
-                expected_permissions[permission], attribute_names,
-                'Unexpected set of attributes with %s permission %s:\n'
-                'Defined but not expected: %s\n'
-                'Expected but not defined: %s'
+                expected_permissions[permission],
+                attribute_names,
+                "Unexpected set of attributes with %s permission %s:\n"
+                "Defined but not expected: %s\n"
+                "Expected but not defined: %s"
                 % (
-                    type_, permission,
-                    sorted(
-                        attribute_names - expected_permissions[permission]),
-                    sorted(
-                        expected_permissions[permission] - attribute_names)))
+                    type_,
+                    permission,
+                    sorted(attribute_names - expected_permissions[permission]),
+                    sorted(expected_permissions[permission] - attribute_names),
+                ),
+            )
 
     def assertEmailQueueLength(self, length, sort_key=None):
         """Pop the email queue, assert its length, and return it.
@@ -806,10 +821,15 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         """
         notifications = pop_notifications(sort_key=sort_key)
         self.assertEqual(
-            length, len(notifications),
-            "Expected %d emails, got %d:\n\n%s" % (
-                length, len(notifications),
-                "\n\n".join(str(n) for n in notifications)))
+            length,
+            len(notifications),
+            "Expected %d emails, got %d:\n\n%s"
+            % (
+                length,
+                len(notifications),
+                "\n\n".join(str(n) for n in notifications),
+            ),
+        )
         return notifications
 
     def getWebserviceJSON(self, webservice, url):
@@ -820,12 +840,12 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
 
 
 class TestCaseWithFactory(TestCase):
-
     def setUp(self, user=ANONYMOUS):
         super().setUp()
         login(user)
         self.addCleanup(logout)
         from lp.testing.factory import LaunchpadObjectFactory
+
         self.factory = LaunchpadObjectFactory()
         self.direct_database_server = False
         self._use_bzr_branch_called = False
@@ -835,7 +855,7 @@ class TestCaseWithFactory(TestCase):
         # necessarily equal logging.getLogger('brz'), so we have to explicitly
         # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
-        trace._brz_logger = logging.getLogger('brz')
+        trace._brz_logger = logging.getLogger("brz")
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
@@ -844,6 +864,7 @@ class TestCaseWithFactory(TestCase):
         """
         # Do the import here to avoid issues with import cycles.
         from lp.testing.pages import setupBrowserForUser
+
         login(ANONYMOUS)
         if user is None:
             user = self.factory.makePerson()
@@ -854,6 +875,7 @@ class TestCaseWithFactory(TestCase):
 
     def getNonRedirectingBrowser(self, url=None, user=None):
         from lp.testing.pages import setupBrowser
+
         if user == ANONYMOUS:
             browser = setupBrowser()
         else:
@@ -874,9 +896,14 @@ class TestCaseWithFactory(TestCase):
             format = format_registry.get(format)()
         return ControlDir.create_branch_convenience(branch_url, format=format)
 
-    def create_branch_and_tree(self, tree_location=None, product=None,
-                               db_branch=None, format=None,
-                               **kwargs):
+    def create_branch_and_tree(
+        self,
+        tree_location=None,
+        product=None,
+        db_branch=None,
+        format=None,
+        **kwargs
+    ):
         """Create a database branch, bzr branch and bzr checkout.
 
         :param tree_location: The path on disk to create the tree at.
@@ -891,7 +918,8 @@ class TestCaseWithFactory(TestCase):
             else:
                 db_branch = self.factory.makeProductBranch(product, **kwargs)
         branch_url = (
-            'lp-internal:///' + removeSecurityProxy(db_branch).unique_name)
+            "lp-internal:///" + removeSecurityProxy(db_branch).unique_name
+        )
         if not self.direct_database_server:
             transaction.commit()
         bzr_branch = self.createBranchAtURL(branch_url, format=format)
@@ -899,7 +927,8 @@ class TestCaseWithFactory(TestCase):
             tree_location = tempfile.mkdtemp()
             self.addCleanup(lambda: shutil.rmtree(tree_location))
         return db_branch, bzr_branch.create_checkout(
-            tree_location, lightweight=True)
+            tree_location, lightweight=True
+        )
 
     def createBzrBranch(self, db_branch, parent=None):
         """Create a bzr branch for a database branch.
@@ -911,17 +940,21 @@ class TestCaseWithFactory(TestCase):
         if parent:
             bzr_branch.pull(parent)
             naked_branch = removeSecurityProxy(db_branch)
-            naked_branch.last_scanned_id = six.ensure_text(
-                bzr_branch.last_revision())
+            naked_branch.last_scanned_id = bzr_branch.last_revision().decode()
         return bzr_branch
 
     def useTempBzrHome(self):
         self.useTempDir()
         # Avoid leaking local user configuration into tests.
-        self.useContext(override_environ(
-            BRZ_HOME=os.getcwd(), BRZ_EMAIL=None,
-            BZR_HOME=os.getcwd(), BZR_EMAIL=None, EMAIL=None,
-            ))
+        self.useContext(
+            override_environ(
+                BRZ_HOME=os.getcwd(),
+                BRZ_EMAIL=None,
+                BZR_HOME=os.getcwd(),
+                BZR_EMAIL=None,
+                EMAIL=None,
+            )
+        )
 
     def useBzrBranches(self, direct_database=False):
         """Prepare for using bzr branches.
@@ -939,7 +972,8 @@ class TestCaseWithFactory(TestCase):
             if direct_database != self.direct_database_server:
                 raise AssertionError(
                     "useBzrBranches called with inconsistent values for "
-                    "direct_database")
+                    "direct_database"
+                )
             return
         self._use_bzr_branch_called = True
         self.useTempBzrHome()
@@ -961,8 +995,9 @@ class BrowserTestCase(TestCaseWithFactory):
         super().setUp()
         self.user = self.factory.makePerson()
 
-    def getViewBrowser(self, context, view_name=None, no_login=False,
-                       rootsite=None, user=None):
+    def getViewBrowser(
+        self, context, view_name=None, no_login=False, rootsite=None, user=None
+    ):
         # Make sure that there is a user interaction in order to generate the
         # canonical url for the context object.
         if no_login:
@@ -975,27 +1010,33 @@ class BrowserTestCase(TestCaseWithFactory):
         logout()
         if no_login:
             from lp.testing.pages import setupBrowser
+
             browser = setupBrowser()
             browser.open(url)
             return browser
         else:
             return self.getUserBrowser(url, user)
 
-    def getMainContent(self, context, view_name=None, rootsite=None,
-                       no_login=False, user=None):
+    def getMainContent(
+        self, context, view_name=None, rootsite=None, no_login=False, user=None
+    ):
         """Beautiful soup of the main content area of context's page."""
         from lp.testing.pages import find_main_content
+
         browser = self.getViewBrowser(
-            context, view_name, rootsite=rootsite, no_login=no_login,
-            user=user)
+            context, view_name, rootsite=rootsite, no_login=no_login, user=user
+        )
         return find_main_content(browser.contents)
 
-    def getMainText(self, context, view_name=None, rootsite=None,
-                    no_login=False, user=None):
+    def getMainText(
+        self, context, view_name=None, rootsite=None, no_login=False, user=None
+    ):
         """Return the main text of a context's page."""
         from lp.testing.pages import extract_text
+
         return extract_text(
-            self.getMainContent(context, view_name, rootsite, no_login, user))
+            self.getMainContent(context, view_name, rootsite, no_login, user)
+        )
 
 
 class WebServiceTestCase(TestCaseWithFactory):
@@ -1007,13 +1048,15 @@ class WebServiceTestCase(TestCaseWithFactory):
         # TestTwistedJobRunner.test_timeout fails if this is at the
         # module level. There is probably some hidden circular import.
         from lp.testing.layers import AppServerLayer
+
         return AppServerLayer
 
     def setUp(self):
         super().setUp()
-        self.ws_version = 'devel'
+        self.ws_version = "devel"
         self.service = self.factory.makeLaunchpadService(
-            version=self.ws_version)
+            version=self.ws_version
+        )
 
     def wsObject(self, obj, user=None):
         """Return the launchpadlib version of the supplied object.
@@ -1024,7 +1067,8 @@ class WebServiceTestCase(TestCaseWithFactory):
         """
         if user is not None:
             service = self.factory.makeLaunchpadService(
-                user, version=self.ws_version)
+                user, version=self.ws_version
+            )
         else:
             service = self.service
         return ws_object(service, obj)
@@ -1032,8 +1076,8 @@ class WebServiceTestCase(TestCaseWithFactory):
 
 class AbstractYUITestCase(TestCase):
 
-    layer = None
-    suite_name = ''
+    layer = None  # type: Type[BaseLayer]
+    suite_name = ""
     # 30 seconds for the suite.
     suite_timeout = 30000
     # By default we do not restrict per-test or times.  yuixhr tests do.
@@ -1063,94 +1107,99 @@ class AbstractYUITestCase(TestCase):
         """Return an ID for this test based on the file path."""
         return os.path.relpath(self.test_path, config.root)
 
-    def setUp(self):
-        super().setUp()
-        # html5browser imports from the gir/pygtk stack which causes
-        # twisted tests to break because of gtk's initialize.
-        from lp.testing import html5browser
-        client = html5browser.Browser()
-        page = client.load_page(self.html_uri,
-                                timeout=self.suite_timeout,
-                                initial_timeout=self.initial_timeout,
-                                incremental_timeout=self.incremental_timeout)
-        report = None
-        if page.content:
-            report = simplejson.loads(page.content)
-        if page.return_code == page.CODE_FAIL:
-            self._yui_results = self.TIMEOUT
-            self._last_test_info = report
-            return
-        # Data['type'] is complete (an event).
-        # Data['results'] is a dict (type=report)
-        # with 1 or more dicts (type=testcase)
-        # with 1 for more dicts (type=test).
-        if report.get('type', None) != 'complete':
-            # Did not get a report back.
-            self._yui_results = self.MISSING_REPORT
-            return
-        self._yui_results = {}
-        for key, value in report['results'].items():
-            if isinstance(value, dict) and value['type'] == 'testcase':
-                testcase_name = key
-                test_case = value
-                for key, value in test_case.items():
-                    if isinstance(value, dict) and value['type'] == 'test':
-                        test_name = '%s.%s' % (testcase_name, key)
-                        test = value
-                        self._yui_results[test_name] = dict(
-                            result=test['result'], message=test['message'])
-
     def checkResults(self):
         """Check the results.
 
         The tests are run during `setUp()`, but failures need to be reported
         from here.
         """
-        if self._yui_results == self.TIMEOUT:
-            msg = 'JS timed out.'
-            if self._last_test_info is not None:
+        assert self.layer.browser
+        results = self.layer.browser.run_tests(
+            self.html_uri,
+            timeout=self.suite_timeout,
+            incremental_timeout=self.incremental_timeout,
+        )
+        report = None
+        if results.results:
+            report = results.results
+
+        if results.status == results.Status.TIMEOUT:
+            msg = "JS timed out."
+            if results.last_test_message is not None:
                 try:
-                    msg += ('  The last test that ran to '
-                            'completion before timing out was '
-                            '%(testCase)s:%(testName)s.  The test %(type)sed.'
-                            % self._last_test_info)
+                    msg += (
+                        " The last test that ran to "
+                        "completion before timing out was "
+                        "{testCase}:{testName}.  The test {type}ed.".format(
+                            **results.last_test_message
+                        )
+                    )
                 except (KeyError, TypeError):
-                    msg += ('  The test runner received an unexpected error '
-                            'when trying to show information about the last '
-                            'test to run.  The data it received was %r.'
-                            % (self._last_test_info,))
-            elif (self.incremental_timeout is not None or
-                  self.initial_timeout is not None):
-                msg += '  The test may never have started.'
+                    msg += (
+                        " The test runner received an unexpected error "
+                        "when trying to show information about the last "
+                        "test to run.  The data it received was {}.".format(
+                            results.last_test_message
+                        )
+                    )
+            elif (
+                self.incremental_timeout is not None
+                or self.initial_timeout is not None
+            ):
+                msg += "  The test may never have started."
             self.fail(msg)
-        elif self._yui_results == self.MISSING_REPORT:
+
+        # Data['type'] is complete (an event).
+        # Data['results'] is a dict (type=report)
+        # with 1 or more dicts (type=testcase)
+        # with 1 for more dicts (type=test).
+        if report.get("type", None) != "complete":
+            # Did not get a report back.
             self.fail("The data returned by js is not a test report.")
-        elif self._yui_results is None or len(self._yui_results) == 0:
+
+        yui_results = {}
+        for key, value in report["results"].items():
+            if isinstance(value, dict) and value["type"] == "testcase":
+                testcase_name = key
+                test_case = value
+                for key, value in test_case.items():
+                    if isinstance(value, dict) and value["type"] == "test":
+                        test_name = "%s.%s" % (testcase_name, key)
+                        test = value
+                        yui_results[test_name] = dict(
+                            result=test["result"], message=test["message"]
+                        )
+
+        if not yui_results:
             self.fail("Test harness or js report format changed.")
+
         failures = []
-        for test_name in self._yui_results:
-            result = self._yui_results[test_name]
-            if result['result'] not in ('pass', 'ignore'):
+        for test_name, result in yui_results.items():
+            if result["result"] not in ("pass", "ignore"):
                 failures.append(
-                    'Failure in %s.%s: %s' % (
-                    self.test_path, test_name, result['message']))
-        self.assertEqual([], failures, '\n'.join(failures))
+                    "Failure in {}.{}: {}".format(
+                        self.test_path, test_name, result["message"]
+                    )
+                )
+
+        self.assertEqual([], failures, "\n".join(failures))
 
 
 class YUIUnitTestCase(AbstractYUITestCase):
 
-    _testMethodName = 'checkResults'
+    _testMethodName = "checkResults"
 
     def initialize(self, test_path):
         # The path is a .html file.
         self.test_path = test_path
-        self.html_uri = 'file://%s' % os.path.join(
-            config.root, 'lib', self.test_path)
+        self.html_uri = "file://%s" % os.path.join(
+            config.root, "lib", self.test_path
+        )
 
 
 def build_yui_unittest_suite(app_testing_path, yui_test_class):
     suite = unittest.TestSuite()
-    testing_path = os.path.join(config.root, 'lib', app_testing_path)
+    testing_path = os.path.join(config.root, "lib", app_testing_path)
     unit_test_names = _harvest_yui_test_files(testing_path)
     for unit_test_path in unit_test_names:
         test_case = yui_test_class()
@@ -1200,7 +1249,9 @@ class RunIsolatedTest(testtools.RunTest):
         try:
             return self._run_started(
                 _StartedTestResult(
-                    testtools.ExtendedToOriginalDecorator(result)))
+                    testtools.ExtendedToOriginalDecorator(result)
+                )
+            )
         finally:
             result.stopTest(self.case)
 
@@ -1224,7 +1275,7 @@ class RunIsolatedTest(testtools.RunTest):
         if pid == 0:
             # Child.
             os.close(pread)
-            fdwrite = os.fdopen(pwrite, 'wb', 1)
+            fdwrite = os.fdopen(pwrite, "wb", 1)
             # Send results to the subunit stream client so that the parent
             # process can obtain the result.
             super().run(subunit.TestProtocolClient(fdwrite))
@@ -1239,15 +1290,16 @@ class RunIsolatedTest(testtools.RunTest):
         else:
             # Parent.
             os.close(pwrite)
-            fdread = os.fdopen(pread, 'rb')
+            fdread = os.fdopen(pread, "rb")
             # Accept the result from the child process, but don't write a
             # duplicate copy to stdout.
             protocol = subunit.TestProtocolServer(
-                result, stream=subunit.DiscardStream())
+                result, stream=subunit.DiscardStream()
+            )
             protocol.readFrom(fdread)
             fdread.close()
             os.waitpid(pid, 0)
-            layer = getattr(self.case, 'layer', None)
+            layer = getattr(self.case, "layer", None)
             if layer is not None and issubclass(layer, DatabaseLayer):
                 layer.force_dirty_database()
 
@@ -1275,8 +1327,9 @@ class EventRecorder:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert zope.event.subscribers == self.new_subscribers, (
-            'Subscriber list has been changed while running!')
+        assert (
+            zope.event.subscribers == self.new_subscribers
+        ), "Subscriber list has been changed while running!"
         zope.event.subscribers[:] = self.old_subscribers
 
 
@@ -1285,8 +1338,9 @@ def feature_flags():
     """Provide a context in which feature flags work."""
     empty_request = LaunchpadTestRequest()
     old_features = features.get_relevant_feature_controller()
-    features.install_feature_controller(FeatureController(
-        ScopesFromRequest(empty_request).lookup))
+    features.install_feature_controller(
+        FeatureController(ScopesFromRequest(empty_request).lookup)
+    )
     try:
         yield
     finally:
@@ -1330,11 +1384,17 @@ def run_script(cmd_line, env=None, cwd=None, universal_newlines=True):
     """
     if env is None:
         env = os.environ.copy()
-    env.pop('PYTHONPATH', None)
+    env.pop("PYTHONPATH", None)
     process = subprocess.Popen(
-        cmd_line, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, env=env, cwd=cwd,
-        universal_newlines=universal_newlines)
+        cmd_line,
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        cwd=cwd,
+        universal_newlines=universal_newlines,
+    )
     (out, err) = process.communicate()
     return out, err, process.returncode
 
@@ -1356,12 +1416,16 @@ def run_process(cmd, env=None, universal_newlines=True):
     """
     if env is None:
         env = os.environ.copy()
-    env.pop('PYTHONPATH', None)
+    env.pop("PYTHONPATH", None)
     with open(os.devnull, "rb") as devnull:
         process = subprocess.Popen(
-            cmd, stdin=devnull, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, env=env,
-            universal_newlines=universal_newlines)
+            cmd,
+            stdin=devnull,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            universal_newlines=universal_newlines,
+        )
         stdout, stderr = process.communicate()
         return stdout, stderr, process.returncode
 
@@ -1389,11 +1453,10 @@ def map_branch_contents(branch):
     tree = branch.basis_tree()
     tree.lock_read()
     try:
-        for dir, entries in tree.walkdirs():
-            dirname, id = dir
+        for _, entries in tree.walkdirs():
             for entry in entries:
                 file_path, file_name, file_type = entry[:3]
-                if file_type == 'file':
+                if file_type == "file":
                     stored_file = tree.get_file(file_path)
                     contents[file_path] = stored_file.read()
     finally:
@@ -1402,7 +1465,7 @@ def map_branch_contents(branch):
     return contents
 
 
-def set_feature_flag(name, value, scope='default', priority=1):
+def set_feature_flag(name, value, scope="default", priority=1):
     """Set a feature flag to the specified value.
 
     In order to access the flag, use the feature_flags context manager or
@@ -1412,8 +1475,7 @@ def set_feature_flag(name, value, scope='default', priority=1):
     :param scope: The scope in which the specified value applies.
     """
     assert features.get_relevant_feature_controller() is not None
-    flag = FeatureFlag(
-        scope=scope, flag=name, value=value, priority=priority)
+    flag = FeatureFlag(scope=scope, flag=name, value=value, priority=priority)
     store = getFeatureStore()
     store.add(flag)
     # Make sure that the feature is saved into the db right now.
@@ -1464,7 +1526,8 @@ def unlink_source_packages(product):
         packaging_util.deletePackaging(
             source_package.productseries,
             source_package.sourcepackagename,
-            source_package.distroseries)
+            source_package.distroseries,
+        )
 
 
 class ExpectedException(TTExpectedException):
@@ -1480,9 +1543,9 @@ class ExpectedException(TTExpectedException):
 
 
 def extract_lp_cache(text):
-    match = re.search(r'<script[^>]*>LP.cache = (\{.*\});</script>', text)
+    match = re.search(r"<script[^>]*>LP.cache = (\{.*\});</script>", text)
     if match is None:
-        raise ValueError('No JSON cache found.')
+        raise ValueError("No JSON cache found.")
     return simplejson.loads(match.group(1))
 
 
@@ -1495,7 +1558,7 @@ def nonblocking_readline(instream, timeout):
     result = io.BytesIO()
     start = now = time.time()
     deadline = start + timeout
-    while (now < deadline and not result.getvalue().endswith(b'\n')):
+    while now < deadline and not result.getvalue().endswith(b"\n"):
         rlist = select([instream], [], [], deadline - now)
         if rlist:
             # Reading 1 character at a time is inefficient, but means
@@ -1509,7 +1572,6 @@ def nonblocking_readline(instream, timeout):
 
 
 class FakeLaunchpadRequest(FakeRequest):
-
     @property
     def stepstogo(self):
         """See `IBasicLaunchpadRequest`."""
@@ -1523,29 +1585,40 @@ class FakeAdapterMixin:
     during the setup of a test and they will be unregistered when the
     test completes.
     """
-    def registerAdapter(self, adapter_class, for_interfaces,
-                        provided_interface, name=None):
+
+    def registerAdapter(
+        self, adapter_class, for_interfaces, provided_interface, name=None
+    ):
         """Register an adapter from the required interfacs to the provided.
 
         eg. registerAdapter(
                 TestOtherThing, (IThing, ILayer), IOther, name='fnord')
         """
         getSiteManager().registerAdapter(
-            adapter_class, for_interfaces, provided_interface, name=name)
+            adapter_class, for_interfaces, provided_interface, name=name
+        )
         self.addCleanup(
-            getSiteManager().unregisterAdapter, adapter_class,
-            for_interfaces, provided_interface, name=name)
+            getSiteManager().unregisterAdapter,
+            adapter_class,
+            for_interfaces,
+            provided_interface,
+            name=name,
+        )
 
-    def registerAuthorizationAdapter(self, authorization_class,
-                                     for_interface, permission_name):
+    def registerAuthorizationAdapter(
+        self, authorization_class, for_interface, permission_name
+    ):
         """Register a security checker to test authorisation.
 
         eg. registerAuthorizationAdapter(
                 TestChecker, IPerson, 'launchpad.View')
         """
         self.registerAdapter(
-            authorization_class, (for_interface, ), IAuthorization,
-            name=permission_name)
+            authorization_class,
+            (for_interface,),
+            IAuthorization,
+            name=permission_name,
+        )
 
     def registerBrowserViewAdapter(self, view_class, for_interface, name):
         """Register a security checker to test authorization.
@@ -1553,13 +1626,13 @@ class FakeAdapterMixin:
         eg registerBrowserViewAdapter(TestView, IPerson, '+test-view')
         """
         self.registerAdapter(
-            view_class, (for_interface, IBrowserRequest), Interface,
-            name=name)
+            view_class, (for_interface, IBrowserRequest), Interface, name=name
+        )
 
     def getAdapter(self, for_interfaces, provided_interface, name=None):
         return getMultiAdapter(for_interfaces, provided_interface, name=name)
 
-    def registerUtility(self, component, for_interface, name=''):
+    def registerUtility(self, component, for_interface, name=""):
         try:
             current_commponent = getUtility(for_interface, name=name)
         except ComponentLookupError:
@@ -1567,12 +1640,16 @@ class FakeAdapterMixin:
         site_manager = getSiteManager()
         site_manager.registerUtility(component, for_interface, name)
         self.addCleanup(
-            site_manager.unregisterUtility, component, for_interface, name)
+            site_manager.unregisterUtility, component, for_interface, name
+        )
         if current_commponent is not None:
             # Restore the default utility.
             self.addCleanup(
-                site_manager.registerUtility, current_commponent,
-                for_interface, name)
+                site_manager.registerUtility,
+                current_commponent,
+                for_interface,
+                name,
+            )
 
 
 def clean_up_reactor():
@@ -1580,6 +1657,7 @@ def clean_up_reactor():
     # calls around.  They need to be updated to use Twisted correctly.
     # For the meantime, just blat the reactor.
     from twisted.internet import reactor
+
     for delayed_call in reactor.getDelayedCalls():
         delayed_call.cancel()
 

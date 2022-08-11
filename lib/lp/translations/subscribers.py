@@ -2,15 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'product_modified',
-    ]
+    "product_modified",
+]
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 
 
 def product_modified(product, event):

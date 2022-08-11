@@ -9,11 +9,11 @@ import _pythonpath  # noqa: F401
 
 from lp.archivepublisher.scripts.generate_ppa_htaccess import (
     HtaccessTokenGenerator,
-    )
+)
 from lp.services.config import config
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = HtaccessTokenGenerator(
-        'generate-ppa-htaccess', dbuser=config.generateppahtaccess.dbuser)
+        "generate-ppa-htaccess", dbuser=config.generateppahtaccess.dbuser
+    )
     script.lock_and_run()

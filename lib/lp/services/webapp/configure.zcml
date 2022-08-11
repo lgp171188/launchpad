@@ -8,6 +8,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <include file="errorlog.zcml" />
     <include file="database.zcml" />
 
@@ -147,17 +148,30 @@
         />
 
     <!-- Session machinery. -->
+    <adapter
+        factory="lp.services.webapp.session.Session"
+        provides="lp.services.webapp.interfaces.ISession"
+        permission="zope.Public"
+        />
+
+    <class class="lp.services.webapp.session.LaunchpadCookieClientIdManager">
+      <require
+          interface="lp.services.webapp.interfaces.IClientIdManager"
+          permission="zope.Public"
+          />
+    </class>
+
     <utility
         component="lp.services.webapp.session.idmanager"
-        provides="zope.session.interfaces.IClientIdManager"
+        provides="lp.services.webapp.interfaces.IClientIdManager"
         />
     <utility
         component="lp.services.webapp.pgsession.data_container"
-        provides="zope.session.interfaces.ISessionDataContainer"
+        provides="lp.services.webapp.interfaces.ISessionDataContainer"
         />
 
     <!-- Default favicon -->
-    <browser:favicon for="*" file="../../../canonical/launchpad/images/launchpad.png" />
+    <browser:favicon for="*" file="../../../canonical/launchpad/images/favicon.ico" />
 
     <!-- LaunchBag Utility -->
     <utility
@@ -210,7 +224,7 @@
     <!-- LaunchpadBrowserResponse needs to be able to find the session -->
     <adapter
         for="lp.services.webapp.servers.LaunchpadBrowserResponse"
-        provides="zope.session.interfaces.ISession"
+        provides="lp.services.webapp.interfaces.ISession"
         factory="lp.services.webapp.servers.adaptResponseToSession"
         />
 

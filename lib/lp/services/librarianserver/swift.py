@@ -4,21 +4,21 @@
 """Move files from Librarian disk storage into Swift."""
 
 __all__ = [
-    'SWIFT_CONTAINER_PREFIX',
-    'connection',
-    'connection_pools',
-    'filesystem_path',
-    'quiet_swiftclient',
-    'reconfigure_connection_pools',
-    'swift_location',
-    'to_swift',
-    ]
+    "SWIFT_CONTAINER_PREFIX",
+    "connection",
+    "connection_pools",
+    "filesystem_path",
+    "quiet_swiftclient",
+    "reconfigure_connection_pools",
+    "swift_location",
+    "to_swift",
+]
 
-from contextlib import contextmanager
 import hashlib
 import os.path
 import re
 import time
+from contextlib import contextmanager
 from urllib.parse import quote
 
 from swiftclient import client as swiftclient
@@ -27,9 +27,8 @@ from lp.services.config import config
 from lp.services.database.interfaces import IStandbyStore
 from lp.services.librarian.model import LibraryFileContent
 
-
-SWIFT_CONTAINER_PREFIX = 'librarian_'
-MAX_SWIFT_OBJECT_SIZE = 5 * 1024 ** 3  # 5GB Swift limit.
+SWIFT_CONTAINER_PREFIX = "librarian_"
+MAX_SWIFT_OBJECT_SIZE = 5 * 1024**3  # 5GB Swift limit.
 
 ONE_DAY = 24 * 60 * 60
 
@@ -52,9 +51,15 @@ def quiet_swiftclient(func, *args, **kwargs):
         swiftclient.logger.disabled = old_disabled
 
 
-def to_swift(log, start_lfc_id=None, end_lfc_id=None,
-             instance_id=None, num_instances=None, remove_func=False):
-    '''Copy a range of Librarian files from disk into Swift.
+def to_swift(
+    log,
+    start_lfc_id=None,
+    end_lfc_id=None,
+    instance_id=None,
+    num_instances=None,
+    remove_func=False,
+):
+    """Copy a range of Librarian files from disk into Swift.
 
     start and end identify the range of LibraryFileContent.id to
     migrate (inclusive).
@@ -65,7 +70,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
 
     If remove_func is set, it is called for every file after being copied into
     Swift.
-    '''
+    """
     swift_connection = connection_pools[-1].get()
     fs_root = os.path.abspath(config.librarian_server.root)
 
@@ -73,13 +78,19 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
         start_lfc_id = 1
     if end_lfc_id is None:
         # Maximum id capable of being stored on the filesystem - ffffffff
-        end_lfc_id = 0xffffffff
+        end_lfc_id = 0xFFFFFFFF
 
-    log.info("Walking disk store {} from {} to {}, inclusive".format(
-        fs_root, start_lfc_id, end_lfc_id))
+    log.info(
+        "Walking disk store {} from {} to {}, inclusive".format(
+            fs_root, start_lfc_id, end_lfc_id
+        )
+    )
     if instance_id is not None and num_instances is not None:
-        log.info("Parallel mode: instance ID {} of {}".format(
-            instance_id, num_instances))
+        log.info(
+            "Parallel mode: instance ID {} of {}".format(
+                instance_id, num_instances
+            )
+        )
 
     start_fs_path = filesystem_path(start_lfc_id)
     end_fs_path = filesystem_path(end_lfc_id)
@@ -91,8 +102,10 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
 
         # Don't recurse if we know this directory contains no matching
         # files.
-        if (start_fs_path[:len(dirpath)] > dirpath
-            or end_fs_path[:len(dirpath)] < dirpath):
+        if (
+            start_fs_path[: len(dirpath)] > dirpath
+            or end_fs_path[: len(dirpath)] < dirpath
+        ):
             dirnames[:] = []
             continue
         else:
@@ -100,9 +113,9 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
             # an aborted job.
             dirnames.sort()
 
-        log.debug('Scanning {} for matching files'.format(dirpath))
+        log.debug("Scanning {} for matching files".format(dirpath))
 
-        _filename_re = re.compile('^[0-9a-f]{2}$')
+        _filename_re = re.compile("^[0-9a-f]{2}$")
 
         for filename in sorted(filenames):
             fs_path = os.path.join(dirpath, filename)
@@ -110,7 +123,7 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
             # Skip any files with names that are not two hex digits.
             # This is noise in the filesystem database.
             if _filename_re.match(filename) is None:
-                log.debug('Skipping noise %s' % fs_path)
+                log.debug("Skipping noise %s" % fs_path)
                 continue
 
             if fs_path < start_fs_path:
@@ -121,32 +134,34 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
             # Skip files which have been modified recently, as they
             # may be uploads still in progress.
             if os.path.getmtime(fs_path) > time.time() - ONE_DAY:
-                log.debug('Skipping recent upload %s' % fs_path)
+                log.debug("Skipping recent upload %s" % fs_path)
                 continue
 
             # Reverse engineer the LibraryFileContent.id from the
             # file's path. Warn about and skip bad filenames.
-            rel_fs_path = fs_path[len(fs_root) + 1:]
-            hex_lfc = ''.join(rel_fs_path.split('/'))
+            rel_fs_path = fs_path[len(fs_root) + 1 :]
+            hex_lfc = "".join(rel_fs_path.split("/"))
             if len(hex_lfc) != 8:
                 log.warning(
-                    'Filename length fail, skipping {}'.format(fs_path))
+                    "Filename length fail, skipping {}".format(fs_path)
+                )
                 continue
             try:
                 lfc = int(hex_lfc, 16)
             except ValueError:
-                log.warning('Invalid hex fail, skipping {}'.format(fs_path))
+                log.warning("Invalid hex fail, skipping {}".format(fs_path))
                 continue
             if instance_id is not None and num_instances is not None:
                 if (lfc % num_instances) != instance_id:
                     continue
 
-            log.debug('Found {} ({})'.format(lfc, filename))
+            log.debug("Found {} ({})".format(lfc, filename))
 
-            if IStandbyStore(LibraryFileContent).get(
-                    LibraryFileContent, lfc) is None:
-                log.info("{} exists on disk but not in the db".format(
-                    lfc))
+            if (
+                IStandbyStore(LibraryFileContent).get(LibraryFileContent, lfc)
+                is None
+            ):
+                log.info("{} exists on disk but not in the db".format(lfc))
                 continue
 
             _to_swift_file(log, swift_connection, lfc, fs_path)
@@ -158,41 +173,49 @@ def to_swift(log, start_lfc_id=None, end_lfc_id=None,
 
 
 def _to_swift_file(log, swift_connection, lfc_id, fs_path):
-    '''Copy a single file into Swift.
+    """Copy a single file into Swift.
 
     This is separate for the benefit of tests; production code should use
     `to_swift` rather than calling this function directly, since this omits
     a number of checks.
-    '''
+    """
     container, obj_name = swift_location(lfc_id)
 
     try:
         quiet_swiftclient(swift_connection.head_container, container)
-        log.debug2('{} container already exists'.format(container))
+        log.debug2("{} container already exists".format(container))
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
-        log.info('Creating {} container'.format(container))
+        log.info("Creating {} container".format(container))
         swift_connection.put_container(container)
 
     try:
         headers = quiet_swiftclient(
-            swift_connection.head_object, container, obj_name)
+            swift_connection.head_object, container, obj_name
+        )
         log.debug(
             "{} already exists in Swift({}, {})".format(
-                lfc_id, container, obj_name))
-        got_size = int(headers['content-length'])
+                lfc_id, container, obj_name
+            )
+        )
+        got_size = int(headers["content-length"])
         expected_size = os.path.getsize(fs_path)
-        if 'X-Object-Manifest' not in headers and got_size != expected_size:
+        if "X-Object-Manifest" not in headers and got_size != expected_size:
             raise AssertionError(
-                '{} has incorrect size in Swift '
-                '(got {} bytes, expected {} bytes)'.format(
-                    lfc_id, got_size, expected_size))
+                "{} has incorrect size in Swift "
+                "(got {} bytes, expected {} bytes)".format(
+                    lfc_id, got_size, expected_size
+                )
+            )
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
-        log.info('Putting {} into Swift ({}, {})'.format(
-            lfc_id, container, obj_name))
+        log.info(
+            "Putting {} into Swift ({}, {})".format(
+                lfc_id, container, obj_name
+            )
+        )
         _put(log, swift_connection, lfc_id, container, obj_name, fs_path)
 
 
@@ -200,50 +223,59 @@ def rename(path):
     # It would be nice to move the file out of the tree entirely, but we
     # need to keep the backup on the same filesystem as the original
     # file.
-    os.rename(path, path + '.migrated')
+    os.rename(path, path + ".migrated")
 
 
 def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
     fs_size = os.path.getsize(fs_path)
-    fs_file = HashStream(open(fs_path, 'rb'))
+    fs_file = HashStream(open(fs_path, "rb"))
 
-    db_md5_hash = IStandbyStore(LibraryFileContent).get(
-        LibraryFileContent, lfc_id).md5
+    db_md5_hash = (
+        IStandbyStore(LibraryFileContent).get(LibraryFileContent, lfc_id).md5
+    )
 
-    assert hasattr(fs_file, 'tell') and hasattr(fs_file, 'seek'), '''
+    assert hasattr(fs_file, "tell") and hasattr(
+        fs_file, "seek"
+    ), """
         File not rewindable
-        '''
+        """
 
     if fs_size <= MAX_SWIFT_OBJECT_SIZE:
         swift_md5_hash = swift_connection.put_object(
-            container, obj_name, fs_file, fs_size)
+            container, obj_name, fs_file, fs_size
+        )
         disk_md5_hash = fs_file.hash.hexdigest()
         if not (disk_md5_hash == db_md5_hash == swift_md5_hash):
             log.error(
                 "LibraryFileContent({}) corrupt. "
                 "disk md5={}, db md5={}, swift md5={}".format(
-                    lfc_id, disk_md5_hash, db_md5_hash, swift_md5_hash))
+                    lfc_id, disk_md5_hash, db_md5_hash, swift_md5_hash
+                )
+            )
             try:
                 swift_connection.delete_object(container, obj_name)
             except Exception:
-                log.exception('Failed to delete corrupt file from Swift')
-            raise AssertionError('md5 mismatch')
+                log.exception("Failed to delete corrupt file from Swift")
+            raise AssertionError("md5 mismatch")
     else:
         # Large file upload. Create the segments first, then the
         # manifest. This order prevents partial downloads, and lets us
         # detect interrupted uploads and clean up.
         segment = 0
         while fs_file.tell() < fs_size:
-            assert segment <= 9999, 'Insane number of segments'
-            seg_name = '%s/%04d' % (obj_name, segment)
+            assert segment <= 9999, "Insane number of segments"
+            seg_name = "%s/%04d" % (obj_name, segment)
             seg_size = min(fs_size - fs_file.tell(), MAX_SWIFT_OBJECT_SIZE)
             md5_stream = HashStream(fs_file, length=seg_size)
             swift_md5_hash = swift_connection.put_object(
-                container, seg_name, md5_stream, seg_size)
+                container, seg_name, md5_stream, seg_size
+            )
             segment_md5_hash = md5_stream.hash.hexdigest()
-            assert swift_md5_hash == segment_md5_hash, (
-                "LibraryFileContent({}) segment {} upload corrupted".format(
-                    lfc_id, segment))
+            assert (
+                swift_md5_hash == segment_md5_hash
+            ), "LibraryFileContent({}) segment {} upload corrupted".format(
+                lfc_id, segment
+            )
             segment = segment + 1
 
         disk_md5_hash = fs_file.hash.hexdigest()
@@ -253,22 +285,25 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
             log.error(
                 "Large LibraryFileContent({}) corrupt. "
                 "disk md5={}, db_md5={}".format(
-                    lfc_id, disk_md5_hash, db_md5_hash))
-            raise AssertionError('md5 mismatch')
+                    lfc_id, disk_md5_hash, db_md5_hash
+                )
+            )
+            raise AssertionError("md5 mismatch")
 
-        manifest = '{}/{}/'.format(quote(container), quote(obj_name))
-        manifest_headers = {'X-Object-Manifest': manifest}
+        manifest = "{}/{}/".format(quote(container), quote(obj_name))
+        manifest_headers = {"X-Object-Manifest": manifest}
         swift_connection.put_object(
-            container, obj_name, b'', 0, headers=manifest_headers)
+            container, obj_name, b"", 0, headers=manifest_headers
+        )
 
 
 def swift_location(lfc_id):
-    '''Return the (container, obj_name) used to store a file.
+    """Return the (container, obj_name) used to store a file.
 
     Per https://answers.launchpad.net/swift/+question/181977, we can't
     simply stuff everything into one container.
-    '''
-    assert isinstance(lfc_id, int), 'Not a LibraryFileContent.id'
+    """
+    assert isinstance(lfc_id, int), "Not a LibraryFileContent.id"
 
     # Don't change this unless you are also going to rebuild the Swift
     # storage, as objects will no longer be found in the expected
@@ -285,8 +320,8 @@ def swift_location(lfc_id):
 
 def filesystem_path(lfc_id):
     from lp.services.librarianserver.storage import _relFileLocation
-    return os.path.join(
-        config.librarian_server.root, _relFileLocation(lfc_id))
+
+    return os.path.join(config.librarian_server.root, _relFileLocation(lfc_id))
 
 
 class SwiftStream:
@@ -301,13 +336,13 @@ class SwiftStream:
 
     def read(self, size):
         if self.closed:
-            raise ValueError('I/O operation on closed file')
+            raise ValueError("I/O operation on closed file")
 
         if self._swift_connection is None:
-            return b''
+            return b""
 
         if size == 0:
-            return b''
+            return b""
 
         return_chunks = []
         return_size = 0
@@ -329,7 +364,7 @@ class SwiftStream:
             return_size += len(return_chunks[-1])
 
         self._offset += return_size
-        return b''.join(return_chunks)
+        return b"".join(return_chunks)
 
     def _next_chunk(self):
         try:
@@ -345,7 +380,7 @@ class SwiftStream:
 
     def seek(self, offset):
         if offset < self._offset:
-            raise NotImplementedError('rewind')  # Rewind not supported
+            raise NotImplementedError("rewind")  # Rewind not supported
         else:
             self.read(offset - self._offset)
 
@@ -355,6 +390,7 @@ class SwiftStream:
 
 class HashStream:
     """Read a file while calculating a checksum as we go."""
+
     def __init__(self, stream, length=None, hash_factory=hashlib.md5):
         self._stream = stream
         self._length = self._remaining = length
@@ -364,7 +400,7 @@ class HashStream:
     def read(self, size=-1):
         if self._remaining is not None:
             if self._remaining <= 0:
-                return b''
+                return b""
             size = min(size, self._remaining)
         chunk = self._stream.read(size)
         if self._remaining is not None:
@@ -386,8 +422,14 @@ class HashStream:
 class ConnectionPool:
     MAX_POOL_SIZE = 10
 
-    def __init__(self, os_auth_url, os_username, os_password, os_tenant_name,
-                 os_auth_version):
+    def __init__(
+        self,
+        os_auth_url,
+        os_username,
+        os_password,
+        os_tenant_name,
+        os_auth_version,
+    ):
         self.os_auth_url = os_auth_url
         self.os_username = os_username
         self.os_password = os_password
@@ -399,22 +441,23 @@ class ConnectionPool:
         self._pool = []
 
     def get(self):
-        '''Return a connection from the pool, or a fresh connection.'''
+        """Return a connection from the pool, or a fresh connection."""
         try:
             return self._pool.pop()
         except IndexError:
             return self._new_connection()
 
     def put(self, swift_connection):
-        '''Put a connection back in the pool for reuse.
+        """Put a connection back in the pool for reuse.
 
         Only call this if the connection is in a usable state. If an
         exception has been raised (apart from a 404), don't trust the
         swift_connection and throw it away.
-        '''
+        """
         if not isinstance(swift_connection, swiftclient.Connection):
             raise AssertionError(
-                "%r is not a swiftclient Connection." % swift_connection)
+                "%r is not a swiftclient Connection." % swift_connection
+            )
         if swift_connection not in self._pool:
             self._pool.append(swift_connection)
             while len(self._pool) > self.MAX_POOL_SIZE:
@@ -428,7 +471,7 @@ class ConnectionPool:
             tenant_name=self.os_tenant_name,
             auth_version=self.os_auth_version,
             timeout=float(config.librarian_server.swift_timeout),
-            )
+        )
 
 
 connection_pools = []
@@ -450,7 +493,9 @@ def reconfigure_connection_pools():
                 config.librarian_server.old_os_username,
                 config.librarian_server.old_os_password,
                 config.librarian_server.old_os_tenant_name,
-                config.librarian_server.old_os_auth_version))
+                config.librarian_server.old_os_auth_version,
+            )
+        )
     if config.librarian_server.os_auth_url:
         connection_pools.append(
             ConnectionPool(
@@ -458,7 +503,9 @@ def reconfigure_connection_pools():
                 config.librarian_server.os_username,
                 config.librarian_server.os_password,
                 config.librarian_server.os_tenant_name,
-                config.librarian_server.os_auth_version))
+                config.librarian_server.os_auth_version,
+            )
+        )
 
 
 reconfigure_connection_pools()

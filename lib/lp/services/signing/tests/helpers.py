@@ -4,8 +4,8 @@
 """Helper functions for code testing live here."""
 
 __all__ = [
-    'SigningServiceClientFixture',
-    ]
+    "SigningServiceClientFixture",
+]
 
 from unittest import mock
 
@@ -14,7 +14,7 @@ from nacl.public import PrivateKey
 
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
-    )
+)
 from lp.testing.fixture import ZopeUtilityFixture
 
 
@@ -27,6 +27,7 @@ class SigningServiceClientFixture(fixtures.Fixture):
 
     Both generate_returns and sign_returns format is the following:
         [(key_type, api_return_dict), (key_type, api_return_dict), ...]"""
+
     def __init__(self, factory):
         self.factory = factory
 
@@ -43,31 +44,33 @@ class SigningServiceClientFixture(fixtures.Fixture):
         self.sign_returns = []
         self.inject_returns = []
 
-    def _generate(self, key_type, description,
-                  openpgp_key_algorithm=None, length=None):
+    def _generate(
+        self, key_type, description, openpgp_key_algorithm=None, length=None
+    ):
         key = bytes(PrivateKey.generate().public_key)
         data = {
             "fingerprint": self.factory.getUniqueHexString(40).upper(),
             "public-key": key,
-            }
+        }
         self.generate_returns.append((key_type, data))
         return data
 
     def _sign(self, key_type, fingerprint, message_name, message, mode):
         key = bytes(PrivateKey.generate().public_key)
-        signed_msg = (
-            "signed with key_type={} mode={}".format(
-                key_type.name, mode.name).encode("UTF-8"))
+        signed_msg = "signed with key_type={} mode={}".format(
+            key_type.name, mode.name
+        ).encode("UTF-8")
         data = {
-            'public-key': key,
-            'signed-message': signed_msg,
-            }
+            "public-key": key,
+            "signed-message": signed_msg,
+        }
         self.sign_returns.append((key_type, data))
         return data
 
-    def _inject(self, key_type, private_key, public_key, description,
-                created_at):
-        data = {'fingerprint': self.factory.getUniqueHexString(40).upper()}
+    def _inject(
+        self, key_type, private_key, public_key, description, created_at
+    ):
+        data = {"fingerprint": self.factory.getUniqueHexString(40).upper()}
         self.inject_returns.append(data)
         return data
 

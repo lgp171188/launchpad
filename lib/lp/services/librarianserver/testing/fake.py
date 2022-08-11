@@ -11,30 +11,27 @@ tests.
 """
 
 __all__ = [
-    'FakeLibrarian',
-    ]
+    "FakeLibrarian",
+]
 
 import hashlib
 import io
 from urllib.parse import urljoin
 
-from fixtures import Fixture
 import transaction
-from transaction.interfaces import ISynchronizer
 import zope.component
+from fixtures import Fixture
+from transaction.interfaces import ISynchronizer
 from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.librarian.client import get_libraryfilealias_download_path
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
-    ILibrarianClient,
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
-    )
-from lp.services.librarian.model import (
-    LibraryFileAlias,
-    LibraryFileContent,
-    )
+    ILibrarianClient,
+)
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 
 
 class InstrumentedLibraryFileAlias(LibraryFileAlias):
@@ -48,7 +45,8 @@ class InstrumentedLibraryFileAlias(LibraryFileAlias):
             raise LookupError(
                 "Attempting to retrieve file '%s' from the fake "
                 "librarian, but the file has not yet been committed to "
-                "storage." % self.filename)
+                "storage." % self.filename
+            )
 
     def open(self, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
         self.checkCommitted()
@@ -82,14 +80,16 @@ class FakeLibrarian(Fixture):
             if site_manager.unregisterUtility(original, utility):
                 # We really disabled a utility, restore it later.
                 self.addCleanup(
-                    zope.component.provideUtility, original, utility)
+                    zope.component.provideUtility, original, utility
+                )
             zope.component.provideUtility(self, utility)
             self.addCleanup(site_manager.unregisterUtility, self, utility)
 
     def addFile(self, name, size, file, contentType, expires=None):
         """See `IFileUploadClient`."""
         return self._storeFile(
-            name, size, file, contentType, expires=expires).id
+            name, size, file, contentType, expires=expires
+        ).id
 
     def _storeFile(self, name, size, file, contentType, expires=None):
         """Like `addFile`, but returns the `LibraryFileAlias`."""
@@ -98,7 +98,8 @@ class FakeLibrarian(Fixture):
         if real_size != size:
             raise AssertionError(
                 "Uploading '%s' to the fake librarian with incorrect "
-                "size %d; actual size is %d." % (name, size, real_size))
+                "size %d; actual size is %d." % (name, size, real_size)
+            )
 
         file_ref = self._makeLibraryFileContent(content)
         alias = self._makeAlias(file_ref.id, name, content, contentType)
@@ -120,8 +121,9 @@ class FakeLibrarian(Fixture):
         path = get_libraryfilealias_download_path(alias.id, alias.filename)
         return urljoin(self.download_url, path)
 
-    def getFileByAlias(self, aliasID,
-                       timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
+    def getFileByAlias(
+        self, aliasID, timeout=LIBRARIAN_SERVER_DEFAULT_TIMEOUT
+    ):
         """See `IFileDownloadClient`."""
         alias = self[aliasID]
         alias.checkCommitted()
@@ -143,7 +145,8 @@ class FakeLibrarian(Fixture):
     def _makeAlias(self, file_id, name, content, content_type):
         """Create a `LibraryFileAlias`."""
         alias = InstrumentedLibraryFileAlias(
-            contentID=file_id, filename=name, mimetype=content_type)
+            contentID=file_id, filename=name, mimetype=content_type
+        )
         alias.content_bytes = content
         return alias
 
@@ -155,25 +158,36 @@ class FakeLibrarian(Fixture):
         sha256 = hashlib.sha256(content).hexdigest()
 
         content_object = LibraryFileContent(
-            filesize=size, md5=md5, sha1=sha1, sha256=sha256)
+            filesize=size, md5=md5, sha1=sha1, sha256=sha256
+        )
         return content_object
 
-    def create(self, name, size, file, contentType, expires=None,
-               debugID=None, restricted=False, allow_zero_length=False):
-        "See `ILibraryFileAliasSet`."""
+    def create(
+        self,
+        name,
+        size,
+        file,
+        contentType,
+        expires=None,
+        debugID=None,
+        restricted=False,
+        allow_zero_length=False,
+    ):
+        "See `ILibraryFileAliasSet`." ""
         return self._storeFile(name, size, file, contentType, expires=expires)
 
     def __getitem__(self, key):
-        "See `ILibraryFileAliasSet`."""
+        "See `ILibraryFileAliasSet`." ""
         alias = self.aliases.get(key)
         if alias is None:
             raise LookupError(
                 "Attempting to retrieve file alias %d from the fake "
-                "librarian, who has never heard of it." % key)
+                "librarian, who has never heard of it." % key
+            )
         return alias
 
     def findBySHA256(self, sha256):
-        "See `ILibraryFileAliasSet`."""
+        "See `ILibraryFileAliasSet`." ""
         for alias in self.aliases.values():
             if alias.content.sha256 == sha256:
                 return alias

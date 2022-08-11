@@ -2,21 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DEFAULT_FLAVOR',
-    'DisallowedStore',
-    'IDatabasePolicy',
-    'IDBObject',
-    'IMasterObject',
-    'IMasterStore',
-    'IRequestExpired',
-    'ISQLBase',
-    'IStandbyStore',
-    'IStore',
-    'IStoreSelector',
-    'MAIN_STORE',
-    'PRIMARY_FLAVOR',
-    'STANDBY_FLAVOR',
-    ]
+    "DEFAULT_FLAVOR",
+    "DisallowedStore",
+    "IDatabasePolicy",
+    "IDBObject",
+    "IMasterObject",
+    "IMasterStore",
+    "IRequestExpired",
+    "ISQLBase",
+    "IStandbyStore",
+    "IStore",
+    "IStoreSelector",
+    "MAIN_STORE",
+    "PRIMARY_FLAVOR",
+    "STANDBY_FLAVOR",
+]
 
 
 from zope.interface import Interface
@@ -35,6 +35,7 @@ class IRequestExpired(IRuntimeError):
 # think it is ever used though ...
 class ISQLBase(Interface):
     """An extension of ISQLObject that provides an ID."""
+
     id = Int(title="The integer ID for the instance")
 
 
@@ -42,12 +43,12 @@ class ISQLBase(Interface):
 # Database policies
 #
 
-MAIN_STORE = 'main'  # The main database.
+MAIN_STORE = "main"  # The main database.
 ALL_STORES = frozenset([MAIN_STORE])
 
-DEFAULT_FLAVOR = 'default'  # Default flavor for current state.
-PRIMARY_FLAVOR = 'primary'  # The primary database.
-STANDBY_FLAVOR = 'standby'  # A standby database.
+DEFAULT_FLAVOR = "default"  # Default flavor for current state.
+PRIMARY_FLAVOR = "primary"  # The primary database.
+STANDBY_FLAVOR = "standby"  # A standby database.
 
 
 class IDatabasePolicy(Interface):
@@ -56,6 +57,7 @@ class IDatabasePolicy(Interface):
     The publisher adapts the request to `IDatabasePolicy` to
     instantiate the policy for the current request.
     """
+
     def __enter__():
         """Standard Python context manager interface.
 
@@ -106,6 +108,7 @@ class IStoreSelector(Interface):
     databases as we are prepared to pay for, so they will perform better
     because they are less loaded.
     """
+
     def push(dbpolicy):
         """Install an `IDatabasePolicy` as the default for this thread."""
 
@@ -145,6 +148,7 @@ class IStoreSelector(Interface):
 
 class IStore(Interface):
     """A storm.store.Store."""
+
     def get(cls, key):
         """See storm.store.Store."""
 

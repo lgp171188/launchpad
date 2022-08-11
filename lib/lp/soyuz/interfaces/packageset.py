@@ -4,11 +4,11 @@
 """Packageset interfaces."""
 
 __all__ = [
-    'DuplicatePackagesetName',
-    'IPackageset',
-    'IPackagesetSet',
-    'NoSuchPackageSet',
-    ]
+    "DuplicatePackagesetName",
+    "IPackageset",
+    "IPackagesetSet",
+    "NoSuchPackageSet",
+]
 
 import http.client
 
@@ -26,17 +26,11 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    )
+)
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Datetime, Int, List, TextLine
 
 from lp import _
 from lp.app.errors import NameLookupFailed
@@ -44,11 +38,16 @@ from lp.app.validators.name import name_validator
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
+from lp.services.webservice.apihelpers import (
+    patch_collection_return_type,
+    patch_plain_parameter_type,
+)
 from lp.soyuz.interfaces.packagesetgroup import IPackagesetGroup
 
 
 class NoSuchPackageSet(NameLookupFailed):
     """Raised when we try to look up an PackageSet that doesn't exist."""
+
     _message_prefix = "No such package set (in the specified distro series)"
 
 
@@ -57,39 +56,68 @@ class DuplicatePackagesetName(Exception):
     """Raised for packagesets with the same name and distroseries."""
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetViewOnly(IHasOwner):
     """A read-only interface for package sets."""
 
-    id = exported(Int(title=_('ID'), required=True, readonly=True))
+    id = exported(Int(title=_("ID"), required=True, readonly=True))
 
-    date_created = exported(Datetime(
-        title=_("Date Created"), required=True, readonly=True,
-        description=_("The creation date/time for the package set at hand.")))
+    date_created = exported(
+        Datetime(
+            title=_("Date Created"),
+            required=True,
+            readonly=True,
+            description=_(
+                "The creation date/time for the package set at hand."
+            ),
+        )
+    )
 
-    owner = exported(Reference(
-        IPerson, title=_("Person"), required=True,
-        description=_("The person who owns this package set.")))
+    owner = exported(
+        Reference(
+            IPerson,
+            title=_("Person"),
+            required=True,
+            description=_("The person who owns this package set."),
+        )
+    )
 
-    name = exported(TextLine(
-        title=_('Valid package set name'),
-        required=True, constraint=name_validator))
+    name = exported(
+        TextLine(
+            title=_("Valid package set name"),
+            required=True,
+            constraint=name_validator,
+        )
+    )
 
-    description = exported(TextLine(
-        title=_("Description"), required=True,
-        description=_("The description for the package set at hand.")))
+    description = exported(
+        TextLine(
+            title=_("Description"),
+            required=True,
+            description=_("The description for the package set at hand."),
+        )
+    )
 
-    distroseries = exported(Reference(
-        IDistroSeries, title=_("Distribution series"), required=True,
-        readonly=True,
-        description=_(
-            "The distroseries to which this package set is related.")))
+    distroseries = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Distribution series"),
+            required=True,
+            readonly=True,
+            description=_(
+                "The distroseries to which this package set is related."
+            ),
+        )
+    )
 
     packagesetgroup = Reference(
-        IPackagesetGroup, title=_('Package set group'), required=True,
+        IPackagesetGroup,
+        title=_("Package set group"),
+        required=True,
         readonly=True,
         description=_(
-            'Used internally to link package sets across distro series.'))
+            "Used internally to link package sets across distro series."
+        ),
+    )
 
     def sourcesIncluded(direct_inclusion=False):
         """Get all source names associated with this package set.
@@ -104,10 +132,11 @@ class IPackagesetViewOnly(IHasOwner):
             instances.
         """
 
-    @operation_parameters(
-        direct_inclusion=Bool(required=False))
+    @operation_parameters(direct_inclusion=Bool(required=False))
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def setsIncludedBy(direct_inclusion=False):
         """Get all package sets that include this one.
 
@@ -118,10 +147,11 @@ class IPackagesetViewOnly(IHasOwner):
         :return: A (potentially empty) sequence of `IPackageset` instances.
         """
 
-    @operation_parameters(
-        direct_inclusion=Bool(required=False))
+    @operation_parameters(direct_inclusion=Bool(required=False))
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def setsIncluded(direct_inclusion=False):
         """Get all package sets that are included by this one.
 
@@ -159,9 +189,9 @@ class IPackagesetViewOnly(IHasOwner):
             instances.
         """
 
-    @operation_parameters(
-        direct_inclusion=Bool(required=False))
+    @operation_parameters(direct_inclusion=Bool(required=False))
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesIncluded(direct_inclusion=False):
         """Get all source names associated with this package set.
 
@@ -192,10 +222,15 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         other_package_set=Reference(
+            # Really IPackageset, patched below.
             Interface,
-            title=_('The package set we are comparing to.'), required=True),
-        direct_inclusion=Bool(required=False))
+            title=_("The package set we are comparing to."),
+            required=True,
+        ),
+        direct_inclusion=Bool(required=False),
+    )
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesSharedBy(other_package_set, direct_inclusion=False):
         """Get source package names also included by another package set.
 
@@ -216,10 +251,15 @@ class IPackagesetViewOnly(IHasOwner):
 
     @operation_parameters(
         other_package_set=Reference(
+            # Really IPackageset, patched below.
             Interface,
-            title=_('The package set we are comparing to.'), required=True),
-        direct_inclusion=Bool(required=False))
+            title=_("The package set we are comparing to."),
+            required=True,
+        ),
+        direct_inclusion=Bool(required=False),
+    )
     @export_read_operation()
+    @operation_for_version("beta")
     def getSourcesNotSharedBy(other_package_set, direct_inclusion=False):
         """Get source package names not included by another package set.
 
@@ -238,8 +278,10 @@ class IPackagesetViewOnly(IHasOwner):
             names.
         """
 
+    # Really IPackageset, patched below.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def relatedSets():
         """Get all other package sets in this set's `PackagesetGroup`.
 
@@ -250,7 +292,6 @@ class IPackagesetViewOnly(IHasOwner):
         """
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetEdit(Interface):
     """A writeable interface for package sets."""
 
@@ -279,8 +320,11 @@ class IPackagesetEdit(Interface):
 
     @operation_parameters(
         names=List(
-        title=_("A list of source package names."), value_type=TextLine()))
+            title=_("A list of source package names."), value_type=TextLine()
+        )
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def addSources(names):
         """Add the named source packages to this package set.
 
@@ -301,8 +345,11 @@ class IPackagesetEdit(Interface):
 
     @operation_parameters(
         names=List(
-        title=_("A list of source package names."), value_type=TextLine()))
+            title=_("A list of source package names."), value_type=TextLine()
+        )
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def removeSources(names):
         """Remove the named source packages from this package set.
 
@@ -318,8 +365,11 @@ class IPackagesetEdit(Interface):
 
     @operation_parameters(
         names=List(
-        title=_("A list of package set names."), value_type=TextLine()))
+            title=_("A list of package set names."), value_type=TextLine()
+        )
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def addSubsets(names):
         """Add the named package sets as subsets to this package set.
 
@@ -339,8 +389,11 @@ class IPackagesetEdit(Interface):
 
     @operation_parameters(
         names=List(
-        title=_("A list of package set names."), value_type=TextLine()))
+            title=_("A list of package set names."), value_type=TextLine()
+        )
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def removeSubsets(names):
         """Remove the named package subsets from this package set.
 
@@ -355,21 +408,27 @@ class IPackagesetEdit(Interface):
         """
 
     @export_destructor_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def destroySelf():
         """Delete the package set."""
 
 
-@exported_as_webservice_entry(publish_web_link=False)
 class IPackagesetRestricted(Interface):
     """A writeable interface for restricted attributes of package sets."""
 
-    relative_build_score = exported(Int(
-        title=_("Build score"), required=True, readonly=False,
-        description=_("Build score bonus for packages in this package set.")))
+    relative_build_score = exported(
+        Int(
+            title=_("Build score"),
+            required=True,
+            readonly=False,
+            description=_(
+                "Build score bonus for packages in this package set."
+            ),
+        )
+    )
 
 
-@exported_as_webservice_entry(publish_web_link=False)
+@exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IPackageset(IPackagesetViewOnly, IPackagesetEdit, IPackagesetRestricted):
     """An interface for package sets."""
 
@@ -378,23 +437,40 @@ class IPackagesetSetEdit(Interface):
     """Multiple package sets operations requiring `launchpad.Edit`."""
 
     @operation_parameters(
-        name=TextLine(title=_('Valid package set name'), required=True),
+        name=TextLine(title=_("Valid package set name"), required=True),
         description=TextLine(
-            title=_('Package set description'), required=True),
+            title=_("Package set description"), required=True
+        ),
         owner=Reference(
-            IPerson, title=_("Person"), required=True, readonly=True,
-            description=_("The person who owns this package set.")),
+            IPerson,
+            title=_("Person"),
+            required=True,
+            readonly=True,
+            description=_("The person who owns this package set."),
+        ),
         distroseries=Reference(
-            IDistroSeries, title=_("Distroseries"), required=True,
-            readonly=True, description=_(
+            IDistroSeries,
+            title=_("Distroseries"),
+            required=True,
+            readonly=True,
+            description=_(
                 "The distribution series to which the packageset "
-                "is related.")),
+                "is related."
+            ),
+        ),
         related_set=Reference(
-            IPackageset, title=_("Related package set"), required=False,
-            readonly=True, description=_(
+            IPackageset,
+            title=_("Related package set"),
+            required=False,
+            readonly=True,
+            description=_(
                 "The new package set will share the package set group "
-                "with this one.")))
+                "with this one."
+            ),
+        ),
+    )
     @export_factory_operation(IPackageset, [])
+    @operation_for_version("beta")
     def new(name, description, owner, distroseries, related_set=None):
         """Create a new package set.
 
@@ -417,10 +493,12 @@ class IPackagesetSet(IPackagesetSetEdit):
     """An interface for multiple package sets."""
 
     @operation_parameters(
-        name=copy_field(IPackageset['name']),
-        distroseries=copy_field(IPackageset['distroseries']))
+        name=copy_field(IPackageset["name"]),
+        distroseries=copy_field(IPackageset["distroseries"]),
+    )
     @operation_returns_entry(IPackageset)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(distroseries, name):
         """Return the single package set with the given name (if any).
 
@@ -449,9 +527,13 @@ class IPackagesetSet(IPackagesetSetEdit):
 
     @operation_parameters(
         distroseries=copy_field(
-            IPackageset['distroseries'], description=_(
+            IPackageset["distroseries"],
+            description=_(
                 "The distribution series to which the packagesets "
-                "are related.")))
+                "are related."
+            ),
+        )
+    )
     @operation_returns_collection_of(IPackageset)
     @export_read_operation()
     @operation_for_version("beta")
@@ -476,13 +558,17 @@ class IPackagesetSet(IPackagesetSetEdit):
 
     @operation_parameters(
         sourcepackagename=TextLine(
-            title=_('Source package name'), required=True),
-        distroseries=copy_field(IPackageset['distroseries'], required=False),
-        direct_inclusion=Bool(required=False))
+            title=_("Source package name"), required=True
+        ),
+        distroseries=copy_field(IPackageset["distroseries"], required=False),
+        direct_inclusion=Bool(required=False),
+    )
     @operation_returns_collection_of(IPackageset)
     @export_read_operation()
-    def setsIncludingSource(sourcepackagename, distroseries=None,
-                            direct_inclusion=False):
+    @operation_for_version("beta")
+    def setsIncludingSource(
+        sourcepackagename, distroseries=None, direct_inclusion=False
+    ):
         """Get the package sets that include this source package.
 
         Return all package sets that directly or indirectly include the
@@ -501,3 +587,14 @@ class IPackagesetSet(IPackagesetSetEdit):
             name cannot be found.
         :return: A (potentially empty) sequence of `IPackageset` instances.
         """
+
+
+patch_collection_return_type(IPackageset, "setsIncluded", IPackageset)
+patch_collection_return_type(IPackageset, "setsIncludedBy", IPackageset)
+patch_plain_parameter_type(
+    IPackageset, "getSourcesSharedBy", "other_package_set", IPackageset
+)
+patch_plain_parameter_type(
+    IPackageset, "getSourcesNotSharedBy", "other_package_set", IPackageset
+)
+patch_collection_return_type(IPackageset, "relatedSets", IPackageset)

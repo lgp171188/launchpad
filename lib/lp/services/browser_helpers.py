@@ -4,9 +4,9 @@
 """Helpers for examining the browser user_agent header."""
 
 __all__ = [
-    'get_user_agent_distroseries',
-    'get_plural_text',
-    ]
+    "get_user_agent_distroseries",
+    "get_plural_text",
+]
 
 import re
 
@@ -18,13 +18,13 @@ def get_user_agent_distroseries(user_agent_string):
         return None
 
     # We're matching on the Ubuntu/10.09 section of the user-agent string.
-    pattern = r'Ubuntu/(?P<version>\d*\.\d*)'
+    pattern = r"Ubuntu/(?P<version>\d*\.\d*)"
     match = re.search(pattern, user_agent_string)
 
     if match is not None:
         # Great, the browser is telling us the platform is Ubuntu.
         # Now grab the Ubuntu series/version number:
-        return match.groupdict()['version']
+        return match.groupdict()["version"]
     else:
         return None
 

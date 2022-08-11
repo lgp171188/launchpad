@@ -18,25 +18,18 @@ As such, it was felt more appropriate to separate out the scripts,
 even though there is some code duplication.
 """
 
-__all__ = ['check_script']
+__all__ = ["check_script"]
 
 import _pythonpath  # noqa: F401
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
-from optparse import OptionParser
 import sys
+from datetime import datetime, timedelta
+from optparse import OptionParser
 from time import strftime
 
 from lp.scripts.scriptmonitor import check_script
 from lp.services.database.sqlbase import connect
-from lp.services.scripts import (
-    db_options,
-    logger,
-    logger_options,
-    )
+from lp.services.scripts import db_options, logger, logger_options
 
 
 def main():
@@ -45,8 +38,8 @@ def main():
     # this should be moved into a testable location.
     # Also duplicated code in scripts/script-monitor.py
     parser = OptionParser(
-            '%prog [options] (minutes) (host:scriptname) [host:scriptname]'
-            )
+        "%prog [options] (minutes) (host:scriptname) [host:scriptname]"
+    )
     db_options(parser)
     logger_options(parser)
 
@@ -64,12 +57,13 @@ def main():
 
         completed_from = strftime("%Y-%m-%d %H:%M:%S", start_date.timetuple())
         completed_to = strftime(
-            "%Y-%m-%d %H:%M:%S", datetime.now().timetuple())
+            "%Y-%m-%d %H:%M:%S", datetime.now().timetuple()
+        )
 
         hosts_scripts = []
         for arg in args:
             try:
-                hostname, scriptname = arg.split(':')
+                hostname, scriptname = arg.split(":")
             except TypeError:
                 print("%r is not in the format 'host:scriptname'" % arg)
                 return 3
@@ -86,14 +80,15 @@ def main():
         error_found = False
         msg = []
         for hostname, scriptname in hosts_scripts:
-            failure_msg = check_script(con, log, hostname,
-                scriptname, completed_from, completed_to)
+            failure_msg = check_script(
+                con, log, hostname, scriptname, completed_from, completed_to
+            )
             if failure_msg is not None:
                 msg.append("%s:%s" % (hostname, scriptname))
                 error_found = True
         if error_found:
             # Construct our return message
-            print("Scripts failed to run: %s" % ', '.join(msg))
+            print("Scripts failed to run: %s" % ", ".join(msg))
             return 2
         else:
             # Construct our return message
@@ -105,5 +100,6 @@ def main():
         print("Unhandled exception: %s %r" % (e.__class__.__name__, str(e)))
         return 3
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

@@ -4,19 +4,19 @@
 """Bug tracker views."""
 
 __all__ = [
-    'BugTrackerAddView',
-    'BugTrackerComponentGroupNavigation',
-    'BugTrackerEditView',
-    'BugTrackerEditComponentView',
-    'BugTrackerNavigation',
-    'BugTrackerNavigationMenu',
-    'BugTrackerSetBreadcrumb',
-    'BugTrackerSetContextMenu',
-    'BugTrackerSetNavigation',
-    'BugTrackerSetView',
-    'BugTrackerView',
-    'RemoteBug',
-    ]
+    "BugTrackerAddView",
+    "BugTrackerComponentGroupNavigation",
+    "BugTrackerEditView",
+    "BugTrackerEditComponentView",
+    "BugTrackerNavigation",
+    "BugTrackerNavigationMenu",
+    "BugTrackerSetBreadcrumb",
+    "BugTrackerSetContextMenu",
+    "BugTrackerSetNavigation",
+    "BugTrackerSetView",
+    "BugTrackerView",
+    "RemoteBug",
+]
 
 from itertools import chain
 
@@ -31,10 +31,10 @@ from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
@@ -47,48 +47,40 @@ from lp.bugs.interfaces.bugtracker import (
     IBugTrackerComponentGroup,
     IBugTrackerSet,
     IRemoteBug,
-    )
+)
 from lp.services.database.sqlbase import flush_database_updates
-from lp.services.helpers import (
-    english_list,
-    shortlist,
-    )
+from lp.services.helpers import english_list, shortlist
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
     GetitemNavigation,
     LaunchpadView,
     Link,
     Navigation,
+    canonical_url,
     redirection,
     stepthrough,
     structured,
-    )
+)
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import (
     ActiveBatchNavigator,
     BatchNavigator,
     InactiveBatchNavigator,
-    )
+)
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.menu import NavigationMenu
 
-
 # A set of bug tracker types for which there can only ever be one bug
 # tracker.
-SINGLE_INSTANCE_TRACKERS = (
-    BugTrackerType.DEBBUGS,
-    )
+SINGLE_INSTANCE_TRACKERS = (BugTrackerType.DEBBUGS,)
 
 # A set of bug tracker types that we should not allow direct creation
 # of.
-NO_DIRECT_CREATION_TRACKERS = (
-    SINGLE_INSTANCE_TRACKERS + (
-        BugTrackerType.EMAILADDRESS,
-        )
-    )
+NO_DIRECT_CREATION_TRACKERS = SINGLE_INSTANCE_TRACKERS + (
+    BugTrackerType.EMAILADDRESS,
+)
 
 
 class BugTrackerSetNavigation(GetitemNavigation):
@@ -100,11 +92,11 @@ class BugTrackerSetContextMenu(ContextMenu):
 
     usedfor = IBugTrackerSet
 
-    links = ['newbugtracker']
+    links = ["newbugtracker"]
 
     def newbugtracker(self):
-        text = 'Register another bug tracker'
-        return Link('+newbugtracker', text, icon='add')
+        text = "Register another bug tracker"
+        return Link("+newbugtracker", text, icon="add")
 
 
 class BugTrackerAddView(LaunchpadFormView):
@@ -112,40 +104,54 @@ class BugTrackerAddView(LaunchpadFormView):
     page_title = "Register an external bug tracker"
     schema = IBugTracker
     label = page_title
-    field_names = ['bugtrackertype', 'name', 'title', 'baseurl', 'summary',
-                   'contactdetails']
+    field_names = [
+        "bugtrackertype",
+        "name",
+        "title",
+        "baseurl",
+        "summary",
+        "contactdetails",
+    ]
 
     def setUpWidgets(self, context=None):
         # We only show those bug tracker types for which there can be
         # multiple instances in the bugtrackertype Choice widget.
         vocab_items = [
-            item for item in BugTrackerType.items.items
-                if item not in NO_DIRECT_CREATION_TRACKERS]
+            item
+            for item in BugTrackerType.items.items
+            if item not in NO_DIRECT_CREATION_TRACKERS
+        ]
         fields = []
         for field_name in self.field_names:
-            if field_name == 'bugtrackertype':
-                fields.append(form.FormField(
-                    Choice(__name__='bugtrackertype',
-                           title=_('Bug Tracker Type'),
-                           values=vocab_items,
-                           default=BugTrackerType.BUGZILLA)))
+            if field_name == "bugtrackertype":
+                fields.append(
+                    form.FormField(
+                        Choice(
+                            __name__="bugtrackertype",
+                            title=_("Bug Tracker Type"),
+                            values=vocab_items,
+                            default=BugTrackerType.BUGZILLA,
+                        )
+                    )
+                )
             else:
                 fields.append(self.form_fields[field_name])
         self.form_fields = form.Fields(*fields)
         super().setUpWidgets(context=context)
 
-    @action(_('Add'), name='add')
+    @action(_("Add"), name="add")
     def add(self, action, data):
         """Create the IBugTracker."""
         btset = getUtility(IBugTrackerSet)
         bugtracker = btset.ensureBugTracker(
-            name=data['name'],
-            bugtrackertype=data['bugtrackertype'],
-            title=data['title'],
-            summary=data['summary'],
-            baseurl=data['baseurl'],
-            contactdetails=data['contactdetails'],
-            owner=getUtility(ILaunchBag).user)
+            name=data["name"],
+            bugtrackertype=data["bugtrackertype"],
+            title=data["title"],
+            summary=data["summary"],
+            baseurl=data["baseurl"],
+            contactdetails=data["contactdetails"],
+            owner=getUtility(ILaunchBag).user,
+        )
         self.next_url = canonical_url(bugtracker)
 
     @property
@@ -165,7 +171,8 @@ class BugTrackerSetView(LaunchpadView):
         # bug watch counts per tracker. However the batching makes
         # the inefficiency tolerable for now. Robert Collins 20100919.
         self._pillar_cache = self.context.getPillarsForBugtrackers(
-            list(self.context.getAllTrackers()), self.user)
+            list(self.context.getAllTrackers()), self.user
+        )
 
     @property
     def inactive_tracker_count(self):
@@ -175,14 +182,14 @@ class BugTrackerSetView(LaunchpadView):
     def active_trackers(self):
         results = self.context.getAllTrackers(active=True)
         navigator = ActiveBatchNavigator(results, self.request)
-        navigator.setHeadings('tracker', 'trackers')
+        navigator.setHeadings("tracker", "trackers")
         return navigator
 
     @cachedproperty
     def inactive_trackers(self):
         results = self.context.getAllTrackers(active=False)
         navigator = InactiveBatchNavigator(results, self.request)
-        navigator.setHeadings('tracker', 'trackers')
+        navigator.setHeadings("tracker", "trackers")
         return navigator
 
     def getPillarData(self, bugtracker):
@@ -202,8 +209,9 @@ class BugTrackerSetView(LaunchpadView):
         else:
             has_more_pillars = False
         return {
-            'pillars': pillars[:self.pillar_limit],
-            'has_more_pillars': has_more_pillars}
+            "pillars": pillars[: self.pillar_limit],
+            "has_more_pillars": has_more_pillars,
+        }
 
 
 class BugTrackerView(LaunchpadView):
@@ -213,7 +221,8 @@ class BugTrackerView(LaunchpadView):
     @property
     def page_title(self):
         return smartquote(
-            'The "%s" bug tracker in Launchpad' % self.context.title)
+            'The "%s" bug tracker in Launchpad' % self.context.title
+        )
 
     def initialize(self):
         self.batchnav = BatchNavigator(self.context.watches, self.request)
@@ -235,7 +244,8 @@ class BugTrackerView(LaunchpadView):
 
 
 BUG_TRACKER_ACTIVE_VOCABULARY = SimpleVocabulary.fromItems(
-    [('On', True), ('Off', False)])
+    [("On", True), ("Off", False)]
+)
 
 
 class BugTrackerEditView(LaunchpadEditFormView):
@@ -243,30 +253,33 @@ class BugTrackerEditView(LaunchpadEditFormView):
     schema = IBugTracker
 
     custom_widget_summary = CustomWidgetFactory(
-        TextAreaWidget, width=30, height=5)
+        TextAreaWidget, width=30, height=5
+    )
     custom_widget_aliases = CustomWidgetFactory(DelimitedListWidget, height=3)
     custom_widget_active = CustomWidgetFactory(
-        LaunchpadRadioWidget, orientation='vertical')
+        LaunchpadRadioWidget, orientation="vertical"
+    )
 
     @property
     def page_title(self):
         return smartquote(
-            'Change details for the "%s" bug tracker' % self.context.title)
+            'Change details for the "%s" bug tracker' % self.context.title
+        )
 
     @cachedproperty
     def field_names(self):
         field_names = [
-            'name',
-            'title',
-            'bugtrackertype',
-            'summary',
-            'baseurl',
-            'aliases',
-            'contactdetails',
-            ]
+            "name",
+            "title",
+            "bugtrackertype",
+            "summary",
+            "baseurl",
+            "aliases",
+            "contactdetails",
+        ]
 
         if check_permission("launchpad.Admin", self.context):
-            field_names.append('active')
+            field_names.append("active")
 
         return field_names
 
@@ -283,48 +296,56 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         # If we're displaying the 'active' field we need to swap it out
         # and replace it with a field that uses our custom vocabulary.
-        if 'active' in self.field_names:
+        if "active" in self.field_names:
             active_field = Choice(
-                __name__='active',
-                title=_('Updates for this bug tracker are'),
+                __name__="active",
+                title=_("Updates for this bug tracker are"),
                 vocabulary=BUG_TRACKER_ACTIVE_VOCABULARY,
-                required=True, default=self.context.active)
+                required=True,
+                default=self.context.active,
+            )
 
-            self.form_fields = self.form_fields.omit('active')
+            self.form_fields = self.form_fields.omit("active")
             self.form_fields += form.Fields(active_field)
 
     def validate(self, data):
         # Normalise aliases to an empty list if it's None.
-        if data.get('aliases') is None:
-            data['aliases'] = []
+        if data.get("aliases") is None:
+            data["aliases"] = []
 
         # If aliases has an error, unwrap the Dantean exception from
         # Zope so that we can tell the user something useful.
-        if self.getFieldError('aliases'):
+        if self.getFieldError("aliases"):
             # XXX: wgrant 2008-04-02 bug=210901: The error
             # messages may have already been escaped by
             # LaunchpadValidationError, so wrap them in structured() to
             # avoid double-escaping them. It's possible that non-LVEs
             # could also be escaped, but I can't think of any cases so
             # let's just escape them anyway.
-            aliases_errors = self.widgets['aliases']._error.errors.args[0]
+            aliases_errors = self.widgets["aliases"]._error.errors.args[0]
             maybe_structured_errors = [
                 structured(error)
-                if isinstance(error, LaunchpadValidationError) else error
-                for error in aliases_errors]
-            self.setFieldError('aliases', structured(
-                    '<br />'.join(['%s'] * len(maybe_structured_errors)),
-                    *maybe_structured_errors))
+                if isinstance(error, LaunchpadValidationError)
+                else error
+                for error in aliases_errors
+            ]
+            self.setFieldError(
+                "aliases",
+                structured(
+                    "<br />".join(["%s"] * len(maybe_structured_errors)),
+                    *maybe_structured_errors,
+                ),
+            )
 
-    @action('Change', name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         # If the baseurl is going to change, save the current baseurl
         # as an alias. Users attempting to use this URL, which is
         # presumably incorrect or out-of-date, will be captured.
         current_baseurl = self.context.baseurl
-        requested_baseurl = data['baseurl']
+        requested_baseurl = data["baseurl"]
         if requested_baseurl != current_baseurl:
-            data['aliases'].append(current_baseurl)
+            data["aliases"].append(current_baseurl)
 
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
@@ -348,12 +369,15 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         # Check that no products or projects use this bugtracker.
         pillars = (
-            getUtility(IBugTrackerSet).getPillarsForBugtrackers(
-                [self.context]).get(self.context, []))
+            getUtility(IBugTrackerSet)
+            .getPillarsForBugtrackers([self.context])
+            .get(self.context, [])
+        )
         if len(pillars) > 0:
             reasons.append(
-                'This is the bug tracker for %s.' % english_list(
-                    sorted(pillar.title for pillar in pillars)))
+                "This is the bug tracker for %s."
+                % english_list(sorted(pillar.title for pillar in pillars))
+            )
 
         # Only admins and registry experts can delete bug watches en
         # masse.
@@ -364,30 +388,32 @@ class BugTrackerEditView(LaunchpadEditFormView):
                     break
             else:
                 reasons.append(
-                    'There are linked bug watches and only members of %s '
-                    'can delete them en masse.' % english_list(
-                        sorted(team.title for team in admin_teams)))
+                    "There are linked bug watches and only members of %s "
+                    "can delete them en masse."
+                    % english_list(sorted(team.title for team in admin_teams))
+                )
 
         # Bugtrackers with imported messages cannot be deleted.
         if not self.context.imported_bug_messages.is_empty():
             reasons.append(
-                'Bug comments have been imported via this bug tracker.')
+                "Bug comments have been imported via this bug tracker."
+            )
 
         # If the bugtracker is a celebrity then we protect it from
         # deletion.
         celebrities_set = {
             getattr(celebrities, name)
-            for name in ILaunchpadCelebrities.names()}
+            for name in ILaunchpadCelebrities.names()
+        }
         if self.context in celebrities_set:
-            reasons.append(
-                'This bug tracker is protected from deletion.')
+            reasons.append("This bug tracker is protected from deletion.")
 
         return reasons
 
     def delete_condition(self, action):
         return len(self.delete_not_possible_reasons) == 0
 
-    @action('Delete', name='delete', condition=delete_condition)
+    @action("Delete", name="delete", condition=delete_condition)
     def delete_action(self, action, data):
         # First unlink bug watches from all bugtasks, flush updates,
         # then delete the watches themselves.
@@ -395,9 +421,10 @@ class BugTrackerEditView(LaunchpadEditFormView):
             for bugtask in watch.bugtasks:
                 if len(bugtask.bug.bugtasks) < 2:
                     raise AssertionError(
-                        'There should be more than one bugtask for a bug '
-                        'when one of them is linked to the original bug via '
-                        'a bug watch.')
+                        "There should be more than one bugtask for a bug "
+                        "when one of them is linked to the original bug via "
+                        "a bug watch."
+                    )
                 bugtask.bugwatch = None
         flush_database_updates()
         for watch in self.context.watches:
@@ -409,7 +436,8 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         # Hey, it worked! Tell the user.
         self.request.response.addInfoNotification(
-            '%s has been deleted.' % (self.context.title,))
+            "%s has been deleted." % (self.context.title,)
+        )
 
         # Go back to the bug tracker listing.
         self.next_url = canonical_url(getUtility(IBugTrackerSet))
@@ -421,18 +449,21 @@ class BugTrackerEditView(LaunchpadEditFormView):
     def reschedule_action_condition(self, action):
         """Return True if the user can see the reschedule action."""
         user_can_reset_watches = check_permission(
-            "launchpad.Admin", self.context)
+            "launchpad.Admin", self.context
+        )
         return user_can_reset_watches and not self.context.watches.is_empty()
 
     @action(
-        'Reschedule all watches', name='reschedule',
-        condition=reschedule_action_condition)
+        "Reschedule all watches",
+        name="reschedule",
+        condition=reschedule_action_condition,
+    )
     def rescheduleAction(self, action, data):
         """Reschedule all the watches for the bugtracker."""
         self.context.resetWatches()
         self.request.response.addInfoNotification(
-            "All bug watches on %s have been rescheduled." %
-            self.context.title)
+            "All bug watches on %s have been rescheduled." % self.context.title
+        )
         self.next_url = canonical_url(self.context)
 
 
@@ -464,31 +495,35 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     This class assumes that bug tracker components are always
     linked to source packages in the Ubuntu distribution.
     """
+
     schema = IBugTrackerComponent
     custom_widget_source_package_name = UbuntuSourcePackageNameWidget
-    field_names = ['source_package_name']
-    page_title = 'Link component'
+    field_names = ["source_package_name"]
+    page_title = "Link component"
 
     @property
     def label(self):
         return (
-            'Link a distribution source package to %s component' %
-            self.context.name)
+            "Link a distribution source package to %s component"
+            % self.context.name
+        )
 
     @property
     def initial_values(self):
         """See `LaunchpadFormView.`"""
-        field_values = dict(source_package_name='')
+        field_values = dict(source_package_name="")
         dsp = self.context.distro_source_package
         if dsp is not None:
-            field_values['source_package_name'] = dsp.name
+            field_values["source_package_name"] = dsp.name
         return field_values
 
     @property
     def next_url(self):
         return canonical_url(self.context.component_group.bug_tracker)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
     def updateContextFromData(self, data, context=None):
         """Link component to specified distro source package.
@@ -497,34 +532,45 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
         look it up in Ubuntu to retrieve the distro_source_package
         object, and link it to this component.
         """
-        source_package_name = data['source_package_name']
-        distribution = self.widgets['source_package_name'].getDistribution()
+        source_package_name = data["source_package_name"]
+        distribution = self.widgets["source_package_name"].getDistribution()
         dsp = distribution.getSourcePackage(source_package_name)
         bug_tracker = self.context.component_group.bug_tracker
         # Has this source package already been assigned to a component?
         component = bug_tracker.getRemoteComponentForDistroSourcePackageName(
-            distribution, source_package_name)
+            distribution, source_package_name
+        )
         if component is not None:
             self.request.response.addNotification(
-                "The %s source package is already linked to %s:%s in %s." % (
+                "The %s source package is already linked to %s:%s in %s."
+                % (
                     source_package_name.name,
                     component.component_group.name,
-                    component.name, distribution.name))
+                    component.name,
+                    distribution.name,
+                )
+            )
             return
         # The submitted component can be linked to the distro source package.
         component = context or self.context
         component.distro_source_package = dsp
         if source_package_name is None:
             self.request.response.addNotification(
-                "%s:%s is now unlinked." % (
-                    component.component_group.name, component.name))
+                "%s:%s is now unlinked."
+                % (component.component_group.name, component.name)
+            )
         else:
             self.request.response.addNotification(
-                "%s:%s is now linked to the %s source package in %s." % (
-                    component.component_group.name, component.name,
-                    source_package_name.name, distribution.name))
+                "%s:%s is now linked to the %s source package in %s."
+                % (
+                    component.component_group.name,
+                    component.name,
+                    source_package_name.name,
+                    distribution.name,
+                )
+            )
 
-    @action('Save Changes', name='save')
+    @action("Save Changes", name="save")
     def save_action(self, action, data):
         """Update the component with the form data."""
         self.updateContextFromData(data)
@@ -559,8 +605,7 @@ class RemoteBug:
 
     @property
     def title(self):
-        return 'Remote Bug #%s in %s' % (self.remotebug,
-                                         self.bugtracker.title)
+        return "Remote Bug #%s in %s" % (self.remotebug, self.bugtracker.title)
 
 
 class RemoteBugView(LaunchpadView):
@@ -574,9 +619,9 @@ class RemoteBugView(LaunchpadView):
 class BugTrackerNavigationMenu(NavigationMenu):
 
     usedfor = BugTrackerView
-    facet = 'bugs'
-    links = ['edit']
+    facet = "bugs"
+    links = ["edit"]
 
     def edit(self):
-        text = 'Change details'
-        return Link('+edit', text, icon='edit')
+        text = "Change details"
+        return Link("+edit", text, icon="edit")

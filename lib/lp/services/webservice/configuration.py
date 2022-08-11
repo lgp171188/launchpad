@@ -4,11 +4,11 @@
 """A configuration class describing the Launchpad web service."""
 
 __all__ = [
-    'LaunchpadWebServiceConfiguration',
+    "LaunchpadWebServiceConfiguration",
 ]
 
-from lazr.restful.simple import BaseWebServiceConfiguration
 import six
+from lazr.restful.simple import BaseWebServiceConfiguration
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 
@@ -17,15 +17,12 @@ from lp.services.config import config
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.webapp.canonicalurl import nearest_adapter
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.interfaces import (
-    ILaunchBag,
-    ILaunchpadContainer,
-    )
+from lp.services.webapp.interfaces import ILaunchBag, ILaunchpadContainer
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import (
     WebServiceClientRequest,
     WebServicePublication,
-    )
+)
 
 
 class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
@@ -48,17 +45,15 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         "beta": """This is the first version of the web service ever
         published. Its end-of-life date is April 2011, the same as the
         Ubuntu release "Karmic Koala".""",
-
         "1.0": """This version of the web service removes unnecessary
         named operations. It was introduced in March 2010, and its
         end-of-life date is April 2015, the same as the server version
         of the Ubuntu release "Lucid Lynx".""",
-
         "devel": """This version of the web service reflects the most
         recent changes made. It may abruptly change without
         warning. Periodically, these changes are bundled up and given a
         permanent version number.""",
-        }
+    }
 
     @property
     def use_https(self):
@@ -72,8 +67,8 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         """See `IWebServiceConfiguration`."""
         # The request is going to try to decode the 'PATH_INFO' using utf-8,
         # so if it is currently unicode, encode it.
-        if 'PATH_INFO' in environ:
-            environ['PATH_INFO'] = six.ensure_binary(environ['PATH_INFO'])
+        if "PATH_INFO" in environ:
+            environ["PATH_INFO"] = six.ensure_binary(environ["PATH_INFO"])
         request = WebServiceClientRequest(body_instream, environ)
         request.setPublication(WebServicePublication(None))
         return request
@@ -95,7 +90,7 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         error. It might contain private information.
         """
         is_developer = getUtility(ILaunchBag).developer
-        return (is_developer or config.canonical.show_tracebacks)
+        return is_developer or config.canonical.show_tracebacks
 
     def get_request_user(self):
         """See `IWebServiceConfiguration`."""
@@ -115,18 +110,22 @@ class LaunchpadWebServiceConfiguration(BaseWebServiceConfiguration):
         else:
             container = nearest_adapter(context, ILaunchpadContainer)
             if not container.isWithin(
-                    canonical_url(access_token.target, force_local_path=True)):
+                canonical_url(access_token.target, force_local_path=True)
+            ):
                 raise Unauthorized(
                     "Current authentication does not allow access to this "
-                    "object.")
+                    "object."
+                )
 
         if not required_scopes:
             raise Unauthorized(
-                "Current authentication only allows calling scoped methods.")
+                "Current authentication only allows calling scoped methods."
+            )
         elif not any(
-                scope.title in required_scopes
-                for scope in access_token.scopes):
+            scope.title in required_scopes for scope in access_token.scopes
+        ):
             raise Unauthorized(
                 "Current authentication does not allow calling this method "
                 "(one of these scopes is required: %s)."
-                % ", ".join("'%s'" % scope for scope in required_scopes))
+                % ", ".join("'%s'" % scope for scope in required_scopes)
+            )

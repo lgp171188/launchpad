@@ -4,7 +4,7 @@
 """Various helper functions for using the librarian in testing.."""
 
 __all__ = [
-    'get_newest_librarian_file',
+    "get_newest_librarian_file",
 ]
 
 from storm.expr import Desc
@@ -23,6 +23,10 @@ def get_newest_librarian_file():
 
     :return: A file-like object of the file content.
     """
-    alias = IStore(LibraryFileAlias).find(LibraryFileAlias).order_by(
-        Desc(LibraryFileAlias.date_created)).first()
+    alias = (
+        IStore(LibraryFileAlias)
+        .find(LibraryFileAlias)
+        .order_by(Desc(LibraryFileAlias.date_created))
+        .first()
+    )
     return getUtility(ILibrarianClient).getFileByAlias(alias.id)

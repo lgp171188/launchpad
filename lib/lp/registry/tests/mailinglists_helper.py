@@ -4,11 +4,11 @@
 """Helper functions for testing XML-RPC services."""
 
 __all__ = [
-    'fault_catcher',
-    'mailman',
-    'new_list_for_team',
-    'new_team',
-    ]
+    "fault_catcher",
+    "mailman",
+    "new_list_for_team",
+    "new_team",
+]
 
 import xmlrpc.client
 
@@ -20,7 +20,7 @@ from lp.registry.interfaces.mailinglist import (
     IMessageApprovalSet,
     MailingListStatus,
     PostedMessageStatus,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.xmlrpc.mailinglist import MailingListAPIView
 from lp.services.database.sqlbase import flush_database_updates
@@ -41,6 +41,7 @@ def fault_catcher(func):
             raise result
         else:
             return result
+
     return caller
 
 
@@ -50,14 +51,15 @@ def new_team(team_name, with_list=False):
     This just provides a convenience function for creating the kinds of teams
     we need to use in the doctest.
     """
-    displayname = ' '.join(word.capitalize() for word in team_name.split('-'))
+    displayname = " ".join(word.capitalize() for word in team_name.split("-"))
     # XXX BarryWarsaw 2007-09-27 bug 125505: Set the team's subscription
     # policy to OPEN.
     policy = TeamMembershipPolicy.OPEN
     personset = getUtility(IPersonSet)
-    team_creator = personset.getByName('no-priv')
-    team = personset.newTeam(team_creator, team_name, displayname,
-                             membership_policy=policy)
+    team_creator = personset.getByName("no-priv")
+    team = personset.newTeam(
+        team_creator, team_name, displayname, membership_policy=policy
+    )
     if not with_list:
         return team
     else:
@@ -98,9 +100,11 @@ class MailmanStub:
             mailing_list.transitionToStatus(MailingListStatus.ACTIVE)
         # Simulate acknowledging held messages.
         message_set = getUtility(IMessageApprovalSet)
-        for status in (PostedMessageStatus.APPROVAL_PENDING,
-                       PostedMessageStatus.REJECTION_PENDING,
-                       PostedMessageStatus.DISCARD_PENDING):
+        for status in (
+            PostedMessageStatus.APPROVAL_PENDING,
+            PostedMessageStatus.REJECTION_PENDING,
+            PostedMessageStatus.DISCARD_PENDING,
+        ):
             message_set.acknowledgeMessagesWithStatus(status)
 
 

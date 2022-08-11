@@ -1,27 +1,10 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Object,
-    Text,
-    TextLine,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
+from lazr.restful.fields import CollectionField, Reference
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Object, Text, TextLine
 
 from lp import _
 from lp.app.errors import NotFoundError
@@ -34,16 +17,15 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.translations.interfaces.rosettastats import IRosettaStats
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
-
+)
 
 __all__ = [
-    'IPOTemplate',
-    'IPOTemplateSet',
-    'IPOTemplateSharingSubset',
-    'IPOTemplateSubset',
-    'LanguageNotFound',
-    ]
+    "IPOTemplate",
+    "IPOTemplateSet",
+    "IPOTemplateSharingSubset",
+    "IPOTemplateSubset",
+    "LanguageNotFound",
+]
 
 
 class LanguageNotFound(NotFoundError):
@@ -51,219 +33,309 @@ class LanguageNotFound(NotFoundError):
 
 
 @exported_as_webservice_entry(
-    singular_name='translation_template',
-    plural_name='translation_templates')
+    singular_name="translation_template",
+    plural_name="translation_templates",
+    as_of="beta",
+)
 class IPOTemplate(IRosettaStats):
     """A translation template."""
 
-    id = exported(Int(
-        title="The translation template id.",
-        required=True, readonly=True))
+    id = exported(
+        Int(title="The translation template id.", required=True, readonly=True)
+    )
 
-    name = exported(TextLine(
-        title=_("Template name"),
-        description=_("The name of this PO template, for example "
-            "'evolution-2.2'. Each translation template has a "
-            "unique name in its package. It's important to get this "
-            "correct, because Launchpad will recommend alternative "
-            "translations based on the name."),
-        constraint=valid_name, required=True))
+    name = exported(
+        TextLine(
+            title=_("Template name"),
+            description=_(
+                "The name of this PO template, for example "
+                "'evolution-2.2'. Each translation template has a "
+                "unique name in its package. It's important to get this "
+                "correct, because Launchpad will recommend alternative "
+                "translations based on the name."
+            ),
+            constraint=valid_name,
+            required=True,
+        )
+    )
 
-    translation_domain = exported(TextLine(
-        title=_("Translation domain"),
-        description=_("The translation domain for a translation template. "
-            "Used with PO file format when generating MO files for inclusion "
-            "in language pack or MO tarball exports."),
-        required=True))
+    translation_domain = exported(
+        TextLine(
+            title=_("Translation domain"),
+            description=_(
+                "The translation domain for a translation template. "
+                "Used with PO file format when generating MO files for "
+                "inclusion in language pack or MO tarball exports."
+            ),
+            required=True,
+        )
+    )
 
-    description = exported(Text(
-        title=_("Description"),
-        description=_("Please provide a brief description of the content "
-            "of this translation template, for example, telling translators "
-            "if this template contains strings for end-users or other "
-            "developers."),
-        required=False))
+    description = exported(
+        Text(
+            title=_("Description"),
+            description=_(
+                "Please provide a brief description of the content "
+                "of this translation template, for example, telling "
+                "translators if this template contains strings for end-users "
+                "or other developers."
+            ),
+            required=False,
+        )
+    )
 
     header = Text(
-        title=_('Header'),
+        title=_("Header"),
         description=_("The standard template header in its native format."),
-        required=True)
-
-    iscurrent = exported(Bool(
-        title=_("Template is active"),
-        description=_(
-            "If unchecked, people can no longer change the template's "
-            "translations."),
         required=True,
-        default=True), exported_as='active')
+    )
 
-    owner = exported(PersonChoice(
-        title=_("Owner"),
-        required=True,
-        description=_(
-            "The owner of the template in Launchpad can edit the template "
-            "and change it's status, and can also upload new versions "
-            "of the template when a new release is made or when the "
-            "translation strings have been changed during development."),
-        vocabulary="ValidOwner"))
+    iscurrent = exported(
+        Bool(
+            title=_("Template is active"),
+            description=_(
+                "If unchecked, people can no longer change the template's "
+                "translations."
+            ),
+            required=True,
+            default=True,
+        ),
+        exported_as="active",
+    )
+
+    owner = exported(
+        PersonChoice(
+            title=_("Owner"),
+            required=True,
+            description=_(
+                "The owner of the template in Launchpad can edit the template "
+                "and change it's status, and can also upload new versions "
+                "of the template when a new release is made or when the "
+                "translation strings have been changed during development."
+            ),
+            vocabulary="ValidOwner",
+        )
+    )
 
     productseries = Choice(
-        title=_("Series"),
-        required=False,
-        vocabulary="ProductSeries")
+        title=_("Series"), required=False, vocabulary="ProductSeries"
+    )
 
     distroseries = Choice(
-        title=_("Series"),
-        required=False,
-        vocabulary="DistroSeries")
+        title=_("Series"), required=False, vocabulary="DistroSeries"
+    )
 
     sourcepackagename = Choice(
         title=_("Source Package Name"),
-        description=_(
-            "The source package that uses this template."),
+        description=_("The source package that uses this template."),
         required=False,
-        vocabulary="SourcePackageName")
+        vocabulary="SourcePackageName",
+    )
 
     sourcepackagenameID = Int(
         title=_("Source Package Name ID"),
-        description=_(
-            "The ID of the source package that uses this template."),
+        description=_("The ID of the source package that uses this template."),
         required=False,
-        readonly=True)
+        readonly=True,
+    )
 
     sourcepackage = Reference(
-        ISourcePackage, title="Source package this template is for, if any.",
-        required=False, readonly=True)
+        ISourcePackage,
+        title="Source package this template is for, if any.",
+        required=False,
+        readonly=True,
+    )
 
     from_sourcepackagename = Choice(
         title=_("From Source Package Name"),
         description=_(
             "The source package this template comes from (set it only if it's"
-            " different from the previous 'Source Package Name'."),
+            " different from the previous 'Source Package Name'."
+        ),
         required=False,
-        vocabulary="SourcePackageName")
+        vocabulary="SourcePackageName",
+    )
 
     sourcepackageversion = TextLine(
-        title=_("Source Package Version"),
-        required=False)
+        title=_("Source Package Version"), required=False
+    )
 
-    languagepack = exported(Bool(
-        title=_("Include translations for this template in language packs?"),
-        description=_(
-            "Check this box if this template is part of a language pack so "
-            "its translations should be exported that way."),
-        required=True,
-        default=False), exported_as='exported_in_languagepacks')
+    languagepack = exported(
+        Bool(
+            title=_(
+                "Include translations for this template in language packs?"
+            ),
+            description=_(
+                "Check this box if this template is part of a language pack "
+                "so its translations should be exported that way."
+            ),
+            required=True,
+            default=False,
+        ),
+        exported_as="exported_in_languagepacks",
+    )
 
-    path = exported(TextLine(
-        title=_(
-            "Path of the template in the source tree, including filename."),
-        required=True))
+    path = exported(
+        TextLine(
+            title=_(
+                "Path of the template in the source tree, including filename."
+            ),
+            required=True,
+        )
+    )
 
     source_file = Object(
-        title=_('Source file for this translation template'),
-        readonly=True, schema=ILibraryFileAlias)
+        title=_("Source file for this translation template"),
+        readonly=True,
+        schema=ILibraryFileAlias,
+    )
 
-    source_file_format = exported(Choice(
-        title=_("File format for the source file"),
-        required=False,
-        vocabulary=TranslationFileFormat), exported_as='format')
+    source_file_format = exported(
+        Choice(
+            title=_("File format for the source file"),
+            required=False,
+            vocabulary=TranslationFileFormat,
+        ),
+        exported_as="format",
+    )
 
-    priority = exported(Int(
-        title=_('Priority'),
-        required=True,
-        default=0,
-        description=_(
-            'A number that describes how important this template is. Often '
-            'there are multiple templates, and you can use this as a way '
-            'of indicating which are more important and should be '
-            'translated first. Pick any number - higher priority '
-            'templates will generally be listed first.')))
+    priority = exported(
+        Int(
+            title=_("Priority"),
+            required=True,
+            default=0,
+            description=_(
+                "A number that describes how important this template is. "
+                "Often there are multiple templates, and you can use this as "
+                "a way of indicating which are more important and should be "
+                "translated first. Pick any number - higher priority "
+                "templates will generally be listed first."
+            ),
+        )
+    )
 
     datecreated = Datetime(
-        title=_('When this translation template was created.'), required=True,
-        readonly=True)
+        title=_("When this translation template was created."),
+        required=True,
+        readonly=True,
+    )
 
     translationgroups = Attribute(
-        _('''
+        _(
+            """
             The `ITranslationGroup` objects that handle translations for this
             template.
             There can be several because they can be inherited from project to
             product, for example.
-            '''))
+            """
+        )
+    )
 
     translationpermission = Choice(
-        title=_('Translation permission'),
+        title=_("Translation permission"),
         required=True,
         readonly=True,
-        description=_('''
+        description=_(
+            """
             The permission system which is used for this translation template.
             This is inherited from the product, project and/or distro in which
             the translation template is found.
-            '''),
-        vocabulary='TranslationPermission')
+            """
+        ),
+        vocabulary="TranslationPermission",
+    )
 
     pofiles = exported(
         CollectionField(
             title=_("All translation files that exist for this template."),
-            # Really IPOFile, see _schema_circular_imports.py.
-            value_type=Reference(schema=Interface)),
-        exported_as='translation_files')
+            # Really IPOFile, patched in lp.translations.interfaces.webservice.
+            value_type=Reference(schema=Interface),
+        ),
+        exported_as="translation_files",
+    )
 
     relatives_by_source = Attribute(
-        _('''All `IPOTemplate` objects that have the same source.
+        _(
+            """All `IPOTemplate` objects that have the same source.
             For example those that came from the same productseries or the
             same source package.
-            '''))
+            """
+        )
+    )
 
     displayname = TextLine(
-        title=_('The translation template brief name.'), required=True,
-        readonly=True)
+        title=_("The translation template brief name."),
+        required=True,
+        readonly=True,
+    )
 
     title = TextLine(
-        title=_('The translation template title.'), required=True,
-        readonly=True)
+        title=_("The translation template title."),
+        required=True,
+        readonly=True,
+    )
 
     product = Object(
-        title=_('The `IProduct` to which this translation template belongs.'),
-        required=False, readonly=True,
-        # Really IProduct, see _schema_circular_imports.py.
-        schema=Interface)
+        title=_("The `IProduct` to which this translation template belongs."),
+        required=False,
+        readonly=True,
+        # Really IProduct, patched in lp.translations.interfaces.webservice.
+        schema=Interface,
+    )
 
     distribution = Object(
         title=_(
-            'The `IDistribution` to which this translation template '
-            'belongs.'),
-        readonly=True, schema=IDistribution)
+            "The `IDistribution` to which this translation template "
+            "belongs."
+        ),
+        readonly=True,
+        schema=IDistribution,
+    )
 
-    messagecount = exported(Int(
-        title=_('The number of translation messages for this template.'),
-        required=True, readonly=True),
-        exported_as='message_count')
+    messagecount = exported(
+        Int(
+            title=_("The number of translation messages for this template."),
+            required=True,
+            readonly=True,
+        ),
+        exported_as="message_count",
+    )
 
-    language_count = exported(Int(
-        title=_('The number of languages for which we have translations.'),
-        required=True, readonly=True))
+    language_count = exported(
+        Int(
+            title=_("The number of languages for which we have translations."),
+            required=True,
+            readonly=True,
+        )
+    )
 
     translationtarget = Attribute(
-        _('''
+        _(
+            """
             The direct object in which this template is attached.
             This will either be an `ISourcePackage` or an `IProductSeries`.
-            '''))
+            """
+        )
+    )
 
-    date_last_updated = exported(Datetime(
-        title=_('Date for last update'),
-        required=True))
+    date_last_updated = exported(
+        Datetime(title=_("Date for last update"), required=True)
+    )
 
     uses_english_msgids = Bool(
-        title=_("Uses English strings as msgids"), readonly=True,
-        description=_("""
+        title=_("Uses English strings as msgids"),
+        readonly=True,
+        description=_(
+            """
             Some formats, such as Mozilla's XPI, use symbolic msgids where
             gettext uses the original English strings to identify messages.
-            """))
+            """
+        ),
+    )
 
     translation_side = Int(
-        title=_("Translation side"), required=True, readonly=True)
+        title=_("Translation side"), required=True, readonly=True
+    )
 
     def __iter__():
         """Return an iterator over current `IPOTMsgSet` in this template."""
@@ -288,8 +360,9 @@ class IPOTemplate(IRosettaStats):
     def getHeader():
         """Return an `ITranslationHeaderData` representing its header."""
 
-    def getPOTMsgSetByMsgIDText(singular_text, plural_text=None,
-                                only_current=False, context=None):
+    def getPOTMsgSetByMsgIDText(
+        singular_text, plural_text=None, only_current=False, context=None
+    ):
         """Return `IPOTMsgSet` indexed by `singular_text` from this template.
 
         If the key is a string or a unicode object, returns the
@@ -340,8 +413,7 @@ class IPOTemplate(IRosettaStats):
         """
 
     def __getitem__(key):
-        """Same as getPOTMsgSetByMsgIDText(), with only_current=True
-        """
+        """Same as getPOTMsgSetByMsgIDText(), with only_current=True"""
 
     def sharingKey():
         """A key for determining the sharing precedence of a template.
@@ -415,8 +487,10 @@ class IPOTemplate(IRosettaStats):
             loops when creating a new IPOTemplate.
         """
 
-    def getDummyPOFile(language, requester=None, check_for_existing=True):
-        """Return a DummyPOFile if there isn't already a persistent `IPOFile`
+    def getPlaceholderPOFile(
+        language, requester=None, check_for_existing=True
+    ):
+        """Return a placeholder if there isn't already a persistent `IPOFile`.
 
         Raise `LanguageNotFound` if the language does not exist in the
         database.
@@ -428,8 +502,9 @@ class IPOTemplate(IRosettaStats):
         if check_for_existing is set to False, no check will be done for this.
         """
 
-    def createPOTMsgSetFromMsgIDs(msgid_singular, msgid_plural=None,
-                                  context=None, sequence=0):
+    def createPOTMsgSetFromMsgIDs(
+        msgid_singular, msgid_plural=None, context=None, sequence=0
+    ):
         """Creates a new template message in the database.
 
         :param msgid_singular: A reference to a singular msgid.
@@ -442,8 +517,9 @@ class IPOTemplate(IRosettaStats):
         :return: The newly created message set.
         """
 
-    def createMessageSetFromText(singular_text, plural_text,
-                                 context=None, sequence=0):
+    def createMessageSetFromText(
+        singular_text, plural_text, context=None, sequence=0
+    ):
         """Creates a new template message in the database using strings.
 
         Similar to createMessageSetFromMessageID, but takes text objects
@@ -460,9 +536,13 @@ class IPOTemplate(IRosettaStats):
         :return: The newly created message set.
         """
 
-    def getOrCreateSharedPOTMsgSet(singular_text, plural_text, context=None,
-                                   initial_file_references=None,
-                                   initial_source_comment=None):
+    def getOrCreateSharedPOTMsgSet(
+        singular_text,
+        plural_text,
+        context=None,
+        initial_file_references=None,
+        initial_source_comment=None,
+    ):
         """Finds an existing shared POTMsgSet to use or creates a new one.
 
         :param singular_text: string containing singular form.
@@ -510,31 +590,36 @@ class IPOTemplateSubset(Interface):
     """A subset of POTemplate."""
 
     sourcepackagename = Object(
-        title=_(
-            'The `ISourcePackageName` associated with this subset.'),
-        schema=ISourcePackageName)
+        title=_("The `ISourcePackageName` associated with this subset."),
+        schema=ISourcePackageName,
+    )
 
     distroseries = Object(
-        title=_(
-            'The `IDistroSeries` associated with this subset.'),
-        # Really IDistroSeries, see _schema_circular_imports.py.
-        schema=Interface)
+        title=_("The `IDistroSeries` associated with this subset."),
+        # Really IDistroSeries, patched in
+        # lp.translations.interfaces.webservice.
+        schema=Interface,
+    )
 
     productseries = Object(
-        title=_(
-            'The `IProductSeries` associated with this subset.'),
-        # Really IProductSeries, see _schema_circular_imports.py.
-        schema=Interface)
+        title=_("The `IProductSeries` associated with this subset."),
+        # Really IProductSeries, patched in
+        # lp.translations.interfaces.webservice.
+        schema=Interface,
+    )
 
     iscurrent = Bool(
         title=_("Filter for iscurrent flag."),
         description=_(
             "The filter for the iscurrent flag that this subset should "
-            "apply. The filter is disabled if it is None"),
-        required=False)
+            "apply. The filter is disabled if it is None"
+        ),
+        required=False,
+    )
 
     title = TextLine(
-        title=_('The translation file title.'), required=True, readonly=True)
+        title=_("The translation file title."), required=True, readonly=True
+    )
 
     def __iter__():
         """Return an iterator over all POTemplate for this subset."""
@@ -621,20 +706,25 @@ class IPOTemplateSet(Interface):
     def getAllOrderByDateLastUpdated():
         """Return an iterator over all POTemplate sorted by modification."""
 
-    def getSubset(distroseries=None, sourcepackagename=None,
-                  productseries=None, iscurrent=None,
-                  ordered_by_names=False):
-        """Return a POTemplateSubset object depending on the given arguments.
-        """
+    def getSubset(
+        distroseries=None,
+        sourcepackagename=None,
+        productseries=None,
+        iscurrent=None,
+        ordered_by_names=False,
+    ):
+        """Return a POTemplateSubset depending on the given arguments."""
 
-    def getSharingSubset(distribution=None, sourcepackagename=None,
-                         products=None):
+    def getSharingSubset(
+        distribution=None, sourcepackagename=None, products=None
+    ):
         """Return a POTemplateSharingSubset object depending on the given
         arguments.
         """
 
-    def getPOTemplateByPathAndOrigin(path, productseries=None,
-        distroseries=None, sourcepackagename=None):
+    def getPOTemplateByPathAndOrigin(
+        path, productseries=None, distroseries=None, sourcepackagename=None
+    ):
         """Return an `IPOTemplate` that is stored at 'path' in source code and
            came from the given arguments.
 
@@ -667,21 +757,21 @@ class IPOTemplateSharingSubset(Interface):
     """A subset of sharing PO templates."""
 
     distribution = Object(
-        title=_(
-            'The `IDistribution` associated with this subset.'),
-        schema=IDistribution)
+        title=_("The `IDistribution` associated with this subset."),
+        schema=IDistribution,
+    )
 
     product = Object(
-        title=_(
-            'The `IProduct` associated with this subset.'),
-        # Really IProduct, see _schema_circular_imports.py.
-        schema=Interface)
+        title=_("The `IProduct` associated with this subset."),
+        # Really IProduct, patched in lp.translations.interfaces.webservice.
+        schema=Interface,
+    )
 
     sourcepackagename = Object(
-        title=_(
-            'The `ISourcePackageName` associated with this subset.'),
+        title=_("The `ISourcePackageName` associated with this subset."),
         schema=ISourcePackageName,
-        required=False)
+        required=False,
+    )
 
     def getSharingPOTemplates(potemplate_name):
         """Find all sharing templates of the given name.

@@ -4,8 +4,8 @@
 """Views for QuestionSubscription."""
 
 __all__ = [
-    'QuestionPortletSubscribersWithDetails',
-    ]
+    "QuestionPortletSubscribersWithDetails",
+]
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebServiceClientRequest
@@ -15,10 +15,7 @@ from zope.traversing.browser import absoluteURL
 from lp.answers.interfaces.question import IQuestion
 from lp.answers.interfaces.questionsubscription import IQuestionSubscription
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class QuestionPortletSubscribersWithDetails(LaunchpadView):
@@ -43,17 +40,17 @@ class QuestionPortletSubscribersWithDetails(LaunchpadView):
                 continue
 
             subscriber = {
-                'name': person.name,
-                'display_name': person.displayname,
-                'web_link': canonical_url(person, rootsite='mainsite'),
-                'self_link': absoluteURL(person, self.api_request),
-                'is_team': person.is_team,
-                'can_edit': can_edit
-                }
+                "name": person.name,
+                "display_name": person.displayname,
+                "web_link": canonical_url(person, rootsite="mainsite"),
+                "self_link": absoluteURL(person, self.api_request),
+                "is_team": person.is_team,
+                "can_edit": can_edit,
+            }
             record = {
-                'subscriber': subscriber,
-                'subscription_level': 'Direct',
-                }
+                "subscriber": subscriber,
+                "subscription_level": "Direct",
+            }
             data.append(record)
         return data
 
@@ -69,27 +66,27 @@ class QuestionPortletSubscribersWithDetails(LaunchpadView):
                 # Skip the current user viewing the page.
                 continue
             subscriber = {
-                'name': person.name,
-                'display_name': person.displayname,
-                'web_link': canonical_url(person, rootsite='mainsite'),
-                'self_link': absoluteURL(person, self.api_request),
-                'is_team': person.is_team,
-                'can_edit': False,
-                }
+                "name": person.name,
+                "display_name": person.displayname,
+                "web_link": canonical_url(person, rootsite="mainsite"),
+                "self_link": absoluteURL(person, self.api_request),
+                "is_team": person.is_team,
+                "can_edit": False,
+            }
             record = {
-                'subscriber': subscriber,
-                'subscription_level': 'Indirect',
-                }
+                "subscriber": subscriber,
+                "subscription_level": "Indirect",
+            }
             data.append(record)
         return dumps(data)
 
     def render(self):
         """Override the default render() to return only JSON."""
-        self.request.response.setHeader('content-type', 'application/json')
+        self.request.response.setHeader("content-type", "application/json")
         return self.subscriber_data_js
 
 
-@delegate_to(IQuestionSubscription, context='subscription')
+@delegate_to(IQuestionSubscription, context="subscription")
 class SubscriptionAttrDecorator:
     """A QuestionSubscription with added attributes for HTML/JS."""
 
@@ -98,4 +95,4 @@ class SubscriptionAttrDecorator:
 
     @property
     def css_name(self):
-        return 'subscriber-%s' % self.subscription.person.id
+        return "subscriber-%s" % self.subscription.person.id

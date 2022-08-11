@@ -4,58 +4,51 @@
 """Browser view classes for BugBranch-related objects."""
 
 __all__ = [
-    'BranchLinkToBugView',
-    'BugBranchAddView',
-    'BugBranchDeleteView',
-    'BugBranchView',
-    ]
+    "BranchLinkToBugView",
+    "BugBranchAddView",
+    "BugBranchDeleteView",
+    "BugBranchView",
+]
+
+from typing import List
 
 from lazr.restful.interfaces import IWebServiceClientRequest
-from zope.component import (
-    adapter,
-    getMultiAdapter,
-    )
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.component import adapter, getMultiAdapter
+from zope.interface import Interface, implementer
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.bugs.interfaces.bugbranch import IBugBranch
 from lp.code.browser.branchmergeproposal import (
     latest_proposals_for_each_branch,
-    )
+)
 from lp.code.enums import BranchLifecycleStatus
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class BugBranchAddView(LaunchpadFormView):
     """Browser view for linking a bug to a branch."""
+
     schema = IBugBranch
     # In order to have the branch field rendered using the appropriate
     # widget, we set the LaunchpadFormView attribute for_input to True
     # to get the read only fields rendered as input widgets.
     for_input = True
-    page_title = 'Add branch'
-    field_names = ['branch']
+    page_title = "Add branch"
+    field_names = ["branch"]
 
-    @action(_('Continue'), name='continue')
+    @action(_("Continue"), name="continue")
     def continue_action(self, action, data):
-        branch = data['branch']
-        self.context.bug.linkBranch(
-            branch=branch, registrant=self.user)
+        branch = data["branch"]
+        self.context.bug.linkBranch(branch=branch, registrant=self.user)
         self.request.response.addNotification(
-            "Successfully registered branch %s for this bug." %
-            branch.name)
+            "Successfully registered branch %s for this bug." % branch.name
+        )
 
     @property
     def next_url(self):
@@ -63,16 +56,19 @@ class BugBranchAddView(LaunchpadFormView):
 
     @property
     def label(self):
-        return 'Add a branch to bug #%i' % self.context.bug.id
+        return "Add a branch to bug #%i" % self.context.bug.id
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
 
 class BugBranchDeleteView(LaunchpadEditFormView):
     """View to update a BugBranch."""
+
     schema = IBugBranch
 
-    field_names = []
+    field_names = []  # type: List[str]
 
     def initialize(self):
         LaunchpadEditFormView.initialize(self)
@@ -81,13 +77,15 @@ class BugBranchDeleteView(LaunchpadEditFormView):
     def next_url(self):
         return canonical_url(self.context.bug)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
-    @action('Remove link', name='delete')
+    @action("Remove link", name="delete")
     def delete_action(self, action, data):
         self.context.bug.unlinkBranch(self.context.branch, self.user)
 
-    label = 'Remove bug branch link'
+    label = "Remove bug branch link"
 
 
 class BugBranchView(LaunchpadView):
@@ -103,19 +101,22 @@ class BugBranchView(LaunchpadView):
     def show_branch_status(self):
         """Show the branch status if merged and there are no proposals."""
         lifecycle_status = self.context.branch.lifecycle_status
-        return (len(self.merge_proposals) == 0 and
-                lifecycle_status == BranchLifecycleStatus.MERGED)
+        return (
+            len(self.merge_proposals) == 0
+            and lifecycle_status == BranchLifecycleStatus.MERGED
+        )
 
 
 class BranchLinkToBugView(LaunchpadFormView):
     """The view to create bug-branch links."""
+
     schema = IBugBranch
     # In order to have the bug field rendered using the appropriate
     # widget, we set the LaunchpadFormView attribute for_input to True
     # to get the read only fields rendered as input widgets.
     for_input = True
 
-    field_names = ['bug']
+    field_names = ["bug"]
 
     @property
     def label(self):
@@ -123,17 +124,19 @@ class BranchLinkToBugView(LaunchpadFormView):
 
     @property
     def page_title(self):
-        return 'Link branch %s to a bug report' % self.context.displayname
+        return "Link branch %s to a bug report" % self.context.displayname
 
     @property
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
-    @action(_('Continue'), name='continue')
+    @action(_("Continue"), name="continue")
     def continue_action(self, action, data):
-        bug = data['bug']
+        bug = data["bug"]
         bug.linkBranch(branch=self.context, registrant=self.user)
 
 
@@ -147,5 +150,6 @@ class BugBranchXHTMLRepresentation:
     def __call__(self):
         """Render `BugBranch` as XHTML using the webservice."""
         branch_view = getMultiAdapter(
-            (self.branch, self.request), name="+bug-branch")
+            (self.branch, self.request), name="+bug-branch"
+        )
         return branch_view()

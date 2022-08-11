@@ -12,7 +12,7 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 # XXX cjwatson 2022-04-01: Most functional tests currently live in
-# lib/lp/soyuz/doc/package-cache-script.txt, but should be moved here.
+# lib/lp/soyuz/doc/package-cache-script.rst, but should be moved here.
 class TestPackageCacheUpdater(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
@@ -28,7 +28,8 @@ class TestPackageCacheUpdater(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         archives = [
             self.factory.makeArchive(distribution=distribution)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         for archive in archives:
             self.assertEqual(0, archive.sources_cached)
             self.factory.makeSourcePackagePublishingHistory(archive=archive)

@@ -4,41 +4,34 @@
 """Browser code for translation groups."""
 
 __all__ = [
-    'TranslationGroupAddTranslatorView',
-    'TranslationGroupAddView',
-    'TranslationGroupEditView',
-    'TranslationGroupNavigation',
-    'TranslationGroupReassignmentView',
-    'TranslationGroupSetBreadcrumb',
-    'TranslationGroupSetView',
-    'TranslationGroupSetNavigation',
-    'TranslationGroupView',
-    ]
+    "TranslationGroupAddTranslatorView",
+    "TranslationGroupAddView",
+    "TranslationGroupEditView",
+    "TranslationGroupNavigation",
+    "TranslationGroupReassignmentView",
+    "TranslationGroupSetBreadcrumb",
+    "TranslationGroupSetView",
+    "TranslationGroupSetNavigation",
+    "TranslationGroupView",
+]
 
 from zope.component import getUtility
 
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.errors import NotFoundError
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
-from lp.services.webapp import (
-    canonical_url,
-    GetitemNavigation,
-    LaunchpadView,
-    )
+from lp.services.webapp import GetitemNavigation, LaunchpadView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.translations.interfaces.translationgroup import (
     ITranslationGroup,
     ITranslationGroupSet,
-    )
-from lp.translations.interfaces.translator import (
-    ITranslator,
-    ITranslatorSet,
-    )
+)
+from lp.translations.interfaces.translator import ITranslator, ITranslatorSet
 
 
 class TranslationGroupNavigation(GetitemNavigation):
@@ -53,23 +46,24 @@ class TranslationGroupSetNavigation(GetitemNavigation):
 
 class TranslationGroupSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ITranslationGroupSet`."""
+
     text = "Translation groups"
 
 
 class TranslationGroupSetView(LaunchpadView):
     """Translation groups overview."""
+
     page_title = "Translation groups"
     label = page_title
 
 
 class TranslationGroupView(LaunchpadView):
-
     def __init__(self, context, request):
         super().__init__(context, request)
         self.context = context
         self.request = request
         self.translation_groups = getUtility(ITranslationGroupSet)
-        self.user_can_edit = check_permission('launchpad.Edit', self.context)
+        self.user_can_edit = check_permission("launchpad.Edit", self.context)
 
     @property
     def label(self):
@@ -86,20 +80,21 @@ class TranslationGroupView(LaunchpadView):
         returned by `TranslationGroup.fetchTranslatorData`.
         """
         return {
-                'person': person,
-                'code': language.code,
-                'language': language,
-                'datecreated': translator.datecreated,
-                'style_guide_url': translator.style_guide_url,
-                'context': translator,
-            }
+            "person": person,
+            "code": language.code,
+            "language": language,
+            "datecreated": translator.datecreated,
+            "style_guide_url": translator.style_guide_url,
+            "context": translator,
+        }
 
     @property
     def translator_list(self):
         """List of dicts describing the translation teams."""
         return [
             self._makeTranslatorDict(*data)
-            for data in self.context.fetchTranslatorData()]
+            for data in self.context.fetchTranslatorData()
+        ]
 
     def fetchProjectsForDisplay(self):
         return self.context.fetchProjectsForDisplay(self.user)
@@ -109,7 +104,7 @@ class TranslationGroupAddTranslatorView(LaunchpadFormView):
     """View class for the "appoint a translator" page"""
 
     schema = ITranslator
-    field_names = ['language', 'translator', 'style_guide_url']
+    field_names = ["language", "translator", "style_guide_url"]
 
     @action("Appoint", name="appoint")
     def appoint_action(self, action, data):
@@ -120,18 +115,20 @@ class TranslationGroupAddTranslatorView(LaunchpadFormView):
         have at most one translator.  Of course the translator may be either a
         person or a group, however.
         """
-        language = data.get('language')
-        translator = data.get('translator')
-        style_guide_url = data.get('style_guide_url')
+        language = data.get("language")
+        translator = data.get("translator")
+        style_guide_url = data.get("style_guide_url")
         getUtility(ITranslatorSet).new(
-            self.context, language, translator, style_guide_url)
+            self.context, language, translator, style_guide_url
+        )
 
     def validate(self, data):
         """Do not allow new translators for already existing languages."""
-        language = data.get('language')
+        language = data.get("language")
         if self.context.query_translator(language):
-            self.setFieldError('language',
-                "There is already a translator for this language")
+            self.setFieldError(
+                "language", "There is already a translator for this language"
+            )
 
     @property
     def cancel_url(self):
@@ -152,7 +149,7 @@ class TranslationGroupEditView(LaunchpadEditFormView):
     """View class to edit ITranslationGroup details."""
 
     schema = ITranslationGroup
-    field_names = ['name', 'title', 'summary', 'translation_guide_url']
+    field_names = ["name", "title", "summary", "translation_guide_url"]
 
     page_title = "Change details"
 
@@ -163,16 +160,17 @@ class TranslationGroupEditView(LaunchpadEditFormView):
 
     def validate(self, data):
         """Check that we follow fields restrictions."""
-        new_name = data.get('name')
+        new_name = data.get("name")
         translation_group = getUtility(ITranslationGroupSet)
-        if (self.context.name != new_name):
+        if self.context.name != new_name:
             try:
                 translation_group[new_name]
             except NotFoundError:
                 # The new name doesn't exist so it's valid.
                 return
-            self.setFieldError('name',
-                "There is already a translation group with this name")
+            self.setFieldError(
+                "name", "There is already a translation group with this name"
+            )
 
     @property
     def cancel_url(self):
@@ -191,33 +189,38 @@ class TranslationGroupAddView(LaunchpadFormView):
     """View class to add ITranslationGroup objects."""
 
     schema = ITranslationGroup
-    field_names = ['name', 'title', 'summary', 'translation_guide_url']
+    field_names = ["name", "title", "summary", "translation_guide_url"]
     label = "Create a new translation group"
     page_title = label
 
     @action("Create", name="create")
     def create_action(self, action, data):
         """Add a new translation group to Launchpad."""
-        name = data.get('name')
-        title = data.get('title')
-        summary = data.get('summary')
-        translation_guide_url = data.get('translation_guide_url')
+        name = data.get("name")
+        title = data.get("title")
+        summary = data.get("summary")
+        translation_guide_url = data.get("translation_guide_url")
         new_group = getUtility(ITranslationGroupSet).new(
-            name=name, title=title, summary=summary,
-            translation_guide_url=translation_guide_url, owner=self.user)
+            name=name,
+            title=title,
+            summary=summary,
+            translation_guide_url=translation_guide_url,
+            owner=self.user,
+        )
 
         self.next_url = canonical_url(new_group)
 
     def validate(self, data):
         """Do not allow new groups with duplicated names."""
-        name = data.get('name')
+        name = data.get("name")
         try:
             self.context[name]
         except NotFoundError:
             # The given name doesn't exist so it's valid.
             return
-        self.setFieldError('name',
-            "There is already a translation group with such name")
+        self.setFieldError(
+            "name", "There is already a translation group with such name"
+        )
 
     @property
     def cancel_url(self):

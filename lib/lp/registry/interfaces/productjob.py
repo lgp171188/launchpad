@@ -4,54 +4,45 @@
 """Interfaces for the Jobs system to update products and send notifications."""
 
 __all__ = [
-    'IProductJob',
-    'IProductJobSource',
-    'IProductNotificationJob',
-    'IProductNotificationJobSource',
-    'ICommercialExpiredJob',
-    'ICommercialExpiredJobSource',
-    'ISevenDayCommercialExpirationJob',
-    'ISevenDayCommercialExpirationJobSource',
-    'IThirtyDayCommercialExpirationJob',
-    'IThirtyDayCommercialExpirationJobSource',
-    ]
+    "IProductJob",
+    "IProductJobSource",
+    "IProductNotificationJob",
+    "IProductNotificationJobSource",
+    "ICommercialExpiredJob",
+    "ICommercialExpiredJobSource",
+    "ISevenDayCommercialExpirationJob",
+    "ISevenDayCommercialExpirationJobSource",
+    "IThirtyDayCommercialExpirationJob",
+    "IThirtyDayCommercialExpirationJobSource",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Int,
-    Object,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Int, Object
 
 from lp import _
 from lp.registry.interfaces.product import IProduct
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IProductJob(IRunnableJob):
     """A Job related to an `IProduct`."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number of this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number of this job."),
+    )
 
     job = Object(
-        title=_('The common Job attributes'),
-        schema=IJob,
-        required=True)
+        title=_("The common Job attributes"), schema=IJob, required=True
+    )
 
     product = Object(
-        title=_('The product the job is for'),
-        schema=IProduct,
-        required=True)
+        title=_("The product the job is for"), schema=IProduct, required=True
+    )
 
-    metadata = Attribute('A dict of data for the job')
+    metadata = Attribute("A dict of data for the job")
 
 
 class IProductJobSource(IJobSource):
@@ -79,14 +70,16 @@ class IProductJobSource(IJobSource):
 class IProductNotificationJob(IProductJob):
     """A job that sends a notification about a product."""
 
-    subject = Attribute('The subject line of the notification.')
+    subject = Attribute("The subject line of the notification.")
     email_template_name = Attribute(
-        'The name of the email template to create the message body from.')
-    reviewer = Attribute('The user or agent sending the email.')
-    recipients = Attribute('An `INotificationRecipientSet`.')
+        "The name of the email template to create the message body from."
+    )
+    reviewer = Attribute("The user or agent sending the email.")
+    recipients = Attribute("An `INotificationRecipientSet`.")
     message_data = Attribute(
-        'A dict that is interpolated with the email template.')
-    reply_to = Attribute('The optional address to set as the Reply-To.')
+        "A dict that is interpolated with the email template."
+    )
+    reply_to = Attribute("The optional address to set as the Reply-To.")
 
     def getBodyAndHeaders(email_template, address, reply_to=None):
         """Return a tuple of email message body and headers.
@@ -115,8 +108,13 @@ class IProductNotificationJob(IProductJob):
 class IProductNotificationJobSource(IProductJobSource):
     """An interface for creating `IProductNotificationJob`s."""
 
-    def create(product, email_template_name, subject,
-               reviewer, reply_to_commercial=False):
+    def create(
+        product,
+        email_template_name,
+        subject,
+        reviewer,
+        reply_to_commercial=False,
+    ):
         """Create a new `IProductNotificationJob`.
 
         :param product: An IProduct.
@@ -130,7 +128,6 @@ class IProductNotificationJobSource(IProductJobSource):
 
 
 class ExpirationSource(Interface):
-
     def create(product, reviewer):
         """Create a new job.
 
@@ -153,8 +150,9 @@ class ISevenDayCommercialExpirationJob(IProductNotificationJob):
     """A job that sends an email about an expiring commercial subscription."""
 
 
-class ISevenDayCommercialExpirationJobSource(IProductNotificationJobSource,
-                                             ExpirationSource):
+class ISevenDayCommercialExpirationJobSource(
+    IProductNotificationJobSource, ExpirationSource
+):
     """An interface for creating `ISevenDayCommercialExpirationJob`s."""
 
 
@@ -162,8 +160,9 @@ class IThirtyDayCommercialExpirationJob(IProductNotificationJob):
     """A job that sends an email about an expiring commercial subscription."""
 
 
-class IThirtyDayCommercialExpirationJobSource(IProductNotificationJobSource,
-                                              ExpirationSource):
+class IThirtyDayCommercialExpirationJobSource(
+    IProductNotificationJobSource, ExpirationSource
+):
     """An interface for creating `IThirtyDayCommercialExpirationJob`s."""
 
 
@@ -176,6 +175,7 @@ class ICommercialExpiredJob(IProductNotificationJob):
     """
 
 
-class ICommercialExpiredJobSource(IProductNotificationJobSource,
-                                  ExpirationSource):
+class ICommercialExpiredJobSource(
+    IProductNotificationJobSource, ExpirationSource
+):
     """An interface for creating `IThirtyDayCommercialExpirationJob`s."""

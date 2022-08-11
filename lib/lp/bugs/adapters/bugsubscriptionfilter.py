@@ -4,9 +4,9 @@
 """Adapt IStructuralSubscription to other types."""
 
 __all__ = [
-    'bugsubscriptionfilter_to_distribution',
-    'bugsubscriptionfilter_to_product',
-    ]
+    "bugsubscriptionfilter_to_distribution",
+    "bugsubscriptionfilter_to_product",
+]
 
 
 def bugsubscriptionfilter_to_distribution(bug_subscription_filter):

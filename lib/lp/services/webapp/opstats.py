@@ -20,30 +20,44 @@ class OpStats(LaunchpadXMLRPCView):
     @classmethod
     def resetStats(cls):
         """Reset the collected stats to 0."""
-        OpStats.stats.update({
-            # Global
-            'requests': 0,       # Requests, all protocols, all statuses
-            'retries': 0,        # Optimistic transaction retries.
-            'soft timeouts': 0,  # Requests that generated a soft timeout OOPS
-            'timeouts': 0,       # Requests that generated a hard timeout OOPS
-
-            # XML-RPC specific
-            'xml-rpc requests': 0,  # XML-RPC requests, all statuses
-            'xml-rpc faults': 0,    # XML-RPC requests returning a Fault
-
-            # HTTP specific
-            'http requests': 0,
-            '404s': 0,  # Not Found
-            '500s': 0,  # Internal Server Error (eg. unhandled exception)
-            '503s': 0,  # Service Unavailable (eg. Timeout)
-            '1XXs': 0,  # Informational (Don't think Launchpad produces these)
-            '2XXs': 0,  # Successful
-            '3XXs': 0,  # Redirection
-            '4XXs': 0,  # Client Errors
-            '5XXs': 0,  # Server Errors
-            '6XXs': 0,  # Internal Errors
-            '5XXs_b': 0,  # Server Errors returned to browsers (not robots).
-            })
+        # Global
+        OpStats.stats.update(
+            {
+                # Requests, all protocols, all statuses
+                "requests": 0,
+                # Optimistic transaction retries.
+                "retries": 0,
+                # Requests that generated a soft timeout OOPS
+                "soft timeouts": 0,
+                # Requests that generated a hard timeout OOPS
+                "timeouts": 0,
+            }
+        )
+        # XML-RPC specific
+        OpStats.stats.update(
+            {
+                # XML-RPC requests, all statuses
+                "xml-rpc requests": 0,
+                # XML-RPC requests returning a Fault
+                "xml-rpc faults": 0,
+            }
+        )
+        # HTTP specific
+        OpStats.stats.update(
+            {
+                "http requests": 0,
+                "404s": 0,  # Not Found
+                "500s": 0,  # Internal Server Error (eg. unhandled exception)
+                "503s": 0,  # Service Unavailable (eg. Timeout)
+                "1XXs": 0,  # Informational (Don't think LP produces these)
+                "2XXs": 0,  # Successful
+                "3XXs": 0,  # Redirection
+                "4XXs": 0,  # Client Errors
+                "5XXs": 0,  # Server Errors
+                "6XXs": 0,  # Internal Errors
+                "5XXs_b": 0,  # Server Errors returned to browsers (not robots)
+            }
+        )
 
     def opstats(self):
         """Return a dictionary of a number of operational statistics.
@@ -66,14 +80,19 @@ class OpStats(LaunchpadXMLRPCView):
         now = time()
         out = io.StringIO()
         for stat_key in sorted(OpStats.stats.keys()):
-            print('%s:%d@%d' % (
+            print(
+                "%s:%d@%d"
+                % (
                     # Make keys more cricket friendly
-                    stat_key.replace(' ', '_').replace('-', ''),
-                    OpStats.stats[stat_key], now
-                    ), file=out)
+                    stat_key.replace(" ", "_").replace("-", ""),
+                    OpStats.stats[stat_key],
+                    now,
+                ),
+                file=out,
+            )
         self.request.response.setHeader(
-                'Content-Type', 'text/plain; charset=US-ASCII'
-                )
+            "Content-Type", "text/plain; charset=US-ASCII"
+        )
         return out.getvalue()
 
 

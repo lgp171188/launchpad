@@ -9,6 +9,7 @@
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
 
+    <authorizations module=".security" />
     <class class="lp.services.auth.model.AccessToken">
         <require
             permission="launchpad.Edit"

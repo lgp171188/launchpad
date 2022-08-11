@@ -10,9 +10,9 @@
 # simply referencing the interfaces.
 
 __all__ = [
-    'LaunchpadAnnouncementsFeed',
-    'TargetAnnouncementsFeed',
-    ]
+    "LaunchpadAnnouncementsFeed",
+    "TargetAnnouncementsFeed",
+]
 
 
 from zope.component import getUtility
@@ -21,7 +21,7 @@ from lp.app.browser.stringformatter import FormattersAPI
 from lp.registry.interfaces.announcement import (
     IAnnouncementSet,
     IHasAnnouncements,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
@@ -30,12 +30,9 @@ from lp.services.feeds.feed import (
     FeedEntry,
     FeedPerson,
     FeedTypedData,
-    )
+)
 from lp.services.feeds.interfaces.application import IFeedsApplication
-from lp.services.webapp import (
-    canonical_url,
-    urlappend,
-    )
+from lp.services.webapp import canonical_url, urlappend
 
 
 class AnnouncementsFeedBase(FeedBase):
@@ -52,8 +49,9 @@ class AnnouncementsFeedBase(FeedBase):
         """See `IFeed`."""
         # Return the human-readable alternate URL for this feed.  For example:
         # https://launchpad.net/ubuntu/+announcements
-        return urlappend(canonical_url(self.context, rootsite="mainsite"),
-                         "+announcements")
+        return urlappend(
+            canonical_url(self.context, rootsite="mainsite"), "+announcements"
+        )
 
     def itemToFeedEntry(self, announcement):
         """See `IFeed`."""
@@ -68,34 +66,36 @@ class AnnouncementsFeedBase(FeedBase):
         # http://launchpad.net/ubuntu/+announcment/12
         entry_link_alternate = "%s%s" % (
             canonical_url(announcement.target, rootsite=self.rootsite),
-            "/+announcement/%d" % announcement.id)
+            "/+announcement/%d" % announcement.id,
+        )
         # The content of the entry is the text displayed as the body in the
         # feed reader.  For announcements it is plain text but it must be
         # escaped to account for any special characters the user may have
         # entered, such as '&' and '<' because it will be embedded in the XML
         # document.
         formatted_summary = FormattersAPI(announcement.summary).text_to_html()
-        content = FeedTypedData(formatted_summary,
-                                content_type="html",
-                                root_url=self.root_url)
+        content = FeedTypedData(
+            formatted_summary, content_type="html", root_url=self.root_url
+        )
         # The entry for an announcement has distinct dates for created,
         # updated, and published.  For some data, the created and published
         # dates will be the same.  The announcements also only have a singe
         # author.
 
-        entry_id = 'tag:launchpad.net,%s:/+announcement/%d' % (
+        entry_id = "tag:launchpad.net,%s:/+announcement/%d" % (
             announcement.date_created.date().isoformat(),
-            announcement.id)
+            announcement.id,
+        )
         entry = FeedEntry(
             title=title,
             link_alternate=entry_link_alternate,
             date_created=announcement.date_created,
             date_updated=announcement.date_updated,
             date_published=announcement.date_announced,
-            authors=[FeedPerson(announcement.registrant,
-                                rootsite="mainsite")],
+            authors=[FeedPerson(announcement.registrant, rootsite="mainsite")],
             content=content,
-            id_=entry_id)
+            id_=entry_id,
+        )
         return entry
 
     def _entryTitle(self, announcement):
@@ -128,15 +128,17 @@ class LaunchpadAnnouncementsFeed(AnnouncementsFeedBase):
 
         # The quantity is defined in FeedBase or config file.
         items = getUtility(IAnnouncementSet).getAnnouncements(
-            limit=self.quantity)
+            limit=self.quantity
+        )
         # Convert the items into their feed entry representation.
         items = [self.itemToFeedEntry(item) for item in items]
         return items
 
     def _entryTitle(self, announcement):
         """Return an `IFeedTypedData` instance for the feed title."""
-        return FeedTypedData('[%s] %s' % (
-                announcement.target.name, announcement.title))
+        return FeedTypedData(
+            "[%s] %s" % (announcement.target.name, announcement.title)
+        )
 
     @property
     def title(self):
@@ -149,7 +151,7 @@ class LaunchpadAnnouncementsFeed(AnnouncementsFeedBase):
         """See `IFeed`."""
         # The logo is an image representing the feed.  Since this feed is for
         # all announcements in Launchpad, return the Launchpad logo.
-        url = '/@@/launchpad-logo'
+        url = "/@@/launchpad-logo"
         return self.site_url + url
 
     @property
@@ -157,7 +159,7 @@ class LaunchpadAnnouncementsFeed(AnnouncementsFeedBase):
         """See `IFeed`."""
         # The icon is an icon representing the feed.  Since this feed is for
         # all announcements in Launchpad, return the Launchpad icon.
-        url = '/@@/launchpad'
+        url = "/@@/launchpad"
         return self.site_url + url
 
 
@@ -167,6 +169,7 @@ class TargetAnnouncementsFeed(AnnouncementsFeedBase):
     Used for any class that implements IHasAnnouncements such as project,
     product, or distribution.
     """
+
     # This view is used for any class implementing `IHasAnnouncments`.
     usedfor = IHasAnnouncements
 
@@ -196,15 +199,16 @@ class TargetAnnouncementsFeed(AnnouncementsFeedBase):
         if self.context.logo is not None:
             return self.context.logo.getURL()
         elif IProjectGroup.providedBy(self.context):
-            url = '/@@/project-logo'
+            url = "/@@/project-logo"
         elif IProduct.providedBy(self.context):
-            url = '/@@/product-logo'
+            url = "/@@/product-logo"
         elif IDistribution.providedBy(self.context):
-            url = '/@@/distribution-logo'
+            url = "/@@/distribution-logo"
         else:
             raise AssertionError(
                 "Context for TargetsAnnouncementsFeed does not provide an "
-                "expected interface.")
+                "expected interface."
+            )
         return self.site_url + url
 
     @property
@@ -214,13 +218,14 @@ class TargetAnnouncementsFeed(AnnouncementsFeedBase):
         if self.context.icon is not None:
             return self.context.icon.getURL()
         elif IProjectGroup.providedBy(self.context):
-            url = '/@@/project'
+            url = "/@@/project"
         elif IProduct.providedBy(self.context):
-            url = '/@@/product'
+            url = "/@@/product"
         elif IDistribution.providedBy(self.context):
-            url = '/@@/distribution'
+            url = "/@@/distribution"
         else:
             raise AssertionError(
                 "Context for TargetsAnnouncementsFeed does not provide an "
-                "expected interface.")
+                "expected interface."
+            )
         return self.site_url + url

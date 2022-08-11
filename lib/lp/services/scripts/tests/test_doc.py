@@ -8,31 +8,28 @@ Run the doctests and pagetests.
 import os
 
 from lp.services.testing import build_test_suite
-from lp.testing.layers import (
-    DatabaseLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import DatabaseLayer, LaunchpadZopelessLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
     setUp,
     tearDown,
-    )
-
+)
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 special = {
-    'script-monitoring.txt': LayeredDocFileSuite(
-            '../doc/script-monitoring.txt',
-            setUp=setUp, tearDown=tearDown,
-            layer=LaunchpadZopelessLayer,
-            ),
-    'launchpad-scripts.txt': LayeredDocFileSuite(
-            '../doc/launchpad-scripts.txt',
-            setUp=setGlobs,
-            layer=DatabaseLayer,
-            ),
+    "script-monitoring.rst": LayeredDocFileSuite(
+        "../doc/script-monitoring.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "launchpad-scripts.rst": LayeredDocFileSuite(
+        "../doc/launchpad-scripts.rst",
+        setUp=setGlobs,
+        layer=DatabaseLayer,
+    ),
 }
 
 

@@ -7,18 +7,15 @@ This is as lightweight as possible, as it runs on PPA frontends.
 """
 
 __all__ = [
-    'check_password',
-    ]
+    "check_password",
+]
 
 import crypt
-from random import SystemRandom
 import string
 import sys
 import time
-from xmlrpc.client import (
-    Fault,
-    ServerProxy,
-    )
+from random import SystemRandom
+from xmlrpc.client import Fault, ServerProxy
 
 import six
 
@@ -42,7 +39,7 @@ def _get_archive_reference(environ):
     # we're installed.
     path = six.ensure_text(environ.get("SCRIPT_NAME") or "/", "ISO-8859-1")
     path_info = six.ensure_text(environ.get("PATH_INFO", ""), "ISO-8859-1")
-    path += (path_info if path else path_info[1:])
+    path += path_info if path else path_info[1:]
     # Extract the first three segments of the path, and rearrange them to
     # form an archive reference.
     path_parts = path.lstrip("/").split("/")
@@ -83,8 +80,10 @@ def check_password(environ, user, password):
         return None
     memcache_key = "archive-auth:%s:%s" % (archive_reference, user)
     crypted_password = _memcache_client.get(memcache_key)
-    if (crypted_password and
-            crypt.crypt(password, crypted_password) == crypted_password):
+    if (
+        crypted_password
+        and crypt.crypt(password, crypted_password) == crypted_password
+    ):
         _log(environ, "%s@%s: Authorized (cached).", user, archive_reference)
         return True
     proxy = ServerProxy(config.personalpackagearchive.archive_api_endpoint)
@@ -92,14 +91,18 @@ def check_password(environ, user, password):
         proxy.checkArchiveAuthToken(archive_reference, user, password)
         # Cache positive responses for a minute to reduce database load.
         _memcache_client.set(
-            memcache_key, _crypt_sha256(password), int(time.time()) + 60)
+            memcache_key, _crypt_sha256(password), int(time.time()) + 60
+        )
         _log(environ, "%s@%s: Authorized.", user, archive_reference)
         return True
     except Fault as e:
         if e.faultCode == 410:  # Unauthorized
             _log(
-                environ, "%s@%s: Password does not match.",
-                user, archive_reference)
+                environ,
+                "%s@%s: Password does not match.",
+                user,
+                archive_reference,
+            )
             return False
         else:
             # Interpret any other fault as NotFound (320).

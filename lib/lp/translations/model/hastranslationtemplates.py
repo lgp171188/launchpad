@@ -4,8 +4,8 @@
 """Implementation class for objects that `POTemplate`s can belong to."""
 
 __all__ = [
-    'HasTranslationTemplatesMixin',
-    ]
+    "HasTranslationTemplatesMixin",
+]
 
 from storm.expr import Desc
 from zope.interface import implementer
@@ -13,7 +13,7 @@ from zope.interface import implementer
 from lp.services import helpers
 from lp.translations.interfaces.hastranslationtemplates import (
     IHasTranslationTemplates,
-    )
+)
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potemplate import POTemplate
 
@@ -28,7 +28,8 @@ class HasTranslationTemplatesMixin:
         To be provided by derived classes.
         """
         raise NotImplementedError(
-            "Child class must provide getTemplatesCollection.")
+            "Child class must provide getTemplatesCollection."
+        )
 
     def getSharingPartner(self):
         """See `IHasTranslationTemplates`.
@@ -36,7 +37,8 @@ class HasTranslationTemplatesMixin:
         To be provided by derived classes.
         """
         raise NotImplementedError(
-            "Child class must provide getSharingPartner.")
+            "Child class must provide getSharingPartner."
+        )
 
     def _orderTemplates(self, result):
         """Apply the conventional ordering to a result set of templates."""
@@ -46,9 +48,9 @@ class HasTranslationTemplatesMixin:
         """See `IHasTranslationTemplates`."""
         return self.getTemplatesCollection().restrictCurrent(current_value)
 
-    def getCurrentTranslationTemplates(self,
-                                       just_ids=False,
-                                       current_value=True):
+    def getCurrentTranslationTemplates(
+        self, just_ids=False, current_value=True
+    ):
         """See `IHasTranslationTemplates`."""
         if just_ids:
             selection = POTemplate.id
@@ -66,15 +68,16 @@ class HasTranslationTemplatesMixin:
     @property
     def has_current_translation_templates(self):
         """See `IHasTranslationTemplates`."""
-        return bool(
-            self.getCurrentTranslationTemplates(just_ids=True).any())
+        return bool(self.getCurrentTranslationTemplates(just_ids=True).any())
 
     @property
     def has_obsolete_translation_templates(self):
         """See `IHasTranslationTemplates`."""
         return bool(
             self.getCurrentTranslationTemplates(
-                just_ids=True, current_value=False).any())
+                just_ids=True, current_value=False
+            ).any()
+        )
 
     @property
     def has_sharing_translation_templates(self):
@@ -97,8 +100,7 @@ class HasTranslationTemplatesMixin:
     @property
     def has_translation_files(self):
         """See `IHasTranslationTemplates`."""
-        return bool(
-            self.getCurrentTranslationFiles(just_ids=True).any())
+        return bool(self.getCurrentTranslationFiles(just_ids=True).any())
 
     def getTranslationTemplates(self):
         """See `IHasTranslationTemplates`."""
@@ -110,7 +112,11 @@ class HasTranslationTemplatesMixin:
 
     def getTranslationTemplateFormats(self):
         """See `IHasTranslationTemplates`."""
-        formats_query = self.getCurrentTranslationTemplates().order_by(
-            'source_file_format').config(distinct=True)
+        formats_query = (
+            self.getCurrentTranslationTemplates()
+            .order_by("source_file_format")
+            .config(distinct=True)
+        )
         return helpers.shortlist(
-            formats_query.values(POTemplate.source_file_format), 10)
+            formats_query.values(POTemplate.source_file_format), 10
+        )

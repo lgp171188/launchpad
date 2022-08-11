@@ -14,7 +14,6 @@ from zope.component import getUtility
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.services.features.testing import FeatureFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -30,12 +29,15 @@ class TestDdtpTarball(TestCaseWithFactory):
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
-            self.distro)
+            self.distro
+        )
         db_pubconf.root_dir = self.temp_dir
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY
+        )
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro)
+            distribution=self.distro
+        )
         self.suite = self.distroseries.name
         # CustomUpload.installFiles requires a umask of 0o022.
         old_umask = os.umask(0o022)
@@ -43,7 +45,8 @@ class TestDdtpTarball(TestCaseWithFactory):
 
     def openArchive(self, version):
         self.path = os.path.join(
-            self.temp_dir, "translations_main_%s.tar.gz" % version)
+            self.temp_dir, "translations_main_%s.tar.gz" % version
+        )
         self.buffer = open(self.path, "wb")
         self.tarfile = LaunchpadWriteTarFile(self.buffer)
 
@@ -55,14 +58,18 @@ class TestDdtpTarball(TestCaseWithFactory):
     def getTranslationsPath(self, filename):
         pubconf = getPubConfig(self.archive)
         return os.path.join(
-            pubconf.archiveroot, "dists", self.suite, "main", "i18n", filename)
+            pubconf.archiveroot, "dists", self.suite, "main", "i18n", filename
+        )
 
     def test_basic(self):
         # Processing a simple correct tar file works.
         self.openArchive("20060728")
         names = (
-            "Translation-en", "Translation-en.xz",
-            "Translation-de", "Translation-de.xz")
+            "Translation-en",
+            "Translation-en.xz",
+            "Translation-de",
+            "Translation-de.xz",
+        )
         for name in names:
             self.tarfile.add_file(os.path.join("i18n", name), b"")
         self.process()
@@ -75,8 +82,9 @@ class TestDdtpTarball(TestCaseWithFactory):
         self.tarfile.add_file("i18n/Translation-de", b"")
         self.tarfile.add_directory("i18n/foo")
         self.process()
-        self.assertTrue(os.path.exists(
-            self.getTranslationsPath("Translation-de")))
+        self.assertTrue(
+            os.path.exists(self.getTranslationsPath("Translation-de"))
+        )
         self.assertFalse(os.path.exists(self.getTranslationsPath("foo")))
 
     def test_partial_update(self):
@@ -119,10 +127,8 @@ class TestDdtpTarball(TestCaseWithFactory):
         # file (for the PPA case), then colliding entries in DDTP
         # tarballs are not extracted.
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PPA)
-        self.useFixture(FeatureFixture({
-            "soyuz.ppa.separate_long_descriptions": "on",
-            }))
+            distribution=self.distro, purpose=ArchivePurpose.PPA
+        )
         self.distroseries.include_long_descriptions = False
         self.openArchive("20060728")
         en_names = ("Translation-en", "Translation-en.xz")
@@ -170,7 +176,9 @@ class TestDdtpTarball(TestCaseWithFactory):
             # uses the version for anything.
             ("translations", "main", "1.tar.gz"),
             DdtpTarballUpload.parsePath(
-                "/dir_with_underscores/translations_main_1.tar.gz"))
+                "/dir_with_underscores/translations_main_1.tar.gz"
+            ),
+        )
 
     def test_getSeriesKey_extracts_component(self):
         # getSeriesKey extracts the component from an upload's filename.
@@ -187,5 +195,6 @@ class TestDdtpTarball(TestCaseWithFactory):
     def test_getSeriesKey_refuses_names_with_wrong_number_of_fields(self):
         # getSeriesKey requires exactly three fields.
         self.assertIsNone(DdtpTarballUpload.getSeriesKey("package_1.0.tar.gz"))
-        self.assertIsNone(DdtpTarballUpload.getSeriesKey(
-            "one_two_three_four_5.tar.gz"))
+        self.assertIsNone(
+            DdtpTarballUpload.getSeriesKey("one_two_three_four_5.tar.gz")
+        )

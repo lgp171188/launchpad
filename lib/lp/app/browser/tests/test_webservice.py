@@ -23,156 +23,163 @@ class TestXHTMLRepresentations(TestCaseWithFactory):
         eric = self.factory.makePerson()
         # We need something that has an IPersonChoice, a project will do.
         product = self.factory.makeProduct(owner=eric)
-        field = IProduct['owner']
+        field = IProduct["owner"]
         request = get_current_web_service_request()
         renderer = getMultiAdapter(
-            (product, field, request), IFieldHTMLRenderer)
+            (product, field, request), IFieldHTMLRenderer
+        )
         # The representation of a person is the same as a tales
         # PersonFormatter.
         self.assertEqual(format_link(eric), renderer(eric))
 
     def test_text(self):
         # Test the XHTML representation of a text field.
-        text = '\N{SNOWMAN} snowman@example.com bug 1'
+        text = "\N{SNOWMAN} snowman@example.com bug 1"
         # We need something that has an IPersonChoice, a project will do.
         product = self.factory.makeProduct()
-        field = IProduct['description']
+        field = IProduct["description"]
         request = get_current_web_service_request()
         renderer = getMultiAdapter(
-            (product, field, request), IFieldHTMLRenderer)
+            (product, field, request), IFieldHTMLRenderer
+        )
         # The representation is linkified html.
         self.assertEqual(
-            '<p>\N{SNOWMAN} snowman@example.com '
+            "<p>\N{SNOWMAN} snowman@example.com "
             '<a href="/bugs/1" class="bug-link">bug 1</a></p>',
-            renderer(text))
+            renderer(text),
+        )
 
 
 class BaseMissingObjectWebService:
     """Base test of NotFound errors for top-level webservice objects."""
 
     layer = DatabaseFunctionalLayer
-    object_type = None
+
+    object_type = None  # type: str
 
     def test_object_not_found(self):
         """Missing top-level objects generate 404s but not OOPS."""
         webservice = LaunchpadWebServiceCaller(
-            'launchpad-library', 'salgado-change-anything')
-        response = webservice.get('/%s/123456789' % self.object_type)
+            "launchpad-library", "salgado-change-anything"
+        )
+        response = webservice.get("/%s/123456789" % self.object_type)
         self.assertEqual(response.status, 404)
-        self.assertEqual(response.getheader('x-lazr-oopsid'), None)
+        self.assertEqual(response.getheader("x-lazr-oopsid"), None)
 
 
 class TestMissingBranches(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice branches requests."""
 
-    object_type = 'branches'
+    object_type = "branches"
 
 
-class TestMissingBugTrackers(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+class TestMissingBugTrackers(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice bug_trackers requests."""
 
-    object_type = 'bug_trackers'
+    object_type = "bug_trackers"
 
 
 class TestMissingBugs(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice bugs requests."""
 
-    object_type = 'bugs'
+    object_type = "bugs"
 
 
 class TestMissingBuilders(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice builders requests."""
 
-    object_type = 'builders'
+    object_type = "builders"
 
 
 class TestMissingCountries(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice countries requests."""
 
-    object_type = 'countries'
+    object_type = "countries"
 
 
 class TestMissingCves(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice cves requests."""
 
-    object_type = 'cves'
+    object_type = "cves"
 
 
 class TestMissingDistributions(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+    BaseMissingObjectWebService, TestCaseWithFactory
+):
     """Test NotFound for webservice distributions requests."""
 
-    object_type = 'distributions'
+    object_type = "distributions"
 
 
 class TestMissingLanguages(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice launguages requests."""
 
-    object_type = 'languages'
+    object_type = "languages"
 
 
 class TestMissingLiveFSes(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice livefses requests."""
 
-    object_type = 'livefses'
+    object_type = "livefses"
 
 
-class TestMissingPackagesets(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+class TestMissingPackagesets(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice packagesets requests."""
 
-    object_type = 'packagesets'
+    object_type = "packagesets"
 
 
 class TestMissingPeople(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice branches requests."""
 
-    object_type = 'people'
+    object_type = "people"
 
 
 class TestMissingProjectGroups(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+    BaseMissingObjectWebService, TestCaseWithFactory
+):
     """Test NotFound for webservice project_groups requests."""
 
-    object_type = 'project_groups'
+    object_type = "project_groups"
 
 
 class TestMissingProjects(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice projects requests."""
 
-    object_type = 'projects'
+    object_type = "projects"
 
 
 class TestMissingQuestions(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice questions requests."""
 
-    object_type = 'questions'
+    object_type = "questions"
 
 
 class TestMissingSnaps(BaseMissingObjectWebService, TestCaseWithFactory):
     """Test NotFound for webservice snaps requests."""
 
-    object_type = '+snaps'
+    object_type = "+snaps"
 
 
 class TestMissingTemporaryBlobs(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+    BaseMissingObjectWebService, TestCaseWithFactory
+):
     """Test NotFound for webservice temporary_blobs requests."""
 
-    object_type = 'temporary_blobs'
+    object_type = "temporary_blobs"
 
 
 class TestMissingTranslationGroups(
-    BaseMissingObjectWebService, TestCaseWithFactory):
+    BaseMissingObjectWebService, TestCaseWithFactory
+):
     """Test NotFound for webservice translation_groups requests."""
 
-    object_type = 'translation_groups'
+    object_type = "translation_groups"
 
 
 class TestMissingTranslationImportQueueEntries(
-    BaseMissingObjectWebService, TestCaseWithFactory):
-    """Test NotFound for webservice translation_import_queue_entries requests.
-    """
+    BaseMissingObjectWebService, TestCaseWithFactory
+):
+    """Test NotFound for webservice translation_import_queue_entries."""
 
-    object_type = 'translation_import_queue_entries'
+    object_type = "translation_import_queue_entries"

@@ -4,52 +4,45 @@
 """Interfaces for sharing jobs."""
 
 __all__ = [
-    'IRemoveArtifactSubscriptionsJob',
-    'IRemoveArtifactSubscriptionsJobSource',
-    'ISharingJob',
-    'ISharingJobSource',
-    ]
+    "IRemoveArtifactSubscriptionsJob",
+    "IRemoveArtifactSubscriptionsJobSource",
+    "ISharingJob",
+    "ISharingJobSource",
+]
 
 from zope.interface import Attribute
-from zope.schema import (
-    Int,
-    Object,
-    )
+from zope.schema import Int, Object
 
 from lp import _
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class ISharingJob(IRunnableJob):
     """A Job for sharing related tasks."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The tracking number for this job."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The tracking number for this job."),
+    )
 
-    job = Object(title=_('The common Job attributes'), schema=IJob,
-        required=True)
+    job = Object(
+        title=_("The common Job attributes"), schema=IJob, required=True
+    )
 
-    product = Object(
-        title=_('The product the job is for'),
-        schema=IProduct)
+    product = Object(title=_("The product the job is for"), schema=IProduct)
 
     distro = Object(
-        title=_('The distribution the job is for'),
-        schema=IDistribution)
+        title=_("The distribution the job is for"), schema=IDistribution
+    )
 
-    grantee = Object(
-        title=_('The grantee the job is for'),
-        schema=IPerson)
+    grantee = Object(title=_("The grantee the job is for"), schema=IPerson)
 
-    metadata = Attribute('A dict of data about the job.')
+    metadata = Attribute("A dict of data about the job.")
 
     def destroySelf():
         """Destroy this object."""
@@ -81,8 +74,13 @@ class ISharingJobSource(IJobSource):
 class IRemoveArtifactSubscriptionsJobSource(ISharingJobSource):
     """An interface for acquiring IRemoveArtifactSubscriptionsJobs."""
 
-    def create(requestor, artifacts=None, grantee=None, pillar=None,
-               information_types=None):
+    def create(
+        requestor,
+        artifacts=None,
+        grantee=None,
+        pillar=None,
+        information_types=None,
+    ):
         """Create a new job to remove subscriptions for the specified
         artifacts.
 

@@ -3,10 +3,11 @@
 
 """Adapters used in the Answer Tracker."""
 
-__all__ = []
-
+from typing import List
 
 from lp.answers.interfaces.faqtarget import IFAQTarget
+
+__all__ = []  # type: List[str]
 
 
 def question_to_questiontarget(question):

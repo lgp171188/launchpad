@@ -3,6 +3,7 @@
 
 """Tests for PersonSet."""
 
+import transaction
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -11,8 +12,7 @@ from testtools.matchers import (
     LessThan,
     MatchesDict,
     MatchesListwise,
-    )
-import transaction
+)
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -26,70 +26,55 @@ from lp.registry.errors import (
     NameAlreadyTaken,
     NoSuchAccount,
     NotPlaceholderAccount,
-    )
+)
 from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
     PersonCreationRationale,
     TeamEmailAddressError,
-    )
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.interfaces.ssh import (
-    SSHKeyAdditionError,
-    SSHKeyType,
-    )
+from lp.registry.interfaces.ssh import SSHKeyAdditionError, SSHKeyType
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.person import Person
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
-from lp.services.database.sqlbase import (
-    cursor,
-    flush_database_caches,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.sqlbase import cursor, flush_database_caches
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
     AccountDeceasedError,
     AccountStatus,
     AccountSuspendedError,
     IAccountSet,
-    )
+)
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressAlreadyTaken,
     EmailAddressStatus,
     IEmailAddressSet,
     InvalidEmailAddress,
-    )
+)
 from lp.services.identity.model.account import Account
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.log.logger import DevNullLogger
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
+    StormStatementRecorder,
+    TestCase,
+    TestCaseWithFactory,
+    admin_logged_in,
     anonymous_logged_in,
     login,
     logout,
     person_logged_in,
-    StormStatementRecorder,
-    TestCase,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
 
@@ -102,6 +87,7 @@ def make_openid_identifier(account, identifier):
 
 class TestPersonSet(TestCaseWithFactory):
     """Test `IPersonSet`."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -112,39 +98,40 @@ class TestPersonSet(TestCaseWithFactory):
 
     def test_isNameBlacklisted(self):
         cursor().execute(
-            "INSERT INTO NameBlacklist(id, regexp) VALUES (-100, 'foo')")
-        self.assertTrue(self.person_set.isNameBlacklisted('foo'))
-        self.assertFalse(self.person_set.isNameBlacklisted('bar'))
+            "INSERT INTO NameBlacklist(id, regexp) VALUES (-100, 'foo')"
+        )
+        self.assertTrue(self.person_set.isNameBlacklisted("foo"))
+        self.assertFalse(self.person_set.isNameBlacklisted("bar"))
 
     def test_isNameBlacklisted_user_is_admin(self):
         team = self.factory.makeTeam()
         name_blacklist_set = getUtility(INameBlacklistSet)
-        self.admin_exp = name_blacklist_set.create('fnord', admin=team)
+        self.admin_exp = name_blacklist_set.create("fnord", admin=team)
         self.store = IStore(self.admin_exp)
         self.store.flush()
         user = team.teamowner
-        self.assertFalse(self.person_set.isNameBlacklisted('fnord', user))
+        self.assertFalse(self.person_set.isNameBlacklisted("fnord", user))
 
     def test_getByEmail_ignores_case_and_whitespace(self):
-        person1_email = 'foo.bar@canonical.com'
+        person1_email = "foo.bar@canonical.com"
         person1 = self.person_set.getByEmail(person1_email)
         self.assertIsNotNone(
-            person1,
-            "PersonSet.getByEmail() could not find %r" % person1_email)
+            person1, "PersonSet.getByEmail() could not find %r" % person1_email
+        )
 
-        person2 = self.person_set.getByEmail('  foo.BAR@canonICAL.com  ')
+        person2 = self.person_set.getByEmail("  foo.BAR@canonICAL.com  ")
         self.assertIsNotNone(
             person2,
-            "PersonSet.getByEmail() should ignore case and whitespace.")
+            "PersonSet.getByEmail() should ignore case and whitespace.",
+        )
         self.assertEqual(person1, person2)
 
     def test_getByEmail_ignores_unvalidated_emails(self):
         person = self.factory.makePerson()
         self.factory.makeEmail(
-            'fnord@example.com',
-            person,
-            email_status=EmailAddressStatus.NEW)
-        found = self.person_set.getByEmail('fnord@example.com')
+            "fnord@example.com", person, email_status=EmailAddressStatus.NEW
+        )
+        found = self.person_set.getByEmail("fnord@example.com")
         self.assertTrue(found is None)
 
     def test_getPrecachedPersonsFromIDs(self):
@@ -156,10 +143,18 @@ class TestPersonSet(TestCaseWithFactory):
         transaction.commit()
 
         with StormStatementRecorder() as recorder:
-            persons = list(self.person_set.getPrecachedPersonsFromIDs(
-                person_ids, need_karma=True, need_ubuntu_coc=True,
-                need_teamowner=True, need_location=True, need_archive=True,
-                need_preferred_email=True, need_validity=True))
+            persons = list(
+                self.person_set.getPrecachedPersonsFromIDs(
+                    person_ids,
+                    need_karma=True,
+                    need_ubuntu_coc=True,
+                    need_teamowner=True,
+                    need_location=True,
+                    need_archive=True,
+                    need_preferred_email=True,
+                    need_validity=True,
+                )
+            )
         self.assertThat(recorder, HasQueryCount(LessThan(3)))
 
         with StormStatementRecorder() as recorder:
@@ -177,33 +172,45 @@ class TestPersonSet(TestCaseWithFactory):
         # getPrecachedPersonsFromIDs() sets preferredemail to the preferred
         # address if it exists, but otherwise leaves it as none.
         team_no_contact = self.factory.makeTeam(email=None)
-        team_contact = self.factory.makeTeam(email='team@example.com')
+        team_contact = self.factory.makeTeam(email="team@example.com")
         team_list = self.factory.makeTeam(email=None)
         self.factory.makeMailingList(team_list, team_list.teamowner)
         person_normal = self.factory.makePerson()
         person_unactivated = self.factory.makePerson(
-            account_status=AccountStatus.NOACCOUNT)
+            account_status=AccountStatus.NOACCOUNT
+        )
         person_ids = [
-            t.id for t in [
-                team_no_contact, team_contact, team_list, person_normal,
-                person_unactivated]]
+            t.id
+            for t in [
+                team_no_contact,
+                team_contact,
+                team_list,
+                person_normal,
+                person_unactivated,
+            ]
+        ]
         transaction.commit()
 
         with StormStatementRecorder() as recorder:
-            list(self.person_set.getPrecachedPersonsFromIDs(
-                person_ids, need_preferred_email=True))
+            list(
+                self.person_set.getPrecachedPersonsFromIDs(
+                    person_ids, need_preferred_email=True
+                )
+            )
         self.assertThat(recorder, HasQueryCount(Equals(1)))
 
         with StormStatementRecorder() as recorder:
             self.assertIsNone(team_no_contact.preferredemail)
             self.assertEqual(
                 EmailAddressStatus.PREFERRED,
-                team_contact.preferredemail.status)
+                team_contact.preferredemail.status,
+            )
             self.assertIsNone(team_list.preferredemail)
             self.assertIsNone(person_unactivated.preferredemail)
             self.assertEqual(
                 EmailAddressStatus.PREFERRED,
-                person_normal.preferredemail.status)
+                person_normal.preferredemail.status,
+            )
         self.assertThat(recorder, HasQueryCount(Equals(0)))
 
     def test_getPrecachedPersonsFromIDs_is_ubuntu_coc_signer(self):
@@ -216,10 +223,13 @@ class TestPersonSet(TestCaseWithFactory):
 
         persons = list(
             self.person_set.getPrecachedPersonsFromIDs(
-                person_ids, need_ubuntu_coc=True))
+                person_ids, need_ubuntu_coc=True
+            )
+        )
         self.assertContentEqual(
             zip(person_ids, [True, False, False]),
-            [(p.id, p.is_ubuntu_coc_signer) for p in persons])
+            [(p.id, p.is_ubuntu_coc_signer) for p in persons],
+        )
 
     def test_getByOpenIDIdentifier_returns_person(self):
         # getByOpenIDIdentifier takes a full OpenID identifier and
@@ -228,18 +238,22 @@ class TestPersonSet(TestCaseWithFactory):
         with person_logged_in(person):
             identifier = person.account.openid_identifiers.one().identifier
         for id_url in (
-                'http://testopenid.test/+id/%s' % identifier,
-                'http://login1.test/+id/%s' % identifier,
-                'http://login2.test/+id/%s' % identifier):
+            "http://testopenid.test/+id/%s" % identifier,
+            "http://login1.test/+id/%s" % identifier,
+            "http://login2.test/+id/%s" % identifier,
+        ):
             self.assertEqual(
-                person, self.person_set.getByOpenIDIdentifier(id_url))
+                person, self.person_set.getByOpenIDIdentifier(id_url)
+            )
 
     def test_getByOpenIDIdentifier_for_nonexistent_identifier_is_none(self):
         # None is returned if there's no matching person.
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                'http://testopenid.test/+id/notanid'))
+                "http://testopenid.test/+id/notanid"
+            ),
+        )
 
     def test_getByOpenIDIdentifier_for_bad_domain_is_none(self):
         # Even though the OpenIDIdentifier table doesn't store the
@@ -251,57 +265,65 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                'http://not.launchpad.test/+id/%s' % identifier))
+                "http://not.launchpad.test/+id/%s" % identifier
+            ),
+        )
 
     def test_find__accepts_queries_with_or_operator(self):
         # PersonSet.find() allows to search for OR combined terms.
-        person_one = self.factory.makePerson(name='baz')
-        person_two = self.factory.makeTeam(name='blah')
-        result = list(self.person_set.find('baz OR blah'))
+        person_one = self.factory.makePerson(name="baz")
+        person_two = self.factory.makeTeam(name="blah")
+        result = list(self.person_set.find("baz OR blah"))
         self.assertEqual([person_one, person_two], result)
 
     def test_findPerson__accepts_queries_with_or_operator(self):
         # PersonSet.findPerson() allows to search for OR combined terms.
         person_one = self.factory.makePerson(
-            name='baz', email='one@example.org')
+            name="baz", email="one@example.org"
+        )
         person_two = self.factory.makePerson(
-            name='blah', email='two@example.com')
-        result = list(self.person_set.findPerson('baz OR blah'))
+            name="blah", email="two@example.com"
+        )
+        result = list(self.person_set.findPerson("baz OR blah"))
         self.assertEqual([person_one, person_two], result)
         # Note that these OR searches do not work for email addresses.
-        result = list(self.person_set.findPerson(
-            'one@example.org OR two@example.org'))
+        result = list(
+            self.person_set.findPerson("one@example.org OR two@example.org")
+        )
         self.assertEqual([], result)
 
     def test_findPerson__case_insensitive_email_address_search(self):
         # A search for email addresses is case insensitve.
         person_one = self.factory.makePerson(
-            name='baz', email='ONE@example.org')
+            name="baz", email="ONE@example.org"
+        )
         person_two = self.factory.makePerson(
-            name='blah', email='two@example.com')
-        result = list(self.person_set.findPerson('one@example.org'))
+            name="blah", email="two@example.com"
+        )
+        result = list(self.person_set.findPerson("one@example.org"))
         self.assertEqual([person_one], result)
-        result = list(self.person_set.findPerson('TWO@example.com'))
+        result = list(self.person_set.findPerson("TWO@example.com"))
         self.assertEqual([person_two], result)
 
     def test_findTeam__accepts_queries_with_or_operator(self):
         # PersonSet.findTeam() allows to search for OR combined terms.
-        team_one = self.factory.makeTeam(name='baz', email='ONE@example.org')
-        team_two = self.factory.makeTeam(name='blah', email='TWO@example.com')
-        result = list(self.person_set.findTeam('baz OR blah'))
+        team_one = self.factory.makeTeam(name="baz", email="ONE@example.org")
+        team_two = self.factory.makeTeam(name="blah", email="TWO@example.com")
+        result = list(self.person_set.findTeam("baz OR blah"))
         self.assertEqual([team_one, team_two], result)
         # Note that these OR searches do not work for email addresses.
-        result = list(self.person_set.findTeam(
-            'one@example.org OR two@example.org'))
+        result = list(
+            self.person_set.findTeam("one@example.org OR two@example.org")
+        )
         self.assertEqual([], result)
 
     def test_findTeam__case_insensitive_email_address_search(self):
         # A search for email addresses is case insensitve.
-        team_one = self.factory.makeTeam(name='baz', email='ONE@example.org')
-        team_two = self.factory.makeTeam(name='blah', email='TWO@example.com')
-        result = list(self.person_set.findTeam('one@example.org'))
+        team_one = self.factory.makeTeam(name="baz", email="ONE@example.org")
+        team_two = self.factory.makeTeam(name="blah", email="TWO@example.com")
+        result = list(self.person_set.findTeam("one@example.org"))
         self.assertEqual([team_one], result)
-        result = list(self.person_set.findTeam('TWO@example.com'))
+        result = list(self.person_set.findTeam("TWO@example.com"))
         self.assertEqual([team_two], result)
 
 
@@ -315,34 +337,49 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
 
         # Generate some valid test data.
         self.account = self.makeAccount()
-        self.identifier = make_openid_identifier(self.account, 'whatever')
+        self.identifier = make_openid_identifier(self.account, "whatever")
         self.person = self.makePerson(self.account)
         self.email = self.makeEmailAddress(
-            email='whatever@example.com', person=self.person)
+            email="whatever@example.com", person=self.person
+        )
 
     def makeAccount(self):
-        return self.store.add(Account(
-            displayname='Displayname',
-            creation_rationale=AccountCreationRationale.UNKNOWN,
-            status=AccountStatus.ACTIVE))
+        return self.store.add(
+            Account(
+                displayname="Displayname",
+                creation_rationale=AccountCreationRationale.UNKNOWN,
+                status=AccountStatus.ACTIVE,
+            )
+        )
 
     def makePerson(self, account):
-        return self.store.add(Person(
-            name='acc%d' % account.id, account=account,
-            display_name='Displayname',
-            creation_rationale=PersonCreationRationale.UNKNOWN))
+        return self.store.add(
+            Person(
+                name="acc%d" % account.id,
+                account=account,
+                display_name="Displayname",
+                creation_rationale=PersonCreationRationale.UNKNOWN,
+            )
+        )
 
     def makeEmailAddress(self, email, person):
-            return self.store.add(EmailAddress(
+        return self.store.add(
+            EmailAddress(
                 email=email,
                 account=person.account,
                 person=person,
-                status=EmailAddressStatus.PREFERRED))
+                status=EmailAddressStatus.PREFERRED,
+            )
+        )
 
     def testAllValid(self):
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            self.identifier.identifier, self.email.email, 'Ignored Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            self.identifier.identifier,
+            self.email.email,
+            "Ignored Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         self.assertIs(False, updated)
@@ -352,14 +389,19 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.email.account, self.account)
         self.assertIs(self.email.person, self.person)
         self.assertEqual(
-            [self.identifier], list(self.account.openid_identifiers))
+            [self.identifier], list(self.account.openid_identifiers)
+        )
 
     def testEmailAddressCaseInsensitive(self):
         # As per testAllValid, but the email address used for the lookup
         # is all upper case.
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            self.identifier.identifier, self.email.email.upper(),
-            'Ignored Name', PersonCreationRationale.UNKNOWN, 'No Comment')
+            self.identifier.identifier,
+            self.email.email.upper(),
+            "Ignored Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         self.assertIs(False, updated)
@@ -369,15 +411,20 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.email.account, self.account)
         self.assertIs(self.email.person, self.person)
         self.assertEqual(
-            [self.identifier], list(self.account.openid_identifiers))
+            [self.identifier], list(self.account.openid_identifiers)
+        )
 
     def testNewOpenId(self):
         # Account looked up by email and the new OpenId identifier
         # attached. We can do this because we trust our OpenId Provider.
-        new_identifier = 'newident'
+        new_identifier = "newident"
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            new_identifier, self.email.email, 'Ignored Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            new_identifier,
+            self.email.email,
+            "Ignored Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         self.assertIs(True, updated)
@@ -392,18 +439,23 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
 
         # So is our new one.
         identifiers = [
-            identifier.identifier for identifier
-                in self.account.openid_identifiers]
+            identifier.identifier
+            for identifier in self.account.openid_identifiers
+        ]
         self.assertIn(new_identifier, identifiers)
 
     def testNewAccountAndIdentifier(self):
         # If neither the OpenId Identifier nor the email address are
         # found, we create everything.
-        new_email = 'new_email@example.com'
-        new_identifier = 'new_identifier'
+        new_email = "new_email@example.com"
+        new_identifier = "new_identifier"
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            new_identifier, new_email, 'New Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            new_identifier,
+            new_email,
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         # We have a new Person
@@ -414,7 +466,8 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         # identifier.
         self.assertIs(found, found.preferredemail.person)
         self.assertEqual(
-            new_identifier, found.account.openid_identifiers.any().identifier)
+            new_identifier, found.account.openid_identifiers.any().identifier
+        )
 
     def testNoAccount(self):
         # EmailAddress is linked to a Person, but there is no Account.
@@ -422,17 +475,22 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.email.account = None
         self.email.status = EmailAddressStatus.NEW
         self.person.account = None
-        new_identifier = 'new_identifier'
+        new_identifier = "new_identifier"
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            new_identifier, self.email.email, 'Ignored',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            new_identifier,
+            self.email.email,
+            "Ignored",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         self.assertTrue(updated)
 
         self.assertIsNot(None, found.account)
         self.assertEqual(
-            new_identifier, found.account.openid_identifiers.any().identifier)
+            new_identifier, found.account.openid_identifiers.any().identifier
+        )
         self.assertIs(self.email.person, found)
         self.assertEqual(EmailAddressStatus.PREFERRED, self.email.status)
 
@@ -441,12 +499,17 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         # but they are not linked to the same account. In this case, the
         # OpenId Identifier trumps the EmailAddress's account.
         self.identifier.account = self.store.find(
-            Account, displayname='Foo Bar').one()
+            Account, displayname="Foo Bar"
+        ).one()
         email_account = self.email.account
 
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            self.identifier.identifier, self.email.email, 'New Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            self.identifier.identifier,
+            self.email.email,
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         found = removeSecurityProxy(found)
 
         self.assertFalse(updated)
@@ -459,8 +522,13 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
     def testEmptyOpenIDIdentifier(self):
         self.assertRaises(
             AssertionError,
-            self.person_set.getOrCreateByOpenIDIdentifier, '', 'foo@bar.com',
-            'New Name', PersonCreationRationale.UNKNOWN, 'No Comment')
+            self.person_set.getOrCreateByOpenIDIdentifier,
+            "",
+            "foo@bar.com",
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
 
     def testTeamEmailAddress(self):
         # If the EmailAddress is linked to a team, login fails. There is
@@ -471,45 +539,58 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertRaises(
             TeamEmailAddressError,
             self.person_set.getOrCreateByOpenIDIdentifier,
-            'other-openid-identifier', 'foo@bar.com', 'New Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            "other-openid-identifier",
+            "foo@bar.com",
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
 
     def testDeactivatedAccount(self):
         # Logging into a deactivated account with a new email address
         # reactivates the account, adds that email address, and sets it
         # as preferred.
-        addr = 'not@an.address'
-        self.person.preDeactivate('I hate life.')
+        addr = "not@an.address"
+        self.person.preDeactivate("I hate life.")
         self.assertEqual(AccountStatus.DEACTIVATED, self.person.account_status)
         self.assertIs(None, self.person.preferredemail)
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            self.identifier.identifier, addr, 'New Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
+            self.identifier.identifier,
+            addr,
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         self.assertEqual(AccountStatus.ACTIVE, self.person.account_status)
         self.assertEqual(addr, self.person.preferredemail.email)
 
     def testPlaceholderAccount(self):
         # Logging into a username placeholder account activates the
         # account and adds the email address.
-        email = 'placeholder@example.com'
-        openid = 'placeholder-id'
-        name = 'placeholder'
+        email = "placeholder@example.com"
+        openid = "placeholder-id"
+        name = "placeholder"
         person = self.person_set.createPlaceholderPerson(openid, name)
         self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
         original_created = person.datecreated
         transaction.commit()
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            openid, email, 'New Name', PersonCreationRationale.UNKNOWN,
-            'No Comment')
+            openid,
+            email,
+            "New Name",
+            PersonCreationRationale.UNKNOWN,
+            "No Comment",
+        )
         self.assertEqual(person, found)
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
         self.assertEqual(name, person.name)
-        self.assertEqual('New Name', person.display_name)
+        self.assertEqual("New Name", person.display_name)
         self.assertThat(person.datecreated, GreaterThan(original_created))
 
 
 class TestCreatePersonAndEmail(TestCase):
     """Test `IPersonSet`.createPersonAndEmail()."""
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -520,30 +601,43 @@ class TestCreatePersonAndEmail(TestCase):
 
     def test_duplicated_name_not_accepted(self):
         self.person_set.createPersonAndEmail(
-            'testing@example.com', PersonCreationRationale.UNKNOWN,
-            name='zzzz')
+            "testing@example.com", PersonCreationRationale.UNKNOWN, name="zzzz"
+        )
         self.assertRaises(
-            NameAlreadyTaken, self.person_set.createPersonAndEmail,
-            'testing2@example.com', PersonCreationRationale.UNKNOWN,
-            name='zzzz')
+            NameAlreadyTaken,
+            self.person_set.createPersonAndEmail,
+            "testing2@example.com",
+            PersonCreationRationale.UNKNOWN,
+            name="zzzz",
+        )
 
     def test_duplicated_email_not_accepted(self):
         self.person_set.createPersonAndEmail(
-            'testing@example.com', PersonCreationRationale.UNKNOWN)
+            "testing@example.com", PersonCreationRationale.UNKNOWN
+        )
         self.assertRaises(
-            EmailAddressAlreadyTaken, self.person_set.createPersonAndEmail,
-            'testing@example.com', PersonCreationRationale.UNKNOWN)
+            EmailAddressAlreadyTaken,
+            self.person_set.createPersonAndEmail,
+            "testing@example.com",
+            PersonCreationRationale.UNKNOWN,
+        )
 
     def test_invalid_email_not_accepted(self):
         self.assertRaises(
-            InvalidEmailAddress, self.person_set.createPersonAndEmail,
-            'testing@.com', PersonCreationRationale.UNKNOWN)
+            InvalidEmailAddress,
+            self.person_set.createPersonAndEmail,
+            "testing@.com",
+            PersonCreationRationale.UNKNOWN,
+        )
 
     def test_invalid_name_not_accepted(self):
         self.assertRaises(
-            InvalidName, self.person_set.createPersonAndEmail,
-            'testing@example.com', PersonCreationRationale.UNKNOWN,
-            name='/john')
+            InvalidName,
+            self.person_set.createPersonAndEmail,
+            "testing@example.com",
+            PersonCreationRationale.UNKNOWN,
+            name="/john",
+        )
 
 
 class TestPersonSetBranchCounts(TestCaseWithFactory):
@@ -564,15 +658,17 @@ class TestPersonSetBranchCounts(TestCaseWithFactory):
         # Each branch has a different product, so any individual product
         # will return one branch.
         self.assertEqual(5, self.person_set.getPeopleWithBranches().count())
-        self.assertEqual(1, self.person_set.getPeopleWithBranches(
-                branches[0].product).count())
+        self.assertEqual(
+            1,
+            self.person_set.getPeopleWithBranches(branches[0].product).count(),
+        )
 
 
 class TestPersonSetEnsurePerson(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
-    email_address = 'testing.ensure.person@example.com'
-    displayname = 'Testing ensurePerson'
+    email_address = "testing.ensure.person@example.com"
+    displayname = "Testing ensurePerson"
     rationale = PersonCreationRationale.SOURCEPACKAGEUPLOAD
 
     def setUp(self):
@@ -582,25 +678,32 @@ class TestPersonSetEnsurePerson(TestCaseWithFactory):
     def test_ensurePerson_returns_existing_person(self):
         # IPerson.ensurePerson returns existing person and does not
         # override its details.
-        testing_displayname = 'will not be modified'
+        testing_displayname = "will not be modified"
         testing_person = self.factory.makePerson(
-            email=self.email_address, displayname=testing_displayname)
+            email=self.email_address, displayname=testing_displayname
+        )
 
         ensured_person = self.person_set.ensurePerson(
-            self.email_address, self.displayname, self.rationale)
+            self.email_address, self.displayname, self.rationale
+        )
         self.assertEqual(testing_person.id, ensured_person.id)
         self.assertIsNot(
-            ensured_person.displayname, self.displayname,
-            'Person.displayname should not be overridden.')
+            ensured_person.displayname,
+            self.displayname,
+            "Person.displayname should not be overridden.",
+        )
         self.assertIsNot(
-            ensured_person.creation_rationale, self.rationale,
-            'Person.creation_rationale should not be overridden.')
+            ensured_person.creation_rationale,
+            self.rationale,
+            "Person.creation_rationale should not be overridden.",
+        )
 
     def test_ensurePerson_hides_new_person_email(self):
         # IPersonSet.ensurePerson creates new person with
         # 'hide_email_addresses' set.
         ensured_person = self.person_set.ensurePerson(
-            self.email_address, self.displayname, self.rationale)
+            self.email_address, self.displayname, self.rationale
+        )
         self.assertTrue(ensured_person.hide_email_addresses)
 
 
@@ -612,17 +715,23 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
         super().setUp()
         self.person_set = getUtility(IPersonSet)
 
-    def callGetOrCreate(self, identifier, email='a@b.com'):
+    def callGetOrCreate(self, identifier, email="a@b.com"):
         return self.person_set.getOrCreateByOpenIDIdentifier(
-            identifier, email, "Joe Bloggs",
+            identifier,
+            email,
+            "Joe Bloggs",
             PersonCreationRationale.SOFTWARE_CENTER_PURCHASE,
-            "when purchasing an application via Software Center.")
+            "when purchasing an application via Software Center.",
+        )
 
     def test_existing_person(self):
-        email = 'test-email@example.com'
+        email = "test-email@example.com"
         person = self.factory.makePerson(email=email)
-        openid_ident = removeSecurityProxy(
-            person.account).openid_identifiers.any().identifier
+        openid_ident = (
+            removeSecurityProxy(person.account)
+            .openid_identifiers.any()
+            .identifier
+        )
 
         result, db_updated = self.callGetOrCreate(openid_ident, email=email)
 
@@ -632,9 +741,13 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
     def test_existing_deactivated_account(self):
         # An existing deactivated account will be reactivated.
         person = self.factory.makePerson(
-            account_status=AccountStatus.DEACTIVATED)
-        openid_ident = removeSecurityProxy(
-            person.account).openid_identifiers.any().identifier
+            account_status=AccountStatus.DEACTIVATED
+        )
+        openid_ident = (
+            removeSecurityProxy(person.account)
+            .openid_identifiers.any()
+            .identifier
+        )
 
         found_person, db_updated = self.callGetOrCreate(openid_ident)
         self.assertEqual(person, found_person)
@@ -643,51 +756,70 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
         self.assertEndsWith(
             removeSecurityProxy(person.account).status_history,
             ": Deactivated -> Active: "
-            "when purchasing an application via Software Center.\n")
+            "when purchasing an application via Software Center.\n",
+        )
 
     def test_existing_suspended_account(self):
         # An existing suspended account will raise an exception.
         person = self.factory.makePerson(
-            account_status=AccountStatus.SUSPENDED)
-        openid_ident = removeSecurityProxy(
-            person.account).openid_identifiers.any().identifier
+            account_status=AccountStatus.SUSPENDED
+        )
+        openid_ident = (
+            removeSecurityProxy(person.account)
+            .openid_identifiers.any()
+            .identifier
+        )
 
         self.assertRaises(
-            AccountSuspendedError, self.callGetOrCreate, openid_ident)
+            AccountSuspendedError, self.callGetOrCreate, openid_ident
+        )
 
     def test_existing_deceased_account(self):
         # An existing account belonging to a deceased user will raise an
         # exception.
         person = self.factory.makePerson(account_status=AccountStatus.DECEASED)
-        openid_ident = removeSecurityProxy(
-            person.account).openid_identifiers.any().identifier
+        openid_ident = (
+            removeSecurityProxy(person.account)
+            .openid_identifiers.any()
+            .identifier
+        )
 
         self.assertRaises(
-            AccountDeceasedError, self.callGetOrCreate, openid_ident)
+            AccountDeceasedError, self.callGetOrCreate, openid_ident
+        )
 
     def test_no_account_or_email(self):
         # An identifier can be used to create an account (it is assumed
         # to be already authenticated with SSO).
-        person, db_updated = self.callGetOrCreate('openid-identifier')
+        person, db_updated = self.callGetOrCreate("openid-identifier")
 
         self.assertEqual(
-            "openid-identifier", removeSecurityProxy(
-                person.account).openid_identifiers.any().identifier)
+            "openid-identifier",
+            removeSecurityProxy(person.account)
+            .openid_identifiers.any()
+            .identifier,
+        )
         self.assertTrue(db_updated)
 
     def test_no_matching_account_existing_email(self):
         # The openid_identity of the account matching the email will
         # updated.
-        other_person = self.factory.makePerson('a@b.com')
+        other_person = self.factory.makePerson("a@b.com")
 
         person, db_updated = self.callGetOrCreate(
-            'other-openid-identifier', 'a@b.com')
+            "other-openid-identifier", "a@b.com"
+        )
 
         self.assertEqual(other_person, person)
         self.assertIn(
-            'other-openid-identifier',
-            [identifier.identifier for identifier in removeSecurityProxy(
-                person.account).openid_identifiers])
+            "other-openid-identifier",
+            [
+                identifier.identifier
+                for identifier in removeSecurityProxy(
+                    person.account
+                ).openid_identifiers
+            ],
+        )
 
 
 class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
@@ -696,18 +828,23 @@ class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sca = getUtility(IPersonSet).getByName('software-center-agent')
+        self.sca = getUtility(IPersonSet).getByName("software-center-agent")
 
     def test_restricted_to_sca(self):
         # Only the software-center-agent celebrity can invoke this
         # privileged method.
         def do_it():
             return getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
-                getUtility(ILaunchBag).user, 'somebody',
-                'somebody@example.com', 'Example')
+                getUtility(ILaunchBag).user,
+                "somebody",
+                "somebody@example.com",
+                "Example",
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -724,49 +861,55 @@ class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
     def test_finds_by_openid(self):
         # A Person with the requested OpenID identifier is returned.
         somebody = self.factory.makePerson()
-        make_openid_identifier(somebody.account, 'somebody')
+        make_openid_identifier(somebody.account, "somebody")
         with person_logged_in(self.sca):
             got = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca, "somebody", "somebody@example.com", "Example"
+            )
         self.assertEqual(somebody, got)
 
         # The email address doesn't get linked, as that could change how
         # future logins work.
         self.assertIs(
             None,
-            getUtility(IEmailAddressSet).getByEmail('somebody@example.com'))
+            getUtility(IEmailAddressSet).getByEmail("somebody@example.com"),
+        )
 
     def test_creates_new(self):
         # If an unknown OpenID identifier and email address are
         # provided, a new account is created and returned.
         with person_logged_in(self.sca):
             made = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca, "somebody", "somebody@example.com", "Example"
+            )
         with admin_logged_in():
-            self.assertEqual('Example', made.displayname)
-            self.assertEqual('somebody@example.com', made.preferredemail.email)
+            self.assertEqual("Example", made.displayname)
+            self.assertEqual("somebody@example.com", made.preferredemail.email)
 
         # The email address is linked, since it can't compromise an
         # account that is being created just for it.
-        email = getUtility(IEmailAddressSet).getByEmail('somebody@example.com')
+        email = getUtility(IEmailAddressSet).getByEmail("somebody@example.com")
         self.assertEqual(made, email.person)
 
     def test_activates_unactivated(self):
         # An unactivated account should be treated just like a new
         # account -- it gets activated with the given email address.
         somebody = self.factory.makePerson(
-            email='existing@example.com',
-            account_status=AccountStatus.NOACCOUNT)
-        make_openid_identifier(somebody.account, 'somebody')
+            email="existing@example.com",
+            account_status=AccountStatus.NOACCOUNT,
+        )
+        make_openid_identifier(somebody.account, "somebody")
         self.assertEqual(AccountStatus.NOACCOUNT, somebody.account.status)
         with person_logged_in(self.sca):
             got = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca, "somebody", "somebody@example.com", "Example"
+            )
         self.assertEqual(somebody, got)
         with admin_logged_in():
             self.assertEqual(AccountStatus.ACTIVE, somebody.account.status)
             self.assertEqual(
-                'somebody@example.com', somebody.preferredemail.email)
+                "somebody@example.com", somebody.preferredemail.email
+            )
 
     def test_fails_if_email_is_already_registered(self):
         # Only the OpenID identifier is used to look up an account. If
@@ -776,56 +919,74 @@ class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
         #
         # The user must log into Launchpad directly first to register
         # their OpenID identifier.
-        other = self.factory.makePerson(email='other@example.com')
+        other = self.factory.makePerson(email="other@example.com")
         with person_logged_in(self.sca):
             self.assertRaises(
                 EmailAddressAlreadyTaken,
                 getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
-                self.sca, 'somebody', 'other@example.com', 'Example')
+                self.sca,
+                "somebody",
+                "other@example.com",
+                "Example",
+            )
 
         # The email address stays with the old owner.
-        email = getUtility(IEmailAddressSet).getByEmail('other@example.com')
+        email = getUtility(IEmailAddressSet).getByEmail("other@example.com")
         self.assertEqual(other, email.person)
 
     def test_fails_if_account_is_suspended(self):
         # Suspended accounts cannot be returned.
         somebody = self.factory.makePerson()
-        make_openid_identifier(somebody.account, 'somebody')
+        make_openid_identifier(somebody.account, "somebody")
         with admin_logged_in():
             somebody.setAccountStatus(
-                AccountStatus.SUSPENDED, None, "Go away!")
+                AccountStatus.SUSPENDED, None, "Go away!"
+            )
         with person_logged_in(self.sca):
             self.assertRaises(
                 AccountSuspendedError,
                 getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca,
+                "somebody",
+                "somebody@example.com",
+                "Example",
+            )
 
     def test_fails_if_account_is_deactivated(self):
         # We don't want to reactivate explicitly deactivated accounts,
         # nor do we want to potentially compromise them with a bad email
         # address.
         somebody = self.factory.makePerson()
-        make_openid_identifier(somebody.account, 'somebody')
+        make_openid_identifier(somebody.account, "somebody")
         with admin_logged_in():
             somebody.setAccountStatus(
-                AccountStatus.DEACTIVATED, None, "Goodbye cruel world.")
+                AccountStatus.DEACTIVATED, None, "Goodbye cruel world."
+            )
         with person_logged_in(self.sca):
             self.assertRaises(
                 NameAlreadyTaken,
                 getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca,
+                "somebody",
+                "somebody@example.com",
+                "Example",
+            )
 
     def test_fails_if_account_is_deceased(self):
         # Accounts belonging to deceased users cannot be returned.
         somebody = self.factory.makePerson()
-        make_openid_identifier(somebody.account, 'somebody')
+        make_openid_identifier(somebody.account, "somebody")
         with admin_logged_in():
             somebody.setAccountStatus(AccountStatus.DECEASED, None, "RIP")
         with person_logged_in(self.sca):
             self.assertRaises(
                 AccountDeceasedError,
                 getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
-                self.sca, 'somebody', 'somebody@example.com', 'Example')
+                self.sca,
+                "somebody",
+                "somebody@example.com",
+                "Example",
+            )
 
 
 class TestPersonGetUsernameForSSO(TestCaseWithFactory):
@@ -834,20 +995,23 @@ class TestPersonGetUsernameForSSO(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sso = getUtility(IPersonSet).getByName('ubuntu-sso')
+        self.sso = getUtility(IPersonSet).getByName("ubuntu-sso")
 
     def test_restricted_to_sca(self):
         # Only the ubuntu-sso celebrity can invoke this
         # privileged method.
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
 
         def do_it():
             return getUtility(IPersonSet).getUsernameForSSO(
-                getUtility(ILaunchBag).user, 'openid')
+                getUtility(ILaunchBag).user, "openid"
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -858,7 +1022,7 @@ class TestPersonGetUsernameForSSO(TestCaseWithFactory):
             self.assertRaises(Unauthorized, do_it)
 
         with person_logged_in(self.sso):
-            self.assertEqual('username', do_it())
+            self.assertEqual("username", do_it())
 
 
 class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
@@ -867,17 +1031,20 @@ class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sso = getUtility(IPersonSet).getByName('ubuntu-sso')
+        self.sso = getUtility(IPersonSet).getByName("ubuntu-sso")
 
     def test_restricted_to_sca(self):
         # Only the ubuntu-sso celebrity can invoke this
         # privileged method.
         def do_it():
             getUtility(IPersonSet).setUsernameFromSSO(
-                getUtility(ILaunchBag).user, 'openid', 'username')
+                getUtility(ILaunchBag).user, "openid", "username"
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -896,40 +1063,47 @@ class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
         # returned.
         with person_logged_in(self.sso):
             getUtility(IPersonSet).setUsernameFromSSO(
-                self.sso, 'openid', 'username')
-        person = getUtility(IPersonSet).getByName('username')
-        self.assertEqual('username', person.name)
-        self.assertEqual('username', person.displayname)
+                self.sso, "openid", "username"
+            )
+        person = getUtility(IPersonSet).getByName("username")
+        self.assertEqual("username", person.name)
+        self.assertEqual("username", person.displayname)
         self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
         with admin_logged_in():
             self.assertContentEqual(
-                ['openid'],
-                [oid.identifier for oid in person.account.openid_identifiers])
+                ["openid"],
+                [oid.identifier for oid in person.account.openid_identifiers],
+            )
             self.assertContentEqual([], person.validatedemails)
             self.assertContentEqual([], person.guessedemails)
 
     def test_creates_new_placeholder_dry_run(self):
         with person_logged_in(self.sso):
             getUtility(IPersonSet).setUsernameFromSSO(
-                self.sso, 'openid', 'username', dry_run=True)
+                self.sso, "openid", "username", dry_run=True
+            )
         self.assertRaises(
             LookupError,
-            getUtility(IAccountSet).getByOpenIDIdentifier, 'openid')
-        self.assertIs(None, getUtility(IPersonSet).getByName('username'))
+            getUtility(IAccountSet).getByOpenIDIdentifier,
+            "openid",
+        )
+        self.assertIs(None, getUtility(IPersonSet).getByName("username"))
 
     def test_updates_existing_placeholder(self):
         # An existing placeholder Person with the request OpenID
         # identifier has its name updated.
         getUtility(IPersonSet).setUsernameFromSSO(
-            self.sso, 'openid', 'username')
-        person = getUtility(IPersonSet).getByName('username')
+            self.sso, "openid", "username"
+        )
+        person = getUtility(IPersonSet).getByName("username")
 
         # Another call for the same OpenID identifier updates the
         # existing Person.
         getUtility(IPersonSet).setUsernameFromSSO(
-            self.sso, 'openid', 'newsername')
-        self.assertEqual('newsername', person.name)
-        self.assertEqual('newsername', person.displayname)
+            self.sso, "openid", "newsername"
+        )
+        self.assertEqual("newsername", person.name)
+        self.assertEqual("newsername", person.displayname)
         self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
         with admin_logged_in():
             self.assertContentEqual([], person.validatedemails)
@@ -937,38 +1111,52 @@ class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
 
     def test_updates_existing_placeholder_dry_run(self):
         getUtility(IPersonSet).setUsernameFromSSO(
-            self.sso, 'openid', 'username')
-        person = getUtility(IPersonSet).getByName('username')
+            self.sso, "openid", "username"
+        )
+        person = getUtility(IPersonSet).getByName("username")
 
         getUtility(IPersonSet).setUsernameFromSSO(
-            self.sso, 'openid', 'newsername', dry_run=True)
-        self.assertEqual('username', person.name)
+            self.sso, "openid", "newsername", dry_run=True
+        )
+        self.assertEqual("username", person.name)
 
     def test_validation(self, dry_run=False):
         # An invalid username is rejected with an InvalidName exception.
         self.assertRaises(
             InvalidName,
             getUtility(IPersonSet).setUsernameFromSSO,
-            self.sso, 'openid', 'username!!', dry_run=dry_run)
+            self.sso,
+            "openid",
+            "username!!",
+            dry_run=dry_run,
+        )
         transaction.abort()
 
         # A username that's already in use is rejected with a
         # NameAlreadyTaken exception.
-        self.factory.makePerson(name='taken')
+        self.factory.makePerson(name="taken")
         self.assertRaises(
             NameAlreadyTaken,
             getUtility(IPersonSet).setUsernameFromSSO,
-            self.sso, 'openid', 'taken', dry_run=dry_run)
+            self.sso,
+            "openid",
+            "taken",
+            dry_run=dry_run,
+        )
         transaction.abort()
 
         # setUsernameFromSSO can't be used to set an OpenID
         # identifier's username if a non-placeholder account exists.
         somebody = self.factory.makePerson()
-        make_openid_identifier(somebody.account, 'openid-taken')
+        make_openid_identifier(somebody.account, "openid-taken")
         self.assertRaises(
             NotPlaceholderAccount,
             getUtility(IPersonSet).setUsernameFromSSO,
-            self.sso, 'openid-taken', 'username', dry_run=dry_run)
+            self.sso,
+            "openid-taken",
+            "username",
+            dry_run=dry_run,
+        )
 
     def test_validation_dry_run(self):
         self.test_validation(dry_run=True)
@@ -980,20 +1168,23 @@ class TestPersonGetSSHKeysForSSO(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sso = getUtility(IPersonSet).getByName('ubuntu-sso')
+        self.sso = getUtility(IPersonSet).getByName("ubuntu-sso")
 
     def test_restricted_to_sso(self):
         # Only the ubuntu-sso celebrity can invoke this
         # privileged method.
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
 
         def do_it():
             return getUtility(IPersonSet).getUsernameForSSO(
-                getUtility(ILaunchBag).user, 'openid')
+                getUtility(ILaunchBag).user, "openid"
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -1003,7 +1194,7 @@ class TestPersonGetSSHKeysForSSO(TestCaseWithFactory):
         with person_logged_in(admin):
             self.assertRaises(Unauthorized, do_it)
         with person_logged_in(self.sso):
-            self.assertEqual('username', do_it())
+            self.assertEqual("username", do_it())
 
 
 class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
@@ -1012,21 +1203,24 @@ class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sso = getUtility(IPersonSet).getByName('ubuntu-sso')
+        self.sso = getUtility(IPersonSet).getByName("ubuntu-sso")
 
     def test_restricted_to_sso(self):
         # Only the ubuntu-sso celebrity can invoke this
         # privileged method.
         key_text = self.factory.makeSSHKeyText()
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
 
         def do_it():
             return getUtility(IPersonSet).addSSHKeyFromSSO(
-                getUtility(ILaunchBag).user, 'openid', key_text, False)
+                getUtility(ILaunchBag).user, "openid", key_text, False
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -1040,13 +1234,14 @@ class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
 
     def test_adds_new_ssh_key(self):
         full_key = self.factory.makeSSHKeyText()
-        _, keytext, comment = full_key.split(' ', 2)
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        _, keytext, comment = full_key.split(" ", 2)
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
 
         with person_logged_in(self.sso):
             getUtility(IPersonSet).addSSHKeyFromSSO(
-                self.sso, 'openid', full_key, False)
+                self.sso, "openid", full_key, False
+            )
 
         with person_logged_in(target):
             [key] = target.sshkeys
@@ -1056,12 +1251,13 @@ class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
 
     def test_does_not_add_new_ssh_key_with_dry_run(self):
         key_text = self.factory.makeSSHKeyText()
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
 
         with person_logged_in(self.sso):
             getUtility(IPersonSet).addSSHKeyFromSSO(
-                self.sso, 'openid', key_text, True)
+                self.sso, "openid", key_text, True
+            )
 
         with person_logged_in(target):
             self.assertEqual(0, target.sshkeys.count())
@@ -1071,7 +1267,11 @@ class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
             self.assertRaises(
                 NoSuchAccount,
                 getUtility(IPersonSet).addSSHKeyFromSSO,
-                self.sso, 'doesnotexist', 'ssh-rsa key comment', True)
+                self.sso,
+                "doesnotexist",
+                "ssh-rsa key comment",
+                True,
+            )
 
 
 class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
@@ -1080,23 +1280,26 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.sso = getUtility(IPersonSet).getByName('ubuntu-sso')
+        self.sso = getUtility(IPersonSet).getByName("ubuntu-sso")
 
     def test_restricted_to_sso(self):
         # Only the ubuntu-sso celebrity can invoke this
         # privileged method.
-        target = self.factory.makePerson(name='username')
+        target = self.factory.makePerson(name="username")
         with person_logged_in(target):
             key = self.factory.makeSSHKey(target)
         key_text = key.getFullKeyText()
-        make_openid_identifier(target.account, 'openid')
+        make_openid_identifier(target.account, "openid")
 
         def do_it():
             return getUtility(IPersonSet).deleteSSHKeyFromSSO(
-                getUtility(ILaunchBag).user, 'openid', key_text, False)
+                getUtility(ILaunchBag).user, "openid", key_text, False
+            )
+
         random = self.factory.makePerson()
         admin = self.factory.makePerson(
-            member_of=[getUtility(IPersonSet).getByName('admins')])
+            member_of=[getUtility(IPersonSet).getByName("admins")]
+        )
 
         # Anonymous, random or admin users can't invoke the method.
         with anonymous_logged_in():
@@ -1109,27 +1312,29 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
             self.assertEqual(None, do_it())
 
     def test_deletes_ssh_key(self):
-        target = self.factory.makePerson(name='username')
+        target = self.factory.makePerson(name="username")
         with person_logged_in(target):
             key = self.factory.makeSSHKey(target)
-        make_openid_identifier(target.account, 'openid')
+        make_openid_identifier(target.account, "openid")
 
         with person_logged_in(self.sso):
             getUtility(IPersonSet).deleteSSHKeyFromSSO(
-                self.sso, 'openid', key.getFullKeyText(), False)
+                self.sso, "openid", key.getFullKeyText(), False
+            )
 
         with person_logged_in(target):
             self.assertEqual(0, target.sshkeys.count())
 
     def test_does_not_delete_ssh_key_with_dry_run(self):
-        target = self.factory.makePerson(name='username')
+        target = self.factory.makePerson(name="username")
         with person_logged_in(target):
             key = self.factory.makeSSHKey(target)
-        make_openid_identifier(target.account, 'openid')
+        make_openid_identifier(target.account, "openid")
 
         with person_logged_in(self.sso):
             getUtility(IPersonSet).deleteSSHKeyFromSSO(
-                self.sso, 'openid', key.getFullKeyText(), True)
+                self.sso, "openid", key.getFullKeyText(), True
+            )
 
         with person_logged_in(target):
             self.assertEqual([key], list(target.sshkeys))
@@ -1139,16 +1344,24 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
             self.assertRaises(
                 NoSuchAccount,
                 getUtility(IPersonSet).deleteSSHKeyFromSSO,
-                self.sso, 'doesnotexist', 'ssh-rsa key comment', False)
+                self.sso,
+                "doesnotexist",
+                "ssh-rsa key comment",
+                False,
+            )
 
     def test_raises_with_bad_key_type(self):
-        target = self.factory.makePerson(name='username')
-        make_openid_identifier(target.account, 'openid')
+        target = self.factory.makePerson(name="username")
+        make_openid_identifier(target.account, "openid")
         with person_logged_in(self.sso):
             self.assertRaises(
                 SSHKeyAdditionError,
                 getUtility(IPersonSet).deleteSSHKeyFromSSO,
-                self.sso, 'openid', 'badtype key comment', False)
+                self.sso,
+                "openid",
+                "badtype key comment",
+                False,
+            )
 
 
 class TestGDPRUserRetrieval(TestCaseWithFactory):
@@ -1161,12 +1374,12 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.user = self.factory.makePerson()
         self.factory.makeGPGKey(self.user)
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        self.warty = self.ubuntu.getSeries('warty')
+        self.warty = self.ubuntu.getSeries("warty")
 
     def publishSources(self, archive, maintainer):
         publisher = SoyuzTestPublisher()
         publisher.person = self.user
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         spphs = []
         for count in range(0, 3):
             source_name = "foo" + str(count)
@@ -1176,14 +1389,15 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
                 archive=archive,
                 maintainer=maintainer,
                 creator=self.user,
-                distroseries=self.warty)
+                distroseries=self.warty,
+            )
             spphs.append(spph)
         # Update the releases cache table.
-        switch_dbuser('garbo_frequently')
+        switch_dbuser("garbo_frequently")
         job = PopulateLatestPersonSourcePackageReleaseCache(DevNullLogger())
         while not job.isDone():
             job(chunk_size=100)
-        switch_dbuser('launchpad')
+        switch_dbuser("launchpad")
         login(ANONYMOUS)
         return spphs
 
@@ -1196,10 +1410,13 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         person = self.factory.makePerson(email="test@example.com")
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account only; no other data",
-            "person": canonical_url(person)},
-            result)
+        self.assertDictEqual(
+            {
+                "status": "account only; no other data",
+                "person": canonical_url(person),
+            },
+            result,
+        )
 
     def test_account_data_hidden(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1207,47 +1424,64 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             person.hide_email_addresses = True
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account only; no other data",
-            "person": canonical_url(person)},
-            result)
+        self.assertDictEqual(
+            {
+                "status": "account only; no other data",
+                "person": canonical_url(person),
+            },
+            result,
+        )
 
     def test_account_data_invalid_email_status(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeEmail(
-            'new@example.com',
-            person,
-            email_status=EmailAddressStatus.NEW)
+            "new@example.com", person, email_status=EmailAddressStatus.NEW
+        )
         with admin_logged_in():
             result = self.person_set.getUserData("new@example.com")
-        self.assertDictEqual({
-            "status": "account only; no other data",
-            "person": canonical_url(person)},
-            result)
+        self.assertDictEqual(
+            {
+                "status": "account only; no other data",
+                "person": canonical_url(person),
+            },
+            result,
+        )
 
     def test_account_data_branches(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeBranch(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "branches": Contains(
-                canonical_url(
-                    person, rootsite="code", view_name="+branches"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "branches": Contains(
+                        canonical_url(
+                            person, rootsite="code", view_name="+branches"
+                        )
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_repositories(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeGitRepository(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "git-repositories": canonical_url(
-                person, rootsite="code", view_name="+git")},
-            result)
+        self.assertDictEqual(
+            {
+                "status": "account with data",
+                "person": canonical_url(person),
+                "git-repositories": canonical_url(
+                    person, rootsite="code", view_name="+git"
+                ),
+            },
+            result,
+        )
 
     def test_account_data_repositories_other_owners(self):
         # Check that we only report on repositories that
@@ -1257,22 +1491,29 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeGitRepository(owner=other_person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account only; no other data",
-            "person": canonical_url(person)},
-            result)
+        self.assertDictEqual(
+            {
+                "status": "account only; no other data",
+                "person": canonical_url(person),
+            },
+            result,
+        )
 
     def test_account_data_bugs(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeBug(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "bugs": Contains(
-                canonical_url(
-                    person, rootsite="bugs"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "bugs": Contains(canonical_url(person, rootsite="bugs")),
+                }
+            ),
+        )
         self.assertIn("field.searchtext", result["bugs"])
 
     def test_account_data_bugs_fixreleased(self):
@@ -1282,12 +1523,16 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeBug(owner=person, status=BugTaskStatus.FIXRELEASED)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "bugs": Contains(
-                canonical_url(
-                    person, rootsite="bugs"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "bugs": Contains(canonical_url(person, rootsite="bugs")),
+                }
+            ),
+        )
         self.assertIn("field.searchtext", result["bugs"])
 
     def test_account_data_blueprints(self):
@@ -1295,11 +1540,14 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeSpecification(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "blueprints": canonical_url(person, rootsite="blueprints")
-            }, result)
+        self.assertDictEqual(
+            {
+                "status": "account with data",
+                "person": canonical_url(person),
+                "blueprints": canonical_url(person, rootsite="blueprints"),
+            },
+            result,
+        )
 
     def test_account_data_translations(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1307,26 +1555,40 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         self.factory.makeTranslator(person=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, MatchesDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "translations": Equals(
-                canonical_url(
-                    person,
-                    rootsite="translations",
-                    view_name="+activity"))}))
+        self.assertThat(
+            result,
+            MatchesDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "translations": Equals(
+                        canonical_url(
+                            person,
+                            rootsite="translations",
+                            view_name="+activity",
+                        )
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_questions(self):
         person = self.factory.makePerson(email="test@example.com")
         self.factory.makeQuestion(owner=person)
         with admin_logged_in():
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "answers": Contains(
-                canonical_url(
-                    person, rootsite="answers"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "answers": Contains(
+                        canonical_url(person, rootsite="answers")
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_questions_comments(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1334,12 +1596,18 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         with admin_logged_in():
             question.addComment(person, "A comment")
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "answers": Contains(
-                canonical_url(
-                    person, rootsite="answers"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "answers": Contains(
+                        canonical_url(person, rootsite="answers")
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_questions_solved(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1347,34 +1615,50 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         with admin_logged_in():
             question.setStatus(person, QuestionStatus.SOLVED, "solved!")
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "answers": Contains(
-                canonical_url(
-                    person, rootsite="answers"))}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "answers": Contains(
+                        canonical_url(person, rootsite="answers")
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_sshkeys(self):
         person = self.factory.makePerson(email="test@example.com")
         with admin_logged_in():
             self.factory.makeSSHKey(person)
             result = self.person_set.getUserData("test@example.com")
-        self.assertDictEqual({
-            "status": "account with data",
-            "person": canonical_url(person),
-            "sshkeys": canonical_url(person, view_name="+sshkeys")
-            }, result)
+        self.assertDictEqual(
+            {
+                "status": "account with data",
+                "person": canonical_url(person),
+                "sshkeys": canonical_url(person, view_name="+sshkeys"),
+            },
+            result,
+        )
 
     def test_account_data_gpg_keys(self):
         person = self.factory.makePerson(email="test@example.com")
         with admin_logged_in():
             self.factory.makeGPGKey(person)
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "openpgp-keys": MatchesListwise([
-                Contains("https://keyserver.ubuntu.com")])}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "openpgp-keys": MatchesListwise(
+                        [Contains("https://keyserver.ubuntu.com")]
+                    ),
+                }
+            ),
+        )
 
     def test_account_data_gpg_keys_inactive(self):
         person = self.factory.makePerson(email="test@example.com")
@@ -1382,11 +1666,18 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
             key = self.factory.makeGPGKey(person)
             key.active = False
             result = self.person_set.getUserData("test@example.com")
-        self.assertThat(result, ContainsDict({
-            "status": Equals("account with data"),
-            "person": Equals(canonical_url(person)),
-            "openpgp-keys": MatchesListwise([
-                Contains("https://keyserver.ubuntu.com")])}))
+        self.assertThat(
+            result,
+            ContainsDict(
+                {
+                    "status": Equals("account with data"),
+                    "person": Equals(canonical_url(person)),
+                    "openpgp-keys": MatchesListwise(
+                        [Contains("https://keyserver.ubuntu.com")]
+                    ),
+                }
+            ),
+        )
 
     def test_getUserOverview(self):
         ppa = self.factory.makeArchive(owner=self.user)
@@ -1394,16 +1685,20 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
         # uploaded-packages
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
         spr = self.factory.makeSourcePackageRelease(
-            creator=self.user, archive=archive)
+            creator=self.user, archive=archive
+        )
         self.spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagerelease=spr, archive=archive)
+            sourcepackagerelease=spr, archive=archive
+        )
 
         # synchronized packages
         dest_distroseries = self.factory.makeDistroSeries()
         self.copied_spph = self.spph.copyTo(
-            dest_distroseries, creator=self.user,
+            dest_distroseries,
+            creator=self.user,
             pocket=PackagePublishingPocket.UPDATES,
-            archive=dest_distroseries.main_archive)
+            archive=dest_distroseries.main_archive,
+        )
 
         # Publish the correct amount of packages to the correct plaches
         # Maintained packages (non-ppa)
@@ -1416,20 +1711,29 @@ class TestGDPRUserRetrieval(TestCaseWithFactory):
 
         with admin_logged_in():
             result = self.person_set.getUserOverview(self.user)
-        self.assertDictEqual({
-            "related-packages": canonical_url(
-                self.user, view_name='+related-packages'),
-            "maintained-packages": canonical_url(
-                self.user, view_name='+maintained-packages'),
-            "uploaded-packages": canonical_url(
-                self.user, view_name='+uploaded-packages'),
-            "ppa-packages": canonical_url(
-                self.user, view_name='+ppa-packages'),
-            "synchronised-packages": canonical_url(
-                self.user, view_name='+synchronised-packages'),
-            "related-projects": canonical_url(
-                self.user, view_name='+related-projects'),
-            "owned-teams": canonical_url(
-                self.user, view_name='+owned-teams')
+        self.assertDictEqual(
+            {
+                "related-packages": canonical_url(
+                    self.user, view_name="+related-packages"
+                ),
+                "maintained-packages": canonical_url(
+                    self.user, view_name="+maintained-packages"
+                ),
+                "uploaded-packages": canonical_url(
+                    self.user, view_name="+uploaded-packages"
+                ),
+                "ppa-packages": canonical_url(
+                    self.user, view_name="+ppa-packages"
+                ),
+                "synchronised-packages": canonical_url(
+                    self.user, view_name="+synchronised-packages"
+                ),
+                "related-projects": canonical_url(
+                    self.user, view_name="+related-projects"
+                ),
+                "owned-teams": canonical_url(
+                    self.user, view_name="+owned-teams"
+                ),
             },
-            result)
+            result,
+        )

@@ -4,8 +4,8 @@
 """Proxied source files."""
 
 __all__ = [
-    'ProxiedSourceLibraryFileAlias',
-    ]
+    "ProxiedSourceLibraryFileAlias",
+]
 
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.client import url_path_quote
@@ -27,7 +27,14 @@ class ProxiedSourceLibraryFileAlias(ProxiedLibraryFileAlias):
             return None
 
         url = canonical_url(self.parent.archive, request=self.request)
-        return urlappend(url, '/'.join([
-            '+sourcefiles', self.parent.source_package_name,
-            self.parent.source_package_version,
-            url_path_quote(self.context.filename.encode('utf-8'))]))
+        return urlappend(
+            url,
+            "/".join(
+                [
+                    "+sourcefiles",
+                    self.parent.source_package_name,
+                    self.parent.source_package_version,
+                    url_path_quote(self.context.filename.encode("utf-8")),
+                ]
+            ),
+        )

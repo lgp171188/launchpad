@@ -2,21 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'StoreChannelsWidget',
-    ]
+    "StoreChannelsWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
-from zope.formlib.interfaces import (
-    IInputWidget,
-    WidgetInputError,
-    )
+from zope.formlib.interfaces import IInputWidget, WidgetInputError
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
     BrowserWidget,
     CustomWidgetFactory,
     InputErrors,
     InputWidget,
-    )
+)
 from zope.interface import implementer
 from zope.schema import (
     Bool,
@@ -33,18 +30,18 @@ from lp.services.channels import (
     CHANNEL_COMPONENTS_DELIMITER,
     channel_list_to_string,
     channel_string_to_list,
-    )
+)
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     ISingleLineWidgetLayout,
-    )
+)
 
 
 @implementer(ISingleLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
 class StoreChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/storechannels.pt")
-    _default_track = 'latest'
+    _default_track = "latest"
     _widgets_set_up = False
 
     def __init__(self, field, value_type, request):
@@ -58,17 +55,26 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             return
         fields = [
             TextLine(
-                __name__="track", title="Track", required=False,
+                __name__="track",
+                title="Track",
+                required=False,
                 description=_(
                     "Track defines a series for your software. "
                     "If not specified, the default track ('latest') is "
-                    "assumed.")),
+                    "assumed."
+                ),
+            ),
             List(
-                __name__="risks", title="Risk", required=False,
+                __name__="risks",
+                title="Risk",
+                required=False,
                 value_type=Choice(vocabulary="SnapStoreChannel"),
-                description=_("Risks denote the stability of your software.")),
+                description=_("Risks denote the stability of your software."),
+            ),
             TextLine(
-                __name__="branch", title="Branch", required=False,
+                __name__="branch",
+                title="Branch",
+                required=False,
                 description=_(
                     "Branches provide users with an easy way to test bug "
                     "fixes.  They are temporary and created on demand.  If "
@@ -78,16 +84,18 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 readonly=False, default=False),
             ]
 
+
         self.risks_widget = CustomWidgetFactory(LabeledMultiCheckBoxWidget)
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
-        self.risks_widget.orientation = 'horizontal'
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
+        self.risks_widget.orientation = "horizontal"
         self._widgets_set_up = True
 
     @property
     def has_risks_vocabulary(self):
-        risks_widget = getattr(self, 'risks_widget', None)
+        risks_widget = getattr(self, "risks_widget", None)
         return risks_widget and bool(risks_widget.vocabulary)
 
     def setRenderedValue(self, value):
@@ -106,7 +114,8 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 branches.add(branch)
             if len(branches) != 1:
                 raise ValueError(
-                    "Channels belong to different branches: %r" % value)
+                    "Channels belong to different branches: %r" % value
+                )
             track = tracks.pop()
             self.track_widget.setRenderedValue(track)
             self.risks_widget.setRenderedValue(risks)
@@ -139,16 +148,21 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         branch = self.branch_widget.getInputValue()
         if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
-                CHANNEL_COMPONENTS_DELIMITER)
+                CHANNEL_COMPONENTS_DELIMITER
+            )
             raise WidgetInputError(
-                self.name, self.label, LaunchpadValidationError(error_msg))
+                self.name, self.label, LaunchpadValidationError(error_msg)
+            )
         if branch and CHANNEL_COMPONENTS_DELIMITER in branch:
             error_msg = "Branch name cannot include '%s'." % (
-                CHANNEL_COMPONENTS_DELIMITER)
+                CHANNEL_COMPONENTS_DELIMITER
+            )
             raise WidgetInputError(
-                self.name, self.label, LaunchpadValidationError(error_msg))
+                self.name, self.label, LaunchpadValidationError(error_msg)
+            )
         channels = [
-            channel_list_to_string(track, risk, branch) for risk in risks]
+            channel_list_to_string(track, risk, branch) for risk in risks
+        ]
         return channels
 
     def error(self):

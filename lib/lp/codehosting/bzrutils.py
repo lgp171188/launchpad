@@ -8,35 +8,29 @@ integrates between Breezy's infrastructure and Launchpad's infrastructure.
 """
 
 __all__ = [
-    'add_exception_logging_hook',
-    'DenyingServer',
-    'get_branch_info',
-    'get_branch_stacked_on_url',
-    'get_stacked_on_url',
-    'get_vfs_format_classes',
-    'HttpAsLocalTransport',
-    'identical_formats',
-    'install_oops_handler',
-    'is_branch_stackable',
-    'server',
-    'read_locked',
-    'remove_exception_logging_hook',
-    ]
+    "add_exception_logging_hook",
+    "DenyingServer",
+    "get_branch_info",
+    "get_branch_stacked_on_url",
+    "get_stacked_on_url",
+    "get_vfs_format_classes",
+    "HttpAsLocalTransport",
+    "identical_formats",
+    "install_oops_handler",
+    "is_branch_stackable",
+    "server",
+    "read_locked",
+    "remove_exception_logging_hook",
+]
 
-from contextlib import contextmanager
 import os
 import sys
+from contextlib import contextmanager
 
-from breezy import (
-    config,
-    trace,
-    )
+import six
+from breezy import config, trace
 from breezy.branch import UnstackableBranchFormat
-from breezy.bzr.remote import (
-    RemoteBranch,
-    RemoteBzrDir,
-    RemoteRepository,
-    )
+from breezy.bzr.remote import RemoteBranch, RemoteBzrDir, RemoteRepository
 from breezy.errors import (
     AppendRevisionsOnlyViolation,
     ConnectionTimeout,
@@ -44,31 +38,27 @@ from breezy.errors import (
     NotStacked,
     UnstackableRepositoryFormat,
     UnsupportedProtocol,
-    )
+)
 from breezy.transport import (
     get_transport,
     register_transport,
     unregister_transport,
-    )
+)
 from breezy.transport.local import LocalTransport
 from lazr.uri import URI
-import six
 
-from lp.services.webapp.errorlog import (
-    ErrorReportingUtility,
-    ScriptRequest,
-    )
-
+from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 
 # Exception classes which are not converted into OOPSes
 NOT_OOPS_EXCEPTIONS = (
-    AppendRevisionsOnlyViolation, ConnectionTimeout,
-    GhostRevisionsHaveNoRevno)
+    AppendRevisionsOnlyViolation,
+    ConnectionTimeout,
+    GhostRevisionsHaveNoRevno,
+)
 
 
 def should_log_oops(exc):
-    """Return true if exc should trigger an OOPS.
-    """
+    """Return true if exc should trigger an OOPS."""
     return not issubclass(exc, NOT_OOPS_EXCEPTIONS)
 
 
@@ -121,7 +111,8 @@ def get_branch_stacked_on_url(a_bzrdir):
         format = a_bzrdir.find_branch_format(None)
     except NotImplementedError:
         raise UnstackableBranchFormat(
-            a_bzrdir._format, a_bzrdir.root_transport.base)
+            a_bzrdir._format, a_bzrdir.root_transport.base
+        )
     if not format.supports_stacking():
         raise UnstackableBranchFormat(format, a_bzrdir.root_transport.base)
     branch_transport = a_bzrdir.get_branch_transport(None)
@@ -131,9 +122,8 @@ def get_branch_stacked_on_url(a_bzrdir):
     # we read the 'branch.conf' and don't bother with the locations.conf or
     # bazaar.conf. This is OK for Launchpad since we don't ever want to have
     # local client configuration. It's not OK for Bazaar in general.
-    branch_config = config.TransportConfig(
-        branch_transport, 'branch.conf')
-    stacked_on_url = branch_config.get_option('stacked_on_location')
+    branch_config = config.TransportConfig(branch_transport, "branch.conf")
+    stacked_on_url = branch_config.get_option("stacked_on_location")
     if not stacked_on_url:
         raise NotStacked(a_bzrdir.root_transport.base)
     return stacked_on_url
@@ -180,6 +170,7 @@ def make_oops_logging_exception_hook(error_utility, request):
     def log_oops():
         if should_log_oops(sys.exc_info()[0]):
             error_utility.raising(sys.exc_info(), request)
+
     return log_oops
 
 
@@ -191,7 +182,7 @@ class BazaarOopsRequest(ScriptRequest):
 
         :param user_id: The database ID of the user doing this.
         """
-        data = [('user_id', user_id)]
+        data = [("user_id", user_id)]
         super().__init__(data, URL=None)
 
 
@@ -200,7 +191,7 @@ def make_error_utility(pid=None):
     if pid is None:
         pid = os.getpid()
     error_utility = ErrorReportingUtility()
-    error_utility.configure('bzr_lpserve')
+    error_utility.configure("bzr_lpserve")
     return error_utility
 
 
@@ -227,19 +218,18 @@ class HttpAsLocalTransport(LocalTransport):
     """
 
     def __init__(self, http_url):
-        file_url = URI(
-            scheme='file', host='', path=URI(http_url).path)
+        file_url = URI(scheme="file", host="", path=URI(http_url).path)
         return super().__init__(str(file_url))
 
     @classmethod
     def register(cls):
         """Register this transport."""
-        register_transport('http://', cls)
+        register_transport("http://", cls)
 
     @classmethod
     def unregister(cls):
         """Unregister this transport."""
-        unregister_transport('http://', cls)
+        unregister_transport("http://", cls)
 
 
 class DenyingServer:
@@ -271,7 +261,8 @@ class DenyingServer:
     def _deny(self, url):
         """Prevent creation of transport for 'url'."""
         raise AssertionError(
-            "Creation of transport for %r is currently forbidden" % url)
+            "Creation of transport for %r is currently forbidden" % url
+        )
 
 
 def get_vfs_format_classes(branch):
@@ -295,14 +286,14 @@ def get_vfs_format_classes(branch):
         branch._format.__class__,
         repository._format.__class__,
         bzrdir._format.__class__,
-        )
+    )
 
 
 def identical_formats(branch_one, branch_two):
-    """Check if two branches have the same bzrdir, repo, and branch formats.
-    """
-    return (get_vfs_format_classes(branch_one) ==
-            get_vfs_format_classes(branch_two))
+    """Check if two branches have the same bzrdir, repo, and branch formats."""
+    return get_vfs_format_classes(branch_one) == get_vfs_format_classes(
+        branch_two
+    )
 
 
 def get_stacked_on_url(branch):
@@ -320,16 +311,18 @@ def get_branch_info(branch):
         'control_string', 'branch_string', 'repository_string'.
     """
     info = {}
-    info['stacked_on_url'] = get_stacked_on_url(branch)
-    info['last_revision_id'] = six.ensure_str(branch.last_revision())
+    info["stacked_on_url"] = get_stacked_on_url(branch)
+    info["last_revision_id"] = branch.last_revision().decode()
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.
-    info['control_string'] = six.ensure_str(
-        branch.controldir._format.get_format_string())
-    info['branch_string'] = six.ensure_str(branch._format.get_format_string())
-    info['repository_string'] = six.ensure_str(
-        branch.repository._format.get_format_string())
+    info["control_string"] = six.ensure_str(
+        branch.controldir._format.get_format_string()
+    )
+    info["branch_string"] = six.ensure_str(branch._format.get_format_string())
+    info["repository_string"] = six.ensure_str(
+        branch.repository._format.get_format_string()
+    )
     return info
 
 

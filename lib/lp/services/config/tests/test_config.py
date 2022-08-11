@@ -4,29 +4,24 @@
 # We know we are not using root and handlers.
 """Test lp.services.config."""
 
-from doctest import (
-    DocTestSuite,
-    ELLIPSIS,
-    NORMALIZE_WHITESPACE,
-    )
 import os
 import unittest
+from doctest import ELLIPSIS, NORMALIZE_WHITESPACE, DocTestSuite
 
+import testtools
 from fixtures import TempDir
 from lazr.config import ConfigSchema
 from lazr.config.interfaces import ConfigErrors
-import testtools
 
 import lp.services.config
 from lp.services.config.fixture import ConfigUseFixture
 
-
 # Configs that shouldn't be tested.
-EXCLUDED_CONFIGS = ['lpnet-template']
+EXCLUDED_CONFIGS = ["lpnet-template"]
 
 # Calculate some landmark paths.
 here = os.path.dirname(lp.services.config.__file__)
-lazr_schema_file = os.path.join(here, 'schema-lazr.conf')
+lazr_schema_file = os.path.join(here, "schema-lazr.conf")
 
 
 def make_config_test(config_file, description):
@@ -35,8 +30,10 @@ def make_config_test(config_file, description):
     The config file name is shown in the output of test.py -vv. eg.
     (lp.services.config.tests.test_config.../configs/schema.lazr.conf)
     """
+
     class LAZRConfigTestCase(unittest.TestCase):
         """Test a lazr.config."""
+
         def testConfig(self):
             """Validate the config against the schema.
 
@@ -47,16 +44,16 @@ def make_config_test(config_file, description):
             try:
                 config.validate()
             except ConfigErrors as error:
-                message = '\n'.join([str(e) for e in error.errors])
+                message = "\n".join([str(e) for e in error.errors])
                 self.fail(message)
+
     # Hack the config file name into the class name.
-    LAZRConfigTestCase.__name__ = '../' + description
+    LAZRConfigTestCase.__name__ = "../" + description
     LAZRConfigTestCase.__qualname__ = LAZRConfigTestCase.__name__
     return LAZRConfigTestCase
 
 
 class TestLaunchpadConfig(testtools.TestCase):
-
     def test_dir(self):
         # dir(config) returns methods, variables and section names.
         config = lp.services.config.config
@@ -79,56 +76,65 @@ class TestLaunchpadConfig(testtools.TestCase):
         # The launchpad.config_overlay_dir setting can be used to load
         # extra config files over the top. This is useful for overlaying
         # non-version-controlled secrets.
-        config_dir = self.useFixture(TempDir(rootdir='configs'))
+        config_dir = self.useFixture(TempDir(rootdir="configs"))
         config_name = os.path.basename(config_dir.path)
-        overlay_dir = self.useFixture(TempDir(rootdir='configs'))
-        with open(config_dir.join('launchpad-lazr.conf'), 'w') as f:
-            f.write("""
+        overlay_dir = self.useFixture(TempDir(rootdir="configs"))
+        with open(config_dir.join("launchpad-lazr.conf"), "w") as f:
+            f.write(
+                """
                 [meta]
                 extends: ../testrunner/launchpad-lazr.conf
 
                 [launchpad]
                 config_overlay_dir: ../%s
-                """ % os.path.basename(overlay_dir.path))
+                """
+                % os.path.basename(overlay_dir.path)
+            )
 
         config = lp.services.config.config
 
         with ConfigUseFixture(config_name):
-            self.assertEqual('launchpad_main', config.launchpad.dbuser)
-            self.assertEqual('', config.launchpad.site_message)
+            self.assertEqual("launchpad_main", config.launchpad.dbuser)
+            self.assertEqual("", config.launchpad.site_message)
 
-        with open(overlay_dir.join('00-test-lazr.conf'), 'w') as f:
-            f.write("""
+        with open(overlay_dir.join("00-test-lazr.conf"), "w") as f:
+            f.write(
+                """
                 [launchpad]
                 dbuser: overlay-user
                 site_message: An overlay!
-                """)
+                """
+            )
         with ConfigUseFixture(config_name):
-            self.assertEqual('overlay-user', config.launchpad.dbuser)
-            self.assertEqual('An overlay!', config.launchpad.site_message)
+            self.assertEqual("overlay-user", config.launchpad.dbuser)
+            self.assertEqual("An overlay!", config.launchpad.site_message)
 
-        with open(overlay_dir.join('01-test-lazr.conf'), 'w') as f:
-            f.write("""
+        with open(overlay_dir.join("01-test-lazr.conf"), "w") as f:
+            f.write(
+                """
                 [launchpad]
                 site_message: Another overlay!
-                """)
+                """
+            )
         with ConfigUseFixture(config_name):
-            self.assertEqual('overlay-user', config.launchpad.dbuser)
-            self.assertEqual('Another overlay!', config.launchpad.site_message)
+            self.assertEqual("overlay-user", config.launchpad.dbuser)
+            self.assertEqual("Another overlay!", config.launchpad.site_message)
 
-        os.unlink(overlay_dir.join('00-test-lazr.conf'))
+        os.unlink(overlay_dir.join("00-test-lazr.conf"))
         with ConfigUseFixture(config_name):
-            self.assertEqual('launchpad_main', config.launchpad.dbuser)
-            self.assertEqual('Another overlay!', config.launchpad.site_message)
+            self.assertEqual("launchpad_main", config.launchpad.dbuser)
+            self.assertEqual("Another overlay!", config.launchpad.site_message)
 
 
 def test_suite():
     """Return a suite of canonical.conf and all conf files."""
     suite = unittest.TestSuite()
-    suite.addTest(DocTestSuite(
-        'lp.services.config',
-        optionflags=NORMALIZE_WHITESPACE | ELLIPSIS,
-        ))
+    suite.addTest(
+        DocTestSuite(
+            "lp.services.config",
+            optionflags=NORMALIZE_WHITESPACE | ELLIPSIS,
+        )
+    )
     load_testcase = unittest.defaultTestLoader.loadTestsFromTestCase
     # Add a test for every launchpad[.lazr].conf file in our tree.
     for config_dir in lp.services.config.CONFIG_ROOT_DIRS:
@@ -137,7 +143,7 @@ def test_suite():
                 del dirnames[:]  # Don't look in subdirectories.
                 continue
             for filename in filenames:
-                if filename.endswith('-lazr.conf'):
+                if filename.endswith("-lazr.conf"):
                     # Test the lazr.config conf files.
                     config_file = os.path.join(dirpath, filename)
                     description = os.path.relpath(config_file, config_dir)

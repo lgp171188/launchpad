@@ -1,10 +1,7 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
 import pytz
 from zope.component import getUtility
@@ -12,10 +9,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.interfaces.questioncollection import IQuestionSet
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,8 +26,10 @@ class TestQuestionDirectSubscribers(TestCaseWithFactory):
 
         direct_subscribers = question.getDirectSubscribers()
         self.assertEqual(
-            set(subscribers), set(direct_subscribers),
-            "Subscribers did not match expected value.")
+            set(subscribers),
+            set(direct_subscribers),
+            "Subscribers did not match expected value.",
+        )
 
     def test_get_direct_subscribers_with_details_other_subscriber(self):
         # getDirectSubscribersWithDetails() returns
@@ -48,7 +44,8 @@ class TestQuestionDirectSubscribers(TestCaseWithFactory):
             subscription = question.subscribe(subscribee, subscriber)
         self.assertContentEqual(
             [(subscribee, subscription)],
-            question.getDirectSubscribersWithDetails())
+            question.getDirectSubscribersWithDetails(),
+        )
 
     def test_get_direct_subscribers_with_details_self_subscribed(self):
         # getDirectSubscribersWithDetails() returns
@@ -62,7 +59,8 @@ class TestQuestionDirectSubscribers(TestCaseWithFactory):
             subscription = question.subscribe(subscriber, subscriber)
         self.assertContentEqual(
             [(subscriber, subscription)],
-            question.getDirectSubscribersWithDetails())
+            question.getDirectSubscribersWithDetails(),
+        )
 
 
 class TestQuestionInDirectSubscribers(TestCaseWithFactory):
@@ -73,7 +71,7 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
         # Question answer contacts are indirect subscribers to questions.
         person = self.factory.makePerson()
         with person_logged_in(person):
-            person.addLanguage(getUtility(ILanguageSet)['en'])
+            person.addLanguage(getUtility(ILanguageSet)["en"])
         question = self.factory.makeQuestion()
         with person_logged_in(question.owner):
             question.target.addAnswerContact(person, person)
@@ -96,8 +94,8 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
         # are filtered according to the question's language.
         english_person = self.factory.makePerson()
         with person_logged_in(english_person):
-            english_person.addLanguage(getUtility(ILanguageSet)['en'])
-        spanish = getUtility(ILanguageSet)['es']
+            english_person.addLanguage(getUtility(ILanguageSet)["en"])
+        spanish = getUtility(ILanguageSet)["es"]
         spanish_person = self.factory.makePerson()
         with person_logged_in(spanish_person):
             spanish_person.addLanguage(spanish)
@@ -117,7 +115,8 @@ class TestQuestionSet(TestCaseWithFactory):
     def test_expiredQuestions(self):
         question = self.factory.makeQuestion()
         removeSecurityProxy(question).datelastquery = datetime.now(
-            pytz.UTC) - timedelta(days=5)
+            pytz.UTC
+        ) - timedelta(days=5)
 
         question_set = getUtility(IQuestionSet)
         expired = question_set.findExpiredQuestions(3)

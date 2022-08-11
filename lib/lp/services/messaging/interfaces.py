@@ -4,14 +4,14 @@
 """Messaging interfaces."""
 
 __all__ = [
-    'IMessageConsumer',
-    'IMessageProducer',
-    'IMessageSession',
-    'MessagingException',
-    'MessagingUnavailable',
-    'QueueEmpty',
-    'QueueNotFound',
-    ]
+    "IMessageConsumer",
+    "IMessageProducer",
+    "IMessageSession",
+    "MessagingException",
+    "MessagingUnavailable",
+    "QueueEmpty",
+    "QueueNotFound",
+]
 
 
 from zope.interface import Interface
@@ -37,7 +37,8 @@ class QueueEmpty(MessagingException):
 class IMessageSession(Interface):
 
     is_connected = Bool(
-        "Whether the session is connected to the messaging system.")
+        "Whether the session is connected to the messaging system."
+    )
 
     def connect():
         """Connect to the messaging system.
@@ -71,7 +72,6 @@ class IMessageSession(Interface):
 
 
 class IMessageConsumer(Interface):
-
     def receive(blocking=True):
         """Receive data from the queue.
 
@@ -80,7 +80,6 @@ class IMessageConsumer(Interface):
 
 
 class IMessageProducer(Interface):
-
     def send(data):
         """Serialize `data` into JSON and send it to the queue on commit."""
 

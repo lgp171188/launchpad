@@ -3,12 +3,7 @@
 
 """Tests for registry errors."""
 
-from http.client import (
-    BAD_REQUEST,
-    CONFLICT,
-    FORBIDDEN,
-    UNAUTHORIZED,
-    )
+from http.client import BAD_REQUEST, CONFLICT, FORBIDDEN, UNAUTHORIZED
 
 from lp.registry.errors import (
     CannotTransitionToCountryMirror,
@@ -24,7 +19,7 @@ from lp.registry.errors import (
     TeamMembershipTransitionError,
     UserCannotChangeMembershipSilently,
     UserCannotSubscribePerson,
-    )
+)
 from lp.registry.interfaces.person import ImmutableVisibilityError
 from lp.testing import TestCase
 from lp.testing.layers import FunctionalLayer
@@ -32,7 +27,7 @@ from lp.testing.views import create_webservice_error_view
 
 
 class TestWebServiceErrors(TestCase):
-    """ Test that errors are correctly mapped to HTTP status codes."""
+    """Test that errors are correctly mapped to HTTP status codes."""
 
     layer = FunctionalLayer
 
@@ -53,18 +48,19 @@ class TestWebServiceErrors(TestCase):
         self.assertEqual(BAD_REQUEST, error_view.status)
 
     def test_TeamMembershipPolicyError_bad_request(self):
-        error_view = create_webservice_error_view(
-            TeamMembershipPolicyError())
+        error_view = create_webservice_error_view(TeamMembershipPolicyError())
         self.assertEqual(BAD_REQUEST, error_view.status)
 
     def test_TeamMembershipTransitionError_bad_request(self):
         error_view = create_webservice_error_view(
-            TeamMembershipTransitionError())
+            TeamMembershipTransitionError()
+        )
         self.assertEqual(BAD_REQUEST, error_view.status)
 
     def test_DistroSeriesDifferenceError_bad_request(self):
         error_view = create_webservice_error_view(
-            DistroSeriesDifferenceError())
+            DistroSeriesDifferenceError()
+        )
         self.assertEqual(BAD_REQUEST, error_view.status)
 
     def test_DeleteSubscriptionError_bad_request(self):
@@ -77,12 +73,14 @@ class TestWebServiceErrors(TestCase):
 
     def test_CannotTransitionToCountryMirror_bad_request(self):
         error_view = create_webservice_error_view(
-            CannotTransitionToCountryMirror())
+            CannotTransitionToCountryMirror()
+        )
         self.assertEqual(BAD_REQUEST, error_view.status)
 
     def test_UserCannotChangeMembershipSilently_authorised(self):
         error_view = create_webservice_error_view(
-            UserCannotChangeMembershipSilently())
+            UserCannotChangeMembershipSilently()
+        )
         self.assertEqual(UNAUTHORIZED, error_view.status)
 
     def test_NameAlreadyTaken_bad_request(self):
@@ -94,6 +92,5 @@ class TestWebServiceErrors(TestCase):
         self.assertEqual(FORBIDDEN, error_view.status)
 
     def test_ImmutableVisibilityError_forbidden(self):
-        error_view = create_webservice_error_view(
-            ImmutableVisibilityError())
+        error_view = create_webservice_error_view(ImmutableVisibilityError())
         self.assertEqual(FORBIDDEN, error_view.status)

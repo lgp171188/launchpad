@@ -10,29 +10,26 @@ __all__ = [
     "CandidUnconfiguredError",
     "extract_candid_caveat",
     "request_candid_discharge",
-    ]
+]
 
-from base64 import b64encode
 import hashlib
 import hmac
 import http.client
 import json
-from urllib.parse import urlencode
 import uuid
+from base64 import b64encode
+from urllib.parse import urlencode
 
 from lazr.restful.declarations import error_status
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
 from requests import HTTPError
 from zope.browserpage import ViewPageTemplateFile
-from zope.session.interfaces import ISession
 
 from lp.services.config import config
 from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.services.timeout import (
-    raise_for_status_redacted,
-    urlfetch,
-    )
+from lp.services.timeout import raise_for_status_redacted, urlfetch
+from lp.services.webapp.interfaces import ISession
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
@@ -63,14 +60,19 @@ def _make_candid_request(request, endpoint_name, expect_401=False, **kwargs):
     action = timeline.start("candid", url)
     try:
         response = urlfetch(
-            url, method="POST", headers=base_headers,
-            check_status=not expect_401, **kwargs)
+            url,
+            method="POST",
+            headers=base_headers,
+            check_status=not expect_401,
+            **kwargs,
+        )
         if expect_401 and response.status_code != 401:
             raise_for_status_redacted(response)
             raise CandidFailure(
                 "Initial discharge request unexpectedly succeeded without "
                 "authorization",
-                response=response)
+                response=response,
+            )
         return response
     except HTTPError as e:
         raise CandidFailure(str(e), response=e.response)
@@ -86,54 +88,73 @@ def _deserialize_json_macaroon(macaroon_raw):
 def extract_candid_caveat(macaroon):
     """Extract the Candid third-party caveat from a macaroon."""
     caveats = [
-        caveat for caveat in macaroon.caveats
-        if caveat.location == config.launchpad.candid_service_root]
+        caveat
+        for caveat in macaroon.caveats
+        if caveat.location == config.launchpad.candid_service_root
+    ]
     if not caveats:
         raise BadCandidMacaroon(
             "Macaroon has no Candid caveat ({})".format(
-                config.launchpad.candid_service_root))
+                config.launchpad.candid_service_root
+            )
+        )
     elif len(caveats) > 1:
         raise BadCandidMacaroon(
             "Macaroon has multiple Candid caveats ({})".format(
-                config.launchpad.candid_service_root))
+                config.launchpad.candid_service_root
+            )
+        )
     return caveats[0]
 
 
-def _get_candid_login_url_for_discharge(request, macaroon, state,
-                                        callback_url):
+def _get_candid_login_url_for_discharge(
+    request, macaroon, state, callback_url
+):
     """Get the login URL to web-discharge a third-party caveat."""
     caveat = extract_candid_caveat(macaroon)
     response = _make_candid_request(
-        request, "discharge",
-        data={"id64": b64encode(caveat.caveat_id_bytes)}, expect_401=True)
+        request,
+        "discharge",
+        data={"id64": b64encode(caveat.caveat_id_bytes)},
+        expect_401=True,
+    )
     try:
         interaction_methods = response.json()["Info"]["InteractionMethods"]
         browser_redirect = interaction_methods["browser-redirect"]
         return "{}?{}".format(
             browser_redirect["LoginURL"],
-            urlencode({"return_to": callback_url, "state": state}))
+            urlencode({"return_to": callback_url, "state": state}),
+        )
     except KeyError:
         raise CandidFailure(
             "Initial discharge request did not contain expected fields",
-            response=response)
+            response=response,
+        )
 
 
-def request_candid_discharge(request, macaroon_raw, starting_url,
-                             discharge_macaroon_field,
-                             discharge_macaroon_action=None):
+def request_candid_discharge(
+    request,
+    macaroon_raw,
+    starting_url,
+    discharge_macaroon_field,
+    discharge_macaroon_action=None,
+):
     """Request a discharge for a given macaroon from Candid.
 
     Returns a Candid URL.  The caller should redirect to it by whatever
     means is appropriate in context.
     """
-    if (not config.launchpad.candid_service_root or
-            not config.launchpad.csrf_secret):
+    if (
+        not config.launchpad.candid_service_root
+        or not config.launchpad.csrf_secret
+    ):
         raise CandidUnconfiguredError("The Candid service is not configured.")
 
     macaroon = _deserialize_json_macaroon(macaroon_raw)
 
     csrf_token = hashlib.sha256(
-        (uuid.uuid4().hex + config.launchpad.csrf_secret).encode()).hexdigest()
+        (uuid.uuid4().hex + config.launchpad.csrf_secret).encode()
+    ).hexdigest()
 
     session_data = ISession(request)["launchpad.candid"]
     session_data["macaroon"] = macaroon_raw
@@ -147,16 +168,19 @@ def request_candid_discharge(request, macaroon_raw, starting_url,
     starting_data = [
         ("starting_url", starting_url),
         ("discharge_macaroon_field", discharge_macaroon_field),
-        ]
+    ]
     if discharge_macaroon_action is not None:
         starting_data.append(
-            ("discharge_macaroon_action", discharge_macaroon_action))
+            ("discharge_macaroon_action", discharge_macaroon_action)
+        )
     return_to = "%s?%s" % (
         urlappend(allvhosts.configs["mainsite"].rooturl, "+candid-callback"),
-        urlencode(starting_data))
+        urlencode(starting_data),
+    )
 
     return _get_candid_login_url_for_discharge(
-        request, macaroon, csrf_token, return_to)
+        request, macaroon, csrf_token, return_to
+    )
 
 
 class CandidErrorView(LaunchpadView):
@@ -186,13 +210,14 @@ class CandidCallbackView(LaunchpadView):
         """Get the discharge macaroon generated after a Candid web login."""
         caveat = extract_candid_caveat(macaroon)
         response = _make_candid_request(
-            request, "discharge-token", json={"code": code})
+            request, "discharge-token", json={"code": code}
+        )
         token = response.json()["token"]
         data = {
             "id64": b64encode(caveat.caveat_id_bytes),
             "token64": token["value"],
             "token-kind": token["kind"],
-            }
+        }
         response = _make_candid_request(request, "discharge", data=data)
         return json.dumps(response.json()["Macaroon"])
 
@@ -201,24 +226,30 @@ class CandidCallbackView(LaunchpadView):
         session_data = ISession(self.request)["launchpad.candid"]
 
         try:
-            if ("macaroon" not in session_data or
-                    "csrf-token" not in session_data):
+            if (
+                "macaroon" not in session_data
+                or "csrf-token" not in session_data
+            ):
                 raise CandidFailure("Candid session lost or not started")
-            if ("starting_url" not in self.params or
-                    "discharge_macaroon_field" not in self.params or
-                    "code" not in self.params):
+            if (
+                "starting_url" not in self.params
+                or "discharge_macaroon_field" not in self.params
+                or "code" not in self.params
+            ):
                 raise CandidFailure("Missing parameters to Candid callback")
 
             # Validate CSRF token.
             if not hmac.compare_digest(
-                    self.params.get("state", ""), session_data["csrf-token"]):
+                self.params.get("state", ""), session_data["csrf-token"]
+            ):
                 raise CandidFailure("CSRF token mismatch")
 
             # Get unbound discharge macaroon from Candid.
             code = self.params["code"]
             macaroon = _deserialize_json_macaroon(session_data["macaroon"])
             self.discharge_macaroon_raw = self._get_serialized_discharge(
-                self.request, macaroon, code)
+                self.request, macaroon, code
+            )
             self.candid_error = None
         except CandidFailure as e:
             self.candid_error = str(e)
@@ -231,6 +262,7 @@ class CandidCallbackView(LaunchpadView):
     def render(self):
         if self.candid_error is not None:
             return CandidErrorView(
-                self.context, self.request, self.candid_error)()
+                self.context, self.request, self.candid_error
+            )()
         else:
             return super().render()

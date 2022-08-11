@@ -13,14 +13,12 @@ special methods to make dealing with them sweet.
 import re
 
 from debian import changelog
-
+from debian.changelog import VersionError
 
 # Regular expressions make validating things easy
-valid_epoch = re.compile(r'^[0-9]+$')
-valid_upstream = re.compile(r'^[0-9][A-Za-z0-9+:.~-]*$')
-valid_revision = re.compile(r'^[A-Za-z0-9+.~]+$')
-
-VersionError = changelog.VersionError
+valid_epoch = re.compile(r"^[0-9]+$")
+valid_upstream = re.compile(r"^[0-9][A-Za-z0-9+:.~-]*$")
+valid_revision = re.compile(r"^[A-Za-z0-9+.~]+$")
 
 
 class BadInputError(VersionError):
@@ -83,4 +81,5 @@ class Version(changelog.Version):
             raise BadUpstreamError("Upstream version cannot be empty")
         if not valid_upstream.search(self.upstream_version):
             raise BadUpstreamError(
-                "Bad upstream version format %s" % self.upstream_version)
+                "Bad upstream version format %s" % self.upstream_version
+            )

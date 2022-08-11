@@ -4,18 +4,18 @@
 """Error logging facilities."""
 
 import contextlib
-from itertools import repeat
 import operator
 import re
+from itertools import repeat
 from urllib.parse import urlparse
 
-from lazr.restful.utils import get_current_browser_request
 import oops.createhooks
 import oops_amqp
-from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
 import six
+from lazr.restful.utils import get_current_browser_request
+from oops_datedir_repo import DateDirRepo
 from talisker.logs import logging_context
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -35,20 +35,19 @@ from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.webapp.adapter import (
     get_request_duration,
     soft_timeout_expired,
-    )
+)
 from lp.services.webapp.interfaces import (
     IErrorReportEvent,
     IErrorReportRequest,
     IUnloggedException,
-    )
+)
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.pgsession import PGSessionBase
 from lp.services.webapp.vhosts import allvhosts
 
-
 UTC = pytz.utc
 
-LAZR_OOPS_USER_REQUESTED_KEY = 'lazr.oops.user_requested'
+LAZR_OOPS_USER_REQUESTED_KEY = "lazr.oops.user_requested"
 
 
 def _is_sensitive(request, name):
@@ -62,16 +61,16 @@ def _is_sensitive(request, name):
     """
     upper_name = name.upper()
     # Block passwords
-    if ('PASSWORD' in upper_name or 'PASSWD' in upper_name):
+    if "PASSWORD" in upper_name or "PASSWD" in upper_name:
         return True
 
     # Block HTTP_COOKIE and oauth_signature.
-    if name in ('HTTP_COOKIE', 'oauth_signature'):
+    if name in ("HTTP_COOKIE", "oauth_signature"):
         return True
 
     # Allow remaining UPPERCASE names and remaining form variables.  Note that
     # XMLRPC requests won't have a form attribute.
-    form = getattr(request, 'form', [])
+    form = getattr(request, "form", [])
     if name == upper_name or name in form:
         return False
 
@@ -85,16 +84,16 @@ class ErrorReportEvent(ObjectEvent):
 
 
 def notify_publisher(report):
-    if not report.get('id'):
-        report['id'] = str(id(report))
+    if not report.get("id"):
+        report["id"] = str(id(report))
     notify(ErrorReportEvent(report))
-    return [report['id']]
+    return [report["id"]]
 
 
 def attach_adapter_duration(report, context):
     # More generic than HTTP requests - e.g. how long a script was running
     # for.
-    report['duration'] = get_request_duration()
+    report["duration"] = get_request_duration()
 
 
 def attach_exc_info(report, context):
@@ -106,37 +105,36 @@ def attach_exc_info(report, context):
     * tb_text
     keys in the report.
     """
-    info = context.get('exc_info')
+    info = context.get("exc_info")
     if info is None:
         return
-    report['type'] = getattr(info[0], '__name__', info[0])
-    report['value'] = oops.createhooks.safe_unicode(info[1])
+    report["type"] = getattr(info[0], "__name__", info[0])
+    report["value"] = oops.createhooks.safe_unicode(info[1])
     if not isinstance(info[2], str):
-        tb_text = ''.join(format_exception(*info,
-                                           **{'as_html': False}))
+        tb_text = "".join(format_exception(*info, **{"as_html": False}))
     else:
         tb_text = info[2]
-    report['tb_text'] = tb_text
+    report["tb_text"] = tb_text
 
 
-_ignored_exceptions_for_unauthenticated_users = {'Unauthorized'}
+_ignored_exceptions_for_unauthenticated_users = {"Unauthorized"}
 
 
 def attach_previous_oopsid(report, context):
     """Add a link to the previous OOPS generated this request, if any."""
-    request = context.get('http_request')
-    last_oopsid = getattr(request, 'oopsid', None)
+    request = context.get("http_request")
+    last_oopsid = getattr(request, "oopsid", None)
     if last_oopsid is not None:
-        report['last_oops'] = last_oopsid
+        report["last_oops"] = last_oopsid
 
 
 def attach_feature_info(report, context):
     """Attach info about the active features and scopes."""
-    request = context.get('http_request')
-    features = getattr(request, 'features', None)
+    request = context.get("http_request")
+    features = getattr(request, "features", None)
     if features is not None:
-        report['features.usedFlags'] = '%r' % features.usedFlags()
-        report['features.usedScopes'] = '%r' % features.usedScopes()
+        report["features.usedFlags"] = "%r" % features.usedFlags()
+        report["features.usedScopes"] = "%r" % features.usedScopes()
 
 
 def attach_http_request(report, context):
@@ -150,59 +148,62 @@ def attach_http_request(report, context):
     * topic
     * req_vars
     """
-    info = context.get('exc_info')
-    request = context.get('http_request')
+    info = context.get("exc_info")
+    request = context.get("http_request")
     if request is None:
         return
     # XXX jamesh 2005-11-22: Temporary fix, which Steve should
     #      undo. URL is just too HTTPRequest-specific.
-    if hasattr(request, 'URL'):
+    if hasattr(request, "URL"):
         # URL's are byte strings, but possibly str() will fail - safe_unicode
         # handles all those cases.  This is strictly double handling as a
         # URL should never have unicode characters in it anyway (though it
         # may have them % encoded, which is fine).  Better safe than sorry,
         # and the safe_unicode handling won't cause double-encoding, so it
         # is safe.
-        report['url'] = oops.createhooks.safe_unicode(request.URL)
+        report["url"] = oops.createhooks.safe_unicode(request.URL)
 
     if WebServiceLayer.providedBy(request) and info is not None:
-        webservice_error = getattr(
-            info[1], '__lazr_webservice_error__', 500)
+        webservice_error = getattr(info[1], "__lazr_webservice_error__", 500)
         if webservice_error / 100 != 5:
             request.oopsid = None
             logging_context.push(oopsid=None)
             # Tell the oops machinery to ignore this error
-            report['ignore'] = True
+            report["ignore"] = True
 
     missing = object()
-    principal = getattr(request, 'principal', missing)
+    principal = getattr(request, "principal", missing)
 
-    if hasattr(principal, 'getLogin'):
+    if hasattr(principal, "getLogin"):
         login = principal.getLogin()
     elif principal is missing or principal is None:
         # Request has no principal (e.g. scriptrequest)
         login = None
     else:
         # Request has an UnauthenticatedPrincipal.
-        login = 'unauthenticated'
+        login = "unauthenticated"
         if _get_type(report) in (
-            _ignored_exceptions_for_unauthenticated_users):
-            report['ignore'] = True
+            _ignored_exceptions_for_unauthenticated_users
+        ):
+            report["ignore"] = True
 
     if principal is not None and principal is not missing:
-        username = ', '.join([
+        username = ", ".join(
+            [
                 six.ensure_text(login),
                 str(request.principal.id),
                 six.ensure_text(request.principal.title),
-                six.ensure_text(request.principal.description)])
-        report['username'] = username
+                six.ensure_text(request.principal.description),
+            ]
+        )
+        report["username"] = username
 
-    if getattr(request, '_orig_env', None):
-        report['topic'] = request._orig_env.get('launchpad.pageid', '')
+    if getattr(request, "_orig_env", None):
+        report["topic"] = request._orig_env.get("launchpad.pageid", "")
 
     for key, value in request.items():
         if _is_sensitive(request, key):
-            value = '<hidden>'
+            value = "<hidden>"
         if not isinstance(value, str):
             value = oops.createhooks.safe_unicode(value)
         # keys need to be unicode objects. The form items (a subset of
@@ -210,27 +211,27 @@ def attach_http_request(report, context):
         # which means the keys may be invalid in bson docs (bson requires that
         # they be unicode).
         key = oops.createhooks.safe_unicode(key)
-        report['req_vars'][key] = value
+        report["req_vars"][key] = value
     if IXMLRPCRequest.providedBy(request):
         args = request.getPositionalArguments()
         # Request variables are strings: this could move to its own key and be
         # raw.
-        report['req_vars']['xmlrpc args'] = str(args)
+        report["req_vars"]["xmlrpc args"] = str(args)
 
 
 def attach_ignore_from_exception(report, context):
     """Set the ignore key to True if the excception is ignored."""
-    info = context.get('exc_info')
+    info = context.get("exc_info")
     if info is None:
         return
     # Because of IUnloggedException being a sidewards lookup we must
     # capture this here to filter on later.
-    report['ignore'] = IUnloggedException.providedBy(info[1])
+    report["ignore"] = IUnloggedException.providedBy(info[1])
 
 
 def _filter_session_statement(database_id, statement):
     """Replace quoted strings with '%s' in statements on session DB."""
-    if database_id == 'SQL-' + PGSessionBase.store_name:
+    if database_id == "SQL-" + PGSessionBase.store_name:
         return re.sub("'[^']*'", "'%s'", statement)
     else:
         return statement
@@ -238,7 +239,7 @@ def _filter_session_statement(database_id, statement):
 
 def filter_sessions_timeline(report, context):
     """Filter timeline session data in the report."""
-    timeline = report.get('timeline')
+    timeline = report.get("timeline")
     if timeline is None:
         return
     statements = []
@@ -246,29 +247,38 @@ def filter_sessions_timeline(report, context):
         start, end, category, detail = event[:4]
         detail = _filter_session_statement(category, detail)
         statements.append((start, end, category, detail) + event[4:])
-    report['timeline'] = statements
+    report["timeline"] = statements
 
 
 def _get_type(report):
-    return report.get('type', 'No exception type')
+    return report.get("type", "No exception type")
 
 
 @implementer(IErrorReportingUtility)
 class ErrorReportingUtility:
 
-    _ignored_exceptions = {'TranslationUnavailable', 'NoReferrerError'}
+    _ignored_exceptions = {"TranslationUnavailable", "NoReferrerError"}
     _ignored_exceptions_for_offsite_referer = {
-        'GoneError', 'InvalidBatchSizeError', 'NotFound'}
-    _default_config_section = 'error_reports'
+        "GoneError",
+        "InvalidBatchSizeError",
+        "NotFound",
+    }
+    _default_config_section = "error_reports"
 
     def __init__(self):
         self.configure()
         self._oops_messages = {}
         self._oops_message_key_iter = (
-            index for index, _ignored in enumerate(repeat(None)))
+            index for index, _ignored in enumerate(repeat(None))
+        )
 
-    def configure(self, section_name=None, config_factory=oops.Config,
-                  publisher_adapter=None, publisher_helpers=oops.publishers):
+    def configure(
+        self,
+        section_name=None,
+        config_factory=oops.Config,
+        publisher_adapter=None,
+        publisher_helpers=oops.publishers,
+    ):
         """Configure the utility using the named section from the config.
 
         The 'error_reports' section is used if section_name is None.
@@ -281,14 +291,14 @@ class ErrorReportingUtility:
         #
         # What do we want in our reports?
         # Constants:
-        self._oops_config.template['branch_nick'] = versioninfo.branch_nick
-        self._oops_config.template['revision'] = versioninfo.revision
+        self._oops_config.template["branch_nick"] = versioninfo.branch_nick
+        self._oops_config.template["revision"] = versioninfo.revision
         reporter = config[self._default_config_section].oops_prefix
         if section_name != self._default_config_section:
-            reporter = '%s-%s' % (reporter, section_name)
-        self._oops_config.template['reporter'] = reporter
+            reporter = "%s-%s" % (reporter, section_name)
+        self._oops_config.template["reporter"] = reporter
         # Should go in an HTTP module.
-        self._oops_config.template['req_vars'] = {}
+        self._oops_config.template["req_vars"] = {}
         # Exceptions, with the zope formatter.
         self._oops_config.on_create.append(attach_exc_info)
         # Ignore IUnloggedException exceptions
@@ -321,34 +331,43 @@ class ErrorReportingUtility:
         self._main_publishers = []
         self._all_publishers = []
         # If amqp is configured we want to publish over amqp.
-        if (config.error_reports.error_exchange and rabbit.is_configured()):
+        if config.error_reports.error_exchange and rabbit.is_configured():
             exchange = config.error_reports.error_exchange
             routing_key = config.error_reports.error_queue_key
-            self._main_publishers.append(adapted_publisher(oops_amqp.Publisher(
-                rabbit.connect, exchange, routing_key)))
+            self._main_publishers.append(
+                adapted_publisher(
+                    oops_amqp.Publisher(rabbit.connect, exchange, routing_key)
+                )
+            )
         # We want to publish reports to disk for gathering to the central
         # analysis server, but only if we haven't already published to rabbit.
         self._oops_datedir_repo = DateDirRepo(
-            config[self._default_config_section].error_dir)
+            config[self._default_config_section].error_dir
+        )
         self._main_publishers.append(
-            adapted_publisher(self._oops_datedir_repo.publish))
+            adapted_publisher(self._oops_datedir_repo.publish)
+        )
         self._all_publishers.append(
-            publisher_helpers.publish_with_fallback(*self._main_publishers))
+            publisher_helpers.publish_with_fallback(*self._main_publishers)
+        )
         # And send everything within the zope application server (only for
         # testing).
         self._all_publishers.append(adapted_publisher(notify_publisher))
         self._oops_config.publisher = publisher_helpers.publish_to_many(
-            *self._all_publishers)
+            *self._all_publishers
+        )
 
         #
         # Reports are filtered if:
         #  - There is a key 'ignore':True in the report. This is set during
         #    _makeReport.
         self._oops_config.filters.append(
-                operator.methodcaller('get', 'ignore'))
+            operator.methodcaller("get", "ignore")
+        )
         #  - have a type listed in self._ignored_exceptions.
         self._oops_config.filters.append(
-                lambda report: _get_type(report) in self._ignored_exceptions)
+            lambda report: _get_type(report) in self._ignored_exceptions
+        )
         #  - have a missing or offset REFERER header with a type listed in
         #    self._ignored_exceptions_for_offsite_referer
         self._oops_config.filters.append(self._filter_bad_urls_by_referer)
@@ -359,13 +378,13 @@ class ErrorReportingUtility:
     @property
     def oops_prefix(self):
         """Get the current effective oops prefix."""
-        return self._oops_config.template['reporter']
+        return self._oops_config.template["reporter"]
 
     def raising(self, info, request=None):
         """See IErrorReportingUtility.raising()"""
         context = dict(exc_info=info)
         if request is not None:
-            context['http_request'] = request
+            context["http_request"] = request
         # In principle the timeline is per-request, but see bug=623199 -
         # at this point the request is optional, but get_request_timeline
         # does not care; when it starts caring, we will always have a
@@ -373,23 +392,23 @@ class ErrorReportingUtility:
         # RBC 20100901
         timeline = get_request_timeline(request)
         if timeline is not None:
-            context['timeline'] = timeline
+            context["timeline"] = timeline
         report = self._oops_config.create(context)
         if self._oops_config.publish(report) is None:
             return
         if request:
-            request.oopsid = report.get('id')
+            request.oopsid = report.get("id")
             request.oops = report
-        logging_context.push(oopsid=report.get('id'))
+        logging_context.push(oopsid=report.get("id"))
         return report
 
     def _filter_bad_urls_by_referer(self, report):
         """Filter if the report was generated because of a bad offsite url."""
         if _get_type(report) in self._ignored_exceptions_for_offsite_referer:
-            was_http = report.get('url', '').lower().startswith('http')
+            was_http = report.get("url", "").lower().startswith("http")
             if was_http:
-                req_vars = report.get('req_vars', {})
-                referer = req_vars.get('HTTP_REFERER')
+                req_vars = report.get("req_vars", {})
+                referer = req_vars.get("HTTP_REFERER")
                 # If there is no referrer then either the user has refer
                 # disabled, or its someone coming from offsite or from some
                 # saved bookmark. Any which way, its not a sign of a current
@@ -397,19 +416,21 @@ class ErrorReportingUtility:
                 if referer is None:
                     return True
                 referer_parts = urlparse(referer)
-                root_parts = urlparse(allvhosts.configs['mainsite'].rooturl)
+                root_parts = urlparse(allvhosts.configs["mainsite"].rooturl)
                 if root_parts.netloc not in referer_parts.netloc:
                     return True
         return False
 
     def _filter_deliberate_db_outages(self, report):
-        if _get_type(report) == 'DisconnectionError':
-            message = report.get('value', '')
+        if _get_type(report) == "DisconnectionError":
+            message = report.get("value", "")
             for ok in (
-                    "database does not allow connections",
-                    "pgbouncer database is disabled"):
-                if (message.startswith(ok)
-                        or message.startswith("ERROR:  " + ok)):
+                "database does not allow connections",
+                "pgbouncer database is disabled",
+            ):
+                if message.startswith(ok) or message.startswith(
+                    "ERROR:  " + ok
+                ):
                     return True
         return False
 
@@ -417,9 +438,9 @@ class ErrorReportingUtility:
         """merges self._oops_messages into the report req_vars variable."""
         # XXX AaronBentley 2009-11-26 bug=488950: There should be separate
         # storage for oops messages.
-        req_vars = report['req_vars']
+        req_vars = report["req_vars"]
         for key, message in self._oops_messages.items():
-            req_vars['<oops-message-%d>' % key] = str(message)
+            req_vars["<oops-message-%d>" % key] = str(message)
 
     @contextlib.contextmanager
     def oopsMessage(self, message):
@@ -507,11 +528,12 @@ def end_request(event):
     # if no OOPS has been generated at the end of the request, but
     # the soft timeout has expired, log an OOPS.
     if event.request.oopsid is None and soft_timeout_expired():
-        OpStats.stats['soft timeouts'] += 1
-        getUtility(IStatsdClient).incr('timeouts.soft')
+        OpStats.stats["soft timeouts"] += 1
+        getUtility(IStatsdClient).incr("timeouts.soft")
         globalErrorUtility.raising(
             (SoftRequestTimeout, SoftRequestTimeout(event.object), None),
-            event.request)
+            event.request,
+        )
 
 
 class UserRequestOops(Exception):
@@ -526,11 +548,14 @@ def maybe_record_user_requested_oops():
     request = get_current_browser_request()
     # If there's a request and no existing OOPS, but an OOPS has been
     # requested, record one.
-    if (request is not None
+    if (
+        request is not None
         and request.oopsid is None
-        and request.annotations.get(LAZR_OOPS_USER_REQUESTED_KEY, False)):
+        and request.annotations.get(LAZR_OOPS_USER_REQUESTED_KEY, False)
+    ):
         globalErrorUtility.raising(
-            (UserRequestOops, UserRequestOops(), None), request)
+            (UserRequestOops, UserRequestOops(), None), request
+        )
 
 
 class OopsNamespace(view):

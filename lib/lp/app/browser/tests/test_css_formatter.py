@@ -5,10 +5,7 @@
 
 from testtools.matchers import Equals
 
-from lp.testing import (
-    test_tales,
-    TestCase,
-    )
+from lp.testing import TestCase, test_tales
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -17,20 +14,21 @@ class TestCSSFormatter(TestCase):
     layer = DatabaseFunctionalLayer
 
     def test_select(self):
-        value = test_tales('value/css:select/visible/hidden', value=None)
-        self.assertThat(value, Equals('hidden'))
-        value = test_tales('value/css:select/visible/hidden', value=False)
-        self.assertThat(value, Equals('hidden'))
-        value = test_tales('value/css:select/visible/hidden', value='')
-        self.assertThat(value, Equals('hidden'))
-        value = test_tales('value/css:select/visible/hidden', value=True)
-        self.assertThat(value, Equals('visible'))
-        value = test_tales('value/css:select/visible/hidden', value='Hello')
-        self.assertThat(value, Equals('visible'))
-        value = test_tales('value/css:select/visible/hidden', value=object())
-        self.assertThat(value, Equals('visible'))
+        value = test_tales("value/css:select/visible/hidden", value=None)
+        self.assertThat(value, Equals("hidden"))
+        value = test_tales("value/css:select/visible/hidden", value=False)
+        self.assertThat(value, Equals("hidden"))
+        value = test_tales("value/css:select/visible/hidden", value="")
+        self.assertThat(value, Equals("hidden"))
+        value = test_tales("value/css:select/visible/hidden", value=True)
+        self.assertThat(value, Equals("visible"))
+        value = test_tales("value/css:select/visible/hidden", value="Hello")
+        self.assertThat(value, Equals("visible"))
+        value = test_tales("value/css:select/visible/hidden", value=object())
+        self.assertThat(value, Equals("visible"))
 
     def test_select_chaining(self):
         value = test_tales(
-            'value/css:select/VISIBLE/hidden/fmt:lower', value=None)
-        self.assertThat(value, Equals('hidden'))
+            "value/css:select/VISIBLE/hidden/fmt:lower", value=None
+        )
+        self.assertThat(value, Equals("hidden"))

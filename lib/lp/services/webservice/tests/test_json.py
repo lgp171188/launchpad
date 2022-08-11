@@ -16,14 +16,14 @@ class TestStrJSONSerializer(TestCase):
     layer = FunctionalLayer
 
     def test_toDataForJSON(self):
-        serializer = StrJSONSerializer(
-            timedelta(days=2, hours=2, seconds=5))
+        serializer = StrJSONSerializer(timedelta(days=2, hours=2, seconds=5))
         self.assertEqual(
-            '2 days, 2:00:05',
-            serializer.toDataForJSON('application/json'))
+            "2 days, 2:00:05", serializer.toDataForJSON("application/json")
+        )
 
     def test_timedelta_users_StrJSONSerializer(self):
         delta = timedelta(seconds=5)
         serializer = IJSONPublishable(delta)
-        self.assertEqual('0:00:05',
-            serializer.toDataForJSON('application/json'))
+        self.assertEqual(
+            "0:00:05", serializer.toDataForJSON("application/json")
+        )

@@ -4,46 +4,38 @@
 """Interface classes for a difference between two distribution series."""
 
 __all__ = [
-    'IDistroSeriesDifference',
-    'IDistroSeriesDifferenceAdmin',
-    'IDistroSeriesDifferencePublic',
-    'IDistroSeriesDifferenceEdit',
-    'IDistroSeriesDifferenceSource',
-    ]
+    "IDistroSeriesDifference",
+    "IDistroSeriesDifferenceAdmin",
+    "IDistroSeriesDifferencePublic",
+    "IDistroSeriesDifferenceEdit",
+    "IDistroSeriesDifferenceSource",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     export_write_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
     operation_parameters,
-    REQUEST_USER,
-    )
+)
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Int, Text, TextLine
 
 from lp import _
 from lp.registry.enums import (
     DistroSeriesDifferenceStatus,
     DistroSeriesDifferenceType,
-    )
+)
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.soyuz.enums import PackageDiffStatus
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
-    )
+)
 from lp.soyuz.interfaces.packagediff import IPackageDiff
 from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 
@@ -51,155 +43,249 @@ from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 class IDistroSeriesDifferencePublic(Interface):
     """The public interface for distro series differences."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
-    derived_series = exported(Reference(
-        IDistroSeries, title=_("Derived series"), required=True,
-        readonly=True, description=_(
-            "The distribution series which identifies the derived series "
-            "with the difference.")))
+    derived_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Derived series"),
+            required=True,
+            readonly=True,
+            description=_(
+                "The distribution series which identifies the derived series "
+                "with the difference."
+            ),
+        )
+    )
 
-    parent_series = exported(Reference(
-        IDistroSeries, title=_("Parent series"), required=True,
-        readonly=True, description=_(
-            "The distribution series which identifies the parent series "
-            "with the difference.")))
+    parent_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Parent series"),
+            required=True,
+            readonly=True,
+            description=_(
+                "The distribution series which identifies the parent series "
+                "with the difference."
+            ),
+        )
+    )
 
     source_package_name_id = Int(
-        title="Source package name id", required=True, readonly=True)
+        title="Source package name id", required=True, readonly=True
+    )
     source_package_name = Reference(
         ISourcePackageName,
-        title=_("Source package name"), required=True, readonly=True,
+        title=_("Source package name"),
+        required=True,
+        readonly=True,
         description=_(
             "The package with a difference between the derived series "
-            "and its parent."))
+            "and its parent."
+        ),
+    )
 
     sourcepackagename = exported(
-        TextLine(
-            title=_("Source Package Name"),
-            required=False, readonly=True))
+        TextLine(title=_("Source Package Name"), required=False, readonly=True)
+    )
 
     package_diff = Reference(
-        IPackageDiff, title=_("Package diff"), required=False,
-        readonly=True, description=_(
-            "The most recently generated package diff from the base to the "
-            "derived version."))
-
-    package_diff_url = exported(TextLine(
-        title=_("Package diff url"), readonly=True, required=False,
+        IPackageDiff,
+        title=_("Package diff"),
+        required=False,
+        readonly=True,
         description=_(
-            "The url for the diff between the base version and the "
-            "derived version.")))
+            "The most recently generated package diff from the base to the "
+            "derived version."
+        ),
+    )
+
+    package_diff_url = exported(
+        TextLine(
+            title=_("Package diff url"),
+            readonly=True,
+            required=False,
+            description=_(
+                "The url for the diff between the base version and the "
+                "derived version."
+            ),
+        )
+    )
 
     parent_package_diff = Reference(
-        IPackageDiff, title=_("Parent package diff"), required=False,
-        readonly=True, description=_(
+        IPackageDiff,
+        title=_("Parent package diff"),
+        required=False,
+        readonly=True,
+        description=_(
             "The most recently generated package diff from the base to the "
-            "parent version."))
+            "parent version."
+        ),
+    )
 
-    parent_package_diff_url = exported(TextLine(
-        title=_("Parent package diff url"), readonly=True, required=False,
-        description=_(
-            "The url for the diff between the base version and the "
-            "parent version.")))
+    parent_package_diff_url = exported(
+        TextLine(
+            title=_("Parent package diff url"),
+            readonly=True,
+            required=False,
+            description=_(
+                "The url for the diff between the base version and the "
+                "parent version."
+            ),
+        )
+    )
 
-    package_diff_status = exported(Choice(
-        title=_("Package diff status"),
-        readonly=True,
-        vocabulary=PackageDiffStatus,
-        description=_(
-            "The status of the diff between the base version and the "
-            "derived version.")))
+    package_diff_status = exported(
+        Choice(
+            title=_("Package diff status"),
+            readonly=True,
+            vocabulary=PackageDiffStatus,
+            description=_(
+                "The status of the diff between the base version and the "
+                "derived version."
+            ),
+        )
+    )
 
-    parent_package_diff_status = exported(Choice(
-        title=_("Parent package diff status"),
-        readonly=True,
-        vocabulary=PackageDiffStatus,
-        description=_(
-            "The status of the diff between the base version and the "
-            "parent version.")))
+    parent_package_diff_status = exported(
+        Choice(
+            title=_("Parent package diff status"),
+            readonly=True,
+            vocabulary=PackageDiffStatus,
+            description=_(
+                "The status of the diff between the base version and the "
+                "parent version."
+            ),
+        )
+    )
 
-    status = exported(Choice(
-        title=_('Distro series difference status.'),
-        description=_('The current status of this difference.'),
-        vocabulary=DistroSeriesDifferenceStatus,
-        required=True, readonly=True))
+    status = exported(
+        Choice(
+            title=_("Distro series difference status."),
+            description=_("The current status of this difference."),
+            vocabulary=DistroSeriesDifferenceStatus,
+            required=True,
+            readonly=True,
+        )
+    )
 
     difference_type = Choice(
-        title=_('Difference type'),
-        description=_('The type of difference for this package.'),
+        title=_("Difference type"),
+        description=_("The type of difference for this package."),
         vocabulary=DistroSeriesDifferenceType,
-        required=True, readonly=True)
+        required=True,
+        readonly=True,
+    )
 
     source_package_release = Reference(
         IDistributionSourcePackageRelease,
-        title=_("Derived source pub"), readonly=True,
+        title=_("Derived source pub"),
+        readonly=True,
         description=_(
             "The published version in the derived series with version "
-            "source_version."))
+            "source_version."
+        ),
+    )
 
     parent_source_package_release = Reference(
         IDistributionSourcePackageRelease,
-        title=_("Parent source pub"), readonly=True,
+        title=_("Parent source pub"),
+        readonly=True,
         description=_(
             "The published version in the derived series with version "
-            "parent_source_version."))
+            "parent_source_version."
+        ),
+    )
 
     source_pub = Reference(
         ISourcePackagePublishingHistory,
-        title=_("Latest derived source pub"), readonly=True,
+        title=_("Latest derived source pub"),
+        readonly=True,
         description=_(
-            "The most recent published version in the derived series."))
+            "The most recent published version in the derived series."
+        ),
+    )
 
-    source_version = exported(TextLine(
-        title=_("Source version"), readonly=True,
-        description=_(
-            "The version of the most recent source publishing in the "
-            "derived series.")))
+    source_version = exported(
+        TextLine(
+            title=_("Source version"),
+            readonly=True,
+            description=_(
+                "The version of the most recent source publishing in the "
+                "derived series."
+            ),
+        )
+    )
 
     parent_source_pub = Reference(
         ISourcePackagePublishingHistory,
-        title=_("Latest parent source pub"), readonly=True,
+        title=_("Latest parent source pub"),
+        readonly=True,
         description=_(
-            "The most recent published version in the parent series."))
+            "The most recent published version in the parent series."
+        ),
+    )
 
-    parent_source_version = exported(TextLine(
-        title=_("Parent source version"), readonly=True,
-        description=_(
-            "The version of the most recent source publishing in the "
-            "parent series.")))
+    parent_source_version = exported(
+        TextLine(
+            title=_("Parent source version"),
+            readonly=True,
+            description=_(
+                "The version of the most recent source publishing in the "
+                "parent series."
+            ),
+        )
+    )
 
-    base_version = exported(TextLine(
-        title=_("Base version"), readonly=True,
-        description=_(
-            "The common base version of the package for differences "
-            "with different versions in the parent and derived series.")))
+    base_version = exported(
+        TextLine(
+            title=_("Base version"),
+            readonly=True,
+            description=_(
+                "The common base version of the package for differences "
+                "with different versions in the parent and derived series."
+            ),
+        )
+    )
 
     base_source_pub = Reference(
         ISourcePackagePublishingHistory,
-        title=_("Base source pub"), readonly=True,
+        title=_("Base source pub"),
+        readonly=True,
         description=_(
             "The common base version published in the parent or the "
-            "derived series."))
+            "derived series."
+        ),
+    )
 
     owner = Reference(
-        IPerson, title=_("Owning team of the derived series"), readonly=True,
+        IPerson,
+        title=_("Owning team of the derived series"),
+        readonly=True,
         description=_(
-            "This attribute mirrors the owner of the derived series."))
+            "This attribute mirrors the owner of the derived series."
+        ),
+    )
 
     title = TextLine(
-        title=_("Title"), readonly=True, required=False, description=_(
-            "A human-readable name describing this difference."))
+        title=_("Title"),
+        readonly=True,
+        required=False,
+        description=_("A human-readable name describing this difference."),
+    )
 
-    packagesets = Attribute("The packagesets for this source package in the "
-                            "derived series.")
+    packagesets = Attribute(
+        "The packagesets for this source package in the " "derived series."
+    )
 
-    parent_packagesets = Attribute("The packagesets for this source package "
-                                   "in the parent series.")
+    parent_packagesets = Attribute(
+        "The packagesets for this source package " "in the parent series."
+    )
 
     base_distro_source_package_release = Attribute(
         "The DistributionSourcePackageRelease object for the source release "
-        "in the parent distribution.")
+        "in the parent distribution."
+    )
 
     def update(manual=False):
         """Checks that difference type and status matches current publishings.
@@ -215,9 +301,12 @@ class IDistroSeriesDifferencePublic(Interface):
         """
 
     latest_comment = Reference(
-        Interface,  # IDistroSeriesDifferenceComment
+        # Really IDistroSeriesDifferenceComment, patched in
+        # lp.registry.interfaces.webservice.
+        Interface,
         title=_("The latest comment"),
-        readonly=True)
+        readonly=True,
+    )
 
     def getComments():
         """Return a result set of the comments for this difference."""
@@ -227,14 +316,15 @@ class IDistroSeriesDifferenceEdit(Interface):
     """Difference attributes requiring launchpad.Edit."""
 
     @call_with(commenter=REQUEST_USER)
-    @operation_parameters(
-        comment=Text(title=_("Comment text"), required=True))
+    @operation_parameters(comment=Text(title=_("Comment text"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def addComment(commenter, comment):
         """Add a comment on this difference."""
 
     @call_with(requestor=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def requestPackageDiffs(requestor):
         """Requests IPackageDiffs for the derived and parent version.
 
@@ -249,9 +339,10 @@ class IDistroSeriesDifferenceAdmin(Interface):
     @call_with(commenter=REQUEST_USER)
     @operation_parameters(
         all=Bool(title=_("All"), required=False),
-        comment=TextLine(title=_('Comment text'), required=False),
-        )
+        comment=TextLine(title=_("Comment text"), required=False),
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def blocklist(commenter, all=False, comment=None):
         """Blocklists this version or all versions of this source package and
         adds a comment on this difference.
@@ -265,8 +356,10 @@ class IDistroSeriesDifferenceAdmin(Interface):
 
     @call_with(commenter=REQUEST_USER)
     @operation_parameters(
-        comment=TextLine(title=_('Comment text'), required=False))
+        comment=TextLine(title=_("Comment text"), required=False)
+    )
     @export_write_operation()
+    @operation_for_version("beta")
     def unblocklist(commenter, comment=None):
         """Removes this difference from the blocklist and adds a comment on
         this difference.
@@ -279,10 +372,12 @@ class IDistroSeriesDifferenceAdmin(Interface):
         """
 
 
-@exported_as_webservice_entry()
-class IDistroSeriesDifference(IDistroSeriesDifferencePublic,
-                              IDistroSeriesDifferenceEdit,
-                              IDistroSeriesDifferenceAdmin):
+@exported_as_webservice_entry(as_of="beta")
+class IDistroSeriesDifference(
+    IDistroSeriesDifferencePublic,
+    IDistroSeriesDifferenceEdit,
+    IDistroSeriesDifferenceAdmin,
+):
     """An interface for a package difference between two distroseries."""
 
 
@@ -308,10 +403,16 @@ class IDistroSeriesDifferenceSource(Interface):
         :return: A new `DistroSeriesDifference` object.
         """
 
-    def getForDistroSeries(distro_series, difference_type=None,
-                           name_filter=None, status=None,
-                           child_version_higher=False, parent_series=None,
-                           packagesets=None, changed_by=None):
+    def getForDistroSeries(
+        distro_series,
+        difference_type=None,
+        name_filter=None,
+        status=None,
+        child_version_higher=False,
+        parent_series=None,
+        packagesets=None,
+        changed_by=None,
+    ):
         """Return differences for the derived distro series sorted by
         package name.
 
@@ -341,9 +442,9 @@ class IDistroSeriesDifferenceSource(Interface):
         :return: A result set of `IDistroSeriesDifference`.
         """
 
-    def getByDistroSeriesNameAndParentSeries(distro_series,
-                                             source_package_name,
-                                             parent_series):
+    def getByDistroSeriesNameAndParentSeries(
+        distro_series, source_package_name, parent_series
+    ):
         """Returns a single difference matching the series, name and parent
         series.
 

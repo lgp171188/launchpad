@@ -4,11 +4,11 @@
 """Tests for person.py."""
 
 __all__ = [
-    'test_suite',
-    ]
+    "test_suite",
+]
 
 from lp.testing.systemdocs import LayeredDocFileSuite
 
 
 def test_suite():
-    return LayeredDocFileSuite('person_from_principal.txt')
+    return LayeredDocFileSuite("person_from_principal.rst")

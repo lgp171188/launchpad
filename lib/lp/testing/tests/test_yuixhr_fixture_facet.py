@@ -13,4 +13,4 @@ def test_suite():
     # You can specify a facet, as found in the vhost.* names in
     # [root]/configs/testrunner-appserver/launchpad-lazr.conf .  This
     # can be convenient for code that must be run within a given subdomain.
-    return make_suite(__name__, 'bugs')
+    return make_suite(__name__, "bugs")

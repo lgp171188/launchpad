@@ -4,28 +4,24 @@
 """Common implementations for a series."""
 
 __all__ = [
-    'ACTIVE_STATUSES',
-    'SeriesMixin',
-    ]
+    "ACTIVE_STATUSES",
+    "SeriesMixin",
+]
 
 from operator import attrgetter
 
 from zope.interface import implementer
 
-from lp.registry.interfaces.series import (
-    ISeriesMixin,
-    SeriesStatus,
-    )
+from lp.registry.interfaces.series import ISeriesMixin, SeriesStatus
 from lp.registry.model.hasdrivers import HasDriversMixin
 from lp.services.database.sqlobject import StringCol
-
 
 ACTIVE_STATUSES = [
     SeriesStatus.DEVELOPMENT,
     SeriesStatus.FROZEN,
     SeriesStatus.CURRENT,
     SeriesStatus.SUPPORTED,
-    ]
+]
 
 
 @implementer(ISeriesMixin)
@@ -50,4 +46,4 @@ class SeriesMixin(HasDriversMixin):
         drivers.add(self.driver)
         drivers = drivers.union(self.parent.drivers)
         drivers.discard(None)
-        return sorted(drivers, key=attrgetter('displayname'))
+        return sorted(drivers, key=attrgetter("displayname"))

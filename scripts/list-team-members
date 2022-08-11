@@ -8,34 +8,45 @@ import _pythonpath  # noqa: F401
 import logging
 import sys
 
-from lp.registry.scripts.listteammembers import (
-    NoSuchTeamError,
-    process_team,
-    )
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
+from lp.registry.scripts.listteammembers import NoSuchTeamError, process_team
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 
 class ListTeamMembersScript(LaunchpadScript):
 
     description = "Create a list of members of a team."
-    usage = "usage: %s [-e|--email-only|-f|--full-details|-s|--ssh-keys] " \
+    usage = (
+        "usage: %s [-e|--email-only|-f|--full-details|-s|--ssh-keys] "
         "team-name [team-name-2] .. [team-name-n]" % sys.argv[0]
+    )
     loglevel = logging.INFO
 
     def add_my_options(self):
-        self.parser.set_defaults(format='simple')
+        self.parser.set_defaults(format="simple")
         self.parser.add_option(
-            '-e', '--email-only', action='store_const', const='email',
-            help='Only print email addresses', dest='format')
+            "-e",
+            "--email-only",
+            action="store_const",
+            const="email",
+            help="Only print email addresses",
+            dest="format",
+        )
         self.parser.add_option(
-            '-f', '--full-details', action='store_const', const='full',
-            help='Print full details', dest='format')
+            "-f",
+            "--full-details",
+            action="store_const",
+            const="full",
+            help="Print full details",
+            dest="format",
+        )
         self.parser.add_option(
-            '-s', '--ssh-keys', action='store_const', const='sshkeys',
-            help='Print sshkeys', dest='format')
+            "-s",
+            "--ssh-keys",
+            action="store_const",
+            const="sshkeys",
+            help="Print sshkeys",
+            dest="format",
+        )
 
     def main(self):
 
@@ -43,7 +54,7 @@ class ListTeamMembersScript(LaunchpadScript):
         teamnames = self.args
 
         if not teamnames:
-            self.parser.error('No team specified')
+            self.parser.error("No team specified")
 
         # We don't want duplicates, so use a set to enforce uniqueness.
         member_details = set()
@@ -56,7 +67,8 @@ class ListTeamMembersScript(LaunchpadScript):
             print(detail)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = ListTeamMembersScript(
-        'lp.services.scripts.listteammembers', dbuser='listteammembers')
+        "lp.services.scripts.listteammembers", dbuser="listteammembers"
+    )
     script.run()

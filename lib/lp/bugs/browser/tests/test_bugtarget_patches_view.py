@@ -2,15 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from lp.bugs.browser.buglisting import (
-    BugListingPortletStatsView,
     DISPLAY_BUG_STATUS_FOR_PATCHES,
-    )
+    BugListingPortletStatsView,
+)
 from lp.bugs.browser.bugtarget import BugsPatchesView
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    login,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import LaunchpadFunctionalLayer
 
 
@@ -20,18 +17,18 @@ class TestBugTargetPatchCountBase(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         self.product = self.factory.makeProduct()
 
     def makeBugWithPatch(self, status):
         bug = self.factory.makeBug(
-            target=self.product, owner=self.product.owner)
+            target=self.product, owner=self.product.owner
+        )
         self.factory.makeBugAttachment(bug=bug, is_patch=True)
         bug.default_bugtask.transitionToStatus(status, user=bug.owner)
 
 
 class TestBugTargetPatchView(TestBugTargetPatchCountBase):
-
     def test_status_of_bugs_with_patches_shown(self):
         # Bugs with patches that have the status FIXRELEASED, INVALID,
         # WONTFIX, UNKNOWN, EXPIRED, DOESNOTEXIST are not shown
@@ -44,13 +41,14 @@ class TestBugTargetPatchView(TestBugTargetPatchCountBase):
             view = BugsPatchesView(self.product, LaunchpadTestRequest())
             batched_tasks = view.batchedPatchTasks()
             self.assertEqual(
-                batched_tasks.batch.listlength, number_of_bugs_shown,
+                batched_tasks.batch.listlength,
+                number_of_bugs_shown,
                 "Unexpected number of bugs with patches displayed for status "
-                "%s" % bugtask_status)
+                "%s" % bugtask_status,
+            )
 
 
 class TestBugListingPortletStatsView(TestBugTargetPatchCountBase):
-
     def test_bugs_with_patches_count(self):
         # Bugs with patches that have the status FIXRELEASED, INVALID,
         # WONTFIX, UNKNOWN or DOESNOTEXIST are not counted in
@@ -62,8 +60,11 @@ class TestBugListingPortletStatsView(TestBugTargetPatchCountBase):
                 number_of_bugs_shown += 1
             self.makeBugWithPatch(bugtask_status)
             view = BugListingPortletStatsView(
-                self.product, LaunchpadTestRequest())
+                self.product, LaunchpadTestRequest()
+            )
             self.assertEqual(
-                view.bugs_with_patches_count, number_of_bugs_shown,
+                view.bugs_with_patches_count,
+                number_of_bugs_shown,
                 "Unexpected number of bugs with patches displayed for status "
-                "%s" % bugtask_status)
+                "%s" % bugtask_status,
+            )

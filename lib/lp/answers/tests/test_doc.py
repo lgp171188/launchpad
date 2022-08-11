@@ -15,17 +15,9 @@ from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.services.mail.tests.test_doc import ProcessMailLayer
 from lp.services.testing import build_test_suite
-from lp.testing import (
-    ANONYMOUS,
-    login,
-    )
+from lp.testing import ANONYMOUS, login
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -33,29 +25,29 @@ here = os.path.dirname(os.path.realpath(__file__))
 def productSetUp(test):
     """Test environment for product."""
     setUp(test)
-    thunderbird = getUtility(IProductSet).getByName('thunderbird')
-    test.globs['target'] = thunderbird
-    test.globs['collection'] = thunderbird
-    login('foo.bar@canonical.com')
-    test.globs['newFAQ'] = thunderbird.newFAQ
+    thunderbird = getUtility(IProductSet).getByName("thunderbird")
+    test.globs["target"] = thunderbird
+    test.globs["collection"] = thunderbird
+    login("foo.bar@canonical.com")
+    test.globs["newFAQ"] = thunderbird.newFAQ
     login(ANONYMOUS)
 
 
 def distributionSetUp(test):
     """Test environment for distribution."""
     setUp(test)
-    kubuntu = getUtility(IDistributionSet).getByName('kubuntu')
-    test.globs['target'] = kubuntu
-    test.globs['collection'] = kubuntu
-    login('foo.bar@canonical.com')
-    test.globs['newFAQ'] = kubuntu.newFAQ
+    kubuntu = getUtility(IDistributionSet).getByName("kubuntu")
+    test.globs["target"] = kubuntu
+    test.globs["collection"] = kubuntu
+    login("foo.bar@canonical.com")
+    test.globs["newFAQ"] = kubuntu.newFAQ
     login(ANONYMOUS)
 
 
 def projectSetUp(test):
     """Test environment for project."""
     setUp(test)
-    gnome_project = getUtility(IProjectGroupSet).getByName('gnome')
+    gnome_project = getUtility(IProjectGroupSet).getByName("gnome")
     products_queue = list(gnome_project.products)
 
     def newFAQ(owner, title, content, keywords=None, date_created=None):
@@ -63,17 +55,17 @@ def projectSetUp(test):
         product = products_queue.pop(0)
         products_queue.append(product)
         return product.newFAQ(
-            owner, title, content, keywords=keywords,
-            date_created=date_created)
+            owner, title, content, keywords=keywords, date_created=date_created
+        )
 
-    test.globs['collection'] = gnome_project
-    test.globs['newFAQ'] = newFAQ
+    test.globs["collection"] = gnome_project
+    test.globs["newFAQ"] = newFAQ
 
 
 def distributionsourcepackageSetUp(test):
     setUp(test)
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    test.globs['target'] = ubuntu.getSourcePackage('evolution')
+    ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    test.globs["target"] = ubuntu.getSourcePackage("evolution")
 
 
 def create_interface_test_suite(test_file, targets):
@@ -81,43 +73,51 @@ def create_interface_test_suite(test_file, targets):
 
     suite = unittest.TestSuite()
     for name, setup_func in targets:
-        test_path = os.path.join(os.path.pardir, 'doc', test_file)
+        test_path = os.path.join(os.path.pardir, "doc", test_file)
         id_ext = "%s-%s" % (test_file, name)
         test = LayeredDocFileSuite(
             test_path,
             id_extensions=[id_ext],
-            setUp=setup_func, tearDown=tearDown,
-            layer=DatabaseFunctionalLayer)
+            setUp=setup_func,
+            tearDown=tearDown,
+            layer=DatabaseFunctionalLayer,
+        )
         suite.addTest(test)
     return suite
 
 
 special = {
-    'questiontarget.txt': create_interface_test_suite(
-        'questiontarget.txt',
-        [('product', productSetUp),
-         ('distribution', distributionSetUp),
-         ('distributionsourcepackage', distributionsourcepackageSetUp),
-         ]),
-
-    'faqtarget.txt': create_interface_test_suite(
-        'faqtarget.txt',
-        [('product', productSetUp),
-         ('distribution', distributionSetUp),
-         ]),
-
-    'faqcollection.txt': create_interface_test_suite(
-        'faqcollection.txt',
-        [('product', productSetUp),
-         ('distribution', distributionSetUp),
-         ('project', projectSetUp),
-         ]),
-    'emailinterface.txt': LayeredDocFileSuite(
-        'emailinterface.txt',
-        setUp=setUp, tearDown=tearDown,
+    "questiontarget.rst": create_interface_test_suite(
+        "questiontarget.rst",
+        [
+            ("product", productSetUp),
+            ("distribution", distributionSetUp),
+            ("distributionsourcepackage", distributionsourcepackageSetUp),
+        ],
+    ),
+    "faqtarget.rst": create_interface_test_suite(
+        "faqtarget.rst",
+        [
+            ("product", productSetUp),
+            ("distribution", distributionSetUp),
+        ],
+    ),
+    "faqcollection.rst": create_interface_test_suite(
+        "faqcollection.rst",
+        [
+            ("product", productSetUp),
+            ("distribution", distributionSetUp),
+            ("project", projectSetUp),
+        ],
+    ),
+    "emailinterface.rst": LayeredDocFileSuite(
+        "emailinterface.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=ProcessMailLayer,
-        stdout_logging=False)
-    }
+        stdout_logging=False,
+    ),
+}
 
 
 def test_suite():

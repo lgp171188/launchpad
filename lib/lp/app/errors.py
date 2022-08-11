@@ -4,26 +4,24 @@
 """Cross application type errors for launchpad."""
 
 __all__ = [
-    'GoneError',
-    'IncompatibleArguments',
-    'NameLookupFailed',
-    'NotFoundError',
-    'POSTToNonCanonicalURL',
-    'ServiceUsageForbidden',
-    'SubscriptionPrivacyViolation',
-    'TeamAccountNotClosable',
-    'TranslationUnavailable',
-    'UnexpectedFormData',
-    'UserCannotUnsubscribePerson',
-    ]
+    "GoneError",
+    "IncompatibleArchiveStatus",
+    "IncompatibleArguments",
+    "NameLookupFailed",
+    "NotFoundError",
+    "POSTToNonCanonicalURL",
+    "ServiceUsageForbidden",
+    "SubscriptionPrivacyViolation",
+    "TeamAccountNotClosable",
+    "TranslationUnavailable",
+    "UnexpectedFormData",
+    "UserCannotUnsubscribePerson",
+]
 
 import http.client
 
 from lazr.restful.declarations import error_status
-from zope.security.interfaces import (
-    ForbiddenAttribute,
-    Unauthorized,
-    )
+from zope.security.interfaces import ForbiddenAttribute, Unauthorized
 
 
 class TranslationUnavailable(Exception):
@@ -95,6 +93,12 @@ class ServiceUsageForbidden(Exception):
 @error_status(http.client.BAD_REQUEST)
 class IncompatibleArguments(Exception):
     """Raised when incompatible arguments are passed to a method."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class IncompatibleArchiveStatus(Exception):
+    """Raised when attempting to set a PPA to publishable
+    when its status is not Active."""
 
 
 # Slam a 401 response code onto all ForbiddenAttribute errors.

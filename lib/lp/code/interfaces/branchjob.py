@@ -4,69 +4,55 @@
 """BranchJob interfaces."""
 
 __all__ = [
-    'IBranchJob',
-    'IBranchModifiedMailJob',
-    'IBranchModifiedMailJobSource',
-    'IBranchScanJob',
-    'IBranchScanJobSource',
-    'IBranchUpgradeJob',
-    'IBranchUpgradeJobSource',
-    'IReclaimBranchSpaceJob',
-    'IReclaimBranchSpaceJobSource',
-    'IRevisionMailJob',
-    'IRevisionMailJobSource',
-    'IRevisionsAddedJob',
-    'IRevisionsAddedJobSource',
-    'IRosettaUploadJob',
-    'IRosettaUploadJobSource',
-    ]
+    "IBranchJob",
+    "IBranchModifiedMailJob",
+    "IBranchModifiedMailJobSource",
+    "IBranchScanJob",
+    "IBranchScanJobSource",
+    "IBranchUpgradeJob",
+    "IBranchUpgradeJobSource",
+    "IReclaimBranchSpaceJob",
+    "IReclaimBranchSpaceJobSource",
+    "IRevisionMailJob",
+    "IRevisionMailJobSource",
+    "IRevisionsAddedJob",
+    "IRevisionsAddedJobSource",
+    "IRosettaUploadJob",
+    "IRosettaUploadJobSource",
+]
 
+from typing import Optional
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Bytes,
-    Int,
-    Object,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Bytes, Int, Object, Text, TextLine
 
 from lp import _
 from lp.code.interfaces.branch import IBranch
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
 class IBranchJob(Interface):
     """A job related to a branch."""
 
-    id = Int(title=_('Unique id of BranchScanJob.'))
+    id = Int(title=_("Unique id of BranchScanJob."))
 
     branch = Object(
-        title=_('Branch to use for this job.'), required=False,
-        schema=IBranch)
+        title=_("Branch to use for this job."), required=False, schema=IBranch
+    )
 
     job = Object(schema=IJob, required=True)
 
-    metadata = Attribute('A dict of data about the job.')
+    metadata = Attribute("A dict of data about the job.")
 
     def destroySelf():
         """Destroy this object."""
 
 
 class IBranchScanJob(IRunnableJob):
-    """ A job to scan branches."""
+    """A job to scan branches."""
 
 
 class IBranchScanJobSource(IJobSource):
-
     def create(branch):
         """Scan a branch for new revisions.
 
@@ -79,7 +65,6 @@ class IBranchUpgradeJob(IRunnableJob):
 
 
 class IBranchUpgradeJobSource(IJobSource):
-
     def create(branch, requester):
         """Upgrade a branch to a more current format.
 
@@ -91,13 +76,13 @@ class IBranchUpgradeJobSource(IJobSource):
 class IRevisionMailJob(IRunnableJob):
     """A Job to send email a revision change in a branch."""
 
-    revno = Int(title='The revno to send mail about.')
+    revno = Int(title="The revno to send mail about.")
 
-    from_address = Bytes(title='The address to send mail from.')
+    from_address = Bytes(title="The address to send mail from.")
 
-    body = Text(title='The main text of the email to send.')
+    body = Text(title="The main text of the email to send.")
 
-    subject = Text(title='The subject of the email to send.')
+    subject = Text(title="The subject of the email to send.")
 
 
 class IRevisionMailJobSource(IJobSource):
@@ -121,13 +106,15 @@ class IRevisionsAddedJobSource(IJobSource):
 class IRosettaUploadJob(IRunnableJob):
     """A job to upload translation files to Rosetta."""
 
-    from_revision_id = TextLine(
-        title=_('The revision id to compare against.'))
+    from_revision_id = TextLine(title=_("The revision id to compare against."))
 
     force_translations_upload = Bool(
-        title=_('Force an upload of translation files.'),
-        description=_('Flag to override the settings in the product '
-                      'series and upload all translation files.'))
+        title=_("Force an upload of translation files."),
+        description=_(
+            "Flag to override the settings in the product "
+            "series and upload all translation files."
+        ),
+    )
 
     def run():
         """Extract translation files from the branch passed in by the factory
@@ -137,11 +124,14 @@ class IRosettaUploadJob(IRunnableJob):
 
 
 class IRosettaUploadJobSource(IJobSource):
-
-    def create(branch, from_revision_id, force_translations_upload):
+    def create(
+        branch,
+        from_revision_id: Optional[str],
+        force_translations_upload: bool = False,
+    ):
         """Construct a new object that implements IRosettaUploadJob.
 
-        :param branch: The database branch to exract files from.
+        :param branch: The database branch to extract files from.
         :param from_revision_id: The revision id to compare against.
         :param force_translations_upload: Flag to override the settings in the
             product series and upload all translation files.
@@ -168,15 +158,12 @@ class IRosettaUploadJobSource(IJobSource):
 
 
 class IReclaimBranchSpaceJob(IRunnableJob):
-    """A job to delete a branch from disk after its been deleted from the db.
-    """
+    """A job to delete a branch from disk after deletion from the db."""
 
-    branch_id = Int(
-        title=_('The id of the now-deleted branch.'))
+    branch_id = Int(title=_("The id of the now-deleted branch."))
 
 
 class IReclaimBranchSpaceJobSource(IJobSource):
-
     def create(branch_id):
         """Construct a new object that implements IReclaimBranchSpaceJob.
 
@@ -189,7 +176,6 @@ class IBranchModifiedMailJob(IRunnableJob):
 
 
 class IBranchModifiedMailJobSource(IJobSource):
-
     def create(branch, user, branch_delta):
         """Send email about branch modifications.
 

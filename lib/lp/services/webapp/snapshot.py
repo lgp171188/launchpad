@@ -11,13 +11,9 @@ from lazr.lifecycle.snapshot import Snapshot
 from storm.zope.interfaces import IResultSet
 from zope.component import adapter
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    providedBy,
-    )
+from zope.interface import implementer, providedBy
 
 from lp.services.helpers import shortlist
-
 
 HARD_LIMIT_FOR_SNAPSHOT = 1000
 
@@ -31,7 +27,8 @@ def snapshot_sql_result(value):
     # object. We therefore list()ify the values; this isn't
     # perfect but allows deltas to be generated reliably.
     return shortlist(
-        value, longest_expected=100, hardlimit=HARD_LIMIT_FOR_SNAPSHOT)
+        value, longest_expected=100, hardlimit=HARD_LIMIT_FOR_SNAPSHOT
+    )
 
 
 @contextmanager
@@ -74,9 +71,13 @@ def notify_modified(obj, edited_fields, snapshot_names=None, user=None):
         defaults to the principal registered in the current interaction.
     """
     obj_before_modification = Snapshot(
-        obj, names=snapshot_names, providing=providedBy(obj))
+        obj, names=snapshot_names, providing=providedBy(obj)
+    )
     yield obj_before_modification
     edited_fields = list(edited_fields)
     if edited_fields:
-        notify(ObjectModifiedEvent(
-            obj, obj_before_modification, edited_fields, user=user))
+        notify(
+            ObjectModifiedEvent(
+                obj, obj_before_modification, edited_fields, user=user
+            )
+        )

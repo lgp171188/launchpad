@@ -1,0 +1,567 @@
+Code Imports
+============
+
+CodeImport objects model the process surrounding the code import
+service of Launchpad. A CodeImport object is created by a user
+requesting an import, the import source is then reviewed by privileged
+users. Then the code import servoce performs the initial import that
+populates the import branch, and updates it regularly.
+
+We can import code from CVS or Subversion.
+
+To allow this test to modify CodeImports freely, we log in as a member
+of the vcs-imports team.
+
+    >>> login('david.allouche@canonical.com')
+
+
+Code import set utility
+-----------------------
+
+CodeImports are created and found using the ICodeImportSet interface,
+which is registered as a utility.
+
+    >>> from lp.code.interfaces.codeimport import ICodeImport, ICodeImportSet
+    >>> from zope.component import getUtility
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> from lp.testing import verifyObject
+    >>> code_import_set = getUtility(ICodeImportSet)
+    >>> verifyObject(ICodeImportSet, removeSecurityProxy(code_import_set))
+    True
+
+CodeImports record who created them, so we're going to create a new
+person with no special privileges.
+
+    >>> nopriv = factory.makePerson(
+    ...     displayname="Code Import Person", email="import@example.com",
+    ...     name="import-person")
+
+
+CodeImport events
+-----------------
+
+Most mutating operations affecting code imports should create
+CodeImportEvent objects in the database to provide an audit trail.
+
+    >>> from lp.code.interfaces.codeimportevent import ICodeImportEventSet
+    >>> event_set = getUtility(ICodeImportEventSet)
+
+
+Supported source systems
+------------------------
+
+The rcs_type field, which indicates whether the import is from CVS or
+Subversion, takes values from the 'RevisionControlSystems' vocabulary.
+Similarly, target_rcs_type takes values from 'TargetRevisionControlSystems'.
+
+    >>> from lp.code.enums import (
+    ...     RevisionControlSystems,
+    ...     TargetRevisionControlSystems,
+    ...     )
+    >>> for item in RevisionControlSystems:
+    ...     print(item.title)
+    Concurrent Versions System
+    Subversion via CSCVS
+    Subversion via bzr-svn
+    Git
+    Mercurial
+    Bazaar
+    >>> for item in TargetRevisionControlSystems:
+    ...     print(item.title)
+    Bazaar
+    Git
+
+
+Import from CVS
++++++++++++++++
+
+Code imports from CVS specify the CVSROOT value, and the path to import
+in the repository, known as the "module".
+
+    >>> cvs = RevisionControlSystems.CVS
+    >>> target_bzr = TargetRevisionControlSystems.BZR
+    >>> cvs_root = ':pserver:anonymous@cvs.example.com:/cvsroot'
+    >>> cvs_module = 'hello'
+    >>> context = factory.makeProduct(name='widget')
+    >>> cvs_import = code_import_set.new(
+    ...     registrant=nopriv, context=context, branch_name='trunk-cvs',
+    ...     rcs_type=cvs, cvs_root=cvs_root, cvs_module=cvs_module,
+    ...     target_rcs_type=target_bzr)
+    >>> verifyObject(ICodeImport, removeSecurityProxy(cvs_import))
+    True
+
+When a new code import is created, an email is sent to the each of the
+three members of the vcs-imports team.
+
+    >>> import transaction
+    >>> transaction.commit()
+    >>> from lp.services.mail import stub
+    >>> len(stub.test_emails)
+    3
+    >>> from lp.services.mail.helpers import get_contact_email_addresses
+    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+    >>> vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
+    >>> len(get_contact_email_addresses(vcs_imports))
+    3
+    >>> import email
+    >>> message = email.message_from_bytes(stub.test_emails[0][2])
+    >>> print(message['subject'])
+    New code import: ~import-person/widget/trunk-cvs
+    >>> print(message['X-Launchpad-Message-Rationale'])
+    Operator @vcs-imports
+    >>> print(message['X-Launchpad-Message-For'])
+    vcs-imports
+    >>> print(message.get_payload(decode=True).decode())
+    A new CVS code import has been requested by Code Import Person:
+        http://code.launchpad.test/~import-person/widget/trunk-cvs
+    from
+        :pserver:anonymous@cvs.example.com:/cvsroot, hello
+    <BLANKLINE>
+    --
+    You are getting this email because you are a member of the vcs-imports
+    team.
+
+Creating a CodeImport object creates a corresponding CodeImportEvent.
+
+    >>> cvs_events = event_set.getEventsForCodeImport(cvs_import)
+    >>> [event.event_type.name for event in cvs_events]
+    ['CREATE']
+
+The CodeImportSet is also able to retrieve the code imports with the
+specified root and module.
+
+    >>> existing_import = code_import_set.getByCVSDetails(
+    ...     cvs_root=cvs_root, cvs_module=cvs_module)
+    >>> cvs_import == existing_import
+    True
+
+
+Import from Subversion
+++++++++++++++++++++++
+
+Code imports from Subversion specify the URL used with "svn checkout" to
+retrieve the tree to import.
+
+    >>> svn = RevisionControlSystems.BZR_SVN
+    >>> svn_url = 'svn://svn.example.com/trunk'
+    >>> svn_import = code_import_set.new(
+    ...     registrant=nopriv, context=context, branch_name='trunk-svn',
+    ...     rcs_type=svn, url=svn_url, target_rcs_type=target_bzr)
+    >>> verifyObject(ICodeImport, removeSecurityProxy(svn_import))
+    True
+
+Creating a CodeImport object creates a corresponding CodeImportEvent.
+
+    >>> svn_events = event_set.getEventsForCodeImport(svn_import)
+    >>> [event.event_type.name for event in svn_events]
+    ['CREATE']
+
+The CodeImportSet is also able to retrieve the code imports with the
+specified subversion branch url.
+
+    >>> existing_import = code_import_set.getByURL(svn_url, target_bzr)
+    >>> svn_import == existing_import
+    True
+
+
+Import from Git
++++++++++++++++
+
+Code imports from Git specify the URL used with "git clone" to
+retrieve the branch to import.
+
+    >>> git = RevisionControlSystems.GIT
+    >>> git_url = 'git://git.example.com/hello.git'
+    >>> git_import = code_import_set.new(
+    ...     registrant=nopriv, context=context, branch_name='trunk-git',
+    ...     rcs_type=git, url=git_url, target_rcs_type=target_bzr)
+    >>> verifyObject(ICodeImport, removeSecurityProxy(git_import))
+    True
+
+Creating a CodeImport object creates a corresponding CodeImportEvent.
+
+    >>> git_events = event_set.getEventsForCodeImport(git_import)
+    >>> [event.event_type.name for event in git_events]
+    ['CREATE']
+
+The CodeImportSet is also able to retrieve the code imports with the
+specified git repo url.
+
+    >>> existing_import = code_import_set.getByURL(git_url, target_bzr)
+    >>> git_import == existing_import
+    True
+
+Code imports from Git may target Git rather than Bazaar.
+
+    >>> from lp.code.tests.helpers import GitHostingFixture
+
+    >>> target_git = TargetRevisionControlSystems.GIT
+    >>> with GitHostingFixture():
+    ...     git_to_git_import = code_import_set.new(
+    ...         registrant=nopriv, context=context, branch_name=u'hello',
+    ...         rcs_type=git, url=git_url, target_rcs_type=target_git)
+    >>> verifyObject(ICodeImport, removeSecurityProxy(git_to_git_import))
+    True
+
+    >>> git_to_git_events = event_set.getEventsForCodeImport(
+    ...     git_to_git_import)
+    >>> [event.event_type.name for event in git_to_git_events]
+    ['CREATE']
+
+    >>> existing_import = code_import_set.getByURL(git_url, target_git)
+    >>> git_to_git_import == existing_import
+    True
+
+The previous Git-to-Bazaar import of the same URL is unaffected.
+
+    >>> existing_import = code_import_set.getByURL(git_url, target_bzr)
+    >>> git_import == existing_import
+    True
+
+
+Updating code import details
+----------------------------
+
+Members of the VCS Imports team (import operators), or Launchpad
+administrators can update the details of the code import, including
+the review status.  This is done using the code import method
+'updateFromData'.  updateFromData returns a MODIFY CodeImportEvent if
+any changes were made, or None if not.
+
+    >>> code_import = factory.makeProductCodeImport(
+    ...     svn_branch_url='http://svn.example.com/project')
+    >>> print(code_import.review_status.title)
+    Reviewed
+
+When an import operator updates the code import emails are sent out to
+the branch subscribers and members of VCS Imports that describe the
+change.
+
+The logged in user is normally subscribed to the new import as it is
+created if done through the web UI, so we'll add nopriv here.
+
+    >>> from lp.code.enums import (
+    ...     BranchSubscriptionDiffSize,
+    ...     BranchSubscriptionNotificationLevel,
+    ...     CodeReviewNotificationLevel)
+    >>> subscription = code_import.branch.subscribe(
+    ...     nopriv,
+    ...     BranchSubscriptionNotificationLevel.FULL,
+    ...     BranchSubscriptionDiffSize.NODIFF,
+    ...     CodeReviewNotificationLevel.FULL, nopriv)
+
+    >>> from lp.testing.mail_helpers import (
+    ...     pop_notifications, print_emails)
+    >>> from lp.code.enums import CodeImportReviewStatus
+    >>> ignore_old_emails = pop_notifications()
+    >>> modify_event = code_import.updateFromData(
+    ...     {'review_status': CodeImportReviewStatus.REVIEWED,
+    ...      'url': 'http://svn.example.com/project/trunk'},
+    ...     nopriv)
+    >>> print_emails(group_similar=True, decode=True)  # noqa
+    From: Code Import Person <import@example.com>
+    To: david.allouche@canonical.com, ...
+    Subject: Code import ~person-name-.../product.../name... status: Reviewed
+    <BLANKLINE>
+    ... is now being imported from:
+        http://svn.example.com/project/trunk
+    instead of:
+        http://svn.example.com/project
+    <BLANKLINE>
+    -- 
+    <BLANKLINE>
+    http://code.launchpad.test/~person.../product.../name...
+    You are getting this email because you are a member of the vcs-imports
+    team.
+    <BLANKLINE>
+    ----------------------------------------
+    From: Code Import Person <import@example.com>
+    To: import@example.com
+    Subject: Code import ~person-name-.../product.../name... status: Reviewed
+    <BLANKLINE>
+    ... is now being imported from:
+        http://svn.example.com/project/trunk
+    instead of:
+        http://svn.example.com/project
+    <BLANKLINE>
+    -- 
+    <BLANKLINE>
+    http://code.launchpad.test/~person.../product.../name...
+    You are receiving this email as you are subscribed to the branch.
+    To unsubscribe from this branch go to .../+edit-subscription.
+    <BLANKLINE>
+    ----------------------------------------
+
+updateFromData is smart enough to not send an email if no changes were
+actually made.
+
+    >>> code_import.updateFromData({}, nopriv)
+    >>> print_emails(group_similar=True)
+
+The person argument to updateFromData can be None, which is
+appropriate for an automated change.  In that case, the email comes
+from a 'noreply' address.
+
+    >>> modify_event = code_import.updateFromData(
+    ...     {'url': 'http://svn.example.org/project/trunk'},
+    ...     None)
+    >>> print_emails(group_similar=True)
+    From: noreply@launchpad.net
+    To: david.allouche@canonical.com, ...
+    Subject: Code import ~person-name-.../product.../name... status: Reviewed
+    ...
+    From: noreply@launchpad.net
+    To: import@example.com
+    Subject: Code import ~person-name-.../product.../name... status: Reviewed
+    ...
+
+
+Update intervals
+----------------
+
+After an import is initially completed, it must be updated regularly. Each
+code import can specify a custom update interval, or use a default value.
+
+There is a separate default update interval for each version control system,
+set in the Launchpad configuration system.
+
+    >>> from lp.services.config import config
+    >>> from datetime import timedelta
+    >>> default_interval_cvs = timedelta(
+    ...     seconds=config.codeimport.default_interval_cvs)
+    >>> default_interval_subversion = timedelta(
+    ...     seconds=config.codeimport.default_interval_subversion)
+    >>> default_interval_git = timedelta(
+    ...     seconds=config.codeimport.default_interval_git)
+
+By default, code imports are created with an unspecified update interval.
+
+    >>> print(cvs_import.update_interval)
+    None
+    >>> print(svn_import.update_interval)
+    None
+
+When the update interval interval is unspecified, the effective update
+interval, which decides how often the import is actually updated, uses the
+appropriate default value for the RCS type.
+
+    >>> default_interval_cvs.total_seconds()
+    43200.0
+    >>> cvs_import.effective_update_interval.total_seconds()
+    43200.0
+
+    >>> default_interval_subversion.total_seconds()
+    21600.0
+    >>> svn_import.effective_update_interval.total_seconds()
+    21600.0
+
+    >>> default_interval_git.total_seconds()
+    21600.0
+    >>> git_import.effective_update_interval.total_seconds()
+    21600.0
+
+
+If the update interval is set, then it overrides the default value.
+
+As explained in the "Modify CodeImports" section, the interface does not allow
+direct attribute modification. So we use removeSecurityProxy in this example.
+
+    >>> removeSecurityProxy(cvs_import).update_interval = (
+    ...     timedelta(seconds=7200))
+    >>> cvs_import.effective_update_interval.total_seconds()
+    7200.0
+
+    >>> removeSecurityProxy(svn_import).update_interval = (
+    ...     timedelta(seconds=3600))
+    >>> svn_import.effective_update_interval.total_seconds()
+    3600.0
+
+
+Retrieving CodeImports
+----------------------
+
+You can retrieve subsets of code imports with the `search` method of
+ICodeImportSet.  Passing no arguments returns all code imports.
+
+    >>> svn_import in code_import_set.search()
+    True
+
+You can filter the results by review status and by type.  For
+instance, there is a single sample CodeImport with the "REVIEWED"
+status:
+
+    >>> reviewed_imports = list(code_import_set.search(
+    ...     review_status=CodeImportReviewStatus.REVIEWED))
+    >>> reviewed_imports
+    [<...CodeImport...>]
+    >>> reviewed_imports[0].review_status.name
+    'REVIEWED'
+
+And a single Git import.
+
+    >>> git_imports = list(code_import_set.search(
+    ...     rcs_type=RevisionControlSystems.GIT))
+    >>> git_imports
+    [<...CodeImport...>]
+    >>> git_imports[0].rcs_type.name
+    'GIT'
+
+Passing both paramters is combined as "and".
+
+    >>> reviewed_git_imports = list(code_import_set.search(
+    ...     review_status=CodeImportReviewStatus.REVIEWED,
+    ...     rcs_type=RevisionControlSystems.GIT))
+    >>> reviewed_git_imports
+    [<...CodeImport...>]
+    >>> reviewed_git_imports[0].rcs_type.name
+    'GIT'
+    >>> reviewed_git_imports[0].review_status.name
+    'REVIEWED'
+
+You can also retrieve an import by id and by branch, which will be used
+to present the import's details on the page of the branch.
+
+    >>> print(code_import_set.get(svn_import.id).url)
+    svn://svn.example.com/trunk
+    >>> print(code_import_set.getByBranch(cvs_import.branch).cvs_root)
+    :pserver:anonymous@cvs.example.com:/cvsroot
+
+When you ask for an id that is not present ICodeImportSet.get() raises
+lp.app.errors.NotFoundError, rather than some internal database exception.
+
+    >>> code_import_set.get(-10)
+    Traceback (most recent call last):
+      ...
+    lp.app.errors.NotFoundError: -10
+
+
+Canonical URLs
+--------------
+
+We've registered the ICodeImportSet utility on the 'code' part of the
+site:
+
+    >>> from lp.services.webapp import canonical_url
+    >>> print(canonical_url(code_import_set))
+    http://code.launchpad.test/+code-imports
+
+The code imports themselves have a canonical URL that is subordinate of
+the branches, though they cannot currently be viewed that way in the webapp,
+only over the API.
+
+    >>> print(canonical_url(svn_import.branch))
+    http://code.launchpad.test/~import-person/widget/trunk-svn
+    >>> print(canonical_url(svn_import))
+    http://code.launchpad.test/~import-person/widget/trunk-svn/+code-import
+
+
+Modifying CodeImports
+---------------------
+
+Modifications to CodeImport objects must be done using setter methods
+that create CodeImportEvent objects when appropriate. This is enforced
+by preventing the setting of any attribute through the ICodeImport
+interface.
+
+Even though David can access CodeImportObjects, he cannot set attributes
+on those objects.
+
+    >>> login('david.allouche@canonical.com')
+    >>> print(svn_import.url)
+    svn://svn.example.com/trunk
+    >>> svn_import.url = 'svn://svn.example.com/branch/1.0'
+    Traceback (most recent call last):
+      ...
+    zope.security.interfaces.ForbiddenAttribute: ('url', <CodeImport ...>)
+
+Modifications can be done using the CodeImport.updateFromData
+method. If any change were made, this method creates and returns a
+CodeImportEvent describing them. The CodeImportEvent records the user
+that made the change, so we need to pass the user as an argument.
+
+    >>> print(svn_import.url)
+    svn://svn.example.com/trunk
+    >>> data = {'url': 'svn://svn.example.com/branch/1.0'}
+    >>> modify_event = svn_import.updateFromData(data, nopriv)
+    >>> modify_event.event_type.name
+    'MODIFY'
+    >>> print(svn_import.url)
+    svn://svn.example.com/branch/1.0
+    >>> svn_events = event_set.getEventsForCodeImport(svn_import)
+    >>> [event.event_type.name for event in svn_events]
+    ['CREATE', 'MODIFY']
+
+The launchpad.Edit privilege is required to use CodeImport.updateFromData.
+
+    >>> login(ANONYMOUS)
+    >>> svn_import.updateFromData({}, nopriv)
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: (<CodeImport ...>,
+    'updateFromData', 'launchpad.Moderate')
+
+We saw above how changes to SVN details are displayed in emails above.
+CVS details are displayed in a similar way.
+
+    >>> from lp.code.mail.codeimport import (
+    ...     make_email_body_for_code_import_update)
+    >>> login('david.allouche@canonical.com')
+    >>> data = {'cvs_root': ':pserver:anoncvs@cvs.example.com:/var/cvsroot'}
+    >>> modify_event = cvs_import.updateFromData(data, nopriv)
+    >>> print(make_email_body_for_code_import_update(
+    ...     cvs_import, modify_event, None))
+    ~import-person/widget/trunk-cvs is now being imported from:
+        hello from :pserver:anoncvs@cvs.example.com:/var/cvsroot
+    instead of:
+        hello from :pserver:anonymous@cvs.example.com:/cvsroot
+
+For Git.
+
+    >>> data = {'url': 'git://git.example.com/goodbye.git'}
+    >>> modify_event = git_import.updateFromData(data, nopriv)
+    >>> print(make_email_body_for_code_import_update(
+    ...     git_import, modify_event, None))
+    ~import-person/widget/trunk-git is now being imported from:
+        git://git.example.com/goodbye.git
+    instead of:
+        git://git.example.com/hello.git
+
+Imports via bzr-svn are also similar.
+
+    >>> data = {'url': 'http://svn.example.com/for-bzr-svn/trunk'}
+    >>> modify_event = svn_import.updateFromData(data, nopriv)
+    >>> print(make_email_body_for_code_import_update(
+    ...     svn_import, modify_event, None))
+    ~import-person/widget/trunk-svn is now being imported from:
+        http://svn.example.com/for-bzr-svn/trunk
+    instead of:
+        svn://svn.example.com/branch/1.0
+
+In addition, updateFromData can be used to set the branch whiteboard,
+which is also described in the email that is sent.
+
+    >>> data = {'whiteboard': 'stuff'}
+    >>> modify_event = cvs_import.updateFromData(data, nopriv)
+    >>> print(make_email_body_for_code_import_update(
+    ...     cvs_import, modify_event, 'stuff'))
+    The branch whiteboard was changed to:
+    <BLANKLINE>
+    stuff
+    <BLANKLINE>
+    This code import is from:
+        hello from :pserver:anoncvs@cvs.example.com:/var/cvsroot
+    >>> print(cvs_import.branch.whiteboard)
+    stuff
+
+Setting the whiteboard to None is how it is deleted.
+
+    >>> data = {'whiteboard': None}
+    >>> modify_event = cvs_import.updateFromData(data, nopriv)
+    >>> print(make_email_body_for_code_import_update(
+    ...     cvs_import, modify_event, ''))
+    The branch whiteboard was deleted.
+    <BLANKLINE>
+    This code import is from:
+        hello from :pserver:anoncvs@cvs.example.com:/var/cvsroot
+    >>> print(cvs_import.branch.whiteboard)
+    None

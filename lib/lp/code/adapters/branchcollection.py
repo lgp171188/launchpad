@@ -4,14 +4,14 @@
 """Adapters for different objects to branch collections."""
 
 __all__ = [
-    'branch_collection_for_distribution',
-    'branch_collection_for_distro_series',
-    'branch_collection_for_person',
-    'branch_collection_for_product',
-    'branch_collection_for_project_group',
-    'branch_collection_for_source_package',
-    'branch_collection_for_distro_source_package',
-    ]
+    "branch_collection_for_distribution",
+    "branch_collection_for_distro_series",
+    "branch_collection_for_person",
+    "branch_collection_for_product",
+    "branch_collection_for_project_group",
+    "branch_collection_for_source_package",
+    "branch_collection_for_distro_source_package",
+]
 
 
 from zope.component import getUtility
@@ -59,4 +59,5 @@ def branch_collection_for_source_package(source_package):
 def branch_collection_for_distro_source_package(distro_source_package):
     """Adapt a distro_source_package to a branch collection."""
     return getUtility(IAllBranches).inDistributionSourcePackage(
-        distro_source_package)
+        distro_source_package
+    )

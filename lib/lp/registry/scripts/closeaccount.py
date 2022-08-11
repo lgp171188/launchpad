@@ -4,30 +4,31 @@
 """Remove personal details of a user from the database, leaving a stub."""
 
 __all__ = [
-    'close_account',
-    'CloseAccountScript',
-    ]
+    "close_account",
+    "CloseAccountScript",
+]
+
+from typing import List, Tuple
 
 import six
 from storm.exceptions import IntegrityError
-from storm.expr import (
-    LeftJoin,
-    Lower,
-    Or,
-    )
+from storm.expr import And, LeftJoin, Lower, Or
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.blueprints.model.specification import Specification
 from lp.bugs.model.bugtask import BugTask
+from lp.code.model.branch import Branch
 from lp.registry.interfaces.person import PersonCreationRationale
-from lp.registry.model.person import (
-    Person,
-    PersonSettings,
-    )
+from lp.registry.model.announcement import Announcement
+from lp.registry.model.milestone import Milestone
+from lp.registry.model.milestonetag import MilestoneTag
+from lp.registry.model.person import Person, PersonSettings
 from lp.registry.model.product import Product
+from lp.registry.model.productrelease import ProductRelease, ProductReleaseFile
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database import postgresql
 from lp.services.database.constants import DEFAULT
@@ -36,17 +37,11 @@ from lp.services.database.sqlbase import cursor
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
     AccountStatus,
-    )
+)
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
-from lp.soyuz.enums import (
-    ArchiveStatus,
-    ArchiveSubscriberStatus,
-    )
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
+from lp.soyuz.enums import ArchiveStatus, ArchiveSubscriberStatus
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
@@ -61,17 +56,24 @@ def close_account(username, log):
     janitor = getUtility(ILaunchpadCelebrities).janitor
 
     cur = cursor()
-    references = list(postgresql.listReferences(cur, 'person', 'id'))
+    references = list(postgresql.listReferences(cur, "person", "id"))
     postgresql.check_indirect_references(references)
 
-    person = store.using(
-        Person,
-        LeftJoin(EmailAddress, Person.id == EmailAddress.personID)
-    ).find(
-        Person,
-        Or(Person.name == username,
-           Lower(EmailAddress.email) == Lower(username))
-    ).order_by(Person.id).config(distinct=True).one()
+    person = (
+        store.using(
+            Person, LeftJoin(EmailAddress, Person.id == EmailAddress.personID)
+        )
+        .find(
+            Person,
+            Or(
+                Person.name == username,
+                Lower(EmailAddress.email) == Lower(username),
+            ),
+        )
+        .order_by(Person.id)
+        .config(distinct=True)
+        .one()
+    )
     if person is None:
         raise LaunchpadScriptFailure("User %s does not exist" % username)
     person_name = person.name
@@ -87,7 +89,7 @@ def close_account(username, log):
 
     # All names starting with 'removed' are blacklisted, so this will always
     # succeed.
-    new_name = 'removed%d' % person.id
+    new_name = "removed%d" % person.id
 
     # Some references can safely remain in place and link to the cleaned-out
     # Person row.
@@ -96,112 +98,112 @@ def close_account(username, log):
         # question still happened, and in some cases the rows may still have
         # functional significance (e.g. subscriptions or access grants), but
         # we no longer identify the actor.
-        ('accessartifactgrant', 'grantor'),
-        ('accesspolicygrant', 'grantor'),
-        ('accesstoken', 'owner'),
-        ('accesstoken', 'revoked_by'),
-        ('binarypackagepublishinghistory', 'removed_by'),
-        ('branch', 'registrant'),
-        ('branchmergeproposal', 'merge_reporter'),
-        ('branchmergeproposal', 'merger'),
-        ('branchmergeproposal', 'queuer'),
-        ('branchmergeproposal', 'registrant'),
-        ('branchmergeproposal', 'reviewer'),
-        ('branchsubscription', 'subscribed_by'),
-        ('bug', 'owner'),
-        ('bug', 'who_made_private'),
-        ('bugactivity', 'person'),
-        ('bugnomination', 'decider'),
-        ('bugnomination', 'owner'),
-        ('bugtask', 'owner'),
-        ('bugsubscription', 'subscribed_by'),
-        ('bugwatch', 'owner'),
-        ('codeimport', 'owner'),
-        ('codeimport', 'registrant'),
-        ('codeimportjob', 'requesting_user'),
-        ('codeimportevent', 'person'),
-        ('codeimportresult', 'requesting_user'),
-        ('distroarchseriesfilter', 'creator'),
-        ('faq', 'last_updated_by'),
-        ('featureflagchangelogentry', 'person'),
-        ('gitactivity', 'changee'),
-        ('gitactivity', 'changer'),
-        ('gitrepository', 'registrant'),
-        ('gitrule', 'creator'),
-        ('gitrulegrant', 'grantor'),
-        ('gitsubscription', 'subscribed_by'),
-        ('job', 'requester'),
-        ('message', 'owner'),
-        ('messageapproval', 'disposed_by'),
-        ('messageapproval', 'posted_by'),
-        ('packagecopyrequest', 'requester'),
-        ('packagediff', 'requester'),
-        ('packageupload', 'signing_key_owner'),
-        ('personlocation', 'last_modified_by'),
-        ('persontransferjob', 'major_person'),
-        ('persontransferjob', 'minor_person'),
-        ('poexportrequest', 'person'),
-        ('pofile', 'lasttranslator'),
-        ('pofile', 'owner'),
-        ('pofiletranslator', 'person'),
-        ('product', 'registrant'),
-        ('question', 'answerer'),
-        ('questionreopening', 'answerer'),
-        ('questionreopening', 'reopener'),
-        ('snapbuild', 'requester'),
-        ('sourcepackagepublishinghistory', 'creator'),
-        ('sourcepackagepublishinghistory', 'removed_by'),
-        ('sourcepackagepublishinghistory', 'sponsor'),
-        ('sourcepackagerecipebuild', 'requester'),
-        ('sourcepackagerelease', 'creator'),
-        ('sourcepackagerelease', 'maintainer'),
-        ('sourcepackagerelease', 'signing_key_owner'),
-        ('specification', 'approver'),
-        ('specification', 'completer'),
-        ('specification', 'drafter'),
-        ('specification', 'goal_decider'),
-        ('specification', 'goal_proposer'),
-        ('specification', 'last_changed_by'),
-        ('specification', 'owner'),
-        ('specification', 'starter'),
-        ('specificationbranch', 'registrant'),
-        ('structuralsubscription', 'subscribed_by'),
-        ('teammembership', 'acknowledged_by'),
-        ('teammembership', 'last_changed_by'),
-        ('teammembership', 'proposed_by'),
-        ('teammembership', 'reviewed_by'),
-        ('translationimportqueueentry', 'importer'),
-        ('translationmessage', 'reviewer'),
-        ('translationmessage', 'submitter'),
-        ('translationrelicensingagreement', 'person'),
-        ('usertouseremail', 'recipient'),
-        ('usertouseremail', 'sender'),
-        ('xref', 'creator'),
-
+        ("accessartifactgrant", "grantor"),
+        ("accesspolicygrant", "grantor"),
+        ("accesstoken", "owner"),
+        ("accesstoken", "revoked_by"),
+        ("binarypackagepublishinghistory", "removed_by"),
+        ("branch", "registrant"),
+        ("branchmergeproposal", "merge_reporter"),
+        ("branchmergeproposal", "merger"),
+        ("branchmergeproposal", "queuer"),
+        ("branchmergeproposal", "registrant"),
+        ("branchmergeproposal", "reviewer"),
+        ("branchsubscription", "subscribed_by"),
+        ("bug", "owner"),
+        ("bug", "who_made_private"),
+        ("bugactivity", "person"),
+        ("bugnomination", "decider"),
+        ("bugnomination", "owner"),
+        ("bugtask", "owner"),
+        ("bugsubscription", "subscribed_by"),
+        ("bugwatch", "owner"),
+        ("codeimport", "owner"),
+        ("codeimport", "registrant"),
+        ("codeimportjob", "requesting_user"),
+        ("codeimportevent", "person"),
+        ("codeimportresult", "requesting_user"),
+        ("distroarchseriesfilter", "creator"),
+        ("faq", "last_updated_by"),
+        ("featureflagchangelogentry", "person"),
+        ("gitactivity", "changee"),
+        ("gitactivity", "changer"),
+        ("gitrepository", "registrant"),
+        ("gitrule", "creator"),
+        ("gitrulegrant", "grantor"),
+        ("gitsubscription", "subscribed_by"),
+        ("job", "requester"),
+        ("message", "owner"),
+        ("messageapproval", "disposed_by"),
+        ("messageapproval", "posted_by"),
+        ("packagecopyrequest", "requester"),
+        ("packagediff", "requester"),
+        ("packageupload", "signing_key_owner"),
+        ("personlocation", "last_modified_by"),
+        ("persontransferjob", "major_person"),
+        ("persontransferjob", "minor_person"),
+        ("poexportrequest", "person"),
+        ("pofile", "lasttranslator"),
+        ("pofile", "owner"),
+        ("pofiletranslator", "person"),
+        ("product", "registrant"),
+        ("question", "answerer"),
+        ("questionreopening", "answerer"),
+        ("questionreopening", "reopener"),
+        ("snapbuild", "requester"),
+        ("sourcepackagepublishinghistory", "creator"),
+        ("sourcepackagepublishinghistory", "removed_by"),
+        ("sourcepackagepublishinghistory", "sponsor"),
+        ("sourcepackagerecipebuild", "requester"),
+        ("sourcepackagerelease", "creator"),
+        ("sourcepackagerelease", "maintainer"),
+        ("sourcepackagerelease", "signing_key_owner"),
+        ("specification", "approver"),
+        ("specification", "completer"),
+        ("specification", "drafter"),
+        ("specification", "goal_decider"),
+        ("specification", "goal_proposer"),
+        ("specification", "last_changed_by"),
+        ("specification", "owner"),
+        ("specification", "starter"),
+        ("specificationbranch", "registrant"),
+        ("structuralsubscription", "subscribed_by"),
+        ("teammembership", "acknowledged_by"),
+        ("teammembership", "last_changed_by"),
+        ("teammembership", "proposed_by"),
+        ("teammembership", "reviewed_by"),
+        ("translationimportqueueentry", "importer"),
+        ("translationmessage", "reviewer"),
+        ("translationmessage", "submitter"),
+        ("translationrelicensingagreement", "person"),
+        ("usertouseremail", "recipient"),
+        ("usertouseremail", "sender"),
+        ("xref", "creator"),
         # This is maintained by trigger functions and a garbo job.  It
         # doesn't need to be updated immediately.
-        ('bugsummary', 'viewed_by'),
-
+        ("bugsummary", "viewed_by"),
         # XXX cjwatson 2019-05-02 bug=1827399: This is suboptimal because it
         # does retain some personal information, but it's currently hard to
         # deal with due to the size and complexity of references to it.  We
         # can hopefully provide a garbo job for this eventually.
-        ('revisionauthor', 'person'),
-        }
+        ("revisionauthor", "person"),
+    }
 
     # If all the teams that the user owns
     # have been deleted (not just one) skip Person.teamowner
     teams = store.find(Person, Person.teamowner == person)
     if all(team.merged is not None for team in teams):
-        skip.add(('person', 'teamowner'))
+        skip.add(("person", "teamowner"))
 
     reference_names = {
-        (src_tab, src_col) for src_tab, src_col, _, _, _, _ in references}
+        (src_tab, src_col) for src_tab, src_col, _, _, _, _ in references
+    }
     for src_tab, src_col in skip:
         if (src_tab, src_col) not in reference_names:
             raise AssertionError(
-                "%s.%s is not a Person reference; possible typo?" %
-                (src_tab, src_col))
+                "%s.%s is not a Person reference; possible typo?"
+                % (src_tab, src_col)
+            )
 
     # XXX cjwatson 2018-11-29: Registrants could possibly be left as-is, but
     # perhaps we should pretend that the registrant was ~registry in that
@@ -210,12 +212,12 @@ def close_account(username, log):
     # Remove the EmailAddress. This is the most important step, as
     # people requesting account removal seem to primarily be interested
     # in ensuring we no longer store this information.
-    table_notification('EmailAddress')
+    table_notification("EmailAddress")
     store.find(EmailAddress, EmailAddress.personID == person.id).remove()
 
     # Clean out personal details from the Person table
-    table_notification('Person')
-    person.display_name = 'Removed by request'
+    table_notification("Person")
+    person.display_name = "Removed by request"
     person.name = new_name
     person.homepage_content = None
     person.icon = None
@@ -228,50 +230,60 @@ def close_account(username, log):
 
     # Keep the corresponding PersonSettings row, but reset everything to the
     # defaults.
-    table_notification('PersonSettings')
+    table_notification("PersonSettings")
     store.find(PersonSettings, PersonSettings.personID == person.id).set(
         selfgenerated_bugnotifications=DEFAULT,
         # XXX cjwatson 2018-11-29: These two columns have NULL defaults, but
         # perhaps shouldn't?
         expanded_notification_footers=False,
-        require_strong_email_authentication=False)
-    skip.add(('personsettings', 'person'))
+        require_strong_email_authentication=False,
+    )
+    skip.add(("personsettings", "person"))
 
     # Remove almost everything from the Account row and the corresponding
     # OpenIdIdentifier rows, preserving only a minimal audit trail.
     if person.account is not None:
-        table_notification('Account')
+        table_notification("Account")
         account = removeSecurityProxy(person.account)
-        account.displayname = 'Removed by request'
+        account.displayname = "Removed by request"
         account.creation_rationale = AccountCreationRationale.UNKNOWN
         person.setAccountStatus(
-            AccountStatus.CLOSED, janitor, "Closed using close-account.")
+            AccountStatus.CLOSED, janitor, "Closed using close-account."
+        )
 
-        table_notification('OpenIdIdentifier')
+        table_notification("OpenIdIdentifier")
         store.find(
-            OpenIdIdentifier,
-            OpenIdIdentifier.account_id == account.id).remove()
+            OpenIdIdentifier, OpenIdIdentifier.account_id == account.id
+        ).remove()
 
     # Reassign their bugs
-    table_notification('BugTask')
+    table_notification("BugTask")
     store.find(BugTask, BugTask.assignee_id == person.id).set(assignee_id=None)
 
     # Reassign questions assigned to the user, and close all their questions
     # in non-final states since nobody else can.
-    table_notification('Question')
+    table_notification("Question")
     store.find(Question, Question.assignee_id == person.id).set(
-        assignee_id=None)
+        assignee_id=None
+    )
     owned_non_final_questions = store.find(
-        Question, Question.owner_id == person.id,
-        Question.status.is_in([
-            QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-            QuestionStatus.ANSWERED,
-            ]))
+        Question,
+        Question.owner_id == person.id,
+        Question.status.is_in(
+            [
+                QuestionStatus.OPEN,
+                QuestionStatus.NEEDSINFO,
+                QuestionStatus.ANSWERED,
+            ]
+        ),
+    )
     owned_non_final_questions.set(
         status=QuestionStatus.SOLVED,
         whiteboard=(
-            'Closed by Launchpad due to owner requesting account removal'))
-    skip.add(('question', 'owner'))
+            "Closed by Launchpad due to owner requesting account removal"
+        ),
+    )
+    skip.add(("question", "owner"))
 
     # Remove rows from tables in simple cases in the given order
     removals = [
@@ -280,117 +292,122 @@ def close_account(username, log):
         # address and this resurrected their deleted account, as the email
         # address is probably the piece of data we store that they were most
         # concerned with being removed from our systems.
-        ('EmailAddress', 'person'),
-
+        ("EmailAddress", "person"),
         # Login and OAuth tokens are no longer interesting if the user can
         # no longer log in.
-        ('LoginToken', 'requester'),
-        ('OAuthAccessToken', 'person'),
-        ('OAuthRequestToken', 'person'),
-
+        ("LoginToken", "requester"),
+        ("OAuthAccessToken", "person"),
+        ("OAuthRequestToken", "person"),
         # Trash their codes of conduct and GPG keys
-        ('SignedCodeOfConduct', 'owner'),
-        ('GpgKey', 'owner'),
-
+        ("SignedCodeOfConduct", "owner"),
+        ("GpgKey", "owner"),
         # Subscriptions and notifications
-        ('BranchSubscription', 'person'),
-        ('BugMute', 'person'),
-        ('BugNotificationRecipient', 'person'),
-        ('BugSubscription', 'person'),
-        ('BugSubscriptionFilterMute', 'person'),
-        ('GitSubscription', 'person'),
-        ('MailingListSubscription', 'person'),
-        ('QuestionSubscription', 'person'),
-        ('SpecificationSubscription', 'person'),
-        ('StructuralSubscription', 'subscriber'),
-
+        ("BranchSubscription", "person"),
+        ("BugMute", "person"),
+        ("BugNotificationRecipient", "person"),
+        ("BugSubscription", "person"),
+        ("BugSubscriptionFilterMute", "person"),
+        ("GitSubscription", "person"),
+        ("MailingListSubscription", "person"),
+        ("QuestionSubscription", "person"),
+        ("SpecificationSubscription", "person"),
+        ("StructuralSubscription", "subscriber"),
         # Personal stuff, freeing up the namespace for others who want to play
         # or just to remove any fingerprints identifying the user.
-        ('IrcId', 'person'),
-        ('JabberId', 'person'),
-        ('WikiName', 'person'),
-        ('PersonLanguage', 'person'),
-        ('PersonLocation', 'person'),
-        ('SshKey', 'person'),
-
+        ("IrcId", "person"),
+        ("JabberId", "person"),
+        ("WikiName", "person"),
+        ("PersonLanguage", "person"),
+        ("PersonLocation", "person"),
+        ("SshKey", "person"),
         # Karma
-        ('Karma', 'person'),
-        ('KarmaCache', 'person'),
-        ('KarmaTotalCache', 'person'),
-
+        ("Karma", "person"),
+        ("KarmaCache", "person"),
+        ("KarmaTotalCache", "person"),
         # Team memberships
-        ('TeamMembership', 'person'),
-        ('TeamParticipation', 'person'),
-
+        ("TeamMembership", "person"),
+        ("TeamParticipation", "person"),
         # Contacts
-        ('AnswerContact', 'person'),
-
+        ("AnswerContact", "person"),
         # Pending items in queues
-        ('POExportRequest', 'person'),
-
+        ("POExportRequest", "person"),
         # Access grants
-        ('AccessArtifactGrant', 'grantee'),
-        ('AccessPolicyGrant', 'grantee'),
-        ('ArchivePermission', 'person'),
-        ('GitRuleGrant', 'grantee'),
-        ('SharingJob', 'grantee'),
-
+        ("AccessArtifactGrant", "grantee"),
+        ("AccessPolicyGrant", "grantee"),
+        ("ArchivePermission", "person"),
+        ("GitRuleGrant", "grantee"),
+        ("SharingJob", "grantee"),
         # Soyuz reporting
-        ('LatestPersonSourcePackageReleaseCache', 'creator'),
-        ('LatestPersonSourcePackageReleaseCache', 'maintainer'),
-
+        ("LatestPersonSourcePackageReleaseCache", "creator"),
+        ("LatestPersonSourcePackageReleaseCache", "maintainer"),
         # "Affects me too" information
-        ('BugAffectsPerson', 'person'),
-        ]
+        ("BugAffectsPerson", "person"),
+    ]
     for table, person_id_column in removals:
         table_notification(table)
-        store.execute("""
+        store.execute(
+            """
             DELETE FROM %(table)s WHERE %(person_id_column)s = ?
-            """ % {
-                'table': table,
-                'person_id_column': person_id_column,
-                },
-            (person.id,))
+            """
+            % {
+                "table": table,
+                "person_id_column": person_id_column,
+            },
+            (person.id,),
+        )
 
     # Trash Sprint Attendance records in the future.
-    table_notification('SprintAttendance')
-    store.execute("""
+    table_notification("SprintAttendance")
+    store.execute(
+        """
         DELETE FROM SprintAttendance
         USING Sprint
         WHERE Sprint.id = SprintAttendance.sprint
             AND attendee = ?
             AND Sprint.time_starts > CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-        """, (person.id,))
+        """,
+        (person.id,),
+    )
     # Any remaining past sprint attendance records can harmlessly refer to
     # the placeholder person row.
-    skip.add(('sprintattendance', 'attendee'))
+    skip.add(("sprintattendance", "attendee"))
 
     # PPA authorization is now handled dynamically and checks the
     # subscriber's account status, so this isn't strictly necessary, but
     # it's still nice to have the per-person audit trail.
-    archive_subscriber_ids = set(store.find(
-        ArchiveSubscriber.id,
-        ArchiveSubscriber.subscriber_id == person.id,
-        ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT))
+    archive_subscriber_ids = set(
+        store.find(
+            ArchiveSubscriber.id,
+            ArchiveSubscriber.subscriber_id == person.id,
+            ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT,
+        )
+    )
     if archive_subscriber_ids:
         getUtility(IArchiveSubscriberSet).cancel(
-            archive_subscriber_ids, janitor)
-    skip.add(('archivesubscriber', 'subscriber'))
-    skip.add(('archiveauthtoken', 'person'))
+            archive_subscriber_ids, janitor
+        )
+    skip.add(("archivesubscriber", "subscriber"))
+    skip.add(("archiveauthtoken", "person"))
 
     # Remove hardware submissions.
-    table_notification('HWSubmissionDevice')
-    store.execute("""
+    table_notification("HWSubmissionDevice")
+    store.execute(
+        """
         DELETE FROM HWSubmissionDevice
         USING HWSubmission
         WHERE HWSubmission.id = HWSubmissionDevice.submission
             AND owner = ?
-        """, (person.id,))
-    table_notification('HWSubmission')
-    store.execute("""
+        """,
+        (person.id,),
+    )
+    table_notification("HWSubmission")
+    store.execute(
+        """
         DELETE FROM HWSubmission
         WHERE HWSubmission.owner = ?
-        """, (person.id,))
+        """,
+        (person.id,),
+    )
 
     # Purge deleted PPAs.  This is safe because the archive can only be in
     # the DELETED status if the publisher has removed it from disk and set
@@ -403,39 +420,130 @@ def close_account(username, log):
         store.find(
             Archive,
             Archive.owner == person,
-            Archive.status == ArchiveStatus.DELETED).remove()
+            Archive.status == ArchiveStatus.DELETED,
+        ).remove()
     except IntegrityError:
         raise LaunchpadScriptFailure(
-            "Can't delete non-trivial PPAs for user %s" % person_name)
+            "Can't delete non-trivial PPAs for user %s" % person_name
+        )
 
-    has_references = False
+    reference_counts = []  # type: List[Tuple[str, int]]
 
     # Check for active related projects, and skip inactive ones.
-    for col in 'bug_supervisor', 'driver', 'owner':
+    for col in "bug_supervisor", "driver", "owner":
         # Raw SQL because otherwise using Product._owner while displaying it
         # as Product.owner is too fiddly.
-        result = store.execute("""
+        result = store.execute(
+            """
             SELECT COUNT(*) FROM product WHERE active AND %(col)s = ?
-            """ % {'col': col},
-            (person.id,))
+            """
+            % {"col": col},
+            (person.id,),
+        )
         count = result.get_one()[0]
         if count:
-            log.error(
-                "User %s is still referenced by %d product.%s values" %
-                (person_name, count, col))
-            has_references = True
-        skip.add(('product', col))
-    for col in 'driver', 'owner':
+            reference_counts.append(("product.{}".format(col), count))
+        skip.add(("product", col))
+    for col in "driver", "owner":
         count = store.find(
             ProductSeries,
-            ProductSeries.product == Product.id, Product.active,
-            getattr(ProductSeries, col) == person).count()
+            ProductSeries.product == Product.id,
+            Product.active,
+            getattr(ProductSeries, col) == person,
+        ).count()
         if count:
-            log.error(
-                "User %s is still referenced by %d productseries.%s values" %
-                (person_name, count, col))
-            has_references = True
-        skip.add(('productseries', col))
+            reference_counts.append(("productseries.{}".format(col), count))
+        skip.add(("productseries", col))
+
+    # Check announcements, skipping the ones
+    # that are related to inactive products.
+    count = store.find(
+        Announcement,
+        Or(
+            And(Announcement.product == Product.id, Product.active),
+            Announcement.product == None,
+        ),
+        Announcement.registrant == person,
+    ).count()
+    if count:
+        reference_counts.append(("announcement.registrant", count))
+    skip.add(("announcement", "registrant"))
+
+    # Check MilestoneTags, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        MilestoneTag,
+        MilestoneTag.milestone_id == Milestone.id,
+        Or(
+            And(Milestone.product == Product.id, Product.active),
+            Milestone.product == None,
+        ),
+        MilestoneTag.created_by_id == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("milestonetag.created_by", count))
+    skip.add(("milestonetag", "created_by"))
+
+    # Check ProductReleases, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        ProductRelease,
+        ProductRelease.milestone == Milestone.id,
+        Milestone.product == Product.id,
+        Product.active,
+        ProductRelease.owner == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("productrelease.owner", count))
+    skip.add(("productrelease", "owner"))
+
+    # Check ProductReleases, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        ProductReleaseFile,
+        ProductReleaseFile.productrelease == ProductRelease.id,
+        ProductRelease.milestone == Milestone.id,
+        Milestone.product == Product.id,
+        Product.active,
+        ProductReleaseFile.uploader == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("productreleasefile.uploader", count))
+    skip.add(("productreleasefile", "uploader"))
+
+    # Check Branches, skipping the ones that are related to inactive products.
+    for col_name in "owner", "reviewer":
+        count = store.find(
+            Branch,
+            Or(
+                And(
+                    Branch.product == Product.id,
+                    Product.active,
+                ),
+                Branch.product == None,
+            ),
+            getattr(Branch, col_name) == person.id,
+        ).count()
+        if count:
+            reference_counts.append(("branch.{}".format(col_name), count))
+        skip.add(("branch", col_name))
+
+    # Check Specification, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        Specification,
+        Or(
+            And(
+                Specification.product == Product.id,
+                Product.active,
+            ),
+            Specification.product == None,
+        ),
+        Specification._assignee == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("specification.assignee", count))
+    skip.add(("specification", "assignee"))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this
@@ -444,43 +552,54 @@ def close_account(username, log):
     for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
         if (src_tab, src_col) in skip:
             continue
-        result = store.execute("""
+        result = store.execute(
+            """
             SELECT COUNT(*) FROM %(src_tab)s WHERE %(src_col)s = ?
-            """ % {
-                'src_tab': src_tab,
-                'src_col': src_col,
-                },
-            (person.id,))
+            """
+            % {
+                "src_tab": src_tab,
+                "src_col": src_col,
+            },
+            (person.id,),
+        )
         count = result.get_one()[0]
         if count:
+            reference_counts.append(("{}.{}".format(src_tab, src_col), count))
+
+    if reference_counts:
+        for reference, count in reference_counts:
             log.error(
-                "User %s is still referenced by %d %s.%s values" %
-                (person_name, count, src_tab, src_col))
-            has_references = True
-    if has_references:
+                "User %s is still referenced by %d %s values"
+                % (person_name, count, reference)
+            )
         raise LaunchpadScriptFailure(
-            "User %s is still referenced" % person_name)
+            "User %s is still referenced" % person_name
+        )
 
     return True
 
 
 class CloseAccountScript(LaunchpadScript):
 
-    usage = '%prog [options] (username|email) [...]'
+    usage = "%prog [options] (username|email) [...]"
     description = (
         "Close a person's account, deleting as much personal information "
-        "as possible.")
+        "as possible."
+    )
 
     def add_my_options(self):
         """See `LaunchpadScript`."""
         self.parser.add_option(
-            "-n", "--dry-run", default=False, action="store_true",
-            help="Do not commit changes.")
+            "-n",
+            "--dry-run",
+            default=False,
+            action="store_true",
+            help="Do not commit changes.",
+        )
 
     def main(self):
         if not self.args:
-            raise LaunchpadScriptFailure(
-                "Must specify username (Person.name)")
+            raise LaunchpadScriptFailure("Must specify username (Person.name)")
 
         for username in self.args:
             try:

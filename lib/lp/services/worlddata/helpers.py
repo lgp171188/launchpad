@@ -4,10 +4,10 @@
 """Worlddata helper functions."""
 
 __all__ = [
-    'browser_languages',
-    'is_english_variant',
-    'preferred_or_request_languages',
-    ]
+    "browser_languages",
+    "is_english_variant",
+    "preferred_or_request_languages",
+]
 
 
 from zope.component import getUtility
@@ -15,7 +15,7 @@ from zope.component import getUtility
 from lp.services.geoip.interfaces import (
     IRequestLocalLanguages,
     IRequestPreferredLanguages,
-    )
+)
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -29,7 +29,7 @@ def is_english_variant(language):
     # XXX sinzui 2007-07-12 bug=125545:
     # We would not need to use this function so often if variant languages
     # knew their parent language.
-    return language.code[0:3] in ['en_']
+    return language.code[0:3] in ["en_"]
 
 
 def preferred_or_request_languages(request):

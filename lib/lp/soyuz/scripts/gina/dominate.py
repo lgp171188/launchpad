@@ -4,8 +4,8 @@
 """Retirement of packages that are removed upstream."""
 
 __all__ = [
-    'dominate_imported_source_packages',
-    ]
+    "dominate_imported_source_packages",
+]
 
 import six
 from zope.component import getUtility
@@ -14,8 +14,9 @@ from lp.archivepublisher.domination import Dominator
 from lp.registry.interfaces.distribution import IDistributionSet
 
 
-def dominate_imported_source_packages(txn, logger, distro_name, series_name,
-                                      pocket, packages_map):
+def dominate_imported_source_packages(
+    txn, logger, distro_name, series_name, pocket, packages_map
+):
     """Perform domination."""
     series = getUtility(IDistributionSet)[distro_name].getSeries(series_name)
     dominator = Dominator(logger, series.main_archive)
@@ -27,8 +28,10 @@ def dominate_imported_source_packages(txn, logger, distro_name, series_name,
     for package_name, pub_count in package_counts:
         entries = packages_map.src_map.get(package_name, [])
         live_versions = [
-            six.ensure_text(entry['Version'])
-            for entry in entries if 'Version' in entry]
+            six.ensure_text(entry["Version"])
+            for entry in entries
+            if "Version" in entry
+        ]
 
         # Gina import just ensured that any live version in the Sources
         # file has a Published publication.  So there should be at least
@@ -38,7 +41,10 @@ def dominate_imported_source_packages(txn, logger, distro_name, series_name,
                 "Package %s has fewer live source publications (%s) than "
                 "live versions (%s).  The archive may be broken in some "
                 "way.",
-                package_name, pub_count, len(live_versions))
+                package_name,
+                pub_count,
+                len(live_versions),
+            )
 
         # Domination can only turn Published publications into
         # non-Published ones, and ensures that we end up with one
@@ -51,10 +57,17 @@ def dominate_imported_source_packages(txn, logger, distro_name, series_name,
         if pub_count != len(live_versions):
             logger.debug("Dominating %s.", package_name)
             dominator.dominateSourceVersions(
-                series, pocket, package_name, live_versions,
-                immutable_check=False)
+                series,
+                pocket,
+                package_name,
+                live_versions,
+                immutable_check=False,
+            )
             txn.commit()
         else:
             logger.debug2(
                 "Skipping domination for %s: %d live version(s) and "
-                "publication(s).", package_name, pub_count)
+                "publication(s).",
+                package_name,
+                pub_count,
+            )

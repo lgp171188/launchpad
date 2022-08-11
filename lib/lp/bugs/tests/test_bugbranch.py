@@ -8,19 +8,13 @@ from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.bugs.interfaces.bugbranch import (
-    IBugBranch,
-    IBugBranchSet,
-    )
-from lp.bugs.model.bugbranch import (
-    BugBranch,
-    BugBranchSet,
-    )
+from lp.bugs.interfaces.bugbranch import IBugBranch, IBugBranchSet
+from lp.bugs.model.bugbranch import BugBranch, BugBranchSet
 from lp.testing import (
+    TestCaseWithFactory,
     anonymous_logged_in,
     celebrity_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -35,7 +29,8 @@ class TestBugBranchSet(TestCaseWithFactory):
     def test_getBranchesWithVisibleBugs_no_branches(self):
         bug_branches = getUtility(IBugBranchSet)
         links = bug_branches.getBranchesWithVisibleBugs(
-            [], self.factory.makePerson())
+            [], self.factory.makePerson()
+        )
         self.assertEqual([], list(links))
 
     def test_getBranchesWithVisibleBugs_finds_branches_with_public_bugs(self):
@@ -54,18 +49,21 @@ class TestBugBranchSet(TestCaseWithFactory):
         self.assertContentEqual(
             [branch_1.id, branch_2.id],
             utility.getBranchesWithVisibleBugs(
-                [branch_1, branch_2], self.factory.makePerson()))
+                [branch_1, branch_2], self.factory.makePerson()
+            ),
+        )
 
     def test_getBranchesWithVisibleBugs_shows_public_bugs_to_anon(self):
         # getBranchesWithVisibleBugs shows public bugs to anyone,
         # including anonymous users.
         branch = self.factory.makeBranch()
         bug = self.factory.makeBug()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug.linkBranch(branch, self.factory.makePerson())
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
-            [branch.id], utility.getBranchesWithVisibleBugs([branch], None))
+            [branch.id], utility.getBranchesWithVisibleBugs([branch], None)
+        )
 
     def test_getBranchesWithVisibleBugs_ignores_duplicate_bugbranches(self):
         # getBranchesWithVisibleBugs reports a branch only once even if
@@ -78,30 +76,33 @@ class TestBugBranchSet(TestCaseWithFactory):
         bug.linkBranch(branch, user)
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
-            [branch.id], utility.getBranchesWithVisibleBugs([branch], user))
+            [branch.id], utility.getBranchesWithVisibleBugs([branch], user)
+        )
 
     def test_getBranchesWithVisibleBugs_ignores_extra_bugs(self):
         # getBranchesWithVisibleBugs reports a branch only once even if
         # it's liked to multiple bugs.
         branch = self.factory.makeBranch()
         user = self.factory.makePerson()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             self.factory.makeBug().linkBranch(branch, user)
             self.factory.makeBug().linkBranch(branch, user)
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
-            [branch.id], utility.getBranchesWithVisibleBugs([branch], user))
+            [branch.id], utility.getBranchesWithVisibleBugs([branch], user)
+        )
 
     def test_getBranchesWithVisibleBugs_hides_private_bugs_from_anon(self):
         # getBranchesWithVisibleBugs does not show private bugs to users
         # who aren't logged in.
         branch = self.factory.makeBranch()
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug.linkBranch(branch, self.factory.makePerson())
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
-            [], utility.getBranchesWithVisibleBugs([branch], None))
+            [], utility.getBranchesWithVisibleBugs([branch], None)
+        )
 
     def test_getBranchesWithVisibleBugs_hides_private_bugs_from_joe(self):
         # getBranchesWithVisibleBugs does not show private bugs to
@@ -109,13 +110,15 @@ class TestBugBranchSet(TestCaseWithFactory):
         # Hacker).
         branch = self.factory.makeBranch()
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug.linkBranch(branch, self.factory.makePerson())
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
             [],
             utility.getBranchesWithVisibleBugs(
-                [branch], self.factory.makePerson()))
+                [branch], self.factory.makePerson()
+            ),
+        )
 
     def test_getBranchesWithVisibleBugs_shows_private_bugs_to_sub(self):
         # getBranchesWithVisibleBugs will show private bugs to their
@@ -123,23 +126,25 @@ class TestBugBranchSet(TestCaseWithFactory):
         branch = self.factory.makeBranch()
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
         user = self.factory.makePerson()
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug.subscribe(user, self.factory.makePerson())
             bug.linkBranch(branch, self.factory.makePerson())
         utility = getUtility(IBugBranchSet)
         self.assertContentEqual(
-            [branch.id], utility.getBranchesWithVisibleBugs([branch], user))
+            [branch.id], utility.getBranchesWithVisibleBugs([branch], user)
+        )
 
     def test_getBranchesWithVisibleBugs_shows_private_bugs_to_admins(self):
         # getBranchesWithVisibleBugs will show private bugs to admins.
         branch = self.factory.makeBranch()
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             bug.linkBranch(branch, self.factory.makePerson())
         utility = getUtility(IBugBranchSet)
         admin = getUtility(ILaunchpadCelebrities).admin
         self.assertContentEqual(
-            [branch.id], utility.getBranchesWithVisibleBugs([branch], admin))
+            [branch.id], utility.getBranchesWithVisibleBugs([branch], admin)
+        )
 
 
 class TestBugBranch(TestCaseWithFactory):
@@ -154,8 +159,10 @@ class TestBugBranch(TestCaseWithFactory):
     def test_bugbranch_provides_IBugBranch(self):
         # BugBranch objects provide IBugBranch.
         bug_branch = BugBranch(
-            branch=self.factory.makeBranch(), bug=self.factory.makeBug(),
-            registrant=self.factory.makePerson())
+            branch=self.factory.makeBranch(),
+            bug=self.factory.makeBug(),
+            registrant=self.factory.makePerson(),
+        )
         self.assertProvides(bug_branch, IBugBranch)
 
     def test_bug_start_with_no_linked_branches(self):
@@ -202,7 +209,7 @@ class TestBugBranch(TestCaseWithFactory):
 
     def test_unlink_not_linked_branch(self):
         # When unlinkBranch is called with a branch that isn't already linked,
-        # nothing discernable happens.
+        # nothing discernible happens.
         bug = self.factory.makeBug()
         branch = self.factory.makeBranch()
         bug.unlinkBranch(branch, self.factory.makePerson())
@@ -211,24 +218,24 @@ class TestBugBranch(TestCaseWithFactory):
     def test_the_unwashed_cannot_link_branch_to_private_bug(self):
         # Those who cannot see a bug are forbidden to link a branch to it.
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
-        self.assertRaises(Unauthorized, getattr, bug, 'linkBranch')
+        self.assertRaises(Unauthorized, getattr, bug, "linkBranch")
 
     def test_the_unwashed_cannot_unlink_branch_from_private_bug(self):
         # Those who cannot see a bug are forbidden to unlink branches from it.
         bug = self.factory.makeBug(information_type=InformationType.USERDATA)
-        self.assertRaises(Unauthorized, getattr, bug, 'unlinkBranch')
+        self.assertRaises(Unauthorized, getattr, bug, "unlinkBranch")
 
     def test_anonymous_users_cannot_link_branches(self):
         # Anonymous users cannot link branches to bugs, even public bugs.
         bug = self.factory.makeBug()
         with anonymous_logged_in():
-            self.assertRaises(Unauthorized, getattr, bug, 'linkBranch')
+            self.assertRaises(Unauthorized, getattr, bug, "linkBranch")
 
     def test_anonymous_users_cannot_unlink_branches(self):
         # Anonymous users cannot unlink branches from bugs, even public bugs.
         bug = self.factory.makeBug()
         with anonymous_logged_in():
-            self.assertRaises(Unauthorized, getattr, bug, 'unlinkBranch')
+            self.assertRaises(Unauthorized, getattr, bug, "unlinkBranch")
 
     def test_adding_branch_changes_date_last_updated(self):
         # Adding a branch to a bug changes IBug.date_last_updated.

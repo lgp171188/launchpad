@@ -27,7 +27,9 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.chroot = getUtility(ILibraryFileAliasSet)[1]
         self.build = removeSecurityProxy(
             self.factory.makeBinaryPackageBuild(
-                status=BuildStatus.MANUALDEPWAIT))
+                status=BuildStatus.MANUALDEPWAIT
+            )
+        )
 
         # Most tests want a no-op updateDependencies and a chroot.
         self.build.updateDependencies = FakeMethod()
@@ -40,7 +42,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.build.distro_arch_series.addOrUpdateChroot(None)
 
     def assertStatusAfterLoop(self, status, dry_run=False):
-        with dbuser('retry_depwait'):
+        with dbuser("retry_depwait"):
             RetryDepwaitTunableLoop(DevNullLogger(), dry_run).run()
         self.assertEqual(status, self.build.status)
 
@@ -48,7 +50,8 @@ class TestRetryDepwait(TestCaseWithFactory):
         # Builds with unsatisfied dependencies are not retried.
         self.build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            worker_status={'dependencies': 'something'})
+            worker_status={"dependencies": "something"},
+        )
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
         self.assertEqual(1, self.build.updateDependencies.call_count)
 
@@ -59,11 +62,13 @@ class TestRetryDepwait(TestCaseWithFactory):
     def test_ignores_when_series_is_obsolete(self):
         # Builds for an obsolete series are not retried.
         self.build.distro_arch_series.distroseries.status = (
-            SeriesStatus.OBSOLETE)
+            SeriesStatus.OBSOLETE
+        )
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
 
         self.build.distro_arch_series.distroseries.status = (
-            SeriesStatus.DEVELOPMENT)
+            SeriesStatus.DEVELOPMENT
+        )
         self.assertStatusAfterLoop(BuildStatus.NEEDSBUILD)
 
     def test_ignores_when_chroot_is_missing(self):
@@ -99,7 +104,7 @@ class TestRetryDepwait(TestCaseWithFactory):
 
     def runScript(self):
         transaction.commit()
-        (ret, out, err) = run_script('cronscripts/buildd-retry-depwait.py')
+        (ret, out, err) = run_script("cronscripts/buildd-retry-depwait.py")
         self.assertEqual(0, ret)
         transaction.commit()
 
@@ -109,7 +114,8 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.assertEqual(BuildStatus.MANUALDEPWAIT, self.build.status)
         bpn = self.factory.getUniqueUnicode()
         self.build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, worker_status={'dependencies': bpn})
+            BuildStatus.MANUALDEPWAIT, worker_status={"dependencies": bpn}
+        )
 
         # With no binary to satisfy the dependency, running the script
         # does nothing.
@@ -119,8 +125,11 @@ class TestRetryDepwait(TestCaseWithFactory):
         # If we create a matching binary and rerun, the script retries
         # the build.
         self.factory.makeBinaryPackagePublishingHistory(
-            archive=self.build.archive, pocket=self.build.pocket,
+            archive=self.build.archive,
+            pocket=self.build.pocket,
             distroarchseries=self.build.distro_arch_series,
-            status=PackagePublishingStatus.PUBLISHED, binarypackagename=bpn)
+            status=PackagePublishingStatus.PUBLISHED,
+            binarypackagename=bpn,
+        )
         self.runScript()
         self.assertEqual(BuildStatus.NEEDSBUILD, self.build.status)

@@ -4,12 +4,12 @@
 """Code's custom publication."""
 
 __all__ = [
-    'BranchesFacet',
-    'CodeBrowserRequest',
-    'CodeLayer',
-    'code_request_publication_factory',
-    'LaunchpadBranchContainer',
-    ]
+    "BranchesFacet",
+    "CodeBrowserRequest",
+    "CodeLayer",
+    "code_request_publication_factory",
+    "LaunchpadBranchContainer",
+]
 
 
 from zope.component import queryAdapter
@@ -17,18 +17,15 @@ from zope.interface import implementer
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
     IDefaultBrowserLayer,
-    )
+)
 
-from lp.services.webapp.interfaces import (
-    IFacet,
-    ILaunchpadContainer,
-    )
+from lp.services.webapp.interfaces import IFacet, ILaunchpadContainer
 from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.publisher import LaunchpadContainer
 from lp.services.webapp.servers import (
     LaunchpadBrowserRequest,
     VHostWebServiceRequestPublicationFactory,
-    )
+)
 
 
 @implementer(IFacet)
@@ -51,22 +48,22 @@ class CodeBrowserRequest(LaunchpadBrowserRequest):
 
 def code_request_publication_factory():
     return VHostWebServiceRequestPublicationFactory(
-        'code', CodeBrowserRequest, LaunchpadBrowserPublication)
+        "code", CodeBrowserRequest, LaunchpadBrowserPublication
+    )
 
 
 class LaunchpadBranchContainer(LaunchpadContainer):
-
     def getParentContainers(self):
         """See `ILaunchpadContainer`."""
         # A branch is within its target.
         adapter = queryAdapter(
-            self.context.target.context, ILaunchpadContainer)
+            self.context.target.context, ILaunchpadContainer
+        )
         if adapter is not None:
             yield adapter
 
 
 class LaunchpadGitRepositoryContainer(LaunchpadContainer):
-
     def getParentContainers(self):
         """See `ILaunchpadContainer`."""
         # A repository is within its target.

@@ -4,18 +4,19 @@
 """Builder interfaces."""
 
 __all__ = [
-    'BuildDaemonError',
-    'BuildDaemonIsolationError',
-    'BuildWorkerFailure',
-    'CannotBuild',
-    'CannotFetchFile',
-    'CannotResumeHost',
-    'IBuilder',
-    'IBuilderModerateAttributes',
-    'IBuilderSet',
-    ]
+    "BuildDaemonError",
+    "BuildDaemonIsolationError",
+    "BuildWorkerFailure",
+    "CannotBuild",
+    "CannotFetchFile",
+    "CannotResumeHost",
+    "IBuilder",
+    "IBuilderModerateAttributes",
+    "IBuilderSet",
+]
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     export_factory_operation,
@@ -29,40 +30,19 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
+)
+from lazr.restful.fields import Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    List,
-    Text,
-    TextLine,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.app.validators.url import builder_url_validator
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuilderResetProtocol,
-    )
+from lp.buildmaster.enums import BuilderCleanStatus, BuilderResetProtocol
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import (
-    PersonChoice,
-    Title,
-    )
+from lp.services.fields import PersonChoice, Title
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 
 
@@ -98,108 +78,202 @@ class BuildWorkerFailure(BuildDaemonError):
 
 
 class IBuilderModerateAttributes(Interface):
-    manual = exported(Bool(
-        title=_('Manual Mode'), required=False, default=False,
-        description=_('The auto-build system does not dispatch '
-                      'jobs automatically for builders in manual mode.')))
+    manual = exported(
+        Bool(
+            title=_("Manual Mode"),
+            required=False,
+            default=False,
+            description=_(
+                "The auto-build system does not dispatch "
+                "jobs automatically for builders in manual mode."
+            ),
+        )
+    )
 
-    builderok = exported(Bool(
-        title=_('Builder State OK'), required=True, default=True,
-        description=_('Whether or not the builder is ok')),
-        as_of='devel')
+    builderok = exported(
+        Bool(
+            title=_("Builder State OK"),
+            required=True,
+            default=True,
+            description=_("Whether or not the builder is ok"),
+        ),
+        as_of="devel",
+    )
 
-    failnotes = exported(Text(
-        title=_('Failure Notes'), required=False,
-        description=_('The reason for a builder not being ok')))
+    failnotes = exported(
+        Text(
+            title=_("Failure Notes"),
+            required=False,
+            description=_("The reason for a builder not being ok"),
+        )
+    )
 
 
 class IBuilderView(IHasBuildRecords, IHasOwner):
 
     id = Attribute("Builder identifier")
 
-    processor = exported(ReferenceChoice(
-        title=_('Processor'), required=True, vocabulary='Processor',
-        schema=IProcessor,
-        description=_(
-            'DEPRECATED: Processor identifying jobs which can be built by '
-            'this device. Use `processors` instead to handle multiple '
-            'supported architectures.')),
-        as_of='devel')
+    processor = exported(
+        ReferenceChoice(
+            title=_("Processor"),
+            required=True,
+            vocabulary="Processor",
+            schema=IProcessor,
+            description=_(
+                "DEPRECATED: Processor identifying jobs which can be built by "
+                "this device. Use `processors` instead to handle multiple "
+                "supported architectures."
+            ),
+        ),
+        as_of="devel",
+    )
 
     processors = exported(
         List(
             title=_("Processors"),
             description=_(
                 "Processors identifying jobs which can be built by this "
-                "device."),
+                "device."
+            ),
             value_type=ReferenceChoice(
-                vocabulary='Processor', schema=IProcessor)),
-        as_of='devel')
+                vocabulary="Processor", schema=IProcessor
+            ),
+        ),
+        as_of="devel",
+    )
 
-    owner = exported(PersonChoice(
-        title=_('Owner'), required=True, vocabulary='ValidOwner',
-        description=_('Builder owner, a Launchpad member which '
-                      'will be responsible for this device.')))
+    owner = exported(
+        PersonChoice(
+            title=_("Owner"),
+            required=True,
+            vocabulary="ValidOwner",
+            description=_(
+                "Builder owner, a Launchpad member which "
+                "will be responsible for this device."
+            ),
+        )
+    )
 
-    url = exported(TextLine(
-        title=_('URL'), required=True, constraint=builder_url_validator,
-        description=_('The URL to the build machine, used as a unique '
-                      'identifier. Includes protocol, host and port only, '
-                      'e.g.: http://farm.com:8221/')))
+    url = exported(
+        TextLine(
+            title=_("URL"),
+            required=True,
+            constraint=builder_url_validator,
+            description=_(
+                "The URL to the build machine, used as a unique "
+                "identifier. Includes protocol, host and port only, "
+                "e.g.: http://farm.com:8221/"
+            ),
+        )
+    )
 
-    name = exported(TextLine(
-        title=_('Name'), required=True, constraint=name_validator,
-        description=_('The builder name used for reference purposes')))
+    name = exported(
+        TextLine(
+            title=_("Name"),
+            required=True,
+            constraint=name_validator,
+            description=_("The builder name used for reference purposes"),
+        )
+    )
 
-    title = exported(Title(
-        title=_('Title'), required=True,
-        description=_(
-            'The builder title. Should be just a few words.')))
+    title = exported(
+        Title(
+            title=_("Title"),
+            required=True,
+            description=_("The builder title. Should be just a few words."),
+        )
+    )
 
-    virtualized = exported(Bool(
-        title=_('Virtualized'), required=True, default=False,
-        description=_('Whether or not the builder is a virtual Xen '
-                      'instance.')))
+    virtualized = exported(
+        Bool(
+            title=_("Virtualized"),
+            required=True,
+            default=False,
+            description=_(
+                "Whether or not the builder is a virtual Xen instance."
+            ),
+        )
+    )
 
-    vm_host = exported(TextLine(
-        title=_('VM host'), required=False,
-        description=_('The machine hostname hosting the virtual '
-                      'buildd-worker, e.g.: foobar-host.ppa')))
+    vm_host = exported(
+        TextLine(
+            title=_("VM host"),
+            required=False,
+            description=_(
+                "The machine hostname hosting the virtual "
+                "buildd-worker, e.g.: foobar-host.ppa"
+            ),
+        )
+    )
 
-    vm_reset_protocol = exported(Choice(
-        title=_("VM reset protocol"), vocabulary=BuilderResetProtocol,
-        readonly=False, required=False,
-        description=_("The protocol version for resetting the VM.")))
+    vm_reset_protocol = exported(
+        Choice(
+            title=_("VM reset protocol"),
+            vocabulary=BuilderResetProtocol,
+            readonly=False,
+            required=False,
+            description=_("The protocol version for resetting the VM."),
+        )
+    )
 
-    active = exported(Bool(
-        title=_('Publicly Visible'), required=False, default=True,
-        description=_('Whether or not to present the builder publicly.')))
+    active = exported(
+        Bool(
+            title=_("Publicly Visible"),
+            required=False,
+            default=True,
+            description=_("Whether or not to present the builder publicly."),
+        )
+    )
 
     currentjob = Attribute("BuildQueue instance for job being processed.")
 
-    current_build = exported(Reference(
-        title=_("Current build"), required=False, readonly=True,
-        schema=Interface,  # Really IBuildFarmJob.
-        description=_("The job currently running on this builder.")),
-        as_of="devel")
+    current_build = exported(
+        Reference(
+            title=_("Current build"),
+            required=False,
+            readonly=True,
+            schema=Interface,  # Really IBuildFarmJob.
+            description=_("The job currently running on this builder."),
+        ),
+        as_of="devel",
+    )
 
-    failure_count = exported(Int(
-        title=_('Failure Count'), required=False, default=0,
-       description=_("Number of consecutive failures for this builder.")))
+    failure_count = exported(
+        Int(
+            title=_("Failure Count"),
+            required=False,
+            default=0,
+            description=_("Number of consecutive failures for this builder."),
+        )
+    )
 
-    version = exported(Text(
-        title=_('Version'), required=False,
-        description=_('The version of launchpad-buildd on the worker.')))
+    version = exported(
+        Text(
+            title=_("Version"),
+            required=False,
+            description=_("The version of launchpad-buildd on the worker."),
+        )
+    )
 
-    clean_status = exported(Choice(
-        title=_("Clean status"), vocabulary=BuilderCleanStatus, readonly=True,
-        description=_(
-            "The readiness of the builder to take a job. Only internal build "
-            "infrastructure bots need to or should write to this.")))
+    clean_status = exported(
+        Choice(
+            title=_("Clean status"),
+            vocabulary=BuilderCleanStatus,
+            readonly=True,
+            description=_(
+                "The readiness of the builder to take a job. Only internal "
+                "build infrastructure bots need to or should write to this."
+            ),
+        )
+    )
 
-    date_clean_status_changed = exported(Datetime(
-        title=_("Date clean status changed"), readonly=True,
-        description=_("The date the builder's clean status last changed.")))
+    date_clean_status_changed = exported(
+        Datetime(
+            title=_("Date clean status changed"),
+            readonly=True,
+            description=_("The date the builder's clean status last changed."),
+        )
+    )
 
     def gotFailure():
         """Increment failure_count on the builder."""
@@ -212,16 +286,15 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
 
 
 class IBuilderEdit(Interface):
-
-    @mutator_for(IBuilderView['clean_status'])
-    @operation_parameters(status=copy_field(IBuilderView['clean_status']))
+    @mutator_for(IBuilderView["clean_status"])
+    @operation_parameters(status=copy_field(IBuilderView["clean_status"]))
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def setCleanStatus(status):
         """Update the clean status."""
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
     """Builder information and state.
 
@@ -237,15 +310,30 @@ class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
 
 
 class IBuilderSetAdmin(Interface):
-
     @call_with(owner=REQUEST_USER)
     @export_factory_operation(
         IBuilder,
-        ['processors', 'url', 'name', 'title', 'active', 'virtualized',
-         'vm_host'])
-    @operation_for_version('devel')
-    def new(processors, url, name, title, owner, active=True,
-            virtualized=False, vm_host=None):
+        [
+            "processors",
+            "url",
+            "name",
+            "title",
+            "active",
+            "virtualized",
+            "vm_host",
+        ],
+    )
+    @operation_for_version("devel")
+    def new(
+        processors,
+        url,
+        name,
+        title,
+        owner,
+        active=True,
+        virtualized=False,
+        vm_host=None,
+    ):
         """Create a new builder.
 
         The builder will be set to manual. An admin needs to verify its
@@ -263,7 +351,8 @@ class IBuilderSet(IBuilderSetAdmin):
     Methods on this interface should deal with the set of Builders:
     methods that affect a single Builder should be on IBuilder.
     """
-    title = Attribute('Title')
+
+    title = Attribute("Title")
 
     def __iter__():
         """Iterate over builders."""
@@ -272,9 +361,11 @@ class IBuilderSet(IBuilderSetAdmin):
         """Retrieve a builder by name"""
 
     @operation_parameters(
-        name=TextLine(title=_("Builder name"), required=True))
+        name=TextLine(title=_("Builder name"), required=True)
+    )
     @operation_returns_entry(IBuilder)
     @export_read_operation()
+    @operation_for_version("beta")
     def getByName(name):
         """Retrieve a builder by name"""
 
@@ -292,7 +383,7 @@ class IBuilderSet(IBuilderSetAdmin):
         """Return all active configured builders."""
 
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getBuildQueueSizes():
         """Return the number of pending builds for each processor.
 
@@ -314,11 +405,12 @@ class IBuilderSet(IBuilderSetAdmin):
 
     @operation_parameters(
         processor=Reference(
-            title=_("Processor"), required=True, schema=IProcessor),
-        virtualized=Bool(
-            title=_("Virtualized"), required=False, default=True))
+            title=_("Processor"), required=True, schema=IProcessor
+        ),
+        virtualized=Bool(title=_("Virtualized"), required=False, default=True),
+    )
     @operation_returns_collection_of(IBuilder)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getBuildersForQueue(processor, virtualized):
         """Return all builders for given processor/virtualization setting."""

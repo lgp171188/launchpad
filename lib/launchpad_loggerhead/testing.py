@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'LoggerheadFixture',
-    ]
+    "LoggerheadFixture",
+]
 
 import os.path
 import time
@@ -16,13 +16,10 @@ from lp.services.osutils import (
     get_pid_from_file,
     kill_by_pidfile,
     remove_if_exists,
-    )
+)
 from lp.services.pidfile import pidfile_path
 from lp.services.scripts.tests import run_script
-from lp.testing.layers import (
-    BaseLayer,
-    LayerProcessController,
-    )
+from lp.testing.layers import BaseLayer, LayerProcessController
 
 
 class LoggerheadFixtureException(Exception):
@@ -34,22 +31,26 @@ class LoggerheadFixture(Fixture):
 
     def _setUp(self):
         pidfile = pidfile_path(
-            "codebrowse", use_config=LayerProcessController.appserver_config)
+            "codebrowse", use_config=LayerProcessController.appserver_config
+        )
         pid = get_pid_from_file(pidfile)
         if pid is not None:
             warnings.warn(
                 "Attempt to start LoggerheadFixture with an existing "
-                "instance (%d) running in %s." % (pid, pidfile))
+                "instance (%d) running in %s." % (pid, pidfile)
+            )
             kill_by_pidfile(pidfile)
         self.logfile = os.path.join(config.codebrowse.log_folder, "debug.log")
         remove_if_exists(self.logfile)
         self.addCleanup(kill_by_pidfile, pidfile)
         run_script(
-            os.path.join("scripts", "start-loggerhead.py"), ["--daemon"],
+            os.path.join("scripts", "start-loggerhead.py"),
+            ["--daemon"],
             # The testrunner-appserver config provides the correct
             # openid_provider_root URL.
             extra_env={"LPCONFIG": BaseLayer.appserver_config_name},
-            universal_newlines=False)
+            universal_newlines=False,
+        )
         self._waitForStartup()
 
     def _hasStarted(self):

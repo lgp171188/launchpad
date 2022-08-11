@@ -8,8 +8,8 @@ for registering help folders.
 """
 
 __all__ = [
-    'HelpFolder',
-    ]
+    "HelpFolder",
+]
 
 from lp.app.browser.folder import ExportedFolder
 

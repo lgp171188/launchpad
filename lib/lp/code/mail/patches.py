@@ -20,22 +20,18 @@
 
 import re
 
-from breezy.patches import (
-    binary_files_re,
-    hunk_from_header,
-    parse_patch,
-    )
+from breezy.patches import binary_files_re, hunk_from_header, parse_patch
 
 
 def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
-    '''
+    """
     :arg iter_lines: iterable of lines to parse for patches
     :kwarg allow_dirty: If True, allow comments and other non-patch text
         before the first patch.  Note that the algorithm here can only find
         such text before any patches have been found.  Comments after the
         first patch are stripped away in iter_hunks() if it is also passed
         allow_dirty=True.  Default False.
-    '''
+    """
     # FIXME: Docstring is not quite true.  We allow certain comments no
     # matter what, If they startwith '===', '***', or '#' Someone should
     # reexamine this logic and decide if we should include those in
@@ -48,20 +44,22 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
     beginning = True
     in_git_patch = False
 
-    dirty_headers = (b'=== ', b'diff ', b'index ')
+    dirty_headers = (b"=== ", b"diff ", b"index ")
     for line in iter_lines:
         # preserve bzr modified/added headers and blank lines
-        if line.startswith(dirty_headers) or not line.strip(b'\n'):
+        if line.startswith(dirty_headers) or not line.strip(b"\n"):
             if len(saved_lines) > 0:
                 if keep_dirty and len(dirty_head) > 0:
-                    yield {'saved_lines': saved_lines,
-                           'dirty_head': dirty_head}
+                    yield {
+                        "saved_lines": saved_lines,
+                        "dirty_head": dirty_head,
+                    }
                     dirty_head = []
                 else:
                     yield saved_lines
                 in_git_patch = False
                 saved_lines = []
-            if line.startswith(b'diff --git'):
+            if line.startswith(b"diff --git"):
                 in_git_patch = True
             dirty_head.append(line)
             continue
@@ -71,14 +69,14 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
             # in the patch before the next "diff" header line can do so.
             dirty_head.append(line)
             continue
-        if line.startswith(b'*** '):
+        if line.startswith(b"*** "):
             continue
-        if line.startswith(b'#'):
+        if line.startswith(b"#"):
             continue
         elif orig_range > 0:
-            if line.startswith(b'-') or line.startswith(b' '):
+            if line.startswith(b"-") or line.startswith(b" "):
                 orig_range -= 1
-        elif line.startswith(b'--- ') or regex.match(line):
+        elif line.startswith(b"--- ") or regex.match(line):
             if allow_dirty and beginning:
                 # Patches can have "junk" at the beginning
                 # Stripping junk from the end of patches is handled when we
@@ -86,39 +84,40 @@ def iter_file_patch(iter_lines, allow_dirty=False, keep_dirty=False):
                 beginning = False
             elif len(saved_lines) > 0:
                 if keep_dirty and len(dirty_head) > 0:
-                    yield {'saved_lines': saved_lines,
-                           'dirty_head': dirty_head}
+                    yield {
+                        "saved_lines": saved_lines,
+                        "dirty_head": dirty_head,
+                    }
                     dirty_head = []
                 else:
                     yield saved_lines
                 in_git_patch = False
             saved_lines = []
-        elif line.startswith(b'@@'):
+        elif line.startswith(b"@@"):
             hunk = hunk_from_header(line)
             orig_range = hunk.orig_range
         saved_lines.append(line)
     if len(saved_lines) > 0:
         if keep_dirty and len(dirty_head) > 0:
-            yield {'saved_lines': saved_lines,
-                   'dirty_head': dirty_head}
+            yield {"saved_lines": saved_lines, "dirty_head": dirty_head}
         else:
             yield saved_lines
 
 
 def parse_patches(iter_lines, allow_dirty=False, keep_dirty=False):
-    '''
+    """
     :arg iter_lines: iterable of lines to parse for patches
     :kwarg allow_dirty: If True, allow text that's not part of the patch at
         selected places.  This includes comments before and after a patch
         for instance.  Default False.
     :kwarg keep_dirty: If True, returns a dict of patches with dirty headers.
         Default False.
-    '''
+    """
     for patch_lines in iter_file_patch(iter_lines, allow_dirty, keep_dirty):
-        if 'dirty_head' in patch_lines:
+        if "dirty_head" in patch_lines:
             yield {
-                'patch': parse_patch(patch_lines['saved_lines'], allow_dirty),
-                'dirty_head': patch_lines['dirty_head'],
-                }
+                "patch": parse_patch(patch_lines["saved_lines"], allow_dirty),
+                "dirty_head": patch_lines["dirty_head"],
+            }
         else:
             yield parse_patch(patch_lines, allow_dirty)

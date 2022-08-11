@@ -4,24 +4,23 @@
 """Interface for build farm job behaviours."""
 
 __all__ = [
-    'IBuildFarmJobBehaviour',
-    ]
+    "IBuildFarmJobBehaviour",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IBuildFarmJobBehaviour(Interface):
 
     builder_type = Attribute(
         "The name of the builder type to use for this build, corresponding "
-        "to a launchpad-buildd build manager tag.")
+        "to a launchpad-buildd build manager tag."
+    )
 
     image_types = Attribute(
         "A list of `BuildBaseImageType`s indicating which types of base "
-        "images can be used for this build.")
+        "images can be used for this build."
+    )
 
     build = Attribute("The `IBuildFarmJob` to build.")
 
@@ -93,4 +92,15 @@ class IBuildFarmJobBehaviour(Interface):
 
         :param bq: The `BuildQueue` currently being processed.
         :param worker_status: Worker status dict from `BuilderWorker.status`.
+        """
+
+    def redactXmlrpcArguments(args):
+        """Redact arguments before getting logged.
+
+        `args` is a nested data structure which contains secrets in different
+        forms. The secrets will be replaced with the string `<redacted>` to
+        prevent leaking them while creating log entries.
+
+        :param args: A nested data structure.
+        :return: A text representation of the input with redacted secrets.
         """

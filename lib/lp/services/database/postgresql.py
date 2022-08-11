@@ -8,11 +8,7 @@ and table manipulation
 
 import re
 
-from lp.services.database.sqlbase import (
-    quote,
-    quoteIdentifier,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import quote, quoteIdentifier, sqlvalues
 
 
 def listReferences(cur, table, column, indirect=True, _state=None):
@@ -100,7 +96,7 @@ def listReferences(cur, table, column, indirect=True, _state=None):
 
 
 def listIndexes(cur, table, column, only_unique=False):
-    '''Return a list of indexes on `table` that include the `column`
+    """Return a list of indexes on `table` that include the `column`
 
     `cur` must be an open DB-API cursor.
 
@@ -142,11 +138,11 @@ def listIndexes(cur, table, column, only_unique=False):
     >>> listIndexes(cur, 'a', 'selfref')
     []
 
-    '''
+    """
 
     # Retrieve the attributes for the table
     attributes = {}
-    sql = '''
+    sql = """
         SELECT
             a.attnum,
             a.attname
@@ -155,7 +151,7 @@ def listIndexes(cur, table, column, only_unique=False):
         WHERE
             t.relname = %(table)s
             AND a.attnum > 0
-        '''
+        """
     cur.execute(sql, dict(table=table))
     for num, name in cur.fetchall():
         attributes[int(num)] = name
@@ -164,33 +160,29 @@ def listIndexes(cur, table, column, only_unique=False):
     rv = []
 
     # Retrieve the indexes.
-    sql = '''
+    sql = """
         SELECT
             i.indkey
         FROM
             pg_class AS t JOIN pg_index AS i ON i.indrelid = t.oid
         WHERE
             t.relname = %(table)s
-        '''
+        """
     if only_unique:
-        sql += ' AND i.indisunique = true'
+        sql += " AND i.indisunique = true"
     cur.execute(sql, dict(table=table))
-    for indkey, in cur.fetchall():
+    for (indkey,) in cur.fetchall():
         # We have a space separated list of integer keys into the attribute
         # mapping. Ignore the 0's, as they indicate a function and we don't
         # handle them.
-        keys = [
-            attributes[int(key)]
-                for key in indkey.split()
-                    if int(key) > 0
-            ]
+        keys = [attributes[int(key)] for key in indkey.split() if int(key) > 0]
         if column in keys:
             rv.append(tuple(keys))
     return rv
 
 
 def listUniques(cur, table, column):
-    '''Return a list of unique indexes on `table` that include the `column`
+    """Return a list of unique indexes on `table` that include the `column`
 
     `cur` must be an open DB-API cursor.
 
@@ -232,7 +224,7 @@ def listUniques(cur, table, column):
     >>> listUniques(cur, 'c', 'description')
     []
 
-    '''
+    """
     return listIndexes(cur, table, column, only_unique=True)
 
 
@@ -265,7 +257,7 @@ def listSequences(cur):
     rv = []
     cur.execute(sql)
     for schema, sequence in list(cur.fetchall()):
-        match = re.search(r'^(\w+)_(\w+)_seq$', sequence)
+        match = re.search(r"^(\w+)_(\w+)_seq$", sequence)
         if match is None:
             rv.append((schema, sequence, None, None))
         else:
@@ -299,39 +291,42 @@ def check_indirect_references(references):
     for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
         # If the ref_tab and ref_col is not Person.id, then we have
         # an indirect reference. Ensure the update action is 'CASCADE'
-        if ref_tab != 'person' and ref_col != 'id':
-            if updact != 'c':
+        if ref_tab != "person" and ref_col != "id":
+            if updact != "c":
                 raise RuntimeError(
-                    '%s.%s reference to %s.%s must be ON UPDATE CASCADE'
-                    % (src_tab, src_col, ref_tab, ref_col))
+                    "%s.%s reference to %s.%s must be ON UPDATE CASCADE"
+                    % (src_tab, src_col, ref_tab, ref_col)
+                )
 
 
 def generateResetSequencesSQL(cur):
-    """Return SQL that will reset table sequences to match the data in them.
-    """
+    """Return SQL that will reset table sequences to match the data in them."""
     stmt = []
     for schema, sequence, table, column in listSequences(cur):
         if table is None or column is None:
             continue
         sql = "SELECT max(%s) FROM %s" % (
-                quoteIdentifier(column), quoteIdentifier(table)
-                )
+            quoteIdentifier(column),
+            quoteIdentifier(table),
+        )
         cur.execute(sql)
         last_value = cur.fetchone()[0]
         if last_value is None:
             last_value = 1
-            flag = 'false'
+            flag = "false"
         else:
-            flag = 'true'
+            flag = "true"
         sql = "setval(%s, %d, %s)" % (
-                quote('%s.%s' % (schema, sequence)), int(last_value), flag
-                )
+            quote("%s.%s" % (schema, sequence)),
+            int(last_value),
+            flag,
+        )
         stmt.append(sql)
     if stmt:
-        stmt = 'SELECT ' + ', '.join(stmt)
+        stmt = "SELECT " + ", ".join(stmt)
         return stmt
     else:
-        return ''
+        return ""
 
 
 def resetSequences(cur):
@@ -354,6 +349,7 @@ def resetSequences(cur):
     sql = generateResetSequencesSQL(cur)
     if sql:
         cur.execute(sql)
+
 
 # Regular expression used to parse row count estimate from EXPLAIN output
 _rows_re = re.compile(r"rows=(\d+)\swidth=")
@@ -399,12 +395,15 @@ def have_table(cur, table):
     >>> have_table(cur, 'atesttable')
     False
     """
-    cur.execute('''
+    cur.execute(
+        """
         SELECT count(*) > 0
         FROM pg_tables
         WHERE tablename=%s
-    ''' % str(quote(table)))
-    return (cur.fetchall()[0][0] != 0)
+    """
+        % str(quote(table))
+    )
+    return cur.fetchall()[0][0] != 0
 
 
 def table_has_column(cur, table, column):
@@ -423,14 +422,17 @@ def table_has_column(cur, table, column):
     >>> table_has_column(cur, 'atesttable', 'x')
     False
     """
-    cur.execute('''
+    cur.execute(
+        """
         SELECT count(*) > 0
         FROM pg_attribute
         JOIN pg_class ON pg_class.oid = attrelid
         WHERE relname=%s
             AND attname=%s
-    ''' % sqlvalues(table, column))
-    return (cur.fetchall()[0][0] != 0)
+    """
+        % sqlvalues(table, column)
+    )
+    return cur.fetchall()[0][0] != 0
 
 
 def drop_tables(cur, tables):
@@ -460,7 +462,7 @@ def drop_tables(cur, tables):
         tables = [tables]
 
     # This syntax requires postgres 8.2 or better
-    cur.execute("DROP TABLE IF EXISTS %s" % ','.join(tables))
+    cur.execute("DROP TABLE IF EXISTS %s" % ",".join(tables))
 
 
 def allow_sequential_scans(cur, permission):
@@ -494,9 +496,9 @@ def allow_sequential_scans(cur, permission):
     >>> print(cur.fetchall()[0][0])
     off
     """
-    permission_value = 'false'
+    permission_value = "false"
     if permission:
-        permission_value = 'true'
+        permission_value = "true"
 
     cur.execute("SET enable_seqscan=%s" % permission_value)
 
@@ -506,17 +508,20 @@ def all_tables_in_schema(cur, schema):
 
     :returns: A set of quoted, fully qualified table names.
     """
-    cur.execute("""
+    cur.execute(
+        """
         SELECT nspname, relname
         FROM pg_class, pg_namespace
         WHERE
             pg_class.relnamespace = pg_namespace.oid
             AND pg_namespace.nspname = %s
             AND pg_class.relkind = 'r'
-        """ % sqlvalues(schema))
+        """
+        % sqlvalues(schema)
+    )
     return {
-            fqn(namespace, tablename)
-            for namespace, tablename in cur.fetchall()}
+        fqn(namespace, tablename) for namespace, tablename in cur.fetchall()
+    }
 
 
 def all_sequences_in_schema(cur, schema):
@@ -524,17 +529,18 @@ def all_sequences_in_schema(cur, schema):
 
     :returns: A set of quoted, fully qualified table names.
     """
-    cur.execute("""
+    cur.execute(
+        """
         SELECT nspname, relname
         FROM pg_class, pg_namespace
         WHERE
             pg_class.relnamespace = pg_namespace.oid
             AND pg_namespace.nspname = %s
             AND pg_class.relkind = 'S'
-        """ % sqlvalues(schema))
-    return {
-            fqn(namespace, sequence)
-            for namespace, sequence in cur.fetchall()}
+        """
+        % sqlvalues(schema)
+    )
+    return {fqn(namespace, sequence) for namespace, sequence in cur.fetchall()}
 
 
 def fqn(namespace, name):
@@ -573,14 +579,21 @@ class ConnectionString:
     >>> repr(cs)
     'dbname=launchpad_dev user=foo'
     """
+
     CONNECTION_KEYS = [
-        'dbname', 'user', 'host', 'port', 'connect_timeout', 'sslmode']
+        "dbname",
+        "user",
+        "host",
+        "port",
+        "connect_timeout",
+        "sslmode",
+    ]
 
     def __init__(self, conn_str):
         if "'" in conn_str or "\\" in conn_str:
             raise AssertionError("quoted or escaped values are not supported")
 
-        if '=' not in conn_str:
+        if "=" not in conn_str:
             # Just a dbname
             for key in self.CONNECTION_KEYS:
                 setattr(self, key, None)
@@ -591,7 +604,7 @@ class ConnectionString:
             # be added after construction or not actually required
             # at all in some instances.
             for key in self.CONNECTION_KEYS:
-                match = re.search(r'%s=([^ ]+)' % key, conn_str)
+                match = re.search(r"%s=([^ ]+)" % key, conn_str)
                 if match is None:
                     setattr(self, key, None)
                 else:
@@ -602,20 +615,22 @@ class ConnectionString:
         for key in self.CONNECTION_KEYS:
             val = getattr(self, key, None)
             if val is not None:
-                params.append('%s=%s' % (key, val))
-        return ' '.join(params)
+                params.append("%s=%s" % (key, val))
+        return " ".join(params)
 
     def __eq__(self, other):
         return isinstance(other, ConnectionString) and all(
             getattr(self, key, None) == getattr(other, key, None)
-            for key in self.CONNECTION_KEYS)
+            for key in self.CONNECTION_KEYS
+        )
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
         return hash(
-            tuple(getattr(self, key, None) for key in self.CONNECTION_KEYS))
+            tuple(getattr(self, key, None) for key in self.CONNECTION_KEYS)
+        )
 
     def asPGCommandLineArgs(self):
         """Return a string suitable for the PostgreSQL standard tools
@@ -638,7 +653,7 @@ class ConnectionString:
             params.append("--username=%s" % self.user)
         if self.dbname is not None:
             params.append(self.dbname)
-        return ' '.join(params)
+        return " ".join(params)
 
     def asLPCommandLineArgs(self):
         """Return a string suitable for use by the LP tools using
@@ -655,13 +670,14 @@ class ConnectionString:
             params.append("--user=%s" % self.user)
         if self.dbname is not None:
             params.append("--dbname=%s" % self.dbname)
-        return ' '.join(params)
+        return " ".join(params)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import psycopg
-    con = psycopg.connect('dbname=launchpad_dev user=launchpad')
+
+    con = psycopg.connect("dbname=launchpad_dev user=launchpad")
     cur = con.cursor()
 
-    for table, column in listReferences(cur, 'person', 'id'):
-        print('%32s %32s' % (table, column))
+    for table, column in listReferences(cur, "person", "id"):
+        print("%32s %32s" % (table, column))

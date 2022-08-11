@@ -6,7 +6,7 @@
 __all__ = [
     "ISpecificationBranch",
     "ISpecificationBranchSet",
-    ]
+]
 
 from lazr.restful.declarations import (
     export_operation_as,
@@ -14,15 +14,9 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
-    )
-from lazr.restful.fields import (
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+)
+from lazr.restful.fields import Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
 from zope.schema import Int
 
 from lp import _
@@ -38,26 +32,38 @@ class ISpecificationBranch(Interface):
     id = Int(title=_("Specification Branch #"))
     specification = exported(
         ReferenceChoice(
-            title=_("Blueprint"), vocabulary="Specification",
+            title=_("Blueprint"),
+            vocabulary="Specification",
             required=True,
-            readonly=True, schema=ISpecification), as_of="beta")
+            readonly=True,
+            schema=ISpecification,
+        ),
+        as_of="beta",
+    )
     branch = exported(
         ReferenceChoice(
             title=_("Branch"),
             vocabulary="Branch",
             required=True,
-            schema=IBranch), as_of="beta")
+            schema=IBranch,
+        ),
+        as_of="beta",
+    )
 
     datecreated = Attribute("The date on which I was created.")
     registrant = exported(
         Reference(
-            schema=IPerson, readonly=True, required=True,
-            title=_("The person who linked the bug to the branch")),
-        as_of="beta")
+            schema=IPerson,
+            readonly=True,
+            required=True,
+            title=_("The person who linked the bug to the branch"),
+        ),
+        as_of="beta",
+    )
 
-    @export_operation_as('delete')
+    @export_operation_as("delete")
     @export_write_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def destroySelf():
         """Destroy this specification branch link"""
 

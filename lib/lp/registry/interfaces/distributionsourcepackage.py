@@ -4,47 +4,45 @@
 """Source package in Distribution interfaces."""
 
 __all__ = [
-    'IDistributionSourcePackage',
-    ]
+    "IDistributionSourcePackage",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import TextLine
 
 from lp import _
 from lp.answers.interfaces.questiontarget import IQuestionTarget
 from lp.app.interfaces.launchpad import IHeadingContext
-from lp.bugs.interfaces.bugtarget import (
-    IBugTarget,
-    IHasOfficialBugTags,
-    )
+from lp.bugs.interfaces.bugtarget import IBugTarget, IHasOfficialBugTags
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
-    )
+)
 from lp.code.interfaces.hasbranches import (
     IHasBranches,
     IHasCodeImports,
     IHasMergeProposals,
-    )
+)
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.role import IHasDrivers
 from lp.soyuz.enums import ArchivePurpose
 
 
-@exported_as_webservice_entry()
-class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
-                                 IHasMergeProposals, IHasOfficialBugTags,
-                                 IStructuralSubscriptionTarget,
-                                 IQuestionTarget, IHasDrivers,
-                                 IHasGitRepositories, IHasCodeImports):
+@exported_as_webservice_entry(as_of="beta")
+class IDistributionSourcePackage(
+    IHeadingContext,
+    IBugTarget,
+    IHasBranches,
+    IHasMergeProposals,
+    IHasOfficialBugTags,
+    IStructuralSubscriptionTarget,
+    IQuestionTarget,
+    IHasDrivers,
+    IHasGitRepositories,
+    IHasCodeImports,
+):
     """Represents a source package in a distribution.
 
     Create IDistributionSourcePackages by invoking
@@ -52,16 +50,20 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
     """
 
     distribution = exported(
-        Reference(IDistribution, title=_("The distribution.")))
+        Reference(IDistribution, title=_("The distribution."))
+    )
     sourcepackagename = Attribute("The source package name.")
 
     name = exported(
-        TextLine(title=_("The source package name as text"), readonly=True))
+        TextLine(title=_("The source package name as text"), readonly=True)
+    )
     display_name = exported(
-        TextLine(title=_("Display name for this package."), readonly=True))
-    displayname = Attribute('Display name (deprecated)')
+        TextLine(title=_("Display name for this package."), readonly=True)
+    )
+    displayname = Attribute("Display name (deprecated)")
     title = exported(
-        TextLine(title=_("Title for this package."), readonly=True))
+        TextLine(title=_("Title for this package."), readonly=True)
+    )
 
     upstream_product = exported(
         Reference(
@@ -71,39 +73,49 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
             # This is really an IProduct but we get a circular import
             # problem if we do that here. This is patched in
             # interfaces/product.py.
-            schema=Interface))
+            schema=Interface,
+        )
+    )
 
     is_official = Attribute(
-        'Is this source package officially in the distribution?')
+        "Is this source package officially in the distribution?"
+    )
 
     summary = Attribute(
-        'The summary of binary packages built from this package')
+        "The summary of binary packages built from this package"
+    )
 
     binary_names = Attribute(
-        'A list of binary package names built from this package.')
+        "A list of binary package names built from this package."
+    )
 
     currentrelease = Attribute(
         "The latest published `IDistributionSourcePackageRelease` of a "
         "source package with this name in the distribution or distroseries, "
         "or None if no source package with that name is published in this "
-        "distroseries.")
+        "distroseries."
+    )
 
     releases = Attribute(
         "The list of all releases of this source package "
-        "in this distribution.")
+        "in this distribution."
+    )
 
     development_version = Attribute(
         "The development version of this source package. 'None' if there is "
         "no such package -- this occurs when there is no current series for "
-        "the distribution.")
+        "the distribution."
+    )
 
     bug_count = Attribute(
         "Number of bugs matching the distribution and sourcepackagename "
-        "of the IDistributionSourcePackage.")
+        "of the IDistributionSourcePackage."
+    )
 
     po_message_count = Attribute(
         "Number of translations matching the distribution and "
-        "sourcepackagename of the IDistributionSourcePackage.")
+        "sourcepackagename of the IDistributionSourcePackage."
+    )
 
     drivers = Attribute("The drivers for the distribution.")
 
@@ -118,11 +130,13 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
 
     publishing_history = Attribute(
         "Return a list of publishing records for this source package in this "
-        "distribution.")
+        "distribution."
+    )
 
     current_publishing_records = Attribute(
         "Return a list of CURRENT publishing records for this source "
-        "package in this distribution.")
+        "package in this distribution."
+    )
 
     def getVersion(version):
         """Return the a DistributionSourcePackageRelease with the given
@@ -141,9 +155,11 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
         published.
         """
 
-    def findRelatedArchives(exclude_archive=None,
-                            archive_purpose=ArchivePurpose.PPA,
-                            required_karma=0):
+    def findRelatedArchives(
+        exclude_archive=None,
+        archive_purpose=ArchivePurpose.PPA,
+        required_karma=0,
+    ):
         """Return Archives which publish this source package.
 
         :param exclude_archive: an archive to exclude from the results,
@@ -171,7 +187,8 @@ class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
 
         See https://bugs.launchpad.net/soyuz/+bug/236922 for a plan
         on how this criteria will be centrally encoded.
-        """)
+        """
+    )
 
     def __eq__(other):
         """IDistributionSourcePackage comparison method.

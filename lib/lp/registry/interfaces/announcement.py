@@ -4,16 +4,13 @@
 """News item interfaces."""
 
 __all__ = [
-    'IAnnouncement',
-    'IHasAnnouncements',
-    'IMakesAnnouncements',
-    'IAnnouncementSet',
-    ]
+    "IAnnouncement",
+    "IHasAnnouncements",
+    "IMakesAnnouncements",
+    "IAnnouncementSet",
+]
 
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
 
 class IHasAnnouncements(Interface):
@@ -25,19 +22,18 @@ class IHasAnnouncements(Interface):
     def getAnnouncements(limit=5, published_only=True):
         """Return a list of announcements visible to this user.
 
-            :param limit: restrict the results to `limit` announcements.  If
-                None is used as the limit then a full list is returned.
+        :param limit: restrict the results to `limit` announcements.  If
+            None is used as the limit then a full list is returned.
 
-            :param published_only: when True the list will include only
-                published announcements.
+        :param published_only: when True the list will include only
+            published announcements.
         """
 
 
 class IMakesAnnouncements(IHasAnnouncements):
     """An interface for pillars that can make announcements."""
 
-    def announce(user, title, summary=None, url=None,
-                 publication_date=None):
+    def announce(user, title, summary=None, url=None, publication_date=None):
         """Create a Announcement for this project.
 
         The user is the person making the announcement. The publication date
@@ -58,9 +54,11 @@ class IAnnouncement(Interface):
     date_created = Attribute("The date this announcement was registered")
     registrant = Attribute("The person who registered this announcement")
     date_last_modified = Attribute(
-        "The date this announcement was last modified, if ever.")
+        "The date this announcement was last modified, if ever."
+    )
     date_updated = Attribute(
-        "The date created, or the date last modified, if ever")
+        "The date created, or the date last modified, if ever"
+    )
 
     # The potential pillars to which the Announcement could belong, of which
     # only 1 should not be None.
@@ -77,7 +75,8 @@ class IAnnouncement(Interface):
     date_announced = Attribute(
         "The date the announcement will be published, or the date it was "
         "published if it is in the past. The announcement will only be "
-        "published on that date if the 'active' flag is True.")
+        "published on that date if the 'active' flag is True."
+    )
     active = Attribute("Whether or not this announcement can be published.")
 
     # Emergent properties of the announcement.
@@ -85,7 +84,8 @@ class IAnnouncement(Interface):
     published = Attribute(
         "Whether or not this announcement is published. This is different "
         "to IAnnouncement.future because it factors in retraction, while "
-        "IAnnouncement.future looks only at the date_announced.")
+        "IAnnouncement.future looks only at the date_announced."
+    )
 
     def modify(title, summary, url):
         """Update the details of the announcement. This will record the
@@ -100,8 +100,8 @@ class IAnnouncement(Interface):
     def setPublicationDate(publication_date):
         """Set the publication date. The value passed is either:
 
-          None: publish it at some future date,
-          A datetime: publish it on the date given.
+        None: publish it at some future date,
+        A datetime: publish it on the date given.
         """
 
     def destroySelf():

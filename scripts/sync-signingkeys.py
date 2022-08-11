@@ -9,8 +9,8 @@ import _pythonpath  # noqa: F401
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.config import config
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = SyncSigningKeysScript(
-        'sync-signingkeys', dbuser=config.archivepublisher.dbuser)
+        "sync-signingkeys", dbuser=config.archivepublisher.dbuser
+    )
     script.lock_and_run()

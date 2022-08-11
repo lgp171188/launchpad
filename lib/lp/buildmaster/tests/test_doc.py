@@ -6,30 +6,26 @@
 import os
 
 from lp.services.testing import build_test_suite
-from lp.testing.layers import (
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 special = {
-    'builder.txt': LayeredDocFileSuite(
-        '../doc/builder.txt',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer),
-    'buildqueue.txt': LayeredDocFileSuite(
-        '../doc/buildqueue.txt',
-        setUp=setUp, tearDown=tearDown,
-        layer=LaunchpadFunctionalLayer),
-    }
+    "builder.rst": LayeredDocFileSuite(
+        "../doc/builder.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+    "buildqueue.rst": LayeredDocFileSuite(
+        "../doc/buildqueue.rst",
+        setUp=setUp,
+        tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
+    ),
+}
 
 
 def test_suite():

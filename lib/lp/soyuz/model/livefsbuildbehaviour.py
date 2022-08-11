@@ -7,8 +7,8 @@ Dispatches live filesystem build jobs to build-farm workers.
 """
 
 __all__ = [
-    'LiveFSBuildBehaviour',
-    ]
+    "LiveFSBuildBehaviour",
+]
 
 from twisted.internet import defer
 from zope.component import adapter
@@ -19,16 +19,14 @@ from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
-    )
+)
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.twistedsupport import cancel_on_timeout
-from lp.soyuz.adapters.archivedependencies import (
-    get_sources_list_for_building,
-    )
+from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.interfaces.livefs import LiveFSBuildArchiveOwnerMismatch
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
@@ -46,13 +44,17 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         das = self.build.distro_arch_series
         archname = das.architecturetag
         if self.build.unique_key:
-            archname += '_%s' % self.build.unique_key
+            archname += "_%s" % self.build.unique_key
 
         # Examples:
         #   buildlog_ubuntu_trusty_i386_ubuntu-desktop_FULLYBUILT.txt
-        return 'buildlog_%s_%s_%s_%s_%s.txt' % (
-            das.distroseries.distribution.name, das.distroseries.name,
-            archname, self.build.livefs.name, self.build.status.name)
+        return "buildlog_%s_%s_%s_%s_%s.txt" % (
+            das.distroseries.distribution.name,
+            das.distroseries.name,
+            archname,
+            self.build.livefs.name,
+            self.build.status.name,
+        )
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -67,7 +69,8 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         build = self.build
         if build.virtualized and not self._builder.virtualized:
             raise AssertionError(
-                "Attempt to build virtual item on a non-virtual builder.")
+                "Attempt to build virtual item on a non-virtual builder."
+            )
 
         if not build.archive.enabled:
             raise ArchiveDisabled(build.archive.displayname)
@@ -77,14 +80,17 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         chroot = build.distro_arch_series.getChroot(pocket=build.pocket)
         if chroot is None:
             raise CannotBuild(
-                "Missing chroot for %s" % build.distro_arch_series.displayname)
+                "Missing chroot for %s" % build.distro_arch_series.displayname
+            )
 
     def issueMacaroon(self):
         """See `IBuildFarmJobBehaviour`."""
         return cancel_on_timeout(
             self._authserver.callRemote(
-                "issueMacaroon", "livefs-build", "LiveFSBuild", self.build.id),
-            config.builddmaster.authentication_timeout)
+                "issueMacaroon", "livefs-build", "LiveFSBuild", self.build.id
+            ),
+            config.builddmaster.authentication_timeout,
+        )
 
     @defer.inlineCallbacks
     def extraBuildArgs(self, logger=None):
@@ -103,9 +109,12 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         args.update(base_args)
         args["pocket"] = build.pocket.name.lower()
         args["datestamp"] = build.version
-        args["archives"], args["trusted_keys"] = (
-            yield get_sources_list_for_building(
-                self, build.distro_arch_series, None, logger=logger))
+        (
+            args["archives"],
+            args["trusted_keys"],
+        ) = yield get_sources_list_for_building(
+            self, build.distro_arch_series, None, logger=logger
+        )
         return args
 
     def verifySuccessfulBuild(self):

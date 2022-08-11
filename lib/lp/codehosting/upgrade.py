@@ -10,7 +10,7 @@ Repositories that have no tree references are always upgraded to the standard
 actually have tree references are converted to RepositoryFormat2aSubtree.
 """
 
-__all__ = ['Upgrader']
+__all__ = ["Upgrader"]
 
 import os
 from shutil import rmtree
@@ -20,20 +20,11 @@ from breezy.bzr.bzrdir import BzrDir
 from breezy.bzr.groupcompress_repo import RepositoryFormat2aSubtree
 from breezy.controldir import format_registry
 from breezy.errors import UpToDateFormat
-from breezy.plugins.loom import (
-    NotALoom,
-    require_loom_branch,
-    )
+from breezy.plugins.loom import NotALoom, require_loom_branch
 from breezy.upgrade import upgrade
-from breezy.url_policy_open import (
-    BranchOpener,
-    SingleSchemePolicy,
-    )
+from breezy.url_policy_open import BranchOpener, SingleSchemePolicy
 
-from lp.code.bzr import (
-    branch_changed,
-    RepositoryFormat,
-    )
+from lp.code.bzr import RepositoryFormat, branch_changed
 from lp.code.model.branch import Branch
 from lp.codehosting.bzrutils import read_locked
 from lp.codehosting.vfs.branchfs import get_real_branch_path
@@ -51,12 +42,12 @@ class Upgrader:
         self.branch = branch
         self.bzr_branch = bzr_branch
         if self.bzr_branch is None:
-            opener = BranchOpener(SingleSchemePolicy('lp-internal'))
+            opener = BranchOpener(SingleSchemePolicy("lp-internal"))
             self.bzr_branch = opener.open(
-                self.branch.getInternalBzrUrl(), ignore_fallbacks=True)
+                self.branch.getInternalBzrUrl(), ignore_fallbacks=True
+            )
         self.target_dir = target_dir
-        self.target_subdir = os.path.join(
-            self.target_dir, str(self.branch.id))
+        self.target_subdir = os.path.join(self.target_dir, str(self.branch.id))
         self.logger = logger
 
     def get_bzrdir(self):
@@ -71,7 +62,7 @@ class Upgrader:
         :param branch: The bzr branch to upgrade
         :return: A Metadir format instance.
         """
-        format = format_registry.make_controldir('2a')
+        format = format_registry.make_controldir("2a")
         try:
             require_loom_branch(self.bzr_branch)
         except NotALoom:
@@ -79,8 +70,10 @@ class Upgrader:
         else:
             format._branch_format = self.bzr_branch._format
         if getattr(
-            self.bzr_branch.repository._format, 'supports_tree_reference',
-            False):
+            self.bzr_branch.repository._format,
+            "supports_tree_reference",
+            False,
+        ):
             if self.has_tree_references():
                 format._repository_format = RepositoryFormat2aSubtree()
         return format
@@ -90,12 +83,13 @@ class Upgrader:
         """Iterate through Upgraders given a target and logger."""
         store = IStore(Branch)
         branches = store.find(
-            Branch, Branch.repository_format != RepositoryFormat.BZR_CHK_2A)
+            Branch, Branch.repository_format != RepositoryFormat.BZR_CHK_2A
+        )
         branches.order_by(Branch.unique_name)
         for branch in branches:
             logger.info(
-                'Upgrading branch %s (%d)', branch.unique_name,
-                branch.id)
+                "Upgrading branch %s (%d)", branch.unique_name, branch.id
+            )
             yield cls(branch, target_dir, logger)
 
     @classmethod
@@ -111,7 +105,7 @@ class Upgrader:
                 upgrader.start_upgrade()
             except AlreadyUpgraded:
                 skipped += 1
-        logger.info('Skipped %d already-upgraded branches.', skipped)
+        logger.info("Skipped %d already-upgraded branches.", skipped)
 
     @classmethod
     def finish_all_upgrades(cls, target_dir, logger):
@@ -142,7 +136,8 @@ class Upgrader:
         self.mirror_branch(self.bzr_branch, bd)
         try:
             exceptions = upgrade(
-                bd.root_transport.base, self.get_target_format())
+                bd.root_transport.base, self.get_target_format()
+            )
             if exceptions:
                 if len(exceptions) == 1:
                     # Compatibility with historical behaviour
@@ -166,7 +161,7 @@ class Upgrader:
         :param upgrade_dir: The directory to create the repository in.
         :return: The created repository.
         """
-        self.logger.info('Converting repository with fetch.')
+        self.logger.info("Converting repository with fetch.")
         upgrade_dir = mkdtemp(dir=self.target_dir)
         try:
             bzrdir = BzrDir.create(upgrade_dir, self.get_target_format())
@@ -181,7 +176,7 @@ class Upgrader:
     def swap_in(self):
         """Swap the upgraded branch into place."""
         real_location = get_real_branch_path(self.branch.id)
-        backup_dir = os.path.join(self.target_subdir, 'backup.bzr')
+        backup_dir = os.path.join(self.target_subdir, "backup.bzr")
         os.rename(real_location, backup_dir)
         os.rename(self.target_subdir, real_location)
 
@@ -194,7 +189,7 @@ class Upgrader:
         revision_ids = repo.all_revision_ids()
         for tree in repo.revision_trees(revision_ids):
             for path, entry in tree.iter_entries_by_dir():
-                if entry.kind == 'tree-reference':
+                if entry.kind == "tree-reference":
                     return True
         return False
 

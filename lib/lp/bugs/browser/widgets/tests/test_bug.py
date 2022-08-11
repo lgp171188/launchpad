@@ -4,10 +4,7 @@
 from lp.bugs.browser.widgets.bug import BugTagsWidget
 from lp.bugs.interfaces.bugtarget import IHasOfficialBugTags
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -16,7 +13,7 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def get_widget(self, bug_target):
-        field = IHasOfficialBugTags['official_bug_tags']
+        field = IHasOfficialBugTags["official_bug_tags"]
         bound_field = field.bind(bug_target)
         request = LaunchpadTestRequest()
         return BugTagsWidget(bound_field, None, request)
@@ -26,20 +23,20 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         project_group = self.factory.makeProject()
         widget = self.get_widget(project_group)
         js = widget.official_tags_js
-        self.assertEqual('var official_tags = [];', js)
+        self.assertEqual("var official_tags = [];", js)
 
     def test_official_tags_js_product_without_tags(self):
         # Products without tags have an empty list.
         product = self.factory.makeProduct()
         widget = self.get_widget(product)
         js = widget.official_tags_js
-        self.assertEqual('var official_tags = [];', js)
+        self.assertEqual("var official_tags = [];", js)
 
     def test_official_tags_js_product_with_tags(self):
         # Products with tags have a list of tags.
         product = self.factory.makeProduct()
         with person_logged_in(product.owner):
-            product.official_bug_tags = ['cows', 'pigs', 'sheep']
+            product.official_bug_tags = ["cows", "pigs", "sheep"]
         widget = self.get_widget(product)
         js = widget.official_tags_js
         self.assertEqual('var official_tags = ["cows", "pigs", "sheep"];', js)
@@ -49,13 +46,13 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         widget = self.get_widget(distribution)
         js = widget.official_tags_js
-        self.assertEqual('var official_tags = [];', js)
+        self.assertEqual("var official_tags = [];", js)
 
     def test_official_tags_js_distribution_with_tags(self):
         # Distributions with tags have a list of tags.
         distribution = self.factory.makeDistribution()
         with person_logged_in(distribution.owner):
-            distribution.official_bug_tags = ['cows', 'pigs', 'sheep']
+            distribution.official_bug_tags = ["cows", "pigs", "sheep"]
         widget = self.get_widget(distribution)
         js = widget.official_tags_js
         self.assertEqual('var official_tags = ["cows", "pigs", "sheep"];', js)
@@ -65,15 +62,16 @@ class BugTagsWidgetTestCase(TestCaseWithFactory):
         # Products with tags have a list of tags.
         product = self.factory.makeProduct()
         with person_logged_in(product.owner):
-            product.official_bug_tags = ['cows', 'pigs', 'sheep']
+            product.official_bug_tags = ["cows", "pigs", "sheep"]
         widget = self.get_widget(product)
         markup = widget()
         self.assertIn(
-            '<input class="textType" id="field.official_bug_tags"', markup)
+            '<input class="textType" id="field.official_bug_tags"', markup
+        )
         self.assertIn('<a href="/+help-bugs/tag-search.html"', markup)
         self.assertIn('var official_tags = ["cows", "pigs", "sheep"];', markup)
+        self.assertIn("Y.lp.bugs.tags_entry.setup_tag_complete(", markup)
         self.assertIn(
-            'Y.lp.bugs.tags_entry.setup_tag_complete(', markup)
-        self.assertIn(
-            """'input[id="field.official_bug_tags"][type="text"]',""", markup)
+            """'input[id="field.official_bug_tags"][type="text"]',""", markup
+        )
         self.assertIn("official_tags)", markup)

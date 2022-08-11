@@ -8,13 +8,13 @@ files representing a source uploaded.
 """
 
 __all__ = [
-    'DSCFile',
-    'DSCUploadedFile',
-    'findFile',
-    'find_changelog',
-    'find_copyright',
-    'SignableTagFile',
-    ]
+    "DSCFile",
+    "DSCUploadedFile",
+    "findFile",
+    "find_changelog",
+    "find_copyright",
+    "SignableTagFile",
+]
 
 import errno
 import glob
@@ -24,60 +24,51 @@ import shutil
 import tempfile
 import warnings
 
-from debian.deb822 import (
-    Deb822Dict,
-    PkgRelation,
-    )
 import six
+from debian.deb822 import Deb822Dict, PkgRelation
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.nascentuploadfile import (
     NascentUploadFile,
     SourceUploadFile,
-    )
+)
 from lp.archiveuploader.tagfiles import (
-    parse_tagfile_content,
     TagFileParseError,
-    )
+    parse_tagfile_content,
+)
 from lp.archiveuploader.utils import (
-    determine_source_file_type,
     DpkgSourceError,
+    ParseMaintError,
+    UploadError,
+    UploadWarning,
+    determine_source_file_type,
     extract_dpkg_source,
     get_source_file_extension,
     parse_and_merge_file_lists,
     parse_maintainer_bytes,
-    ParseMaintError,
     re_is_component_orig_tar_ext,
     re_is_component_orig_tar_ext_sig,
     re_issource,
     re_valid_pkg_name,
     re_valid_version,
-    UploadError,
-    UploadWarning,
-    )
+)
 from lp.registry.interfaces.gpg import IGPGKeySet
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    PersonCreationRationale,
-    )
+from lp.registry.interfaces.person import IPersonSet, PersonCreationRationale
 from lp.registry.interfaces.sourcepackage import (
     SourcePackageFileType,
     SourcePackageType,
-    )
+)
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.encoding import guess as guess_encoding
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
     GPGVerificationError,
     IGPGHandler,
-    )
+)
 from lp.services.identity.interfaces.emailaddress import InvalidEmailAddress
 from lp.services.librarian.utils import copy_and_close
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    SourcePackageFormat,
-    )
+from lp.soyuz.enums import ArchivePurpose, SourcePackageFormat
 
 
 def unpack_source(dsc_filepath):
@@ -105,10 +96,11 @@ def cleanup_unpacked_dir(unpacked_dir):
     try:
         shutil.rmtree(unpacked_dir)
     except OSError as error:
-        if errno.errorcode[error.errno] != 'EACCES':
+        if errno.errorcode[error.errno] != "EACCES":
             raise UploadError(
-                "couldn't remove tmp dir %s: code %s" % (
-                unpacked_dir, error.errno))
+                "couldn't remove tmp dir %s: code %s"
+                % (unpacked_dir, error.errno)
+            )
         else:
             result = os.system("chmod -R u+rwx " + unpacked_dir)
             if result != 0:
@@ -138,11 +130,10 @@ class SignableTagFile:
         or if signature verification was requested but failed.
         """
         try:
-            with open(self.filepath, 'rb') as f:
+            with open(self.filepath, "rb") as f:
                 self.raw_content = f.read()
         except OSError as error:
-            raise UploadError(
-                "Unable to read %s: %s" % (self.filename, error))
+            raise UploadError("Unable to read %s: %s" % (self.filename, error))
 
         if verify_signature:
             # We set self.signingkey regardless of whether the key is
@@ -151,28 +142,34 @@ class SignableTagFile:
             # UploadError is enough to prevent the upload being accepted.
             try:
                 self.signingkey, self.parsed_content = self._verifySignature(
-                    self.raw_content, self.filepath)
+                    self.raw_content, self.filepath
+                )
                 if not self.signingkey.active:
                     raise UploadError(
-                        "File %s is signed with a deactivated key %s" %
-                        (self.filepath, self.signingkey.fingerprint))
+                        "File %s is signed with a deactivated key %s"
+                        % (self.filepath, self.signingkey.fingerprint)
+                    )
             except GPGKeyExpired as e:
                 # This may theoretically return None, but the "expired"
                 # error will take precedence anyway.
                 self.signingkey = getUtility(IGPGKeySet).getByFingerprint(
-                    e.key.fingerprint)
+                    e.key.fingerprint
+                )
                 raise UploadError(
-                    "File %s is signed with an expired key %s" %
-                    (self.filepath, e.key.fingerprint))
+                    "File %s is signed with an expired key %s"
+                    % (self.filepath, e.key.fingerprint)
+                )
         else:
             self.logger.debug("%s can be unsigned." % self.filename)
             self.parsed_content = self.raw_content
         try:
             self._dict = parse_tagfile_content(
-                self.parsed_content, filename=self.filepath)
+                self.parsed_content, filename=self.filepath
+            )
         except TagFileParseError as error:
             raise UploadError(
-                "Unable to parse %s: %s" % (self.filename, error))
+                "Unable to parse %s: %s" % (self.filename, error)
+            )
 
     def _verifySignature(self, content, filename):
         """Verify the signature on the file content.
@@ -184,20 +181,23 @@ class SignableTagFile:
         cleartext data.
         """
         self.logger.debug(
-            "Verifying signature on %s" % os.path.basename(filename))
+            "Verifying signature on %s" % os.path.basename(filename)
+        )
 
         try:
             sig = getUtility(IGPGHandler).getVerifiedSignatureResilient(
-                content)
+                content
+            )
         except GPGVerificationError as error:
             raise UploadError(
-                "GPG verification of %s failed: %s" % (
-                filename, str(error)))
+                "GPG verification of %s failed: %s" % (filename, str(error))
+            )
 
         key = getUtility(IGPGKeySet).getByFingerprint(sig.fingerprint)
         if key is None:
-            raise UploadError("Signing key %s not registered in launchpad."
-                              % sig.fingerprint)
+            raise UploadError(
+                "Signing key %s not registered in launchpad." % sig.fingerprint
+            )
 
         return (key, sig.plain_data)
 
@@ -223,31 +223,39 @@ class SignableTagFile:
             raise UploadError("Invalid Maintainer.")
 
         if person is None and self.policy.create_people:
-            package = six.ensure_text(self._dict['Source'])
-            version = six.ensure_text(self._dict['Version'])
+            package = six.ensure_text(self._dict["Source"])
+            version = six.ensure_text(self._dict["Version"])
             if self.policy.distroseries and self.policy.pocket:
-                policy_suite = ('%s/%s' % (self.policy.distroseries.name,
-                                           self.policy.pocket.name))
+                policy_suite = "%s/%s" % (
+                    self.policy.distroseries.name,
+                    self.policy.pocket.name,
+                )
             else:
-                policy_suite = '(unknown)'
+                policy_suite = "(unknown)"
             try:
                 person = getUtility(IPersonSet).ensurePerson(
-                    email, name, PersonCreationRationale.SOURCEPACKAGEUPLOAD,
-                    comment=('when the %s_%s package was uploaded to %s'
-                             % (package, version, policy_suite)))
+                    email,
+                    name,
+                    PersonCreationRationale.SOURCEPACKAGEUPLOAD,
+                    comment=(
+                        "when the %s_%s package was uploaded to %s"
+                        % (package, version, policy_suite)
+                    ),
+                )
             except InvalidEmailAddress:
                 self.logger.info("Invalid email address: '%s'", email)
                 person = None
 
         if person is None:
-            raise UploadError("Unable to identify '%s':<%s> in launchpad"
-                              % (name, email))
+            raise UploadError(
+                "Unable to identify '%s':<%s> in launchpad" % (name, email)
+            )
 
         return {
             "name": name,
             "email": email,
             "person": person,
-            }
+        }
 
 
 class DSCFile(SourceUploadFile, SignableTagFile):
@@ -259,20 +267,23 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         "Binary",
         "Maintainer",
         "Architecture",
-        "Files"}
+        "Files",
+    }
 
-    known_fields = mandatory_fields.union({
-        "Build-Depends",
-        "Build-Depends-Indep",
-        "Build-Conflicts",
-        "Build-Conflicts-Indep",
-        "Checksums-Sha1",
-        "Checksums-Sha256",
-        "Checksums-Sha512",
-        "Format",
-        "Homepage",
-        "Standards-Version",
-        })
+    known_fields = mandatory_fields.union(
+        {
+            "Build-Depends",
+            "Build-Depends-Indep",
+            "Build-Conflicts",
+            "Build-Conflicts-Indep",
+            "Checksums-Sha1",
+            "Checksums-Sha256",
+            "Checksums-Sha512",
+            "Format",
+            "Homepage",
+            "Standards-Version",
+        }
+    )
 
     # Note that files is actually only set inside verify().
     files = None
@@ -280,8 +291,19 @@ class DSCFile(SourceUploadFile, SignableTagFile):
     copyright = None
     changelog = None
 
-    def __init__(self, filepath, checksums, size, component_and_section,
-                 priority, package, version, changes, policy, logger):
+    def __init__(
+        self,
+        filepath,
+        checksums,
+        size,
+        component_and_section,
+        priority,
+        package,
+        version,
+        changes,
+        policy,
+        logger,
+    ):
         """Construct a DSCFile instance.
 
         This takes all NascentUploadFile constructor parameters plus package
@@ -293,29 +315,41 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         from lp.archiveuploader.nascentupload import EarlyReturnUploadError
 
         SourceUploadFile.__init__(
-            self, filepath, checksums, size, component_and_section, priority,
-            package, version, changes, policy, logger)
+            self,
+            filepath,
+            checksums,
+            size,
+            component_and_section,
+            priority,
+            package,
+            version,
+            changes,
+            policy,
+            logger,
+        )
         self.parse(verify_signature=not policy.unsigned_dsc_ok)
 
         self.logger.debug("Performing DSC verification.")
         for mandatory_field in self.mandatory_fields:
             if mandatory_field not in self._dict:
                 raise UploadError(
-                    "Unable to find mandatory field %s in %s" % (
-                    mandatory_field, self.filename))
+                    "Unable to find mandatory field %s in %s"
+                    % (mandatory_field, self.filename)
+                )
 
-        self.maintainer = self.parseAddress(self._dict['Maintainer'])
+        self.maintainer = self.parseAddress(self._dict["Maintainer"])
 
         # If format is not present, assume 1.0. At least one tool in
         # the wild generates dsc files with format missing, and we need
         # to accept them.
-        if 'Format' not in self._dict:
-            self._dict['Format'] = b"1.0"
+        if "Format" not in self._dict:
+            self._dict["Format"] = b"1.0"
 
         if self.format is None:
             raise EarlyReturnUploadError(
-                "Unsupported source format: %s" %
-                six.ensure_str(self._dict['Format']))
+                "Unsupported source format: %s"
+                % six.ensure_str(self._dict["Format"])
+            )
 
     #
     # Useful properties.
@@ -323,31 +357,32 @@ class DSCFile(SourceUploadFile, SignableTagFile):
     @property
     def source(self):
         """Return the DSC source name."""
-        return six.ensure_text(self._dict['Source'])
+        return six.ensure_text(self._dict["Source"])
 
     @property
     def dsc_version(self):
         """Return the DSC source version."""
-        return six.ensure_text(self._dict['Version'])
+        return six.ensure_text(self._dict["Version"])
 
     @property
     def format(self):
         """Return the DSC format."""
         try:
             return SourcePackageFormat.getTermByToken(
-                six.ensure_text(self._dict['Format'])).value
+                six.ensure_text(self._dict["Format"])
+            ).value
         except LookupError:
             return None
 
     @property
     def architecture(self):
         """Return the DSC source architecture."""
-        return six.ensure_text(self._dict['Architecture'])
+        return six.ensure_text(self._dict["Architecture"])
 
     @property
     def binary(self):
         """Return the DSC claimed binary line."""
-        return six.ensure_text(self._dict['Binary'])
+        return six.ensure_text(self._dict["Binary"])
 
     #
     # DSC file checks.
@@ -359,14 +394,13 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         all exceptions that are generated while processing DSC file checks.
         """
 
-        for error in SourceUploadFile.verify(self):
-            yield error
+        yield from SourceUploadFile.verify(self)
 
         # Check size and checksum of the DSC file itself
         try:
             self.checkSizeAndCheckSum()
-        except UploadError as error:
-            yield error
+        except UploadError as e:
+            yield e
 
         try:
             raw_files = parse_and_merge_file_lists(self._dict, changes=False)
@@ -381,49 +415,58 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 # DSC files only really hold on references to source
                 # files; they are essentially a description of a source
                 # package. Anything else is crack.
-                yield UploadError("%s: File %s does not look sourceful." % (
-                                  self.filename, filename))
+                yield UploadError(
+                    "%s: File %s does not look sourceful."
+                    % (self.filename, filename)
+                )
                 continue
             filepath = os.path.join(self.dirname, filename)
             try:
                 file_instance = DSCUploadedFile(
-                    filepath, hashes, size, self.policy, self.logger)
-            except UploadError as error:
-                yield error
+                    filepath, hashes, size, self.policy, self.logger
+                )
+            except UploadError as e:
+                yield e
             else:
                 files.append(file_instance)
         self.files = files
 
         if not re_valid_pkg_name.match(self.source):
             yield UploadError(
-                "%s: invalid source name %s" % (self.filename, self.source))
+                "%s: invalid source name %s" % (self.filename, self.source)
+            )
         if not re_valid_version.match(self.dsc_version):
             yield UploadError(
-                "%s: invalid version %s" % (self.filename, self.dsc_version))
+                "%s: invalid version %s" % (self.filename, self.dsc_version)
+            )
 
         if not self.policy.distroseries.isSourcePackageFormatPermitted(
-            self.format):
+            self.format
+        ):
             yield UploadError(
-                "%s: format '%s' is not permitted in %s." %
-                (self.filename, self.format, self.policy.distroseries.name))
+                "%s: format '%s' is not permitted in %s."
+                % (self.filename, self.format, self.policy.distroseries.name)
+            )
 
         # Validate the build dependencies
-        for field_name in ['Build-Depends', 'Build-Depends-Indep']:
+        for field_name in ["Build-Depends", "Build-Depends-Indep"]:
             field = self._dict.get(field_name, None)
             if field is not None:
                 field = six.ensure_text(field)
                 if field.startswith("ARRAY"):
                     yield UploadError(
                         "%s: invalid %s field produced by a broken version "
-                        "of dpkg-dev (1.10.11)" % (self.filename, field_name))
+                        "of dpkg-dev (1.10.11)" % (self.filename, field_name)
+                    )
                 try:
                     with warnings.catch_warnings():
                         warnings.simplefilter("error")
                         PkgRelation.parse_relations(field)
-                except Warning as error:
+                except Warning as e:
                     yield UploadError(
                         "%s: invalid %s field; cannot be parsed by deb822: %s"
-                        % (self.filename, field_name, error))
+                        % (self.filename, field_name, e)
+                    )
 
         # Verify if version declared in changesfile is the same than that
         # in DSC (including epochs).
@@ -431,10 +474,10 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             yield UploadError(
                 "%s: version ('%s') in .dsc does not match version "
                 "('%s') in .changes."
-                % (self.filename, self.dsc_version, self.version))
+                % (self.filename, self.dsc_version, self.version)
+            )
 
-        for error in self.checkFiles():
-            yield error
+        yield from self.checkFiles()
 
     def _getFileByName(self, filename):
         """Return the corresponding file reference in the policy context.
@@ -457,13 +500,16 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
         :raise: `NotFoundError` when the wanted file could not be found.
         """
-        if (self.policy.archive.purpose == ArchivePurpose.PPA and
-            determine_source_file_type(filename) in (
+        if (
+            self.policy.archive.purpose == ArchivePurpose.PPA
+            and determine_source_file_type(filename)
+            in (
                 SourcePackageFileType.ORIG_TARBALL,
                 SourcePackageFileType.COMPONENT_ORIG_TARBALL,
                 SourcePackageFileType.ORIG_TARBALL_SIGNATURE,
                 SourcePackageFileType.COMPONENT_ORIG_TARBALL_SIGNATURE,
-                )):
+            )
+        ):
             archives = [self.policy.archive, self.policy.distro.main_archive]
         else:
             archives = [self.policy.archive]
@@ -475,7 +521,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             try:
                 library_file = archive.getFileByName(filename)
                 self.logger.debug(
-                    "%s found in %s" % (filename, archive.displayname))
+                    "%s found in %s" % (filename, archive.displayname)
+                )
                 return library_file, archive
             except NotFoundError:
                 pass
@@ -495,7 +542,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             SourcePackageFileType.ORIG_TARBALL_SIGNATURE: 0,
             SourcePackageFileType.DEBIAN_TARBALL: 0,
             SourcePackageFileType.NATIVE_TARBALL: 0,
-            }
+        }
         component_orig_tar_counts = {}
         component_orig_tar_signature_counts = {}
         bzip2_count = 0
@@ -506,36 +553,40 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             file_type = determine_source_file_type(sub_dsc_file.filename)
 
             if file_type is None:
-                yield UploadError('Unknown file: ' + sub_dsc_file.filename)
+                yield UploadError("Unknown file: " + sub_dsc_file.filename)
                 continue
 
             if file_type == SourcePackageFileType.COMPONENT_ORIG_TARBALL:
                 # Split the count by component name.
                 component = re_is_component_orig_tar_ext.match(
-                    get_source_file_extension(sub_dsc_file.filename)).group(1)
+                    get_source_file_extension(sub_dsc_file.filename)
+                ).group(1)
                 if component not in component_orig_tar_counts:
                     component_orig_tar_counts[component] = 0
                 component_orig_tar_counts[component] += 1
             elif (
-                file_type ==
-                    SourcePackageFileType.COMPONENT_ORIG_TARBALL_SIGNATURE):
+                file_type
+                == SourcePackageFileType.COMPONENT_ORIG_TARBALL_SIGNATURE
+            ):
                 # Split the count by component name.
                 component = re_is_component_orig_tar_ext_sig.match(
-                    get_source_file_extension(sub_dsc_file.filename)).group(1)
+                    get_source_file_extension(sub_dsc_file.filename)
+                ).group(1)
                 if component not in component_orig_tar_signature_counts:
                     component_orig_tar_signature_counts[component] = 0
                 component_orig_tar_signature_counts[component] += 1
             else:
                 file_type_counts[file_type] += 1
 
-            if sub_dsc_file.filename.endswith('.bz2'):
+            if sub_dsc_file.filename.endswith(".bz2"):
                 bzip2_count += 1
-            elif sub_dsc_file.filename.endswith('.xz'):
+            elif sub_dsc_file.filename.endswith(".xz"):
                 xz_count += 1
 
             try:
                 library_file, file_archive = self._getFileByName(
-                    sub_dsc_file.filename)
+                    sub_dsc_file.filename
+                )
             except NotFoundError:
                 library_file = None
                 file_archive = None
@@ -545,13 +596,14 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 # dismiss. It prevents us from having scary duplicated
                 # filenames in Librarian and misapplied files in archive,
                 # fixes bug # 38636 and friends.
-                if sub_dsc_file.checksums['MD5'] != library_file.content.md5:
+                if sub_dsc_file.checksums["MD5"] != library_file.content.md5:
                     yield UploadError(
                         "File %s already exists in %s, but uploaded version "
                         "has different contents. See more information about "
                         "this error in "
-                        "https://help.launchpad.net/Packaging/UploadErrors." %
-                        (sub_dsc_file.filename, file_archive.displayname))
+                        "https://help.launchpad.net/Packaging/UploadErrors."
+                        % (sub_dsc_file.filename, file_archive.displayname)
+                    )
                     files_missing = True
                     continue
 
@@ -562,13 +614,15 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                     # context Distribution.
                     yield UploadError(
                         "Unable to find %s in upload or distribution."
-                        % (sub_dsc_file.filename))
+                        % (sub_dsc_file.filename)
+                    )
                     files_missing = True
                     continue
 
                 # Pump the file through.
-                self.logger.debug("Pumping %s out of the librarian" % (
-                    sub_dsc_file.filename))
+                self.logger.debug(
+                    "Pumping %s out of the librarian" % (sub_dsc_file.filename)
+                )
                 library_file.open()
                 target_file = open(sub_dsc_file.filepath, "wb")
                 copy_and_close(library_file, target_file)
@@ -581,17 +635,24 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             file_checker = format_to_file_checker_map[self.format]
         except KeyError:
             raise AssertionError(
-                "No file checker for source format %s." % self.format)
+                "No file checker for source format %s." % self.format
+            )
 
         for error in file_checker(
-            self.filename, file_type_counts, component_orig_tar_counts,
-            component_orig_tar_signature_counts, bzip2_count, xz_count):
+            self.filename,
+            file_type_counts,
+            component_orig_tar_counts,
+            component_orig_tar_signature_counts,
+            bzip2_count,
+            xz_count,
+        ):
             yield error
 
         if files_missing:
             yield UploadError(
                 "Files specified in DSC are broken or missing, "
-                "skipping package unpack verification.")
+                "skipping package unpack verification."
+            )
         else:
             for error in self.unpackAndCheckSource():
                 # Pass on errors found when unpacking the source.
@@ -599,8 +660,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
     def unpackAndCheckSource(self):
         """Verify uploaded source using dpkg-source."""
-        self.logger.debug(
-            "Verifying uploaded source package by unpacking it.")
+        self.logger.debug("Verifying uploaded source package by unpacking it.")
 
         try:
             unpacked_dir = unpack_source(self.filepath)
@@ -608,7 +668,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             yield UploadError(
                 "dpkg-source failed for %s [return: %s]\n"
                 "[dpkg-source output: %s]"
-                % (self.filename, e.result, e.output))
+                % (self.filename, e.result, e.output)
+            )
             return
 
         try:
@@ -617,12 +678,15 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
             # Check if 'dpkg-source' created only one directory.
             temp_directories = [
-                entry.name for entry in os.scandir(unpacked_dir)
-                if entry.is_dir()]
+                entry.name
+                for entry in os.scandir(unpacked_dir)
+                if entry.is_dir()
+            ]
             if len(temp_directories) > 1:
                 yield UploadError(
-                    'Unpacked source contains more than one directory: %r'
-                    % temp_directories)
+                    "Unpacked source contains more than one directory: %r"
+                    % temp_directories
+                )
 
             # XXX cprov 20070713: We should access only the expected directory
             # name (<sourcename>-<no_epoch(no_revision(version))>).
@@ -658,8 +722,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         """
         # Organize all the parameters requiring encoding transformation.
         pending = self._dict.copy()
-        pending['simulated_changelog'] = self.changes.simulated_changelog
-        pending['copyright'] = self.copyright
+        pending["simulated_changelog"] = self.changes.simulated_changelog
+        pending["copyright"] = self.copyright
 
         # We have no way of knowing what encoding the original copyright
         # file is in, unfortunately, and there is no standard, so guess.
@@ -681,13 +745,16 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             len(self.changelog),
             io.BytesIO(self.changelog),
             "text/x-debian-source-changelog",
-            restricted=self.policy.archive.private)
+            restricted=self.policy.archive.private,
+        )
 
-        source_name = getUtility(
-            ISourcePackageNameSet).getOrCreateByName(self.source)
+        source_name = getUtility(ISourcePackageNameSet).getOrCreateByName(
+            self.source
+        )
 
-        user_defined_fields = self.extractUserDefinedFields([
-            (field, encoded[field]) for field in self._dict])
+        user_defined_fields = self.extractUserDefinedFields(
+            [(field, encoded[field]) for field in self._dict]
+        )
 
         if self.changes.buildinfo is not None:
             buildinfo_lfa = self.changes.buildinfo.storeInDatabase()
@@ -698,32 +765,32 @@ class DSCFile(SourceUploadFile, SignableTagFile):
             sourcepackagename=source_name,
             version=self.dsc_version,
             format=SourcePackageType.DPKG,
-            maintainer=self.maintainer['person'],
-            builddepends=encoded.get('Build-Depends', ''),
-            builddependsindep=encoded.get('Build-Depends-Indep', ''),
-            build_conflicts=encoded.get('Build-Conflicts', ''),
-            build_conflicts_indep=encoded.get('Build-Conflicts-Indep', ''),
-            architecturehintlist=encoded.get('Architecture', ''),
-            creator=self.changes.changed_by['person'],
+            maintainer=self.maintainer["person"],
+            builddepends=encoded.get("Build-Depends", ""),
+            builddependsindep=encoded.get("Build-Depends-Indep", ""),
+            build_conflicts=encoded.get("Build-Conflicts", ""),
+            build_conflicts_indep=encoded.get("Build-Conflicts-Indep", ""),
+            architecturehintlist=encoded.get("Architecture", ""),
+            creator=self.changes.changed_by["person"],
             urgency=self.changes.converted_urgency,
-            homepage=encoded.get('Homepage'),
+            homepage=encoded.get("Homepage"),
             dsc=encoded_raw_content,
             dscsigningkey=self.signingkey,
-            dsc_maintainer_rfc822=encoded['Maintainer'],
-            dsc_format=encoded['Format'],
-            dsc_binaries=encoded['Binary'],
-            dsc_standards_version=encoded.get('Standards-Version'),
+            dsc_maintainer_rfc822=encoded["Maintainer"],
+            dsc_format=encoded["Format"],
+            dsc_binaries=encoded["Binary"],
+            dsc_standards_version=encoded.get("Standards-Version"),
             component=self.component,
             changelog=changelog_lfa,
-            changelog_entry=encoded.get('simulated_changelog'),
+            changelog_entry=encoded.get("simulated_changelog"),
             section=self.section,
             archive=self.policy.archive,
             source_package_recipe_build=build,
-            copyright=encoded.get('copyright'),
+            copyright=encoded.get("copyright"),
             # dateuploaded by default is UTC:now in the database
             user_defined_fields=user_defined_fields,
             buildinfo=buildinfo_lfa,
-            )
+        )
 
         # SourcePackageFiles should contain also the DSC
         source_files = self.files + [self]
@@ -734,7 +801,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                     uploaded_file.size,
                     uploaded_file_obj,
                     uploaded_file.content_type,
-                    restricted=self.policy.archive.private)
+                    restricted=self.policy.archive.private,
+                )
             release.addFile(library_file)
 
         return release
@@ -756,8 +824,15 @@ class DSCUploadedFile(NascentUploadFile):
     def __init__(self, filepath, checksums, size, policy, logger):
         component_and_section = priority = "--no-value--"
         NascentUploadFile.__init__(
-            self, filepath, checksums, size, component_and_section,
-            priority, policy, logger)
+            self,
+            filepath,
+            checksums,
+            size,
+            component_and_section,
+            priority,
+            policy,
+            logger,
+        )
 
     def verify(self):
         """Check Sub DSCFile mentioned size & checksum."""
@@ -783,14 +858,12 @@ def findFile(source_dir, filename):
         if not os.path.exists(fullpath):
             continue
         if os.path.islink(fullpath):
-            raise UploadError(
-                "Symbolic link for %s not allowed" % filename)
+            raise UploadError("Symbolic link for %s not allowed" % filename)
         # Anything returned by this method should be less than 10MiB since it
         # will be stored in the database assuming the source package isn't
         # rejected before hand
         if os.stat(fullpath).st_size > 10485760:
-            raise UploadError(
-                "%s file too large, 10MiB max" % filename)
+            raise UploadError("%s file too large, 10MiB max" % filename)
         else:
             return fullpath
     return None
@@ -803,7 +876,7 @@ def find_copyright(source_dir, logger):
     :param logger: A logger object for debug output.
     :return: Contents of copyright file
     """
-    copyright_file = findFile(source_dir, 'debian/copyright')
+    copyright_file = findFile(source_dir, "debian/copyright")
     if copyright_file is None:
         raise UploadWarning("No copyright file found.")
 
@@ -823,20 +896,25 @@ def find_changelog(source_dir, logger):
     :param logger: A logger object for debug output.
     :return: Changelog contents
     """
-    changelog_file = findFile(source_dir, 'debian/changelog')
+    changelog_file = findFile(source_dir, "debian/changelog")
     if changelog_file is None:
         # Policy requires debian/changelog to always exist.
         raise UploadError("No changelog file found.")
 
-    # Move the changelog file out of the package direcotry
+    # Move the changelog file out of the package directory
     logger.debug("Found changelog")
     with open(changelog_file, "rb") as changelog:
         return changelog.read()
 
 
-def check_format_1_0_files(filename, file_type_counts,
-                           component_counts, component_signature_counts,
-                           bzip2_count, xz_count):
+def check_format_1_0_files(
+    filename,
+    file_type_counts,
+    component_counts,
+    component_signature_counts,
+    bzip2_count,
+    xz_count,
+):
     """Check that the given counts of each file type suit format 1.0.
 
     A 1.0 source must be native (with only one tar.gz), or have an orig.tar.gz
@@ -845,12 +923,12 @@ def check_format_1_0_files(filename, file_type_counts,
     """
     if bzip2_count > 0:
         yield UploadError(
-            "%s: is format 1.0 but uses bzip2 compression."
-            % filename)
+            "%s: is format 1.0 but uses bzip2 compression." % filename
+        )
     if xz_count > 0:
         yield UploadError(
-            "%s: is format 1.0 but uses xz compression."
-            % filename)
+            "%s: is format 1.0 but uses xz compression." % filename
+        )
 
     valid_file_type_counts = [
         {
@@ -876,16 +954,25 @@ def check_format_1_0_files(filename, file_type_counts,
         },
     ]
 
-    if (file_type_counts not in valid_file_type_counts or
-        len(component_counts) > 0 or len(component_signature_counts) > 0):
+    if (
+        file_type_counts not in valid_file_type_counts
+        or len(component_counts) > 0
+        or len(component_signature_counts) > 0
+    ):
         yield UploadError(
             "%s: must have exactly one tar.gz, or an orig.tar.gz and diff.gz"
-            % filename)
+            % filename
+        )
 
 
-def check_format_3_0_native_files(filename, file_type_counts,
-                                  component_counts, component_signature_counts,
-                                  bzip2_count, xz_count):
+def check_format_3_0_native_files(
+    filename,
+    file_type_counts,
+    component_counts,
+    component_signature_counts,
+    bzip2_count,
+    xz_count,
+):
     """Check that the given counts of each file type suit format 3.0 (native).
 
     A 3.0 (native) source must have only one tar.*. Any of gzip, bzip2, and
@@ -902,14 +989,22 @@ def check_format_3_0_native_files(filename, file_type_counts,
         },
     ]
 
-    if (file_type_counts not in valid_file_type_counts or
-        len(component_counts) > 0 or len(component_signature_counts) > 0):
+    if (
+        file_type_counts not in valid_file_type_counts
+        or len(component_counts) > 0
+        or len(component_signature_counts) > 0
+    ):
         yield UploadError("%s: must have only a tar.*." % filename)
 
 
-def check_format_3_0_quilt_files(filename, file_type_counts,
-                                 component_counts, component_signature_counts,
-                                 bzip2_count, xz_count):
+def check_format_3_0_quilt_files(
+    filename,
+    file_type_counts,
+    component_counts,
+    component_signature_counts,
+    bzip2_count,
+    xz_count,
+):
     """Check that the given counts of each file type suit format 3.0 (native).
 
     A 3.0 (quilt) source must have exactly one orig.tar.*, one debian.tar.*,
@@ -938,22 +1033,24 @@ def check_format_3_0_quilt_files(filename, file_type_counts,
     if file_type_counts not in valid_file_type_counts:
         yield UploadError(
             "%s: must have only an orig.tar.*, a debian.tar.*, and "
-            "optionally orig-*.tar.*" % filename)
+            "optionally orig-*.tar.*" % filename
+        )
 
     for component in component_counts:
         if component_counts[component] > 1:
             yield UploadError(
-                "%s: has more than one orig-%s.tar.*."
-                % (filename, component))
+                "%s: has more than one orig-%s.tar.*." % (filename, component)
+            )
     for component in component_signature_counts:
         if component_signature_counts[component] > 1:
             yield UploadError(
                 "%s: has more than one orig-%s.tar.*.asc."
-                % (filename, component))
+                % (filename, component)
+            )
 
 
 format_to_file_checker_map = {
     SourcePackageFormat.FORMAT_1_0: check_format_1_0_files,
     SourcePackageFormat.FORMAT_3_0_NATIVE: check_format_3_0_native_files,
     SourcePackageFormat.FORMAT_3_0_QUILT: check_format_3_0_quilt_files,
-    }
+}

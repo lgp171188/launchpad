@@ -17,26 +17,16 @@ from zope.event import notify
 from zope.interface import implementer
 from zope.lifecycleevent import ObjectModifiedEvent
 
-from lp.bugs.interfaces.cve import (
-    CveStatus,
-    ICveSet,
-    )
+from lp.bugs.interfaces.cve import CveStatus, ICveSet
 from lp.services.config import config
-from lp.services.looptuner import (
-    ITunableLoop,
-    LoopTuner,
-    )
+from lp.services.looptuner import ITunableLoop, LoopTuner
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
-    )
-from lp.services.timeout import (
-    override_timeout,
-    urlfetch,
-    )
+)
+from lp.services.timeout import override_timeout, urlfetch
 
-
-CVEDB_NS = '{http://cve.mitre.org/cve/downloads/1.0}'
+CVEDB_NS = "{http://cve.mitre.org/cve/downloads/1.0}"
 
 
 def getText(elem):
@@ -69,7 +59,7 @@ def handle_references(cve_node, cve, log):
     new_references = set()
 
     # work through the refs in the xml dump
-    for ref_node in cve_node.findall('.//%sref' % CVEDB_NS):
+    for ref_node in cve_node.findall(".//%sref" % CVEDB_NS):
         refsrc = six.ensure_text(ref_node.get("source"))
         refurl = ref_node.get("url")
         if refurl is not None:
@@ -78,25 +68,31 @@ def handle_references(cve_node, cve, log):
         # compare it to each of the known references
         was_there_previously = False
         for ref in old_references:
-            if ref.source == refsrc and ref.url == refurl and \
-               ref.content == reftxt:
+            if (
+                ref.source == refsrc
+                and ref.url == refurl
+                and ref.content == reftxt
+            ):
                 # we have found a match, remove it from the old list
                 was_there_previously = True
                 new_references.add(ref)
                 break
         if not was_there_previously:
-            log.info("Creating new %s reference for %s" % (refsrc,
-                cve.sequence))
+            log.info(
+                "Creating new %s reference for %s" % (refsrc, cve.sequence)
+            )
             ref = cve.createReference(refsrc, reftxt, url=refurl)
             new_references.add(ref)
             modified = True
     # now, if there are any refs in old_references that are not in
     # new_references, then we need to get rid of them
-    for ref in sorted(old_references,
-        key=lambda a: (a.source, a.content, a.url)):
+    for ref in sorted(
+        old_references, key=lambda a: (a.source, a.content, a.url)
+    ):
         if ref not in new_references:
-            log.info("Removing %s reference for %s" % (ref.source,
-                cve.sequence))
+            log.info(
+                "Removing %s reference for %s" % (ref.source, cve.sequence)
+            )
             cve.removeReference(ref)
             modified = True
 
@@ -106,35 +102,37 @@ def handle_references(cve_node, cve, log):
 def update_one_cve(cve_node, log):
     """Update the state of a single CVE item."""
     # get the sequence number
-    sequence = six.ensure_text(cve_node.get('seq'))
+    sequence = six.ensure_text(cve_node.get("seq"))
     # establish its status
-    status = six.ensure_text(cve_node.get('type'))
+    status = six.ensure_text(cve_node.get("type"))
     # get the description
-    description = getText(cve_node.find(CVEDB_NS + 'desc'))
+    description = getText(cve_node.find(CVEDB_NS + "desc"))
     if not description:
-        log.debug('No description for CVE-%s' % sequence)
-    if status == 'CAN':
+        log.debug("No description for CVE-%s" % sequence)
+    if status == "CAN":
         new_status = CveStatus.CANDIDATE
-    elif status == 'CVE':
+    elif status == "CVE":
         new_status = CveStatus.ENTRY
     else:
-        log.error('Unknown status %s for CVE-%s' % (status, sequence))
+        log.error("Unknown status %s for CVE-%s" % (status, sequence))
         return
     # find or create the CVE entry in the db
     cveset = getUtility(ICveSet)
     cve = cveset[sequence]
     if cve is None:
         cve = cveset.new(sequence, description, new_status)
-        log.info('CVE-%s created' % sequence)
+        log.info("CVE-%s created" % sequence)
     # update the CVE if needed
     modified = False
     if cve.status != new_status:
-        log.info('CVE-%s changed from %s to %s' % (cve.sequence,
-            cve.status.title, new_status.title))
+        log.info(
+            "CVE-%s changed from %s to %s"
+            % (cve.sequence, cve.status.title, new_status.title)
+        )
         cve.status = new_status
         modified = True
     if cve.description != description:
-        log.info('CVE-%s updated description' % cve.sequence)
+        log.info("CVE-%s updated description" % cve.sequence)
         cve.description = description
         modified = True
     # make sure we have copies of all the references.
@@ -190,39 +188,46 @@ class CveUpdaterTunableLoop:
 
 
 class CVEUpdater(LaunchpadCronScript):
-
     def add_my_options(self):
         """Parse command line arguments."""
         self.parser.add_option(
-            "-f", "--cvefile", dest="cvefile", default=None,
-            help="An XML file containing the CVE database.")
+            "-f",
+            "--cvefile",
+            dest="cvefile",
+            default=None,
+            help="An XML file containing the CVE database.",
+        )
         self.parser.add_option(
-            "-u", "--cveurl", dest="cveurl",
+            "-u",
+            "--cveurl",
+            dest="cveurl",
             default=config.cveupdater.cve_db_url,
-            help="The URL for the XML CVE database.")
+            help="The URL for the XML CVE database.",
+        )
 
     def main(self):
-        self.logger.info('Initializing...')
+        self.logger.info("Initializing...")
         if self.options.cvefile is not None:
             try:
                 with open(self.options.cvefile) as f:
                     cve_db = f.read()
             except OSError:
                 raise LaunchpadScriptFailure(
-                    'Unable to open CVE database in %s'
-                    % self.options.cvefile)
+                    "Unable to open CVE database in %s" % self.options.cvefile
+                )
         elif self.options.cveurl is not None:
             cve_db = self.fetchCVEURL(self.options.cveurl)
         else:
-            raise LaunchpadScriptFailure('No CVE database file or URL given.')
+            raise LaunchpadScriptFailure("No CVE database file or URL given.")
 
         # Start analysing the data.
         start_time = time.time()
         self.logger.info("Processing CVE XML...")
         self.processCVEXML(cve_db)
         finish_time = time.time()
-        self.logger.info('%d seconds to update database.'
-                % (finish_time - start_time))
+        self.logger.info(
+            "%d seconds to update database." % (finish_time - start_time)
+        )
 
     def fetchCVEURL(self, url):
         """Fetch CVE data from a URL, decompressing if necessary."""
@@ -234,14 +239,15 @@ class CVEUpdater(LaunchpadCronScript):
                 response = urlfetch(url, use_proxy=True, allow_file=True)
         except requests.RequestException:
             raise LaunchpadScriptFailure(
-                'Unable to connect for CVE database %s' % url)
+                "Unable to connect for CVE database %s" % url
+            )
 
         cve_db = response.content
         self.logger.info("%d bytes downloaded." % len(cve_db))
         # requests will normally decompress this automatically, but that
         # might not be the case if we're given a file:// URL to a gzipped
         # file.
-        if cve_db[:2] == b'\037\213':  # gzip magic
+        if cve_db[:2] == b"\037\213":  # gzip magic
             cve_db = gzip.GzipFile(fileobj=io.BytesIO(cve_db)).read()
         return cve_db
 
@@ -251,7 +257,7 @@ class CVEUpdater(LaunchpadCronScript):
         :param cve_xml: The CVE XML as a string.
         """
         dom = cElementTree.fromstring(cve_xml, forbid_dtd=True)
-        items = dom.findall(CVEDB_NS + 'item')
+        items = dom.findall(CVEDB_NS + "item")
         if len(items) == 0:
             raise LaunchpadScriptFailure("No CVEs found in XML file.")
         self.logger.info("Updating database...")

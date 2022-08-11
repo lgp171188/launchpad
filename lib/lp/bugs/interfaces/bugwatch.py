@@ -4,40 +4,21 @@
 """Bug watch interfaces."""
 
 __all__ = [
-    'BUG_WATCH_ACTIVITY_SUCCESS_STATUSES',
-    'BugWatchActivityStatus',
-    'BugWatchCannotBeRescheduled',
-    'IBugWatch',
-    'IBugWatchActivity',
-    'IBugWatchSet',
-    'NoBugTrackerFound',
-    'UnrecognizedBugTrackerURL',
-    ]
+    "BUG_WATCH_ACTIVITY_SUCCESS_STATUSES",
+    "BugWatchActivityStatus",
+    "BugWatchCannotBeRescheduled",
+    "IBugWatch",
+    "IBugWatchActivity",
+    "IBugWatchSet",
+    "NoBugTrackerFound",
+    "UnrecognizedBugTrackerURL",
+]
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    ReferenceChoice,
-    )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    TextLine,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
+from lazr.restful.declarations import exported, exported_as_webservice_entry
+from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
+from zope.interface import Attribute, Interface
+from zope.schema import Choice, Datetime, Int, Text, TextLine
 
 from lp import _
 from lp.bugs.interfaces.bugtracker import IBugTracker
@@ -49,187 +30,255 @@ from lp.services.webservice.apihelpers import patch_collection_property
 class BugWatchActivityStatus(DBEnumeratedType):
     """An enumeration of possible BugWatch errors."""
 
-    UNKNOWN = DBItem(999, """
+    UNKNOWN = DBItem(
+        999,
+        """
         Unknown
 
         Launchpad encountered an unexpected error when trying to
         retrieve the bug from the remote server.
-        """)
+        """,
+    )
 
-    BUG_NOT_FOUND = DBItem(1, """
+    BUG_NOT_FOUND = DBItem(
+        1,
+        """
         Bug Not Found
 
         Launchpad could not find the specified bug on the remote server.
-        """)
+        """,
+    )
 
-    CONNECTION_ERROR = DBItem(2, """
+    CONNECTION_ERROR = DBItem(
+        2,
+        """
         Connection Error
 
         Launchpad was unable to connect to the remote server.
-        """)
+        """,
+    )
 
-    INVALID_BUG_ID = DBItem(3, """
+    INVALID_BUG_ID = DBItem(
+        3,
+        """
         Invalid Bug ID
 
         The specified bug ID is not valid.
-        """)
+        """,
+    )
 
-    TIMEOUT = DBItem(4, """
+    TIMEOUT = DBItem(
+        4,
+        """
         Timeout
 
         Launchpad encountered a timeout when trying to connect to the
         remote server and was unable to retrieve the bug's status.
-        """)
+        """,
+    )
 
-    UNPARSABLE_BUG = DBItem(5, """
+    UNPARSABLE_BUG = DBItem(
+        5,
+        """
         Unparsable Bug
 
         Launchpad could not extract a status from the data it received
         from the remote server.
-        """)
+        """,
+    )
 
-    UNPARSABLE_BUG_TRACKER = DBItem(6, """
+    UNPARSABLE_BUG_TRACKER = DBItem(
+        6,
+        """
         Unparsable Bug Tracker Version
 
         Launchpad could not determine the version of the bug tracker
         software running on the remote server.
-        """)
+        """,
+    )
 
-    UNSUPPORTED_BUG_TRACKER = DBItem(7, """
+    UNSUPPORTED_BUG_TRACKER = DBItem(
+        7,
+        """
         Unsupported Bugtracker
 
         The remote server is using bug tracker software which Launchpad
         does not currently support.
-        """)
+        """,
+    )
 
-    PRIVATE_REMOTE_BUG = DBItem(8, """
+    PRIVATE_REMOTE_BUG = DBItem(
+        8,
+        """
         Private Remote Bug
 
         The bug is marked as private on the remote bug tracker.
         Launchpad cannot import the status of private remote bugs.
-        """)
+        """,
+    )
 
-    SYNC_SUCCEEDED = DBItem(9, """
+    SYNC_SUCCEEDED = DBItem(
+        9,
+        """
         Synchronisation succeeded
 
         The remote bug's status was successfully synchronized to Launchpad.
-        """)
+        """,
+    )
 
-    COMMENT_IMPORT_FAILED = DBItem(10, """
+    COMMENT_IMPORT_FAILED = DBItem(
+        10,
+        """
         Unable to import comments
 
         The remote bug's status was synchronized successfully but
         comments could not be imported from the remote bug.
-        """)
+        """,
+    )
 
-    COMMENT_PUSH_FAILED = DBItem(11, """
+    COMMENT_PUSH_FAILED = DBItem(
+        11,
+        """
         Unable to push comments
 
         The remote bug's status was synchronized successfully and
         its comments were successfully imported but Launchpad was unable
         to push comments back to the remote bug.
-        """)
+        """,
+    )
 
-    BACKLINK_FAILED = DBItem(12, """
+    BACKLINK_FAILED = DBItem(
+        12,
+        """
         Unable to set link remote bug to Launchpad
 
         The remote bug's status and comments were synchronized
-        sucessfully with Launchpad but Launchpad was unable to set the
+        successfully with Launchpad but Launchpad was unable to set the
         remote bug's link back to the relevant Launchpad bug.
-        """)
+        """,
+    )
 
 
 # The set of BugWatchActivityStatuses that are considered to indicate
 # success.
 BUG_WATCH_ACTIVITY_SUCCESS_STATUSES = [
     BugWatchActivityStatus.SYNC_SUCCEEDED,
-    ]
+]
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IBugWatch(IHasBug):
     """A bug on a remote system."""
 
-    id = Int(title=_('ID'), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
 
     # Actually refers to Bug; redefined in bug.py.
     bug = exported(
         Reference(
-            title=_('Bug'), schema=Interface, required=True, readonly=True))
+            title=_("Bug"), schema=Interface, required=True, readonly=True
+        )
+    )
     bugtracker = exported(
         ReferenceChoice(
-            title=_('Bug System'), required=True,
-            schema=IBugTracker, vocabulary='BugTracker',
+            title=_("Bug System"),
+            required=True,
+            schema=IBugTracker,
+            vocabulary="BugTracker",
             description=_(
                 "You can register new bug trackers from the Launchpad "
-                "Bugs home page.")),
-        exported_as='bug_tracker')
+                "Bugs home page."
+            ),
+        ),
+        exported_as="bug_tracker",
+    )
     remotebug = exported(
         StrippedTextLine(
-            title=_('Remote Bug'), required=True,
-            readonly=False, description=_(
-                "The bug number of this bug in the remote bug tracker.")),
-        exported_as='remote_bug')
+            title=_("Remote Bug"),
+            required=True,
+            readonly=False,
+            description=_(
+                "The bug number of this bug in the remote bug tracker."
+            ),
+        ),
+        exported_as="remote_bug",
+    )
     remotestatus = exported(
-        TextLine(title=_('Remote Status')),
-        exported_as='remote_status')
-    remote_importance = exported(
-        TextLine(title=_('Remote Importance')))
+        TextLine(title=_("Remote Status")), exported_as="remote_status"
+    )
+    remote_importance = exported(TextLine(title=_("Remote Importance")))
     lastchanged = exported(
-        Datetime(title=_('Last Changed')),
-        exported_as='date_last_changed')
+        Datetime(title=_("Last Changed")), exported_as="date_last_changed"
+    )
     lastchecked = exported(
-        Datetime(title=_('Last Checked')),
-        exported_as='date_last_checked')
+        Datetime(title=_("Last Checked")), exported_as="date_last_checked"
+    )
     last_error_type = exported(
-        Choice(title=_('Last Error Type'), vocabulary=BugWatchActivityStatus))
+        Choice(title=_("Last Error Type"), vocabulary=BugWatchActivityStatus)
+    )
     datecreated = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created')
+        Datetime(title=_("Date Created"), required=True, readonly=True),
+        exported_as="date_created",
+    )
     owner = exported(
-        Reference(title=_('Owner'), required=True,
-                  readonly=True, schema=Interface))
-    activity = Attribute('The activity history of this BugWatch.')
+        Reference(
+            title=_("Owner"),
+            required=True,
+            readonly=True,
+            # Really IPerson, patched in lp.bugs.interfaces.webservice.
+            schema=Interface,
+        )
+    )
+    activity = Attribute("The activity history of this BugWatch.")
     next_check = exported(
-        Datetime(title=_('Next Check')),
-        exported_as='date_next_checked')
+        Datetime(title=_("Next Check")), exported_as="date_next_checked"
+    )
 
     # Useful joins.
     bugtasks = exported(
         CollectionField(
             description=_(
-                'The tasks which this watch will affect. '
-                'In Launchpad, a bug watch can be linked to one or more '
-                'tasks, and if it is linked and we notice a status change '
-                'in the watched bug then we will try to update the '
-                'Launchpad bug task accordingly.'),
+                "The tasks which this watch will affect. "
+                "In Launchpad, a bug watch can be linked to one or more "
+                "tasks, and if it is linked and we notice a status change "
+                "in the watched bug then we will try to update the "
+                "Launchpad bug task accordingly."
+            ),
             # value_type is redefined in bugtask.py, to use the right
             # interface.
-            value_type=Reference(schema=Interface,)),
-            exported_as='bug_tasks')
+            value_type=Reference(
+                schema=Interface,
+            ),
+        ),
+        exported_as="bug_tasks",
+    )
 
     # Properties.
-    needscheck = Attribute("A True or False indicator of whether or not "
+    needscheck = Attribute(
+        "A True or False indicator of whether or not "
         "this watch needs to be synchronised. The algorithm used considers "
         "the severity of the bug, as well as the activity on the bug, to "
         "ensure that we spend most effort on high-importance and "
-        "high-activity bugs.")
+        "high-activity bugs."
+    )
 
     unpushed_comments = Attribute(
         "A set of comments on this BugWatch that need to be pushed to "
-        "the remote bug tracker.")
+        "the remote bug tracker."
+    )
 
     # Required for Launchpad pages.
-    title = exported(
-        Text(title=_('Bug watch title'), readonly=True))
+    title = exported(Text(title=_("Bug watch title"), readonly=True))
 
     url = exported(
-        Text(title=_('The URL at which to view the remote bug.'),
-             readonly=True))
+        Text(
+            title=_("The URL at which to view the remote bug."), readonly=True
+        )
+    )
 
     can_be_rescheduled = Attribute(
         "A True or False indicator of whether or not this watch can be "
-        "rescheduled.")
+        "rescheduled."
+    )
 
     def updateImportance(remote_importance, malone_importance):
         """Update the importance of the bug watch and any linked bug task.
@@ -280,6 +329,7 @@ class IBugWatch(IHasBug):
         :raises: `BugWatchCannotBeRescheduled` if
                  `IBugWatch.can_be_rescheduled` is False.
         """
+
     def reset():
         """Completely reset the watch.
 
@@ -294,14 +344,14 @@ class IBugWatch(IHasBug):
 
 
 # Defined here because of circular imports.
-patch_collection_property(IBugTracker, 'watches', IBugWatch)
+patch_collection_property(IBugTracker, "watches", IBugWatch)
 
 
 class IBugWatchSet(Interface):
     """The set of `IBugWatch`es."""
 
     bug = Int(title=_("Bug id"), readonly=True)
-    title = Attribute('Title')
+    title = Attribute("Title")
 
     def __getitem__(key):
         """Get a BugWatch"""
@@ -385,9 +435,12 @@ class IBugWatchSet(Interface):
             or None.
         """
 
-    def bulkAddActivity(references,
-                        result=BugWatchActivityStatus.SYNC_SUCCEEDED,
-                        message=None, oops_id=None):
+    def bulkAddActivity(
+        references,
+        result=BugWatchActivityStatus.SYNC_SUCCEEDED,
+        message=None,
+        oops_id=None,
+    ):
         """Efficiently add activity for the given bug watches.
 
         Add `BugWatchActivity` records for the given bug watches in
@@ -419,24 +472,42 @@ class IBugWatchActivity(Interface):
     """A record of a single BugWatch update."""
 
     id = Int(
-        title=_('DB ID'), required=True, readonly=True,
-        description=_("The unique id of this activity record."))
+        title=_("DB ID"),
+        required=True,
+        readonly=True,
+        description=_("The unique id of this activity record."),
+    )
     bug_watch = Reference(
-        title=_('Bug watch'), required=True, readonly=True, schema=IBugWatch,
+        title=_("Bug watch"),
+        required=True,
+        readonly=True,
+        schema=IBugWatch,
         description=_(
-            "The BugWatch whose activity is recorded in this record"))
+            "The BugWatch whose activity is recorded in this record"
+        ),
+    )
     activity_date = Datetime(
-        title=_('Activity date'), required=True, readonly=True,
-        description=_("The date on which this activity occurred."))
+        title=_("Activity date"),
+        required=True,
+        readonly=True,
+        description=_("The date on which this activity occurred."),
+    )
     result = Choice(
-        title=_('Result'), vocabulary=BugWatchActivityStatus, readonly=True,
-        description=_("The result of the activity."))
+        title=_("Result"),
+        vocabulary=BugWatchActivityStatus,
+        readonly=True,
+        description=_("The result of the activity."),
+    )
     message = Text(
-        title=_('Message'), readonly=True,
-        description=_("The message associated with this activity."))
+        title=_("Message"),
+        readonly=True,
+        description=_("The message associated with this activity."),
+    )
     oops_id = Text(
-        title=_('OOPS ID'), readonly=True,
-        description=_("The OOPS ID associated with this activity."))
+        title=_("OOPS ID"),
+        readonly=True,
+        description=_("The OOPS ID associated with this activity."),
+    )
 
 
 class BugWatchCannotBeRescheduled(Exception):

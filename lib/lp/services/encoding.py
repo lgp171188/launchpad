@@ -4,28 +4,27 @@
 """Character encoding utilities"""
 
 __all__ = [
-    'escape_nonascii_uniquely',
-    'guess',
-    'is_ascii_only',
-    'wsgi_native_string',
-    ]
+    "escape_nonascii_uniquely",
+    "guess",
+    "is_ascii_only",
+    "wsgi_native_string",
+]
 
 import codecs
 import re
 
 import six
 
-
 _boms = [
-    (codecs.BOM_UTF16_BE, 'utf_16_be'),
-    (codecs.BOM_UTF16_LE, 'utf_16_le'),
-    (codecs.BOM_UTF32_BE, 'utf_32_be'),
-    (codecs.BOM_UTF32_LE, 'utf_32_le'),
-    ]
+    (codecs.BOM_UTF16_BE, "utf_16_be"),
+    (codecs.BOM_UTF16_LE, "utf_16_le"),
+    (codecs.BOM_UTF32_BE, "utf_32_be"),
+    (codecs.BOM_UTF32_LE, "utf_32_le"),
+]
 
 
 def guess(s):
-    r'''
+    r"""
     Attempts to heuristically guess a strings encoding, returning
     a Unicode string.
 
@@ -107,14 +106,12 @@ def guess(s):
     >>> guess(u'hello'.encode('UTF-16be')) == u'\x00h\x00e\x00l\x00l\x00o'
     True
 
-    '''
+    """
 
     # Calling this method with a Unicode argument indicates a hidden bug
     # that will bite you eventually -- StuartBishop 20050709
     if isinstance(s, str):
-        raise TypeError(
-                'encoding.guess called with Unicode string %r' % (s,)
-                )
+        raise TypeError("encoding.guess called with Unicode string %r" % (s,))
 
     # Attempt to use an objects default Unicode conversion, for objects
     # that can encode themselves as ASCII.
@@ -128,32 +125,32 @@ def guess(s):
     try:
         for bom, encoding in _boms:
             if s.startswith(bom):
-                return str(s[len(bom):], encoding)
+                return str(s[len(bom) :], encoding)
     except UnicodeDecodeError:
         pass
 
     # Try preferred encoding
     try:
-        return str(s, 'UTF-8')
+        return str(s, "UTF-8")
     except UnicodeDecodeError:
         pass
 
     # If we have characters in this range, it is probably CP1252
-    if re.search(br"[\x80-\x9f]", s) is not None:
+    if re.search(rb"[\x80-\x9f]", s) is not None:
         try:
-            return str(s, 'CP1252')
+            return str(s, "CP1252")
         except UnicodeDecodeError:
             pass
 
     # If we have characters in this range, it is probably ISO-8859-15
-    if re.search(br"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None:
+    if re.search(rb"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None:
         try:
-            return str(s, 'ISO-8859-15')
+            return str(s, "ISO-8859-15")
         except UnicodeDecodeError:
             pass
 
     # Otherwise we default to ISO-8859-1
-    return str(s, 'ISO-8859-1', 'replace')
+    return str(s, "ISO-8859-1", "replace")
 
 
 def escape_nonascii_uniquely(bogus_string):
@@ -179,14 +176,14 @@ def escape_nonascii_uniquely(bogus_string):
 
     :type bogus_string: bytes
     """
-    nonascii_regex = re.compile(br'[\200-\377]')
+    nonascii_regex = re.compile(rb"[\200-\377]")
 
     # By encoding the invalid ascii with a backslash, x, and then the
     # hex value, it makes it easy to decode it by pasting into a python
     # interpreter. quopri() is not used, since that could caused the
     # decoding of an email to fail.
     def quote(match):
-        return b'\\x%x' % ord(match.group(0))
+        return b"\\x%x" % ord(match.group(0))
 
     return nonascii_regex.sub(quote, bogus_string)
 
@@ -194,20 +191,20 @@ def escape_nonascii_uniquely(bogus_string):
 def is_ascii_only(string):
     r"""Ensure that the string contains only ASCII characters.
 
-        >>> is_ascii_only(u'ascii only')
-        True
-        >>> is_ascii_only(b'ascii only')
-        True
-        >>> is_ascii_only(b'\xf4')
-        False
-        >>> is_ascii_only(u'\xf4')
-        False
+    >>> is_ascii_only(u'ascii only')
+    True
+    >>> is_ascii_only(b'ascii only')
+    True
+    >>> is_ascii_only(b'\xf4')
+    False
+    >>> is_ascii_only(u'\xf4')
+    False
     """
     try:
         if isinstance(string, bytes):
-            string.decode('ascii')
+            string.decode("ascii")
         else:
-            string.encode('ascii')
+            string.encode("ascii")
     except UnicodeError:
         return False
     else:
@@ -222,8 +219,8 @@ def wsgi_native_string(s):
     porting to Python 3 via an intermediate stage of Unicode literals in
     Python 2, we enforce this here.
     """
-    result = six.ensure_str(s, encoding='ISO-8859-1')
+    result = six.ensure_str(s, encoding="ISO-8859-1")
     if isinstance(s, str):
         # Ensure we're limited to ISO-8859-1.
-        result.encode('ISO-8859-1')
+        result.encode("ISO-8859-1")
     return result

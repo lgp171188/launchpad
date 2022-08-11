@@ -4,8 +4,8 @@
 """Interface for things that can host IFAQ."""
 
 __all__ = [
-    'IFAQTarget',
-    ]
+    "IFAQTarget",
+]
 
 
 from lazr.restful.declarations import exported_as_webservice_entry
@@ -13,7 +13,7 @@ from lazr.restful.declarations import exported_as_webservice_entry
 from lp.answers.interfaces.faqcollection import IFAQCollection
 
 
-@exported_as_webservice_entry('faq_target', as_of='beta')
+@exported_as_webservice_entry("faq_target", as_of="beta")
 class IFAQTarget(IFAQCollection):
     """An object that can contain a FAQ document."""
 

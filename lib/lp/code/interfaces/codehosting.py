@@ -4,70 +4,71 @@
 """Internal Codehosting API interfaces."""
 
 __all__ = [
-    'BRANCH_ALIAS_PREFIX',
-    'branch_id_alias',
-    'BRANCH_ID_ALIAS_PREFIX',
-    'BRANCH_TRANSPORT',
-    'compose_public_url',
-    'CONTROL_TRANSPORT',
-    'IBazaarApplication',
-    'ICodehostingAPI',
-    'ICodehostingApplication',
-    'LAUNCHPAD_ANONYMOUS',
-    'LAUNCHPAD_SERVICES',
-    'READ_ONLY',
-    'SUPPORTED_SCHEMES',
-    'WRITABLE',
-    ]
+    "BRANCH_ALIAS_PREFIX",
+    "branch_id_alias",
+    "BRANCH_ID_ALIAS_PREFIX",
+    "BRANCH_TRANSPORT",
+    "compose_public_url",
+    "CONTROL_TRANSPORT",
+    "IBazaarApplication",
+    "ICodehostingAPI",
+    "ICodehostingApplication",
+    "LAUNCHPAD_ANONYMOUS",
+    "LAUNCHPAD_SERVICES",
+    "READ_ONLY",
+    "SUPPORTED_SCHEMES",
+    "WRITABLE",
+]
 
 import os.path
 from urllib.parse import quote
 
-from lazr.uri import URI
 import six
+from lazr.uri import URI
 from zope.interface import Interface
 
 from lp.app.validators.name import valid_name
 from lp.services.config import config
 from lp.services.webapp.interfaces import ILaunchpadApplication
 
-
 # When LAUNCHPAD_SERVICES is provided as a login ID to XML-RPC methods, they
 # bypass the normal security checks and give read-only access to all branches.
 # This allows Launchpad services like the puller and branch scanner to access
 # private branches.
-LAUNCHPAD_SERVICES = '+launchpad-services'
-assert not valid_name(LAUNCHPAD_SERVICES), (
-    "%r should *not* be a valid name." % (LAUNCHPAD_SERVICES,))
+LAUNCHPAD_SERVICES = "+launchpad-services"
+assert not valid_name(
+    LAUNCHPAD_SERVICES
+), "%r should *not* be a valid name." % (LAUNCHPAD_SERVICES,)
 
 # When LAUNCHPAD_ANONYMOUS is passed, the XML-RPC methods behave as if no user
 # was logged in.
-LAUNCHPAD_ANONYMOUS = '+launchpad-anonymous'
-assert not valid_name(LAUNCHPAD_ANONYMOUS), (
-    "%r should *not* be a valid name." % (LAUNCHPAD_ANONYMOUS,))
+LAUNCHPAD_ANONYMOUS = "+launchpad-anonymous"
+assert not valid_name(
+    LAUNCHPAD_ANONYMOUS
+), "%r should *not* be a valid name." % (LAUNCHPAD_ANONYMOUS,)
 
 # These are used as permissions for getBranchInformation.
-READ_ONLY = 'r'
-WRITABLE = 'w'
+READ_ONLY = "r"
+WRITABLE = "w"
 
 # Indicates that a path's real location is on a branch transport.
-BRANCH_TRANSPORT = 'BRANCH_TRANSPORT'
+BRANCH_TRANSPORT = "BRANCH_TRANSPORT"
 # Indicates that a path points to a control directory.
-CONTROL_TRANSPORT = 'CONTROL_TRANSPORT'
+CONTROL_TRANSPORT = "CONTROL_TRANSPORT"
 
 # The path prefix for getting at branches via their short name.
-BRANCH_ALIAS_PREFIX = '+branch'
+BRANCH_ALIAS_PREFIX = "+branch"
 # The path prefix for getting at branches via their id.
-BRANCH_ID_ALIAS_PREFIX = '+branch-id'
+BRANCH_ID_ALIAS_PREFIX = "+branch-id"
 
 
 def branch_id_alias(branch):
     """Return the path using the branch id alias."""
-    return '/%s/%s' % (BRANCH_ID_ALIAS_PREFIX, branch.id)
+    return "/%s/%s" % (BRANCH_ID_ALIAS_PREFIX, branch.id)
 
 
 # The scheme types that are supported for codehosting.
-SUPPORTED_SCHEMES = 'bzr+ssh', 'http'
+SUPPORTED_SCHEMES = "bzr+ssh", "http"
 
 
 class IBazaarApplication(ILaunchpadApplication):
@@ -157,8 +158,15 @@ class ICodehostingAPI(Interface):
         :param branchID: a branch ID.
         """
 
-    def branchChanged(login_id, branch_id, stacked_on_url, last_revision_id,
-                      control_string, branch_string, repository_string):
+    def branchChanged(
+        login_id,
+        branch_id,
+        stacked_on_url,
+        last_revision_id,
+        control_string,
+        branch_string,
+        repository_string,
+    ):
         """Record that a branch has been changed.
 
         See `IBranch.branchChanged`.
@@ -199,12 +207,12 @@ class ICodehostingAPI(Interface):
 def compose_public_url(scheme, unique_name, suffix=None):
     # Accept sftp as a legacy protocol.
     accepted_schemes = set(SUPPORTED_SCHEMES)
-    accepted_schemes.add('sftp')
+    accepted_schemes.add("sftp")
     assert scheme in accepted_schemes, "Unknown scheme: %s" % scheme
     host = URI(config.codehosting.supermirror_root).host
     # After quoting and encoding, the path should be perfectly
     # safe as a plain ASCII string, str() just enforces this
-    path = '/' + str(quote(six.ensure_binary(unique_name), safe='/~+'))
+    path = "/" + str(quote(six.ensure_binary(unique_name), safe="/~+"))
     if suffix:
         path = os.path.join(path, suffix)
     return str(URI(scheme=scheme, host=host, path=path))

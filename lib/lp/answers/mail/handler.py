@@ -5,7 +5,7 @@
 
 __all__ = [
     "AnswerTrackerHandler",
-    ]
+]
 
 import re
 
@@ -28,7 +28,7 @@ class AnswerTrackerHandler:
     # XXX flacoste 2007-04-23: The 'ticket' part is there for backward
     # compatibility with the old notification address. We probably want to
     # remove it in the future.
-    _question_address = re.compile(r'^(ticket|question)(?P<id>\d+)@.*')
+    _question_address = re.compile(r"^(ticket|question)(?P<id>\d+)@.*")
 
     def process(self, signed_msg, to_addr, filealias=None, log=None):
         """See IMailHandler."""
@@ -36,7 +36,7 @@ class AnswerTrackerHandler:
         if not match:
             return False
 
-        question_id = int(match.group('id'))
+        question_id = int(match.group("id"))
         question = getUtility(IQuestionSet).get(question_id)
         if question is None:
             # No such question, don't process the email.
@@ -47,7 +47,8 @@ class AnswerTrackerHandler:
             signed_msg.parsed_bytes,
             owner=getUtility(ILaunchBag).user,
             filealias=filealias,
-            parsed_message=signed_msg)
+            parsed_message=signed_msg,
+        )
 
         if message.owner == question.owner:
             self.processOwnerMessage(question, message)
@@ -64,11 +65,12 @@ class AnswerTrackerHandler:
         or EXPIRED, we interpret the message as a reopenening request;
         otherwise it's a comment.
         """
-        if question.status in [
-            QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]:
+        if question.status in [QuestionStatus.OPEN, QuestionStatus.NEEDSINFO]:
             question.giveInfo(message)
         elif question.status in [
-            QuestionStatus.ANSWERED, QuestionStatus.EXPIRED]:
+            QuestionStatus.ANSWERED,
+            QuestionStatus.EXPIRED,
+        ]:
             question.reopen(message)
         else:
             question.addComment(message.owner, message)
@@ -85,8 +87,10 @@ class AnswerTrackerHandler:
         In the other status, the message is a comment without status change.
         """
         if question.status in [
-            QuestionStatus.OPEN, QuestionStatus.NEEDSINFO,
-        QuestionStatus.ANSWERED]:
+            QuestionStatus.OPEN,
+            QuestionStatus.NEEDSINFO,
+            QuestionStatus.ANSWERED,
+        ]:
             question.giveAnswer(message.owner, message)
         else:
             # In the other states, only a comment can be added.

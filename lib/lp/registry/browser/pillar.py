@@ -1,53 +1,43 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common views for objects that implement `IPillar`."""
 
 __all__ = [
-    'InvolvedMenu',
-    'PillarBugsMenu',
-    'PillarInvolvementView',
-    'PillarViewMixin',
-    'PillarNavigationMixin',
-    'PillarPersonSharingView',
-    'PillarSharingView',
-    ]
+    "InvolvedMenu",
+    "PillarBugsMenu",
+    "PillarInvolvementView",
+    "PillarViewMixin",
+    "PillarNavigationMixin",
+    "PillarPersonSharingView",
+    "PillarSharingView",
+]
 
-
+import json
 from operator import attrgetter
 
 from lazr.restful import ResourceJSONEncoder
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_web_service_request
-import simplejson
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    Interface,
-    )
-from zope.schema.vocabulary import (
-    getVocabularyRegistry,
-    SimpleVocabulary,
-    )
+from zope.interface import Interface, implementer
+from zope.schema.vocabulary import SimpleVocabulary, getVocabularyRegistry
 from zope.traversing.browser.absoluteurl import absoluteURL
 
 from lp.app.browser.lazrjs import vocabulary_to_choice_edit_items
 from lp.app.browser.tales import MenuAPI
 from lp.app.browser.vocabulary import vocabulary_filters
-from lp.app.enums import (
-    service_uses_launchpad,
-    ServiceUsage,
-    )
+from lp.app.enums import ServiceUsage, service_uses_launchpad
 from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.app.interfaces.launchpad import IServiceUsage
 from lp.app.interfaces.services import IService
 from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionMenuMixin,
-    )
+)
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pillar import IPillar
@@ -58,29 +48,26 @@ from lp.services.propertycache import cachedproperty
 from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
-    )
+)
 from lp.services.webapp.batching import (
     BatchNavigator,
-    get_batch_properties_for_json_cache,
     StormRangeFactory,
-    )
-from lp.services.webapp.breadcrumb import (
-    Breadcrumb,
-    DisplaynameBreadcrumb,
-    )
+    get_batch_properties_for_json_cache,
+)
+from lp.services.webapp.breadcrumb import Breadcrumb, DisplaynameBreadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 from lp.services.webapp.menu import (
     ApplicationMenu,
-    enabled_with_permission,
     Link,
     NavigationMenu,
-    )
+    enabled_with_permission,
+)
 from lp.services.webapp.publisher import (
-    canonical_url,
     LaunchpadView,
+    canonical_url,
     nearest,
     stepthrough,
-    )
+)
 
 
 @implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
@@ -104,12 +91,13 @@ class PillarPersonBreadcrumb(Breadcrumb):
         return Breadcrumb(
             self.context.pillar,
             url=canonical_url(self.context.pillar, view_name="+sharing"),
-            text="Sharing", inside=self.context.pillar)
+            text="Sharing",
+            inside=self.context.pillar,
+        )
 
 
 class PillarNavigationMixin:
-
-    @stepthrough('+sharing')
+    @stepthrough("+sharing")
     def traverse_details(self, name):
         """Traverse to the sharing details for a given person."""
         person = getUtility(IPersonSet).getByName(name)
@@ -124,9 +112,14 @@ class IInvolved(Interface):
 
 class InvolvedMenu(NavigationMenu):
     """The get involved menu."""
+
     usedfor = IInvolved
     links = [
-        'report_bug', 'ask_question', 'help_translate', 'register_blueprint']
+        "report_bug",
+        "ask_question",
+        "help_translate",
+        "register_blueprint",
+    ]
 
     @property
     def pillar(self):
@@ -134,26 +127,39 @@ class InvolvedMenu(NavigationMenu):
 
     def report_bug(self):
         return Link(
-            '+filebug', 'Report a bug', site='bugs', icon='bugs',
-            enabled=self.pillar.official_malone)
+            "+filebug",
+            "Report a bug",
+            site="bugs",
+            icon="bugs",
+            enabled=self.pillar.official_malone,
+        )
 
     def ask_question(self):
         return Link(
-            '+addquestion', 'Ask a question', site='answers', icon='answers',
-            enabled=service_uses_launchpad(self.pillar.answers_usage))
+            "+addquestion",
+            "Ask a question",
+            site="answers",
+            icon="answers",
+            enabled=service_uses_launchpad(self.pillar.answers_usage),
+        )
 
     def help_translate(self):
         return Link(
-            '', 'Help translate', site='translations', icon='translations',
-            enabled=service_uses_launchpad(self.pillar.translations_usage))
+            "",
+            "Help translate",
+            site="translations",
+            icon="translations",
+            enabled=service_uses_launchpad(self.pillar.translations_usage),
+        )
 
     def register_blueprint(self):
         return Link(
-            '+addspec',
-            'Register a blueprint',
-            site='blueprints',
-            icon='blueprints',
-            enabled=service_uses_launchpad(self.pillar.blueprints_usage))
+            "+addspec",
+            "Register a blueprint",
+            site="blueprints",
+            icon="blueprints",
+            enabled=service_uses_launchpad(self.pillar.blueprints_usage),
+        )
 
 
 @implementer(IInvolved)
@@ -211,19 +217,22 @@ class PillarInvolvementView(LaunchpadView):
     @property
     def has_involvement(self):
         """This `IPillar` uses Launchpad."""
-        return (self.official_malone
-                or service_uses_launchpad(self.answers_usage)
-                or service_uses_launchpad(self.blueprints_usage)
-                or service_uses_launchpad(self.translations_usage)
-                or service_uses_launchpad(self.codehosting_usage))
+        return (
+            self.official_malone
+            or service_uses_launchpad(self.answers_usage)
+            or service_uses_launchpad(self.blueprints_usage)
+            or service_uses_launchpad(self.translations_usage)
+            or service_uses_launchpad(self.codehosting_usage)
+        )
 
     @property
     def enabled_links(self):
         """The enabled involvement links."""
         menuapi = MenuAPI(self)
-        return sorted((
-            link for link in menuapi.navigation.values() if link.enabled),
-            key=attrgetter('sort_key'))
+        return sorted(
+            (link for link in menuapi.navigation.values() if link.enabled),
+            key=attrgetter("sort_key"),
+        )
 
     @cachedproperty
     def visible_disabled_links(self):
@@ -237,11 +246,12 @@ class PillarInvolvementView(LaunchpadView):
         """
         involved_menu = MenuAPI(self).navigation
         important_links = [
-            involved_menu[name]
-            for name in self.visible_disabled_link_names]
-        return sorted((
-            link for link in important_links if not link.enabled),
-            key=attrgetter('sort_key'))
+            involved_menu[name] for name in self.visible_disabled_link_names
+        ]
+        return sorted(
+            (link for link in important_links if not link.enabled),
+            key=attrgetter("sort_key"),
+        )
 
     @property
     def registration_completeness(self):
@@ -255,24 +265,24 @@ class PillarInvolvementView(LaunchpadView):
 class PillarBugsMenu(ApplicationMenu, StructuralSubscriptionMenuMixin):
     """Base class for pillar bugs menus."""
 
-    facet = 'bugs'
+    facet = "bugs"
     configurable_bugtracker = False
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def bugsupervisor(self):
-        text = 'Change bug supervisor'
-        return Link('+bugsupervisor', text, icon='edit')
+        text = "Change bug supervisor"
+        return Link("+bugsupervisor", text, icon="edit")
 
     def cve(self):
-        text = 'CVE reports'
-        return Link('+cve', text, icon='cve')
+        text = "CVE reports"
+        return Link("+cve", text, icon="cve")
 
     def filebug(self):
-        text = 'Report a bug'
-        return Link('+filebug', text, icon='bug')
+        text = "Report a bug"
+        return Link("+filebug", text, icon="bug")
 
 
-class PillarViewMixin():
+class PillarViewMixin:
     """A mixin for pillar views to populate the json request cache."""
 
     def initialize(self):
@@ -283,9 +293,11 @@ class PillarViewMixin():
         policy_items = [(item.name, item) for item in EXCLUSIVE_TEAM_POLICY]
         team_membership_policy_data = vocabulary_to_choice_edit_items(
             SimpleVocabulary.fromItems(policy_items),
-            value_fn=lambda item: item.name)
-        cache.objects['team_membership_policy_data'] = (
-            team_membership_policy_data)
+            value_fn=lambda item: item.name,
+        )
+        cache.objects[
+            "team_membership_policy_data"
+        ] = team_membership_policy_data
 
 
 class PillarSharingView(LaunchpadView):
@@ -293,17 +305,18 @@ class PillarSharingView(LaunchpadView):
     page_title = "Sharing"
     label = "Sharing information"
 
-    sharing_vocabulary_name = 'NewPillarGrantee'
+    sharing_vocabulary_name = "NewPillarGrantee"
 
     _batch_navigator = None
 
     def _getSharingService(self):
-        return getUtility(IService, 'sharing')
+        return getUtility(IService, "sharing")
 
     @property
     def information_types(self):
         return self._getSharingService().getAllowedInformationTypes(
-            self.context)
+            self.context
+        )
 
     @property
     def bug_sharing_policies(self):
@@ -316,7 +329,8 @@ class PillarSharingView(LaunchpadView):
     @property
     def specification_sharing_policies(self):
         return self._getSharingService().getSpecificationSharingPolicies(
-            self.context)
+            self.context
+        )
 
     @property
     def sharing_permissions(self):
@@ -325,8 +339,7 @@ class PillarSharingView(LaunchpadView):
     @cachedproperty
     def sharing_vocabulary(self):
         registry = getVocabularyRegistry()
-        return registry.get(
-            self.context, self.sharing_vocabulary_name)
+        return registry.get(self.context, self.sharing_vocabulary_name)
 
     @cachedproperty
     def sharing_vocabulary_filters(self):
@@ -338,20 +351,22 @@ class PillarSharingView(LaunchpadView):
             vocabulary=self.sharing_vocabulary_name,
             vocabulary_filters=self.sharing_vocabulary_filters,
             header=self.sharing_vocabulary.displayname,
-            steptitle=self.sharing_vocabulary.step_title)
+            steptitle=self.sharing_vocabulary.step_title,
+        )
 
     @property
     def json_sharing_picker_config(self):
-        return simplejson.dumps(
-            self.sharing_picker_config, cls=ResourceJSONEncoder)
+        return json.dumps(self.sharing_picker_config, cls=ResourceJSONEncoder)
 
     def _getBatchNavigator(self, grantees):
         """Return the batch navigator to be used to batch the grantees."""
         return BatchNavigator(
-            grantees, self.request,
+            grantees,
+            self.request,
             hide_counts=True,
             size=config.launchpad.default_batch_size,
-            range_factory=StormRangeFactory(grantees))
+            range_factory=StormRangeFactory(grantees),
+        )
 
     def grantees(self):
         """An `IBatchNavigator` for grantees."""
@@ -367,15 +382,16 @@ class PillarSharingView(LaunchpadView):
     def initialize(self):
         super().initialize()
         cache = IJSONRequestCache(self.request)
-        cache.objects['information_types'] = self.information_types
-        cache.objects['sharing_permissions'] = self.sharing_permissions
-        cache.objects['bug_sharing_policies'] = self.bug_sharing_policies
-        cache.objects['branch_sharing_policies'] = (
-            self.branch_sharing_policies)
-        cache.objects['specification_sharing_policies'] = (
-            self.specification_sharing_policies)
-        cache.objects['has_edit_permission'] = check_permission(
-            "launchpad.Edit", self.context)
+        cache.objects["information_types"] = self.information_types
+        cache.objects["sharing_permissions"] = self.sharing_permissions
+        cache.objects["bug_sharing_policies"] = self.bug_sharing_policies
+        cache.objects["branch_sharing_policies"] = self.branch_sharing_policies
+        cache.objects[
+            "specification_sharing_policies"
+        ] = self.specification_sharing_policies
+        cache.objects["has_edit_permission"] = check_permission(
+            "launchpad.Edit", self.context
+        )
         batch_navigator = self.grantees()
         # Precache LimitedView for all the grantees, partly for performance
         # but mainly because it's possible that the user won't strictly have
@@ -383,18 +399,25 @@ class PillarSharingView(LaunchpadView):
         # see who has access to pillars they drive.  Fixing this in
         # PublicOrPrivateTeamsExistence would very likely be too expensive.
         precache_permission_for_objects(
-            None, 'launchpad.LimitedView',
-            [grantee for grantee, _, _ in batch_navigator.batch])
-        cache.objects['grantee_data'] = (
-            self._getSharingService().jsonGranteeData(batch_navigator.batch))
+            None,
+            "launchpad.LimitedView",
+            [grantee for grantee, _, _ in batch_navigator.batch],
+        )
+        cache.objects[
+            "grantee_data"
+        ] = self._getSharingService().jsonGranteeData(batch_navigator.batch)
         cache.objects.update(
-            get_batch_properties_for_json_cache(self, batch_navigator))
+            get_batch_properties_for_json_cache(self, batch_navigator)
+        )
 
-        grant_counts = (
-            self._getSharingService().getAccessPolicyGrantCounts(self.context))
-        cache.objects['invisible_information_types'] = [
-            count_info[0].title for count_info in grant_counts
-            if count_info[1] == 0]
+        grant_counts = self._getSharingService().getAccessPolicyGrantCounts(
+            self.context
+        )
+        cache.objects["invisible_information_types"] = [
+            count_info[0].title
+            for count_info in grant_counts
+            if count_info[1] == 0
+        ]
 
 
 class PillarPersonSharingView(LaunchpadView):
@@ -408,7 +431,7 @@ class PillarPersonSharingView(LaunchpadView):
 
         self.label = "Information shared with %s" % self.person.displayname
         self.page_title = "%s" % self.person.displayname
-        self.sharing_service = getUtility(IService, 'sharing')
+        self.sharing_service = getUtility(IService, "sharing")
 
         self._loadSharedArtifacts()
 
@@ -416,40 +439,47 @@ class PillarPersonSharingView(LaunchpadView):
         request = get_current_web_service_request()
         branch_data = self._build_branch_template_data(self.branches, request)
         gitrepository_data = self._build_gitrepository_template_data(
-            self.gitrepositories, request)
+            self.gitrepositories, request
+        )
         bug_data = self._build_bug_template_data(self.bugtasks, request)
         spec_data = self._build_specification_template_data(
-            self.specifications, request)
-        snap_data = self._build_ocirecipe_template_data(self.snaps, request)
+            self.specifications, request
+        )
+        snap_data = self._build_snap_template_data(self.snaps, request)
         ocirecipe_data = self._build_ocirecipe_template_data(
-            self.ocirecipes, request)
+            self.ocirecipes, request
+        )
+        vulnerability_data = self._build_vulnerability_template_data(
+            self.vulnerabilities, request
+        )
         grantee_data = {
-            'displayname': self.person.displayname,
-            'self_link': absoluteURL(self.person, request)
+            "displayname": self.person.displayname,
+            "self_link": absoluteURL(self.person, request),
         }
-        pillar_data = {
-            'self_link': absoluteURL(self.pillar, request)
-        }
-        cache.objects['grantee'] = grantee_data
-        cache.objects['pillar'] = pillar_data
-        cache.objects['bugs'] = bug_data
-        cache.objects['branches'] = branch_data
-        cache.objects['gitrepositories'] = gitrepository_data
-        cache.objects['specifications'] = spec_data
-        cache.objects['snaps'] = snap_data
-        cache.objects['ocirecipes'] = ocirecipe_data
+        pillar_data = {"self_link": absoluteURL(self.pillar, request)}
+        cache.objects["grantee"] = grantee_data
+        cache.objects["pillar"] = pillar_data
+        cache.objects["bugs"] = bug_data
+        cache.objects["branches"] = branch_data
+        cache.objects["gitrepositories"] = gitrepository_data
+        cache.objects["specifications"] = spec_data
+        cache.objects["snaps"] = snap_data
+        cache.objects["ocirecipes"] = ocirecipe_data
+        cache.objects["vulnerabilities"] = vulnerability_data
 
     def _loadSharedArtifacts(self):
         # As a concrete can by linked via more than one policy, we use sets to
         # filter out dupes.
         artifacts = self.sharing_service.getSharedArtifacts(
-                self.pillar, self.person, self.user)
+            self.pillar, self.person, self.user
+        )
         self.bugtasks = artifacts["bugtasks"]
         self.branches = artifacts["branches"]
         self.gitrepositories = artifacts["gitrepositories"]
         self.snaps = artifacts["snaps"]
         self.specifications = artifacts["specifications"]
         self.ocirecipes = artifacts["ocirecipes"]
+        self.vulnerabilities = artifacts["vulnerabilities"]
 
         bug_ids = {bugtask.bug.id for bugtask in self.bugtasks}
         self.shared_bugs_count = len(bug_ids)
@@ -458,38 +488,50 @@ class PillarPersonSharingView(LaunchpadView):
         self.shared_snaps_count = len(self.snaps)
         self.shared_specifications_count = len(self.specifications)
         self.shared_ocirecipe_count = len(self.ocirecipes)
+        self.shared_vulnerabilities_count = len(self.vulnerabilities)
 
     def _build_specification_template_data(self, specs, request):
         spec_data = []
         for spec in specs:
-            spec_data.append(dict(
-                self_link=absoluteURL(spec, request),
-                web_link=canonical_url(spec, path_only_if_possible=True),
-                name=spec.name,
-                id=spec.id,
-                information_type=spec.information_type.title))
+            spec_data.append(
+                dict(
+                    self_link=absoluteURL(spec, request),
+                    web_link=canonical_url(spec, path_only_if_possible=True),
+                    name=spec.name,
+                    id=spec.id,
+                    information_type=spec.information_type.title,
+                )
+            )
         return spec_data
 
     def _build_branch_template_data(self, branches, request):
         branch_data = []
         for branch in branches:
-            branch_data.append(dict(
-                self_link=absoluteURL(branch, request),
-                web_link=canonical_url(branch, path_only_if_possible=True),
-                branch_name=branch.unique_name,
-                branch_id=branch.id,
-                information_type=branch.information_type.title))
+            branch_data.append(
+                dict(
+                    self_link=absoluteURL(branch, request),
+                    web_link=canonical_url(branch, path_only_if_possible=True),
+                    branch_name=branch.unique_name,
+                    branch_id=branch.id,
+                    information_type=branch.information_type.title,
+                )
+            )
         return branch_data
 
     def _build_gitrepository_template_data(self, repositories, request):
         repository_data = []
         for repository in repositories:
-            repository_data.append(dict(
-                self_link=absoluteURL(repository, request),
-                web_link=canonical_url(repository, path_only_if_possible=True),
-                repository_name=repository.unique_name,
-                repository_id=repository.id,
-                information_type=repository.information_type.title))
+            repository_data.append(
+                dict(
+                    self_link=absoluteURL(repository, request),
+                    web_link=canonical_url(
+                        repository, path_only_if_possible=True
+                    ),
+                    repository_name=repository.unique_name,
+                    repository_id=repository.id,
+                    information_type=repository.information_type.title,
+                )
+            )
         return repository_data
 
     def _build_bug_template_data(self, bugtasks, request):
@@ -499,33 +541,58 @@ class PillarPersonSharingView(LaunchpadView):
             self_link = absoluteURL(bugtask.bug, request)
             importance = bugtask.importance.title.lower()
             information_type = bugtask.bug.information_type.title
-            bug_data.append(dict(
-                self_link=self_link,
-                web_link=web_link,
-                bug_summary=bugtask.bug.title,
-                bug_id=bugtask.bug.id,
-                bug_importance=importance,
-                information_type=information_type))
+            bug_data.append(
+                dict(
+                    self_link=self_link,
+                    web_link=web_link,
+                    bug_summary=bugtask.bug.title,
+                    bug_id=bugtask.bug.id,
+                    bug_importance=importance,
+                    information_type=information_type,
+                )
+            )
         return bug_data
 
     def _build_ocirecipe_template_data(self, oci_recipes, request):
         recipe_data = []
         for recipe in oci_recipes:
-            recipe_data.append(dict(
-                self_link=absoluteURL(recipe, request),
-                web_link=canonical_url(recipe, path_only_if_possible=True),
-                name=recipe.name,
-                id=recipe.id,
-                information_type=recipe.information_type.title))
+            recipe_data.append(
+                dict(
+                    self_link=absoluteURL(recipe, request),
+                    web_link=canonical_url(recipe, path_only_if_possible=True),
+                    name=recipe.name,
+                    id=recipe.id,
+                    information_type=recipe.information_type.title,
+                )
+            )
         return recipe_data
 
     def _build_snap_template_data(self, snaps, request):
         snap_data = []
         for snap in snaps:
-            snap_data.append(dict(
-                self_link=absoluteURL(snap, request),
-                web_link=canonical_url(snap, path_only_if_possible=True),
-                name=snap.name,
-                id=snap.id,
-                information_type=snap.information_type.title))
+            snap_data.append(
+                dict(
+                    self_link=absoluteURL(snap, request),
+                    web_link=canonical_url(snap, path_only_if_possible=True),
+                    name=snap.name,
+                    id=snap.id,
+                    information_type=snap.information_type.title,
+                )
+            )
         return snap_data
+
+    def _build_vulnerability_template_data(self, vulnerabilities, request):
+        vulnerability_data = []
+        for vulnerability in vulnerabilities:
+            vulnerability_data.append(
+                dict(
+                    self_link=absoluteURL(vulnerability, request),
+                    web_link=canonical_url(
+                        vulnerability, path_only_if_possible=True
+                    ),
+                    name=vulnerability.cve.sequence,
+                    id=vulnerability.id,
+                    information_type=vulnerability.information_type.title,
+                )
+            )
+        return vulnerability_data

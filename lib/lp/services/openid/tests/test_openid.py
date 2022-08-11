@@ -9,7 +9,6 @@ import os
 
 from lp.services.testing import build_test_suite
 
-
 here = os.path.dirname(os.path.realpath(__file__))
 
 

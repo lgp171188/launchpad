@@ -4,11 +4,11 @@
 """Adapters for registry objects."""
 
 __all__ = [
-    'distroseries_to_distribution',
-    'PollSubset',
-    'productseries_to_product',
-    'sourcepackage_to_distribution',
-    ]
+    "distroseries_to_distribution",
+    "PollSubset",
+    "productseries_to_product",
+    "sourcepackage_to_distribution",
+]
 
 
 from zope.component import getUtility
@@ -22,7 +22,7 @@ from lp.registry.interfaces.poll import (
     IPollSubset,
     PollAlgorithm,
     PollStatus,
-    )
+)
 from lp.services.webapp.interfaces import ILaunchpadPrincipal
 
 
@@ -55,7 +55,7 @@ def person_from_principal(principal):
         #
         # When Zope3 interfaces allow returning None for "cannot adapt"
         # we can return None here.
-        ##return None
+        # return None
         raise ComponentLookupError
 
 
@@ -63,56 +63,85 @@ def person_from_principal(principal):
 class PollSubset:
     """Adapt an `IPoll` to an `IPollSubset`."""
 
-    title = 'Team polls'
+    title = "Team polls"
 
     def __init__(self, team=None):
         self.team = team
 
-    def new(self, name, title, proposition, dateopens, datecloses,
-            secrecy, allowspoilt, poll_type=PollAlgorithm.SIMPLE):
+    def new(
+        self,
+        name,
+        title,
+        proposition,
+        dateopens,
+        datecloses,
+        secrecy,
+        allowspoilt,
+        poll_type=PollAlgorithm.SIMPLE,
+    ):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         return getUtility(IPollSet).new(
-            self.team, name, title, proposition, dateopens,
-            datecloses, secrecy, allowspoilt, poll_type)
+            self.team,
+            name,
+            title,
+            proposition,
+            dateopens,
+            datecloses,
+            secrecy,
+            allowspoilt,
+            poll_type,
+        )
 
     def getByName(self, name, default=None):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         pollset = getUtility(IPollSet)
         return pollset.getByTeamAndName(self.team, name, default)
 
     def getAll(self):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         return getUtility(IPollSet).findByTeam(self.team)
 
     def getOpenPolls(self, when=None):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         return getUtility(IPollSet).findByTeam(
-            self.team, [PollStatus.OPEN],
-            order_by=PollSort.CLOSING, when=when)
+            self.team, [PollStatus.OPEN], order_by=PollSort.CLOSING, when=when
+        )
 
     def getClosedPolls(self, when=None):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         return getUtility(IPollSet).findByTeam(
-            self.team, [PollStatus.CLOSED],
-            order_by=PollSort.CLOSING, when=when)
+            self.team,
+            [PollStatus.CLOSED],
+            order_by=PollSort.CLOSING,
+            when=when,
+        )
 
     def getNotYetOpenedPolls(self, when=None):
         """See IPollSubset."""
-        assert self.team is not None, (
-            'team cannot be None to call this method.')
+        assert (
+            self.team is not None
+        ), "team cannot be None to call this method."
         return getUtility(IPollSet).findByTeam(
-            self.team, [PollStatus.NOT_YET_OPENED],
-            order_by=PollSort.OPENING, when=when)
+            self.team,
+            [PollStatus.NOT_YET_OPENED],
+            order_by=PollSort.OPENING,
+            when=when,
+        )
 
 
 def productseries_to_product(productseries):

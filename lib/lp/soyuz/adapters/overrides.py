@@ -4,29 +4,21 @@
 """Generic Override Policy classes."""
 
 __all__ = [
-    'BinaryOverride',
-    'ConstantOverridePolicy',
-    'FallbackOverridePolicy',
-    'FromExistingOverridePolicy',
-    'FromSourceOverridePolicy',
-    'IBinaryOverride',
-    'ISourceOverride',
-    'SourceOverride',
-    'UnknownOverridePolicy',
-    ]
+    "BinaryOverride",
+    "ConstantOverridePolicy",
+    "FallbackOverridePolicy",
+    "FromExistingOverridePolicy",
+    "FromSourceOverridePolicy",
+    "IBinaryOverride",
+    "ISourceOverride",
+    "SourceOverride",
+    "UnknownOverridePolicy",
+]
 
 
-from storm.expr import (
-    And,
-    Desc,
-    Or,
-    )
+from storm.expr import And, Desc, Or
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from zope.interface import Attribute, Interface, implementer
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -43,7 +35,7 @@ from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
@@ -70,16 +62,19 @@ class IBinaryOverride(IOverride):
     """Binary-specific overrides on a publication."""
 
     binary_package_name = Attribute(
-        "The IBinaryPackageName that's being overridden")
-    architecture_tag = Attribute(
-        "The architecture tag for the publication")
+        "The IBinaryPackageName that's being overridden"
+    )
+    architecture_tag = Attribute("The architecture tag for the publication")
     priority = Attribute(
-        "The PackagePublishingPriority that's being overridden")
+        "The PackagePublishingPriority that's being overridden"
+    )
     phased_update_percentage = Attribute(
-        "The phased update percentage that's being overridden")
+        "The phased update percentage that's being overridden"
+    )
 
     source_override = Attribute(
-        "A source override from which to determine defaults.")
+        "A source override from which to determine defaults."
+    )
 
 
 class Override:
@@ -98,7 +93,8 @@ class Override:
         # Prevent people getting very confused with these new classes,
         # should their instances ever be put in a dict or set.
         raise NotImplementedError(
-            "%s objects are not hashable." % self.__class__.__name__)
+            "%s objects are not hashable." % self.__class__.__name__
+        )
 
 
 @implementer(ISourceOverride)
@@ -107,51 +103,74 @@ class SourceOverride(Override):
 
     def __eq__(self, other):
         return (
-            self.__class__ == other.__class__ and
-            self.component == other.component and
-            self.section == other.section and
-            self.version == other.version and
-            self.new == other.new)
+            self.__class__ == other.__class__
+            and self.component == other.component
+            and self.section == other.section
+            and self.version == other.version
+            and self.new == other.new
+        )
 
     def __repr__(self):
-        return (
-            "<%s at %x component=%r section=%r version=%r new=%r>" %
-            (self.__class__.__name__, id(self), self.component, self.section,
-             self.version, self.new))
+        return "<%s at %x component=%r section=%r version=%r new=%r>" % (
+            self.__class__.__name__,
+            id(self),
+            self.component,
+            self.section,
+            self.version,
+            self.new,
+        )
 
 
 @implementer(IBinaryOverride)
 class BinaryOverride(Override):
     """See `IBinaryOverride`."""
 
-    def __init__(self, component=None, section=None, priority=None,
-                 phased_update_percentage=None, version=None, new=None,
-                 source_override=None):
+    def __init__(
+        self,
+        component=None,
+        section=None,
+        priority=None,
+        phased_update_percentage=None,
+        version=None,
+        new=None,
+        source_override=None,
+    ):
         super().__init__(
-            component=component, section=section, version=version, new=new)
+            component=component, section=section, version=version, new=new
+        )
         self.priority = priority
         self.phased_update_percentage = phased_update_percentage
         self.source_override = source_override
 
     def __eq__(self, other):
         return (
-            self.__class__ == other.__class__ and
-            self.component == other.component and
-            self.section == other.section and
-            self.priority == other.priority and
-            self.phased_update_percentage == other.phased_update_percentage and
-            self.version == other.version and
-            self.new == other.new and
-            self.source_override == other.source_override)
+            self.__class__ == other.__class__
+            and self.component == other.component
+            and self.section == other.section
+            and self.priority == other.priority
+            and self.phased_update_percentage == other.phased_update_percentage
+            and self.version == other.version
+            and self.new == other.new
+            and self.source_override == other.source_override
+        )
 
     def __repr__(self):
         return (
             "<%s at %x component=%r section=%r priority=%r "
             "phased_update_percentage=%r version=%r new=%r "
-            "source_override=%r>" %
-            (self.__class__.__name__, id(self), self.component, self.section,
-             self.priority, self.phased_update_percentage, self.version,
-             self.new, self.source_override))
+            "source_override=%r>"
+            % (
+                self.__class__.__name__,
+                id(self),
+                self.component,
+                self.section,
+                self.priority,
+                self.phased_update_percentage,
+                self.version,
+                self.new,
+                self.source_override,
+            )
+        )
 
 
 class IOverridePolicy(Interface):
@@ -165,7 +184,8 @@ class IOverridePolicy(Interface):
     """
 
     phased_update_percentage = Attribute(
-        "The phased update percentage to apply to binary publications.")
+        "The phased update percentage to apply to binary publications."
+    )
 
     def calculateSourceOverrides(archive, distroseries, pocket, sources):
         """Calculate source overrides.
@@ -198,9 +218,9 @@ class IOverridePolicy(Interface):
 
 @implementer(IOverridePolicy)
 class BaseOverridePolicy:
-
-    def __init__(self, archive, distroseries, pocket,
-                 phased_update_percentage=None):
+    def __init__(
+        self, archive, distroseries, pocket, phased_update_percentage=None
+    ):
         super().__init__()
         self.archive = archive
         self.distroseries = distroseries
@@ -224,8 +244,8 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
     """
 
     def __init__(self, *args, **kwargs):
-        self.any_arch = kwargs.pop('any_arch', False)
-        self.include_deleted = kwargs.pop('include_deleted', False)
+        self.any_arch = kwargs.pop("any_arch", False)
+        self.include_deleted = kwargs.pop("include_deleted", False)
         super().__init__(*args, **kwargs)
 
     def getExistingPublishingStatuses(self, include_deleted):
@@ -244,38 +264,56 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
         other_conditions = []
         if self.pocket is not None:
             other_conditions.append(
-                SourcePackagePublishingHistory.pocket == self.pocket)
+                SourcePackagePublishingHistory.pocket == self.pocket
+            )
         already_published = DecoratedResultSet(
             store.find(
-                (SourcePackagePublishingHistory.sourcepackagenameID,
-                 SourcePackagePublishingHistory.componentID,
-                 SourcePackagePublishingHistory.sectionID,
-                 SourcePackagePublishingHistory.status,
-                 SourcePackageRelease.version),
-                SourcePackageRelease.id ==
-                    SourcePackagePublishingHistory.sourcepackagereleaseID,
+                (
+                    SourcePackagePublishingHistory.sourcepackagenameID,
+                    SourcePackagePublishingHistory.componentID,
+                    SourcePackagePublishingHistory.sectionID,
+                    SourcePackagePublishingHistory.status,
+                    SourcePackageRelease.version,
+                ),
+                SourcePackageRelease.id
+                == SourcePackagePublishingHistory.sourcepackagereleaseID,
                 SourcePackagePublishingHistory.archiveID == self.archive.id,
-                SourcePackagePublishingHistory.distroseriesID ==
-                    self.distroseries.id,
+                SourcePackagePublishingHistory.distroseriesID
+                == self.distroseries.id,
                 SourcePackagePublishingHistory.status.is_in(
-                    self.getExistingPublishingStatuses(self.include_deleted)),
+                    self.getExistingPublishingStatuses(self.include_deleted)
+                ),
                 SourcePackagePublishingHistory.sourcepackagenameID.is_in(
-                    spn.id for spn in spns),
-                *other_conditions).order_by(
-                        SourcePackagePublishingHistory.sourcepackagenameID,
-                        Desc(SourcePackagePublishingHistory.datecreated),
-                        Desc(SourcePackagePublishingHistory.id),
-                ).config(
-                    distinct=(
-                        SourcePackagePublishingHistory.sourcepackagenameID,)),
+                    spn.id for spn in spns
+                ),
+                *other_conditions,
+            )
+            .order_by(
+                SourcePackagePublishingHistory.sourcepackagenameID,
+                Desc(SourcePackagePublishingHistory.datecreated),
+                Desc(SourcePackagePublishingHistory.id),
+            )
+            .config(
+                distinct=(SourcePackagePublishingHistory.sourcepackagenameID,)
+            ),
             id_resolver((SourcePackageName, Component, Section, None, None)),
-            pre_iter_hook=eager_load)
+            pre_iter_hook=eager_load,
+        )
         return {
             name: SourceOverride(
-                component=component, section=section, version=version,
-                new=(status == PackagePublishingStatus.DELETED))
-            for (name, component, section, status, version)
-            in already_published}
+                component=component,
+                section=section,
+                version=version,
+                new=(status == PackagePublishingStatus.DELETED),
+            )
+            for (
+                name,
+                component,
+                section,
+                status,
+                version,
+            ) in already_published
+        }
 
     def calculateBinaryOverrides(self, binaries):
         def eager_load(rows):
@@ -288,56 +326,79 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
             expanded = calculate_target_das(self.distroseries, binaries.keys())
             candidates = [
                 make_package_condition(self.archive, das, bpn)
-                for bpn, das in expanded if das is not None]
+                for bpn, das in expanded
+                if das is not None
+            ]
         else:
             candidates = []
             archtags = set()
             for bpn, archtag in binaries.keys():
                 candidates.append(
-                    BinaryPackagePublishingHistory.binarypackagenameID ==
-                        bpn.id)
+                    BinaryPackagePublishingHistory.binarypackagenameID
+                    == bpn.id
+                )
                 archtags.add(archtag)
-            other_conditions.extend([
-                BinaryPackagePublishingHistory.archiveID == self.archive.id,
-                DistroArchSeries.distroseriesID == self.distroseries.id,
-                BinaryPackagePublishingHistory.distroarchseriesID ==
-                    DistroArchSeries.id,
-                ])
+            other_conditions.extend(
+                [
+                    BinaryPackagePublishingHistory.archiveID
+                    == self.archive.id,
+                    DistroArchSeries.distroseriesID == self.distroseries.id,
+                    BinaryPackagePublishingHistory.distroarchseriesID
+                    == DistroArchSeries.id,
+                ]
+            )
         if len(candidates) == 0:
             return {}
         if self.pocket is not None:
             other_conditions.append(
-                BinaryPackagePublishingHistory.pocket == self.pocket)
+                BinaryPackagePublishingHistory.pocket == self.pocket
+            )
         # Do not copy phased_update_percentage from existing publications;
         # it is too context-dependent to copy.
         already_published = DecoratedResultSet(
             store.find(
-                (BinaryPackagePublishingHistory.binarypackagenameID,
-                 BinaryPackagePublishingHistory.distroarchseriesID,
-                 BinaryPackagePublishingHistory.componentID,
-                 BinaryPackagePublishingHistory.sectionID,
-                 BinaryPackagePublishingHistory.priority,
-                 BinaryPackagePublishingHistory.status,
-                 BinaryPackageRelease.version),
-                BinaryPackageRelease.id ==
-                    BinaryPackagePublishingHistory.binarypackagereleaseID,
-                BinaryPackagePublishingHistory.status.is_in(
-                    self.getExistingPublishingStatuses(self.include_deleted)),
-                Or(*candidates),
-                *other_conditions).order_by(
-                    BinaryPackagePublishingHistory.distroarchseriesID,
+                (
                     BinaryPackagePublishingHistory.binarypackagenameID,
-                    Desc(BinaryPackagePublishingHistory.datecreated),
-                    Desc(BinaryPackagePublishingHistory.id),
-                ).config(distinct=(
                     BinaryPackagePublishingHistory.distroarchseriesID,
-                    BinaryPackagePublishingHistory.binarypackagenameID,
-                    )
+                    BinaryPackagePublishingHistory.componentID,
+                    BinaryPackagePublishingHistory.sectionID,
+                    BinaryPackagePublishingHistory.priority,
+                    BinaryPackagePublishingHistory.status,
+                    BinaryPackageRelease.version,
                 ),
+                BinaryPackageRelease.id
+                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                BinaryPackagePublishingHistory.status.is_in(
+                    self.getExistingPublishingStatuses(self.include_deleted)
+                ),
+                Or(*candidates),
+                *other_conditions,
+            )
+            .order_by(
+                BinaryPackagePublishingHistory.distroarchseriesID,
+                BinaryPackagePublishingHistory.binarypackagenameID,
+                Desc(BinaryPackagePublishingHistory.datecreated),
+                Desc(BinaryPackagePublishingHistory.id),
+            )
+            .config(
+                distinct=(
+                    BinaryPackagePublishingHistory.distroarchseriesID,
+                    BinaryPackagePublishingHistory.binarypackagenameID,
+                )
+            ),
             id_resolver(
-                (BinaryPackageName, DistroArchSeries, Component, Section,
-                None, None, None)),
-            pre_iter_hook=eager_load)
+                (
+                    BinaryPackageName,
+                    DistroArchSeries,
+                    Component,
+                    Section,
+                    None,
+                    None,
+                    None,
+                )
+            ),
+            pre_iter_hook=eager_load,
+        )
         overrides = {}
         for (name, das, comp, sect, prio, status, ver) in already_published:
             # These details can always fulfill their own archtag, and may
@@ -348,15 +409,19 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                     matching_keys.append((name, None))
             else:
                 matching_keys = [
-                    (name, archtag) for archtag in archtags | {None}]
+                    (name, archtag) for archtag in archtags | {None}
+                ]
             for key in matching_keys:
                 if key not in binaries:
                     continue
                 overrides[key] = BinaryOverride(
-                    component=comp, section=sect, priority=prio,
+                    component=comp,
+                    section=sect,
+                    priority=prio,
                     phased_update_percentage=self.phased_update_percentage,
                     version=ver,
-                    new=(status == PackagePublishingStatus.DELETED))
+                    new=(status == PackagePublishingStatus.DELETED),
+                )
         return overrides
 
 
@@ -372,10 +437,13 @@ class FromSourceOverridePolicy(BaseOverridePolicy):
     def calculateBinaryOverrides(self, binaries):
         overrides = {}
         for key, override_in in binaries.items():
-            if (override_in.source_override is not None
-                    and override_in.source_override.component is not None):
+            if (
+                override_in.source_override is not None
+                and override_in.source_override.component is not None
+            ):
                 overrides[key] = BinaryOverride(
-                    component=override_in.source_override.component, new=True)
+                    component=override_in.source_override.component, new=True
+                )
         return overrides
 
 
@@ -397,11 +465,11 @@ class UnknownOverridePolicy(BaseOverridePolicy):
     """
 
     DEBIAN_COMPONENT_OVERRIDE_MAP = {
-        'contrib': 'multiverse',
-        'non-free': 'multiverse',
-        }
+        "contrib": "multiverse",
+        "non-free": "multiverse",
+    }
 
-    DEFAULT_OVERRIDE_COMPONENT = 'universe'
+    DEFAULT_OVERRIDE_COMPONENT = "universe"
 
     @classmethod
     def getComponentOverride(cls, component=None, return_component=False):
@@ -409,7 +477,8 @@ class UnknownOverridePolicy(BaseOverridePolicy):
         if zope_isinstance(component, Component):
             component = component.name
         override_component_name = cls.DEBIAN_COMPONENT_OVERRIDE_MAP.get(
-            component, cls.DEFAULT_OVERRIDE_COMPONENT)
+            component, cls.DEFAULT_OVERRIDE_COMPONENT
+        )
         if return_component:
             return getUtility(IComponentSet)[override_component_name]
         else:
@@ -419,24 +488,36 @@ class UnknownOverridePolicy(BaseOverridePolicy):
         return {
             spn: SourceOverride(
                 component=UnknownOverridePolicy.getComponentOverride(
-                    override.component, return_component=True),
-                new=True)
-            for spn, override in sources.items()}
+                    override.component, return_component=True
+                ),
+                new=True,
+            )
+            for spn, override in sources.items()
+        }
 
     def calculateBinaryOverrides(self, binaries):
-        default_component = getUtility(IComponentSet)['universe']
+        default_component = getUtility(IComponentSet)["universe"]
         return {
             (binary_package_name, architecture_tag): BinaryOverride(
-                component=default_component, new=True,
-                phased_update_percentage=self.phased_update_percentage)
-            for binary_package_name, architecture_tag in binaries.keys()}
+                component=default_component,
+                new=True,
+                phased_update_percentage=self.phased_update_percentage,
+            )
+            for binary_package_name, architecture_tag in binaries.keys()
+        }
 
 
 class ConstantOverridePolicy(BaseOverridePolicy):
     """Override policy that returns constant values."""
 
-    def __init__(self, component=None, section=None, priority=None,
-                 phased_update_percentage=None, new=None):
+    def __init__(
+        self,
+        component=None,
+        section=None,
+        priority=None,
+        phased_update_percentage=None,
+        new=None,
+    ):
         self.component = component
         self.section = section
         self.priority = priority
@@ -446,16 +527,22 @@ class ConstantOverridePolicy(BaseOverridePolicy):
     def calculateSourceOverrides(self, sources):
         return {
             key: SourceOverride(
-                component=self.component, section=self.section,
-                new=self.new) for key in sources.keys()}
+                component=self.component, section=self.section, new=self.new
+            )
+            for key in sources.keys()
+        }
 
     def calculateBinaryOverrides(self, binaries):
         return {
             key: BinaryOverride(
-                component=self.component, section=self.section,
+                component=self.component,
+                section=self.section,
                 priority=self.priority,
                 phased_update_percentage=self.phased_update_percentage,
-                new=self.new) for key in binaries.keys()}
+                new=self.new,
+            )
+            for key in binaries.keys()
+        }
 
 
 class FallbackOverridePolicy(BaseOverridePolicy):
@@ -471,7 +558,8 @@ class FallbackOverridePolicy(BaseOverridePolicy):
             if not missing:
                 break
             these_overrides = policy.calculateSourceOverrides(
-                {spn: sources[spn] for spn in missing})
+                {spn: sources[spn] for spn in missing}
+            )
             overrides.update(these_overrides)
             missing -= set(these_overrides.keys())
         return overrides
@@ -483,7 +571,8 @@ class FallbackOverridePolicy(BaseOverridePolicy):
             if not missing:
                 break
             these_overrides = policy.calculateBinaryOverrides(
-                {key: binaries[key] for key in missing})
+                {key: binaries[key] for key in missing}
+            )
             overrides.update(these_overrides)
             missing -= set(these_overrides.keys())
         return overrides
@@ -492,7 +581,8 @@ class FallbackOverridePolicy(BaseOverridePolicy):
 def calculate_target_das(distroseries, binaries):
     arch_map = {
         arch.architecturetag: arch
-        for arch in distroseries.enabled_architectures}
+        for arch in distroseries.enabled_architectures
+    }
 
     with_das = []
     for bpn, archtag in binaries:
@@ -507,7 +597,8 @@ def make_package_condition(archive, das, bpn):
     return And(
         BinaryPackagePublishingHistory.archiveID == archive.id,
         BinaryPackagePublishingHistory.distroarchseriesID == das.id,
-        BinaryPackagePublishingHistory.binarypackagenameID == bpn.id)
+        BinaryPackagePublishingHistory.binarypackagenameID == bpn.id,
+    )
 
 
 def id_resolver(lookups):
@@ -515,6 +606,7 @@ def id_resolver(lookups):
         store = IStore(SourcePackagePublishingHistory)
         return tuple(
             (value if cls is None else store.get(cls, value))
-            for value, cls in zip(row, lookups))
+            for value, cls in zip(row, lookups)
+        )
 
     return _resolve

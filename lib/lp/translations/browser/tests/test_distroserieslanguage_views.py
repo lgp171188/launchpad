@@ -1,16 +1,13 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from testtools.matchers import Equals
 import transaction
+from testtools.matchers import Equals
 from zope.component import getUtility
 
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import (
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
 from lp.translations.browser.serieslanguage import DistroSeriesLanguageView
@@ -26,16 +23,15 @@ class TestDistroSeriesLanguage(TestCaseWithFactory):
         # Create a distroseries that uses translations.
         TestCaseWithFactory.setUp(self)
         self.distroseries = self.factory.makeDistroSeries()
-        self.language = getUtility(ILanguageSet).getLanguageByCode('sr')
+        self.language = getUtility(ILanguageSet).getLanguageByCode("sr")
         sourcepackagename = self.factory.makeSourcePackageName()
         potemplate = self.factory.makePOTemplate(
-            distroseries=self.distroseries,
-            sourcepackagename=sourcepackagename)
-        self.factory.makePOFile('sr', potemplate)
+            distroseries=self.distroseries, sourcepackagename=sourcepackagename
+        )
+        self.factory.makePOFile("sr", potemplate)
         self.distroseries.updateStatistics(transaction)
         self.dsl = self.distroseries.distroserieslanguages[0]
-        self.view = DistroSeriesLanguageView(
-            self.dsl, LaunchpadTestRequest())
+        self.view = DistroSeriesLanguageView(self.dsl, LaunchpadTestRequest())
 
     def test_empty_view(self):
         self.assertIsNone(self.view.translation_group)
@@ -44,10 +40,10 @@ class TestDistroSeriesLanguage(TestCaseWithFactory):
 
     def test_translation_group(self):
         group = self.factory.makeTranslationGroup(
-            self.distroseries.distribution.owner, url=None)
+            self.distroseries.distribution.owner, url=None
+        )
         self.distroseries.distribution.translationgroup = group
-        self.view = DistroSeriesLanguageView(
-            self.dsl, LaunchpadTestRequest())
+        self.view = DistroSeriesLanguageView(self.dsl, LaunchpadTestRequest())
         self.view.initialize()
         self.assertEqual(self.view.translation_group, group)
 
@@ -55,18 +51,17 @@ class TestDistroSeriesLanguage(TestCaseWithFactory):
         # Just having a group doesn't mean there's a translation
         # team as well.
         group = self.factory.makeTranslationGroup(
-            self.distroseries.distribution.owner, url=None)
+            self.distroseries.distribution.owner, url=None
+        )
         self.distroseries.distribution.translationgroup = group
         self.assertIsNone(self.view.translation_team)
 
         # Setting a translator for this languages makes it
         # appear as the translation_team.
         team = self.factory.makeTeam()
-        translator = getUtility(ITranslatorSet).new(
-            group, self.language, team)
+        translator = getUtility(ITranslatorSet).new(group, self.language, team)
         # Recreate the view because we are using a cached property.
-        self.view = DistroSeriesLanguageView(
-            self.dsl, LaunchpadTestRequest())
+        self.view = DistroSeriesLanguageView(self.dsl, LaunchpadTestRequest())
         self.view.initialize()
         self.assertEqual(self.view.translation_team, translator)
 

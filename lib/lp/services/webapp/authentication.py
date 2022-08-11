@@ -2,18 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'check_oauth_signature',
-    'get_oauth_authorization',
-    'LaunchpadLoginSource',
-    'LaunchpadPrincipal',
-    'PlacelessAuthUtility',
-    ]
+    "check_oauth_signature",
+    "get_oauth_authorization",
+    "LaunchpadLoginSource",
+    "LaunchpadPrincipal",
+    "PlacelessAuthUtility",
+]
 
 
 import binascii
 
-from oauthlib import oauth1
 import six
+from oauthlib import oauth1
 from zope.authentication.interfaces import ILoginPassword
 from zope.component import getUtility
 from zope.event import notify
@@ -21,12 +21,8 @@ from zope.interface import implementer
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
-from zope.session.interfaces import ISession
 
-from lp.registry.interfaces.person import (
-    IPerson,
-    IPersonSet,
-    )
+from lp.registry.interfaces.person import IPerson, IPersonSet
 from lp.services.config import config
 from lp.services.identity.interfaces.account import IAccountSet
 from lp.services.oauth.interfaces import OAUTH_CHALLENGE
@@ -37,7 +33,8 @@ from lp.services.webapp.interfaces import (
     ILaunchpadPrincipal,
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
-    )
+    ISession,
+)
 
 
 @implementer(IPlacelessAuthUtility)
@@ -48,17 +45,21 @@ class PlacelessAuthUtility:
 
     def __init__(self):
         self.nobody = UnauthenticatedPrincipal(
-            'Anonymous', 'Anonymous', 'Anonymous User')
+            "Anonymous", "Anonymous", "Anonymous User"
+        )
         self.nobody.__parent__ = self
 
     def _authenticateUsingBasicAuth(self, credentials, request):
         # authenticate() only attempts basic auth if it's enabled. But
         # recheck here, just in case. There is a single password for all
         # users, so this must never get anywhere near production!
-        if (not config.launchpad.basic_auth_password
-            or config.launchpad.basic_auth_password.lower() == 'none'):
+        if (
+            not config.launchpad.basic_auth_password
+            or config.launchpad.basic_auth_password.lower() == "none"
+        ):
             raise AssertionError(
-                "Attempted to use basic auth when it is disabled")
+                "Attempted to use basic auth when it is disabled"
+            )
 
         login = credentials.getLogin()
         if login is not None:
@@ -66,25 +67,25 @@ class PlacelessAuthUtility:
             principal = login_src.getPrincipalByLogin(login)
             if principal is not None and principal.person.is_valid_person:
                 password = credentials.getPassword()
-                if (password ==
-                        config.launchpad.basic_auth_password.encode('ASCII')):
+                if password == config.launchpad.basic_auth_password.encode(
+                    "ASCII"
+                ):
                     # We send a LoggedInEvent here, when the
                     # cookie auth below sends a PrincipalIdentified,
                     # as the login form is never visited for BasicAuth.
                     # This we treat each request as a separate
                     # login/logout.
-                    notify(BasicAuthLoggedInEvent(
-                        request, login, principal))
+                    notify(BasicAuthLoggedInEvent(request, login, principal))
                     return principal
 
     def _authenticateUsingCookieAuth(self, request):
         session = ISession(request)
-        authdata = session['launchpad.authenticateduser']
-        id = authdata.get('accountid')
+        authdata = session["launchpad.authenticateduser"]
+        id = authdata.get("accountid")
         if id is None:
             # XXX: salgado, 2009-02-17: This is for backwards compatibility,
             # when we used to store the person's ID in the session.
-            person_id = authdata.get('personid')
+            person_id = authdata.get("personid")
             if person_id is not None:
                 person = getUtility(IPersonSet).get(person_id)
                 if person is not None and person.accountID is not None:
@@ -105,10 +106,11 @@ class PlacelessAuthUtility:
             # become invalid for some reason, such as being merged.
             return None
         elif principal.person.is_valid_person:
-            login = authdata['login']
-            assert login, 'login is %s!' % repr(login)
-            notify(CookieAuthPrincipalIdentifiedEvent(
-                principal, request, login))
+            login = authdata["login"]
+            assert login, "login is %s!" % repr(login)
+            notify(
+                CookieAuthPrincipalIdentifiedEvent(principal, request, login)
+            )
             return principal
         else:
             return None
@@ -127,16 +129,21 @@ class PlacelessAuthUtility:
             # encoded properly. That's a client error, so we don't really
             # care, and we're done.
             raise Unauthorized("Bad Basic authentication.")
-        if (config.launchpad.basic_auth_password and credentials is not None
-            and credentials.getLogin() is not None):
+        if (
+            config.launchpad.basic_auth_password
+            and credentials is not None
+            and credentials.getLogin() is not None
+        ):
             return self._authenticateUsingBasicAuth(credentials, request)
         else:
             # Hack to make us not even think of using a session if there
             # isn't already a cookie in the request, or one waiting to be
             # set in the response.
             cookie_name = config.launchpad_session.cookie
-            if (request.cookies.get(cookie_name) is not None or
-                request.response.getCookie(cookie_name) is not None):
+            if (
+                request.cookies.get(cookie_name) is not None
+                or request.response.getCookie(cookie_name) is not None
+            ):
                 return self._authenticateUsingCookieAuth(request)
             else:
                 return None
@@ -175,8 +182,9 @@ class LaunchpadLoginSource:
     principal information.
     """
 
-    def getPrincipal(self, id, access_level=AccessLevel.WRITE_PRIVATE,
-                     scope_url=None):
+    def getPrincipal(
+        self, id, access_level=AccessLevel.WRITE_PRIVATE, scope_url=None
+    ):
         """Return an `ILaunchpadPrincipal` for the account with the given id.
 
         Return None if there is no account with the given id.
@@ -203,9 +211,9 @@ class LaunchpadLoginSource:
     def getPrincipals(self, name):
         raise NotImplementedError
 
-    def getPrincipalByLogin(self, login,
-                            access_level=AccessLevel.WRITE_PRIVATE,
-                            scope_url=None):
+    def getPrincipalByLogin(
+        self, login, access_level=AccessLevel.WRITE_PRIVATE, scope_url=None
+    ):
         """Return a principal based on the account with the email address
         signified by "login".
 
@@ -228,7 +236,8 @@ class LaunchpadLoginSource:
         if person is None or person.account is None:
             return None
         return self._principalForAccount(
-            person.account, access_level, scope_url)
+            person.account, access_level, scope_url
+        )
 
     def _principalForAccount(self, account, access_level, scope_url):
         """Return a LaunchpadPrincipal for the given account.
@@ -238,9 +247,13 @@ class LaunchpadLoginSource:
         """
         naked_account = removeSecurityProxy(account)
         principal = LaunchpadPrincipal(
-            naked_account.id, naked_account.displayname,
-            naked_account.displayname, account,
-            access_level=access_level, scope_url=scope_url)
+            naked_account.id,
+            naked_account.displayname,
+            naked_account.displayname,
+            account,
+            access_level=access_level,
+            scope_url=scope_url,
+        )
         principal.__parent__ = self
         return principal
 
@@ -253,9 +266,15 @@ loginSource.__parent__ = authService
 
 @implementer(ILaunchpadPrincipal)
 class LaunchpadPrincipal:
-
-    def __init__(self, id, title, description, account,
-                 access_level=AccessLevel.WRITE_PRIVATE, scope_url=None):
+    def __init__(
+        self,
+        id,
+        title,
+        description,
+        account,
+        access_level=AccessLevel.WRITE_PRIVATE,
+        scope_url=None,
+    ):
         self.id = str(id)
         self.title = title
         self.description = description
@@ -264,7 +283,8 @@ class LaunchpadPrincipal:
         self.account = account
         self.person = IPerson(account, None)
         self.person_name = (
-            self.person.name if self.person is not None else None)
+            self.person.name if self.person is not None else None
+        )
 
     def getLogin(self):
         if self.person_name is not None:
@@ -277,9 +297,12 @@ def _parse_oauth_authorization_header(header):
     # http://oauth.net/core/1.0/#encoding_parameters says "Text names
     # and values MUST be encoded as UTF-8 octets before percent-encoding
     # them", so we can reasonably fail if this hasn't been done.
-    return dict(oauth1.rfc5849.signature.collect_parameters(
-        headers={"Authorization": six.ensure_text(header)},
-        exclude_oauth_signature=False))
+    return dict(
+        oauth1.rfc5849.signature.collect_parameters(
+            headers={"Authorization": six.ensure_text(header)},
+            exclude_oauth_signature=False,
+        )
+    )
 
 
 def get_oauth_authorization(request):
@@ -311,7 +334,7 @@ def check_oauth_signature(request, consumer, token):
         request.response.setStatus(400)
         return False
 
-    if authorization.get('oauth_signature_method') != 'PLAINTEXT':
+    if authorization.get("oauth_signature_method") != "PLAINTEXT":
         # XXX: 2008-03-04, salgado: Only the PLAINTEXT method is supported
         # now. Others will be implemented later.
         request.response.setStatus(400)
@@ -319,11 +342,15 @@ def check_oauth_signature(request, consumer, token):
 
     # The signature is a consumer secret and a token secret joined by &.
     # If there's no token, the token secret is the empty string.
-    sig_bits = authorization.get('oauth_signature', '').split('&')
-    if (len(sig_bits) == 2
+    sig_bits = authorization.get("oauth_signature", "").split("&")
+    if (
+        len(sig_bits) == 2
         and consumer.isSecretValid(sig_bits[0])
-        and ((token is None and sig_bits[1] == '')
-             or (token is not None and token.isSecretValid(sig_bits[1])))):
+        and (
+            (token is None and sig_bits[1] == "")
+            or (token is not None and token.isSecretValid(sig_bits[1]))
+        )
+    ):
         return True
     request.unauthorized(OAUTH_CHALLENGE)
     return False

@@ -7,9 +7,9 @@ This code talks to the internal XML-RPC server for the branch filesystem.
 """
 
 __all__ = [
-    'BranchFileSystemClient',
-    'NotInCache',
-    ]
+    "BranchFileSystemClient",
+    "NotInCache",
+]
 
 import time
 
@@ -36,8 +36,14 @@ class BranchFileSystemClient:
     cache the results here.
     """
 
-    def __init__(self, codehosting_endpoint, user_id, expiry_time=None,
-                 seen_new_branch_hook=None, _now=time.time):
+    def __init__(
+        self,
+        codehosting_endpoint,
+        user_id,
+        expiry_time=None,
+        seen_new_branch_hook=None,
+        _now=time.time,
+    ):
         """Construct a caching codehosting_endpoint.
 
         :param codehosting_endpoint: An XML-RPC proxy that implements
@@ -64,7 +70,7 @@ class BranchFileSystemClient:
             matched_part = path
         else:
             matched_part = path[:-trailing_length]
-        return matched_part.rstrip('/')
+        return matched_part.rstrip("/")
 
     def _addToCache(self, transport_tuple, path):
         """Cache the given 'transport_tuple' results for 'path'.
@@ -76,24 +82,26 @@ class BranchFileSystemClient:
         matched_part = self._getMatchedPart(path, transport_tuple)
         if transport_type == BRANCH_TRANSPORT:
             if self.seen_new_branch_hook:
-                self.seen_new_branch_hook(matched_part.strip('/'))
+                self.seen_new_branch_hook(matched_part.strip("/"))
             self._cache[matched_part] = (transport_type, data, self._now())
         return transport_tuple
 
     def _getFromCache(self, path):
         """Get the cached 'transport_tuple' for 'path'."""
-        split_path = path.strip('/').split('/')
+        split_path = path.strip("/").split("/")
         for object_path, value in self._cache.items():
             transport_type, data, inserted_time = value
-            split_object_path = object_path.strip('/').split('/')
+            split_object_path = object_path.strip("/").split("/")
             # Do a segment-by-segment comparison. Python sucks, lists should
             # also have startswith.
-            if split_path[:len(split_object_path)] == split_object_path:
-                if (self.expiry_time is not None
-                    and self._now() > inserted_time + self.expiry_time):
+            if split_path[: len(split_object_path)] == split_object_path:
+                if (
+                    self.expiry_time is not None
+                    and self._now() > inserted_time + self.expiry_time
+                ):
                     del self._cache[object_path]
                     break
-                trailing_path = '/'.join(split_path[len(split_object_path):])
+                trailing_path = "/".join(split_path[len(split_object_path) :])
                 return (transport_type, data, trailing_path)
         raise NotInCache(path)
 
@@ -108,18 +116,32 @@ class BranchFileSystemClient:
         :return: A `Deferred` that fires the ID of the created branch.
         """
         return self._codehosting_endpoint.callRemote(
-            'createBranch', self._user_id, branch_path)
+            "createBranch", self._user_id, branch_path
+        )
 
-    def branchChanged(self, branch_id, stacked_on_url, last_revision_id,
-                      control_string, branch_string, repository_string):
+    def branchChanged(
+        self,
+        branch_id,
+        stacked_on_url,
+        last_revision_id,
+        control_string,
+        branch_string,
+        repository_string,
+    ):
         """Mark a branch as needing to be mirrored.
 
         :param branch_id: The database ID of the branch.
         """
         return self._codehosting_endpoint.callRemote(
-            'branchChanged', self._user_id, branch_id, stacked_on_url,
-            last_revision_id, control_string, branch_string,
-            repository_string)
+            "branchChanged",
+            self._user_id,
+            branch_id,
+            stacked_on_url,
+            last_revision_id,
+            control_string,
+            branch_string,
+            repository_string,
+        )
 
     def translatePath(self, path):
         """Translate 'path'."""
@@ -127,6 +149,7 @@ class BranchFileSystemClient:
             return defer.succeed(self._getFromCache(path))
         except NotInCache:
             deferred = self._codehosting_endpoint.callRemote(
-                'translatePath', self._user_id, path)
+                "translatePath", self._user_id, path
+            )
             deferred.addCallback(no_traceback_failures(self._addToCache), path)
             return deferred

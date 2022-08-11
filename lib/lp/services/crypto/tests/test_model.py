@@ -12,7 +12,6 @@ from lp.testing.layers import ZopelessLayer
 
 
 class FakeEncryptedContainer(NaClEncryptedContainerBase):
-
     def __init__(self, public_key_bytes, private_key_bytes=None):
         self._public_key_bytes = public_key_bytes
         self._private_key_bytes = private_key_bytes
@@ -55,7 +54,8 @@ class TestNaClEncryptedContainerBase(TestCase):
     def test_private_key_valid(self):
         private_key = PrivateKey.generate()
         container = FakeEncryptedContainer(
-            bytes(private_key.public_key), bytes(private_key))
+            bytes(private_key.public_key), bytes(private_key)
+        )
         self.assertEqual(private_key, container.private_key)
         self.assertTrue(container.can_decrypt)
 
@@ -74,6 +74,8 @@ class TestNaClEncryptedContainerBase(TestCase):
     def test_encrypt_decrypt(self):
         private_key = PrivateKey.generate()
         container = FakeEncryptedContainer(
-            bytes(private_key.public_key), bytes(private_key))
+            bytes(private_key.public_key), bytes(private_key)
+        )
         self.assertEqual(
-            b"plaintext", container.decrypt(container.encrypt(b"plaintext")))
+            b"plaintext", container.decrypt(container.encrypt(b"plaintext"))
+        )

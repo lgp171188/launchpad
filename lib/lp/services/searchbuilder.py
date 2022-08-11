@@ -3,7 +3,7 @@
 
 """Helpers for creating searches with *Set.search methods.
 
-See lib/canonical/launchpad/doc/bugtask.txt for example usages of
+See lib/lp/bugs/model/tests/test_bugtasksearch.py for example usages of
 searchbuilder helpers.
 """
 

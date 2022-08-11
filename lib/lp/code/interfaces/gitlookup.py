@@ -4,10 +4,10 @@
 """Utility for looking up Git repositories by name."""
 
 __all__ = [
-    'IGitLookup',
-    'IGitTraversable',
-    'IGitTraverser',
-    ]
+    "IGitLookup",
+    "IGitTraversable",
+    "IGitTraverser",
+]
 
 from zope.interface import Interface
 

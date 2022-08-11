@@ -4,18 +4,14 @@
 """Unit tests for TestP3APackages."""
 
 __all__ = [
-    'TestP3APackages',
-    'TestPPAPackages',
-    ]
+    "TestP3APackages",
+    "TestPPAPackages",
+]
 
 import re
 
 import soupmatchers
-from testtools.matchers import (
-    Equals,
-    LessThan,
-    Not,
-    )
+from testtools.matchers import Equals, LessThan, Not
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -23,27 +19,30 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.utilities.celebrities import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.soyuz.browser.archive import ArchiveNavigationMenu
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.testing import (
+    RequestTimelineCollector,
+    TestCaseWithFactory,
     celebrity_logged_in,
     login,
     login_person,
     person_logged_in,
     record_two_runs,
-    RequestTimelineCollector,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import get_feedback_messages
+from lp.testing.pages import (
+    extract_text,
+    find_tag_by_id,
+    get_feedback_messages,
+)
 from lp.testing.sampledata import ADMIN_EMAIL
 from lp.testing.views import create_initialized_view
 
@@ -55,28 +54,30 @@ class TestP3APackages(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.private_ppa = self.factory.makeArchive(description='Foo')
-        login('admin@canonical.com')
+        self.private_ppa = self.factory.makeArchive(description="Foo")
+        login("admin@canonical.com")
         self.private_ppa.private = True
-        self.joe = self.factory.makePerson(name='joe')
-        self.fred = self.factory.makePerson(name='fred')
-        self.mary = self.factory.makePerson(name='mary')
+        self.joe = self.factory.makePerson(name="joe")
+        self.fred = self.factory.makePerson(name="fred")
+        self.mary = self.factory.makePerson(name="mary")
         login_person(self.private_ppa.owner)
         self.private_ppa.newSubscription(self.joe, self.private_ppa.owner)
-        self.private_ppa.newComponentUploader(self.mary, 'main')
+        self.private_ppa.newComponentUploader(self.mary, "main")
 
     def test_packages_unauthorized(self):
-        """A person with no subscription will not be able to view +packages
-        """
+        """A person with no subscription will not be able to view +packages"""
         login_person(self.fred)
         self.assertRaises(
-            Unauthorized, create_initialized_view, self.private_ppa,
-            "+packages")
+            Unauthorized,
+            create_initialized_view,
+            self.private_ppa,
+            "+packages",
+        )
 
     def test_packages_authorized_for_commercial_admin_with_subscription(self):
         # A commercial admin should always be able to see +packages even
         # if they have a subscription.
-        login('admin@canonical.com')
+        login("admin@canonical.com")
         admins = getUtility(ILaunchpadCelebrities).commercial_admin
         admins.addMember(self.joe, admins)
         login_person(self.joe)
@@ -112,7 +113,8 @@ class TestPPAPackages(TestCaseWithFactory):
     def getPackagesView(self, query_string=None):
         ppa = self.factory.makeArchive()
         return create_initialized_view(
-            ppa, "+packages", query_string=query_string)
+            ppa, "+packages", query_string=query_string
+        )
 
     def assertNotifications(self, ppa, notification, person=None):
         # Assert that while requesting a 'ppa' page as 'person', the
@@ -120,12 +122,16 @@ class TestPPAPackages(TestCaseWithFactory):
         if person is not None:
             login_person(ppa.owner)
             principal = LaunchpadPrincipal(
-                ppa.owner.account.id, ppa.owner.displayname,
-                ppa.owner.displayname, ppa.owner)
+                ppa.owner.account.id,
+                ppa.owner.displayname,
+                ppa.owner.displayname,
+                ppa.owner,
+            )
         else:
             principal = None
         page = create_initialized_view(
-            ppa, "+packages", principal=principal).render()
+            ppa, "+packages", principal=principal
+        ).render()
         notifications = get_feedback_messages(page)
         self.assertIn(notification, notifications)
 
@@ -138,7 +144,8 @@ class TestPPAPackages(TestCaseWithFactory):
             ppa,
             "Publishing has been disabled for this archive. (re-enable "
             "publishing)",
-            person=ppa.owner)
+            person=ppa.owner,
+        )
 
     def test_warning_for_disabled_publishing_with_private_ppa(self):
         # Ensure that a notification is shown when archive.publish
@@ -150,7 +157,8 @@ class TestPPAPackages(TestCaseWithFactory):
             "Publishing has been disabled for this archive. (re-enable "
             "publishing) Since this archive is private, no builds are being "
             "dispatched.",
-            person=ppa.owner)
+            person=ppa.owner,
+        )
 
     def test_warning_for_disabled_publishing_with_anonymous_user(self):
         # The warning notification doesn't mention the Change details
@@ -158,43 +166,53 @@ class TestPPAPackages(TestCaseWithFactory):
         ppa = self.factory.makeArchive()
         removeSecurityProxy(ppa).publish = False
         self.assertNotifications(
-            ppa, 'Publishing has been disabled for this archive.')
+            ppa, "Publishing has been disabled for this archive."
+        )
 
     def test_page_show_singular_pending_builds(self):
         ppa = self.factory.makeArchive()
         self.factory.makeBinaryPackageBuild(
-            archive=ppa, status=BuildStatus.NEEDSBUILD)
+            archive=ppa, status=BuildStatus.NEEDSBUILD
+        )
         owner = login_person(ppa.owner)
         browser = self.getUserBrowser(
-            canonical_url(ppa) + '/+packages', user=owner)
+            canonical_url(ppa) + "/+packages", user=owner
+        )
         html = browser.contents
         pending_build_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'pending build', 'p',
-                text=re.compile(r'(?s).*(pending\s*build\.)')),
+                "pending build",
+                "p",
+                text=re.compile(r"(?s).*(pending\s*build\.)"),
+            ),
         )
         self.assertThat(
-            html, pending_build_exists,
-            'Pending builds message was not found')
+            html, pending_build_exists, "Pending builds message was not found"
+        )
 
     def test_page_show_plural_pending_builds(self):
         ppa = self.factory.makeArchive()
         self.factory.makeBinaryPackageBuild(
-            archive=ppa, status=BuildStatus.NEEDSBUILD)
+            archive=ppa, status=BuildStatus.NEEDSBUILD
+        )
         self.factory.makeBinaryPackageBuild(
-            archive=ppa, status=BuildStatus.NEEDSBUILD)
+            archive=ppa, status=BuildStatus.NEEDSBUILD
+        )
         owner = login_person(ppa.owner)
         browser = self.getUserBrowser(
-            canonical_url(ppa) + '/+packages', user=owner)
+            canonical_url(ppa) + "/+packages", user=owner
+        )
         html = browser.contents
         pending_build_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'pending build', 'p',
-                text=re.compile(r'(?s).*(pending\s*builds\.)')),
+                "pending build",
+                "p",
+                text=re.compile(r"(?s).*(pending\s*builds\.)"),
+            ),
         )
         self.assertThat(
-            html, pending_build_exists,
-            'Pending builds message was not found')
+            html, pending_build_exists, "Pending builds message was not found"
+        )
 
     def test_ppa_packages_menu_is_enabled(self):
         joe = self.factory.makePerson()
@@ -205,51 +223,63 @@ class TestPPAPackages(TestCaseWithFactory):
         self.assertTrue(menu.packages().enabled)
 
     def test_specified_name_filter_works(self):
-        view = self.getPackagesView('field.name_filter=blah')
-        self.assertEqual('blah', view.specified_name_filter)
+        view = self.getPackagesView("field.name_filter=blah")
+        self.assertEqual("blah", view.specified_name_filter)
 
     def test_page_with_filter_parameter_shows_message(self):
         ppa = self.factory.makeArchive()
         self.factory.makeSourcePackagePublishingHistory(archive=ppa)
         owner = login_person(ppa.owner)
         browser = self.getUserBrowser(
-            canonical_url(ppa) + '/+packages?field.name_filter=unknown_name',
-            user=owner)
+            canonical_url(ppa) + "/+packages?field.name_filter=unknown_name",
+            user=owner,
+        )
         html = browser.contents
         empty_package_msg_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'no matching packages message', 'div',
+                "no matching packages message",
+                "div",
                 text=re.compile(
-                    r"\s*No matching package for 'unknown_name'\s*"),
-                attrs={'id': 'empty-result'}),
+                    r"\s*No matching package for 'unknown_name'\s*"
+                ),
+                attrs={"id": "empty-result"},
+            ),
         )
         self.assertThat(
-            html, empty_package_msg_exists,
-            'Message "No matching package for (...)" should appear')
+            html,
+            empty_package_msg_exists,
+            'Message "No matching package for (...)" should appear',
+        )
 
     def test_page_without_filter_parameter_doesnt_show_message(self):
         ppa = self.factory.makeArchive()
         self.factory.makeSourcePackagePublishingHistory(
-            archive=ppa, status=PackagePublishingStatus.DELETED)
+            archive=ppa, status=PackagePublishingStatus.DELETED
+        )
         owner = login_person(ppa.owner)
         browser = self.getUserBrowser(
-            canonical_url(ppa) + '/+packages', user=owner)
+            canonical_url(ppa) + "/+packages", user=owner
+        )
         html = browser.contents
         empty_package_msg_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'no matching packages message', 'div',
-                attrs={'id': 'empty-result'}),
+                "no matching packages message",
+                "div",
+                attrs={"id": "empty-result"},
+            ),
         )
         self.assertThat(
-            html, Not(empty_package_msg_exists),
-            'Message "No matching package for (...)" should *NOT* appear')
+            html,
+            Not(empty_package_msg_exists),
+            'Message "No matching package for (...)" should *NOT* appear',
+        )
 
     def test_specified_name_filter_returns_none_on_omission(self):
         view = self.getPackagesView()
         self.assertIs(None, view.specified_name_filter)
 
     def test_specified_name_filter_returns_none_on_empty_filter(self):
-        view = self.getPackagesView('field.name_filter=')
+        view = self.getPackagesView("field.name_filter=")
         self.assertIs(None, view.specified_name_filter)
 
     def test_source_query_counts(self):
@@ -286,9 +316,11 @@ class TestPPAPackages(TestCaseWithFactory):
         with person_logged_in(viewer):
             for i in range(2):
                 pkg = self.factory.makeSourcePackagePublishingHistory(
-                    archive=ppa)
-                self.factory.makeSourcePackagePublishingHistory(archive=ppa,
-                    distroseries=pkg.distroseries)
+                    archive=ppa
+                )
+                self.factory.makeSourcePackagePublishingHistory(
+                    archive=ppa, distroseries=pkg.distroseries
+                )
             url = canonical_url(ppa) + "/+packages"
         browser.open(url)
         self.assertThat(collector, HasQueryCount(LessThan(expected_count)))
@@ -307,8 +339,7 @@ class TestPPAPackages(TestCaseWithFactory):
             # short-circuit prevents the packages iteration happening at
             # all and we're not actually measuring scaling
             # appropriately.
-            pkg = self.factory.makeBinaryPackagePublishingHistory(
-                archive=ppa)
+            pkg = self.factory.makeBinaryPackagePublishingHistory(archive=ppa)
             url = canonical_url(ppa) + "/+packages"
         browser.open(url)
         self.assertThat(collector, HasQueryCount(LessThan(query_baseline)))
@@ -322,10 +353,58 @@ class TestPPAPackages(TestCaseWithFactory):
         with person_logged_in(viewer):
             for i in range(3):
                 pkg = self.factory.makeBinaryPackagePublishingHistory(
-                    archive=ppa, distroarchseries=pkg.distroarchseries)
+                    archive=ppa, distroarchseries=pkg.distroarchseries
+                )
             url = canonical_url(ppa) + "/+packages"
         browser.open(url)
         self.assertThat(collector, HasQueryCount(Equals(expected_count)))
+
+    def test_ci_build_python_sdist(self):
+        # Publications for non-dsc/deb package types have no component or
+        # section.
+        ci_build = self.factory.makeCIBuild()
+        ppa = self.factory.makeArchive(
+            distribution=ci_build.distribution,
+            repository_format=ArchiveRepositoryFormat.PYTHON,
+        )
+        spn = self.factory.makeSourcePackageName()
+        spr = ci_build.createSourcePackageRelease(
+            distroseries=ci_build.distro_series,
+            sourcepackagename=spn,
+            version="0.1",
+            creator=ci_build.git_repository.owner,
+            archive=ppa,
+        )
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        spr.addFile(lfa, filetype=SourcePackageFileType.SDIST)
+        spph = getUtility(IPublishingSet).newSourcePublication(
+            archive=ppa,
+            sourcepackagerelease=spr,
+            distroseries=ci_build.distro_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            creator=ci_build.git_repository.owner,
+            channel="edge",
+        )
+        distroseries_name = spph.distroseries.name
+        browser = self.getUserBrowser(
+            canonical_url(ppa, view_name="+packages")
+        )
+        package_table = find_tag_by_id(browser.contents, "packages_list")
+        [row] = package_table.tbody.find_all(
+            "tr", attrs={"class": "archive_package_row"}
+        )
+        self.assertEqual(
+            [
+                spr.title,
+                "",  # changes file
+                "",  # date published
+                "Pending",
+                distroseries_name.capitalize(),
+                "",  # section
+                "",  # build status summary
+            ],
+            [extract_text(cell) for cell in row.find_all("td")],
+        )
 
 
 class TestPPAPackagesJobNotifications(TestCaseWithFactory):
@@ -334,7 +413,7 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.ws_version = 'devel'
+        self.ws_version = "devel"
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive(owner=self.person)
 
@@ -344,11 +423,15 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
         requester = self.factory.makePerson()
         source = getUtility(IPlainPackageCopyJobSource)
         job = source.create(
-            package_name=package_name, source_archive=source_archive,
-            target_archive=self.archive, target_distroseries=distroseries,
+            package_name=package_name,
+            source_archive=source_archive,
+            target_archive=self.archive,
+            target_distroseries=distroseries,
             target_pocket=PackagePublishingPocket.RELEASE,
-            package_version="1.0-1", include_binaries=True,
-            requester=requester)
+            package_version="1.0-1",
+            include_binaries=True,
+            requester=requester,
+        )
         job.start()
         if failed:
             job.fail()
@@ -357,135 +440,173 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
     def getPackagesView(self, query_string=None):
         ppa = self.factory.makeArchive()
         return create_initialized_view(
-            ppa, "+packages", query_string=query_string)
+            ppa, "+packages", query_string=query_string
+        )
 
     def test_job_notifications_display_failed(self):
-        job = self.makeJob('package_1', failed=True)
+        job = self.makeJob("package_1", failed=True)
         # Manually poke an error message.
         removeSecurityProxy(job).extendMetadata(
-            {'error_message': 'Job failed!'})
+            {"error_message": "Job failed!"}
+        )
         with person_logged_in(self.archive.owner):
             view = create_initialized_view(
-                self.archive, "+packages", principal=self.archive.owner)
+                self.archive, "+packages", principal=self.archive.owner
+            )
             html = view.render()
         packages_matches = soupmatchers.HTMLContains(
             # Check the main title.
             soupmatchers.Tag(
-                'job summary', 'a',
-                text=re.compile('Copying.*'),
-                attrs={'class': re.compile('job-summary')}),
+                "job summary",
+                "a",
+                text=re.compile("Copying.*"),
+                attrs={"class": re.compile("job-summary")},
+            ),
             # Check the link to the source archive.
             soupmatchers.Tag(
-                'copied from', 'a',
+                "copied from",
+                "a",
                 text=job.source_archive.displayname,
-                attrs={'class': re.compile('copied-from')}),
+                attrs={"class": re.compile("copied-from")},
+            ),
             # Check the presence of the link to remove the notification.
             soupmatchers.Tag(
-                'no remove notification link', 'a',
-                text=re.compile(r'\s*Remove notification\s*'),
-                attrs={'class': re.compile('remove-notification')}),
+                "no remove notification link",
+                "a",
+                text=re.compile(r"\s*Remove notification\s*"),
+                attrs={"class": re.compile("remove-notification")},
+            ),
             # Check the presence of the error message.
             soupmatchers.Tag(
-                'job error msg', 'div',
-                text='Job failed!',
-                attrs={'class': re.compile('job-failed-error-msg')}),
-            )
+                "job error msg",
+                "div",
+                text="Job failed!",
+                attrs={"class": re.compile("job-failed-error-msg")},
+            ),
+        )
         self.assertThat(html, packages_matches)
 
     def test_job_notifications_display_in_progress_not_allowed(self):
         other_person = self.factory.makePerson()
-        self.makeJob('package_1', failed=True)
+        self.makeJob("package_1", failed=True)
         with person_logged_in(other_person):
             view = create_initialized_view(
-                self.archive, "+packages", principal=other_person)
+                self.archive, "+packages", principal=other_person
+            )
             html = view.render()
         packages_not_matches = soupmatchers.HTMLContains(
             # Check the absence of the link remove the notification.
             soupmatchers.Tag(
-                'no remove notification link', 'a',
-                text=re.compile(r'\s*Remove notification\s*'),
-                attrs={'class': re.compile('remove-notification')}),
-            )
+                "no remove notification link",
+                "a",
+                text=re.compile(r"\s*Remove notification\s*"),
+                attrs={"class": re.compile("remove-notification")},
+            ),
+        )
         self.assertThat(html, Not(packages_not_matches))
 
     def test_job_notifications_display_in_progress(self):
-        job = self.makeJob('package_1', failed=False)
+        job = self.makeJob("package_1", failed=False)
         with person_logged_in(self.archive.owner):
             view = create_initialized_view(
-                self.archive, "+packages", principal=self.archive.owner)
+                self.archive, "+packages", principal=self.archive.owner
+            )
             html = view.render()
         packages_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'job summary', 'a',
-                text=re.compile('Copying.*'),
-                attrs={'class': re.compile('job-summary')}),
+                "job summary",
+                "a",
+                text=re.compile("Copying.*"),
+                attrs={"class": re.compile("job-summary")},
+            ),
             soupmatchers.Tag(
-                'copied from', 'a',
+                "copied from",
+                "a",
                 text=job.source_archive.displayname,
-                attrs={'class': re.compile('copied-from')}),
-            )
+                attrs={"class": re.compile("copied-from")},
+            ),
+        )
         packages_not_matches = soupmatchers.HTMLContains(
             # Check the absence of the link remove the notification.
             soupmatchers.Tag(
-                'remove notification link', 'a',
-                text=re.compile(r'\s*Remove notification\s*'),
-                attrs={'class': re.compile('remove-notification')}),
-            )
+                "remove notification link",
+                "a",
+                text=re.compile(r"\s*Remove notification\s*"),
+                attrs={"class": re.compile("remove-notification")},
+            ),
+        )
         self.assertThat(html, packages_matches)
         self.assertThat(html, Not(packages_not_matches))
 
     def test_job_notifications_display_multiple(self):
-        job1 = self.makeJob('package_1')
-        job2 = self.makeJob('package_2', failed=True)
-        job3 = self.makeJob('package_3')
+        job1 = self.makeJob("package_1")
+        job2 = self.makeJob("package_2", failed=True)
+        job3 = self.makeJob("package_3")
         with person_logged_in(self.archive.owner):
             view = create_initialized_view(
-                self.archive, "+packages", principal=self.archive.owner)
+                self.archive, "+packages", principal=self.archive.owner
+            )
             html = view.render()
         packages_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'job1', 'div',
-                attrs={'class': 'pending-job', 'job_id': job1.id}),
+                "job1",
+                "div",
+                attrs={"class": "pending-job", "job_id": job1.id},
+            ),
             soupmatchers.Tag(
-                'job2', 'div',
-                attrs={'class': 'pending-job', 'job_id': job2.id}),
+                "job2",
+                "div",
+                attrs={"class": "pending-job", "job_id": job2.id},
+            ),
             soupmatchers.Tag(
-                'job3', 'div',
-                attrs={'class': 'pending-job', 'job_id': job3.id}),
-            )
+                "job3",
+                "div",
+                attrs={"class": "pending-job", "job_id": job3.id},
+            ),
+        )
         self.assertThat(html, packages_matches)
         self.assertEqual(
-            [], BeautifulSoup(html).find_all(
-                'span', text=re.compile('Showing 5 of .')))
+            [],
+            BeautifulSoup(html).find_all(
+                "span", text=re.compile("Showing 5 of .")
+            ),
+        )
 
     def test_job_notifications_display_multiple_is_capped(self):
-        jobs = [self.makeJob('package%d' % i) for i in range(7)]
+        jobs = [self.makeJob("package%d" % i) for i in range(7)]
         with person_logged_in(self.archive.owner):
             view = create_initialized_view(
-                self.archive, "+packages", principal=self.archive.owner)
+                self.archive, "+packages", principal=self.archive.owner
+            )
             soup = BeautifulSoup(view.render())
-        self.assertEqual([],
-            soup.find_all(
-                'div', attrs={'class': 'pending-job', 'job_id': jobs[-1].id}))
-        showing_tags = soup.find_all(
-            'span', text=re.compile('Showing 5 of .'))
         self.assertEqual(
-            ['Showing 5 of 7'], [tag.string for tag in showing_tags])
+            [],
+            soup.find_all(
+                "div", attrs={"class": "pending-job", "job_id": jobs[-1].id}
+            ),
+        )
+        showing_tags = soup.find_all("span", text=re.compile("Showing 5 of ."))
+        self.assertEqual(
+            ["Showing 5 of 7"], [tag.string for tag in showing_tags]
+        )
 
     def test_job_notifications_display_owner_is_team(self):
         team = self.factory.makeTeam()
         removeSecurityProxy(self.archive).owner = team
-        job = self.makeJob('package_1', failed=False)
+        job = self.makeJob("package_1", failed=False)
         with person_logged_in(self.archive.owner):
             view = create_initialized_view(
-                self.archive, "+packages", principal=self.archive.owner)
+                self.archive, "+packages", principal=self.archive.owner
+            )
             html = view.render()
         packages_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
-                'copied by', 'a',
+                "copied by",
+                "a",
                 text=job.job.requester.displayname,
-                attrs={'class': re.compile('copied-by')}),
-            )
+                attrs={"class": re.compile("copied-by")},
+            ),
+        )
         self.assertThat(html, packages_matches)
 
 
@@ -500,28 +621,36 @@ class TestP3APackagesQueryCount(TestCaseWithFactory):
         self.person = self.factory.makePerson()
 
         self.private_ppa = self.factory.makeArchive(
-            owner=self.team, private=True)
+            owner=self.team, private=True
+        )
         self.private_ppa.newSubscription(
-            self.person, registrant=self.team.teamowner)
+            self.person, registrant=self.team.teamowner
+        )
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.private_ppa.distribution)
+            distribution=self.private_ppa.distribution
+        )
 
     def createPackage(self):
-        with celebrity_logged_in('admin'):
+        with celebrity_logged_in("admin"):
             pkg = self.factory.makeBinaryPackagePublishingHistory(
                 distroarchseries=self.factory.makeDistroArchSeries(
-                    distroseries=self.distroseries),
+                    distroseries=self.distroseries
+                ),
                 status=PackagePublishingStatus.PUBLISHED,
-                archive=self.private_ppa)
+                archive=self.private_ppa,
+            )
         return pkg
 
     def test_ppa_index_queries_count(self):
         def ppa_index_render():
             with person_logged_in(self.team.teamowner):
                 view = create_initialized_view(
-                    self.private_ppa, '+index', principal=self.team.teamowner)
+                    self.private_ppa, "+index", principal=self.team.teamowner
+                )
                 view.page_title = "title"
                 view.render()
+
         recorder1, recorder2 = record_two_runs(
-            ppa_index_render, self.createPackage, 2, 3)
+            ppa_index_render, self.createPackage, 2, 3
+        )
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))

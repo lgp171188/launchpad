@@ -18,7 +18,7 @@ class RequestProductJobs(LaunchpadCronScript):
     """Create `ProductJobs` for products that need updating."""
 
     def __init__(self):
-        name = 'daily_product_jobs'
+        name = "daily_product_jobs"
         dbuser = config.ICommercialExpiredJobSource.dbuser
         LaunchpadCronScript.__init__(self, name, dbuser)
 
@@ -26,10 +26,10 @@ class RequestProductJobs(LaunchpadCronScript):
         globalErrorUtility.configure(self.name)
         manager = ProductJobManager(self.logger)
         job_count = manager.createAllDailyJobs()
-        self.logger.info('Requested %d total product jobs.' % job_count)
+        self.logger.info("Requested %d total product jobs." % job_count)
         transaction.commit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = RequestProductJobs()
     script.lock_and_run()

@@ -2,18 +2,19 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Karma',
-    'KarmaAction',
-    'KarmaActionSet',
-    'KarmaAssignedEvent',
-    'KarmaCache',
-    'KarmaCacheManager',
-    'KarmaTotalCache',
-    'KarmaCategory',
-    'KarmaContextMixin',
-    ]
+    "Karma",
+    "KarmaAction",
+    "KarmaActionSet",
+    "KarmaAssignedEvent",
+    "KarmaCache",
+    "KarmaCacheManager",
+    "KarmaTotalCache",
+    "KarmaCategory",
+    "KarmaContextMixin",
+]
 
-from storm.expr import Desc
+import pytz
+from storm.locals import DateTime, Desc, Int, Reference, ReferenceSet, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -28,23 +29,12 @@ from lp.registry.interfaces.karma import (
     IKarmaCategory,
     IKarmaContext,
     IKarmaTotalCache,
-    )
+)
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-    )
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IKarmaAssignedEvent)
@@ -57,41 +47,62 @@ class KarmaAssignedEvent:
 
 
 @implementer(IKarma)
-class Karma(SQLBase):
+class Karma(StormBase):
     """See IKarma."""
 
-    _table = 'Karma'
-    _defaultOrder = ['action', 'id']
+    __storm_table__ = "Karma"
+    __storm_order__ = ["action", "id"]
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person', notNull=True)
-    action = ForeignKey(
-        dbName='action', foreignKey='KarmaAction', notNull=True)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False)
-    datecreated = UtcDateTimeCol(
-        dbName='datecreated', notNull=True, default=UTC_NOW)
+    id = Int(primary=True)
+
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    action_id = Int(name="action", allow_none=False)
+    action = Reference(action_id, "KarmaAction.id")
+    product_id = Int(name="product", allow_none=True)
+    product = Reference(product_id, "Product.id")
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    datecreated = DateTime(
+        name="datecreated", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+    )
+
+    def __init__(
+        self,
+        person,
+        action,
+        product=None,
+        distribution=None,
+        sourcepackagename=None,
+        datecreated=None,
+    ):
+        super().__init__()
+        self.person = person
+        self.action = action
+        self.product = product
+        self.distribution = distribution
+        self.sourcepackagename = sourcepackagename
+        self.datecreated = datecreated
 
 
 @implementer(IKarmaAction)
-class KarmaAction(SQLBase):
+class KarmaAction(StormBase):
     """See IKarmaAction."""
 
-    _table = 'KarmaAction'
-    sortingColumns = ['category', 'name']
-    _defaultOrder = sortingColumns
+    __storm_table__ = "KarmaAction"
+    sortingColumns = ["category", "name"]
+    __storm_order__ = sortingColumns
 
-    name = StringCol(notNull=True, alternateID=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=True)
-    category = ForeignKey(dbName='category', foreignKey='KarmaCategory',
-        notNull=True)
-    points = IntCol(dbName='points', notNull=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+    title = Unicode(name="title", allow_none=False)
+    summary = Unicode(name="summary", allow_none=False)
+    category_id = Int(name="category", allow_none=False)
+    category = Reference(category_id, "KarmaCategory.id")
+    points = Int(name="points", allow_none=False)
 
 
 @implementer(IKarmaActionSet)
@@ -99,123 +110,197 @@ class KarmaActionSet:
     """See IKarmaActionSet."""
 
     def __iter__(self):
-        return iter(KarmaAction.select())
+        return iter(IStore(KarmaAction).find(KarmaAction))
 
     def getByName(self, name, default=None):
         """See IKarmaActionSet."""
-        try:
-            return KarmaAction.byName(name)
-        except SQLObjectNotFound:
+        action = IStore(KarmaAction).find(KarmaAction, name=name).one()
+        if action is None:
             return default
+        return action
 
     def selectByCategory(self, category):
         """See IKarmaActionSet."""
-        return KarmaAction.selectBy(category=category)
+        return IStore(KarmaAction).find(KarmaAction, category=category)
 
     def selectByCategoryAndPerson(self, category, person, orderBy=None):
         """See IKarmaActionSet."""
         if orderBy is None:
             orderBy = KarmaAction.sortingColumns
-        query = ('KarmaAction.category = %s '
-                 'AND Karma.action = KarmaAction.id '
-                 'AND Karma.person = %s' % sqlvalues(category.id, person.id))
-        return KarmaAction.select(
-                query, clauseTables=['Karma'], distinct=True, orderBy=orderBy)
+        return (
+            IStore(KarmaAction)
+            .find(
+                KarmaAction,
+                KarmaAction.category == category,
+                Karma.action == KarmaAction.id,
+                Karma.person == person,
+            )
+            .config(distinct=True)
+            .order_by(orderBy)
+        )
 
 
 @implementer(IKarmaCache)
-class KarmaCache(SQLBase):
+class KarmaCache(StormBase):
     """See IKarmaCache."""
 
-    _table = 'KarmaCache'
-    _defaultOrder = ['category', 'id']
+    __storm_table__ = "KarmaCache"
+    __storm_order__ = ["category", "id"]
 
-    person = ForeignKey(
-        dbName='person', foreignKey='Person', notNull=True)
-    category = ForeignKey(
-        dbName='category', foreignKey='KarmaCategory', notNull=False)
-    karmavalue = IntCol(
-        dbName='karmavalue', notNull=True)
-    product = ForeignKey(
-        dbName='product', foreignKey='Product', notNull=False)
-    projectgroup = ForeignKey(
-        dbName='project', foreignKey='ProjectGroup', notNull=False)
-    distribution = ForeignKey(
-        dbName='distribution', foreignKey='Distribution', notNull=False)
-    sourcepackagename = ForeignKey(
-        dbName='sourcepackagename', foreignKey='SourcePackageName',
-        notNull=False)
+    id = Int(primary=True)
+
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    category_id = Int(name="category", allow_none=True)
+    category = Reference(category_id, "KarmaCategory.id")
+    karmavalue = Int(name="karmavalue", allow_none=False)
+    product_id = Int(name="product", allow_none=True)
+    product = Reference(product_id, "Product.id")
+    projectgroup_id = Int(name="project", allow_none=True)
+    projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+
+    # It's a little odd for the constructor to explicitly take IDs, but this
+    # is mainly called by cronscripts/foaf-update-karma-cache.py which only
+    # has the IDs available to it.
+    def __init__(
+        self,
+        person_id,
+        karmavalue,
+        category_id=None,
+        product_id=None,
+        projectgroup_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+    ):
+        super().__init__()
+        self.person_id = person_id
+        self.karmavalue = karmavalue
+        self.category_id = category_id
+        self.product_id = product_id
+        self.projectgroup_id = projectgroup_id
+        self.distribution_id = distribution_id
+        self.sourcepackagename_id = sourcepackagename_id
 
 
 @implementer(IKarmaCacheManager)
 class KarmaCacheManager:
     """See IKarmaCacheManager."""
 
-    def new(self, value, person_id, category_id, product_id=None,
-            distribution_id=None, sourcepackagename_id=None,
-            projectgroup_id=None):
+    def new(
+        self,
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """See IKarmaCacheManager."""
-        return KarmaCache(
-            karmavalue=value, person=person_id, category=category_id,
-            product=product_id, distribution=distribution_id,
-            sourcepackagename=sourcepackagename_id,
-            projectgroup=projectgroup_id)
+        karma_cache = KarmaCache(
+            karmavalue=value,
+            person_id=person_id,
+            category_id=category_id,
+            product_id=product_id,
+            distribution_id=distribution_id,
+            sourcepackagename_id=sourcepackagename_id,
+            projectgroup_id=projectgroup_id,
+        )
+        IStore(KarmaCache).add(karma_cache)
+        return karma_cache
 
-    def updateKarmaValue(self, value, person_id, category_id, product_id=None,
-                         distribution_id=None, sourcepackagename_id=None,
-                         projectgroup_id=None):
+    def updateKarmaValue(
+        self,
+        value,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """See IKarmaCacheManager."""
         entry = self._getEntry(
-            person_id=person_id, category_id=category_id,
-            product_id=product_id, distribution_id=distribution_id,
+            person_id=person_id,
+            category_id=category_id,
+            product_id=product_id,
+            distribution_id=distribution_id,
             projectgroup_id=projectgroup_id,
-            sourcepackagename_id=sourcepackagename_id)
+            sourcepackagename_id=sourcepackagename_id,
+        )
         if entry is None:
             raise NotFoundError("KarmaCache not found: %s" % vars())
         else:
             entry.karmavalue = value
-            entry.syncUpdate()
+            IStore(entry).flush()
 
-    def _getEntry(self, person_id, category_id, product_id=None,
-                  distribution_id=None, sourcepackagename_id=None,
-                  projectgroup_id=None):
+    def _getEntry(
+        self,
+        person_id,
+        category_id,
+        product_id=None,
+        distribution_id=None,
+        sourcepackagename_id=None,
+        projectgroup_id=None,
+    ):
         """Return the KarmaCache entry with the given arguments.
 
         Return None if it's not found.
         """
-        return IStore(KarmaCache).find(
-            KarmaCache,
-            KarmaCache.personID == person_id,
-            KarmaCache.categoryID == category_id,
-            KarmaCache.productID == product_id,
-            KarmaCache.projectgroupID == projectgroup_id,
-            KarmaCache.distributionID == distribution_id,
-            KarmaCache.sourcepackagenameID == sourcepackagename_id).one()
+        return (
+            IStore(KarmaCache)
+            .find(
+                KarmaCache,
+                KarmaCache.person == person_id,
+                KarmaCache.category == category_id,
+                KarmaCache.product == product_id,
+                KarmaCache.projectgroup == projectgroup_id,
+                KarmaCache.distribution == distribution_id,
+                KarmaCache.sourcepackagename == sourcepackagename_id,
+            )
+            .one()
+        )
 
 
 @implementer(IKarmaTotalCache)
-class KarmaTotalCache(SQLBase):
+class KarmaTotalCache(StormBase):
     """A cached value of the total of a person's karma (all categories)."""
 
-    _table = 'KarmaTotalCache'
-    _defaultOrder = ['id']
+    __storm_table__ = "KarmaTotalCache"
+    __storm_order__ = ["id"]
 
-    person = ForeignKey(dbName='person', foreignKey='Person', notNull=True)
-    karma_total = IntCol(dbName='karma_total', notNull=True)
+    id = Int(primary=True)
+
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    karma_total = Int(name="karma_total", allow_none=False)
+
+    def __init__(self, person, karma_total):
+        super().__init__()
+        self.person = person
+        self.karma_total = karma_total
 
 
 @implementer(IKarmaCategory)
-class KarmaCategory(SQLBase):
+class KarmaCategory(StormBase):
     """See IKarmaCategory."""
 
-    _defaultOrder = ['title', 'id']
+    __storm_table__ = "KarmaCategory"
+    __storm_order__ = ["title", "id"]
 
-    name = StringCol(notNull=True, alternateID=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=True)
+    id = Int(primary=True)
 
-    karmaactions = SQLMultipleJoin(
-        'KarmaAction', joinColumn='category', orderBy='name')
+    name = Unicode(allow_none=False)
+    title = Unicode(allow_none=False)
+    summary = Unicode(allow_none=False)
+
+    karmaactions = ReferenceSet(
+        "id", "KarmaAction.category_id", order_by="KarmaAction.name"
+    )
 
 
 @implementer(IKarmaContext)
@@ -229,7 +314,7 @@ class KarmaContextMixin:
     def getTopContributorsGroupedByCategory(self, limit=None):
         """See IKarmaContext."""
         contributors_by_category = {}
-        for category in KarmaCategory.select():
+        for category in IStore(KarmaCategory).find(KarmaCategory):
             results = self.getTopContributors(category=category, limit=limit)
             if results:
                 contributors_by_category[category] = results
@@ -238,22 +323,29 @@ class KarmaContextMixin:
     def getTopContributors(self, category=None, limit=None):
         """See IKarmaContext."""
         from lp.registry.model.person import Person
+
         store = IStore(Person)
         if IProduct.providedBy(self):
-            condition = KarmaCache.productID == self.id
+            condition = KarmaCache.product == self.id
         elif IDistribution.providedBy(self):
-            condition = KarmaCache.distributionID == self.id
+            condition = KarmaCache.distribution == self.id
         elif IProjectGroup.providedBy(self):
-            condition = KarmaCache.projectgroupID == self.id
+            condition = KarmaCache.projectgroup == self.id
         else:
             raise AssertionError(
-                "Not a product, project group or distribution: %r" % self)
+                "Not a product, project group or distribution: %r" % self
+            )
 
         if category is not None:
             category = category.id
-        contributors = store.find(
-            (Person, KarmaCache.karmavalue),
-            KarmaCache.personID == Person.id,
-            KarmaCache.categoryID == category, condition).order_by(
-                Desc(KarmaCache.karmavalue)).config(limit=limit)
+        contributors = (
+            store.find(
+                (Person, KarmaCache.karmavalue),
+                KarmaCache.person_id == Person.id,
+                KarmaCache.category == category,
+                condition,
+            )
+            .order_by(Desc(KarmaCache.karmavalue))
+            .config(limit=limit)
+        )
         return list(contributors)

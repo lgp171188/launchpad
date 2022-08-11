@@ -15,22 +15,32 @@ class PersonBugsMenuTestCase(TestCaseWithFactory):
     def test_user(self):
         user = self.factory.makePerson()
         menu_api = MenuAPI(user)
-        menu_api._selectedfacetname = 'bugs'
+        menu_api._selectedfacetname = "bugs"
         enabled_links = sorted(
-            link.name for link in menu_api.navigation.values()
-            if link.enabled)
+            link.name for link in menu_api.navigation.values() if link.enabled
+        )
         expected_links = [
-            'affectingbugs', 'assignedbugs', 'commentedbugs',
-            'relatedbugs', 'reportedbugs', 'softwarebugs', 'subscribedbugs']
+            "affectingbugs",
+            "assignedbugs",
+            "commentedbugs",
+            "relatedbugs",
+            "reportedbugs",
+            "softwarebugs",
+            "subscribedbugs",
+        ]
         self.assertEqual(expected_links, enabled_links)
 
     def test_team(self):
         team = self.factory.makeTeam()
         menu_api = MenuAPI(team)
-        menu_api._selectedfacetname = 'bugs'
+        menu_api._selectedfacetname = "bugs"
         enabled_links = sorted(
-            link.name for link in menu_api.navigation.values()
-            if link.enabled)
+            link.name for link in menu_api.navigation.values() if link.enabled
+        )
         expected_links = [
-            'assignedbugs', 'relatedbugs', 'softwarebugs', 'subscribedbugs']
+            "assignedbugs",
+            "relatedbugs",
+            "softwarebugs",
+            "subscribedbugs",
+        ]
         self.assertEqual(expected_links, enabled_links)

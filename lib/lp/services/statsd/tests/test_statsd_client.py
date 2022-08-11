@@ -21,9 +21,10 @@ class TestClientConfiguration(TestCase):
         client = getUtility(IStatsdClient)
         self.addCleanup(client.reload)
         config.push(
-            'statsd_test',
+            "statsd_test",
             "[statsd]\nhost: 127.0.01\n"
-            "port: 9999\nprefix: test\nenvironment: test\n")
+            "port: 9999\nprefix: test\nenvironment: test\n",
+        )
         client.reload()
         self.assertIsInstance(client._client, StatsClient)
 
@@ -31,9 +32,7 @@ class TestClientConfiguration(TestCase):
         """Test that we get the correct client, depending on config values."""
         client = getUtility(IStatsdClient)
         self.addCleanup(client.reload)
-        config.push(
-            'statsd_test',
-            "[statsd]\nhost:")
+        config.push("statsd_test", "[statsd]\nhost:")
         client.reload()
         self.assertIsNone(client._client)
 
@@ -41,8 +40,9 @@ class TestClientConfiguration(TestCase):
         client = getUtility(IStatsdClient)
         self.addCleanup(client.reload)
         config.push(
-            'statsd_test',
+            "statsd_test",
             "[statsd]\nhost: 127.0.01\n"
-            "port: 9999\nprefix: test\nenvironment: test\n")
+            "port: 9999\nprefix: test\nenvironment: test\n",
+        )
         client.reload()
         self.assertIsInstance(client._client, StatsClient)

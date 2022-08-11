@@ -8,13 +8,13 @@ Do not simply dump stuff in here.  Think carefully as to whether it would
 be better as a method on an existing content object or IFooSet object.
 """
 
-from collections import OrderedDict
-from difflib import unified_diff
-from io import BytesIO
 import re
 import subprocess
 import tarfile
 import warnings
+from collections import OrderedDict
+from difflib import unified_diff
+from io import BytesIO
 
 import six
 from zope.security.interfaces import ForbiddenAttribute
@@ -56,10 +56,10 @@ def text_replaced(text, replacements, _cache={}):
     cachekey = tuple(replacements.items())
     if cachekey not in _cache:
         L = []
-        for find, replace in sorted(replacements.items(),
-                                    key=lambda item: len(item[0]),
-                                    reverse=True):
-            L.append('(%s)' % re.escape(find))
+        for find, replace in sorted(
+            replacements.items(), key=lambda item: len(item[0]), reverse=True
+        ):
+            L.append("(%s)" % re.escape(find))
         # Make a copy of the replacements dict, as it is mutable, but we're
         # keeping a cached reference to it.
         replacements_copy = dict(replacements)
@@ -67,7 +67,7 @@ def text_replaced(text, replacements, _cache={}):
         def matchobj_replacer(matchobj):
             return replacements_copy[matchobj.group()]
 
-        regexsub = re.compile('|'.join(L)).sub
+        regexsub = re.compile("|".join(L)).sub
 
         def replacer(s):
             return regexsub(matchobj_replacer, s)
@@ -81,16 +81,17 @@ def backslashreplace(str):
     xNN or uNNNN. Used to test data containing typographical quotes etc.
     """
     return six.ensure_str(
-        six.ensure_text(str).encode('ASCII', 'backslashreplace'))
+        six.ensure_text(str).encode("ASCII", "backslashreplace")
+    )
 
 
 def bytes_to_tarfile(s):
     """Convert a byte string containing a tar file into a tar file obj."""
 
-    return tarfile.open('', 'r', BytesIO(s))
+    return tarfile.open("", "r", BytesIO(s))
 
 
-def simple_popen2(command, input, env=None, in_bufsize=1024, out_bufsize=128):
+def simple_popen2(command, input, env=None):
     """Run a command, give it input on its standard input, and capture its
     standard output.
 
@@ -105,8 +106,12 @@ def simple_popen2(command, input, env=None, in_bufsize=1024, out_bufsize=128):
     """
 
     p = subprocess.Popen(
-            command, env=env, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        command,
+        env=env,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
     (output, nothing) = p.communicate(input)
     return output
 
@@ -171,26 +176,29 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
 
     size = len(results)
     if hardlimit and size > hardlimit:
-        raise ShortListTooBigError(
-           'Hard limit of %d exceeded.' % hardlimit)
+        raise ShortListTooBigError("Hard limit of %d exceeded." % hardlimit)
     elif size > longest_expected:
         warnings.warn(
             "shortlist() should not be used here. It's meant to listify"
             " sequences with no more than %d items.  There were %s items."
-            % (longest_expected, size), stacklevel=2)
+            % (longest_expected, size),
+            stacklevel=2,
+        )
     return results
 
 
 def is_tar_filename(filename):
-    '''
+    """
     Check whether a filename looks like a filename that belongs to a tar file,
     possibly one compressed somehow.
-    '''
+    """
 
-    return (filename.endswith('.tar') or
-            filename.endswith('.tar.gz') or
-            filename.endswith('.tgz') or
-            filename.endswith('.tar.bz2'))
+    return (
+        filename.endswith(".tar")
+        or filename.endswith(".tar.gz")
+        or filename.endswith(".tgz")
+        or filename.endswith(".tar.bz2")
+    )
 
 
 def test_diff(lines_a, lines_b):
@@ -198,17 +206,21 @@ def test_diff(lines_a, lines_b):
     values in a test.
     """
 
-    return '\n'.join(list(unified_diff(
-        a=lines_a,
-        b=lines_b,
-        fromfile='expected',
-        tofile='actual',
-        lineterm='',
-        )))
+    return "\n".join(
+        list(
+            unified_diff(
+                a=lines_a,
+                b=lines_b,
+                fromfile="expected",
+                tofile="actual",
+                lineterm="",
+            )
+        )
+    )
 
 
 def filenameToContentType(fname):
-    """ Return the a ContentType-like entry for arbitrary filenames
+    """Return the a ContentType-like entry for arbitrary filenames
 
     deb files
 
@@ -238,23 +250,25 @@ def filenameToContentType(fname):
     >>> filenameToContentType('Packages.xz')
     'application/x-xz'
     """
-    ftmap = OrderedDict([
-        (".dsc", "text/plain"),
-        (".changes", "text/plain"),
-        (".deb", "application/x-debian-package"),
-        (".udeb", "application/x-debian-package"),
-        (".txt", "text/plain"),
-        # For the build master logs
-        (".txt.gz", "text/plain"),
-        # For live filesystem builds
-        (".manifest", "text/plain"),
-        (".manifest-remove", "text/plain"),
-        (".size", "text/plain"),
-        # Compressed files
-        (".gz", "application/x-gzip"),
-        (".bz2", "application/x-bzip2"),
-        (".xz", "application/x-xz"),
-        ])
+    ftmap = OrderedDict(
+        [
+            (".dsc", "text/plain"),
+            (".changes", "text/plain"),
+            (".deb", "application/x-debian-package"),
+            (".udeb", "application/x-debian-package"),
+            (".txt", "text/plain"),
+            # For the build master logs
+            (".txt.gz", "text/plain"),
+            # For live filesystem builds
+            (".manifest", "text/plain"),
+            (".manifest-remove", "text/plain"),
+            (".size", "text/plain"),
+            # Compressed files
+            (".gz", "application/x-gzip"),
+            (".bz2", "application/x-bzip2"),
+            (".xz", "application/x-xz"),
+        ]
+    )
     for ending in ftmap:
         if fname.endswith(ending):
             return ftmap[ending]
@@ -288,7 +302,7 @@ def truncate_text(text, max_length):
 
     Tries not to cut off the text mid-word.
     """
-    words = re.compile(r'\s*\S+').findall(text, 0, max_length + 1)
+    words = re.compile(r"\s*\S+").findall(text, 0, max_length + 1)
     truncated = words[0]
     for word in words[1:]:
         if len(truncated) + len(word) > max_length:
@@ -297,7 +311,7 @@ def truncate_text(text, max_length):
     return truncated[:max_length]
 
 
-def english_list(items, conjunction='and'):
+def english_list(items, conjunction="and"):
     """Return all the items concatenated into a English-style string.
 
     Follows the advice given in The Elements of Style, chapter I,
@@ -310,7 +324,7 @@ def english_list(items, conjunction='and'):
     """
     items = list(items)
     if len(items) <= 2:
-        return (' %s ' % conjunction).join(items)
+        return (" %s " % conjunction).join(items)
     else:
-        items[-1] = '%s %s' % (conjunction, items[-1])
-        return ', '.join(items)
+        items[-1] = "%s %s" % (conjunction, items[-1])
+        return ", ".join(items)

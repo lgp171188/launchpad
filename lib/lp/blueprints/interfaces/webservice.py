@@ -10,27 +10,51 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'GoalProposeError',
-    'ISpecification',
-    'ISpecificationBranch',
-    'ISpecificationSet',
-    'ISpecificationSubscription',
-    'ISpecificationTarget',
-    ]
+    "GoalProposeError",
+    "ISpecification",
+    "ISpecificationBranch",
+    "ISpecificationSet",
+    "ISpecificationSubscription",
+    "ISpecificationTarget",
+]
 
-# XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
-# import bugs.  Break this up into a per-package thing.
-from lp import _schema_circular_imports
 from lp.blueprints.interfaces.specification import (
     GoalProposeError,
     ISpecification,
     ISpecificationSet,
-    )
+)
 from lp.blueprints.interfaces.specificationbranch import ISpecificationBranch
 from lp.blueprints.interfaces.specificationsubscription import (
     ISpecificationSubscription,
-    )
-from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
+)
+from lp.blueprints.interfaces.specificationtarget import (
+    IHasSpecifications,
+    ISpecificationTarget,
+)
+from lp.bugs.interfaces.bug import IBug
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_entry_return_type,
+    patch_plain_parameter_type,
+)
 
+# IHasSpecifications
+patch_collection_property(
+    IHasSpecifications, "visible_specifications", ISpecification
+)
+patch_collection_property(
+    IHasSpecifications, "api_valid_specifications", ISpecification
+)
 
-_schema_circular_imports
+# ISpecification
+patch_plain_parameter_type(ISpecification, "linkBug", "bug", IBug)
+patch_plain_parameter_type(ISpecification, "unlinkBug", "bug", IBug)
+patch_collection_property(ISpecification, "dependencies", ISpecification)
+patch_collection_property(
+    ISpecification, "linked_branches", ISpecificationBranch
+)
+
+# ISpecificationTarget
+patch_entry_return_type(
+    ISpecificationTarget, "getSpecification", ISpecification
+)

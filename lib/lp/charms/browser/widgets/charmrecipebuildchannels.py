@@ -5,16 +5,12 @@
 
 __all__ = [
     "CharmRecipeBuildChannelsWidget",
-    ]
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    InputErrors,
-    InputWidget,
-    )
+from zope.formlib.widget import BrowserWidget, InputErrors, InputWidget
 from zope.interface import implementer
 from zope.schema import TextLine
 from zope.security.proxy import isinstance as zope_isinstance
@@ -23,7 +19,7 @@ from lp.app.errors import UnexpectedFormData
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     ISingleLineWidgetLayout,
-    )
+)
 
 
 @implementer(ISingleLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
@@ -38,20 +34,24 @@ class CharmRecipeBuildChannelsWidget(BrowserWidget, InputWidget):
         super().__init__(context, request)
         self.hint = (
             "The channels to use for build tools when building the charm "
-            "recipe.")
+            "recipe."
+        )
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
         fields = [
             TextLine(
-                __name__=snap_name, title="%s channel" % snap_name,
-                required=False)
+                __name__=snap_name,
+                title="%s channel" % snap_name,
+                required=False,
+            )
             for snap_name in self.snap_names
-            ]
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def setRenderedValue(self, value):
@@ -61,13 +61,15 @@ class CharmRecipeBuildChannelsWidget(BrowserWidget, InputWidget):
             value = {}
         for snap_name in self.snap_names:
             getattr(self, "%s_widget" % snap_name).setRenderedValue(
-                value.get(snap_name))
+                value.get(snap_name)
+            )
 
     def hasInput(self):
         """See `IInputWidget`."""
         return any(
             "%s.%s" % (self.name, snap_name) in self.request.form
-            for snap_name in self.snap_names)
+            for snap_name in self.snap_names
+        )
 
     def hasValidInput(self):
         """See `IInputWidget`."""

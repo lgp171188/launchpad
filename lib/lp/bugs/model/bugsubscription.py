@@ -1,14 +1,10 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['BugSubscription']
+__all__ = ["BugSubscription"]
 
 import pytz
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    )
+from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
 from lp.bugs.enums import BugNotificationLevel
@@ -24,12 +20,11 @@ from lp.services.database.stormbase import StormBase
 class BugSubscription(StormBase):
     """A relationship between a person and a bug."""
 
-    __storm_table__ = 'BugSubscription'
+    __storm_table__ = "BugSubscription"
 
     id = Int(primary=True)
 
-    person_id = Int(
-        "person", allow_none=False, validator=validate_person)
+    person_id = Int("person", allow_none=False, validator=validate_person)
     person = Reference(person_id, "Person.id")
 
     bug_id = Int("bug", allow_none=False)
@@ -38,17 +33,23 @@ class BugSubscription(StormBase):
     bug_notification_level = DBEnum(
         enum=BugNotificationLevel,
         default=BugNotificationLevel.COMMENTS,
-        allow_none=False)
+        allow_none=False,
+    )
 
-    date_created = DateTime(
-        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
     subscribed_by_id = Int(
-        "subscribed_by", allow_none=False, validator=validate_person)
+        "subscribed_by", allow_none=False, validator=validate_person
+    )
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
-    def __init__(self, bug=None, person=None, subscribed_by=None,
-                 bug_notification_level=BugNotificationLevel.COMMENTS):
+    def __init__(
+        self,
+        bug=None,
+        person=None,
+        subscribed_by=None,
+        bug_notification_level=BugNotificationLevel.COMMENTS,
+    ):
         super().__init__()
         self.bug = bug
         self.person = person
@@ -59,25 +60,31 @@ class BugSubscription(StormBase):
     def display_subscribed_by(self):
         """See `IBugSubscription`."""
         if self.person_id == self.subscribed_by_id:
-            return 'Self-subscribed'
+            return "Self-subscribed"
         else:
-            return 'Subscribed by %s (%s)' % (
-                self.subscribed_by.displayname, self.subscribed_by.name)
+            return "Subscribed by %s (%s)" % (
+                self.subscribed_by.displayname,
+                self.subscribed_by.name,
+            )
 
     @property
     def display_duplicate_subscribed_by(self):
         """See `IBugSubscription`."""
         if self.person == self.subscribed_by:
-            return 'Self-subscribed to bug %s' % (self.bug_id)
+            return "Self-subscribed to bug %s" % (self.bug_id)
         else:
-            return 'Subscribed to bug %s by %s (%s)' % (
-                self.bug_id, self.subscribed_by.displayname,
-                self.subscribed_by.name)
+            return "Subscribed to bug %s by %s (%s)" % (
+                self.bug_id,
+                self.subscribed_by.displayname,
+                self.subscribed_by.name,
+            )
 
     def canBeUnsubscribedByUser(self, user):
         """See `IBugSubscription`."""
         if user is None:
             return False
-        return (user.inTeam(self.person) or
-                user.inTeam(self.subscribed_by) or
-                IPersonRoles(user).in_admin)
+        return (
+            user.inTeam(self.person)
+            or user.inTeam(self.subscribed_by)
+            or IPersonRoles(user).in_admin
+        )

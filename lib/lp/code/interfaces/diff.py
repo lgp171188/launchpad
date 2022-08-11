@@ -4,26 +4,15 @@
 """Interfaces including and related to IDiff."""
 
 __all__ = [
-    'IDiff',
-    'IIncrementalDiff',
-    'IPreviewDiff',
-    ]
+    "IDiff",
+    "IIncrementalDiff",
+    "IPreviewDiff",
+]
 
-from lazr.restful.declarations import (
-    exported,
-    exported_as_webservice_entry,
-    )
+from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Bytes,
-    Datetime,
-    Dict,
-    Int,
-    Text,
-    TextLine,
-    )
+from zope.schema import Bool, Bytes, Datetime, Dict, Int, Text, TextLine
 
 from lp import _
 from lp.code.interfaces.revision import IRevision
@@ -34,55 +23,72 @@ class IDiff(Interface):
 
     id = exported(
         Int(
-            title=_('DB ID'), required=True, readonly=True,
-            description=_("The tracking number for this diff.")))
+            title=_("DB ID"),
+            required=True,
+            readonly=True,
+            description=_("The tracking number for this diff."),
+        )
+    )
 
     text = Text(
-        title=_('Textual contents of a diff.'), readonly=True,
-        description=_("The text may be cut off at a defined maximum size."))
+        title=_("Textual contents of a diff."),
+        readonly=True,
+        description=_("The text may be cut off at a defined maximum size."),
+    )
 
     oversized = Bool(
         readonly=True,
         description=_(
             "True if the size of the content is over the defined maximum "
-            "size."))
+            "size."
+        ),
+    )
 
     diff_text = exported(
-        Bytes(title=_('Content of this diff'), required=True, readonly=True))
+        Bytes(title=_("Content of this diff"), required=True, readonly=True)
+    )
 
     diff_lines_count = exported(
-        Int(title=_('The number of lines in this diff.'), readonly=True))
+        Int(title=_("The number of lines in this diff."), readonly=True)
+    )
 
     diffstat = exported(
-        Dict(title=_('Statistics about this diff'), readonly=True))
+        Dict(title=_("Statistics about this diff"), readonly=True)
+    )
 
     added_lines_count = exported(
-        Int(title=_('The number of lines added in this diff.'),
-            readonly=True))
+        Int(title=_("The number of lines added in this diff."), readonly=True)
+    )
 
     removed_lines_count = exported(
-        Int(title=_('The number of lines removed in this diff.'),
-            readonly=True))
+        Int(
+            title=_("The number of lines removed in this diff."), readonly=True
+        )
+    )
 
 
 class IIncrementalDiff(Interface):
     """An incremental diff for a merge proposal."""
 
-    diff = Reference(IDiff, title=_('The Diff object.'), readonly=True)
+    diff = Reference(IDiff, title=_("The Diff object."), readonly=True)
 
     # The schema for the Reference gets patched in _schema_circular_imports.
     branch_merge_proposal = Reference(
-        Interface, readonly=True,
-        title=_('The branch merge proposal that diff relates to.'))
+        Interface,
+        readonly=True,
+        title=_("The branch merge proposal that diff relates to."),
+    )
 
     old_revision = Reference(
-        IRevision, readonly=True, title=_('The old revision of the diff.'))
+        IRevision, readonly=True, title=_("The old revision of the diff.")
+    )
 
     new_revision = Reference(
-        IRevision, readonly=True, title=_('The new revision of the diff.'))
+        IRevision, readonly=True, title=_("The new revision of the diff.")
+    )
 
 
-@exported_as_webservice_entry()
+@exported_as_webservice_entry(as_of="beta")
 class IPreviewDiff(IDiff):
     """A diff generated to show actual diff between two branches.
 
@@ -93,55 +99,90 @@ class IPreviewDiff(IDiff):
 
     source_revision_id = exported(
         TextLine(
-            title=_('The tip revision id of the source branch used to '
-                    'generate the diff.'),
-            readonly=True))
+            title=_(
+                "The tip revision id of the source branch used to "
+                "generate the diff."
+            ),
+            readonly=True,
+        )
+    )
 
     target_revision_id = exported(
         TextLine(
-            title=_('The tip revision id of the target branch used to '
-                    'generate the diff.'),
-            readonly=True))
+            title=_(
+                "The tip revision id of the target branch used to "
+                "generate the diff."
+            ),
+            readonly=True,
+        )
+    )
 
     prerequisite_revision_id = exported(
         TextLine(
-            title=_('The tip revision id of the prerequisite branch used to '
-                    'generate the diff.'),
-            readonly=True))
+            title=_(
+                "The tip revision id of the prerequisite branch used to "
+                "generate the diff."
+            ),
+            readonly=True,
+        )
+    )
 
     conflicts = exported(
-        Text(title=_(
-                'The conflicts text describing any path or text conflicts.'),
-             readonly=True))
+        Text(
+            title=_(
+                "The conflicts text describing any path or text conflicts."
+            ),
+            readonly=True,
+        )
+    )
 
     has_conflicts = Bool(
-        title=_('Has conflicts'), readonly=True,
-        description=_('The previewed merge produces conflicts.'))
+        title=_("Has conflicts"),
+        readonly=True,
+        description=_("The previewed merge produces conflicts."),
+    )
 
     branch_merge_proposal_id = Int(
-        title=_('The branch merge proposal for this diff.'), readonly=True)
+        title=_("The branch merge proposal for this diff."), readonly=True
+    )
 
     # The schema for the Reference gets patched in _schema_circular_imports.
     branch_merge_proposal = exported(
         Reference(
-            Interface, readonly=True,
-            title=_('The branch merge proposal that diff relates to.')))
+            Interface,
+            readonly=True,
+            title=_("The branch merge proposal that diff relates to."),
+        )
+    )
 
     date_created = exported(
         Datetime(
-            title=_('Date Created'), required=False, readonly=True,
-            description=_("When this diff was created.")))
+            title=_("Date Created"),
+            required=False,
+            readonly=True,
+            description=_("When this diff was created."),
+        )
+    )
 
     stale = exported(
-        Bool(readonly=True, description=_(
-                'If the preview diff is stale, it is out of date when '
-                'compared to the tip revisions of the source, target, and '
-                'possibly prerequisite branches.')))
+        Bool(
+            readonly=True,
+            description=_(
+                "If the preview diff is stale, it is out of date when "
+                "compared to the tip revisions of the source, target, and "
+                "possibly prerequisite branches."
+            ),
+        )
+    )
 
     title = exported(
         TextLine(
-            title=_('Title'), required=False, readonly=True,
-            description=_('PreviewDiff title.')))
+            title=_("Title"),
+            required=False,
+            readonly=True,
+            description=_("PreviewDiff title."),
+        )
+    )
 
     def getFileByName(filename):
         """Return the file under +files with specified name."""

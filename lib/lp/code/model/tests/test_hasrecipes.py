@@ -33,7 +33,8 @@ class TestIHasRecipes(TestCaseWithFactory):
         base_branch = self.factory.makeBranch()
         nonbase_branch = self.factory.makeBranch()
         recipe = self.factory.makeSourcePackageRecipe(
-            branches=[base_branch, nonbase_branch])
+            branches=[base_branch, nonbase_branch]
+        )
         self.factory.makeSourcePackageRecipe()
         self.assertEqual(recipe, nonbase_branch.recipes.one())
 
@@ -46,7 +47,8 @@ class TestIHasRecipes(TestCaseWithFactory):
         # IGitRepository.recipes should provide all the SourcePackageRecipes
         # attached to that repository.
         base_ref1, base_ref2 = self.factory.makeGitRefs(
-            paths=["refs/heads/ref1", "refs/heads/ref2"])
+            paths=["refs/heads/ref1", "refs/heads/ref2"]
+        )
         [other_ref] = self.factory.makeGitRefs()
         self.factory.makeSourcePackageRecipe(branches=[base_ref1])
         self.factory.makeSourcePackageRecipe(branches=[base_ref2])
@@ -60,7 +62,8 @@ class TestIHasRecipes(TestCaseWithFactory):
         [nonbase_ref] = self.factory.makeGitRefs()
         [other_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeSourcePackageRecipe(
-            branches=[base_ref, nonbase_ref])
+            branches=[base_ref, nonbase_ref]
+        )
         self.factory.makeSourcePackageRecipe(branches=[other_ref])
         self.assertEqual(recipe, nonbase_ref.repository.recipes.one())
 
@@ -95,6 +98,8 @@ class TestIHasRecipes(TestCaseWithFactory):
         recipe3 = self.factory.makeSourcePackageRecipe(branches=[ref])
         recipe4 = self.factory.makeSourcePackageRecipe(branches=[ref])
         self.factory.makeSourcePackageRecipe(
-            branches=self.factory.makeGitRefs())
+            branches=self.factory.makeGitRefs()
+        )
         self.assertContentEqual(
-            [recipe1, recipe2, recipe3, recipe4], product.recipes)
+            [recipe1, recipe2, recipe3, recipe4], product.recipes
+        )

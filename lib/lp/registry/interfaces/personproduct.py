@@ -4,22 +4,16 @@
 """A person's view on a product."""
 
 __all__ = [
-    'IPersonProduct',
-    'IPersonProductFactory',
-    ]
+    "IPersonProduct",
+    "IPersonProductFactory",
+]
 
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import TextLine
 
 from lp.app.interfaces.launchpad import IPrivacy
-from lp.code.interfaces.hasbranches import (
-    IHasBranches,
-    IHasMergeProposals,
-    )
+from lp.code.interfaces.hasbranches import IHasBranches, IHasMergeProposals
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 

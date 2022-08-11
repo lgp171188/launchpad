@@ -2,23 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'AdvisoryLockHeld',
-    'LockType',
-    'try_advisory_lock',
+    "AdvisoryLockHeld",
+    "LockType",
+    "try_advisory_lock",
 ]
 
 from contextlib import contextmanager
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from storm.locals import Select
 
-from lp.services.database.stormexpr import (
-    AdvisoryUnlock,
-    TryAdvisoryLock,
-    )
+from lp.services.database.stormexpr import AdvisoryUnlock, TryAdvisoryLock
 
 
 class AdvisoryLockHeld(Exception):
@@ -27,25 +21,36 @@ class AdvisoryLockHeld(Exception):
 
 class LockType(DBEnumeratedType):
 
-    BRANCH_SCAN = DBItem(0, """Branch scan.
+    BRANCH_SCAN = DBItem(
+        0,
+        """Branch scan.
 
         Branch scan.
-        """)
+        """,
+    )
 
-    GIT_REF_SCAN = DBItem(1, """Git repository reference scan.
+    GIT_REF_SCAN = DBItem(
+        1,
+        """Git repository reference scan.
 
         Git repository reference scan.
-        """)
+        """,
+    )
 
-    PACKAGE_COPY = DBItem(2, """Package copy.
+    PACKAGE_COPY = DBItem(
+        2,
+        """Package copy.
 
         Package copy.
-        """)
+        """,
+    )
 
-    REGISTRY_UPLOAD = DBItem(3, """OCI Registry upload.
+    REGISTRY_UPLOAD = DBItem(
+        3,
+        """OCI Registry upload.
 
         OCI Registry upload.
-        """
+        """,
     )
 
 

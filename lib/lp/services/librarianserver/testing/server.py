@@ -4,27 +4,21 @@
 """Fixture for the librarians."""
 
 __all__ = [
-    'fillLibrarianFile',
-    'LibrarianServerFixture',
-    ]
+    "fillLibrarianFile",
+    "LibrarianServerFixture",
+]
 
 import hashlib
 import os
 import shutil
 import tempfile
-from textwrap import dedent
 import warnings
+from textwrap import dedent
 
-from fixtures import (
-    Fixture,
-    FunctionFixture,
-    )
+from fixtures import Fixture, FunctionFixture
 
 from lp.services.config import config
-from lp.services.daemons.tachandler import (
-    TacException,
-    TacTestSetup,
-    )
+from lp.services.daemons.tachandler import TacException, TacTestSetup
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver.storage import _relFileLocation
 from lp.services.osutils import get_pid_from_file
@@ -59,7 +53,7 @@ class LibrarianServerFixture(TacTestSetup):
 
     def setUp(self):
         """Start both librarian instances."""
-        if (self._persistent_servers() and self.pid):
+        if self._persistent_servers() and self.pid:
             return
         else:
             # self.pid may have been evaluated - nuke it.
@@ -74,7 +68,7 @@ class LibrarianServerFixture(TacTestSetup):
         else:
             self._pid = self._read_pid()
         self._setup = True
-        self.addCleanup(setattr, self, '_setup', False)
+        self.addCleanup(setattr, self, "_setup", False)
 
         # Update the config our tests are using to know about the
         # correct ports.
@@ -86,8 +80,11 @@ class LibrarianServerFixture(TacTestSetup):
         if self._persistent_servers():
             return
         if not self._setup:
-            warnings.warn("Attempt to tearDown inactive fixture.",
-                DeprecationWarning, stacklevel=3)
+            warnings.warn(
+                "Attempt to tearDown inactive fixture.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
             return
         self.config_fixture.remove_section(self.service_config)
         config.reloadConfig()
@@ -96,8 +93,8 @@ class LibrarianServerFixture(TacTestSetup):
     def clear(self):
         """Clear all files from the Librarian"""
         # Make this smarter if our tests create huge numbers of files
-        if os.path.isdir(os.path.join(self.root, '00')):
-            shutil.rmtree(os.path.join(self.root, '00'))
+        if os.path.isdir(os.path.join(self.root, "00")):
+            shutil.rmtree(os.path.join(self.root, "00"))
 
     @property
     def pid(self):
@@ -115,10 +112,10 @@ class LibrarianServerFixture(TacTestSetup):
 
         True if LP_TEST_INSTANCE is set in the environment.
         """
-        return 'LP_TEST_INSTANCE' in os.environ
+        return "LP_TEST_INSTANCE" in os.environ
 
     def _persistent_servers(self):
-        return os.environ.get('LP_PERSISTENT_TEST_SERVICES') is not None
+        return os.environ.get("LP_PERSISTENT_TEST_SERVICES") is not None
 
     @property
     def root(self):
@@ -136,7 +133,7 @@ class LibrarianServerFixture(TacTestSetup):
             self._root = root_fixture.fn_result
             os.chmod(self.root, 0o700)
             # Give the root to the new librarian.
-            os.environ['LP_LIBRARIAN_ROOT'] = self._root
+            os.environ["LP_LIBRARIAN_ROOT"] = self._root
         else:
             # This should not happen in normal usage, but might if someone
             # interrupts the test suite.
@@ -151,10 +148,12 @@ class LibrarianServerFixture(TacTestSetup):
         if not self._dynamic_config():
             self.download_port = config.librarian.download_port
             self.upload_port = config.librarian.upload_port
-            self.restricted_download_port = \
+            self.restricted_download_port = (
                 config.librarian.restricted_download_port
-            self.restricted_upload_port = \
+            )
+            self.restricted_upload_port = (
                 config.librarian.restricted_upload_port
+            )
             return
         chunks = self.getLogChunks()
         # A typical startup: upload, download, restricted up, restricted down.
@@ -185,7 +184,9 @@ class LibrarianServerFixture(TacTestSetup):
         self.download_port = int(chunks[6].split()[-1])
         self.restricted_upload_port = int(chunks[8].split()[-1])
         self.restricted_download_port = int(chunks[10].split()[-1])
-        self.service_config = dedent("""\
+        self.service_config = (
+            dedent(
+                """\
             [librarian_server]
             root: %s
             [librarian]
@@ -195,7 +196,9 @@ class LibrarianServerFixture(TacTestSetup):
             restricted_download_port: %s
             restricted_upload_port: %s
             restricted_download_url: http://%s:%s/
-            """) % (
+            """
+            )
+            % (
                 self.root,
                 self.download_port,
                 self.upload_port,
@@ -205,7 +208,8 @@ class LibrarianServerFixture(TacTestSetup):
                 self.restricted_upload_port,
                 config.librarian.restricted_download_host,
                 self.restricted_download_port,
-                )
+            )
+        )
 
     def tearDownRoot(self):
         """Remove the librarian root archive."""
@@ -214,16 +218,16 @@ class LibrarianServerFixture(TacTestSetup):
 
     @property
     def tacfile(self):
-        return os.path.join(self.daemon_directory, 'librarian.tac')
+        return os.path.join(self.daemon_directory, "librarian.tac")
 
     @property
     def pidfile(self):
         try:
-            return os.path.join(self.root, 'librarian.pid')
+            return os.path.join(self.root, "librarian.pid")
         except AttributeError:
             # An attempt to read the pidfile before this fixture was setUp,
             # with dynamic configuration.
-            return '/tmp/unused/'
+            return "/tmp/unused/"
 
     @property
     def logfile(self):
@@ -231,15 +235,15 @@ class LibrarianServerFixture(TacTestSetup):
         # test can use addDetail to grab the log and include it in its
         # error.
         try:
-            return os.path.join(self.root, 'librarian.log')
+            return os.path.join(self.root, "librarian.log")
         except AttributeError:
             # An attempt to read the pidfile before this fixture was setUp,
             # with dynamic configuration.
-            return '/tmp/unused/'
+            return "/tmp/unused/"
 
     def getLogChunks(self):
         """Get a list with the contents of the librarian log in it."""
-        with open(self.logfile, 'rb') as f:
+        with open(self.logfile, "rb") as f:
             return f.readlines()
 
     def reset(self):
@@ -250,10 +254,10 @@ class LibrarianServerFixture(TacTestSetup):
 
 def fillLibrarianFile(fileid, content=None):
     """Write contents in disk for a librarian sampledata."""
-    with dbuser('librariangc'):
+    with dbuser("librariangc"):
         lfc = LibraryFileContent.get(fileid)
         if content is None:
-            content = b'x' * lfc.filesize
+            content = b"x" * lfc.filesize
         else:
             lfc.filesize = len(content)
         lfc.sha256 = hashlib.sha256(content).hexdigest()
@@ -263,10 +267,11 @@ def fillLibrarianFile(fileid, content=None):
             lfc.md5 = hashlib.md5(content).hexdigest()
 
     filepath = os.path.join(
-        config.librarian_server.root, _relFileLocation(fileid))
+        config.librarian_server.root, _relFileLocation(fileid)
+    )
 
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
 
-    with open(filepath, 'wb') as libfile:
+    with open(filepath, "wb") as libfile:
         libfile.write(content)

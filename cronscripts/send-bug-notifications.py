@@ -14,8 +14,8 @@ import _pythonpath  # noqa: F401
 from lp.bugs.scripts.bugnotification import SendBugNotifications
 from lp.services.config import config
 
-
-if __name__ == '__main__':
-    script = SendBugNotifications('send-bug-notifications',
-        dbuser=config.malone.bugnotification_dbuser)
+if __name__ == "__main__":
+    script = SendBugNotifications(
+        "send-bug-notifications", dbuser=config.malone.bugnotification_dbuser
+    )
     script.lock_and_run()

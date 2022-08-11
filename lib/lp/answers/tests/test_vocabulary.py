@@ -6,12 +6,9 @@
 from lp.answers.vocabulary import (
     UsesAnswersDistributionVocabulary,
     UsesAnswersProductVocabulary,
-    )
+)
 from lp.app.enums import ServiceUsage
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -46,21 +43,24 @@ class UsesAnswersDistributionVocabularyTestCase(TestCaseWithFactory):
         vocabulary = UsesAnswersDistributionVocabulary()
         self.assertFalse(
             distro_less_answers in vocabulary,
-            "Vocabulary contains distros that do not use Launchpad Answers.")
+            "Vocabulary contains distros that do not use Launchpad Answers.",
+        )
         self.assertTrue(
             distro_uses_answers in vocabulary,
-            "Vocabulary missing distros that use Launchpad Answers.")
+            "Vocabulary missing distros that use Launchpad Answers.",
+        )
 
     def test_contains_context_distro(self):
         # The vocabulary contains the context distro even it it does not
         # use Launchpad to track answers. The distro may have tracked answers
-        # in the past so it is a legitimate choise for historic data.
+        # in the past so it is a legitimate choice for historic data.
         distro_less_answers = self.factory.makeDistribution()
         vocabulary = UsesAnswersDistributionVocabulary(distro_less_answers)
         self.assertFalse(distro_less_answers.official_answers)
         self.assertTrue(
             distro_less_answers in vocabulary,
-            "Vocabulary missing context distro.")
+            "Vocabulary missing context distro.",
+        )
 
     def test_contains_missing_context(self):
         # The vocabulary does not contain the context if the
@@ -68,8 +68,8 @@ class UsesAnswersDistributionVocabularyTestCase(TestCaseWithFactory):
         thing = self.factory.makeProduct()
         vocabulary = UsesAnswersDistributionVocabulary(thing)
         self.assertFalse(
-            thing in vocabulary,
-            "Vocabulary contains a non-distribution.")
+            thing in vocabulary, "Vocabulary contains a non-distribution."
+        )
 
 
 class UsesAnswersProductVocabularyTestCase(TestCaseWithFactory):
@@ -79,12 +79,17 @@ class UsesAnswersProductVocabularyTestCase(TestCaseWithFactory):
 
     def test_products_not_using_answers_not_found(self):
         using_product = self.factory.makeProduct(
-            name='foobar', answers_usage=ServiceUsage.LAUNCHPAD)
+            name="foobar", answers_usage=ServiceUsage.LAUNCHPAD
+        )
         not_using_product = self.factory.makeProduct(
-            name='foobarbaz', answers_usage=ServiceUsage.NOT_APPLICABLE)
+            name="foobarbaz", answers_usage=ServiceUsage.NOT_APPLICABLE
+        )
         vocabulary = UsesAnswersProductVocabulary()
-        products = vocabulary.search(query='foobar')
-        self.assertTrue(using_product in products,
-            'Valid product not found in vocabulary.')
-        self.assertTrue(not_using_product not in products,
-            'Vocabulary found a product not using answers.')
+        products = vocabulary.search(query="foobar")
+        self.assertTrue(
+            using_product in products, "Valid product not found in vocabulary."
+        )
+        self.assertTrue(
+            not_using_product not in products,
+            "Vocabulary found a product not using answers.",
+        )

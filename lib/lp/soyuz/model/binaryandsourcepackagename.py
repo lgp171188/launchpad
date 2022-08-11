@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BinaryAndSourcePackageName',
-    'BinaryAndSourcePackageNameVocabulary',
+    "BinaryAndSourcePackageName",
+    "BinaryAndSourcePackageNameVocabulary",
 ]
 
 from storm.locals import Unicode
@@ -14,7 +14,7 @@ from lp.services.database.stormbase import StormBase
 from lp.services.webapp.vocabulary import (
     BatchedCountableIterator,
     NamedStormHugeVocabulary,
-    )
+)
 from lp.soyuz.interfaces.binarypackagename import IBinaryAndSourcePackageName
 
 
@@ -22,10 +22,10 @@ from lp.soyuz.interfaces.binarypackagename import IBinaryAndSourcePackageName
 class BinaryAndSourcePackageName(StormBase):
     """See IBinaryAndSourcePackageName"""
 
-    __storm_table__ = 'BinaryAndSourcePackageNameView'
-    __storm_order__ = 'name'
+    __storm_table__ = "BinaryAndSourcePackageNameView"
+    __storm_order__ = "name"
 
-    name = Unicode('name', primary=True)
+    name = Unicode("name", primary=True)
 
 
 class BinaryAndSourcePackageNameIterator(BatchedCountableIterator):
@@ -36,8 +36,7 @@ class BinaryAndSourcePackageNameIterator(BatchedCountableIterator):
     """
 
     def getTermsWithDescriptions(self, results):
-        return [SimpleTerm(obj, obj.name, obj.name)
-                for obj in results]
+        return [SimpleTerm(obj, obj.name, obj.name) for obj in results]
 
 
 class BinaryAndSourcePackageNameVocabulary(NamedStormHugeVocabulary):
@@ -50,9 +49,10 @@ class BinaryAndSourcePackageNameVocabulary(NamedStormHugeVocabulary):
     The value returned by a widget using this vocabulary will be either an
     ISourcePackageName or an IBinaryPackageName.
     """
+
     _table = BinaryAndSourcePackageName
-    displayname = 'Select a Package'
-    _order_by = 'name'
+    displayname = "Select a Package"
+    _order_by = "name"
     iterator = BinaryAndSourcePackageNameIterator
 
     def getTermByToken(self, token):

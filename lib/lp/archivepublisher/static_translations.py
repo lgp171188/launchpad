@@ -5,7 +5,7 @@
 
 __all__ = [
     "StaticTranslationsUpload",
-    ]
+]
 
 from lp.archivepublisher.customupload import CustomUpload
 
@@ -17,6 +17,7 @@ class StaticTranslationsUpload(CustomUpload):
     via webservice methods so that third parties can retrieve them from the
     librarian.
     """
+
     custom_type = "static-translations"
 
     @classmethod

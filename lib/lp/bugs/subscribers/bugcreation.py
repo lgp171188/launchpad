@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'at_least_one_task',
-    ]
+    "at_least_one_task",
+]
 
 from lp.bugs.interfaces.bug import CreatedBugWithNoBugTasksError
 
@@ -15,4 +15,5 @@ def at_least_one_task(bug, event):
     """
     if len(bug.bugtasks) == 0:
         raise CreatedBugWithNoBugTasksError(
-            "The bug has to affect at least one product or distribution.")
+            "The bug has to affect at least one product or distribution."
+        )

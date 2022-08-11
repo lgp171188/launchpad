@@ -3,19 +3,12 @@
 """Custom language code."""
 
 __all__ = [
-    'ICustomLanguageCode',
-    'IHasCustomLanguageCodes',
-    ]
+    "ICustomLanguageCode",
+    "IHasCustomLanguageCodes",
+]
 
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    Int,
-    Object,
-    Set,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, Int, Object, Set, TextLine
 from zope.schema.interfaces import IObject
 
 from lp import _
@@ -29,26 +22,44 @@ class ICustomLanguageCode(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
     product = Object(
-        title=_("Product"), required=False, readonly=True, schema=IProduct)
+        title=_("Product"), required=False, readonly=True, schema=IProduct
+    )
     distribution = Object(
-        title=_("Distribution"), required=False, readonly=True,
-        schema=IDistribution)
+        title=_("Distribution"),
+        required=False,
+        readonly=True,
+        schema=IDistribution,
+    )
     sourcepackagename = Object(
-        title=_("Source package name"), required=False, readonly=True,
-        schema=ISourcePackageName)
-    language_code = TextLine(title=_("Language code"),
+        title=_("Source package name"),
+        required=False,
+        readonly=True,
+        schema=ISourcePackageName,
+    )
+    language_code = TextLine(
+        title=_("Language code"),
         description=_("Language code to treat as special."),
-        required=True, readonly=False)
+        required=True,
+        readonly=False,
+    )
     language = Choice(
-        title=_("Language"), required=False, readonly=False,
-        vocabulary='Language',
-        description=_("Language to map this code to.  "
-            "Leave empty to drop translations for this code."))
+        title=_("Language"),
+        required=False,
+        readonly=False,
+        vocabulary="Language",
+        description=_(
+            "Language to map this code to.  "
+            "Leave empty to drop translations for this code."
+        ),
+    )
 
     # Reference back to the IHasCustomLanguageCodes.
     translation_target = Object(
         title=_("Context this custom language code applies to"),
-        required=True, readonly=True, schema=IObject)
+        required=True,
+        readonly=True,
+        schema=IObject,
+    )
 
 
 class IHasCustomLanguageCodes(Interface):
@@ -56,15 +67,20 @@ class IHasCustomLanguageCodes(Interface):
 
     Implemented by `Product` and `DistributionSourcePackage`.
     """
+
     custom_language_codes = Set(
         title=_("Custom language codes"),
         description=_("Translations for these language codes are re-routed."),
         value_type=Object(schema=ICustomLanguageCode),
-        required=False, readonly=False)
+        required=False,
+        readonly=False,
+    )
 
     has_custom_language_codes = Bool(
         title=_("There are custom language codes in this context."),
-        readonly=True, required=True)
+        readonly=True,
+        required=True,
+    )
 
     def getCustomLanguageCode(language_code):
         """Retrieve `CustomLanguageCode` for `language_code`.

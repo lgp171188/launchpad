@@ -3,9 +3,7 @@
 
 """Interfaces related to bulk copying of publishing history data."""
 
-__all__ = [
-    'IPackageCloner'
-    ]
+__all__ = ["IPackageCloner"]
 
 from zope.interface import Interface
 
@@ -13,8 +11,13 @@ from zope.interface import Interface
 class IPackageCloner(Interface):
     """Copies publishing history data across archives."""
 
-    def clonePackages(origin, destination, distroarchseries_list=None,
-                    processors=None, sourcepackagenames=None):
+    def clonePackages(
+        origin,
+        destination,
+        distroarchseries_list=None,
+        processors=None,
+        sourcepackagenames=None,
+    ):
         """Copy packages from origin to destination.
 
         Copies the source packages, as well as the binary packages for the

@@ -4,8 +4,8 @@
 """Interface for communication with the Loggerhead API."""
 
 __all__ = [
-    'IBranchHostingClient',
-    ]
+    "IBranchHostingClient",
+]
 
 from zope.interface import Interface
 

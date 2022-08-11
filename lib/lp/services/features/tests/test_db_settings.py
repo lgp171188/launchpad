@@ -3,14 +3,8 @@
 
 """Tests for feature settings coming from the database"""
 
-from lp.services.features.model import (
-    FeatureFlag,
-    getFeatureStore,
-    )
-from lp.testing import (
-    layers,
-    TestCase,
-    )
+from lp.services.features.model import FeatureFlag, getFeatureStore
+from lp.testing import TestCase, layers
 
 
 class TestFeatureModel(TestCase):

@@ -2,44 +2,32 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'cannot_modify_suite',
-    'DirectoryHash',
-    'FORMAT_TO_SUBCOMPONENT',
-    'GLOBAL_PUBLISHER_LOCK',
-    'Publisher',
-    'getPublisher',
-    ]
+    "cannot_modify_suite",
+    "DirectoryHash",
+    "FORMAT_TO_SUBCOMPONENT",
+    "GLOBAL_PUBLISHER_LOCK",
+    "Publisher",
+    "getPublisher",
+]
 
 import bz2
-from collections import defaultdict
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import errno
-from functools import partial
 import gzip
 import hashlib
-from itertools import (
-    chain,
-    groupby,
-    )
 import lzma
-from operator import attrgetter
 import os
+import re
 import shutil
+from collections import defaultdict
+from datetime import datetime, timedelta
+from functools import partial
+from itertools import chain, groupby
+from operator import attrgetter
 
-from debian.deb822 import (
-    _multivalued,
-    Release,
-    )
+from debian.deb822 import Release, _multivalued
 from storm.expr import Desc
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    implementer,
-    Interface,
-    )
+from zope.interface import Attribute, Interface, implementer
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
@@ -49,30 +37,21 @@ from lp.archivepublisher.indices import (
     build_binary_stanza_fields,
     build_source_stanza_fields,
     build_translations_stanza_fields,
-    )
+)
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     ISignableArchive,
-    )
+)
 from lp.archivepublisher.model.ftparchive import FTPArchiveHandler
-from lp.archivepublisher.utils import (
-    get_ppa_reference,
-    RepositoryIndexFile,
-    )
-from lp.registry.interfaces.pocket import (
-    PackagePublishingPocket,
-    pocketsuffix,
-    )
+from lp.archivepublisher.utils import RepositoryIndexFile, get_ppa_reference
+from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
+from lp.services.database.bulk import load
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.features import getFeatureFlag
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.client import LibrarianClient
-from lp.services.osutils import (
-    ensure_directory_exists,
-    open_for_writing,
-    )
+from lp.services.osutils import ensure_directory_exists, open_for_writing
 from lp.services.utils import file_exists
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
@@ -80,30 +59,31 @@ from lp.soyuz.enums import (
     ArchiveStatus,
     BinaryPackageFormat,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.interfaces.archive import NoSuchPPA
 from lp.soyuz.interfaces.archivefile import IArchiveFileSet
 from lp.soyuz.interfaces.publishing import (
-    active_publishing_status,
     IPublishingSet,
-    )
+    active_publishing_status,
+)
+from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
-
+)
+from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 # Use this as the lock file name for all scripts that may manipulate
 # archives in the filesystem.  In a Launchpad(Cron)Script, set
 # lockfilename to this value to make it use the shared lock.
-GLOBAL_PUBLISHER_LOCK = 'launchpad-publisher.lock'
+GLOBAL_PUBLISHER_LOCK = "launchpad-publisher.lock"
 
 
 FORMAT_TO_SUBCOMPONENT = {
-    BinaryPackageFormat.UDEB: 'debian-installer',
-    BinaryPackageFormat.DDEB: 'debug',
-    }
+    BinaryPackageFormat.UDEB: "debian-installer",
+    BinaryPackageFormat.DDEB: "debug",
+}
 
 
 # Number of days before unreferenced files are removed from by-hash.
@@ -129,19 +109,19 @@ def reorder_components(components):
 
 def remove_suffix(path):
     """Return `path` but with any compression suffix removed."""
-    if path.endswith('.gz'):
-        return path[:-len('.gz')]
-    elif path.endswith('.bz2'):
-        return path[:-len('.bz2')]
-    elif path.endswith('.xz'):
-        return path[:-len('.xz')]
+    if path.endswith(".gz"):
+        return path[: -len(".gz")]
+    elif path.endswith(".bz2"):
+        return path[: -len(".bz2")]
+    elif path.endswith(".xz"):
+        return path[: -len(".xz")]
     else:
         return path
 
 
 def get_suffixed_indices(path):
     """Return a set of paths to compressed copies of the given index."""
-    return {path + suffix for suffix in ('', '.gz', '.bz2', '.xz')}
+    return {path + suffix for suffix in ("", ".gz", ".bz2", ".xz")}
 
 
 def getPublisher(archive, allowed_suites, log, distsroot=None):
@@ -151,11 +131,12 @@ def getPublisher(archive, allowed_suites, log, distsroot=None):
     be stored via 'distroot' argument.
     """
     if archive.purpose != ArchivePurpose.PPA:
-        log.debug("Finding configuration for %s %s."
-                  % (archive.distribution.name, archive.displayname))
+        log.debug(
+            "Finding configuration for %s %s."
+            % (archive.distribution.name, archive.displayname)
+        )
     else:
-        log.debug("Finding configuration for '%s' PPA."
-                  % archive.owner.name)
+        log.debug("Finding configuration for '%s' PPA." % archive.owner.name)
     pubconf = getPubConfig(archive)
 
     disk_pool = pubconf.getDiskPool(log)
@@ -172,7 +153,8 @@ def getPublisher(archive, allowed_suites, log, distsroot=None):
 def get_sources_path(config, suite_name, component):
     """Return path to Sources file for the given arguments."""
     return os.path.join(
-        config.distsroot, suite_name, component.name, "source", "Sources")
+        config.distsroot, suite_name, component.name, "source", "Sources"
+    )
 
 
 def get_packages_path(config, suite_name, component, arch, subcomp=None):
@@ -187,13 +169,16 @@ def get_packages_path(config, suite_name, component, arch, subcomp=None):
 
 def cannot_modify_suite(archive, distroseries, pocket):
     """Return True for Release pockets of stable series in primary archives."""
-    return (not distroseries.isUnstable() and
-            not archive.allowUpdatesToReleasePocket() and
-            pocket == PackagePublishingPocket.RELEASE)
+    return (
+        not distroseries.isUnstable()
+        and not archive.allowUpdatesToReleasePocket()
+        and pocket == PackagePublishingPocket.RELEASE
+    )
 
 
 class I18nIndex(_multivalued):
     """Represents an i18n/Index file."""
+
     _multivalued_fields = {
         "sha1": ["sha1", "size", "name"],
     }
@@ -207,7 +192,7 @@ class I18nIndex(_multivalued):
         return fixed_field_lengths
 
     def _get_size_field_length(self, key):
-        return max(len(str(item['size'])) for item in self[key])
+        return max(len(str(item["size"])) for item in self[key])
 
 
 class IArchiveHash(Interface):
@@ -215,18 +200,24 @@ class IArchiveHash(Interface):
 
     hash_factory = Attribute("A hashlib class suitable for this algorithm.")
     deb822_name = Attribute(
-        "Algorithm name expected by debian.deb822.Release.")
+        "Algorithm name expected by debian.deb822.Release."
+    )
     apt_name = Attribute(
         "Algorithm name used by apt in Release files and by-hash "
-        "subdirectories.")
+        "subdirectories."
+    )
     lfc_name = Attribute(
-        "LibraryFileContent attribute name corresponding to this algorithm.")
+        "LibraryFileContent attribute name corresponding to this algorithm."
+    )
     dh_name = Attribute(
-        "Filename for use when checksumming directories with this algorithm.")
+        "Filename for use when checksumming directories with this algorithm."
+    )
     write_by_hash = Attribute(
-        "Whether to write by-hash subdirectories for this algorithm.")
+        "Whether to write by-hash subdirectories for this algorithm."
+    )
     write_directory_hash = Attribute(
-        "Whether to write *SUM files for this algorithm for directories.")
+        "Whether to write *SUM files for this algorithm for directories."
+    )
 
 
 @implementer(IArchiveHash)
@@ -266,7 +257,7 @@ archive_hashes = [
     MD5ArchiveHash(),
     SHA1ArchiveHash(),
     SHA256ArchiveHash(),
-    ]
+]
 
 
 class ByHash:
@@ -301,20 +292,25 @@ class ByHash:
         for archive_hash in reversed(self._usable_archive_hashes):
             digest = getattr(lfa.content, archive_hash.lfc_name)
             digest_path = os.path.join(
-                self.path, archive_hash.apt_name, digest)
+                self.path, archive_hash.apt_name, digest
+            )
             self.known_digests[archive_hash.apt_name][digest].add(name)
             if not os.path.lexists(digest_path):
                 self.log.debug(
-                    "by-hash: Creating %s for %s" % (digest_path, name))
+                    "by-hash: Creating %s for %s" % (digest_path, name)
+                )
                 ensure_directory_exists(os.path.dirname(digest_path))
                 if archive_hash != best_hash:
                     os.symlink(
                         os.path.join(
-                            os.pardir, best_hash.apt_name, best_digest),
-                        digest_path)
+                            os.pardir, best_hash.apt_name, best_digest
+                        ),
+                        digest_path,
+                    )
                 elif copy_from_path is not None:
                     os.link(
-                        os.path.join(self.root, copy_from_path), digest_path)
+                        os.path.join(self.root, copy_from_path), digest_path
+                    )
                 else:
                     with open(digest_path, "wb") as outfile:
                         lfa.open()
@@ -339,10 +335,13 @@ class ByHash:
             if os.path.exists(hash_path):
                 prune_hash_directory = True
                 for entry in list(os.scandir(hash_path)):
-                    if entry.name not in self.known_digests[
-                            archive_hash.apt_name]:
+                    if (
+                        entry.name
+                        not in self.known_digests[archive_hash.apt_name]
+                    ):
                         self.log.debug(
-                            "by-hash: Deleting unreferenced %s" % entry.path)
+                            "by-hash: Deleting unreferenced %s" % entry.path
+                        )
                         os.unlink(entry.path)
                     else:
                         prune_hash_directory = False
@@ -375,7 +374,8 @@ class ByHashes:
     def add(self, path, lfa, copy_from_path=None):
         dirpath, name = os.path.split(path)
         self.registerChild(dirpath).add(
-            name, lfa, copy_from_path=copy_from_path)
+            name, lfa, copy_from_path=copy_from_path
+        )
 
     def known(self, path, hashname, digest):
         dirpath, name = os.path.split(path)
@@ -393,8 +393,9 @@ class Publisher:
     the processing of each DistroSeries and DistroArchSeries in question
     """
 
-    def __init__(self, log, config, diskpool, archive, allowed_suites=None,
-                 library=None):
+    def __init__(
+        self, log, config, diskpool, archive, allowed_suites=None, library=None
+    ):
         """Initialize a publisher.
 
         Publishers need the pool root dir and a DiskPool object.
@@ -408,7 +409,8 @@ class Publisher:
         self.distro = archive.distribution
         self.archive = archive
         self.allowed_suites = (
-            None if allowed_suites is None else set(allowed_suites))
+            None if allowed_suites is None else set(allowed_suites)
+        )
 
         self._diskpool = diskpool
 
@@ -448,16 +450,18 @@ class Publisher:
 
         Otherwise, return False.
         """
-        return (not self.allowed_suites or
-                distroseries.getSuite(pocket) in self.allowed_suites)
+        return (
+            not self.allowed_suites
+            or distroseries.getSuite(pocket) in self.allowed_suites
+        )
 
     @property
     def subcomponents(self):
         subcomps = []
         if self.archive.purpose != ArchivePurpose.PARTNER:
-            subcomps.append('debian-installer')
+            subcomps.append("debian-installer")
         if self.archive.publish_debug_symbols:
-            subcomps.append('debug')
+            subcomps.append("debug")
         return subcomps
 
     @property
@@ -465,7 +469,7 @@ class Publisher:
         if self.archive.purpose in (
             ArchivePurpose.PRIMARY,
             ArchivePurpose.PARTNER,
-            ):
+        ):
             # For PRIMARY and PARTNER archives, skip OBSOLETE and FUTURE
             # series.  We will never want to publish anything in them, so it
             # isn't worth thinking about whether they have pending
@@ -473,10 +477,12 @@ class Publisher:
             return [
                 series
                 for series in self.distro.series
-                if series.status not in (
+                if series.status
+                not in (
                     SeriesStatus.OBSOLETE,
                     SeriesStatus.FUTURE,
-                    )]
+                )
+            ]
         else:
             # Other archives may have reasons to continue building at least
             # for OBSOLETE series.  For example, a PPA may be continuing to
@@ -501,24 +507,29 @@ class Publisher:
         clauses = [
             SourcePackagePublishingHistory.archive == self.archive,
             SourcePackagePublishingHistory.status.is_in(
-                active_publishing_status),
-            ]
+                active_publishing_status
+            ),
+        ]
         if not is_careful:
             clauses.append(
-                SourcePackagePublishingHistory.datepublished == None)
+                SourcePackagePublishingHistory.datepublished == None
+            )
 
         publications = IStore(SourcePackagePublishingHistory).find(
-            SourcePackagePublishingHistory, *clauses)
+            SourcePackagePublishingHistory, *clauses
+        )
         return publications.order_by(
             SourcePackagePublishingHistory.distroseriesID,
             SourcePackagePublishingHistory.pocket,
-            Desc(SourcePackagePublishingHistory.id))
+            Desc(SourcePackagePublishingHistory.id),
+        )
 
     def publishSources(self, distroseries, pocket, spphs):
         """Publish sources for a given distroseries and pocket."""
         self.log.debug(
-            "* Publishing pending sources for %s" %
-            distroseries.getSuite(pocket))
+            "* Publishing pending sources for %s"
+            % distroseries.getSuite(pocket)
+        )
         for spph in spphs:
             spph.publish(self._diskpool, self.log)
 
@@ -533,16 +544,21 @@ class Publisher:
         dirty_suites = set()
         all_spphs = self.getPendingSourcePublications(is_careful)
         for (distroseries, pocket), spphs in groupby(
-                all_spphs, attrgetter("distroseries", "pocket")):
+            all_spphs, attrgetter("distroseries", "pocket")
+        ):
             if not self.isAllowed(distroseries, pocket):
                 self.log.debug("* Skipping %s", distroseries.getSuite(pocket))
             elif not self.checkLegalPocket(distroseries, pocket, is_careful):
                 for spph in spphs:
                     self.log.error(
-                        "Tried to publish %s (%s) into %s (%s), skipping" % (
-                            spph.displayname, spph.id,
+                        "Tried to publish %s (%s) into %s (%s), skipping"
+                        % (
+                            spph.displayname,
+                            spph.id,
                             distroseries.getSuite(pocket),
-                            distroseries.status.name))
+                            distroseries.status.name,
+                        )
+                    )
             else:
                 self.publishSources(distroseries, pocket, spphs)
                 dirty_suites.add(distroseries.getSuite(pocket))
@@ -552,29 +568,36 @@ class Publisher:
         """Return the specific group of binary records to be published."""
         clauses = [
             BinaryPackagePublishingHistory.archive == self.archive,
-            BinaryPackagePublishingHistory.distroarchseriesID ==
-                DistroArchSeries.id,
+            BinaryPackagePublishingHistory.distroarchseriesID
+            == DistroArchSeries.id,
             BinaryPackagePublishingHistory.status.is_in(
-                active_publishing_status),
-            ]
+                active_publishing_status
+            ),
+        ]
         if not is_careful:
             clauses.append(
-                BinaryPackagePublishingHistory.datepublished == None)
+                BinaryPackagePublishingHistory.datepublished == None
+            )
 
         publications = IStore(BinaryPackagePublishingHistory).find(
-            BinaryPackagePublishingHistory, *clauses)
+            BinaryPackagePublishingHistory, *clauses
+        )
         return publications.order_by(
             DistroArchSeries.distroseriesID,
             BinaryPackagePublishingHistory.pocket,
             DistroArchSeries.architecturetag,
-            Desc(BinaryPackagePublishingHistory.id))
+            Desc(BinaryPackagePublishingHistory.id),
+        )
 
     def publishBinaries(self, distroarchseries, pocket, bpphs):
         """Publish binaries for a given distroarchseries and pocket."""
         self.log.debug(
-            "* Publishing pending binaries for %s/%s" % (
+            "* Publishing pending binaries for %s/%s"
+            % (
                 distroarchseries.distroseries.getSuite(pocket),
-                distroarchseries.architecturetag))
+                distroarchseries.architecturetag,
+            )
+        )
         for bpph in bpphs:
             bpph.publish(self._diskpool, self.log)
 
@@ -589,17 +612,22 @@ class Publisher:
         dirty_suites = set()
         all_bpphs = self.getPendingBinaryPublications(is_careful)
         for (distroarchseries, pocket), bpphs in groupby(
-                all_bpphs, attrgetter("distroarchseries", "pocket")):
+            all_bpphs, attrgetter("distroarchseries", "pocket")
+        ):
             distroseries = distroarchseries.distroseries
             if not self.isAllowed(distroseries, pocket):
                 pass  # Already logged by publishSources.
             elif not self.checkLegalPocket(distroseries, pocket, is_careful):
                 for bpph in bpphs:
                     self.log.error(
-                        "Tried to publish %s (%s) into %s (%s), skipping" % (
-                            bpph.displayname, bpph.id,
+                        "Tried to publish %s (%s) into %s (%s), skipping"
+                        % (
+                            bpph.displayname,
+                            bpph.id,
                             distroseries.getSuite(pocket),
-                            distroseries.status.name))
+                            distroseries.status.name,
+                        )
+                    )
             else:
                 self.publishBinaries(distroarchseries, pocket, bpphs)
                 dirty_suites.add(distroseries.getSuite(pocket))
@@ -616,9 +644,11 @@ class Publisher:
         self.log.debug("* Step A: Publishing packages")
 
         self.dirty_suites.update(
-            self.findAndPublishSources(is_careful=force_publishing))
+            self.findAndPublishSources(is_careful=force_publishing)
+        )
         self.dirty_suites.update(
-            self.findAndPublishBinaries(is_careful=force_publishing))
+            self.findAndPublishBinaries(is_careful=force_publishing)
+        )
 
     def A2_markPocketsWithDeletionsDirty(self):
         """An intermediate step in publishing to detect deleted packages.
@@ -636,7 +666,7 @@ class Publisher:
                 table.status == PackagePublishingStatus.DELETED,
                 table.scheduleddeletiondate == None,
                 table.dateremoved == None,
-                ]
+            ]
 
         # We need to get a set of suite names that have publications that
         # are waiting to be deleted.  Each suite name is added to the
@@ -645,29 +675,43 @@ class Publisher:
         # Make the source publications query.
         conditions = base_conditions(SourcePackagePublishingHistory)
         conditions.append(
-            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id)
-        source_suites = IStore(SourcePackagePublishingHistory).find(
-            (DistroSeries, SourcePackagePublishingHistory.pocket),
-            *conditions).config(distinct=True).order_by(
-                DistroSeries.id, SourcePackagePublishingHistory.pocket)
+            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id
+        )
+        source_suites = (
+            IStore(SourcePackagePublishingHistory)
+            .find(
+                (DistroSeries, SourcePackagePublishingHistory.pocket),
+                *conditions,
+            )
+            .config(distinct=True)
+            .order_by(DistroSeries.id, SourcePackagePublishingHistory.pocket)
+        )
 
         # Make the binary publications query.
         conditions = base_conditions(BinaryPackagePublishingHistory)
-        conditions.extend([
-            BinaryPackagePublishingHistory.distroarchseriesID ==
-                DistroArchSeries.id,
-            DistroArchSeries.distroseriesID == DistroSeries.id,
-            ])
-        binary_suites = IStore(BinaryPackagePublishingHistory).find(
-            (DistroSeries, BinaryPackagePublishingHistory.pocket),
-            *conditions).config(distinct=True).order_by(
-                DistroSeries.id, BinaryPackagePublishingHistory.pocket)
+        conditions.extend(
+            [
+                BinaryPackagePublishingHistory.distroarchseriesID
+                == DistroArchSeries.id,
+                DistroArchSeries.distroseriesID == DistroSeries.id,
+            ]
+        )
+        binary_suites = (
+            IStore(BinaryPackagePublishingHistory)
+            .find(
+                (DistroSeries, BinaryPackagePublishingHistory.pocket),
+                *conditions,
+            )
+            .config(distinct=True)
+            .order_by(DistroSeries.id, BinaryPackagePublishingHistory.pocket)
+        )
 
         for distroseries, pocket in chain(source_suites, binary_suites):
             if self.isDirty(distroseries, pocket):
                 continue
-            if (cannot_modify_suite(self.archive, distroseries, pocket)
-                or not self.isAllowed(distroseries, pocket)):
+            if cannot_modify_suite(
+                self.archive, distroseries, pocket
+            ) or not self.isAllowed(distroseries, pocket):
                 # We don't want to mark release pockets dirty in a
                 # stable distroseries, no matter what other bugs
                 # that precede here have dirtied it.
@@ -687,8 +731,10 @@ class Publisher:
                     continue
                 if not force_domination:
                     if not self.isDirty(distroseries, pocket):
-                        self.log.debug("Skipping domination for %s/%s" %
-                                   (distroseries.name, pocket.name))
+                        self.log.debug(
+                            "Skipping domination for %s/%s"
+                            % (distroseries.name, pocket.name)
+                        )
                         continue
                     self.checkDirtySuiteBeforePublishing(distroseries, pocket)
                 judgejudy.judgeAndDominate(distroseries, pocket)
@@ -696,9 +742,9 @@ class Publisher:
     def C_doFTPArchive(self, is_careful):
         """Does the ftp-archive step: generates Sources and Packages."""
         self.log.debug("* Step C: Set apt-ftparchive up and run it")
-        apt_handler = FTPArchiveHandler(self.log, self._config,
-                                        self._diskpool, self.distro,
-                                        self)
+        apt_handler = FTPArchiveHandler(
+            self.log, self._config, self._diskpool, self.distro, self
+        )
         apt_handler.run(is_careful)
 
     def C_writeIndexes(self, is_careful):
@@ -711,8 +757,10 @@ class Publisher:
             for pocket in self.archive.getPockets():
                 if not is_careful:
                     if not self.isDirty(distroseries, pocket):
-                        self.log.debug("Skipping index generation for %s/%s" %
-                                       (distroseries.name, pocket.name))
+                        self.log.debug(
+                            "Skipping index generation for %s/%s"
+                            % (distroseries.name, pocket.name)
+                        )
                         continue
                     self.checkDirtySuiteBeforePublishing(distroseries, pocket)
 
@@ -721,7 +769,8 @@ class Publisher:
                 components = self.archive.getComponentsForSeries(distroseries)
                 for component in components:
                     self._writeComponentIndexes(
-                        distroseries, pocket, component)
+                        distroseries, pocket, component
+                    )
 
     def C_updateArtifactoryProperties(self, is_careful):
         """Update Artifactory properties to match our database."""
@@ -735,29 +784,69 @@ class Publisher:
         # suite/channel.  A more complete overhaul of the
         # publisher/dominator might be able to deal with this.
         publishing_set = getUtility(IPublishingSet)
+        releases_by_id = {}
         pubs_by_id = defaultdict(list)
         spphs_by_spr = defaultdict(list)
         bpphs_by_bpr = defaultdict(list)
         for spph in publishing_set.getSourcesForPublishing(
-                archive=self.archive):
+            archive=self.archive
+        ):
             spphs_by_spr[spph.sourcepackagereleaseID].append(spph)
-            pubs_by_id["source:%d" % spph.sourcepackagereleaseID].append(spph)
+            release_id = "source:%d" % spph.sourcepackagereleaseID
+            releases_by_id.setdefault(release_id, spph.sourcepackagerelease)
+            pubs_by_id[release_id].append(spph)
         for bpph in publishing_set.getBinariesForPublishing(
-                archive=self.archive):
+            archive=self.archive
+        ):
             bpphs_by_bpr[bpph.binarypackagereleaseID].append(bpph)
-            pubs_by_id["binary:%d" % bpph.binarypackagereleaseID].append(bpph)
+            release_id = "binary:%d" % bpph.binarypackagereleaseID
+            releases_by_id.setdefault(release_id, bpph.binarypackagerelease)
+            pubs_by_id[release_id].append(bpph)
         artifacts = self._diskpool.getAllArtifacts(
-            self.archive.name, self.archive.repository_format)
+            self.archive.name, self.archive.repository_format
+        )
 
+        plan = []
         for path, properties in sorted(artifacts.items()):
             release_id = properties.get("launchpad.release-id")
             source_name = properties.get("launchpad.source-name")
-            if not release_id or not source_name:
+            source_version = properties.get("launchpad.source-version")
+            if not release_id or not source_name or not source_version:
                 # Skip any files that Launchpad didn't put in Artifactory.
                 continue
+            plan.append(
+                (source_name[0], source_version[0], release_id[0], properties)
+            )
+
+        # Releases that have been removed may still have corresponding
+        # artifacts but no corresponding publishing history rows.  Bulk-load
+        # any of these that we find so that we can track down the
+        # corresponding pool entries.
+        missing_sources = set()
+        missing_binaries = set()
+        for _, _, release_id, _ in plan:
+            if release_id in releases_by_id:
+                continue
+            match = re.match(r"^source:(\d+)$", release_id)
+            if match is not None:
+                missing_sources.add(int(match.group(1)))
+            else:
+                match = re.match(r"^binary:(\d+)$", release_id)
+                if match is not None:
+                    missing_binaries.add(int(match.group(1)))
+        for spr in load(SourcePackageRelease, missing_sources):
+            releases_by_id["source:%d" % spr.id] = spr
+        for bpr in load(BinaryPackageRelease, missing_binaries):
+            releases_by_id["binary:%d" % bpr.id] = bpr
+
+        for source_name, source_version, release_id, properties in plan:
             self._diskpool.updateProperties(
-                source_name[0], path.name, pubs_by_id.get(release_id[0]),
-                old_properties=properties)
+                source_name,
+                source_version,
+                releases_by_id[release_id].files,
+                pubs_by_id.get(release_id),
+                old_properties=properties,
+            )
 
     def D_writeReleaseFiles(self, is_careful):
         """Write out the Release files for the provided distribution.
@@ -770,9 +859,11 @@ class Publisher:
 
         archive_file_suites = set()
         for container in getUtility(IArchiveFileSet).getContainersToReap(
-                self.archive, container_prefix="release:"):
+            self.archive, container_prefix="release:"
+        ):
             distroseries, pocket = self.distro.getDistroSeriesAndPocket(
-                container[len("release:"):])
+                container[len("release:") :]
+            )
             archive_file_suites.add(distroseries.getSuite(pocket))
 
         for distroseries in self.distro:
@@ -795,24 +886,30 @@ class Publisher:
                 write_release = suite in self.release_files_needed
                 if not is_careful:
                     if not self.isDirty(distroseries, pocket):
-                        self.log.debug("Skipping release files for %s/%s" %
-                                       (distroseries.name, pocket.name))
+                        self.log.debug(
+                            "Skipping release files for %s/%s"
+                            % (distroseries.name, pocket.name)
+                        )
                         write_release = False
                     else:
                         self.checkDirtySuiteBeforePublishing(
-                            distroseries, pocket)
+                            distroseries, pocket
+                        )
 
                 if write_release:
                     self._writeSuite(distroseries, pocket)
-                elif (suite in archive_file_suites and
-                      distroseries.publish_by_hash):
+                elif (
+                    suite in archive_file_suites
+                    and distroseries.publish_by_hash
+                ):
                     # We aren't publishing a new Release file for this
                     # suite, probably because it's immutable, but we still
                     # need to prune by-hash files from it.
                     extra_by_hash_files = {
                         filename: filename
                         for filename in ("Release", "Release.gpg", "InRelease")
-                        if file_exists(os.path.join(suite_path, filename))}
+                        if file_exists(os.path.join(suite_path, filename))
+                    }
                     self._updateByHash(suite, "Release", extra_by_hash_files)
 
     def _allIndexFiles(self, distroseries):
@@ -826,16 +923,18 @@ class Publisher:
             suite_name = distroseries.getSuite(pocket)
             for component in components:
                 yield gzip.open, get_sources_path(
-                    self._config, suite_name, component) + ".gz"
+                    self._config, suite_name, component
+                ) + ".gz"
                 for arch in distroseries.architectures:
                     if not arch.enabled:
                         continue
                     yield gzip.open, get_packages_path(
-                        self._config, suite_name, component, arch) + ".gz"
+                        self._config, suite_name, component, arch
+                    ) + ".gz"
                     for subcomp in self.subcomponents:
                         yield gzip.open, get_packages_path(
-                            self._config, suite_name, component, arch,
-                            subcomp) + ".gz"
+                            self._config, suite_name, component, arch, subcomp
+                        ) + ".gz"
 
     def _latestNonEmptySeries(self):
         """Find the latest non-empty series in an archive.
@@ -881,18 +980,21 @@ class Publisher:
                 alias_suite = "%s%s" % (alias, pocketsuffix[pocket])
                 current_suite = current.getSuite(pocket)
                 current_suite_path = os.path.join(
-                    self._config.distsroot, current_suite)
+                    self._config.distsroot, current_suite
+                )
                 if not os.path.isdir(current_suite_path):
                     continue
                 alias_suite_path = os.path.join(
-                    self._config.distsroot, alias_suite)
+                    self._config.distsroot, alias_suite
+                )
                 if os.path.islink(alias_suite_path):
                     if os.readlink(alias_suite_path) == current_suite:
                         continue
                 elif os.path.isdir(alias_suite_path):
                     # Perhaps somebody did something misguided ...
                     self.log.warning(
-                        "Alias suite path %s is a directory!" % alias_suite)
+                        "Alias suite path %s is a directory!" % alias_suite
+                    )
                     continue
                 try:
                     os.unlink(alias_suite_path)
@@ -909,36 +1011,48 @@ class Publisher:
         and Sources.lp .
         """
         suite_name = distroseries.getSuite(pocket)
-        self.log.debug("Generate Indexes for %s/%s"
-                       % (suite_name, component.name))
+        self.log.debug(
+            "Generate Indexes for %s/%s" % (suite_name, component.name)
+        )
 
         self.log.debug("Generating Sources")
 
         separate_long_descriptions = False
         # Must match DdtpTarballUpload.shouldInstall.
-        if (not distroseries.include_long_descriptions and
-                getFeatureFlag("soyuz.ppa.separate_long_descriptions")):
-            # If include_long_descriptions is False and the feature flag is
-            # enabled, create a Translation-en file.
-            # build_binary_stanza_fields will also omit long descriptions
-            # from the Packages.
+        if not distroseries.include_long_descriptions:
+            # If include_long_descriptions is False, create a Translation-en
+            # file.  build_binary_stanza_fields will also omit long
+            # descriptions from the Packages.
             separate_long_descriptions = True
             packages = set()
             translation_en = RepositoryIndexFile(
-                os.path.join(self._config.distsroot, suite_name,
-                             component.name, "i18n", "Translation-en"),
-                self._config.temproot, distroseries.index_compressors)
+                os.path.join(
+                    self._config.distsroot,
+                    suite_name,
+                    component.name,
+                    "i18n",
+                    "Translation-en",
+                ),
+                self._config.temproot,
+                distroseries.index_compressors,
+            )
 
         source_index = RepositoryIndexFile(
             get_sources_path(self._config, suite_name, component),
-            self._config.temproot, distroseries.index_compressors)
+            self._config.temproot,
+            distroseries.index_compressors,
+        )
 
         for spp in getUtility(IPublishingSet).getSourcesForPublishing(
-                archive=self.archive, distroseries=distroseries, pocket=pocket,
-                component=component):
+            archive=self.archive,
+            distroseries=distroseries,
+            pocket=pocket,
+            component=component,
+        ):
             stanza = build_source_stanza_fields(
-                spp.sourcepackagerelease, spp.component, spp.section)
-            source_index.write(stanza.makeOutput().encode('utf-8') + b'\n\n')
+                spp.sourcepackagerelease, spp.component, spp.section
+            )
+            source_index.write(stanza.makeOutput().encode("utf-8") + b"\n\n")
 
         source_index.close()
 
@@ -946,37 +1060,51 @@ class Publisher:
             if not arch.enabled:
                 continue
 
-            arch_path = 'binary-%s' % arch.architecturetag
+            arch_path = "binary-%s" % arch.architecturetag
 
             self.log.debug("Generating Packages for %s" % arch_path)
 
             indices = {}
             indices[None] = RepositoryIndexFile(
                 get_packages_path(self._config, suite_name, component, arch),
-                self._config.temproot, distroseries.index_compressors)
+                self._config.temproot,
+                distroseries.index_compressors,
+            )
 
             for subcomp in self.subcomponents:
                 indices[subcomp] = RepositoryIndexFile(
                     get_packages_path(
-                        self._config, suite_name, component, arch, subcomp),
-                    self._config.temproot, distroseries.index_compressors)
+                        self._config, suite_name, component, arch, subcomp
+                    ),
+                    self._config.temproot,
+                    distroseries.index_compressors,
+                )
 
             for bpp in getUtility(IPublishingSet).getBinariesForPublishing(
-                    archive=self.archive, distroarchseries=arch, pocket=pocket,
-                    component=component):
+                archive=self.archive,
+                distroarchseries=arch,
+                pocket=pocket,
+                component=component,
+            ):
                 subcomp = FORMAT_TO_SUBCOMPONENT.get(
-                    bpp.binarypackagerelease.binpackageformat)
+                    bpp.binarypackagerelease.binpackageformat
+                )
                 if subcomp not in indices:
                     # Skip anything that we're not generating indices
                     # for, eg. ddebs where publish_debug_symbols is
                     # disabled.
                     continue
                 stanza = build_binary_stanza_fields(
-                    bpp.binarypackagerelease, bpp.component, bpp.section,
-                    bpp.priority, bpp.phased_update_percentage,
-                    separate_long_descriptions)
+                    bpp.binarypackagerelease,
+                    bpp.component,
+                    bpp.section,
+                    bpp.priority,
+                    bpp.phased_update_percentage,
+                    separate_long_descriptions,
+                )
                 indices[subcomp].write(
-                    stanza.makeOutput().encode('utf-8') + b'\n\n')
+                    stanza.makeOutput().encode("utf-8") + b"\n\n"
+                )
                 if separate_long_descriptions:
                     # If the (Package, Description-md5) pair already exists
                     # in the set, build_translations_stanza_fields will
@@ -984,11 +1112,13 @@ class Publisher:
                     # the set and return a stanza to be written to
                     # Translation-en.
                     translation_stanza = build_translations_stanza_fields(
-                        bpp.binarypackagerelease, packages)
+                        bpp.binarypackagerelease, packages
+                    )
                     if translation_stanza is not None:
                         translation_en.write(
-                            translation_stanza.makeOutput().encode('utf-8')
-                            + b'\n\n')
+                            translation_stanza.makeOutput().encode("utf-8")
+                            + b"\n\n"
+                        )
 
             for index in indices.values():
                 index.close()
@@ -1005,7 +1135,8 @@ class Publisher:
         """
         if cannot_modify_suite(self.archive, distroseries, pocket):
             raise AssertionError(
-                "Oops, tainting RELEASE pocket of %s." % distroseries)
+                "Oops, tainting RELEASE pocket of %s." % distroseries
+            )
 
     def _getLabel(self):
         """Return the contents of the Release file Label field.
@@ -1050,42 +1181,52 @@ class Publisher:
         extra_data = {}
         for filename, real_filename in extra_files.items():
             hashes = self._readIndexFileHashes(
-                suite, filename, real_file_name=real_filename)
+                suite, filename, real_file_name=real_filename
+            )
             if hashes is None:
                 continue
             for archive_hash in archive_hashes:
                 extra_data.setdefault(archive_hash.apt_name, []).append(
-                    hashes[archive_hash.deb822_name])
+                    hashes[archive_hash.deb822_name]
+                )
 
         release_path = os.path.join(
-            self._config.distsroot, suite, release_file_name)
+            self._config.distsroot, suite, release_file_name
+        )
         with open(release_path) as release_file:
             release_data = Release(release_file)
         archive_file_set = getUtility(IArchiveFileSet)
         by_hashes = ByHashes(self._config.distsroot, self.log)
         suite_dir = os.path.relpath(
-            os.path.join(self._config.distsroot, suite),
-            self._config.distsroot)
+            os.path.join(self._config.distsroot, suite), self._config.distsroot
+        )
         container = "release:%s" % suite
 
         def strip_dists(path):
             assert path.startswith("dists/")
-            return path[len("dists/"):]
+            return path[len("dists/") :]
 
         # Gather information on entries in the current Release file, and
         # make sure nothing there is condemned.
         current_files = {}
-        for current_entry in (
-                release_data["SHA256"] + extra_data.get("SHA256", [])):
+        for current_entry in release_data["SHA256"] + extra_data.get(
+            "SHA256", []
+        ):
             path = os.path.join(suite_dir, current_entry["name"])
             real_name = current_entry.get("real_name", current_entry["name"])
             real_path = os.path.join(suite_dir, real_name)
             current_files[path] = (
-                int(current_entry["size"]), current_entry["sha256"], real_path)
+                int(current_entry["size"]),
+                current_entry["sha256"],
+                real_path,
+            )
         uncondemned_files = set()
         for db_file in archive_file_set.getByArchive(
-                self.archive, container=container, only_condemned=True,
-                eager_load=True):
+            self.archive,
+            container=container,
+            only_condemned=True,
+            eager_load=True,
+        ):
             stripped_path = strip_dists(db_file.path)
             if stripped_path in current_files:
                 current_sha256 = current_files[stripped_path][1]
@@ -1093,26 +1234,32 @@ class Publisher:
                     uncondemned_files.add(db_file)
         if uncondemned_files:
             for container, path, sha256 in archive_file_set.unscheduleDeletion(
-                    uncondemned_files):
+                uncondemned_files
+            ):
                 self.log.debug(
-                    "by-hash: Unscheduled %s for %s in %s for deletion" % (
-                        sha256, path, container))
+                    "by-hash: Unscheduled %s for %s in %s for deletion"
+                    % (sha256, path, container)
+                )
 
         # Remove any condemned files from the database whose stay of
         # execution has elapsed.  We ensure that we know about all the
         # relevant by-hash directory trees before doing any removals so that
         # we can prune them properly later.
         for db_file in archive_file_set.getByArchive(
-                self.archive, container=container):
+            self.archive, container=container
+        ):
             by_hashes.registerChild(os.path.dirname(strip_dists(db_file.path)))
         for container, path, sha256 in archive_file_set.reap(
-                self.archive, container=container):
+            self.archive, container=container
+        ):
             self.log.debug(
-                "by-hash: Deleted %s for %s in %s" % (sha256, path, container))
+                "by-hash: Deleted %s for %s in %s" % (sha256, path, container)
+            )
 
         # Ensure that all files recorded in the database are in by-hash.
         db_files = archive_file_set.getByArchive(
-            self.archive, container=container, eager_load=True)
+            self.archive, container=container, eager_load=True
+        )
         for db_file in db_files:
             by_hashes.add(strip_dists(db_file.path), db_file.library_file)
 
@@ -1130,11 +1277,12 @@ class Publisher:
                     condemned_files.add(db_file)
         if condemned_files:
             for container, path, sha256 in archive_file_set.scheduleDeletion(
-                    condemned_files,
-                    timedelta(days=BY_HASH_STAY_OF_EXECUTION)):
+                condemned_files, timedelta(days=BY_HASH_STAY_OF_EXECUTION)
+            ):
                 self.log.debug(
-                    "by-hash: Scheduled %s for %s in %s for deletion" % (
-                        sha256, path, container))
+                    "by-hash: Scheduled %s for %s in %s for deletion"
+                    % (sha256, path, container)
+                )
 
         # Ensure that all the current index files are in by-hash and have
         # corresponding database entries.
@@ -1143,14 +1291,21 @@ class Publisher:
         # librarian client has no bulk upload methods.
         for path, (size, sha256, real_path) in current_files.items():
             full_path = os.path.join(self._config.distsroot, real_path)
-            if (os.path.exists(full_path) and
-                    not by_hashes.known(path, "SHA256", sha256)):
+            if os.path.exists(full_path) and not by_hashes.known(
+                path, "SHA256", sha256
+            ):
                 with open(full_path, "rb") as fileobj:
                     db_file = archive_file_set.newFromFile(
-                        self.archive, container, os.path.join("dists", path),
-                        fileobj, size, filenameToContentType(path))
+                        self.archive,
+                        container,
+                        os.path.join("dists", path),
+                        fileobj,
+                        size,
+                        filenameToContentType(path),
+                    )
                 by_hashes.add(
-                    path, db_file.library_file, copy_from_path=real_path)
+                    path, db_file.library_file, copy_from_path=real_path
+                )
 
         # Finally, remove any files from disk that aren't recorded in the
         # database and aren't active.
@@ -1165,7 +1320,8 @@ class Publisher:
             to the filesystem.
         """
         release_path = os.path.join(
-            self._config.distsroot, suite, "Release.new")
+            self._config.distsroot, suite, "Release.new"
+        )
         with open_for_writing(release_path, "wb") as release_file:
             release_data.dump(release_file, "utf-8")
 
@@ -1184,10 +1340,12 @@ class Publisher:
         suite = distroseries.getSuite(pocket)
         suite_dir = os.path.join(self._config.distsroot, suite)
         all_components = [
-            comp.name for comp in
-            self.archive.getComponentsForSeries(distroseries)]
+            comp.name
+            for comp in self.archive.getComponentsForSeries(distroseries)
+        ]
         all_architectures = [
-            a.architecturetag for a in distroseries.enabled_architectures]
+            a.architecturetag for a in distroseries.enabled_architectures
+        ]
         # Core files are those that are normally updated when a suite
         # changes, and which therefore receive special treatment with
         # caching headers on mirrors.
@@ -1202,20 +1360,21 @@ class Publisher:
         # still want to include them in by-hash directories.
         extra_by_hash_files = {}
         for component in all_components:
-            self._writeSuiteSource(
-                distroseries, pocket, component, core_files)
+            self._writeSuiteSource(distroseries, pocket, component, core_files)
             for architecture in all_architectures:
                 self._writeSuiteArch(
-                    distroseries, pocket, component, architecture, core_files)
-            self._writeSuiteI18n(
-                distroseries, pocket, component, core_files)
+                    distroseries, pocket, component, architecture, core_files
+                )
+            self._writeSuiteI18n(distroseries, pocket, component, core_files)
             dep11_dir = os.path.join(suite_dir, component, "dep11")
             try:
                 for entry in os.scandir(dep11_dir):
-                    if (entry.name.startswith("Components-") or
-                            entry.name.startswith("icons-")):
+                    if entry.name.startswith(
+                        "Components-"
+                    ) or entry.name.startswith("icons-"):
                         dep11_path = os.path.join(
-                            component, "dep11", entry.name)
+                            component, "dep11", entry.name
+                        )
                         extra_files.add(remove_suffix(dep11_path))
                         extra_files.add(dep11_path)
             except OSError as e:
@@ -1225,8 +1384,7 @@ class Publisher:
             try:
                 for cnf_file in os.listdir(cnf_dir):
                     if cnf_file.startswith("Commands-"):
-                        cnf_path = os.path.join(
-                            component, "cnf", cnf_file)
+                        cnf_path = os.path.join(component, "cnf", cnf_file)
                         extra_files.add(remove_suffix(cnf_path))
                         extra_files.add(cnf_path)
             except OSError as e:
@@ -1234,14 +1392,17 @@ class Publisher:
                     raise
         for architecture in all_architectures:
             for contents_path in get_suffixed_indices(
-                    'Contents-' + architecture):
+                "Contents-" + architecture
+            ):
                 if os.path.exists(os.path.join(suite_dir, contents_path)):
                     extra_files.add(remove_suffix(contents_path))
                     extra_files.add(contents_path)
         all_files = core_files | extra_files
 
-        drsummary = "%s %s " % (self.distro.displayname,
-                                distroseries.displayname)
+        drsummary = "%s %s " % (
+            self.distro.displayname,
+            distroseries.displayname,
+        )
         if pocket == PackagePublishingPocket.RELEASE:
             drsummary += distroseries.version
         else:
@@ -1255,15 +1416,20 @@ class Publisher:
         release_file["Version"] = distroseries.version
         release_file["Codename"] = distroseries.name
         release_file["Date"] = datetime.utcnow().strftime(
-            "%a, %d %b %Y %k:%M:%S UTC")
+            "%a, %d %b %Y %k:%M:%S UTC"
+        )
         release_file["Architectures"] = " ".join(sorted(all_architectures))
         release_file["Components"] = " ".join(
-            reorder_components(all_components))
+            reorder_components(all_components)
+        )
         release_file["Description"] = drsummary
-        if ((pocket == PackagePublishingPocket.BACKPORTS and
-             distroseries.backports_not_automatic) or
-            (pocket == PackagePublishingPocket.PROPOSED and
-             distroseries.proposed_not_automatic)):
+        if (
+            pocket == PackagePublishingPocket.BACKPORTS
+            and distroseries.backports_not_automatic
+        ) or (
+            pocket == PackagePublishingPocket.PROPOSED
+            and distroseries.proposed_not_automatic
+        ):
             release_file["NotAutomatic"] = "yes"
             release_file["ButAutomaticUpgrades"] = "yes"
 
@@ -1273,7 +1439,8 @@ class Publisher:
                 continue
             for archive_hash in archive_hashes:
                 release_file.setdefault(archive_hash.apt_name, []).append(
-                    hashes[archive_hash.deb822_name])
+                    hashes[archive_hash.deb822_name]
+                )
 
         if distroseries.publish_by_hash and distroseries.advertise_by_hash:
             release_file["Acquire-By-Hash"] = "yes"
@@ -1287,7 +1454,8 @@ class Publisher:
             # Sign the repository.
             self.log.debug("Signing Release file for %s" % suite)
             for signed_name in signable_archive.signRepository(
-                    suite, pubconf=self._config, suffix=".new", log=self.log):
+                suite, pubconf=self._config, suffix=".new", log=self.log
+            ):
                 core_files.add(signed_name)
                 extra_by_hash_files[signed_name] = signed_name + ".new"
         else:
@@ -1301,22 +1469,31 @@ class Publisher:
             if name in core_files:
                 os.rename(
                     os.path.join(suite_dir, "%s.new" % name),
-                    os.path.join(suite_dir, name))
+                    os.path.join(suite_dir, name),
+                )
 
         # Make sure all the timestamps match, to make it easier to insert
         # caching headers on mirrors.
         self._syncTimestamps(suite, core_files)
 
-    def _writeSuiteArchOrSource(self, distroseries, pocket, component,
-                                file_stub, arch_name, arch_path,
-                                all_series_files):
+    def _writeSuiteArchOrSource(
+        self,
+        distroseries,
+        pocket,
+        component,
+        file_stub,
+        arch_name,
+        arch_path,
+        all_series_files,
+    ):
         """Write out a Release file for an architecture or source."""
         # XXX kiko 2006-08-24: Untested method.
 
         suite = distroseries.getSuite(pocket)
         suite_dir = os.path.join(self._config.distsroot, suite)
-        self.log.debug("Writing Release file for %s/%s/%s" % (
-            suite, component, arch_path))
+        self.log.debug(
+            "Writing Release file for %s/%s/%s" % (suite, component, arch_path)
+        )
 
         # Now, grab the actual (non-di) files inside each of
         # the suite's architectures
@@ -1340,21 +1517,29 @@ class Publisher:
         with open_for_writing(release_path, "wb") as f:
             release_file.dump(f, "utf-8")
 
-    def _writeSuiteSource(self, distroseries, pocket, component,
-                          all_series_files):
+    def _writeSuiteSource(
+        self, distroseries, pocket, component, all_series_files
+    ):
         """Write out a Release file for a suite's sources."""
         self._writeSuiteArchOrSource(
-            distroseries, pocket, component, 'Sources', 'source', 'source',
-            all_series_files)
+            distroseries,
+            pocket,
+            component,
+            "Sources",
+            "source",
+            "source",
+            all_series_files,
+        )
 
-    def _writeSuiteArch(self, distroseries, pocket, component,
-                        arch_name, all_series_files):
+    def _writeSuiteArch(
+        self, distroseries, pocket, component, arch_name, all_series_files
+    ):
         """Write out a Release file for an architecture in a suite."""
         suite = distroseries.getSuite(pocket)
         suite_dir = os.path.join(self._config.distsroot, suite)
 
-        file_stub = 'Packages'
-        arch_path = 'binary-' + arch_name
+        file_stub = "Packages"
+        arch_path = "binary-" + arch_name
 
         for subcomp in self.subcomponents:
             # Set up the subcomponent paths.
@@ -1365,22 +1550,30 @@ class Publisher:
                     all_series_files.add(remove_suffix(path))
                     all_series_files.add(path)
         self._writeSuiteArchOrSource(
-            distroseries, pocket, component, 'Packages', arch_name, arch_path,
-            all_series_files)
+            distroseries,
+            pocket,
+            component,
+            "Packages",
+            arch_name,
+            arch_path,
+            all_series_files,
+        )
 
-    def _writeSuiteI18n(self, distroseries, pocket, component,
-                        all_series_files):
+    def _writeSuiteI18n(
+        self, distroseries, pocket, component, all_series_files
+    ):
         """Write out an Index file for translation files in a suite."""
         suite = distroseries.getSuite(pocket)
-        self.log.debug("Writing Index file for %s/%s/i18n" % (
-            suite, component))
+        self.log.debug(
+            "Writing Index file for %s/%s/i18n" % (suite, component)
+        )
 
         i18n_subpath = os.path.join(component, "i18n")
         i18n_dir = os.path.join(self._config.distsroot, suite, i18n_subpath)
         i18n_files = set()
         try:
             for entry in os.scandir(i18n_dir):
-                if not entry.name.startswith('Translation-'):
+                if not entry.name.startswith("Translation-"):
                     continue
                 i18n_files.add(remove_suffix(entry.name))
                 i18n_files.add(entry.name)
@@ -1395,7 +1588,8 @@ class Publisher:
         i18n_index = I18nIndex()
         for i18n_file in sorted(i18n_files):
             hashes = self._readIndexFileHashes(
-                suite, i18n_file, subpath=i18n_subpath)
+                suite, i18n_file, subpath=i18n_subpath
+            )
             if hashes is None:
                 continue
             i18n_index.setdefault("SHA1", []).append(hashes["sha1"])
@@ -1408,8 +1602,9 @@ class Publisher:
         # Schedule this for inclusion in the Release file.
         all_series_files.add(os.path.join(component, "i18n", "Index"))
 
-    def _readIndexFileHashes(self, suite, file_name, subpath=None,
-                             real_file_name=None):
+    def _readIndexFileHashes(
+        self, suite, file_name, subpath=None, real_file_name=None
+    ):
         """Read an index file and return its hashes.
 
         :param suite: Suite name.
@@ -1427,20 +1622,23 @@ class Publisher:
             {"md5sum": {"md5sum": ..., "size": ..., "name": ...}}), or None
             if the file could not be found.
         """
-        open_func = partial(open, mode='rb')
+        open_func = partial(open, mode="rb")
         full_name = os.path.join(
-            self._config.distsroot, suite, subpath or '.',
-            real_file_name or file_name)
+            self._config.distsroot,
+            suite,
+            subpath or ".",
+            real_file_name or file_name,
+        )
         if not os.path.exists(full_name):
-            if os.path.exists(full_name + '.gz'):
+            if os.path.exists(full_name + ".gz"):
                 open_func = gzip.open
-                full_name = full_name + '.gz'
-            elif os.path.exists(full_name + '.bz2'):
+                full_name = full_name + ".gz"
+            elif os.path.exists(full_name + ".bz2"):
                 open_func = bz2.BZ2File
-                full_name = full_name + '.bz2'
-            elif os.path.exists(full_name + '.xz'):
+                full_name = full_name + ".bz2"
+            elif os.path.exists(full_name + ".xz"):
                 open_func = partial(lzma.LZMAFile, format=lzma.FORMAT_XZ)
-                full_name = full_name + '.xz'
+                full_name = full_name + ".xz"
             else:
                 # The file we were asked to write out doesn't exist.
                 # Most likely we have an incomplete archive (e.g. no sources
@@ -1450,7 +1648,8 @@ class Publisher:
 
         hashes = {
             archive_hash.deb822_name: archive_hash.hash_factory()
-            for archive_hash in archive_hashes}
+            for archive_hash in archive_hashes
+        }
         size = 0
         with open_func(full_name) as in_file:
             for chunk in iter(lambda: in_file.read(256 * 1024), b""):
@@ -1477,27 +1676,38 @@ class Publisher:
         assert self.archive.is_ppa
         if self.archive.publishing_method != ArchivePublishingMethod.LOCAL:
             raise NotImplementedError(
-                "Don't know how to delete archives published using %s" %
-                self.archive.publishing_method.title)
+                "Don't know how to delete archives published using %s"
+                % self.archive.publishing_method.title
+            )
         self.log.info(
-            "Attempting to delete archive '%s/%s' at '%s'." % (
-                self.archive.owner.name, self.archive.name,
-                self._config.archiveroot))
+            "Attempting to delete archive '%s/%s' at '%s'."
+            % (
+                self.archive.owner.name,
+                self.archive.name,
+                self._config.archiveroot,
+            )
+        )
 
         # Set all the publications to DELETED.
         sources = self.archive.getPublishedSources(
-            status=active_publishing_status)
+            status=active_publishing_status
+        )
         getUtility(IPublishingSet).requestDeletion(
-            sources, removed_by=getUtility(ILaunchpadCelebrities).janitor,
-            removal_comment="Removed when deleting archive")
+            sources,
+            removed_by=getUtility(ILaunchpadCelebrities).janitor,
+            removal_comment="Removed when deleting archive",
+        )
 
         # Deleting the sources will have killed the corresponding
         # binaries too, but there may be orphaned leftovers (eg. NBS).
         binaries = self.archive.getAllPublishedBinaries(
-            status=active_publishing_status)
+            status=active_publishing_status
+        )
         getUtility(IPublishingSet).requestDeletion(
-            binaries, removed_by=getUtility(ILaunchpadCelebrities).janitor,
-            removal_comment="Removed when deleting archive")
+            binaries,
+            removed_by=getUtility(ILaunchpadCelebrities).janitor,
+            removal_comment="Removed when deleting archive",
+        )
 
         # Now set dateremoved on any publication that doesn't already
         # have it set, so things can expire from the librarian.
@@ -1514,24 +1724,30 @@ class Publisher:
             except (shutil.Error, OSError) as e:
                 self.log.warning(
                     "Failed to delete directory '%s' for archive "
-                    "'%s/%s'\n%s" % (
-                    directory, self.archive.owner.name,
-                    self.archive.name, e))
+                    "'%s/%s'\n%s"
+                    % (
+                        directory,
+                        self.archive.owner.name,
+                        self.archive.name,
+                        e,
+                    )
+                )
 
         self.archive.status = ArchiveStatus.DELETED
         self.archive.publish = False
 
         # Now that it's gone from disk we can rename the archive to free
         # up the namespace.
-        new_name = base_name = '%s-deletedppa' % self.archive.name
+        new_name = base_name = "%s-deletedppa" % self.archive.name
         count = 1
         while True:
             try:
                 self.archive.owner.getPPAByName(
-                    self.archive.distribution, new_name)
+                    self.archive.distribution, new_name
+                )
             except NoSuchPPA:
                 break
-            new_name = '%s%d' % (base_name, count)
+            new_name = "%s%d" % (base_name, count)
             count += 1
         self.archive.name = new_name
         self.log.info("Renamed deleted archive '%s'.", self.archive.reference)
@@ -1547,8 +1763,13 @@ class DirectoryHash:
 
         for usable in self._usable_archive_hashes:
             csum_path = os.path.join(self.root, usable.dh_name)
-            self.checksum_hash.append((csum_path,
-                RepositoryIndexFile(csum_path, self.tmpdir), usable))
+            self.checksum_hash.append(
+                (
+                    csum_path,
+                    RepositoryIndexFile(csum_path, self.tmpdir),
+                    usable,
+                )
+            )
 
     def __enter__(self):
         return self
@@ -1571,15 +1792,18 @@ class DirectoryHash:
         """Add a path to be checksummed."""
         hashes = [
             (checksum_file, archive_hash.hash_factory())
-            for (_, checksum_file, archive_hash) in self.checksum_hash]
-        with open(path, 'rb') as in_file:
+            for (_, checksum_file, archive_hash) in self.checksum_hash
+        ]
+        with open(path, "rb") as in_file:
             for chunk in iter(lambda: in_file.read(256 * 1024), b""):
                 for (checksum_file, hashobj) in hashes:
                     hashobj.update(chunk)
 
         for (checksum_file, hashobj) in hashes:
             checksum_line = "%s *%s\n" % (
-                hashobj.hexdigest(), path[len(self.root) + 1:])
+                hashobj.hexdigest(),
+                path[len(self.root) + 1 :],
+            )
             checksum_file.write(checksum_line.encode("UTF-8"))
 
     def add_dir(self, path):

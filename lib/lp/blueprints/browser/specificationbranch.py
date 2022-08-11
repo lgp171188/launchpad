@@ -4,19 +4,21 @@
 """Specification views."""
 
 __all__ = [
-    'BranchLinkToSpecificationView',
-    'SpecificationBranchStatusView',
-    'SpecificationBranchURL',
-    ]
+    "BranchLinkToSpecificationView",
+    "SpecificationBranchStatusView",
+    "SpecificationBranchURL",
+]
+
+from typing import List
 
 from zope.interface import implementer
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.blueprints.interfaces.specificationbranch import ISpecificationBranch
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import ICanonicalUrlData
@@ -38,15 +40,15 @@ class SpecificationBranchURL:
 
     @property
     def path(self):
-        return '+branch/%s' % self.branch.unique_name[1:]
+        return "+branch/%s" % self.branch.unique_name[1:]
 
 
 class SpecificationBranchStatusView(LaunchpadEditFormView):
     """Edit the summary of the SpecificationBranch link."""
 
     schema = ISpecificationBranch
-    field_names = []
-    label = _('Delete link between specification and branch')
+    field_names = []  # type: List[str]
+    label = _("Delete link between specification and branch")
 
     def initialize(self):
         self.specification = self.context.specification
@@ -56,7 +58,7 @@ class SpecificationBranchStatusView(LaunchpadEditFormView):
     def next_url(self):
         return canonical_url(self.specification)
 
-    @action(_('Delete'), name='delete')
+    @action(_("Delete"), name="delete")
     def delete_action(self, action, data):
         self.context.destroySelf()
 
@@ -70,7 +72,7 @@ class BranchLinkToSpecificationView(LaunchpadFormView):
     # to get the read only fields rendered as input widgets.
     for_input = True
 
-    field_names = ['specification']
+    field_names = ["specification"]
 
     @property
     def label(self):
@@ -78,15 +80,17 @@ class BranchLinkToSpecificationView(LaunchpadFormView):
 
     @property
     def page_title(self):
-        return 'Link branch %s to a blueprint' % self.context.displayname
+        return "Link branch %s to a blueprint" % self.context.displayname
 
     @property
     def next_url(self):
         return canonical_url(self.context)
 
-    cancel_url = next_url
+    @property
+    def cancel_url(self):
+        return self.next_url
 
-    @action(_('Continue'), name='continue')
+    @action(_("Continue"), name="continue")
     def continue_action(self, action, data):
-        spec = data['specification']
+        spec = data["specification"]
         spec.linkBranch(branch=self.context, registrant=self.user)

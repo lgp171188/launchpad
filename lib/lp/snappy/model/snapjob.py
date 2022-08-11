@@ -4,31 +4,20 @@
 """Snap package jobs."""
 
 __all__ = [
-    'SnapJob',
-    'SnapJobType',
-    'SnapRequestBuildsJob',
-    ]
+    "SnapJob",
+    "SnapJobType",
+    "SnapRequestBuildsJob",
+]
 
 from itertools import chain
 
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from storm.locals import (
-    Desc,
-    Int,
-    JSON,
-    Reference,
-    )
-from storm.store import EmptyResultSet
 import transaction
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
+from storm.locals import JSON, Desc, Int, Reference
+from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
@@ -38,15 +27,9 @@ from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.propertycache import cachedproperty
@@ -55,45 +38,45 @@ from lp.snappy.interfaces.snap import (
     CannotFetchSnapcraftYaml,
     CannotParseSnapcraftYaml,
     MissingSnapcraftYaml,
-    )
+)
 from lp.snappy.interfaces.snapbase import NoSuchSnapBase
 from lp.snappy.interfaces.snapjob import (
     ISnapJob,
     ISnapRequestBuildsJob,
     ISnapRequestBuildsJobSource,
-    )
+)
 from lp.snappy.model.snapbuild import SnapBuild
-from lp.soyuz.model.archive import (
-    Archive,
-    get_enabled_archive_filter,
-    )
+from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
 
 
 class SnapJobType(DBEnumeratedType):
     """Values that `ISnapJob.job_type` can take."""
 
-    REQUEST_BUILDS = DBItem(0, """
+    REQUEST_BUILDS = DBItem(
+        0,
+        """
         Request builds
 
         This job requests builds of a snap package.
-        """)
+        """,
+    )
 
 
 @implementer(ISnapJob)
 class SnapJob(StormBase):
     """See `ISnapJob`."""
 
-    __storm_table__ = 'SnapJob'
+    __storm_table__ = "SnapJob"
 
-    job_id = Int(name='job', primary=True, allow_none=False)
-    job = Reference(job_id, 'Job.id')
+    job_id = Int(name="job", primary=True, allow_none=False)
+    job = Reference(job_id, "Job.id")
 
-    snap_id = Int(name='snap', allow_none=False)
-    snap = Reference(snap_id, 'Snap.id')
+    snap_id = Int(name="snap", allow_none=False)
+    snap = Reference(snap_id, "Snap.id")
 
     job_type = DBEnum(enum=SnapJobType, allow_none=False)
 
-    metadata = JSON('json_data', allow_none=False)
+    metadata = JSON("json_data", allow_none=False)
 
     def __init__(self, snap, job_type, metadata, **job_args):
         """Constructor.
@@ -118,14 +101,16 @@ class SnapJob(StormBase):
 
 @delegate_to(ISnapJob)
 class SnapJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, snap_job):
         self.context = snap_job
 
     def __repr__(self):
         """An informative representation of the job."""
         return "<%s for ~%s/+snap/%s>" % (
-            self.__class__.__name__, self.snap.owner.name, self.snap.name)
+            self.__class__.__name__,
+            self.snap.owner.name,
+            self.snap.name,
+        )
 
     @classmethod
     def get(cls, job_id):
@@ -139,8 +124,9 @@ class SnapJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         snap_job = IStore(SnapJob).get(SnapJob, job_id)
         if snap_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(snap_job)
 
     @classmethod
@@ -150,18 +136,21 @@ class SnapJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             SnapJob,
             SnapJob.job_type == cls.class_job_type,
             SnapJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
-        oops_vars.extend([
-            ("job_id", self.context.job.id),
-            ("job_type", self.context.job_type.title),
-            ("snap_owner_name", self.context.snap.owner.name),
-            ("snap_name", self.context.snap.name),
-            ])
+        oops_vars.extend(
+            [
+                ("job_id", self.context.job.id),
+                ("job_type", self.context.job_type.title),
+                ("snap_owner_name", self.context.snap.owner.name),
+                ("snap_name", self.context.snap.name),
+            ]
+        )
         return oops_vars
 
 
@@ -176,7 +165,7 @@ class SnapRequestBuildsJob(SnapJobDerived):
         CannotParseSnapcraftYaml,
         MissingSnapcraftYaml,
         NoSuchSnapBase,
-        )
+    )
     retry_error_types = (CannotFetchSnapcraftYaml,)
 
     max_retries = 5
@@ -184,8 +173,9 @@ class SnapRequestBuildsJob(SnapJobDerived):
     config = config.ISnapRequestBuildsJobSource
 
     @classmethod
-    def create(cls, snap, requester, archive, pocket, channels,
-               architectures=None):
+    def create(
+        cls, snap, requester, archive, pocket, channels, architectures=None
+    ):
         """See `ISnapRequestBuildsJobSource`."""
         metadata = {
             "requester": requester.id,
@@ -195,8 +185,9 @@ class SnapRequestBuildsJob(SnapJobDerived):
             # Really a set or None, but sets aren't directly
             # JSON-serialisable.
             "architectures": (
-                list(architectures) if architectures is not None else None),
-            }
+                list(architectures) if architectures is not None else None
+            ),
+        }
         snap_job = SnapJob(snap, cls.class_job_type, metadata)
         job = cls(snap_job)
         job.celeryRunOnCommit()
@@ -208,36 +199,49 @@ class SnapRequestBuildsJob(SnapJobDerived):
         clauses = [
             SnapJob.snap == snap,
             SnapJob.job_type == cls.class_job_type,
-            ]
+        ]
         if statuses is not None:
-            clauses.extend([
-                SnapJob.job == Job.id,
-                Job._status.is_in(statuses),
-                ])
+            clauses.extend(
+                [
+                    SnapJob.job == Job.id,
+                    Job._status.is_in(statuses),
+                ]
+            )
         if job_ids is not None:
             clauses.append(SnapJob.job_id.is_in(job_ids))
-        snap_jobs = IStore(SnapJob).find(SnapJob, *clauses).order_by(
-            Desc(SnapJob.job_id))
+        snap_jobs = (
+            IStore(SnapJob)
+            .find(SnapJob, *clauses)
+            .order_by(Desc(SnapJob.job_id))
+        )
 
         def preload_jobs(rows):
             load_related(Job, rows, ["job_id"])
 
         return DecoratedResultSet(
-            snap_jobs, lambda snap_job: cls(snap_job),
-            pre_iter_hook=preload_jobs)
+            snap_jobs,
+            lambda snap_job: cls(snap_job),
+            pre_iter_hook=preload_jobs,
+        )
 
     @classmethod
     def getBySnapAndID(cls, snap, job_id):
         """See `ISnapRequestBuildsJobSource`."""
-        snap_job = IStore(SnapJob).find(
-            SnapJob,
-            SnapJob.job_id == job_id,
-            SnapJob.snap == snap,
-            SnapJob.job_type == cls.class_job_type).one()
+        snap_job = (
+            IStore(SnapJob)
+            .find(
+                SnapJob,
+                SnapJob.job_id == job_id,
+                SnapJob.snap == snap,
+                SnapJob.job_type == cls.class_job_type,
+            )
+            .one()
+        )
         if snap_job is None:
             raise NotFoundError(
-                "No REQUEST_BUILDS job with ID %d found for %r" %
-                (job_id, snap))
+                "No REQUEST_BUILDS job with ID %d found for %r"
+                % (job_id, snap)
+            )
         return cls(snap_job)
 
     @classmethod
@@ -245,25 +249,32 @@ class SnapRequestBuildsJob(SnapJobDerived):
         """See `ISnapRequestBuildsJobSource`."""
         build_ids = {
             job.job_id: removeSecurityProxy(job).metadata.get("builds") or []
-            for job in jobs}
+            for job in jobs
+        }
         all_build_ids = set(chain.from_iterable(build_ids.values()))
         if all_build_ids:
             all_builds = {
-                build.id: build for build in IStore(SnapBuild).find(
+                build.id: build
+                for build in IStore(SnapBuild).find(
                     SnapBuild,
                     SnapBuild.id.is_in(all_build_ids),
                     SnapBuild.archive_id == Archive.id,
                     Archive._enabled == True,
                     get_enabled_archive_filter(
-                        user, include_public=True, include_subscribed=True))
-                }
+                        user, include_public=True, include_subscribed=True
+                    ),
+                )
+            }
         else:
             all_builds = {}
         return {
             job.job_id: [
-                all_builds[build_id] for build_id in build_ids[job.job_id]
-                if build_id in all_builds]
-            for job in jobs}
+                all_builds[build_id]
+                for build_id in build_ids[job.job_id]
+                if build_id in all_builds
+            ]
+            for job in jobs
+        }
 
     def getOperationDescription(self):
         return "requesting builds of %s" % self.snap.name
@@ -333,7 +344,8 @@ class SnapRequestBuildsJob(SnapJobDerived):
         build_ids = self.metadata.get("builds")
         if build_ids:
             return IStore(SnapBuild).find(
-                SnapBuild, SnapBuild.id.is_in(build_ids))
+                SnapBuild, SnapBuild.id.is_in(build_ids)
+            )
         else:
             return EmptyResultSet()
 
@@ -347,18 +359,25 @@ class SnapRequestBuildsJob(SnapJobDerived):
         requester = self.requester
         if requester is None:
             log.info(
-                "Skipping %r because the requester has been deleted." % self)
+                "Skipping %r because the requester has been deleted." % self
+            )
             return
         archive = self.archive
         if archive is None:
             log.info(
-                "Skipping %r because the archive has been deleted." % self)
+                "Skipping %r because the archive has been deleted." % self
+            )
             return
         try:
             self.builds = self.snap.requestBuildsFromJob(
-                requester, archive, self.pocket, channels=self.channels,
+                requester,
+                archive,
+                self.pocket,
+                channels=self.channels,
                 architectures=self.architectures,
-                build_request=self.build_request, logger=log)
+                build_request=self.build_request,
+                logger=log,
+            )
             self.error_message = None
         except self.retry_error_types:
             raise

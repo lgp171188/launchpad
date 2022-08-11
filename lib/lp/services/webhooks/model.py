@@ -2,45 +2,30 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Webhook',
-    'WebhookJob',
-    'WebhookJobType',
-    'WebhookTargetMixin',
-    ]
+    "Webhook",
+    "WebhookJob",
+    "WebhookJobType",
+    "WebhookTargetMixin",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 import ipaddress
 import re
 import socket
+from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 
 import iso8601
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
 import psutil
+import transaction
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
 from pytz import utc
 from storm.expr import Desc
-from storm.properties import (
-    Bool,
-    DateTime,
-    Int,
-    JSON,
-    Unicode,
-    )
+from storm.properties import JSON, Bool, DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
-import transaction
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
@@ -51,21 +36,15 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.features import getFeatureFlag
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.memoizer import memoize
 from lp.services.scripts import log
 from lp.services.webapp.authorization import iter_authorization
 from lp.services.webhooks.interfaces import (
+    WEBHOOK_EVENT_TYPES,
     IWebhook,
     IWebhookClient,
     IWebhookDeliveryJob,
@@ -73,11 +52,9 @@ from lp.services.webhooks.interfaces import (
     IWebhookJob,
     IWebhookJobSource,
     IWebhookSet,
-    WEBHOOK_EVENT_TYPES,
     WebhookDeliveryFailure,
     WebhookDeliveryRetry,
-    WebhookFeatureDisabled,
-    )
+)
 
 
 def webhook_modified(webhook, event):
@@ -94,30 +71,30 @@ def webhook_modified(webhook, event):
 class Webhook(StormBase):
     """See `IWebhook`."""
 
-    __storm_table__ = 'Webhook'
+    __storm_table__ = "Webhook"
 
     id = Int(primary=True)
 
-    git_repository_id = Int(name='git_repository')
-    git_repository = Reference(git_repository_id, 'GitRepository.id')
+    git_repository_id = Int(name="git_repository")
+    git_repository = Reference(git_repository_id, "GitRepository.id")
 
-    branch_id = Int(name='branch')
-    branch = Reference(branch_id, 'Branch.id')
+    branch_id = Int(name="branch")
+    branch = Reference(branch_id, "Branch.id")
 
-    snap_id = Int(name='snap')
-    snap = Reference(snap_id, 'Snap.id')
+    snap_id = Int(name="snap")
+    snap = Reference(snap_id, "Snap.id")
 
-    livefs_id = Int(name='livefs')
-    livefs = Reference(livefs_id, 'LiveFS.id')
+    livefs_id = Int(name="livefs")
+    livefs = Reference(livefs_id, "LiveFS.id")
 
-    oci_recipe_id = Int(name='oci_recipe')
-    oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
+    oci_recipe_id = Int(name="oci_recipe")
+    oci_recipe = Reference(oci_recipe_id, "OCIRecipe.id")
 
-    charm_recipe_id = Int(name='charm_recipe')
-    charm_recipe = Reference(charm_recipe_id, 'CharmRecipe.id')
+    charm_recipe_id = Int(name="charm_recipe")
+    charm_recipe = Reference(charm_recipe_id, "CharmRecipe.id")
 
-    registrant_id = Int(name='registrant', allow_none=False)
-    registrant = Reference(registrant_id, 'Person.id')
+    registrant_id = Int(name="registrant", allow_none=False)
+    registrant = Reference(registrant_id, "Person.id")
     date_created = DateTime(tzinfo=utc, allow_none=False)
     date_last_modified = DateTime(tzinfo=utc, allow_none=False)
 
@@ -125,7 +102,7 @@ class Webhook(StormBase):
     active = Bool(default=True, allow_none=False)
     secret = Unicode(allow_none=True)
 
-    json_data = JSON(name='json_data')
+    json_data = JSON(name="json_data")
 
     @property
     def target(self):
@@ -146,30 +123,35 @@ class Webhook(StormBase):
 
     @property
     def deliveries(self):
-        jobs = Store.of(self).find(
-            WebhookJob,
-            WebhookJob.webhook == self,
-            WebhookJob.job_type == WebhookJobType.DELIVERY,
-            ).order_by(Desc(WebhookJob.job_id))
+        jobs = (
+            Store.of(self)
+            .find(
+                WebhookJob,
+                WebhookJob.webhook == self,
+                WebhookJob.job_type == WebhookJobType.DELIVERY,
+            )
+            .order_by(Desc(WebhookJob.job_id))
+        )
 
         def preload_jobs(rows):
-            load_related(Job, rows, ['job_id'])
+            load_related(Job, rows, ["job_id"])
 
         return DecoratedResultSet(
-            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs
+        )
 
     def getDelivery(self, id):
         return self.deliveries.find(WebhookJob.job_id == id).one()
 
     def ping(self):
-        return WebhookDeliveryJob.create(self, 'ping', {'ping': True})
+        return WebhookDeliveryJob.create(self, "ping", {"ping": True})
 
     def destroySelf(self):
         getUtility(IWebhookSet).delete([self])
 
     @property
     def event_types(self):
-        return (self.json_data or {}).get('event_types', [])
+        return (self.json_data or {}).get("event_types", [])
 
     @event_types.setter
     def event_types(self, event_types):
@@ -178,7 +160,7 @@ class Webhook(StormBase):
         # but best to be safe.
         assert isinstance(event_types, (list, tuple))
         assert all(isinstance(v, str) for v in event_types)
-        updated_data['event_types'] = event_types
+        updated_data["event_types"] = event_types
         self.json_data = updated_data
 
     def setSecret(self, secret):
@@ -190,8 +172,9 @@ class Webhook(StormBase):
 class WebhookSet:
     """See `IWebhookSet`."""
 
-    def new(self, target, registrant, delivery_url, event_types, active,
-            secret):
+    def new(
+        self, target, registrant, delivery_url, event_types, active, secret
+    ):
         from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
@@ -227,7 +210,8 @@ class WebhookSet:
         hooks = list(hooks)
         getUtility(IWebhookJobSource).deleteByWebhooks(hooks)
         IStore(Webhook).find(
-            Webhook, Webhook.id.is_in({hook.id for hook in hooks})).remove()
+            Webhook, Webhook.id.is_in({hook.id for hook in hooks})
+        ).remove()
 
     def getByID(self, id):
         return IStore(Webhook).get(Webhook, id)
@@ -254,8 +238,9 @@ class WebhookSet:
             target_filter = Webhook.charm_recipe == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
-        return IStore(Webhook).find(Webhook, target_filter).order_by(
-            Webhook.id)
+        return (
+            IStore(Webhook).find(Webhook, target_filter).order_by(Webhook.id)
+        )
 
     @classmethod
     def _checkVisibility(cls, context, user):
@@ -269,9 +254,14 @@ class WebhookSet:
         :return: True if the context is visible to the webhook owner,
             otherwise False.
         """
-        return all(iter_authorization(
-            removeSecurityProxy(context), "launchpad.View",
-            IPersonRoles(user), {}))
+        return all(
+            iter_authorization(
+                removeSecurityProxy(context),
+                "launchpad.View",
+                IPersonRoles(user),
+                {},
+            )
+        )
 
     def trigger(self, target, event_type, payload, context=None):
         if context is None:
@@ -288,15 +278,15 @@ class WebhookSet:
 
 
 class WebhookTargetMixin:
-
     @property
     def webhooks(self):
         def preload_registrants(rows):
-            load_related(Person, rows, ['registrant_id'])
+            load_related(Person, rows, ["registrant_id"])
 
         return DecoratedResultSet(
             getUtility(IWebhookSet).findByTarget(self),
-            pre_iter_hook=preload_registrants)
+            pre_iter_hook=preload_registrants,
+        )
 
     @property
     def valid_webhook_event_types(self):
@@ -306,22 +296,25 @@ class WebhookTargetMixin:
     def default_webhook_event_types(self):
         return self.valid_webhook_event_types
 
-    def newWebhook(self, registrant, delivery_url, event_types, active=True,
-                   secret=None):
-        if not getFeatureFlag('webhooks.new.enabled'):
-            raise WebhookFeatureDisabled()
+    def newWebhook(
+        self, registrant, delivery_url, event_types, active=True, secret=None
+    ):
         return getUtility(IWebhookSet).new(
-            self, registrant, delivery_url, event_types, active, secret)
+            self, registrant, delivery_url, event_types, active, secret
+        )
 
 
 class WebhookJobType(DBEnumeratedType):
     """Values that `IWebhookJob.job_type` can take."""
 
-    DELIVERY = DBItem(0, """
+    DELIVERY = DBItem(
+        0,
+        """
         DELIVERY
 
         This job delivers an event to a webhook's endpoint.
-        """)
+        """,
+    )
 
 
 @provider(IWebhookJobSource)
@@ -329,17 +322,17 @@ class WebhookJobType(DBEnumeratedType):
 class WebhookJob(StormBase):
     """See `IWebhookJob`."""
 
-    __storm_table__ = 'WebhookJob'
+    __storm_table__ = "WebhookJob"
 
-    job_id = Int(name='job', primary=True)
-    job = Reference(job_id, 'Job.id')
+    job_id = Int(name="job", primary=True)
+    job = Reference(job_id, "Job.id")
 
-    webhook_id = Int(name='webhook', allow_none=False)
-    webhook = Reference(webhook_id, 'Webhook.id')
+    webhook_id = Int(name="webhook", allow_none=False)
+    webhook = Reference(webhook_id, "Webhook.id")
 
     job_type = DBEnum(enum=WebhookJobType, allow_none=False)
 
-    json_data = JSON('json_data')
+    json_data = JSON("json_data")
 
     def __init__(self, webhook, job_type, json_data, **job_args):
         """Constructor.
@@ -367,7 +360,8 @@ class WebhookJob(StormBase):
         # Assumes that Webhook's PK is its FK to Job.id.
         webhookjob_ids = list(webhookjob_ids)
         IStore(WebhookJob).find(
-            WebhookJob, WebhookJob.job_id.is_in(webhookjob_ids)).remove()
+            WebhookJob, WebhookJob.job_id.is_in(webhookjob_ids)
+        ).remove()
         IStore(Job).find(Job, Job.id.is_in(webhookjob_ids)).remove()
 
     @classmethod
@@ -375,14 +369,14 @@ class WebhookJob(StormBase):
         """See `IWebhookJobSource`."""
         result = IStore(WebhookJob).find(
             WebhookJob,
-            WebhookJob.webhook_id.is_in(hook.id for hook in webhooks))
+            WebhookJob.webhook_id.is_in(hook.id for hook in webhooks),
+        )
         job_ids = list(result.values(WebhookJob.job_id))
         cls.deleteByIDs(job_ids)
 
 
 @delegate_to(IWebhookJob)
 class WebhookJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     def __init__(self, webhook_job):
         self.context = webhook_job
 
@@ -391,16 +385,21 @@ class WebhookJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
             "job_class": self.__class__.__name__,
             "webhook_id": self.context.webhook_id,
             "target": self.context.webhook.target,
-            }
+        }
 
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        jobs = IMasterStore(WebhookJob).find(
-            WebhookJob,
-            WebhookJob.job_type == cls.class_job_type,
-            WebhookJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs)).order_by(Job.id)
+        jobs = (
+            IMasterStore(WebhookJob)
+            .find(
+                WebhookJob,
+                WebhookJob.job_type == cls.class_job_type,
+                WebhookJob.job == Job.id,
+                Job.id.is_in(Job.ready_jobs),
+            )
+            .order_by(Job.id)
+        )
         return (cls(job) for job in jobs)
 
 
@@ -418,8 +417,11 @@ def _redact_payload(event_type, payload):
     for key, value in payload.items():
         if isinstance(value, dict):
             redacted[key] = _redact_payload(event_type, value)
-        elif (event_type.startswith("merge-proposal:") and
-              key in ("commit_message", "whiteboard", "description")):
+        elif event_type.startswith("merge-proposal:") and key in (
+            "commit_message",
+            "whiteboard",
+            "description",
+        ):
             redacted[key] = "<redacted>"
         elif isinstance(value, str) and "\n" in value:
             redacted[key] = "%s\n<redacted>" % value.split("\n", 1)[0]
@@ -462,13 +464,16 @@ class WebhookDeliveryJob(WebhookJobDerived):
     @classmethod
     def create(cls, webhook, event_type, payload):
         webhook_job = WebhookJob(
-            webhook, cls.class_job_type,
-            {"event_type": event_type, "payload": payload})
+            webhook,
+            cls.class_job_type,
+            {"event_type": event_type, "payload": payload},
+        )
         job = cls(webhook_job)
         job.celeryRunOnCommit()
         log.info(
-            "Scheduled %r (%s): %s" %
-            (job, event_type, _redact_payload(event_type, payload)))
+            "Scheduled %r (%s): %s"
+            % (job, event_type, _redact_payload(event_type, payload))
+        )
         return job
 
     @classmethod
@@ -478,8 +483,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
         for net, addresses in psutil.net_if_addrs().items():
             for i in addresses:
                 try:
-                    addrs.append(
-                        ipaddress.ip_address(str(i.broadcast)))
+                    addrs.append(ipaddress.ip_address(str(i.broadcast)))
                 except (ValueError, ipaddress.AddressValueError):
                     pass
         return addrs
@@ -506,9 +510,12 @@ class WebhookDeliveryJob(WebhookJobDerived):
                 # If we could not resolve, we limit the effort to delivery.
                 return True
         return (
-            ip.is_loopback or ip.is_unspecified or ip.is_multicast
+            ip.is_loopback
+            or ip.is_unspecified
+            or ip.is_multicast
             or ip in self._get_broadcast_addresses()
-            or (not ip.is_global and not ip.is_private))
+            or (not ip.is_global and not ip.is_private)
+        )
 
     @property
     def pending(self):
@@ -516,23 +523,23 @@ class WebhookDeliveryJob(WebhookJobDerived):
 
     @property
     def successful(self):
-        if 'result' not in self.json_data:
+        if "result" not in self.json_data:
             return None
         return self.error_message is None
 
     @property
     def error_message(self):
-        if 'result' not in self.json_data:
+        if "result" not in self.json_data:
             return None
-        if self.json_data['result'].get('webhook_deactivated'):
-            return 'Webhook deactivated'
-        connection_error = self.json_data['result'].get('connection_error')
+        if self.json_data["result"].get("webhook_deactivated"):
+            return "Webhook deactivated"
+        connection_error = self.json_data["result"].get("connection_error")
         if connection_error is not None:
-            return 'Connection error: %s' % connection_error
-        status_code = self.json_data['result']['response']['status_code']
+            return "Connection error: %s" % connection_error
+        status_code = self.json_data["result"]["response"]["status_code"]
         if 200 <= status_code <= 299:
             return None
-        return 'Bad HTTP response: %d' % status_code
+        return "Bad HTTP response: %d" % status_code
 
     @property
     def date_scheduled(self):
@@ -540,23 +547,23 @@ class WebhookDeliveryJob(WebhookJobDerived):
 
     @property
     def date_first_sent(self):
-        if 'date_first_sent' not in self.json_data:
+        if "date_first_sent" not in self.json_data:
             return None
-        return iso8601.parse_date(self.json_data['date_first_sent'])
+        return iso8601.parse_date(self.json_data["date_first_sent"])
 
     @property
     def date_sent(self):
-        if 'date_sent' not in self.json_data:
+        if "date_sent" not in self.json_data:
             return None
-        return iso8601.parse_date(self.json_data['date_sent'])
+        return iso8601.parse_date(self.json_data["date_sent"])
 
     @property
     def event_type(self):
-        return self.json_data['event_type']
+        return self.json_data["event_type"]
 
     @property
     def payload(self):
-        return self.json_data['payload']
+        return self.json_data["payload"]
 
     @property
     def _time_since_first_attempt(self):
@@ -568,7 +575,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
         # queue() from delaying it again.
         if reset:
             updated_data = self.json_data
-            del updated_data['date_first_sent']
+            del updated_data["date_first_sent"]
             self.json_data = updated_data
         self.scheduled_start = None
         self.attempt_count = 0
@@ -576,14 +583,14 @@ class WebhookDeliveryJob(WebhookJobDerived):
 
     @property
     def retry_automatically(self):
-        if 'result' not in self.json_data:
+        if "result" not in self.json_data:
             return False
         if self.is_limited_effort_delivery():
             duration = self.limited_effort_retry_period
-        elif self.json_data['result'].get('connection_error') is not None:
+        elif self.json_data["result"].get("connection_error") is not None:
             duration = timedelta(days=1)
         else:
-            status_code = self.json_data['result']['response']['status_code']
+            status_code = self.json_data["result"]["response"]["status_code"]
             if 500 <= status_code <= 599:
                 duration = timedelta(days=1)
             else:
@@ -605,30 +612,38 @@ class WebhookDeliveryJob(WebhookJobDerived):
     def run(self):
         if not self.webhook.active:
             updated_data = self.json_data
-            updated_data['result'] = {'webhook_deactivated': True}
+            updated_data["result"] = {"webhook_deactivated": True}
             self.json_data = updated_data
             # Job.fail will abort the transaction.
             transaction.commit()
             raise WebhookDeliveryFailure(self.error_message)
-        user_agent = '%s-Webhooks/r%s' % (
-            config.vhost.mainsite.hostname, versioninfo.revision)
+        user_agent = "%s-Webhooks/r%s" % (
+            config.vhost.mainsite.hostname,
+            versioninfo.revision,
+        )
         secret = self.webhook.secret
         result = getUtility(IWebhookClient).deliver(
-            self.webhook.delivery_url, config.webhooks.http_proxy,
-            user_agent, 30, secret, str(self.job_id), self.event_type,
-            self.payload)
+            self.webhook.delivery_url,
+            config.webhooks.http_proxy,
+            user_agent,
+            30,
+            secret,
+            str(self.job_id),
+            self.event_type,
+            self.payload,
+        )
         # Request and response headers and body may be large, so don't
         # store them in the frequently-used JSON. We could store them in
         # the librarian if we wanted them in future.
-        for direction in ('request', 'response'):
-            for attr in ('headers', 'body'):
+        for direction in ("request", "response"):
+            for attr in ("headers", "body"):
                 if direction in result and attr in result[direction]:
                     del result[direction][attr]
         updated_data = self.json_data
-        updated_data['result'] = result
-        updated_data['date_sent'] = datetime.now(utc).isoformat()
-        if 'date_first_sent' not in updated_data:
-            updated_data['date_first_sent'] = updated_data['date_sent']
+        updated_data["result"] = result
+        updated_data["date_sent"] = datetime.now(utc).isoformat()
+        if "date_first_sent" not in updated_data:
+            updated_data["date_first_sent"] = updated_data["date_sent"]
         self.json_data = updated_data
         transaction.commit()
 

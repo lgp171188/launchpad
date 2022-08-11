@@ -7,23 +7,20 @@ __all__ = [
     "CIBuildContextMenu",
     "CIBuildNavigation",
     "CIBuildView",
-    ]
+]
 
 from zope.interface import Interface
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.code.interfaces.cibuild import ICIBuild
 from lp.services.librarian.browser import FileNavigationMixin
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     Link,
     Navigation,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
 
 
@@ -43,20 +40,29 @@ class CIBuildContextMenu(ContextMenu):
     @enabled_with_permission("launchpad.Edit")
     def retry(self):
         return Link(
-            "+retry", "Retry this build", icon="retry",
-            enabled=self.context.can_be_retried)
+            "+retry",
+            "Retry this build",
+            icon="retry",
+            enabled=self.context.can_be_retried,
+        )
 
     @enabled_with_permission("launchpad.Edit")
     def cancel(self):
         return Link(
-            "+cancel", "Cancel build", icon="remove",
-            enabled=self.context.can_be_cancelled)
+            "+cancel",
+            "Cancel build",
+            icon="remove",
+            enabled=self.context.can_be_cancelled,
+        )
 
     @enabled_with_permission("launchpad.Admin")
     def rescore(self):
         return Link(
-            "+rescore", "Rescore build", icon="edit",
-            enabled=self.context.can_be_rescored)
+            "+rescore",
+            "Rescore build",
+            icon="edit",
+            enabled=self.context.can_be_rescored,
+        )
 
 
 class CIBuildView(LaunchpadFormView):
@@ -83,6 +89,7 @@ class CIBuildRetryView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
     @action("Retry build", name="retry")
@@ -90,7 +97,8 @@ class CIBuildRetryView(LaunchpadFormView):
         """Retry the build."""
         if not self.context.can_be_retried:
             self.request.response.addErrorNotification(
-                "Build cannot be retried")
+                "Build cannot be retried"
+            )
         else:
             self.context.retry()
             self.request.response.addInfoNotification("Build has been queued")
@@ -109,6 +117,7 @@ class CIBuildCancelView(LaunchpadFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
     @action("Cancel build", name="cancel")
@@ -128,12 +137,14 @@ class CIBuildRescoreView(LaunchpadFormView):
         if self.context.can_be_rescored:
             return super().__call__()
         self.request.response.addWarningNotification(
-            "Cannot rescore this build because it is not queued.")
+            "Cannot rescore this build because it is not queued."
+        )
         self.request.response.redirect(canonical_url(self.context))
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
     @action("Rescore build", name="rescore")

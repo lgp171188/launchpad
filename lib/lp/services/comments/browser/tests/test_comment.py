@@ -3,10 +3,7 @@
 
 from lp.services.comments.browser.comment import CommentBodyDownloadView
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -31,13 +28,13 @@ class TestCommentBodyDownloadView(TestCaseWithFactory):
 
     def test_anonymous_body_obfuscated(self):
         """For anonymous users, email addresses are obfuscated."""
-        output = self.view('example@example.org')
-        self.assertNotIn(output, 'example@example.org')
-        self.assertIn(output, '<email address hidden>')
+        output = self.view("example@example.org")
+        self.assertNotIn(output, "example@example.org")
+        self.assertIn(output, "<email address hidden>")
 
     def test_logged_in_not_obfuscated(self):
         """For logged-in users, email addresses are not obfuscated."""
         with person_logged_in(self.factory.makePerson()):
-            output = self.view('example@example.org')
-            self.assertIn(output, 'example@example.org')
-            self.assertNotIn(output, '<email address hidden>')
+            output = self.view("example@example.org")
+            self.assertIn(output, "example@example.org")
+            self.assertNotIn(output, "<email address hidden>")

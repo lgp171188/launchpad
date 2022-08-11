@@ -11,6 +11,7 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
+  <authorizations module=".security" />
   <include package=".browser"/>
   <include file="vocabularies.zcml"/>
 
@@ -229,7 +230,7 @@
         for="lp.registry.interfaces.product.IProduct zope.lifecycleevent.interfaces.IObjectModifiedEvent"
         handler="lp.translations.subscribers.product_modified"/>
 
-    <!-- DistroSeriesLanguage and Dummy -->
+    <!-- DistroSeriesLanguage and EmptyDistroSeriesLanguage -->
 
     <adapter
         provides="lp.services.webapp.interfaces.IBreadcrumb"
@@ -243,7 +244,7 @@
             interface="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"/>
     </class>
     <class
-        class="lp.translations.model.distroserieslanguage.DummyDistroSeriesLanguage">
+        class="lp.translations.model.distroserieslanguage.EmptyDistroSeriesLanguage">
         <allow
             interface="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"/>
     </class>
@@ -319,10 +320,10 @@
             provides="lp.translations.interfaces.translationcommonformat.ITranslationFileData"
             factory="lp.translations.model.pofile.POFileToChangedFromPackagedAdapter"/>
 
-        <!-- Dummy PO File -->
+        <!-- Placeholder PO File -->
 
         <class
-            class="lp.translations.model.pofile.DummyPOFile">
+            class="lp.translations.model.pofile.PlaceholderPOFile">
             <allow
                 interface="lp.translations.interfaces.pofile.IPOFile"/>
         </class>
@@ -501,10 +502,10 @@
                 set_schema="lp.translations.interfaces.translationmessage.ITranslationMessage"/>
         </class>
 
-        <!-- Dummy Translation Message. It's a read only class. -->
+        <!-- Placeholder Translation Message. It's a read only class. -->
 
         <class
-            class="lp.translations.model.translationmessage.DummyTranslationMessage">
+            class="lp.translations.model.translationmessage.PlaceholderTranslationMessage">
             <allow
                 interface="lp.translations.interfaces.translationmessage.ITranslationMessage"/>
         </class>

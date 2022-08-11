@@ -6,18 +6,14 @@
 import os
 import signal
 import time
-from unittest import mock
 import xmlrpc.client
+from unittest import mock
 
+import transaction
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
-import transaction
-from twisted.internet import (
-    defer,
-    reactor,
-    task,
-    )
+from twisted.internet import defer, reactor, task
 from twisted.internet.task import deferLater
 from twisted.python.failure import Failure
 from zope.component import getUtility
@@ -27,44 +23,44 @@ from lp.buildmaster.enums import (
     BuilderCleanStatus,
     BuildQueueStatus,
     BuildStatus,
-    )
+)
 from lp.buildmaster.interactor import (
     BuilderInteractor,
     BuilderWorker,
     extract_vitals_from_db,
     shut_down_default_process_pool,
-    )
+)
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonIsolationError,
     BuildWorkerFailure,
     IBuilderSet,
-    )
+)
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.manager import (
-    BuilddManager,
     BUILDER_FAILURE_THRESHOLD,
-    BuilderFactory,
     JOB_RESET_THRESHOLD,
-    judge_failure,
+    BuilddManager,
+    BuilderFactory,
     PrefetchedBuilderFactory,
-    recover_failure,
     WorkerScanner,
-    )
+    judge_failure,
+    recover_failure,
+)
 from lp.buildmaster.tests.harness import BuilddManagerTestSetup
 from lp.buildmaster.tests.mock_workers import (
     BrokenWorker,
     BuildingWorker,
     LostBuildingBrokenWorker,
-    make_publisher,
     MockBuilder,
     OkWorker,
     TrivialBehaviour,
     WaitingWorker,
-    )
+    make_publisher,
+)
 from lp.buildmaster.tests.test_interactor import (
     FakeBuildQueue,
     MockBuilderFactory,
-    )
+)
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
@@ -72,14 +68,14 @@ from lp.services.statsd.tests import StatsMixin
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.model.binarypackagebuildbehaviour import (
     BinaryPackageBuildBehaviour,
-    )
+)
 from lp.testing import (
     ANONYMOUS,
-    login,
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
-    )
+    login,
+)
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
@@ -87,7 +83,7 @@ from lp.testing.layers import (
     LaunchpadScriptLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
-    )
+)
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import BOB_THE_BUILDER_NAME
 
@@ -97,6 +93,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
     This method uses the old framework for scanning and dispatching builds.
     """
+
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
@@ -105,8 +102,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         super().setUp()
         # Creating the required chroots needed for dispatching.
         self.test_publisher = make_publisher()
-        ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-        hoary = ubuntu.getSeries('hoary')
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        hoary = ubuntu.getSeries("hoary")
         self.test_publisher.setUpDefaultDistroSeries(hoary)
         self.test_publisher.addFakeChroots(db_only=True)
         self.addCleanup(shut_down_default_process_pool)
@@ -126,7 +123,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
     def assertBuildingJob(self, job, builder, logtail=None):
         """Assert the given job is building on the given builder."""
         if logtail is None:
-            logtail = 'Dummy sampledata entry, not processing'
+            logtail = "Dummy sampledata entry, not processing"
 
         self.assertTrue(job is not None)
         self.assertEqual(job.builder, builder)
@@ -147,9 +144,9 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         manager = BuilddManager(builder_factory=builder_factory, clock=clock)
         manager.logger = BufferLogger()
         scanner = WorkerScanner(
-            builder_name, builder_factory, manager, BufferLogger(),
-            clock=clock)
-        scanner.logger.name = 'worker-scanner'
+            builder_name, builder_factory, manager, BufferLogger(), clock=clock
+        )
+        scanner.logger.name = "worker-scanner"
 
         return scanner
 
@@ -160,7 +157,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(OkWorker()))
         # Set this to 1 here so that _checkDispatch can make sure it's
         # reset to 0 after a successful dispatch.
         builder.failure_count = 1
@@ -200,8 +197,10 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Sampledata builder is enabled and is assigned to an active job.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self.patch(
-            BuilderWorker, 'makeBuilderWorker',
-            FakeMethod(BuildingWorker(build_id='PACKAGEBUILD-8')))
+            BuilderWorker,
+            "makeBuilderWorker",
+            FakeMethod(BuildingWorker(build_id="PACKAGEBUILD-8")),
+        )
         self.assertTrue(builder.builderok)
         job = builder.currentjob
         self.assertBuildingJob(job, builder)
@@ -219,7 +218,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertIs(None, builder.currentjob)
         self._checkJobRescued(builder, job)
 
-    def _checkJobUpdated(self, builder, job, logtail='This is a build log: 0'):
+    def _checkJobUpdated(self, builder, job, logtail="This is a build log: 0"):
         """`WorkerScanner.scan` updates legitimate jobs.
 
         Job is kept assigned to the active builder and its 'logtail' is
@@ -237,10 +236,13 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # worker. It will respond as if it was building the sampledata job.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
 
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         builder.builderok = True
-        self.patch(BuilderWorker, 'makeBuilderWorker',
-                   FakeMethod(BuildingWorker(build_id='PACKAGEBUILD-8')))
+        self.patch(
+            BuilderWorker,
+            "makeBuilderWorker",
+            FakeMethod(BuildingWorker(build_id="PACKAGEBUILD-8")),
+        )
         transaction.commit()
         login(ANONYMOUS)
 
@@ -259,7 +261,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         factory = LaunchpadObjectFactory()
         builder = factory.makeBuilder()
         builder.setCleanStatus(BuilderCleanStatus.CLEAN)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(OkWorker()))
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         yield scanner.scan()
@@ -270,7 +272,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(OkWorker()))
         builder.manual = True
         transaction.commit()
         scanner = self._getScanner()
@@ -282,7 +284,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Reset sampledata builder.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(OkWorker()))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(OkWorker()))
         builder.builderok = False
         transaction.commit()
         scanner = self._getScanner()
@@ -295,7 +297,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         self._resetBuilder(builder)
         self.patch(
-            BuilderWorker, 'makeBuilderWorker', FakeMethod(BrokenWorker()))
+            BuilderWorker, "makeBuilderWorker", FakeMethod(BrokenWorker())
+        )
         builder.failure_count = 0
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
@@ -314,11 +317,13 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
                 return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         builder.builderok = True
         self.patch(
-            BuilderWorker, 'makeBuilderWorker',
-            FakeMethod(BrokenUTF8Worker(build_id='PACKAGEBUILD-8')))
+            BuilderWorker,
+            "makeBuilderWorker",
+            FakeMethod(BrokenUTF8Worker(build_id="PACKAGEBUILD-8")),
+        )
         transaction.commit()
         login(ANONYMOUS)
 
@@ -343,11 +348,13 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
                 return status
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         builder.builderok = True
         self.patch(
-            BuilderWorker, 'makeBuilderWorker',
-            FakeMethod(NULWorker(build_id='PACKAGEBUILD-8')))
+            BuilderWorker,
+            "makeBuilderWorker",
+            FakeMethod(NULWorker(build_id="PACKAGEBUILD-8")),
+        )
         transaction.commit()
         login(ANONYMOUS)
 
@@ -393,6 +400,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         def _fake_scan():
             fake_scan()
             return defer.succeed(None)
+
         scanner.scan = _fake_scan
         self.assertEqual(0, fake_scan.call_count)
 
@@ -424,10 +432,12 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
                 return status
 
         build = self.factory.makeSnapBuild(
-            distroarchseries=self.test_publisher.distroseries.architectures[0])
+            distroarchseries=self.test_publisher.distroseries.architectures[0]
+        )
         job = build.queueBuild()
         builder = self.factory.makeBuilder(
-            processors=[job.processor], vm_host="fake_vm_host")
+            processors=[job.processor], vm_host="fake_vm_host"
+        )
         job.markAsBuilding(builder)
         worker = SnapBuildingWorker(build_id="SNAPBUILD-%d" % build.id)
         self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
@@ -445,18 +455,25 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertEqual("dummy", build.revision_id)
 
     @defer.inlineCallbacks
-    def _assertFailureCounting(self, builder_count, job_count,
-                               expected_builder_count, expected_job_count):
+    def _assertFailureCounting(
+        self,
+        builder_count,
+        job_count,
+        expected_builder_count,
+        expected_job_count,
+    ):
         # If scan() fails with an exception, failure_counts should be
         # incremented.  What we do with the results of the failure
         # counts is tested below separately, this test just makes sure that
         # scan() is setting the counts.
         def failing_scan():
             return defer.fail(Exception("fake exception"))
+
         scanner = self._getScanner()
         scanner.scan = failing_scan
         from lp.buildmaster import manager as manager_module
-        self.patch(manager_module, 'recover_failure', FakeMethod())
+
+        self.patch(manager_module, "recover_failure", FakeMethod())
         builder = getUtility(IBuilderSet)[scanner.builder_name]
 
         builder.failure_count = builder_count
@@ -475,35 +492,45 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # in TestFailureAssessments.
         self.assertEqual(expected_builder_count, builder.failure_count)
         self.assertEqual(
-            expected_job_count,
-            builder.current_build.failure_count)
+            expected_job_count, builder.current_build.failure_count
+        )
         self.assertEqual(1, manager_module.recover_failure.call_count)
 
     def test_scan_first_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
-            builder_count=0, job_count=0, expected_builder_count=1,
-            expected_job_count=1)
+            builder_count=0,
+            job_count=0,
+            expected_builder_count=1,
+            expected_job_count=1,
+        )
 
     def test_scan_second_builder_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
-            builder_count=1, job_count=0, expected_builder_count=2,
-            expected_job_count=1)
+            builder_count=1,
+            job_count=0,
+            expected_builder_count=2,
+            expected_job_count=1,
+        )
 
     def test_scan_second_job_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
-            builder_count=0, job_count=1, expected_builder_count=1,
-            expected_job_count=2)
+            builder_count=0,
+            job_count=1,
+            expected_builder_count=1,
+            expected_job_count=2,
+        )
 
     @defer.inlineCallbacks
     def test_scanFailed_handles_lack_of_a_job_on_the_builder(self):
         def failing_scan():
             return defer.fail(Exception("fake exception"))
+
         scanner = self._getScanner()
         scanner.scan = failing_scan
         builder = getUtility(IBuilderSet)[scanner.builder_name]
@@ -518,6 +545,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
     def test_scanFailed_increments_counter(self):
         def failing_scan():
             return defer.fail(Exception("fake exception"))
+
         scanner = self._getScanner()
         scanner.scan = failing_scan
         builder = getUtility(IBuilderSet)[scanner.builder_name]
@@ -527,10 +555,14 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         yield scanner.singleCycle()
         self.assertEqual(2, self.stats_client.incr.call_count)
-        self.stats_client.incr.assert_has_calls([
-            mock.call("build.reset,arch=386,env=test,job_type=PACKAGEBUILD"),
-            mock.call("builders.judged_failed,build=False,env=test"),
-            ])
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "build.reset,arch=386,env=test,job_type=PACKAGEBUILD"
+                ),
+                mock.call("builders.judged_failed,build=False,env=test"),
+            ]
+        )
 
     @defer.inlineCallbacks
     def test_fail_to_resume_leaves_it_dirty(self):
@@ -540,16 +572,18 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Make a worker with a failing resume() method.
         worker = OkWorker()
         worker.resume = lambda: deferLater(
-            reactor, 0, defer.fail, Failure(('out', 'err', 1)))
+            reactor, 0, defer.fail, Failure(("out", "err", 1))
+        )
 
         # Reset sampledata builder.
         builder = removeSecurityProxy(
-            getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME])
+            getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
+        )
         self._resetBuilder(builder)
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         builder.virtualized = True
         self.assertEqual(0, builder.failure_count)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
         builder.vm_host = "fake_vm_host"
         transaction.commit()
 
@@ -578,7 +612,8 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         yield self._getScanner().singleCycle()
         self.assertFalse(builder.builderok)
         self.assertEqual(
-            'Non-dirty builder allegedly building.', builder.failnotes)
+            "Non-dirty builder allegedly building.", builder.failnotes
+        )
         self.assertIsNone(build.buildqueue_record)
         self.assertEqual(BuildStatus.FAILEDTOBUILD, build.status)
 
@@ -590,7 +625,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
         builder.version = "99"
         self._resetBuilder(builder)
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
         scanner = self._getScanner()
         yield scanner.scan()
         self.assertEqual("100", builder.version)
@@ -618,12 +653,12 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         # Set the sample data builder building with the worker from above.
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
-        login('foo.bar@canonical.com')
+        login("foo.bar@canonical.com")
         builder.builderok = True
         # For now, we can only cancel virtual builds.
         builder.virtualized = True
         builder.vm_host = "fake_vm_host"
-        self.patch(BuilderWorker, 'makeBuilderWorker', FakeMethod(worker))
+        self.patch(BuilderWorker, "makeBuilderWorker", FakeMethod(worker))
         transaction.commit()
         login(ANONYMOUS)
         buildqueue = builder.currentjob
@@ -676,24 +711,27 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # a second build.
         build = self.factory.makeBinaryPackageBuild()
         build.distro_arch_series.addOrUpdateChroot(
-            self.factory.makeLibraryFileAlias(db_only=True))
+            self.factory.makeLibraryFileAlias(db_only=True)
+        )
         bq = build.queueBuild()
         bq.manualScore(9000)
         build2 = self.factory.makeBinaryPackageBuild(
-            distroarchseries=build.distro_arch_series)
+            distroarchseries=build.distro_arch_series
+        )
         bq2 = build2.queueBuild()
         bq2.manualScore(8900)
 
         builder = self.factory.makeBuilder(
-            processors=[bq.processor], manual=False, vm_host='VMHOST')
+            processors=[bq.processor], manual=False, vm_host="VMHOST"
+        )
         transaction.commit()
 
         # Mock out the build behaviour's handleSuccess so it doesn't
         # try to upload things to the librarian or queue.
         def handleSuccess(self, worker_status, logger):
             return BuildStatus.UPLOADING
-        self.patch(
-            BinaryPackageBuildBehaviour, 'handleSuccess', handleSuccess)
+
+        self.patch(BinaryPackageBuildBehaviour, "handleSuccess", handleSuccess)
 
         # And create a WorkerScanner with a worker and a clock that we
         # control.
@@ -702,14 +740,19 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         manager = BuilddManager(clock=clock)
         manager.logger = BufferLogger()
         scanner = WorkerScanner(
-            builder.name, BuilderFactory(), manager, BufferLogger(),
-            worker_factory=get_worker, clock=clock)
+            builder.name,
+            BuilderFactory(),
+            manager,
+            BufferLogger(),
+            worker_factory=get_worker,
+            clock=clock,
+        )
 
         # The worker is idle and dirty, so the first scan will clean it
         # with a reset.
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
         yield scanner.scan()
-        self.assertEqual(['resume', 'echo'], get_worker.result.method_log)
+        self.assertEqual(["resume", "echo"], get_worker.result.method_log)
         self.assertEqual(BuilderCleanStatus.CLEAN, builder.clean_status)
         self.assertIs(None, builder.currentjob)
 
@@ -718,8 +761,8 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         get_worker.result = OkWorker()
         yield scanner.scan()
         self.assertEqual(
-            ['status', 'ensurepresent', 'build'],
-            get_worker.result.method_log)
+            ["status", "ensurepresent", "build"], get_worker.result.method_log
+        )
         self.assertEqual(bq, builder.currentjob)
         self.assertEqual(BuildQueueStatus.RUNNING, bq.status)
         self.assertEqual(BuildStatus.BUILDING, build.status)
@@ -739,7 +782,8 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         yield scanner.manager.flushLogTails()
         self.assertEqual("This is a build log: 2", bq.logtail)
         self.assertEqual(
-            ['status', 'status', 'status'], get_worker.result.method_log)
+            ["status", "status", "status"], get_worker.result.method_log
+        )
 
         # When the build finishes, the scanner will notice and call
         # handleStatus(). Our fake handleSuccess() doesn't do anything
@@ -748,7 +792,7 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # The builder remains dirty afterward.
         get_worker.result = WaitingWorker(build_id=build.build_cookie)
         yield scanner.scan()
-        self.assertEqual(['status', 'getFile'], get_worker.result.method_log)
+        self.assertEqual(["status", "getFile"], get_worker.result.method_log)
         self.assertIs(None, builder.currentjob)
         self.assertEqual(BuildStatus.UPLOADING, build.status)
         self.assertEqual(builder, build.builder)
@@ -758,7 +802,7 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         # confirm that the worker gets cleaned.
         get_worker.result = OkWorker()
         yield scanner.scan()
-        self.assertEqual(['resume', 'echo'], get_worker.result.method_log)
+        self.assertEqual(["resume", "echo"], get_worker.result.method_log)
         self.assertIs(None, builder.currentjob)
         self.assertEqual(BuilderCleanStatus.CLEAN, builder.clean_status)
 
@@ -768,8 +812,8 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
         get_worker.result = OkWorker()
         yield scanner.scan()
         self.assertEqual(
-            ['status', 'ensurepresent', 'build'],
-            get_worker.result.method_log)
+            ["status", "ensurepresent", "build"], get_worker.result.method_log
+        )
         self.assertEqual(bq2, builder.currentjob)
         self.assertEqual(BuildQueueStatus.RUNNING, bq2.status)
         self.assertEqual(BuildStatus.BUILDING, build2.status)
@@ -866,7 +910,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         # with the non-prefetching BuilderFactory.
         self.assertEqual(7, len(all_vitals))
         self.assertEqual(
-            4, len([v for v in all_vitals if v.build_queue is not None]))
+            4, len([v for v in all_vitals if v.build_queue is not None])
+        )
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
 
     def test_findBuildCandidate_avoids_duplicates(self):
@@ -874,12 +919,14 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         # of candidates, so a second call returns a different job.
         das = self.factory.makeDistroArchSeries()
         builders = [
-            self.factory.makeBuilder(
-                processors=[das.processor]) for _ in range(2)]
+            self.factory.makeBuilder(processors=[das.processor])
+            for _ in range(2)
+        ]
         builder_names = [builder.name for builder in builders]
         for _ in range(5):
             self.factory.makeBinaryPackageBuild(
-                distroarchseries=das).queueBuild()
+                distroarchseries=das
+            ).queueBuild()
         transaction.commit()
         pbf = PrefetchedBuilderFactory()
         pbf.update()
@@ -889,7 +936,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         transaction.abort()
         with StormStatementRecorder() as recorder:
             candidate1 = pbf.findBuildCandidate(
-                pbf.getVitals(builder_names[1]))
+                pbf.getVitals(builder_names[1])
+            )
         self.assertIsNotNone(candidate1)
         self.assertNotEqual(candidate0, candidate1)
         # The second call made only a single query, to fetch the candidate
@@ -906,7 +954,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         pbf.update()
 
         candidate = pbf.acquireBuildCandidate(
-            pbf.getVitals(builder.name), builder)
+            pbf.getVitals(builder.name), builder
+        )
         self.assertEqual(BuildQueueStatus.RUNNING, candidate.status)
 
 
@@ -928,11 +977,17 @@ class TestWorkerScannerWithoutDB(TestCase):
         super().setUp()
         self.addCleanup(shut_down_default_process_pool)
 
-    def getScanner(self, builder_factory=None, interactor=None, worker=None,
-                   behaviour=None):
+    def getScanner(
+        self,
+        builder_factory=None,
+        interactor=None,
+        worker=None,
+        behaviour=None,
+    ):
         if builder_factory is None:
             builder_factory = MockBuilderFactory(
-                MockBuilder(virtualized=False), None)
+                MockBuilder(virtualized=False), None
+            )
         if interactor is None:
             interactor = BuilderInteractor()
             interactor.updateBuild = FakeMethod()
@@ -941,43 +996,50 @@ class TestWorkerScannerWithoutDB(TestCase):
         if behaviour is None:
             behaviour = TrivialBehaviour()
         return WorkerScanner(
-            'mock', builder_factory, FakeBuilddManager(), BufferLogger(),
+            "mock",
+            builder_factory,
+            FakeBuilddManager(),
+            BufferLogger(),
             interactor_factory=FakeMethod(interactor),
             worker_factory=FakeMethod(worker),
-            behaviour_factory=FakeMethod(behaviour))
+            behaviour_factory=FakeMethod(behaviour),
+        )
 
     @defer.inlineCallbacks
     def test_scan_with_job(self):
         # WorkerScanner.scan calls updateBuild() when a job is building.
-        worker = BuildingWorker('trivial')
-        bq = FakeBuildQueue('trivial')
+        worker = BuildingWorker("trivial")
+        bq = FakeBuildQueue("trivial")
         scanner = self.getScanner(
             builder_factory=MockBuilderFactory(MockBuilder(), bq),
-            worker=worker)
+            worker=worker,
+        )
 
         yield scanner.scan()
-        self.assertEqual(['status'], worker.call_log)
+        self.assertEqual(["status"], worker.call_log)
         self.assertEqual(
-            1, scanner.interactor_factory.result.updateBuild.call_count)
+            1, scanner.interactor_factory.result.updateBuild.call_count
+        )
         self.assertEqual(0, bq.reset.call_count)
 
     @defer.inlineCallbacks
     def test_scan_recovers_lost_worker_with_job(self):
         # WorkerScanner.scan identifies workers that aren't building what
         # they should be, resets the jobs, and then aborts the workers.
-        worker = BuildingWorker('nontrivial')
-        bq = FakeBuildQueue('trivial')
+        worker = BuildingWorker("nontrivial")
+        bq = FakeBuildQueue("trivial")
         builder = MockBuilder(virtualized=False)
         scanner = self.getScanner(
-            builder_factory=MockBuilderFactory(builder, bq),
-            worker=worker)
+            builder_factory=MockBuilderFactory(builder, bq), worker=worker
+        )
 
         # A single scan will call status(), notice that the worker is lost,
         # and reset() the job without calling updateBuild().
         yield scanner.scan()
-        self.assertEqual(['status'], worker.call_log)
+        self.assertEqual(["status"], worker.call_log)
         self.assertEqual(
-            0, scanner.interactor_factory.result.updateBuild.call_count)
+            0, scanner.interactor_factory.result.updateBuild.call_count
+        )
         self.assertEqual(1, bq.reset.call_count)
         # The reset would normally have unset build_queue.
         scanner.builder_factory.updateTestData(builder, None)
@@ -985,7 +1047,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         # The next scan will see a dirty idle builder with a BUILDING
         # worker, and abort() it.
         yield scanner.scan()
-        self.assertEqual(['status', 'status', 'abort'], worker.call_log)
+        self.assertEqual(["status", "status", "abort"], worker.call_log)
 
     @defer.inlineCallbacks
     def test_scan_recovers_lost_worker_when_idle(self):
@@ -994,7 +1056,7 @@ class TestWorkerScannerWithoutDB(TestCase):
         worker = BuildingWorker()
         scanner = self.getScanner(worker=worker)
         yield scanner.scan()
-        self.assertEqual(['status', 'abort'], worker.call_log)
+        self.assertEqual(["status", "abort"], worker.call_log)
 
     @defer.inlineCallbacks
     def test_scan_building_but_not_dirty_builder_explodes(self):
@@ -1004,11 +1066,12 @@ class TestWorkerScannerWithoutDB(TestCase):
         builder = MockBuilder(clean_status=BuilderCleanStatus.CLEAN)
         bq = FakeBuildQueue()
         scanner = self.getScanner(
-            worker=worker, builder_factory=MockBuilderFactory(builder, bq))
+            worker=worker, builder_factory=MockBuilderFactory(builder, bq)
+        )
 
         with ExpectedException(
-                BuildDaemonIsolationError,
-                "Non-dirty builder allegedly building."):
+            BuildDaemonIsolationError, "Non-dirty builder allegedly building."
+        ):
             yield scanner.scan()
         self.assertEqual([], worker.call_log)
 
@@ -1019,56 +1082,62 @@ class TestWorkerScannerWithoutDB(TestCase):
         worker = BuildingWorker()
         builder = MockBuilder(clean_status=BuilderCleanStatus.CLEAN)
         scanner = self.getScanner(
-            worker=worker, builder_factory=MockBuilderFactory(builder, None))
+            worker=worker, builder_factory=MockBuilderFactory(builder, None)
+        )
 
         with ExpectedException(
-                BuildDaemonIsolationError,
-                r"Allegedly clean worker not idle \(%r instead\)" %
-                'BuilderStatus.BUILDING'):
+            BuildDaemonIsolationError,
+            r"Allegedly clean worker not idle \(%r instead\)"
+            % "BuilderStatus.BUILDING",
+        ):
             yield scanner.scan()
-        self.assertEqual(['status'], worker.call_log)
+        self.assertEqual(["status"], worker.call_log)
 
     def test_getExpectedCookie_caches(self):
-        bq = FakeBuildQueue('trivial')
+        bq = FakeBuildQueue("trivial")
         bf = MockBuilderFactory(MockBuilder(), bq)
         manager = BuilddManager()
         manager.logger = BufferLogger()
         scanner = WorkerScanner(
-            'mock', bf, manager, BufferLogger(),
+            "mock",
+            bf,
+            manager,
+            BufferLogger(),
             interactor_factory=FakeMethod(None),
             worker_factory=FakeMethod(None),
-            behaviour_factory=FakeMethod(TrivialBehaviour()))
+            behaviour_factory=FakeMethod(TrivialBehaviour()),
+        )
 
         # The first call retrieves the cookie from the BuildQueue.
-        cookie1 = scanner.getExpectedCookie(bf.getVitals('foo'))
-        self.assertEqual('trivial', cookie1)
+        cookie1 = scanner.getExpectedCookie(bf.getVitals("foo"))
+        self.assertEqual("trivial", cookie1)
 
         # A second call with the same BuildQueue will not reretrieve it.
-        bq.build_cookie = 'nontrivial'
-        cookie2 = scanner.getExpectedCookie(bf.getVitals('foo'))
-        self.assertEqual('trivial', cookie2)
+        bq.build_cookie = "nontrivial"
+        cookie2 = scanner.getExpectedCookie(bf.getVitals("foo"))
+        self.assertEqual("trivial", cookie2)
 
         # But a call with a new BuildQueue will regrab.
-        bf.updateTestData(bf._builder, FakeBuildQueue('complicated'))
-        cookie3 = scanner.getExpectedCookie(bf.getVitals('foo'))
-        self.assertEqual('complicated', cookie3)
+        bf.updateTestData(bf._builder, FakeBuildQueue("complicated"))
+        cookie3 = scanner.getExpectedCookie(bf.getVitals("foo"))
+        self.assertEqual("complicated", cookie3)
 
         # And unsetting the BuildQueue returns None again.
         bf.updateTestData(bf._builder, None)
-        cookie4 = scanner.getExpectedCookie(bf.getVitals('foo'))
+        cookie4 = scanner.getExpectedCookie(bf.getVitals("foo"))
         self.assertIs(None, cookie4)
 
 
 class TestJudgeFailure(TestCase):
-
     def test_same_count_below_threshold(self):
         # A few consecutive failures aren't any cause for alarm, as it
         # could just be a network glitch.
         self.assertEqual(
             (None, None),
             judge_failure(
-                JOB_RESET_THRESHOLD - 1, JOB_RESET_THRESHOLD - 1,
-                Exception()))
+                JOB_RESET_THRESHOLD - 1, JOB_RESET_THRESHOLD - 1, Exception()
+            ),
+        )
 
     def test_same_count_exceeding_threshold(self):
         # Several consecutive failures suggest that something might be
@@ -1076,7 +1145,9 @@ class TestJudgeFailure(TestCase):
         self.assertEqual(
             (None, True),
             judge_failure(
-                JOB_RESET_THRESHOLD, JOB_RESET_THRESHOLD, Exception()))
+                JOB_RESET_THRESHOLD, JOB_RESET_THRESHOLD, Exception()
+            ),
+        )
 
     def test_same_count_no_retries(self):
         # A single failure of both causes a job reset if retries are
@@ -1084,8 +1155,12 @@ class TestJudgeFailure(TestCase):
         self.assertEqual(
             (None, True),
             judge_failure(
-                JOB_RESET_THRESHOLD - 1, JOB_RESET_THRESHOLD - 1, Exception(),
-                retry=False))
+                JOB_RESET_THRESHOLD - 1,
+                JOB_RESET_THRESHOLD - 1,
+                Exception(),
+                retry=False,
+            ),
+        )
 
     def test_bad_builder(self):
         # A bad builder resets its job and dirties itself. The next scan
@@ -1093,23 +1168,23 @@ class TestJudgeFailure(TestCase):
         # case, or just retrying for non-virts).
         self.assertEqual(
             (True, True),
-            judge_failure(BUILDER_FAILURE_THRESHOLD - 1, 1, Exception()))
+            judge_failure(BUILDER_FAILURE_THRESHOLD - 1, 1, Exception()),
+        )
 
     def test_bad_builder_gives_up(self):
         # A persistently bad builder resets its job and fails itself.
         self.assertEqual(
             (False, True),
-            judge_failure(BUILDER_FAILURE_THRESHOLD, 1, Exception()))
+            judge_failure(BUILDER_FAILURE_THRESHOLD, 1, Exception()),
+        )
 
     def test_bad_job_fails(self):
-        self.assertEqual(
-            (None, False),
-            judge_failure(1, 2, Exception()))
+        self.assertEqual((None, False), judge_failure(1, 2, Exception()))
 
     def test_isolation_violation_double_kills(self):
         self.assertEqual(
-            (False, False),
-            judge_failure(1, 1, BuildDaemonIsolationError()))
+            (False, False), judge_failure(1, 1, BuildDaemonIsolationError())
+        )
 
 
 class TestCancellationChecking(TestCaseWithFactory):
@@ -1133,8 +1208,9 @@ class TestCancellationChecking(TestCaseWithFactory):
         manager = BuilddManager(clock=clock)
         manager.logger = BufferLogger()
         scanner = WorkerScanner(
-            None, BuilderFactory(), manager, BufferLogger(), clock=clock)
-        scanner.logger.name = 'worker-scanner'
+            None, BuilderFactory(), manager, BufferLogger(), clock=clock
+        )
+        scanner.logger.name = "worker-scanner"
         return scanner
 
     def test_ignores_build_not_cancelling(self):
@@ -1175,7 +1251,8 @@ class TestCancellationChecking(TestCaseWithFactory):
 
         clock.advance(WorkerScanner.CANCEL_TIMEOUT)
         with ExpectedException(
-                BuildWorkerFailure, "Timeout waiting for .* to cancel"):
+            BuildWorkerFailure, "Timeout waiting for .* to cancel"
+        ):
             yield scanner.checkCancellation(self.vitals, worker)
 
     @defer.inlineCallbacks
@@ -1185,7 +1262,8 @@ class TestCancellationChecking(TestCaseWithFactory):
         worker = LostBuildingBrokenWorker()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpc.client.Fault, "<Fault 8002: %r>" % 'Could not abort'):
+            xmlrpc.client.Fault, "<Fault 8002: %r>" % "Could not abort"
+        ):
             yield self._getScanner().checkCancellation(self.vitals, worker)
 
 
@@ -1196,18 +1274,31 @@ class TestBuilddManager(TestCase):
     def _stub_out_scheduleNextScanCycle(self):
         # stub out the code that adds a callLater, so that later tests
         # don't get surprises.
-        self.patch(WorkerScanner, 'startCycle', FakeMethod())
+        self.patch(WorkerScanner, "startCycle", FakeMethod())
 
     def test_addScanForBuilders(self):
         # Test that addScanForBuilders generates WorkerScanner objects.
         self._stub_out_scheduleNextScanCycle()
 
         manager = BuilddManager()
-        builder_names = {
-            builder.name for builder in getUtility(IBuilderSet)}
+        builder_names = {builder.name for builder in getUtility(IBuilderSet)}
         scanners = manager.addScanForBuilders(builder_names)
         scanner_names = {scanner.builder_name for scanner in scanners}
         self.assertEqual(builder_names, scanner_names)
+
+    def test_startService_clears_grabbing(self):
+        # When startService is called, the manager clears out the "grabbing"
+        # directory.
+        self._stub_out_scheduleNextScanCycle()
+        tempdir = self.makeTemporaryDirectory()
+        self.pushConfig("builddmaster", root=tempdir)
+        os.makedirs(os.path.join(tempdir, "grabbing", "some-upload"))
+        clock = task.Clock()
+        manager = BuilddManager(clock=clock)
+
+        manager.startService()
+
+        self.assertFalse(os.path.exists(os.path.join(tempdir, "grabbing")))
 
     def test_startService_adds_scanBuilders_loop(self):
         # When startService is called, the manager will start up a
@@ -1258,8 +1349,12 @@ class TestFailureAssessments(TestCaseWithFactory):
         # Helper for recover_failure boilerplate.
         logger = BufferLogger()
         recover_failure(
-            logger, extract_vitals_from_db(self.builder), self.builder,
-            retry, Exception(fail_notes))
+            logger,
+            extract_vitals_from_db(self.builder),
+            self.builder,
+            retry,
+            Exception(fail_notes),
+        )
         return logger.getLogBuffer()
 
     def test_job_reset_threshold_with_retry(self):
@@ -1409,8 +1504,10 @@ class TestNewBuilders(TestCase):
         advance = manager.SCAN_BUILDERS_INTERVAL + 1
         clock.advance(advance)
         self.assertNotEqual(
-            0, manager.scanBuilders.call_count,
-            "startService did not schedule a scanBuilders loop")
+            0,
+            manager.scanBuilders.call_count,
+            "startService did not schedule a scanBuilders loop",
+        )
 
     def test_checkForNewBuilders(self):
         # Test that checkForNewBuilders() detects a new builder
@@ -1459,7 +1556,8 @@ class TestNewBuilders(TestCase):
         clock = task.Clock()
         manager = self._getManager(clock=clock)
         manager.checkForNewBuilders = FakeMethod(
-            failure=Exception("CHAOS REIGNS"))
+            failure=Exception("CHAOS REIGNS")
+        )
         manager.startService()
         self.addCleanup(manager.stopService)
         self.assertEqual(1, manager.checkForNewBuilders.call_count)
@@ -1492,15 +1590,18 @@ class TestFlushLogTails(TestCaseWithFactory):
 
         clock.advance(manager.FLUSH_LOGTAILS_INTERVAL + 1)
         self.assertNotEqual(
-            0, manager.flushLogTails.call_count,
-            "scheduleUpdate did not schedule a flushLogTails loop")
+            0,
+            manager.flushLogTails.call_count,
+            "scheduleUpdate did not schedule a flushLogTails loop",
+        )
 
     def test_flushLogTails(self):
         # flushLogTails flushes pending log tail updates to the database.
         manager = self._getManager()
         bqs = [
             self.factory.makeBinaryPackageBuild().queueBuild()
-            for _ in range(3)]
+            for _ in range(3)
+        ]
         manager.addLogTail(bqs[0].id, "A log tail")
         manager.addLogTail(bqs[1].id, "Another log tail")
         transaction.commit()
@@ -1531,7 +1632,8 @@ class TestFlushLogTails(TestCaseWithFactory):
         self.addCleanup(manager.stopService)
         self.assertIn(
             "Failure while flushing log tail updates:",
-            manager.logger.getLogBuffer())
+            manager.logger.getLogBuffer(),
+        )
 
         # Even though the previous flushUpdates raised an exception, further
         # updates will happen as normal.
@@ -1605,7 +1707,7 @@ class TestBuilddManagerScript(TestCaseWithFactory):
         self.assertTrue(is_file_growing(logfilepath))
         # After rotating the log, the process keeps using the old file, no
         # new file is created.
-        rotated_logfilepath = logfilepath + '.1'
+        rotated_logfilepath = logfilepath + ".1"
         os.rename(logfilepath, rotated_logfilepath)
         self.assertTrue(is_file_growing(rotated_logfilepath))
         self.assertFalse(os.access(logfilepath, os.F_OK))
@@ -1621,14 +1723,16 @@ class TestBuilddManagerScript(TestCaseWithFactory):
         # 1000000 bytes but this is deactivated for the buildd manager.
         test_setup = BuilddManagerTestSetup()
         logfilepath = test_setup.logfile
-        rotated_logfilepath = logfilepath + '.1'
+        rotated_logfilepath = logfilepath + ".1"
         # Prefill the log file to just under 1000000 bytes.
         test_setup.precreateLogfile(
-            "2010-07-27 12:36:54+0200 [-] Starting scanning cycle.\n", 18518)
+            "2010-07-27 12:36:54+0200 [-] Starting scanning cycle.\n", 18518
+        )
         self.useFixture(test_setup)
         # The process logs to the logfile.
         self.assertTrue(is_file_growing(logfilepath))
         # No rotation occured.
         self.assertFalse(
             os.access(rotated_logfilepath, os.F_OK),
-            "Twistd's log file was rotated by twistd.")
+            "Twistd's log file was rotated by twistd.",
+        )

@@ -4,26 +4,20 @@
 """Commit files straight to bzr branch."""
 
 __all__ = [
-    'ConcurrentUpdateError',
-    'DirectBranchCommit',
-    ]
+    "ConcurrentUpdateError",
+    "DirectBranchCommit",
+]
 
 
 import os.path
 
 from breezy.bzr.generate_ids import gen_file_id
+from breezy.bzr.transform import TransformPreview
 from breezy.revision import NULL_REVISION
-from breezy.transform import (
-    ROOT_PARENT,
-    TransformPreview,
-    )
-import six
+from breezy.transform import ROOT_PARENT
 
 from lp.code.errors import StaleLastMirrored
-from lp.codehosting.bzrutils import (
-    get_branch_info,
-    get_stacked_on_url,
-    )
+from lp.codehosting.bzrutils import get_branch_info, get_stacked_on_url
 from lp.services.config import config
 from lp.services.database.interfaces import IMasterObject
 from lp.services.mail.sendmail import format_address_for_person
@@ -54,12 +48,19 @@ class DirectBranchCommit:
     The trick for this was invented by Aaron Bentley.  It saves having
     to do a full checkout of the branch.
     """
+
     is_open = False
     is_locked = False
     commit_builder = None
 
-    def __init__(self, db_branch, committer=None, no_race_check=False,
-                 merge_parents=None, committer_id=None):
+    def __init__(
+        self,
+        db_branch,
+        committer=None,
+        no_race_check=False,
+        merge_parents=None,
+        committer_id=None,
+    ):
         """Create context for direct commit to branch.
 
         Before constructing a `DirectBranchCommit`, set up a server that
@@ -89,7 +90,7 @@ class DirectBranchCommit:
 
         self.last_scanned_id = self.db_branch.last_scanned_id
         if self.last_scanned_id is not None:
-            self.last_scanned_id = six.ensure_binary(self.last_scanned_id)
+            self.last_scanned_id = self.last_scanned_id.encode()
 
         if committer is None:
             committer = db_branch.owner
@@ -108,13 +109,15 @@ class DirectBranchCommit:
         try:
             self.revision_tree = self.bzrbranch.basis_tree()
             self.transform_preview = TransformPreview(self.revision_tree)
-            assert self.transform_preview.find_conflicts() == [], (
-                "TransformPreview is not in a consistent state.")
+            assert (
+                self.transform_preview.find_raw_conflicts() == []
+            ), "TransformPreview is not in a consistent state."
             if not no_race_check:
                 last_revision = self.bzrbranch.last_revision()
                 if not self._matchingLastMirrored(last_revision):
                     raise StaleLastMirrored(
-                        db_branch, get_branch_info(self.bzrbranch))
+                        db_branch, get_branch_info(self.bzrbranch)
+                    )
 
             self.is_open = True
         except BaseException:
@@ -125,10 +128,12 @@ class DirectBranchCommit:
         self.merge_parents = merge_parents
 
     def _matchingLastMirrored(self, revision_id):
-        if (self.db_branch.last_mirrored_id is None
-            and revision_id == NULL_REVISION):
+        if (
+            self.db_branch.last_mirrored_id is None
+            and revision_id == NULL_REVISION
+        ):
             return True
-        return six.ensure_text(revision_id) == self.db_branch.last_mirrored_id
+        return revision_id.decode() == self.db_branch.last_mirrored_id
 
     def _getDir(self, path):
         """Get trans_id for directory "path."  Create if necessary."""
@@ -151,7 +156,8 @@ class DirectBranchCommit:
         # Create new directory.
         dirfile_id = gen_file_id(path)
         path_id = self.transform_preview.new_directory(
-            dirname, parent_id, dirfile_id)
+            dirname, parent_id, dirfile_id
+        )
         self.path_ids[path] = path_id
         return path_id
 
@@ -173,7 +179,8 @@ class DirectBranchCommit:
             parent_id = self._getDir(parent_path)
             file_id = gen_file_id(name)
             self.transform_preview.new_file(
-                name, parent_id, [contents], file_id)
+                name, parent_id, [contents], file_id
+            )
         else:
             trans_id = self.transform_preview.trans_id_tree_path(path)
             # Delete old contents.  It doesn't actually matter whether
@@ -194,7 +201,8 @@ class DirectBranchCommit:
         last_revision = self.bzrbranch.last_revision()
         if last_revision != self.last_scanned_id:
             raise ConcurrentUpdateError(
-                "Branch has been changed.  Not committing.")
+                "Branch has been changed.  Not committing."
+            )
 
     def getBzrCommitterID(self):
         """Find the committer id to pass to bzr."""
@@ -205,7 +213,8 @@ class DirectBranchCommit:
         else:
             return '"%s" <%s>' % (
                 self.committer.displayname,
-                config.canonical.noreply_from_address)
+                config.canonical.noreply_from_address,
+            )
 
     def commit(self, commit_message, txn=None):
         """Commit to branch.
@@ -234,13 +243,18 @@ class DirectBranchCommit:
             # required to generate the revision-id.
             with override_environ(BRZ_EMAIL=committer_id):
                 new_rev_id = self.transform_preview.commit(
-                    self.bzrbranch, commit_message, self.merge_parents,
-                    committer=committer_id)
+                    self.bzrbranch,
+                    commit_message,
+                    self.merge_parents,
+                    committer=committer_id,
+                )
             IMasterObject(self.db_branch).branchChanged(
                 get_stacked_on_url(self.bzrbranch),
-                None if new_rev_id is None else six.ensure_text(new_rev_id),
-                self.db_branch.control_format, self.db_branch.branch_format,
-                self.db_branch.repository_format)
+                None if new_rev_id is None else new_rev_id.decode(),
+                self.db_branch.control_format,
+                self.db_branch.branch_format,
+                self.db_branch.repository_format,
+            )
 
             if txn:
                 txn.commit()

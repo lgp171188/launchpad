@@ -7,23 +7,17 @@ __all__ = []
 
 
 import os
-from subprocess import (
-    PIPE,
-    Popen,
-    )
+from subprocess import PIPE, Popen
 
+import transaction
 from breezy import errors
 from breezy.branch import Branch
 from breezy.bzr.bzrdir import BzrDir
 from breezy.upgrade import upgrade
-from breezy.urlutils import (
-    join as urljoin,
-    local_path_from_url,
-    )
+from breezy.urlutils import join as urljoin
+from breezy.urlutils import local_path_from_url
 from breezy.workingtree import WorkingTree
 from fixtures import TempDir
-import six
-import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -51,10 +45,12 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
     def setUp(self):
         PullerBranchTestCase.setUp(self)
         self._puller_script = os.path.join(
-            config.root, 'cronscripts', 'supermirror-pull.py')
+            config.root, "cronscripts", "supermirror-pull.py"
+        )
         self.makeCleanDirectory(config.codehosting.mirrored_branches_root)
         self.makeCleanDirectory(
-            local_path_from_url(config.launchpad.bzr_imports_root_url))
+            local_path_from_url(config.launchpad.bzr_imports_root_url)
+        )
 
     def assertMirrored(self, db_branch, source_branch):
         """Assert that 'db_branch' was mirrored successfully.
@@ -76,20 +72,23 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         transaction.commit()
         self.assertEqual(None, db_branch.mirror_status_message)
         self.assertEqual(
-            db_branch.last_mirror_attempt, db_branch.last_mirrored)
+            db_branch.last_mirror_attempt, db_branch.last_mirrored
+        )
         self.assertEqual(0, db_branch.mirror_failures)
         mirrored_branch = self.openBranchAsUser(db_branch, accessing_user)
         self.assertEqual(
-            six.ensure_text(source_branch.last_revision()),
-            db_branch.last_mirrored_id)
+            source_branch.last_revision().decode(), db_branch.last_mirrored_id
+        )
         self.assertEqual(
-            source_branch.last_revision(), mirrored_branch.last_revision())
+            source_branch.last_revision(), mirrored_branch.last_revision()
+        )
         self.assertEqual(
-            source_branch._format.__class__,
-            mirrored_branch._format.__class__)
+            source_branch._format.__class__, mirrored_branch._format.__class__
+        )
         self.assertEqual(
             source_branch.repository._format.__class__,
-            mirrored_branch.repository._format.__class__)
+            mirrored_branch.repository._format.__class__,
+        )
         return mirrored_branch
 
     def assertRanSuccessfully(self, command, retcode, stdout, stderr):
@@ -98,17 +97,20 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         'Successfully' means that it's return code was 0 and it printed
         nothing to stdout or stderr.
         """
-        message = '\n'.join(
-            ['Command: %r' % (command,),
-             'Return code: %s' % retcode,
-             'Output:',
-             stdout,
-             '',
-             'Error:',
-             stderr])
+        message = "\n".join(
+            [
+                "Command: %r" % (command,),
+                "Return code: %s" % retcode,
+                "Output:",
+                stdout,
+                "",
+                "Error:",
+                stderr,
+            ]
+        )
         self.assertEqual(0, retcode, message)
-        self.assertEqualDiff('', stdout)
-        self.assertEqualDiff('', stderr)
+        self.assertEqualDiff("", stdout)
+        self.assertEqualDiff("", stderr)
 
     def runSubprocess(self, command):
         """Run the given command in a subprocess.
@@ -117,7 +119,8 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         :return: retcode, stdout, stderr
         """
         process = Popen(
-            command, stdout=PIPE, stderr=PIPE, universal_newlines=True)
+            command, stdout=PIPE, stderr=PIPE, universal_newlines=True
+        )
         output, error = process.communicate()
         return process.returncode, output, error
 
@@ -132,8 +135,12 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         """
         logfile = self.useFixture(TempDir()).join("supermirror_test.log")
         command = [
-            '%s/bin/py' % config.root, self._puller_script, '--log-file',
-            logfile, '-q'] + list(args)
+            "%s/bin/py" % config.root,
+            self._puller_script,
+            "--log-file",
+            logfile,
+            "-q",
+        ] + list(args)
         retcode, output, error = self.runSubprocess(command)
         return command, retcode, output, error
 
@@ -157,24 +164,21 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         return lp_server
 
     def openBranchAsUser(self, db_branch, user):
-        """Open the branch as 'user' would see it as a client of codehosting.
-        """
+        """Open the branch as 'user' would see it as a codehosting client."""
         lp_server = self.getLPServerForUser(user)
         return Branch.open(lp_server.get_url() + db_branch.unique_name)
 
     def setUpMirroredBranch(self, db_branch, format=None):
-        """Make a tree in the cwd and serve it over HTTP, returning the URL.
-        """
-        tree = self.make_branch_and_tree('.', format=format)
-        tree.commit('rev1')
+        """Make a tree in the cwd and serve it over HTTP, returning the URL."""
+        tree = self.make_branch_and_tree(".", format=format)
+        tree.commit("rev1")
         db_branch.url = self.serveOverHTTP()
         db_branch.requestMirror()
         return tree
 
     def test_mirror_mirrored_branch(self):
         # Run the puller with a mirrored branch ready to be pulled.
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.MIRRORED)
+        db_branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         tree = self.setUpMirroredBranch(db_branch)
         transaction.commit()
         command, retcode, output, error = self.runPuller()
@@ -183,8 +187,7 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
 
     def test_mirror_mirrored_loom_branch(self):
         # Run the puller with a mirrored loom branch ready to be pulled.
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.MIRRORED)
+        db_branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
         tree = self.setUpMirroredBranch(db_branch)
         self.loomify(tree.branch)
         transaction.commit()
@@ -195,9 +198,8 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
     def test_format_change(self):
         # When the format of a mirrored branch changes, the puller remirrors
         # the branch into the new format.
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.MIRRORED)
-        tree = self.setUpMirroredBranch(db_branch, format='pack-0.92')
+        db_branch = self.factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
+        tree = self.setUpMirroredBranch(db_branch, format="pack-0.92")
         transaction.commit()
         command, retcode, output, error = self.runPuller()
         self.assertRanSuccessfully(command, retcode, output, error)
@@ -228,18 +230,21 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         else:
             information_type = InformationType.PUBLIC
         default_branch = self.factory.makeProductBranch(
-            product=product, information_type=information_type)
+            product=product, information_type=information_type
+        )
         transaction.commit()
         # Create the underlying bzr branch.
         lp_server = self.getLPServerForUser(default_branch.owner)
         BzrDir.create_branch_convenience(
-            lp_server.get_url() + default_branch.unique_name)
+            lp_server.get_url() + default_branch.unique_name
+        )
         transaction.commit()
         # Make it the default stacked-on branch for the product.
         series = removeSecurityProxy(product.development_focus)
         series.branch = default_branch
         self.assertEqual(
-            default_branch, IBranchTarget(product).default_stacked_on_branch)
+            default_branch, IBranchTarget(product).default_stacked_on_branch
+        )
         return default_branch
 
     def test_stack_mirrored_branch(self):
@@ -247,47 +252,53 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         # branch of the product if such a thing exists.
         default_branch = self._makeDefaultStackedOnBranch()
         db_branch = self.factory.makeProductBranch(
-            branch_type=BranchType.MIRRORED, product=default_branch.product)
+            branch_type=BranchType.MIRRORED, product=default_branch.product
+        )
         tree = self.setUpMirroredBranch(db_branch)
         transaction.commit()
         command, retcode, output, error = self.runPuller()
         self.assertRanSuccessfully(command, retcode, output, error)
         mirrored_branch = self.assertMirrored(
-            db_branch, source_branch=tree.branch)
+            db_branch, source_branch=tree.branch
+        )
         self.assertEqual(
-            '/' + default_branch.unique_name,
-            mirrored_branch.get_stacked_on_url())
+            "/" + default_branch.unique_name,
+            mirrored_branch.get_stacked_on_url(),
+        )
 
     def test_stack_mirrored_branch_onto_private(self):
         # If the default stacked-on branch is private then mirrored branches
         # aren't stacked when they are mirrored.
         default_branch = self._makeDefaultStackedOnBranch(private=True)
         db_branch = self.factory.makeProductBranch(
-            branch_type=BranchType.MIRRORED, product=default_branch.product)
+            branch_type=BranchType.MIRRORED, product=default_branch.product
+        )
 
         tree = self.setUpMirroredBranch(db_branch)
         transaction.commit()
         command, retcode, output, error = self.runPuller()
         self.assertRanSuccessfully(command, retcode, output, error)
         mirrored_branch = self.assertMirrored(
-            db_branch, source_branch=tree.branch)
+            db_branch, source_branch=tree.branch
+        )
         self.assertRaises(
-            errors.NotStacked, mirrored_branch.get_stacked_on_url)
+            errors.NotStacked, mirrored_branch.get_stacked_on_url
+        )
 
     def test_mirror_imported_branch(self):
         # Run the puller on a populated imported branch pull queue.
         # Create the branch in the database.
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.IMPORTED)
+        db_branch = self.factory.makeAnyBranch(branch_type=BranchType.IMPORTED)
         db_branch.requestMirror()
         transaction.commit()
 
         # Create the Bazaar branch in the expected location.
         branch_url = urljoin(
-            config.launchpad.bzr_imports_root_url, '%08x' % db_branch.id)
+            config.launchpad.bzr_imports_root_url, "%08x" % db_branch.id
+        )
         branch = BzrDir.create_branch_convenience(branch_url)
         tree = branch.controldir.open_workingtree()
-        tree.commit('rev1')
+        tree.commit("rev1")
 
         transaction.commit()
 
@@ -306,33 +317,35 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         # When run with --branch-type arguments, the puller only mirrors those
         # branches of the specified types.
         imported_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.IMPORTED)
+            branch_type=BranchType.IMPORTED
+        )
         imported_branch.requestMirror()
         mirrored_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.MIRRORED)
+            branch_type=BranchType.MIRRORED
+        )
         mirrored_branch.requestMirror()
         tree = self.setUpMirroredBranch(mirrored_branch)
 
         transaction.commit()
 
         command, retcode, output, error = self.runPuller(
-            '--branch-type', 'MIRRORED')
+            "--branch-type", "MIRRORED"
+        )
         self.assertRanSuccessfully(command, retcode, output, error)
         self.assertMirrored(mirrored_branch, source_branch=tree.branch)
-        self.assertIsNot(
-            None, imported_branch.next_mirror_time)
+        self.assertIsNot(None, imported_branch.next_mirror_time)
 
     def test_records_script_activity(self):
         # A record gets created in the ScriptActivity table.
         script_activity_set = getUtility(IScriptActivitySet)
         self.assertIs(
-            script_activity_set.getLastActivity("branch-puller"),
-            None)
+            script_activity_set.getLastActivity("branch-puller"), None
+        )
         self.runPuller()
         transaction.abort()
         self.assertIsNot(
-            script_activity_set.getLastActivity("branch-puller"),
-            None)
+            script_activity_set.getLastActivity("branch-puller"), None
+        )
 
     # Possible tests to add:
     # - branch already exists in new location

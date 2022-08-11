@@ -15,11 +15,11 @@ from zope.interface import implementer
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
-    )
+)
 from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.registry.interfaces.product import IProduct
@@ -36,8 +36,8 @@ class BaseDefaultGitRepository:
 
     def __eq__(self, other):
         return (
-            isinstance(other, self.__class__) and
-            self.context == other.context)
+            isinstance(other, self.__class__) and self.context == other.context
+        )
 
 
 @adapter(IProduct)
@@ -71,7 +71,8 @@ class PackageDefaultGitRepository(BaseDefaultGitRepository):
         """See `ICanHasDefaultGitRepository`."""
         return "%s/+source/%s" % (
             self.context.distribution.name,
-            self.context.sourcepackagename.name)
+            self.context.sourcepackagename.name,
+        )
 
 
 @adapter(IOCIProject)
@@ -122,8 +123,10 @@ class OwnerPackageDefaultGitRepository(BaseDefaultGitRepository):
         """See `ICanHasDefaultGitRepository`."""
         dsp = self.context.distro_source_package
         return "~%s/%s/+source/%s" % (
-            self.context.person.name, dsp.distribution.name,
-            dsp.sourcepackagename.name)
+            self.context.person.name,
+            dsp.distribution.name,
+            dsp.sourcepackagename.name,
+        )
 
 
 @adapter(IPersonOCIProject)
@@ -141,5 +144,7 @@ class OwnerOCIProjectDefaultGitRepository(BaseDefaultGitRepository):
         """See `ICanHasDefaultGitRepository`."""
         oci_project = self.context.oci_project
         return "~%s/%s/+oci/%s" % (
-            self.context.person.name, oci_project.pillar.name,
-            oci_project.name)
+            self.context.person.name,
+            oci_project.pillar.name,
+            oci_project.name,
+        )

@@ -4,15 +4,12 @@
 """Package copy policies."""
 
 __all__ = [
-    'ICopyPolicy',
-    ]
+    "ICopyPolicy",
+]
 
 
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Choice,
-    )
+from zope.schema import Bool, Choice
 
 from lp import _
 from lp.soyuz.enums import PackageCopyPolicy
@@ -23,11 +20,16 @@ class ICopyPolicy(Interface):
 
     enum_value = Choice(
         title=_("PackageCopyPolicy number associated with this policy."),
-        values=PackageCopyPolicy, readonly=True, required=True)
+        values=PackageCopyPolicy,
+        readonly=True,
+        required=True,
+    )
 
     send_email = Bool(
         title=_("Should completion of this copy be announced by email?"),
-        readonly=True, required=True)
+        readonly=True,
+        required=True,
+    )
 
     def autoApprove(archive, distroseries, pocket):
         """Can this upload of a known package be approved automatically?

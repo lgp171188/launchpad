@@ -2,45 +2,32 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BugWatch',
-    'BugWatchActivity',
-    'BugWatchDeletionError',
-    'BugWatchSet',
-    ]
+    "BugWatch",
+    "BugWatchActivity",
+    "BugWatchDeletionError",
+    "BugWatchSet",
+]
 
-from datetime import datetime
 import re
+from datetime import datetime
 from urllib.parse import urlunsplit
 
+import six
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
-import six
-from storm.expr import (
-    Desc,
-    Not,
-    )
-from storm.locals import (
-    Int,
-    Reference,
-    Unicode,
-    )
+from storm.expr import Desc, Not
+from storm.locals import Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
-from zope.interface import (
-    implementer,
-    providedBy,
-    )
+from zope.interface import implementer, providedBy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators.email import valid_email
-from lp.bugs.interfaces.bugtracker import (
-    BugTrackerType,
-    IBugTrackerSet,
-    )
+from lp.bugs.interfaces.bugtracker import BugTrackerType, IBugTrackerSet
 from lp.bugs.interfaces.bugwatch import (
     BUG_WATCH_ACTIVITY_SUCCESS_STATUSES,
     BugWatchActivityStatus,
@@ -50,7 +37,7 @@ from lp.bugs.interfaces.bugwatch import (
     IBugWatchSet,
     NoBugTrackerFound,
     UnrecognizedBugTrackerURL,
-    )
+)
 from lp.bugs.model.bugmessage import BugMessage
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import validate_public_person
@@ -64,30 +51,26 @@ from lp.services.database.sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
     StringCol,
-    )
+)
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message
-from lp.services.webapp import (
-    urlappend,
-    urlsplit,
-    )
-
+from lp.services.webapp import urlappend, urlsplit
 
 BUG_TRACKER_URL_FORMATS = {
-    BugTrackerType.BUGZILLA: 'show_bug.cgi?id=%s',
-    BugTrackerType.DEBBUGS: 'cgi-bin/bugreport.cgi?bug=%s',
-    BugTrackerType.GITHUB: '%s',
-    BugTrackerType.GITLAB: '%s',
-    BugTrackerType.GOOGLE_CODE: 'detail?id=%s',
-    BugTrackerType.MANTIS: 'view.php?id=%s',
-    BugTrackerType.ROUNDUP: 'issue%s',
-    BugTrackerType.RT: 'Ticket/Display.html?id=%s',
-    BugTrackerType.SOURCEFORGE: 'support/tracker.php?aid=%s',
-    BugTrackerType.TRAC: 'ticket/%s',
-    BugTrackerType.SAVANE: 'bugs/?%s',
-    BugTrackerType.PHPPROJECT: 'bug.php?id=%s',
-    }
+    BugTrackerType.BUGZILLA: "show_bug.cgi?id=%s",
+    BugTrackerType.DEBBUGS: "cgi-bin/bugreport.cgi?bug=%s",
+    BugTrackerType.GITHUB: "%s",
+    BugTrackerType.GITLAB: "%s",
+    BugTrackerType.GOOGLE_CODE: "detail?id=%s",
+    BugTrackerType.MANTIS: "view.php?id=%s",
+    BugTrackerType.ROUNDUP: "issue%s",
+    BugTrackerType.RT: "Ticket/Display.html?id=%s",
+    BugTrackerType.SOURCEFORGE: "support/tracker.php?aid=%s",
+    BugTrackerType.TRAC: "ticket/%s",
+    BugTrackerType.SAVANE: "bugs/?%s",
+    BugTrackerType.PHPPROJECT: "bug.php?id=%s",
+}
 
 
 WATCH_RESCHEDULE_THRESHOLD = 0.6
@@ -108,7 +91,8 @@ def get_bug_watch_ids(references):
             yield reference
         else:
             raise AssertionError(
-                '%r is not a bug watch or an ID.' % (reference,))
+                "%r is not a bug watch or an ID." % (reference,)
+            )
 
 
 class BugWatchDeletionError(Exception):
@@ -118,10 +102,12 @@ class BugWatchDeletionError(Exception):
 @implementer(IBugWatch)
 class BugWatch(SQLBase):
     """See `IBugWatch`."""
-    _table = 'BugWatch'
-    bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
-    bugtracker = ForeignKey(dbName='bugtracker',
-                foreignKey='BugTracker', notNull=True)
+
+    _table = "BugWatch"
+    bug = ForeignKey(dbName="bug", foreignKey="Bug", notNull=True)
+    bugtracker = ForeignKey(
+        dbName="bugtracker", foreignKey="BugTracker", notNull=True
+    )
     remotebug = StringCol(notNull=True)
     remotestatus = StringCol(notNull=False, default=None)
     remote_importance = StringCol(notNull=False, default=None)
@@ -130,8 +116,11 @@ class BugWatch(SQLBase):
     last_error_type = DBEnum(enum=BugWatchActivityStatus, default=None)
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        dbName="owner",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
     next_check = UtcDateTimeCol()
 
     @property
@@ -169,11 +158,11 @@ class BugWatch(SQLBase):
             return bugtracker.baseurl
         elif bugtrackertype in BUG_TRACKER_URL_FORMATS:
             url_format = BUG_TRACKER_URL_FORMATS[bugtrackertype]
-            return urlappend(bugtracker.baseurl,
-                             url_format % self.remotebug)
+            return urlappend(bugtracker.baseurl, url_format % self.remotebug)
         else:
             raise AssertionError(
-                'Unknown bug tracker type %s' % bugtrackertype)
+                "Unknown bug tracker type %s" % bugtrackertype
+            )
 
     @property
     def needscheck(self):
@@ -190,14 +179,19 @@ class BugWatch(SQLBase):
             self.sync()
         for linked_bugtask in self.bugtasks_to_update:
             old_bugtask = Snapshot(
-                linked_bugtask, providing=providedBy(linked_bugtask))
+                linked_bugtask, providing=providedBy(linked_bugtask)
+            )
             linked_bugtask.transitionToImportance(
                 malone_importance,
-                getUtility(ILaunchpadCelebrities).bug_watch_updater)
+                getUtility(ILaunchpadCelebrities).bug_watch_updater,
+            )
             if linked_bugtask.importance != old_bugtask.importance:
                 event = ObjectModifiedEvent(
-                    linked_bugtask, old_bugtask, ['importance'],
-                    user=getUtility(ILaunchpadCelebrities).bug_watch_updater)
+                    linked_bugtask,
+                    old_bugtask,
+                    ["importance"],
+                    user=getUtility(ILaunchpadCelebrities).bug_watch_updater,
+                )
                 notify(event)
 
     def updateStatus(self, remote_status, malone_status):
@@ -210,24 +204,32 @@ class BugWatch(SQLBase):
             self.sync()
         for linked_bugtask in self.bugtasks_to_update:
             old_bugtask = Snapshot(
-                linked_bugtask, providing=providedBy(linked_bugtask))
+                linked_bugtask, providing=providedBy(linked_bugtask)
+            )
             linked_bugtask.transitionToStatus(
                 malone_status,
-                getUtility(ILaunchpadCelebrities).bug_watch_updater)
+                getUtility(ILaunchpadCelebrities).bug_watch_updater,
+            )
             # We don't yet support updating the assignee of bug watches.
             linked_bugtask.transitionToAssignee(None)
             if linked_bugtask.status != old_bugtask.status:
                 event = ObjectModifiedEvent(
-                    linked_bugtask, old_bugtask, ['status'],
-                    user=getUtility(ILaunchpadCelebrities).bug_watch_updater)
+                    linked_bugtask,
+                    old_bugtask,
+                    ["status"],
+                    user=getUtility(ILaunchpadCelebrities).bug_watch_updater,
+                )
                 notify(event)
 
     def destroySelf(self):
         """See `IBugWatch`."""
-        if (len(self.bugtasks) > 0 or
-            not self.getImportedBugMessages().is_empty()):
+        if (
+            len(self.bugtasks) > 0
+            or not self.getImportedBugMessages().is_empty()
+        ):
             raise BugWatchDeletionError(
-                "Can't delete bug watches linked to tasks or comments.")
+                "Can't delete bug watches linked to tasks or comments."
+            )
         # Remove any BugWatchActivity entries for this bug watch.
         self.activity.remove()
         # XXX 2010-09-29 gmb bug=647103
@@ -246,7 +248,8 @@ class BugWatch(SQLBase):
             BugMessage.message == Message.id,
             BugMessage.bug == self.bug,
             BugMessage.bugwatch == self,
-            BugMessage.remote_comment_id == None)
+            BugMessage.remote_comment_id == None,
+        )
 
         # Ordering by the id is only necessary to avoid randomness
         # caused by identical dates, which can break tests.
@@ -261,31 +264,41 @@ class BugWatch(SQLBase):
             BugMessage,
             BugMessage.bug == self.bug.id,
             BugMessage.bugwatch == self.id,
-            BugMessage.remote_comment_id == comment_id)
+            BugMessage.remote_comment_id == comment_id,
+        )
 
         return bug_messages.any() is not None
 
     def addComment(self, comment_id, message):
         """See `IBugWatch`."""
-        assert not self.hasComment(comment_id), ("Comment with ID %s has "
-            "already been imported for %s." % (comment_id, self.title))
+        assert not self.hasComment(
+            comment_id
+        ), "Comment with ID %s has " "already been imported for %s." % (
+            comment_id,
+            self.title,
+        )
 
         # When linking the message we force the owner being used to the
         # Bug Watch Updater celebrity. This allows us to avoid trying to
         # assign karma to the authors of imported comments, since karma
         # should only be assigned for actions that occur within
         # Launchpad. See bug 185413 for more details.
-        bug_watch_updater = getUtility(
-            ILaunchpadCelebrities).bug_watch_updater
+        bug_watch_updater = getUtility(ILaunchpadCelebrities).bug_watch_updater
         bug_message = self.bug.linkMessage(
-            message, bugwatch=self, user=bug_watch_updater,
-            remote_comment_id=comment_id)
+            message,
+            bugwatch=self,
+            user=bug_watch_updater,
+            remote_comment_id=comment_id,
+        )
         return bug_message
 
     def getBugMessages(self, clauses=[]):
         return Store.of(self).find(
-            BugMessage, BugMessage.bug == self.bug.id,
-            BugMessage.bugwatch == self.id, *clauses)
+            BugMessage,
+            BugMessage.bug == self.bug.id,
+            BugMessage.bugwatch == self.id,
+            *clauses,
+        )
 
     def getImportedBugMessages(self):
         """See `IBugWatch`."""
@@ -297,7 +310,7 @@ class BugWatch(SQLBase):
         activity.bug_watch = self
         if result is None:
             # If no result is passed we assume that the activity
-            # succeded and set the result field accordingly.
+            # succeeded and set the result field accordingly.
             activity.result = BugWatchActivityStatus.SYNC_SUCCEEDED
         else:
             activity.result = result
@@ -312,15 +325,15 @@ class BugWatch(SQLBase):
     def activity(self):
         store = Store.of(self)
         return store.find(
-            BugWatchActivity,
-            BugWatchActivity.bug_watch == self).order_by(
-                Desc('activity_date'))
+            BugWatchActivity, BugWatchActivity.bug_watch == self
+        ).order_by(Desc("activity_date"))
 
     @property
     def can_be_rescheduled(self):
         """See `IBugWatch`."""
-        if (self.next_check is not None and
-            self.next_check <= datetime.now(utc)):
+        if self.next_check is not None and self.next_check <= datetime.now(
+            utc
+        ):
             # If the watch is already scheduled for a time in the past
             # (or for right now) it can't be rescheduled, since it
             # should be checked by the next checkwatches run anyway.
@@ -349,18 +362,25 @@ class BugWatch(SQLBase):
         # If the ratio is lower than the reschedule threshold, we
         # can show the button.
         failure_ratio = (
-            float(self.failed_activity.count()) /
-            self.activity.count())
+            float(self.failed_activity.count()) / self.activity.count()
+        )
         return failure_ratio <= WATCH_RESCHEDULE_THRESHOLD
 
     @property
     def failed_activity(self):
-        return Store.of(self).find(
-            BugWatchActivity,
-            BugWatchActivity.bug_watch == self,
-            Not(BugWatchActivity.result.is_in(
-                BUG_WATCH_ACTIVITY_SUCCESS_STATUSES))).order_by(
-                Desc('activity_date'))
+        return (
+            Store.of(self)
+            .find(
+                BugWatchActivity,
+                BugWatchActivity.bug_watch == self,
+                Not(
+                    BugWatchActivity.result.is_in(
+                        BUG_WATCH_ACTIVITY_SUCCESS_STATUSES
+                    )
+                ),
+            )
+            .order_by(Desc("activity_date"))
+        )
 
     def setNextCheck(self, next_check):
         """See `IBugWatch`."""
@@ -398,7 +418,7 @@ class BugWatchSet:
             BugTrackerType.SAVANE: self.parseSavaneURL,
             BugTrackerType.SOURCEFORGE: self.parseSourceForgeLikeURL,
             BugTrackerType.TRAC: self.parseTracURL,
-            }
+        }
 
     def get(self, watch_id):
         """See `IBugWatch`Set."""
@@ -428,7 +448,8 @@ class BugWatchSet:
                     continue
 
                 bugtracker = getUtility(IBugTrackerSet).ensureBugTracker(
-                    error.base_url, owner, error.bugtracker_type)
+                    error.base_url, owner, error.bugtracker_type
+                )
                 remotebug = error.remote_bug
             except UnrecognizedBugTrackerURL:
                 # It doesn't look like a bug URL, so simply ignore it.
@@ -444,7 +465,8 @@ class BugWatchSet:
                 # This bug doesn't have such a bug watch, let's create
                 # one.
                 bugwatch = bug.addWatch(
-                    bugtracker=bugtracker, remotebug=remotebug, owner=owner)
+                    bugtracker=bugtracker, remotebug=remotebug, owner=owner
+                )
                 newwatches.append(bugwatch)
 
         return newwatches
@@ -459,57 +481,63 @@ class BugWatchSet:
             elif messagechunk.content is not None:
                 # look for potential BugWatch URL's and create the trackers
                 # and watches as needed
-                watches = watches.union(self.fromText(messagechunk.content,
-                    bug, message.owner))
+                watches = watches.union(
+                    self.fromText(messagechunk.content, bug, message.owner)
+                )
             else:
-                raise AssertionError('MessageChunk without content or blob.')
+                raise AssertionError("MessageChunk without content or blob.")
         return sorted(watches, key=lambda a: a.remotebug)
 
     def createBugWatch(self, bug, owner, bugtracker, remotebug):
         """See `IBugWatchSet`."""
         return BugWatch(
-            bug=bug, owner=owner, datecreated=UTC_NOW, lastchanged=UTC_NOW,
-            bugtracker=bugtracker, remotebug=remotebug)
+            bug=bug,
+            owner=owner,
+            datecreated=UTC_NOW,
+            lastchanged=UTC_NOW,
+            bugtracker=bugtracker,
+            remotebug=remotebug,
+        )
 
     def parseBugzillaURL(self, scheme, host, path, query):
         """Extract the Bugzilla base URL and bug ID."""
-        bug_page = 'show_bug.cgi'
+        bug_page = "show_bug.cgi"
         if not path.endswith(bug_page):
             return None
-        if query.get('id'):
+        if query.get("id"):
             # This is a Bugzilla URL.
-            remote_bug = query['id']
-        elif query.get('issue'):
+            remote_bug = query["id"]
+        elif query.get("issue"):
             # This is a Issuezilla URL.
-            remote_bug = query['issue']
+            remote_bug = query["issue"]
         else:
             return None
         if remote_bug is None or not remote_bug.isdigit():
             return None
-        base_path = path[:-len(bug_page)]
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_path = path[: -len(bug_page)]
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseMantisURL(self, scheme, host, path, query):
         """Extract the Mantis base URL and bug ID."""
-        bug_page = 'view.php'
+        bug_page = "view.php"
         if not path.endswith(bug_page):
             return None
-        remote_bug = query.get('id')
+        remote_bug = query.get("id")
         if remote_bug is None or not remote_bug.isdigit():
             return None
-        base_path = path[:-len(bug_page)]
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_path = path[: -len(bug_page)]
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseDebbugsURL(self, scheme, host, path, query):
         """Extract the Debbugs base URL and bug ID."""
-        bug_page = 'cgi-bin/bugreport.cgi'
+        bug_page = "cgi-bin/bugreport.cgi"
         remote_bug = None
 
         if path.endswith(bug_page):
-            remote_bug = query.get('bug')
-            base_path = path[:-len(bug_page)]
+            remote_bug = query.get("bug")
+            base_path = path[: -len(bug_page)]
         elif host == "bugs.debian.org":
             # Oy, what a hack. debian's tracker allows you to access
             # bugs by saying http://bugs.debian.org/400848, so support
@@ -517,25 +545,25 @@ class BugWatchSet:
             # check here is because otherwise /any/ URL that ends with
             # "/number" will appear to match a debbugs URL.
             remote_bug = path.split("/")[-1]
-            base_path = ''
+            base_path = ""
         else:
             return None
 
         if remote_bug is None or not remote_bug.isdigit():
             return None
 
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseRoundupURL(self, scheme, host, path, query):
         """Extract the RoundUp base URL and bug ID."""
-        match = re.match(r'(.*/)issue(\d+)$', path)
+        match = re.match(r"(.*/)issue(\d+)$", path)
         if not match:
             return None
         base_path = match.group(1)
         remote_bug = match.group(2)
 
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseRTURL(self, scheme, host, path, query):
@@ -545,35 +573,36 @@ class BugWatchSet:
         # hosts that we know use non-standard URLs for their tickets,
         # allowing us to parse them properly.
         host_expressions = {
-            'default': r'(.*/)(Bug|Ticket)/Display.html',
-            'rt.cpan.org': r'(.*/)Public/(Bug|Ticket)/Display.html'}
+            "default": r"(.*/)(Bug|Ticket)/Display.html",
+            "rt.cpan.org": r"(.*/)Public/(Bug|Ticket)/Display.html",
+        }
 
         if host in host_expressions:
             expression = host_expressions[host]
         else:
-            expression = host_expressions['default']
+            expression = host_expressions["default"]
 
         match = re.match(expression, path)
         if not match:
             return None
 
         base_path = match.group(1)
-        remote_bug = query['id']
+        remote_bug = query["id"]
         if remote_bug is None or not remote_bug.isdigit():
             return None
 
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseTracURL(self, scheme, host, path, query):
         """Extract the Trac base URL and bug ID."""
-        match = re.match(r'(.*/)ticket/(\d+)$', path)
+        match = re.match(r"(.*/)ticket/(\d+)$", path)
         if not match:
             return None
         base_path = match.group(1)
         remote_bug = match.group(2)
 
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseSourceForgeLikeURL(self, scheme, host, path, query):
@@ -590,13 +619,14 @@ class BugWatchSet:
         # * /tracker/(index.php) (index.php part is optional)
         # * /tracker2/(index.php) (index.php part is optional)
         sf_path_re = re.compile(
-            r'^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$')
-        if (sf_path_re.match(path) is None):
+            r"^\/(support\/tracker\.php|tracker2?\/(index\.php)?)$"
+        )
+        if sf_path_re.match(path) is None:
             return None
-        if not query.get('aid'):
+        if not query.get("aid"):
             return None
 
-        remote_bug = query['aid']
+        remote_bug = query["aid"]
         if remote_bug is None or not remote_bug.isdigit():
             return None
 
@@ -608,7 +638,7 @@ class BugWatchSet:
         if host in sf_hosts:
             return sf_tracker.baseurl, remote_bug
         else:
-            base_url = urlunsplit((scheme, host, '/', '', ''))
+            base_url = urlunsplit((scheme, host, "/", "", ""))
             return base_url, remote_bug
 
     def parseSavaneURL(self, scheme, host, path, query):
@@ -617,13 +647,13 @@ class BugWatchSet:
         # Savane bugtracker. We currently accept URL paths /bugs/ or
         # /bugs/index.php, and accept query strings that are just the bug ID
         # or that have an item_id parameter containing the bug ID.
-        if path not in ('/bugs/', '/bugs/index.php'):
+        if path not in ("/bugs/", "/bugs/index.php"):
             return None
         if len(query) == 1 and list(query.values())[0] is None:
             # The query string is just a bare ID.
             remote_bug = list(query)[0]
-        elif 'item_id' in query:
-            remote_bug = query['item_id']
+        elif "item_id" in query:
+            remote_bug = query["item_id"]
         else:
             return None
         if not remote_bug.isdigit():
@@ -633,13 +663,14 @@ class BugWatchSet:
         # Launchpad, so we return that one if the hostname matches.
         savannah_tracker = getUtility(ILaunchpadCelebrities).savannah_tracker
         savannah_hosts = [
-            urlsplit(alias)[1] for alias in savannah_tracker.aliases]
+            urlsplit(alias)[1] for alias in savannah_tracker.aliases
+        ]
         savannah_hosts.append(urlsplit(savannah_tracker.baseurl)[1])
 
         if host in savannah_hosts:
             return savannah_tracker.baseurl, remote_bug
         else:
-            base_url = urlunsplit((scheme, host, '/', '', ''))
+            base_url = urlunsplit((scheme, host, "/", "", ""))
             return base_url, remote_bug
 
     def parseEmailAddressURL(self, scheme, host, path, query):
@@ -651,80 +682,80 @@ class BugWatchSet:
         None.
         """
         # We ignore anything that isn't a mailto URL.
-        if scheme != 'mailto':
+        if scheme != "mailto":
             return None
 
         # We also reject invalid email addresses.
         if not valid_email(path):
             return None
 
-        return '%s:%s' % (scheme, path), ''
+        return "%s:%s" % (scheme, path), ""
 
     def parsePHPProjectURL(self, scheme, host, path, query):
         """Extract a PHP project bug tracker base URL and bug ID."""
         # The URLs have the form bug.php?id=<bug-id>.
-        if path != '/bug.php' or len(query) != 1:
+        if path != "/bug.php" or len(query) != 1:
             return None
-        remote_bug = query.get('id')
+        remote_bug = query.get("id")
         if remote_bug is None or not remote_bug.isdigit():
             return None
-        base_url = urlunsplit((scheme, host, '/', '', ''))
+        base_url = urlunsplit((scheme, host, "/", "", ""))
         return base_url, remote_bug
 
     def parseGoogleCodeURL(self, scheme, host, path, query):
         """Extract a Google Code bug tracker base URL and bug ID."""
-        if host != 'code.google.com':
+        if host != "code.google.com":
             return None
 
         google_code_url_expression = re.compile(
-            r"(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail")
+            r"(?P<base_path>\/p\/[a-z][-a-z0-9]+/issues)/detail"
+        )
 
         path_match = google_code_url_expression.match(path)
         if path_match is None:
             return None
 
-        remote_bug = query.get('id')
+        remote_bug = query.get("id")
         if remote_bug is None or not remote_bug.isdigit():
             return None
 
-        tracker_path = path_match.groupdict()['base_path']
-        base_url = urlunsplit((scheme, host, tracker_path, '', ''))
+        tracker_path = path_match.groupdict()["base_path"]
+        base_url = urlunsplit((scheme, host, tracker_path, "", ""))
         return base_url, remote_bug
 
     def parseGitHubURL(self, scheme, host, path, query):
         """Extract a GitHub Issues base URL and bug ID."""
-        if host != 'github.com':
+        if host != "github.com":
             return None
-        match = re.match(r'(.*/issues)/(\d+)$', path)
+        match = re.match(r"(.*/issues)/(\d+)$", path)
         if not match:
             return None
         base_path = match.group(1)
         remote_bug = match.group(2)
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def parseGitLabURL(self, scheme, host, path, query):
         """Extract a GitLab Issues base URL and bug ID."""
-        match = re.match(r'(.*/issues)/(\d+)$', path)
+        match = re.match(r"(.*/issues)/(\d+)$", path)
         if not match:
             return None
         base_path = match.group(1)
         remote_bug = match.group(2)
-        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        base_url = urlunsplit((scheme, host, base_path, "", ""))
         return base_url, remote_bug
 
     def extractBugTrackerAndBug(self, url):
         """See `IBugWatchSet`."""
-        for trackertype, parse_func in (
-            self.bugtracker_parse_functions.items()):
+        for trackertype, parse_func in self.bugtracker_parse_functions.items():
             scheme, host, path, query_string, frag = urlsplit(url)
             # urllib.parse.parse_qsl would almost be suitable here, but
             # Savannah/Savane use bare bug IDs as query strings without any
             # key=value structure, so we need something more like the
             # deprecated urllib.parse.splitvalue.
             query = {}
-            for query_part in query_string.split('&'):
-                key, delim, value = query_part.partition('=')
+            for query_part in query_string.split("&"):
+                key, delim, value = query_part.partition("=")
                 if not delim:
                     value = None
                 query[key] = value
@@ -746,7 +777,8 @@ class BugWatchSet:
     def getBugWatchesForRemoteBug(self, remote_bug, bug_watch_ids=None):
         """See `IBugWatchSet`."""
         query = IStore(BugWatch).find(
-            BugWatch, BugWatch.remotebug == remote_bug)
+            BugWatch, BugWatch.remotebug == remote_bug
+        )
         if bug_watch_ids is not None:
             query = query.find(BugWatch.id.is_in(bug_watch_ids))
         return query
@@ -756,32 +788,46 @@ class BugWatchSet:
         bug_watch_ids = set(get_bug_watch_ids(references))
         if len(bug_watch_ids) > 0:
             bug_watches_in_database = IStore(BugWatch).find(
-                BugWatch, BugWatch.id.is_in(bug_watch_ids))
+                BugWatch, BugWatch.id.is_in(bug_watch_ids)
+            )
             bug_watches_in_database.set(
                 lastchecked=UTC_NOW,
                 last_error_type=last_error_type,
-                next_check=None)
+                next_check=None,
+            )
 
-    def bulkAddActivity(self, references,
-                        result=BugWatchActivityStatus.SYNC_SUCCEEDED,
-                        oops_id=None):
+    def bulkAddActivity(
+        self,
+        references,
+        result=BugWatchActivityStatus.SYNC_SUCCEEDED,
+        oops_id=None,
+    ):
         """See `IBugWatchSet`."""
         bulk.create(
-            (BugWatchActivity.bug_watch_id, BugWatchActivity.result,
-             BugWatchActivity.oops_id),
-            [(bug_watch_id, result,
-              None if oops_id is None else six.ensure_text(oops_id))
-             for bug_watch_id in set(get_bug_watch_ids(references))])
+            (
+                BugWatchActivity.bug_watch_id,
+                BugWatchActivity.result,
+                BugWatchActivity.oops_id,
+            ),
+            [
+                (
+                    bug_watch_id,
+                    result,
+                    None if oops_id is None else six.ensure_text(oops_id),
+                )
+                for bug_watch_id in set(get_bug_watch_ids(references))
+            ],
+        )
 
 
 @implementer(IBugWatchActivity)
 class BugWatchActivity(StormBase):
     """See `IBugWatchActivity`."""
 
-    __storm_table__ = 'BugWatchActivity'
+    __storm_table__ = "BugWatchActivity"
 
     id = Int(primary=True)
-    bug_watch_id = Int(name='bug_watch')
+    bug_watch_id = Int(name="bug_watch")
     bug_watch = Reference(bug_watch_id, BugWatch.id)
     activity_date = UtcDateTimeCol(notNull=True)
     result = DBEnum(enum=BugWatchActivityStatus, allow_none=True)

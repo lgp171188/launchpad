@@ -11,23 +11,17 @@ See README.txt for discussion
 
 from zope.formlib.exception import (
     WidgetInputErrorView as Z3WidgetInputErrorView,
-    )
-from zope.formlib.interfaces import IWidgetInputError
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+)
+from zope.interface import implementer
 from zope.schema.interfaces import ValidationError
 
+from lp.app.validators.interfaces import (
+    ILaunchpadValidationError,
+    ILaunchpadWidgetInputErrorView,
+)
 from lp.services.webapp.escaping import html_escape
 
-
-__all__ = ['LaunchpadValidationError']
-
-
-class ILaunchpadValidationError(IWidgetInputError):
-    def snippet():
-        """Render as an HTML error message, as per IWidgetInputErrorView"""
+__all__ = ["LaunchpadValidationError"]
 
 
 @implementer(ILaunchpadValidationError)
@@ -73,16 +67,6 @@ class LaunchpadValidationError(ValidationError):
         return self.snippet()
 
 
-class ILaunchpadWidgetInputErrorView(Interface):
-
-    def snippet():
-        """Convert a widget input error to an html snippet
-
-        If the error implements provides a snippet() method, just return it.
-        Otherwise, fall back to the default Z3 mechanism
-        """
-
-
 @implementer(ILaunchpadWidgetInputErrorView)
 class WidgetInputErrorView(Z3WidgetInputErrorView):
     """Display an input error as a snippet of text.
@@ -113,7 +97,8 @@ class WidgetInputErrorView(Z3WidgetInputErrorView):
         >>> print(view.snippet())
         Foo input &lt; 1
         """
-        if (hasattr(self.context, 'errors') and
-                ILaunchpadValidationError.providedBy(self.context.errors)):
+        if hasattr(
+            self.context, "errors"
+        ) and ILaunchpadValidationError.providedBy(self.context.errors):
             return self.context.errors.snippet()
         return html_escape(self.context.doc())

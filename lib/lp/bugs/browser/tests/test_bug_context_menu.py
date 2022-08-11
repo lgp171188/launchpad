@@ -10,11 +10,7 @@ from lp.bugs.enums import BugNotificationLevel
 from lp.services.features import get_relevant_feature_controller
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import (
-    feature_flags,
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, feature_flags, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -43,7 +39,7 @@ class TestBugContextMenu(TestCaseWithFactory):
             with person_logged_in(person):
                 self.bug.mute(person, person)
                 link = self.context_menu.subscription()
-                self.assertEqual('Subscribe', link.text)
+                self.assertEqual("Subscribe", link.text)
 
     def test_mute_subscription_link(self):
         # The mute_subscription() method of BugContextMenu will return a
@@ -68,11 +64,13 @@ class TestBugContextMenu(TestCaseWithFactory):
         with feature_flags():
             with person_logged_in(person):
                 self.bug.subscribe(
-                    person, person, level=BugNotificationLevel.METADATA)
+                    person, person, level=BugNotificationLevel.METADATA
+                )
                 self.bug.mute(person, person)
                 request = LaunchpadTestRequest()
                 request.features = get_relevant_feature_controller()
                 view = create_initialized_view(
-                    self.bug, name="+portlet-subscription", request=request)
+                    self.bug, name="+portlet-subscription", request=request
+                )
                 html = view.render()
         self.assertTrue('class="sprite maybe action-icon mute-help"' in html)

@@ -4,32 +4,23 @@
 """Interfaces for handling credentials for OCI registry actions."""
 
 __all__ = [
-    'IOCIRegistryCredentials',
-    'IOCIRegistryCredentialsSet',
-    'OCIRegistryCredentialsAlreadyExist',
-    'OCIRegistryCredentialsNotOwner',
-    'user_can_edit_credentials_for_owner',
-    ]
+    "IOCIRegistryCredentials",
+    "IOCIRegistryCredentialsSet",
+    "OCIRegistryCredentialsAlreadyExist",
+    "OCIRegistryCredentialsNotOwner",
+    "user_can_edit_credentials_for_owner",
+]
 
 import http.client
 
 from lazr.restful.declarations import error_status
 from zope.interface import Interface
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import Int, TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
-from lp.registry.interfaces.role import (
-    IHasOwner,
-    IPersonRoles,
-    )
-from lp.services.fields import (
-    PersonChoice,
-    URIField,
-    )
+from lp.registry.interfaces.role import IHasOwner, IPersonRoles
+from lp.services.fields import PersonChoice, URIField
 
 
 @error_status(http.client.CONFLICT)
@@ -41,7 +32,8 @@ class OCIRegistryCredentialsAlreadyExist(Exception):
     def __init__(self):
         super().__init__(
             "Credentials already exist with the same URL, username, and "
-            "region.")
+            "region."
+        )
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -60,13 +52,15 @@ class IOCIRegistryCredentialsView(Interface):
         title=_("Username"),
         description=_("The username for the credentials, if available."),
         required=True,
-        readonly=True)
+        readonly=True,
+    )
 
     region = TextLine(
         title=_("Region"),
         description=_("The registry region, if available."),
         required=False,
-        readonly=True)
+        readonly=True,
+    )
 
 
 class IOCIRegistryCredentialsEditableAttributes(IHasOwner):
@@ -75,17 +69,21 @@ class IOCIRegistryCredentialsEditableAttributes(IHasOwner):
         title=_("Owner"),
         required=True,
         vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_("The owner of these credentials. "
-                      "Only the owner is entitled to create "
-                      "push rules using them."),
-        readonly=False)
+        description=_(
+            "The owner of these credentials. "
+            "Only the owner is entitled to create "
+            "push rules using them."
+        ),
+        readonly=False,
+    )
 
     url = URIField(
-        allowed_schemes=['http', 'https'],
+        allowed_schemes=["http", "https"],
         title=_("URL"),
         description=_("The registry URL."),
         required=True,
-        readonly=False)
+        readonly=False,
+    )
 
 
 class IOCIRegistryCredentialsEdit(Interface):
@@ -100,9 +98,11 @@ class IOCIRegistryCredentialsEdit(Interface):
         """Delete these credentials."""
 
 
-class IOCIRegistryCredentials(IOCIRegistryCredentialsEdit,
-                              IOCIRegistryCredentialsEditableAttributes,
-                              IOCIRegistryCredentialsView):
+class IOCIRegistryCredentials(
+    IOCIRegistryCredentialsEdit,
+    IOCIRegistryCredentialsEditableAttributes,
+    IOCIRegistryCredentialsView,
+):
     """Credentials for pushing to an OCI registry."""
 
 

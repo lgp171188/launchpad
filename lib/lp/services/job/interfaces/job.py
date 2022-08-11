@@ -4,30 +4,18 @@
 """Interfaces including and related to IJob."""
 
 __all__ = [
-    'IJob',
-    'IJobSource',
-    'IRunnableJob',
-    'JobStatus',
-    'JobType',
-    ]
+    "IJob",
+    "IJobSource",
+    "IRunnableJob",
+    "JobStatus",
+    "JobType",
+]
 
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.fields import Reference
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
-from zope.schema import (
-    Bool,
-    Choice,
-    Datetime,
-    Int,
-    Text,
-    )
+from zope.interface import Attribute, Interface
+from zope.schema import Bool, Choice, Datetime, Int, Text
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
@@ -36,100 +24,140 @@ from lp.registry.interfaces.person import IPerson
 class JobStatus(DBEnumeratedType):
     """Values that IJob.status can take."""
 
-    WAITING = DBItem(0, """
+    WAITING = DBItem(
+        0,
+        """
         Waiting
 
         The job is waiting to be run.
-        """)
+        """,
+    )
 
-    RUNNING = DBItem(1, """
+    RUNNING = DBItem(
+        1,
+        """
         Running
 
         The job is currently running.
-        """)
+        """,
+    )
 
-    COMPLETED = DBItem(2, """
+    COMPLETED = DBItem(
+        2,
+        """
         Completed
 
         The job has run to successful completion.
-        """)
+        """,
+    )
 
-    FAILED = DBItem(3, """
+    FAILED = DBItem(
+        3,
+        """
         Failed
 
         The job was run, but failed.  Will not be run again.
-        """)
+        """,
+    )
 
-    SUSPENDED = DBItem(4, """
+    SUSPENDED = DBItem(
+        4,
+        """
         Suspended
 
         The job is suspended, so should not be run.
-        """)
+        """,
+    )
 
 
 class JobType(DBEnumeratedType):
 
-    GENERATE_PACKAGE_DIFF = DBItem(0, """
+    GENERATE_PACKAGE_DIFF = DBItem(
+        0,
+        """
         Generate Package Diff
 
         Job to generate the diff between two SourcePackageReleases.
-        """)
+        """,
+    )
 
-    UPLOAD_PACKAGE_TRANSLATIONS = DBItem(1, """
+    UPLOAD_PACKAGE_TRANSLATIONS = DBItem(
+        1,
+        """
         Upload Package Translations
 
         Job to upload package translations files and attach them to a
         SourcePackageRelease.
-        """)
+        """,
+    )
 
 
 class IJob(Interface):
     """Basic attributes of a job."""
 
-    job_id = Int(title=_(
-        'A unique identifier for this job.'))
+    job_id = Int(title=_("A unique identifier for this job."))
 
     scheduled_start = Datetime(
-        title=_('Time when the IJob was scheduled to start.'))
+        title=_("Time when the IJob was scheduled to start.")
+    )
 
-    date_created = Datetime(title=_('Time when the IJob was created.'))
+    date_created = Datetime(title=_("Time when the IJob was created."))
 
-    date_started = Datetime(title=_('Time when the IJob started.'))
+    date_started = Datetime(title=_("Time when the IJob started."))
 
-    date_finished = Datetime(title=_('Time when the IJob ended.'))
+    date_finished = Datetime(title=_("Time when the IJob ended."))
 
-    lease_expires = Datetime(title=_('Time when the lease expires.'))
+    lease_expires = Datetime(title=_("Time when the lease expires."))
 
-    log = Text(title=_('The log of the job.'))
+    log = Text(title=_("The log of the job."))
 
     status = Choice(
-        vocabulary=JobStatus, readonly=True,
-        description=_("The current state of the job."))
+        vocabulary=JobStatus,
+        readonly=True,
+        description=_("The current state of the job."),
+    )
 
-    attempt_count = Int(title=_(
-        'The number of attempts to perform this job that have been made.'))
+    attempt_count = Int(
+        title=_(
+            "The number of attempts to perform this job that have been made."
+        )
+    )
 
-    max_retries = Int(title=_(
-        'The number of retries permitted before this job permanently fails.'))
+    max_retries = Int(
+        title=_(
+            "The number of retries permitted before this job permanently "
+            "fails."
+        )
+    )
 
     requester = Reference(
-        IPerson, title=_("The person who requested the job"),
-        required=False, readonly=True
-        )
+        IPerson,
+        title=_("The person who requested the job"),
+        required=False,
+        readonly=True,
+    )
 
     is_pending = Bool(
-        title=_("Whether or not this job's status is such that it "
-                "could eventually complete."))
+        title=_(
+            "Whether or not this job's status is such that it "
+            "could eventually complete."
+        )
+    )
 
     is_runnable = Bool(
-        title=_("Whether or not this job is ready to be run immediately."))
+        title=_("Whether or not this job is ready to be run immediately.")
+    )
 
     base_json_data = Attribute("A dict of data about the job.")
 
     base_job_type = Choice(
-        vocabulary=JobType, readonly=True,
-        description=_("What type of job this is, only used for jobs that "
-            "do not have their own tables."))
+        vocabulary=JobType,
+        readonly=True,
+        description=_(
+            "What type of job this is, only used for jobs that "
+            "do not have their own tables."
+        ),
+    )
 
     def acquireLease(duration=300):
         """Acquire the lease for this Job, or raise LeaseHeld."""
@@ -186,17 +214,20 @@ class IRunnableJob(IJob):
         """
 
     user_error_types = Attribute(
-        'A tuple of exception classes which result from user error.')
+        "A tuple of exception classes which result from user error."
+    )
 
     retry_error_types = Attribute(
-        'A tuple of exception classes which should cause a retry.')
+        "A tuple of exception classes which should cause a retry."
+    )
 
     # If implemented, this must not be an instance method of a job, as that
     # will create an uncollectable reference cycle via the timeline.
     timeline_detail_filter = Attribute(
-        'An optional (category, detail) -> detail callable to filter '
-        'timeline action details.  This may be used when some details are '
-        'expected to be very large.')
+        "An optional (category, detail) -> detail callable to filter "
+        "timeline action details.  This may be used when some details are "
+        "expected to be very large."
+    )
 
     def notifyUserError(e):
         """Notify interested parties that this job encountered a user error.
@@ -215,7 +246,8 @@ class IJobSource(Interface):
     """Interface for creating and getting jobs."""
 
     memory_limit = Int(
-        title=_('Maximum amount of memory which may be used by the process.'))
+        title=_("Maximum amount of memory which may be used by the process.")
+    )
 
     def iterReady():
         """Iterate through all jobs."""

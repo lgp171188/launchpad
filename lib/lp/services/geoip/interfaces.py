@@ -3,12 +3,11 @@
 
 from zope.interface import Interface
 
-
 __all__ = [
-    'IGeoIP',
-    'IRequestLocalLanguages',
-    'IRequestPreferredLanguages',
-    ]
+    "IGeoIP",
+    "IRequestLocalLanguages",
+    "IRequestPreferredLanguages",
+]
 
 
 class IGeoIP(Interface):
@@ -26,7 +25,6 @@ class IGeoIP(Interface):
 
 
 class IRequestLocalLanguages(Interface):
-
     def getLocalLanguages():
         """Return a list of the Language objects which represent languages
         spoken in the country from which that IP address is likely to be
@@ -34,7 +32,6 @@ class IRequestLocalLanguages(Interface):
 
 
 class IRequestPreferredLanguages(Interface):
-
     def getPreferredLanguages():
         """Return a list of the Language objects which represent languages
         listed in the HTTP_ACCEPT_LANGUAGE header."""

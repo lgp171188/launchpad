@@ -4,21 +4,15 @@
 import doctest
 import unittest
 
-from zope.formlib.interfaces import (
-    IDisplayWidget,
-    IInputWidget,
-    )
-from zope.interface import (
-    directlyProvides,
-    implementer,
-    )
+from zope.formlib.interfaces import IDisplayWidget, IInputWidget
+from zope.interface import directlyProvides, implementer
 
 from lp.app.browser.launchpadform import LaunchpadFormView
 from lp.services.webapp.interfaces import (
     ICheckBoxWidgetLayout,
     IMultiLineWidgetLayout,
     ISingleLineWidgetLayout,
-    )
+)
 from lp.testing.layers import FunctionalLayer
 
 
@@ -38,7 +32,7 @@ class LaunchpadFormTest(unittest.TestCase):
             pass
 
         widget = FakeWidget()
-        form.widgets = {'widget': widget}
+        form.widgets = {"widget": widget}
         # test every combination of the three interfaces:
         for use_single_line in [False, True]:
             for use_multi_line in [False, True]:
@@ -54,16 +48,19 @@ class LaunchpadFormTest(unittest.TestCase):
 
                     # Now count how many of the is* functions return True:
                     count = 0
-                    if form.isSingleLineLayout('widget'):
+                    if form.isSingleLineLayout("widget"):
                         count += 1
-                    if form.isMultiLineLayout('widget'):
+                    if form.isMultiLineLayout("widget"):
                         count += 1
-                    if form.isCheckBoxLayout('widget'):
+                    if form.isCheckBoxLayout("widget"):
                         count += 1
 
-                    self.assertEqual(count, 1,
-                                     'Expected count of 1 for %r.  Got %d'
-                                     % (provides, count))
+                    self.assertEqual(
+                        count,
+                        1,
+                        "Expected count of 1 for %r.  Got %d"
+                        % (provides, count),
+                    )
 
     def test_showOptionalMarker(self):
         """Verify a field marked .for_display has no (Optional) marker."""
@@ -75,11 +72,11 @@ class LaunchpadFormTest(unittest.TestCase):
             def __init__(self, required):
                 self.required = required
 
-        form.widgets = {'widget': FakeInputWidget(required=False)}
-        self.assertTrue(form.showOptionalMarker('widget'))
+        form.widgets = {"widget": FakeInputWidget(required=False)}
+        self.assertTrue(form.showOptionalMarker("widget"))
         # Required IInputWidgets have no (Optional) marker.
-        form.widgets = {'widget': FakeInputWidget(required=True)}
-        self.assertFalse(form.showOptionalMarker('widget'))
+        form.widgets = {"widget": FakeInputWidget(required=True)}
+        self.assertFalse(form.showOptionalMarker("widget"))
 
         # IDisplayWidgets have no (Optional) marker, regardless of whether
         # they are required or not, since they are read only.
@@ -88,10 +85,10 @@ class LaunchpadFormTest(unittest.TestCase):
             def __init__(self, required):
                 self.required = required
 
-        form.widgets = {'widget': FakeDisplayWidget(required=False)}
-        self.assertFalse(form.showOptionalMarker('widget'))
-        form.widgets = {'widget': FakeDisplayWidget(required=True)}
-        self.assertFalse(form.showOptionalMarker('widget'))
+        form.widgets = {"widget": FakeDisplayWidget(required=False)}
+        self.assertFalse(form.showOptionalMarker("widget"))
+        form.widgets = {"widget": FakeDisplayWidget(required=True)}
+        self.assertFalse(form.showOptionalMarker("widget"))
 
 
 def doctest_custom_widget_with_setUpFields_override():
@@ -139,7 +136,9 @@ def doctest_custom_widget_with_setUpFields_override():
 
 
 def test_suite():
-    return unittest.TestSuite((
-        unittest.TestLoader().loadTestsFromName(__name__),
-        doctest.DocTestSuite()
-        ))
+    return unittest.TestSuite(
+        (
+            unittest.TestLoader().loadTestsFromName(__name__),
+            doctest.DocTestSuite(),
+        )
+    )

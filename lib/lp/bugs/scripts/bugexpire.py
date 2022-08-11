@@ -3,7 +3,7 @@
 
 """BugTask expiration rules."""
 
-__all__ = ['BugJanitor']
+__all__ = ["BugJanitor"]
 
 
 from logging import getLogger
@@ -11,15 +11,9 @@ from logging import getLogger
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTaskSet,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus, IBugTaskSet
 from lp.services.config import config
-from lp.services.webapp.interaction import (
-    endInteraction,
-    setupInteraction,
-    )
+from lp.services.webapp.interaction import endInteraction, setupInteraction
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.snapshot import notify_modified
 
@@ -31,8 +25,9 @@ class BugJanitor:
     must use Malone for bug tracking.
     """
 
-    def __init__(self, days_before_expiration=None, log=None, target=None,
-                 limit=None):
+    def __init__(
+        self, days_before_expiration=None, log=None, target=None, limit=None
+    ):
         """Create a new BugJanitor.
 
         :days_before_expiration: Days of inactivity before a question is
@@ -44,7 +39,7 @@ class BugJanitor:
         """
 
         if days_before_expiration is None:
-            days_before_expiration = (config.malone.days_before_expiration)
+            days_before_expiration = config.malone.days_before_expiration
 
         if log is None:
             log = getLogger()
@@ -62,46 +57,56 @@ class BugJanitor:
         will login as the bug_watch_updater celebrity and logout after the
         expiration is done.
         """
-        message_template = ('[Expired for %s because there has been no '
-            'activity for %d days.]')
+        message_template = (
+            "[Expired for %s because there has been no "
+            "activity for %d days.]"
+        )
         self.log.info(
-            'Expiring unattended, INCOMPLETE bugtasks older than '
-            '%d days for projects that use Launchpad Bugs.' %
-            self.days_before_expiration)
+            "Expiring unattended, INCOMPLETE bugtasks older than "
+            "%d days for projects that use Launchpad Bugs."
+            % self.days_before_expiration
+        )
         self._login()
         try:
             expired_count = 0
             bugtask_set = getUtility(IBugTaskSet)
             incomplete_bugtasks = bugtask_set.findExpirableBugTasks(
-                self.days_before_expiration, user=self.janitor,
-                target=self.target, limit=self.limit)
+                self.days_before_expiration,
+                user=self.janitor,
+                target=self.target,
+                limit=self.limit,
+            )
             self.log.info(
-                'Found %d bugtasks to expire.' % incomplete_bugtasks.count())
+                "Found %d bugtasks to expire." % incomplete_bugtasks.count()
+            )
             for bugtask in incomplete_bugtasks:
                 # We don't expire bugtasks with conjoined primaries.
                 if bugtask.conjoined_primary:
                     continue
 
-                with notify_modified(bugtask, ['status'], user=self.janitor):
+                with notify_modified(bugtask, ["status"], user=self.janitor):
                     bugtask.transitionToStatus(
-                        BugTaskStatus.EXPIRED, self.janitor)
+                        BugTaskStatus.EXPIRED, self.janitor
+                    )
                     content = message_template % (
                         bugtask.bugtargetdisplayname,
-                        self.days_before_expiration)
+                        self.days_before_expiration,
+                    )
                     bugtask.bug.newMessage(
                         owner=self.janitor,
                         subject=bugtask.bug.followup_subject(),
-                        content=content)
+                        content=content,
+                    )
                 # We commit after each expiration because emails are sent
                 # immediately in zopeless. This minimize the risk of
                 # duplicate expiration emails being sent in case an error
                 # occurs later on.
                 transaction_manager.commit()
                 expired_count += 1
-            self.log.info('Expired %d bugtasks.' % expired_count)
+            self.log.info("Expired %d bugtasks." % expired_count)
         finally:
             self._logout()
-        self.log.info('Finished expiration run.')
+        self.log.info("Finished expiration run.")
 
     def _login(self):
         """Setup an interaction as the bug janitor.
@@ -112,7 +117,8 @@ class BugJanitor:
         janitor_email = self.janitor.preferredemail.email
         setupInteraction(
             auth_utility.getPrincipalByLogin(janitor_email),
-            login=janitor_email)
+            login=janitor_email,
+        )
 
     def _logout(self):
         """End the bug janitor interaction."""

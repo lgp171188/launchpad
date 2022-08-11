@@ -10,6 +10,8 @@
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
+
+    <authorizations module=".security" />
     <include
         package=".browser"/>
     <include
@@ -350,9 +352,9 @@
         <require
             permission="launchpad.Edit"
             interface="lp.soyuz.interfaces.archive.IArchiveEdit"
-            set_attributes="build_debug_symbols description displayname
-                            publish publish_debug_symbols status
-                            suppress_subscription_notifications"/>
+            set_attributes="api_publish build_debug_symbols description
+                            displayname publish publish_debug_symbols
+                            status suppress_subscription_notifications"/>
         <require
             permission="launchpad.Delete"
             interface="lp.soyuz.interfaces.archive.IArchiveDelete"/>
@@ -433,19 +435,30 @@
     <class class="lp.soyuz.model.archivejob.ArchiveJob">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
     </class>
-    <class class="lp.soyuz.model.archivejob.PackageUploadNotificationJob">
-        <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
-        <allow interface="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJob"/>
-    </class>
     <securedutility
         component="lp.soyuz.model.archivejob.ArchiveJob"
         provides="lp.soyuz.interfaces.archivejob.IArchiveJobSource">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJobSource"/>
     </securedutility>
+
+    <class class="lp.soyuz.model.archivejob.PackageUploadNotificationJob">
+        <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
+        <allow interface="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJob"/>
+    </class>
     <securedutility
         component="lp.soyuz.model.archivejob.PackageUploadNotificationJob"
         provides="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJobSource">
         <allow interface="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJobSource"/>
+    </securedutility>
+
+    <class class="lp.soyuz.model.archivejob.CIBuildUploadJob">
+        <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
+        <allow interface="lp.soyuz.interfaces.archivejob.ICIBuildUploadJob"/>
+    </class>
+    <securedutility
+        component="lp.soyuz.model.archivejob.CIBuildUploadJob"
+        provides="lp.soyuz.interfaces.archivejob.ICIBuildUploadJobSource">
+        <allow interface="lp.soyuz.interfaces.archivejob.ICIBuildUploadJobSource"/>
     </securedutility>
 
     <!-- ArchivePermission -->

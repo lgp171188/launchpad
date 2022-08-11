@@ -4,10 +4,10 @@
 """Base class view for snap listings."""
 
 __all__ = [
-    'BranchSnapListingView',
-    'GitSnapListingView',
-    'PersonSnapListingView',
-    ]
+    "BranchSnapListingView",
+    "GitSnapListingView",
+    "PersonSnapListingView",
+]
 
 from functools import partial
 
@@ -31,19 +31,22 @@ class SnapListingView(LaunchpadView, FeedsMixin):
 
     @property
     def page_title(self):
-        return 'Snap packages'
+        return "Snap packages"
 
     @property
     def label(self):
-        return 'Snap packages for %(displayname)s' % {
-            'displayname': self.context.displayname}
+        return "Snap packages for %(displayname)s" % {
+            "displayname": self.context.displayname
+        }
 
     def initialize(self):
         super().initialize()
         snaps = getUtility(ISnapSet).findByContext(
-            self.context, visible_by_user=self.user)
+            self.context, visible_by_user=self.user
+        )
         loader = partial(
-            getUtility(ISnapSet).preloadDataForSnaps, user=self.user)
+            getUtility(ISnapSet).preloadDataForSnaps, user=self.user
+        )
         self.snaps = DecoratedResultSet(snaps, pre_iter_hook=loader)
 
     @cachedproperty
@@ -69,8 +72,9 @@ class GitSnapListingView(SnapListingView):
 
     @property
     def label(self):
-        return 'Snap packages for %(display_name)s' % {
-            'display_name': self.context.display_name}
+        return "Snap packages for %(display_name)s" % {
+            "display_name": self.context.display_name
+        }
 
 
 class PersonSnapListingView(SnapListingView):

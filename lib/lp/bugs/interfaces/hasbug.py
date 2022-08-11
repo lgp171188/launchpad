@@ -4,8 +4,8 @@
 """Interfaces related to bugs."""
 
 __all__ = [
-    'IHasBug',
-    ]
+    "IHasBug",
+]
 
 
 from zope.interface import Interface

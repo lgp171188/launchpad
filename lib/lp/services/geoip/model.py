@@ -2,10 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'GeoIP',
-    'RequestLocalLanguages',
-    'RequestPreferredLanguages',
-    ]
+    "GeoIP",
+    "RequestLocalLanguages",
+    "RequestPreferredLanguages",
+]
 
 import os
 
@@ -19,12 +19,12 @@ from lp.services.config import config
 from lp.services.geoip.helpers import (
     ipaddress_from_request,
     ipaddress_is_global,
-    )
+)
 from lp.services.geoip.interfaces import (
     IGeoIP,
     IRequestLocalLanguages,
     IRequestPreferredLanguages,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.services.worlddata.interfaces.language import ILanguageSet
@@ -44,8 +44,9 @@ class GeoIP:
             return None
         if not os.path.exists(config.launchpad.geoip_database):
             raise NonexistentGeoIPDatabase(
-                "The configured GeoIP DB (%s) does not exist." %
-                config.launchpad.geoip_database)
+                "The configured GeoIP DB (%s) does not exist."
+                % config.launchpad.geoip_database
+            )
         return Reader(config.launchpad.geoip_database)
 
     def getCountryCodeByAddr(self, ip_address):
@@ -78,7 +79,6 @@ class GeoIP:
 
 @implementer(IRequestLocalLanguages)
 class RequestLocalLanguages:
-
     def __init__(self, request):
         self.request = request
 
@@ -88,20 +88,20 @@ class RequestLocalLanguages:
         if ip_addr is None:
             # this happens during page testing, when the REMOTE_ADDR is not
             # set by Zope
-            ip_addr = '127.0.0.1'
+            ip_addr = "127.0.0.1"
         gi = getUtility(IGeoIP)
         country = gi.getCountryByAddr(ip_addr)
-        if country in [None, 'A0', 'A1', 'A2']:
+        if country in [None, "A0", "A1", "A2"]:
             return []
 
         languages = [
-            language for language in country.languages if language.visible]
+            language for language in country.languages if language.visible
+        ]
         return sorted(languages, key=lambda x: x.englishname)
 
 
 @implementer(IRequestPreferredLanguages)
 class RequestPreferredLanguages:
-
     def __init__(self, request):
         self.request = request
 
@@ -116,13 +116,13 @@ class RequestPreferredLanguages:
             # Language tags are restricted to ASCII (see RFC 5646).
             if isinstance(code, bytes):
                 try:
-                    code = code.decode('ASCII')
+                    code = code.decode("ASCII")
                 except UnicodeDecodeError:
                     # skip language codes that can't be represented in ASCII
                     continue
             else:
                 try:
-                    code.encode('ASCII')
+                    code.encode("ASCII")
                 except UnicodeEncodeError:
                     # skip language codes that can't be represented in ASCII
                     continue

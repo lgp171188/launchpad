@@ -7,48 +7,38 @@ __all__ = []
 
 from textwrap import dedent
 
-from lazr.restful.interfaces import IWebServiceConfiguration
 import psycopg2
+import transaction
+from lazr.restful.interfaces import IWebServiceConfiguration
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from storm.exceptions import DisconnectionError
-import transaction
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getAdapter, getUtility
 from zope.publisher.interfaces.xmlrpc import IXMLRPCRequest
-from zope.security.management import (
-    endInteraction,
-    newInteraction,
-    )
-from zope.session.interfaces import ISession
+from zope.security.management import endInteraction, newInteraction
 
-from lp.layers import (
-    FeedsLayer,
-    setFirstLayer,
-    WebServiceLayer,
-    )
+from lp.layers import FeedsLayer, WebServiceLayer, setFirstLayer
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.interfaces import (
     ALL_STORES,
     DEFAULT_FLAVOR,
+    MAIN_STORE,
+    PRIMARY_FLAVOR,
+    STANDBY_FLAVOR,
     DisallowedStore,
     IDatabasePolicy,
     IMasterStore,
     IStandbyStore,
     IStoreSelector,
-    MAIN_STORE,
-    PRIMARY_FLAVOR,
-    STANDBY_FLAVOR,
-    )
+)
 from lp.services.database.policy import (
     BaseDatabasePolicy,
     LaunchpadDatabasePolicy,
     PrimaryDatabasePolicy,
     StandbyDatabasePolicy,
     StandbyOnlyDatabasePolicy,
-    )
+)
+from lp.services.webapp.interfaces import ISession
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
 from lp.testing.fixture import PGBouncerFixture
@@ -56,27 +46,28 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     DatabaseLayer,
     FunctionalLayer,
-    )
+)
 
 
 class ImplicitDatabasePolicyTestCase(TestCase):
     """Tests for when there is no policy installed."""
+
     layer = DatabaseFunctionalLayer
 
     def test_defaults(self):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, DEFAULT_FLAVOR),
-                IMasterStore)
+                IMasterStore,
+            )
 
     def test_dbusers(self):
         store_selector = getUtility(IStoreSelector)
         main_store = store_selector.get(MAIN_STORE, DEFAULT_FLAVOR)
-        self.assertEqual(self.getDBUser(main_store), 'launchpad_main')
+        self.assertEqual(self.getDBUser(main_store), "launchpad_main")
 
     def getDBUser(self, store):
-        return store.execute(
-            'SHOW session_authorization').get_one()[0]
+        return store.execute("SHOW session_authorization").get_one()[0]
 
 
 class BaseDatabasePolicyTestCase(ImplicitDatabasePolicyTestCase):
@@ -110,13 +101,15 @@ class StandbyDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, DEFAULT_FLAVOR),
-                IStandbyStore)
+                IStandbyStore,
+            )
 
     def test_primary_allowed(self):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, PRIMARY_FLAVOR),
-                IMasterStore)
+                IMasterStore,
+            )
 
 
 class StandbyOnlyDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
@@ -130,7 +123,10 @@ class StandbyOnlyDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
         for store in ALL_STORES:
             self.assertRaises(
                 DisallowedStore,
-                getUtility(IStoreSelector).get, store, PRIMARY_FLAVOR)
+                getUtility(IStoreSelector).get,
+                store,
+                PRIMARY_FLAVOR,
+            )
 
 
 class PrimaryDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
@@ -145,19 +141,22 @@ class PrimaryDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         use POST and do not support session cookies.
         """
         request = LaunchpadTestRequest(
-            SERVER_URL='http://xmlrpc-private.launchpad.test')
+            SERVER_URL="http://xmlrpc-private.launchpad.test"
+        )
         setFirstLayer(request, IXMLRPCRequest)
         policy = getAdapter(request, IDatabasePolicy)
         self.assertTrue(
             isinstance(policy, PrimaryDatabasePolicy),
-            "Expected PrimaryDatabasePolicy, not %s." % policy)
+            "Expected PrimaryDatabasePolicy, not %s." % policy,
+        )
 
     def test_standby_allowed(self):
         # We get the primary store even if the standby was requested.
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, STANDBY_FLAVOR),
-                IStandbyStore)
+                IStandbyStore,
+            )
 
 
 class LaunchpadDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
@@ -168,7 +167,7 @@ class LaunchpadDatabasePolicyTestCase(StandbyDatabasePolicyTestCase):
     """
 
     def setUp(self):
-        request = LaunchpadTestRequest(SERVER_URL='http://launchpad.test')
+        request = LaunchpadTestRequest(SERVER_URL="http://launchpad.test")
         self.policy = LaunchpadDatabasePolicy(request)
         super().setUp()
 
@@ -182,7 +181,8 @@ class LayerDatabasePolicyTestCase(TestCase):
         over them.
         """
         request = LaunchpadTestRequest(
-            SERVER_URL='http://feeds.launchpad.test')
+            SERVER_URL="http://feeds.launchpad.test"
+        )
         setFirstLayer(request, FeedsLayer)
         policy = IDatabasePolicy(request)
         self.assertIsInstance(policy, StandbyOnlyDatabasePolicy)
@@ -195,9 +195,8 @@ class LayerDatabasePolicyTestCase(TestCase):
         XXX 20090320 Stuart Bishop bug=297052: This doesn't scale of course
             and will meltdown when the API becomes popular.
         """
-        api_prefix = getUtility(
-            IWebServiceConfiguration).active_versions[0]
-        server_url = 'http://api.launchpad.test/%s' % api_prefix
+        api_prefix = getUtility(IWebServiceConfiguration).active_versions[0]
+        server_url = "http://api.launchpad.test/%s" % api_prefix
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         setFirstLayer(request, WebServiceLayer)
         policy = IDatabasePolicy(request)
@@ -208,14 +207,13 @@ class LayerDatabasePolicyTestCase(TestCase):
         standard LaunchpadDatabasePolicy so their database queries
         can be outsourced to a standby database when possible.
         """
-        api_prefix = getUtility(
-            IWebServiceConfiguration).active_versions[0]
-        server_url = 'http://api.launchpad.test/%s' % api_prefix
+        api_prefix = getUtility(IWebServiceConfiguration).active_versions[0]
+        server_url = "http://api.launchpad.test/%s" % api_prefix
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         newInteraction(request)
         try:
             # First, generate a valid session cookie.
-            ISession(request)['whatever']['whatever'] = 'whatever'
+            ISession(request)["whatever"]["whatever"] = "whatever"
             # Then stuff it into the request where we expect to
             # find it. The database policy is only interested if
             # a session cookie was sent with the request, not it
@@ -229,7 +227,7 @@ class LayerDatabasePolicyTestCase(TestCase):
 
     def test_other_request_uses_LaunchpadDatabasePolicy(self):
         """By default, requests should use the LaunchpadDatabasePolicy."""
-        server_url = 'http://launchpad.test/'
+        server_url = "http://launchpad.test/"
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         policy = IDatabasePolicy(request)
         self.assertIsInstance(policy, LaunchpadDatabasePolicy)
@@ -250,23 +248,28 @@ class PrimaryFallbackTestCase(TestCase):
         # Pull the direct db connection string, including explicit port.
         conn_str_direct = self.pgbouncer_fixture.databases[dbname]
         # Generate a db connection string that will go via pgbouncer.
-        conn_str_pgbouncer = 'dbname=%s host=localhost' % dbname
+        conn_str_pgbouncer = "dbname=%s host=localhost" % dbname
 
         # Configure standby connections via pgbouncer, so we can shut them
         # down. Primary connections direct so they are unaffected.
-        config_key = 'primary-standby-separation'
-        config.push(config_key, dedent('''\
+        config_key = "primary-standby-separation"
+        config.push(
+            config_key,
+            dedent(
+                """\
             [database]
             rw_main_primary: %s
             rw_main_standby: %s
-            ''' % (conn_str_direct, conn_str_pgbouncer)))
+            """
+                % (conn_str_direct, conn_str_pgbouncer)
+            ),
+        )
         self.addCleanup(lambda: config.pop(config_key))
 
         self.useFixture(self.pgbouncer_fixture)
 
     def test_can_shutdown_standby_only(self):
-        '''Confirm that this TestCase's test infrastructure works as needed.
-        '''
+        """Confirm that this TestCase's test infrastructure works as needed."""
         master_store = IMasterStore(Person)
         standby_store = IStandbyStore(Person)
 
@@ -281,7 +284,7 @@ class PrimaryFallbackTestCase(TestCase):
         self.assertRaises(DisconnectionError, standby_store.get, Person, 2)
 
     def test_startup_with_no_standby(self):
-        '''An attempt is made for the first time to connect to a standby.'''
+        """An attempt is made for the first time to connect to a standby."""
         self.pgbouncer_fixture.stop()
 
         master_store = IMasterStore(Person)
@@ -291,7 +294,7 @@ class PrimaryFallbackTestCase(TestCase):
         self.assertIs(master_store, standby_store)
 
     def test_standby_shutdown_during_transaction(self):
-        '''Standby is shutdown while running, but we can recover.'''
+        """Standby is shutdown while running, but we can recover."""
         master_store = IMasterStore(Person)
         standby_store = IStandbyStore(Person)
 
@@ -314,7 +317,7 @@ class PrimaryFallbackTestCase(TestCase):
         self.assertIs(master_store, standby_store)
 
     def test_standby_shutdown_between_transactions(self):
-        '''Standby is shutdown in between transactions.'''
+        """Standby is shutdown in between transactions."""
         master_store = IMasterStore(Person)
         standby_store = IStandbyStore(Person)
         self.assertIsNot(master_store, standby_store)
@@ -337,7 +340,7 @@ class PrimaryFallbackTestCase(TestCase):
         self.assertIs(master_store, standby_store)
 
     def test_standby_reconnect_after_outage(self):
-        '''The standby is again used once it becomes available.'''
+        """The standby is again used once it becomes available."""
         self.pgbouncer_fixture.stop()
 
         master_store = IMasterStore(Person)
@@ -359,26 +362,34 @@ class TestFastDowntimeRollout(TestCase):
         super().setUp()
 
         self.primary_dbname = DatabaseLayer._db_fixture.dbname
-        self.standby_dbname = self.primary_dbname + '_standby'
+        self.standby_dbname = self.primary_dbname + "_standby"
 
         self.pgbouncer_fixture = PGBouncerFixture()
-        self.pgbouncer_fixture.databases[self.standby_dbname] = (
-            self.pgbouncer_fixture.databases[self.primary_dbname])
+        self.pgbouncer_fixture.databases[
+            self.standby_dbname
+        ] = self.pgbouncer_fixture.databases[self.primary_dbname]
 
         # Configure primary and standby connections to go via different
         # pgbouncer aliases.
-        config_key = 'primary-standby-separation'
-        config.push(config_key, dedent('''\
+        config_key = "primary-standby-separation"
+        config.push(
+            config_key,
+            dedent(
+                """\
             [database]
             rw_main_primary: dbname=%s host=localhost
             rw_main_standby: dbname=%s host=localhost
-            ''' % (self.primary_dbname, self.standby_dbname)))
+            """
+                % (self.primary_dbname, self.standby_dbname)
+            ),
+        )
         self.addCleanup(lambda: config.pop(config_key))
 
         self.useFixture(self.pgbouncer_fixture)
 
         self.pgbouncer_con = psycopg2.connect(
-            'dbname=pgbouncer user=pgbouncer host=localhost')
+            "dbname=pgbouncer user=pgbouncer host=localhost"
+        )
         self.pgbouncer_con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         self.pgbouncer_cur = self.pgbouncer_con.cursor()
 
@@ -386,20 +397,19 @@ class TestFastDowntimeRollout(TestCase):
 
     def store_is_working(self, store):
         try:
-            store.execute('SELECT TRUE')
+            store.execute("SELECT TRUE")
             return True
         except DisconnectionError:
             return False
 
     def store_is_standby(self, store):
-        return store.get_database().name == 'main-standby'
+        return store.get_database().name == "main-standby"
 
     def store_is_primary(self, store):
         return not self.store_is_standby(store)
 
     def test_standby_only_fast_downtime_rollout(self):
-        '''You can always access a working standby store during fast downtime.
-        '''
+        """You can always access a working standby during fast downtime."""
         # Everything is running happily.
         store = IStandbyStore(Person)
         original_store = store
@@ -413,25 +423,25 @@ class TestFastDowntimeRollout(TestCase):
 
         # All connections to the primary are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute("DISABLE %s" % self.primary_dbname)
+        self.pgbouncer_cur.execute("KILL %s" % self.primary_dbname)
 
         # Of course, standby connections are unaffected.
         self.assertTrue(self.store_is_working(store))
 
         # After schema updates have been made to the primary, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute("RESUME %s" % self.primary_dbname)
+        self.pgbouncer_cur.execute("ENABLE %s" % self.primary_dbname)
 
         # And the standbys taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute("DISABLE %s" % self.standby_dbname)
+        self.pgbouncer_cur.execute("KILL %s" % self.standby_dbname)
 
         # The next attempt at accessing the standby store will fail
         # with a DisconnectionError.
-        self.assertRaises(DisconnectionError, store.execute, 'SELECT TRUE')
+        self.assertRaises(DisconnectionError, store.execute, "SELECT TRUE")
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
@@ -460,8 +470,8 @@ class TestFastDowntimeRollout(TestCase):
         transaction.abort()
 
         # Once replication has caught up, the standby is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute("RESUME %s" % self.standby_dbname)
+        self.pgbouncer_cur.execute("ENABLE %s" % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         store = IStandbyStore(Person)
@@ -470,8 +480,7 @@ class TestFastDowntimeRollout(TestCase):
         self.assertIs(original_store, store)
 
     def test_primary_standby_fast_downtime_rollout(self):
-        '''Parts of your app can keep working during a fast downtime update.
-        '''
+        """Parts of your app can keep working during a fast downtime update."""
         # Everything is running happily.
         master_store = IMasterStore(Person)
         self.assertTrue(self.store_is_primary(master_store))
@@ -488,8 +497,8 @@ class TestFastDowntimeRollout(TestCase):
 
         # All connections to the primary are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.primary_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute("DISABLE %s" % self.primary_dbname)
+        self.pgbouncer_cur.execute("KILL %s" % self.primary_dbname)
 
         # Of course, standby connections are unaffected.
         self.assertTrue(self.store_is_working(standby_store))
@@ -500,13 +509,13 @@ class TestFastDowntimeRollout(TestCase):
 
         # After schema updates have been made to the primary, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.primary_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.primary_dbname)
+        self.pgbouncer_cur.execute("RESUME %s" % self.primary_dbname)
+        self.pgbouncer_cur.execute("ENABLE %s" % self.primary_dbname)
 
         # And the standbys taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.standby_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute("DISABLE %s" % self.standby_dbname)
+        self.pgbouncer_cur.execute("KILL %s" % self.standby_dbname)
 
         # The primary store is working again.
         master_store = IMasterStore(Person)
@@ -518,7 +527,8 @@ class TestFastDowntimeRollout(TestCase):
         standby_store = IStandbyStore(Person)
         self.assertTrue(self.store_is_standby(standby_store))
         self.assertRaises(
-            DisconnectionError, standby_store.execute, 'SELECT TRUE')
+            DisconnectionError, standby_store.execute, "SELECT TRUE"
+        )
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
@@ -529,8 +539,8 @@ class TestFastDowntimeRollout(TestCase):
         self.assertTrue(self.store_is_working(standby_store))
 
         # Once replication has caught up, the standby is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.standby_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.standby_dbname)
+        self.pgbouncer_cur.execute("RESUME %s" % self.standby_dbname)
+        self.pgbouncer_cur.execute("ENABLE %s" % self.standby_dbname)
 
         # And next transaction, we are back to normal.
         transaction.abort()

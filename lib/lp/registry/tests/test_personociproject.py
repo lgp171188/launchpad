@@ -25,7 +25,9 @@ class TestPersonOCIProject(TestCaseWithFactory):
         # The canonical_url of a person OCIProject is
         # ~person/pillar/+oci/ociprojectname.
         pocip = self._makePersonOCIProject()
-        expected = 'http://launchpad.test/~%s/%s/+oci/%s' % (
-            pocip.person.name, pocip.oci_project.pillar.name,
-            pocip.oci_project.name)
+        expected = "http://launchpad.test/~%s/%s/+oci/%s" % (
+            pocip.person.name,
+            pocip.oci_project.pillar.name,
+            pocip.oci_project.name,
+        )
         self.assertEqual(expected, canonical_url(pocip))

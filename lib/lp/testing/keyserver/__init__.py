@@ -2,9 +2,9 @@
 # Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'InProcessKeyServerFixture',
-    'KeyServerTac',
-    ]
+    "InProcessKeyServerFixture",
+    "KeyServerTac",
+]
 
 from lp.testing.keyserver.harness import KeyServerTac
 from lp.testing.keyserver.inprocess import InProcessKeyServerFixture

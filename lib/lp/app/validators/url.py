@@ -2,12 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'builder_url_validator',
-    'valid_absolute_url',
-    'valid_builder_url',
-    'valid_webref',
-    'validate_url',
-    ]
+    "builder_url_validator",
+    "valid_absolute_url",
+    "valid_builder_url",
+    "valid_webref",
+    "validate_url",
+]
 
 from textwrap import dedent
 from urllib.parse import urlsplit
@@ -73,11 +73,11 @@ def valid_builder_url(url):
         (scheme, netloc, path, params, query, fragment) = urlparse(url)
     except UnicodeEncodeError:
         return False
-    if scheme != 'http':
+    if scheme != "http":
         return False
     if params or query or fragment:
         return False
-    if path and path != '/':
+    if path and path != "/":
         return False
     return True
 
@@ -85,10 +85,17 @@ def valid_builder_url(url):
 def builder_url_validator(url):
     """Return True if the url is valid, or raise a LaunchpadValidationError"""
     if not valid_builder_url(url):
-        raise LaunchpadValidationError(_(dedent("""
+        raise LaunchpadValidationError(
+            _(
+                dedent(
+                    """
             Invalid builder url '${url}'. Builder urls must be
             http://host/ or http://host:port/ only.
-            """), mapping={'url': url}))
+            """
+                ),
+                mapping={"url": url},
+            )
+        )
     return True
 
 
@@ -153,13 +160,19 @@ def valid_webref(web_ref):
     ...
     lp.app.validators.LaunchpadValidationError: ...
     """
-    if validate_url(web_ref, ['http', 'https', 'ftp', 'sftp']):
+    if validate_url(web_ref, ["http", "https", "ftp", "sftp"]):
         # Allow ftp so valid_webref can be used for download_url, and so
         # it doesn't lock out weird projects where the site or
         # screenshots are kept on ftp.
         return True
     else:
-        raise LaunchpadValidationError(_(dedent("""
+        raise LaunchpadValidationError(
+            _(
+                dedent(
+                    """
             Not a valid URL. Please enter the full URL, including the
             scheme (for instance, http:// for a web URL), and ensure the
-            URL uses either http, https or ftp.""")))
+            URL uses either http, https or ftp."""
+                )
+            )
+        )

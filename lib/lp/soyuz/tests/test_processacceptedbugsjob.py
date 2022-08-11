@@ -7,9 +7,9 @@ import io
 from itertools import product
 from textwrap import dedent
 
+import transaction
 from debian.deb822 import Changes
 from testtools.content import text_content
-import transaction
 from zope.component import getUtility
 from zope.security.interfaces import ForbiddenAttribute
 from zope.security.proxy import removeSecurityProxy
@@ -26,27 +26,27 @@ from lp.services.job.tests import block_on_job
 from lp.soyuz.interfaces.processacceptedbugsjob import (
     IProcessAcceptedBugsJob,
     IProcessAcceptedBugsJobSource,
-    )
+)
 from lp.soyuz.model.processacceptedbugsjob import (
     close_bug_ids_for_sourcepackagerelease,
     close_bugs_for_sourcepackagerelease,
     close_bugs_for_sourcepublication,
     get_bug_ids_from_changes_file,
-    )
+)
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
     run_script,
-    TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     CeleryJobLayer,
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
+)
 
 
 class TestBugIDsFromChangesFile(TestCaseWithFactory):
@@ -57,10 +57,12 @@ class TestBugIDsFromChangesFile(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.changes = Changes({
-            'Format': '1.8',
-            'Source': 'swat',
-            })
+        self.changes = Changes(
+            {
+                "Format": "1.8",
+                "Source": "swat",
+            }
+        )
 
     def getBugIDs(self):
         """Serialize self.changes and use get_bug_ids_from_changes_file to
@@ -104,7 +106,9 @@ class TestBugIDsFromChangesFile(TestCaseWithFactory):
         bug1 = self.factory.makeBug()
         bug2 = self.factory.makeBug()
         self.changes["Launchpad-Bugs-Fixed"] = "%d invalid %d" % (
-            bug1.id, bug2.id)
+            bug1.id,
+            bug2.id,
+        )
         self.assertEqual([bug1.id, bug2.id], self.getBugIDs())
 
 
@@ -115,9 +119,10 @@ class TestClosingBugs(TestCaseWithFactory):
     start a unification in a single file and those other tests need
     migrating here.
     See also:
-        * lib/lp/soyuz/doc/closing-bugs-from-changelogs.txt
-        * lib/lp/archiveuploader/tests/nascentupload-closing-bugs.txt
+        * lib/lp/soyuz/doc/closing-bugs-from-changelogs.rst
+        * lib/lp/archiveuploader/tests/nascentupload-closing-bugs.rst
     """
+
     layer = LaunchpadZopelessLayer
 
     def makeChangelogWithBugs(self, spr, target_series=None):
@@ -142,7 +147,8 @@ class TestClosingBugs(TestCaseWithFactory):
             bugs.append((bug, bugtask))
         # Make a changelog entry for a package which contains the IDs of
         # the 6 bugs separated across 3 releases.
-        changelog = dedent("""
+        changelog = dedent(
+            """
             foo (1.0-3) unstable; urgency=low
 
               * closes: %s, %s
@@ -162,14 +168,16 @@ class TestClosingBugs(TestCaseWithFactory):
 
              -- Foo Bar <foo@example.com>  Tue, 01 Jan 1970 01:50:41 +0000
 
-            """ % (
-            bugs[0][0].id,
-            bugs[1][0].id,
-            bugs[2][0].id,
-            bugs[3][0].id,
-            bugs[4][0].id,
-            bugs[5][0].id,
-            )).encode("UTF-8")
+            """
+            % (
+                bugs[0][0].id,
+                bugs[1][0].id,
+                bugs[2][0].id,
+                bugs[3][0].id,
+                bugs[4][0].id,
+                bugs[5][0].id,
+            )
+        ).encode("UTF-8")
         lfa = self.factory.makeLibraryFileAlias(content=changelog)
         removeSecurityProxy(spr).changelog = lfa
         self.layer.txn.commit()
@@ -184,7 +192,8 @@ class TestClosingBugs(TestCaseWithFactory):
 
         # Call the method and test it's closed the bugs.
         close_bugs_for_sourcepackagerelease(
-            spr.upload_distroseries, spr, None, since_version="1.0-1")
+            spr.upload_distroseries, spr, None, since_version="1.0-1"
+        )
         for bug, bugtask in bugs:
             if bug.id != bugs[5][0].id:
                 self.assertEqual(BugTaskStatus.FIXRELEASED, bugtask.status)
@@ -202,15 +211,20 @@ class TestClosingBugs(TestCaseWithFactory):
         target_distro = self.factory.makeDistribution()
         target_distroseries = self.factory.makeDistroSeries(target_distro)
         bugs = self.makeChangelogWithBugs(
-            spr, target_series=target_distroseries)
+            spr, target_series=target_distroseries
+        )
         target_spph = self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagerelease=spr, distroseries=target_distroseries,
+            sourcepackagerelease=spr,
+            distroseries=target_distroseries,
             archive=target_distro.main_archive,
-            pocket=PackagePublishingPocket.RELEASE)
+            pocket=PackagePublishingPocket.RELEASE,
+        )
 
         # The test depends on this pre-condition.
-        self.assertNotEqual(spr.upload_distroseries.distribution,
-                            target_distroseries.distribution)
+        self.assertNotEqual(
+            spr.upload_distroseries.distribution,
+            target_distroseries.distribution,
+        )
 
         close_bugs_for_sourcepublication(target_spph, since_version="1.0")
 
@@ -234,12 +248,13 @@ class TestClosingPrivateBugs(TestCaseWithFactory):
         series = spr.upload_distroseries
         dsp = series.distribution.getSourcePackage(spr.sourcepackagename)
         bug = self.factory.makeBug(
-            target=dsp, information_type=InformationType.USERDATA)
+            target=dsp, information_type=InformationType.USERDATA
+        )
         changes = io.BytesIO((changes_file_template % bug.id).encode("UTF-8"))
 
         with person_logged_in(archive_admin):
             # The archive admin user can't normally see this bug.
-            self.assertRaises(ForbiddenAttribute, bug, 'status')
+            self.assertRaises(ForbiddenAttribute, bug, "status")
             # But the bug closure should work.
             close_bugs_for_sourcepackagerelease(series, spr, changes)
 
@@ -266,27 +281,36 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
         self.distro = self.factory.makeDistribution()
         self.series = [
             self.factory.makeDistroSeries(
-                distribution=self.distro, status=status)
-            for status in (SeriesStatus.CURRENT, SeriesStatus.DEVELOPMENT)]
+                distribution=self.distro, status=status
+            )
+            for status in (SeriesStatus.CURRENT, SeriesStatus.DEVELOPMENT)
+        ]
         self.spns = [self.factory.makeSourcePackageName() for _ in range(2)]
         self.bug = self.factory.makeBug()
         self.sprs = [
             self.factory.makeSourcePackageRelease(
-                sourcepackagename=spn, distroseries=series,
-                changelog_entry="changelog")
-            for spn, series in product(self.spns, self.series)]
+                sourcepackagename=spn,
+                distroseries=series,
+                changelog_entry="changelog",
+            )
+            for spn, series in product(self.spns, self.series)
+        ]
         self.bugtasks = [
             self.factory.makeBugTask(
                 target=spr.upload_distroseries.getSourcePackage(
-                    spr.sourcepackagename),
-                bug=self.bug)
-            for spr in self.sprs]
+                    spr.sourcepackagename
+                ),
+                bug=self.bug,
+            )
+            for spr in self.sprs
+        ]
 
     def test_correct_tasks_with_distroseries(self):
         # Close the task for the correct source package name and the given
         # series.
         close_bug_ids_for_sourcepackagerelease(
-            self.series[0], self.sprs[0], [self.bug.id])
+            self.series[0], self.sprs[0], [self.bug.id]
+        )
         self.assertEqual(BugTaskStatus.FIXRELEASED, self.bugtasks[0].status)
         for i in (1, 2, 3):
             self.assertEqual(BugTaskStatus.NEW, self.bugtasks[i].status)
@@ -294,17 +318,20 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
     def test_correct_message(self):
         # When closing a bug, a reasonable message is added.
         close_bug_ids_for_sourcepackagerelease(
-            self.series[0], self.sprs[0], [self.bug.id])
+            self.series[0], self.sprs[0], [self.bug.id]
+        )
         self.assertEqual(2, self.bug.messages.count())
         self.assertEqual(
             "This bug was fixed in the package %s"
             "\n\n---------------\nchangelog" % self.sprs[0].title,
-            self.bug.messages[1].text_contents)
+            self.bug.messages[1].text_contents,
+        )
 
     def test_ignore_unknown_bug_ids(self):
         # Unknown bug IDs are ignored, and no message is added.
         close_bug_ids_for_sourcepackagerelease(
-            self.series[0], self.sprs[0], [self.bug.id + 1])
+            self.series[0], self.sprs[0], [self.bug.id + 1]
+        )
         for bugtask in self.bugtasks:
             self.assertEqual(BugTaskStatus.NEW, bugtask.status)
         self.assertEqual(1, self.bug.messages.count())
@@ -312,9 +339,11 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
     def test_private_bug(self):
         # Closing private bugs is not a problem.
         self.bug.transitionToInformationType(
-            InformationType.USERDATA, self.distro.owner)
+            InformationType.USERDATA, self.distro.owner
+        )
         close_bug_ids_for_sourcepackagerelease(
-            self.series[0], self.sprs[0], [self.bug.id])
+            self.series[0], self.sprs[0], [self.bug.id]
+        )
         self.assertEqual(BugTaskStatus.FIXRELEASED, self.bugtasks[0].status)
 
 
@@ -335,9 +364,11 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
             distroseries = self.distroseries
         if spr is None:
             spr = self.factory.makeSourcePackageRelease(
-                distroseries=distroseries, changelog_entry="changelog")
+                distroseries=distroseries, changelog_entry="changelog"
+            )
         return getUtility(IProcessAcceptedBugsJobSource).create(
-            distroseries, spr, bug_ids)
+            distroseries, spr, bug_ids
+        )
 
     def test_job_implements_IProcessAcceptedBugsJob(self):
         job = self.makeJob()
@@ -346,12 +377,14 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
     def test_job_source_implements_IProcessAcceptedBugsJobSource(self):
         job_source = getUtility(IProcessAcceptedBugsJobSource)
         self.assertTrue(
-            verifyObject(IProcessAcceptedBugsJobSource, job_source))
+            verifyObject(IProcessAcceptedBugsJobSource, job_source)
+        )
 
     def test_create(self):
         # A ProcessAcceptedBugsJob can be created and stores its arguments.
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=self.distroseries, changelog_entry="changelog")
+            distroseries=self.distroseries, changelog_entry="changelog"
+        )
         bug_ids = [1, 2]
         job = self.makeJob(spr=spr, bug_ids=bug_ids)
         self.assertProvides(job, IProcessAcceptedBugsJob)
@@ -366,30 +399,36 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
 
         distroseries = self.factory.makeDistroSeries()
         removeSecurityProxy(distroseries).getSourcePackage = FakeMethod(
-            failure=Boom())
+            failure=Boom()
+        )
         job = self.makeJob(distroseries=distroseries)
         self.assertRaises(Boom, job.run)
 
     def test___repr__(self):
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=self.distroseries, changelog_entry="changelog")
+            distroseries=self.distroseries, changelog_entry="changelog"
+        )
         bug_ids = [1, 2]
         job = self.makeJob(spr=spr, bug_ids=bug_ids)
         self.assertEqual(
-            ("<ProcessAcceptedBugsJob to close bugs [1, 2] for "
-             "{spr.name}/{spr.version} ({distroseries.distribution.name} "
-             "{distroseries.name})>").format(
-                distroseries=self.distroseries, spr=spr),
-            repr(job))
+            (
+                "<ProcessAcceptedBugsJob to close bugs [1, 2] for "
+                "{spr.name}/{spr.version} ({distroseries.distribution.name} "
+                "{distroseries.name})>"
+            ).format(distroseries=self.distroseries, spr=spr),
+            repr(job),
+        )
 
     def test_run(self):
         # A proper test run closes bugs.
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=self.distroseries, changelog_entry="changelog")
+            distroseries=self.distroseries, changelog_entry="changelog"
+        )
         bug = self.factory.makeBug()
         bugtask = self.factory.makeBugTask(
             target=self.distroseries.getSourcePackage(spr.sourcepackagename),
-            bug=bug)
+            bug=bug,
+        )
         self.assertEqual(BugTaskStatus.NEW, bugtask.status)
         job = self.makeJob(spr=spr, bug_ids=[bug.id])
         JobRunner([job]).runAll()
@@ -397,18 +436,21 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
 
     def test_smoke(self):
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=self.distroseries, changelog_entry="changelog")
+            distroseries=self.distroseries, changelog_entry="changelog"
+        )
         bug = self.factory.makeBug()
         bugtask = self.factory.makeBugTask(
             target=self.distroseries.getSourcePackage(spr.sourcepackagename),
-            bug=bug)
+            bug=bug,
+        )
         self.assertEqual(BugTaskStatus.NEW, bugtask.status)
         self.makeJob(spr=spr, bug_ids=[bug.id])
         transaction.commit()
 
         out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s" % (
-                IProcessAcceptedBugsJobSource.getName()))
+            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
+            % (IProcessAcceptedBugsJobSource.getName())
+        )
 
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))
@@ -424,20 +466,27 @@ class TestViaCelery(TestCaseWithFactory):
 
     def test_run(self):
         # A proper test run closes bugs.
-        self.useFixture(FeatureFixture({
-            "jobs.celery.enabled_classes": "ProcessAcceptedBugsJob",
-        }))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "jobs.celery.enabled_classes": "ProcessAcceptedBugsJob",
+                }
+            )
+        )
 
         distroseries = self.factory.makeDistroSeries()
         spr = self.factory.makeSourcePackageRelease(
-            distroseries=distroseries, changelog_entry="changelog")
+            distroseries=distroseries, changelog_entry="changelog"
+        )
         bug = self.factory.makeBug()
         bugtask = self.factory.makeBugTask(
             target=distroseries.getSourcePackage(spr.sourcepackagename),
-            bug=bug)
+            bug=bug,
+        )
         self.assertEqual(BugTaskStatus.NEW, bugtask.status)
         job = getUtility(IProcessAcceptedBugsJobSource).create(
-            distroseries, spr, [bug.id])
+            distroseries, spr, [bug.id]
+        )
         self.assertEqual(distroseries, job.distroseries)
         self.assertEqual(spr, job.sourcepackagerelease)
         self.assertEqual([bug.id], job.bug_ids)

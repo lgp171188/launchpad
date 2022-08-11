@@ -4,9 +4,9 @@
 """Miscellaneous functions for publisher."""
 
 __all__ = [
-    'RepositoryIndexFile',
-    'get_ppa_reference',
-    ]
+    "RepositoryIndexFile",
+    "get_ppa_reference",
+]
 
 
 import bz2
@@ -16,10 +16,7 @@ import os
 import stat
 import tempfile
 
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    IndexCompressionType,
-    )
+from lp.soyuz.enums import ArchivePurpose, IndexCompressionType
 from lp.soyuz.interfaces.archive import default_name_by_purpose
 
 
@@ -29,11 +26,12 @@ def get_ppa_reference(ppa):
     * '<owner_name>' for default PPAs (the ones named 'ppa');
     * '<owner_name>-<ppa_name>' for named-PPAs.
     """
-    assert ppa.purpose == ArchivePurpose.PPA, (
-        'Only PPAs can use reference name.')
+    assert (
+        ppa.purpose == ArchivePurpose.PPA
+    ), "Only PPAs can use reference name."
 
     if ppa.name != default_name_by_purpose.get(ArchivePurpose.PPA):
-        return '%s-%s' % (ppa.owner.name, ppa.name)
+        return "%s-%s" % (ppa.owner.name, ppa.name)
 
     return ppa.owner.name
 
@@ -43,7 +41,7 @@ class PlainTempFile:
     # Enumerated identifier.
     compression_type = IndexCompressionType.UNCOMPRESSED
     # Filename suffix.
-    suffix = ''
+    suffix = ""
     # File path built on initialization.
     path = None
 
@@ -55,11 +53,12 @@ class PlainTempFile:
             self.open()
 
     def _buildFile(self, fd):
-        return os.fdopen(fd, 'wb')
+        return os.fdopen(fd, "wb")
 
     def open(self):
         fd, self.path = tempfile.mkstemp(
-            dir=self.temp_root, prefix='%s_' % self.filename)
+            dir=self.temp_root, prefix="%s_" % self.filename
+        )
         self._fd = self._buildFile(fd)
 
     def write(self, content):
@@ -69,45 +68,44 @@ class PlainTempFile:
         self._fd.close()
 
     def __del__(self):
-        """Remove temporary file if it was left behind. """
+        """Remove temporary file if it was left behind."""
         if self.path is not None and os.path.exists(self.path):
             os.remove(self.path)
 
 
 class GzipTempFile(PlainTempFile):
     compression_type = IndexCompressionType.GZIP
-    suffix = '.gz'
+    suffix = ".gz"
 
     def _buildFile(self, fd):
         # Blank the filename and mtime as if using "gzip -n" to avoid
         # needless hash changes.
-        return gzip.GzipFile(
-            fileobj=os.fdopen(fd, "wb"), filename='', mtime=0)
+        return gzip.GzipFile(fileobj=os.fdopen(fd, "wb"), filename="", mtime=0)
 
 
 class Bzip2TempFile(PlainTempFile):
     compression_type = IndexCompressionType.BZIP2
-    suffix = '.bz2'
+    suffix = ".bz2"
 
     def _buildFile(self, fd):
         os.close(fd)
-        return bz2.BZ2File(self.path, mode='wb')
+        return bz2.BZ2File(self.path, mode="wb")
 
 
 class XZTempFile(PlainTempFile):
     compression_type = IndexCompressionType.XZ
-    suffix = '.xz'
+    suffix = ".xz"
 
     def _buildFile(self, fd):
         os.close(fd)
-        return lzma.LZMAFile(self.path, mode='wb', format=lzma.FORMAT_XZ)
+        return lzma.LZMAFile(self.path, mode="wb", format=lzma.FORMAT_XZ)
 
 
 class RepositoryIndexFile:
     """Facilitates the publication of repository index files.
 
-    It allows callsites to publish index files in different medias
-    (plain, gzip, bzip2, and xz) transparently and atomically.
+    It allows callsites to publish index files with different compression
+    formats (plain, gzip, bzip2, and xz) transparently and atomically.
     """
 
     def __init__(self, path, temp_root, compressors=None):
@@ -124,7 +122,7 @@ class RepositoryIndexFile:
             compressors = [IndexCompressionType.UNCOMPRESSED]
 
         self.root, filename = os.path.split(path)
-        assert os.path.exists(temp_root), 'Temporary root does not exist.'
+        assert os.path.exists(temp_root), "Temporary root does not exist."
 
         self.index_files = []
         self.old_index_files = []
@@ -133,7 +131,8 @@ class RepositoryIndexFile:
                 self.index_files.append(cls(temp_root, filename))
             else:
                 self.old_index_files.append(
-                    cls(temp_root, filename, auto_open=False))
+                    cls(temp_root, filename, auto_open=False)
+                )
 
     def __enter__(self):
         return self
@@ -142,21 +141,22 @@ class RepositoryIndexFile:
         self.close()
 
     def write(self, content):
-        """Write contents to all target medias."""
+        """Write contents to all target files."""
         for index_file in self.index_files:
             index_file.write(content)
 
     def close(self):
-        """Close temporary media and atomically publish them.
+        """Close temporary files and atomically publish them.
 
         If necessary the given 'root' destination is created at this point.
 
-        It also fixes the final files permissions making them readable and
+        It also fixes the final files' permissions making them readable and
         writable by their group and readable by others.
         """
         if os.path.exists(self.root):
-            assert os.access(
-                self.root, os.W_OK), "%s not writeable!" % self.root
+            assert os.access(self.root, os.W_OK), (
+                "%s not writeable!" % self.root
+            )
         else:
             os.makedirs(self.root)
 
@@ -170,8 +170,9 @@ class RepositoryIndexFile:
             # group/world read access.
             # See https://bugs.launchpad.net/soyuz/+bug/148471
             mode = stat.S_IMODE(os.stat(root_path).st_mode)
-            os.chmod(root_path,
-                     mode | stat.S_IWGRP | stat.S_IRGRP | stat.S_IROTH)
+            os.chmod(
+                root_path, mode | stat.S_IWGRP | stat.S_IRGRP | stat.S_IROTH
+            )
 
         # Remove files that may have been created by older versions of this
         # code.

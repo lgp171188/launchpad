@@ -11,28 +11,27 @@ except ImportError:
 import subprocess
 from urllib.parse import urljoin
 
-from lp.services.webapp.interaction import (
-    ANONYMOUS,
-    setupInteractionByEmail,
-    )
+from lp.services.webapp.interaction import ANONYMOUS, setupInteractionByEmail
 from lp.services.webapp.servers import (
     WebServicePublication,
     WebServiceTestRequest,
-    )
+)
 from lp.services.webapp.vhosts import allvhosts
 
 
 def _generate_web_service_root(version, mimetype):
-    """Generate the webservice description for the given version and mimetype.
-    """
-    url = urljoin(allvhosts.configs['api'].rooturl, version)
+    """Generate the webservice description for the given version/mimetype."""
+    url = urljoin(allvhosts.configs["api"].rooturl, version)
     # Since we want HTTPS URLs we have to munge the request URL.
-    url = url.replace('http://', 'https://')
-    request = WebServiceTestRequest(version=version, environ={
-        'SERVER_URL': url,
-        'HTTP_HOST': allvhosts.configs['api'].hostname,
-        'HTTP_ACCEPT': mimetype,
-        })
+    url = url.replace("http://", "https://")
+    request = WebServiceTestRequest(
+        version=version,
+        environ={
+            "SERVER_URL": url,
+            "HTTP_HOST": allvhosts.configs["api"].hostname,
+            "HTTP_ACCEPT": mimetype,
+        },
+    )
     # We then bypass the usual publisher processing by associating
     # the request with the WebServicePublication (usually done by the
     # publisher) and then calling the root resource - retrieved
@@ -44,12 +43,12 @@ def _generate_web_service_root(version, mimetype):
 
 def generate_wadl(version):
     """Generate the WADL for the given version of the web service."""
-    return _generate_web_service_root(version, 'application/vd.sun.wadl+xml')
+    return _generate_web_service_root(version, "application/vd.sun.wadl+xml")
 
 
 def generate_json(version):
     """Generate the JSON for the given version of the web service."""
-    return _generate_web_service_root(version, 'application/json')
+    return _generate_web_service_root(version, "application/json")
 
 
 def generate_html(wadl_filename, suppress_stderr=True):
@@ -59,12 +58,13 @@ def generate_html(wadl_filename, suppress_stderr=True):
     # stderr file handle and then discard the output.  Otherwise we let the
     # subprocess inherit stderr.
     with resources.path(
-            'lp.services.webservice', 'wadl-to-refhtml.xsl') as stylesheet:
+        "lp.services.webservice", "wadl-to-refhtml.xsl"
+    ) as stylesheet:
         if suppress_stderr:
             stderr = subprocess.PIPE
         else:
             stderr = None
-        args = ('xsltproc', str(stylesheet), wadl_filename)
+        args = ("xsltproc", str(stylesheet), wadl_filename)
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=stderr)
 
         output = process.communicate()[0]

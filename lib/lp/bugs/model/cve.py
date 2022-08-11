@@ -2,9 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'Cve',
-    'CveSet',
-    ]
+    "Cve",
+    "CveSet",
+]
 
 import operator
 
@@ -18,20 +18,13 @@ from storm.locals import (
     ReferenceSet,
     Store,
     Unicode,
-    )
+)
 from zope.component import getUtility
 from zope.interface import implementer
 
-from lp.app.validators.cve import (
-    CVEREF_PATTERN,
-    valid_cve,
-    )
+from lp.app.validators.cve import CVEREF_PATTERN, valid_cve
 from lp.bugs.interfaces.buglink import IBugLinkTarget
-from lp.bugs.interfaces.cve import (
-    CveStatus,
-    ICve,
-    ICveSet,
-    )
+from lp.bugs.interfaces.cve import CveStatus, ICve, ICveSet
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
 from lp.bugs.model.cvereference import CveReference
@@ -49,23 +42,27 @@ from lp.services.xref.model import XRef
 class Cve(StormBase, BugLinkTargetMixin):
     """A CVE database record."""
 
-    __storm_table__ = 'Cve'
+    __storm_table__ = "Cve"
 
     id = Int(primary=True)
 
     sequence = Unicode(allow_none=False)
-    status = DBEnum(name='status', enum=CveStatus, allow_none=False)
+    status = DBEnum(name="status", enum=CveStatus, allow_none=False)
     description = Unicode(allow_none=False)
     datecreated = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
     datemodified = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
 
     references = ReferenceSet(
-        id, 'CveReference.cve_id', order_by='CveReference.id')
+        id, "CveReference.cve_id", order_by="CveReference.id"
+    )
+    vulnerabilities = ReferenceSet(
+        id, "Vulnerability.cve_id", order_by="Vulnerability.id"
+    )
 
     date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
-    discoverer_id = Int(name='discoverer', allow_none=True)
-    discoverer = Reference(discoverer_id, 'Person.id')
-    _cvss = JSON(name='cvss', allow_none=True)
+    discoverer_id = Int(name="discoverer", allow_none=True)
+    discoverer = Reference(discoverer_id, "Person.id")
+    _cvss = JSON(name="cvss", allow_none=True)
 
     @property
     def cvss(self):
@@ -76,8 +73,15 @@ class Cve(StormBase, BugLinkTargetMixin):
         assert value is None or isinstance(value, dict)
         self._cvss = value
 
-    def __init__(self, sequence, status, description,
-                 date_made_public=None, discoverer=None, cvss=None):
+    def __init__(
+        self,
+        sequence,
+        status,
+        description,
+        date_made_public=None,
+        discoverer=None,
+        cvss=None,
+    ):
         super().__init__()
         self.sequence = sequence
         self.status = status
@@ -89,30 +93,34 @@ class Cve(StormBase, BugLinkTargetMixin):
     @property
     def url(self):
         """See ICve."""
-        return ('https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s'
-                % self.sequence)
+        return (
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s" % self.sequence
+        )
 
     @property
     def displayname(self):
-        return 'CVE-%s' % self.sequence
+        return "CVE-%s" % self.sequence
 
     @property
     def title(self):
-        return 'CVE-%s (%s)' % (self.sequence, self.status.title)
+        return "CVE-%s (%s)" % (self.sequence, self.status.title)
 
     @property
     def bugs(self):
         bug_ids = [
-            int(id) for _, id in getUtility(IXRefSet).findFrom(
-                ('cve', self.sequence), types=['bug'])]
-        return list(sorted(
-            bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
+            int(id)
+            for _, id in getUtility(IXRefSet).findFrom(
+                ("cve", self.sequence), types=["bug"]
+            )
+        ]
+        return list(
+            sorted(bulk.load(Bug, bug_ids), key=operator.attrgetter("id"))
+        )
 
     # CveReference's
     def createReference(self, source, content, url=None):
         """See ICveReference."""
-        return CveReference(cve=self, source=source, content=content,
-            url=url)
+        return CveReference(cve=self, source=source, content=content, url=url)
 
     def removeReference(self, ref):
         assert ref.cve == self
@@ -124,12 +132,14 @@ class Cve(StormBase, BugLinkTargetMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {('cve', self.sequence): {('bug', str(bug.id)): props}})
+            {("cve", self.sequence): {("bug", str(bug.id)): props}}
+        )
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {('cve', self.sequence): [('bug', str(bug.id))]})
+            {("cve", self.sequence): [("bug", str(bug.id))]}
+        )
 
     def setCVSSVectorForAuthority(self, authority, vector_string):
         """See ICveReference."""
@@ -144,11 +154,11 @@ class CveSet:
 
     def __init__(self, bug=None):
         """See ICveSet."""
-        self.title = 'The Common Vulnerabilities and Exposures database'
+        self.title = "The Common Vulnerabilities and Exposures database"
 
     def __getitem__(self, sequence):
         """See ICveSet."""
-        if sequence[:4] in ['CVE-', 'CAN-']:
+        if sequence[:4] in ["CVE-", "CAN-"]:
             sequence = sequence[4:]
         if not valid_cve(sequence):
             return None
@@ -162,8 +172,15 @@ class CveSet:
         """See ICveSet."""
         return iter(IStore(Cve).find(Cve))
 
-    def new(self, sequence, description, status=CveStatus.CANDIDATE,
-            date_made_public=None, discoverer=None, cvss=None):
+    def new(
+        self,
+        sequence,
+        description,
+        status=CveStatus.CANDIDATE,
+        date_made_public=None,
+        discoverer=None,
+        cvss=None,
+    ):
         """See ICveSet."""
         cve = Cve(
             sequence=sequence,
@@ -171,7 +188,7 @@ class CveSet:
             description=description,
             date_made_public=date_made_public,
             discoverer=discoverer,
-            cvss=cvss
+            cvss=cvss,
         )
 
         IStore(Cve).add(cve)
@@ -179,18 +196,30 @@ class CveSet:
 
     def latest(self, quantity=5):
         """See ICveSet."""
-        return IStore(Cve).find(Cve).order_by(
-            Desc(Cve.datecreated)).config(limit=quantity)
+        return (
+            IStore(Cve)
+            .find(Cve)
+            .order_by(Desc(Cve.datecreated))
+            .config(limit=quantity)
+        )
 
     def latest_modified(self, quantity=5):
         """See ICveSet."""
-        return IStore(Cve).find(Cve).order_by(
-            Desc(Cve.datemodified)).config(limit=quantity)
+        return (
+            IStore(Cve)
+            .find(Cve)
+            .order_by(Desc(Cve.datemodified))
+            .config(limit=quantity)
+        )
 
     def search(self, text):
         """See ICveSet."""
-        return IStore(Cve).find(Cve, fti_search(Cve, text)).order_by(
-            Desc(Cve.datemodified)).config(distinct=True)
+        return (
+            IStore(Cve)
+            .find(Cve, fti_search(Cve, text))
+            .order_by(Desc(Cve.datemodified))
+            .config(distinct=True)
+        )
 
     def inText(self, text):
         """See ICveSet."""
@@ -204,12 +233,15 @@ class CveSet:
             # not, then create it
             cve = self[sequence]
             if cve is None:
-                cve = Cve(sequence=sequence, status=CveStatus.DEPRECATED,
+                cve = Cve(
+                    sequence=sequence,
+                    status=CveStatus.DEPRECATED,
                     description="This CVE was automatically created from "
                     "a reference found in an email or other text. If you "
                     "are reading this, then this CVE entry is probably "
                     "erroneous, since this text should be replaced by "
-                    "the official CVE description automatically.")
+                    "the official CVE description automatically.",
+                )
                 store.add(cve)
             cves.add(cve)
 
@@ -217,13 +249,14 @@ class CveSet:
 
     def getBugCvesForBugTasks(self, bugtasks, cve_mapper=None):
         """See ICveSet."""
-        bugs = bulk.load_related(Bug, bugtasks, ('bug_id', ))
+        bugs = bulk.load_related(Bug, bugtasks, ("bug_id",))
         if len(bugs) == 0:
             return []
         store = Store.of(bugtasks[0])
 
         xrefs = getUtility(IXRefSet).findFromMany(
-            [('bug', str(bug.id)) for bug in bugs], types=['cve'])
+            [("bug", str(bug.id)) for bug in bugs], types=["cve"]
+        )
         bugcve_ids = set()
         for bug_key in xrefs:
             for cve_key in xrefs[bug_key]:
@@ -232,7 +265,8 @@ class CveSet:
         bugcve_ids = list(sorted(bugcve_ids))
 
         cves = store.find(
-            Cve, Cve.sequence.is_in([seq for _, seq in bugcve_ids]))
+            Cve, Cve.sequence.is_in([seq for _, seq in bugcve_ids])
+        )
 
         if cve_mapper is None:
             cvemap = {cve.sequence: cve for cve in cves}
@@ -242,9 +276,12 @@ class CveSet:
         return [
             (bugmap[bug_id], cvemap[cve_sequence])
             for bug_id, cve_sequence in bugcve_ids
-            ]
+        ]
 
     def getBugCveCount(self):
         """See ICveSet."""
-        return IStore(XRef).find(
-            XRef, XRef.from_type == 'bug', XRef.to_type == 'cve').count()
+        return (
+            IStore(XRef)
+            .find(XRef, XRef.from_type == "bug", XRef.to_type == "cve")
+            .count()
+        )

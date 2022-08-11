@@ -4,38 +4,55 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'ReuploadPackageTranslations',
-    ]
+    "ReuploadPackageTranslations",
+]
 
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
-from lp.services.scripts.base import (
-    LaunchpadScript,
-    LaunchpadScriptFailure,
-    )
+from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
-    )
+)
 
 
 class ReuploadPackageTranslations(LaunchpadScript):
     """Re-upload latest translations for given distribution packages."""
+
     description = "Re-upload latest translations uploads for package(s)."
 
     def add_my_options(self):
         """See `LaunchpadScript`."""
-        self.parser.add_option('-d', '--distribution', dest='distro',
-            help="Distribution to upload for.", default='ubuntu')
-        self.parser.add_option('-s', '--series', dest='distroseries',
-            help="Distribution release series to upload for.")
-        self.parser.add_option('-p', '--package', action='append',
-            dest='packages', default=[],
-            help="Name(s) of source package(s) to re-upload.")
-        self.parser.add_option('-l', '--dry-run', dest='dryrun',
-            action='store_true', default=False,
-            help="Pretend to upload, but make no actual changes.")
+        self.parser.add_option(
+            "-d",
+            "--distribution",
+            dest="distro",
+            help="Distribution to upload for.",
+            default="ubuntu",
+        )
+        self.parser.add_option(
+            "-s",
+            "--series",
+            dest="distroseries",
+            help="Distribution release series to upload for.",
+        )
+        self.parser.add_option(
+            "-p",
+            "--package",
+            action="append",
+            dest="packages",
+            default=[],
+            help="Name(s) of source package(s) to re-upload.",
+        )
+        self.parser.add_option(
+            "-l",
+            "--dry-run",
+            dest="dryrun",
+            action="store_true",
+            default=False,
+            help="Pretend to upload, but make no actual changes.",
+        )
 
     def main(self):
         """See `LaunchpadScript`."""
@@ -72,7 +89,8 @@ class ReuploadPackageTranslations(LaunchpadScript):
 
         if not self.options.distroseries:
             raise LaunchpadScriptFailure(
-                "Specify a distribution release series.")
+                "Specify a distribution release series."
+            )
 
         self.distroseries = self.distro.getSeries(self.options.distroseries)
 
@@ -93,7 +111,7 @@ class ReuploadPackageTranslations(LaunchpadScript):
         # Avoid circular imports.
         from lp.soyuz.model.packagetranslationsuploadjob import (
             _filter_ubuntu_translation_file,
-            )
+        )
 
         self.logger.info("Processing %s" % package.displayname)
         tarball_aliases = package.getLatestTranslationsUploads()
@@ -103,15 +121,21 @@ class ReuploadPackageTranslations(LaunchpadScript):
         have_uploads = False
         for alias in tarball_aliases:
             have_uploads = True
-            self.logger.debug("Uploading file '%s' for %s." % (
-                alias.filename, package.displayname))
+            self.logger.debug(
+                "Uploading file '%s' for %s."
+                % (alias.filename, package.displayname)
+            )
             queue.addOrUpdateEntriesFromTarball(
-                alias.read(), True, rosetta_team,
+                alias.read(),
+                True,
+                rosetta_team,
                 sourcepackagename=package.sourcepackagename,
                 distroseries=self.distroseries,
-                filename_filter=_filter_ubuntu_translation_file)
+                filename_filter=_filter_ubuntu_translation_file,
+            )
 
         if not have_uploads:
             self.logger.warning(
-                "Found no translations upload for %s." % package.displayname)
+                "Found no translations upload for %s." % package.displayname
+            )
             self.uploadless_packages.append(package)

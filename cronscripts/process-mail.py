@@ -15,13 +15,16 @@ from lp.services.mail.mailbox import IMailBox
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
-    )
+)
 
 
 class ProcessMail(LaunchpadCronScript):
-    usage = """%prog [options]
+    usage = (
+        """%prog [options]
 
-    """ + __doc__
+    """
+        + __doc__
+    )
 
     def main(self):
         try:
@@ -31,9 +34,10 @@ class ProcessMail(LaunchpadCronScript):
                 raise
             raise LaunchpadScriptFailure(
                 "No mail box is configured. "
-                "Please see mailbox.txt for info on how to configure one.")
+                "Please see mailbox.rst for info on how to configure one."
+            )
 
 
-if __name__ == '__main__':
-    script = ProcessMail('process-mail', dbuser=config.processmail.dbuser)
+if __name__ == "__main__":
+    script = ProcessMail("process-mail", dbuser=config.processmail.dbuser)
     script.lock_and_run(use_web_security=True)

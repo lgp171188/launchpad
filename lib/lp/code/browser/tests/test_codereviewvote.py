@@ -4,10 +4,7 @@
 """Unit tests for CodeReviewVoteReferences."""
 
 from lp.services.webapp import canonical_url
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -23,11 +20,12 @@ class TestReassignReviewer(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         with person_logged_in(bmp.registrant):
             vote = bmp.nominateReviewer(
-                reviewer=reviewer, registrant=bmp.registrant)
+                reviewer=reviewer, registrant=bmp.registrant
+            )
         new_reviewer = self.factory.makePerson()
         with person_logged_in(reviewer):
-            view = create_initialized_view(vote, '+reassign')
-            view.reassign_action.success({'reviewer': new_reviewer})
+            view = create_initialized_view(vote, "+reassign")
+            view.reassign_action.success({"reviewer": new_reviewer})
         self.assertEqual(vote.reviewer, new_reviewer)
 
     def test_view_attributes(self):
@@ -37,7 +35,8 @@ class TestReassignReviewer(TestCaseWithFactory):
         reviewer = self.factory.makePerson()
         with person_logged_in(bmp.registrant):
             vote = bmp.nominateReviewer(
-                reviewer=reviewer, registrant=bmp.registrant)
+                reviewer=reviewer, registrant=bmp.registrant
+            )
         with person_logged_in(reviewer):
-            view = create_initialized_view(vote, '+reassign')
+            view = create_initialized_view(vote, "+reassign")
         self.assertEqual(canonical_url(bmp), view.cancel_url)

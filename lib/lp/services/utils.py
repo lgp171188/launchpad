@@ -8,70 +8,72 @@ stuff.
 """
 
 __all__ = [
-    'AutoDecorate',
-    'CachingIterator',
-    'decorate_with',
-    'docstring_dedent',
-    'file_exists',
-    'iter_chunks',
-    'iter_split',
-    'load_bz2_pickle',
-    'obfuscate_email',
-    'obfuscate_structure',
-    're_email_address',
-    'round_half_up',
-    'sanitise_urls',
-    'save_bz2_pickle',
-    'seconds_since_epoch',
-    'text_delta',
-    'traceback_info',
-    'utc_now',
-    'value_string',
-    ]
+    "AutoDecorateMetaClass",
+    "CachingIterator",
+    "decorate_with",
+    "docstring_dedent",
+    "file_exists",
+    "iter_chunks",
+    "iter_split",
+    "load_bz2_pickle",
+    "obfuscate_email",
+    "obfuscate_structure",
+    "re_email_address",
+    "round_half_up",
+    "sanitise_urls",
+    "save_bz2_pickle",
+    "seconds_since_epoch",
+    "text_delta",
+    "traceback_info",
+    "utc_now",
+    "value_string",
+]
 
 import bz2
-from datetime import datetime
 import decimal
-from itertools import (
-    islice,
-    tee,
-    )
 import os
 import pickle
 import re
 import sys
+from datetime import datetime
+from itertools import islice, tee
 from textwrap import dedent
 from types import FunctionType
 
-from lazr.enum import BaseItem
 import pytz
 import six
+from lazr.enum import BaseItem
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
 
 
-def AutoDecorate(*decorators):
-    """Factory to generate metaclasses that automatically apply decorators.
-
-    AutoDecorate is a metaclass factory that can be used to make a class
+class AutoDecorateMetaClass(type):
+    """
+    AutoDecorateMetaClass is a metaclass that can be used to make a class
     implicitly wrap all of its methods with one or more decorators.
+
+    Usage::
+
+        class A(metaclass=AutoDecorateMetaClass):
+            __decorators = (...)
+
     """
 
-    class AutoDecorateMetaClass(type):
-
-        def __new__(cls, class_name, bases, class_dict):
-            new_class_dict = {}
+    def __new__(mcs, class_name, bases, class_dict):
+        class_dict = dict(class_dict)
+        decorators = class_dict.pop("_{}__decorators".format(class_name), None)
+        if decorators is not None:
             for name, value in class_dict.items():
                 if type(value) == FunctionType:
                     for decorator in decorators:
                         value = decorator(value)
-                        assert callable(value), (
-                            "Decorator %s didn't return a callable."
-                            % repr(decorator))
-                new_class_dict[name] = value
-            return type.__new__(cls, class_name, bases, new_class_dict)
-
-    return AutoDecorateMetaClass
+                        assert callable(
+                            value
+                        ), "Decorator {} didn't return a callable.".format(
+                            repr(decorator)
+                        )
+                    class_dict[name] = value
+        return type.__new__(mcs, class_name, bases, class_dict)
 
 
 def iter_split(string, splitter, splits=None):
@@ -88,14 +90,14 @@ def iter_split(string, splitter, splits=None):
 
     Splits, if specified, is an iterable of splitters to split the string at.
     """
-    if string == '':
+    if string == "":
         return
     tokens = string.split(splitter)
     if splits is None:
         splits = reversed(range(1, len(tokens) + 1))
     for i in splits:
         first = splitter.join(tokens[:i])
-        yield first, string[len(first):]
+        yield first, string[len(first) :]
 
 
 def iter_chunks(iterable, size):
@@ -117,7 +119,7 @@ def value_string(item):
     This text is special cased for enumerated types.
     """
     if item is None:
-        return '(not set)'
+        return "(not set)"
     elif zope_isinstance(item, BaseItem):
         return item.title
     elif zope_isinstance(item, bytes):
@@ -140,7 +142,7 @@ def text_delta(instance_delta, delta_names, state_names, interface):
     :param interface: The Zope interface that the input delta compared.
     """
     output = []
-    indent = ' ' * 4
+    indent = " " * 4
 
     # Fields for which we have old and new values.
     for field_name in delta_names:
@@ -148,8 +150,8 @@ def text_delta(instance_delta, delta_names, state_names, interface):
         if delta is None:
             continue
         title = interface[field_name].title
-        old_item = value_string(delta['old'])
-        new_item = value_string(delta['new'])
+        old_item = value_string(delta["old"])
+        new_item = value_string(delta["new"])
         output.append("%s%s: %s => %s" % (indent, title, old_item, new_item))
     for field_name in state_names:
         delta = getattr(instance_delta, field_name, None)
@@ -157,9 +159,9 @@ def text_delta(instance_delta, delta_names, state_names, interface):
             continue
         title = interface[field_name].title
         if output:
-            output.append('')
-        output.append('%s changed to:\n\n%s' % (title, delta))
-    return '\n'.join(output)
+            output.append("")
+        output.append("%s changed to:\n\n%s" % (title, delta))
+    return "\n".join(output)
 
 
 class CachingIterator:
@@ -191,7 +193,6 @@ def decorate_with(context_factory, *args, **kwargs):
     """Create a decorator that runs decorated functions with 'context'."""
 
     def decorator(function):
-
         def decorated(*a, **kw):
             with context_factory(*args, **kwargs):
                 return function(*a, **kw)
@@ -208,8 +209,8 @@ def docstring_dedent(s):
     then reassemble.
     """
     # Make sure there is at least one newline so the split works.
-    first, rest = (s + '\n').split('\n', 1)
-    return (first + '\n' + dedent(rest)).strip()
+    first, rest = (s + "\n").split("\n", 1)
+    return (first + "\n" + dedent(rest)).strip()
 
 
 def file_exists(filename):
@@ -253,11 +254,14 @@ def seconds_since_epoch(dt):
 
 # This verson of the re is more than 5x faster that the orginal
 # version used in ftest/test_tales.testObfuscateEmail.
-re_email_address = re.compile(r"""
+re_email_address = re.compile(
+    r"""
     \b[a-zA-Z0-9._/="'+-]{1,64}@  # The localname.
     [a-zA-Z][a-zA-Z0-9-]{1,63}    # The hostname.
     \.[a-zA-Z0-9.-]{1,251}\b      # Dot starts one or more domains.
-    """, re.VERBOSE)              # ' <- font-lock turd
+    """,
+    re.VERBOSE,
+)  # ' <- font-lock turd
 
 
 def obfuscate_email(text_to_obfuscate, replacement=None):
@@ -272,12 +276,10 @@ def obfuscate_email(text_to_obfuscate, replacement=None):
     match, though the http match is in fact not an email address.
     """
     if replacement is None:
-        replacement = '<email address hidden>'
-    text = re_email_address.sub(
-        replacement, text_to_obfuscate)
+        replacement = "<email address hidden>"
+    text = re_email_address.sub(replacement, text_to_obfuscate)
     # Avoid doubled angle brackets.
-    text = text.replace(
-        "<<email address hidden>>", "<email address hidden>")
+    text = text.replace("<<email address hidden>>", "<email address hidden>")
     return text
 
 
@@ -318,7 +320,8 @@ def obfuscate_structure(o):
     elif isinstance(o, (dict)):
         return {
             obfuscate_structure(key): obfuscate_structure(value)
-            for key, value in o.items()}
+            for key, value in o.items()
+        }
     else:
         return o
 
@@ -331,8 +334,8 @@ def sanitise_urls(s):
     example).  This function removes them.
     """
     # Remove credentials from URLs.
-    password_re = re.compile(r'://([^:@/]*:[^@/]*@)(\S+)')
-    return password_re.sub(r'://<redacted>@\2', s)
+    password_re = re.compile(r"://([^:@/]*:[^@/]*@)(\S+)")
+    return password_re.sub(r"://<redacted>@\2", s)
 
 
 def round_half_up(number):
@@ -343,5 +346,8 @@ def round_half_up(number):
     job of avoiding statistical bias in many cases but isn't always what we
     want.
     """
-    return int(decimal.Decimal(number).to_integral_value(
-        rounding=decimal.ROUND_HALF_UP))
+    return int(
+        decimal.Decimal(number).to_integral_value(
+            rounding=decimal.ROUND_HALF_UP
+        )
+    )

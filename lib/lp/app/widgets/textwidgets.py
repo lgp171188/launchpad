@@ -4,10 +4,7 @@
 import re
 
 from zope.browserpage import ViewPageTemplateFile
-from zope.formlib.textwidgets import (
-    TextAreaWidget,
-    TextWidget,
-    )
+from zope.formlib.textwidgets import TextAreaWidget, TextWidget
 
 from lp.app.errors import UnexpectedFormData
 
@@ -22,7 +19,7 @@ class StrippedTextWidget(TextWidget):
 class LowerCaseTextWidget(StrippedTextWidget):
     """A widget that converts text to lower case."""
 
-    cssClass = 'lowerCaseText'
+    cssClass = "lowerCaseText"
 
     def _toFieldValue(self, input):
         return StrippedTextWidget._toFieldValue(self, input.lower())
@@ -40,7 +37,7 @@ class TokensTextWidget(StrippedTextWidget):
         Accept only alphanumeric characters and '-'.  Everything
         else is replaced with a single space.
         """
-        normalised_text = re.sub(r'[^\w-]+', ' ', input)
+        normalised_text = re.sub(r"[^\w-]+", " ", input)
         return super()._toFieldValue(normalised_text)
 
 
@@ -49,7 +46,7 @@ class NoneableTextWidget(StrippedTextWidget):
 
     def _toFieldValue(self, input):
         value = super()._toFieldValue(input)
-        if value == '':
+        if value == "":
             return None
         else:
             return value
@@ -59,7 +56,7 @@ class URIWidget(StrippedTextWidget):
     """A widget that represents a URI."""
 
     displayWidth = 44
-    cssClass = 'urlTextType'
+    cssClass = "urlTextType"
 
     def __init__(self, field, request):
         super().__init__(field, request)
@@ -67,14 +64,14 @@ class URIWidget(StrippedTextWidget):
 
     def _toFieldValue(self, input):
         if isinstance(input, list):
-            raise UnexpectedFormData('Only a single value is expected')
+            raise UnexpectedFormData("Only a single value is expected")
         return super()._toFieldValue(input)
 
 
 class URIComponentWidget(LowerCaseTextWidget):
     """A text input widget that looks like a URL path component entry."""
 
-    template = ViewPageTemplateFile('templates/uri-component.pt')
+    template = ViewPageTemplateFile("templates/uri-component.pt")
     read_only = False
 
     def __call__(self):
@@ -91,9 +88,9 @@ class URIComponentWidget(LowerCaseTextWidget):
     @property
     def widget_type(self):
         if self.read_only:
-            return 'hidden'
+            return "hidden"
         else:
-            return 'text'
+            return "text"
 
 
 class DelimitedListWidget(TextAreaWidget):
@@ -115,7 +112,7 @@ class DelimitedListWidget(TextAreaWidget):
     # The default joining function, which simply separates each list
     # item with a newline. Subclasses can override this if different
     # delimiters are needed.
-    join = staticmethod('\n'.join)
+    join = staticmethod("\n".join)
 
     def _toFormValue(self, value):
         """Converts a list to a newline separated string.
@@ -174,17 +171,20 @@ class DelimitedListWidget(TextAreaWidget):
 
 class TitleWidget(StrippedTextWidget):
     """A launchpad title widget; a little wider than a normal Textline."""
+
     displayWidth = 44
 
 
 class SummaryWidget(TextAreaWidget):
     """A widget to capture a summary."""
+
     width = 44
     height = 3
 
 
 class DescriptionWidget(TextAreaWidget):
     """A widget to capture a description."""
+
     width = 44
     height = 15
 
@@ -194,7 +194,7 @@ class NoneableDescriptionWidget(DescriptionWidget):
 
     def _toFieldValue(self, input):
         value = super()._toFieldValue(input.strip())
-        if value == '':
+        if value == "":
             return None
         else:
             return value
@@ -202,5 +202,6 @@ class NoneableDescriptionWidget(DescriptionWidget):
 
 class WhiteboardWidget(TextAreaWidget):
     """A widget to capture a whiteboard."""
+
     width = 44
     height = 5

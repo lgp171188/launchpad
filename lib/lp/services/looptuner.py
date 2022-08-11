@@ -2,27 +2,24 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DBLoopTuner',
-    'ITunableLoop',
-    'LoopTuner',
-    'TunableLoop',
-    ]
+    "DBLoopTuner",
+    "ITunableLoop",
+    "LoopTuner",
+    "TunableLoop",
+]
 
 
-from datetime import timedelta
 import sys
 import time
+from datetime import timedelta
 
-from six import reraise
 import transaction
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from six import reraise
+from zope.interface import Interface, implementer
 
+import lp.services.scripts
 from lp.services.database import activity_cols
 from lp.services.database.interfaces import IMasterStore
-import lp.services.scripts
 
 
 class ITunableLoop(Interface):
@@ -31,6 +28,7 @@ class ITunableLoop(Interface):
     To construct a self-tuning batched loop, define your loop body as a class
     implementing TunableLoop, and pass an instance to your LoopTuner.
     """
+
     def isDone():
         """Is this loop finished?
 
@@ -88,9 +86,15 @@ class LoopTuner:
     """
 
     def __init__(
-        self, operation, goal_seconds,
-        minimum_chunk_size=1, maximum_chunk_size=1000000000,
-        abort_time=None, cooldown_time=None, log=None):
+        self,
+        operation,
+        goal_seconds,
+        minimum_chunk_size=1,
+        maximum_chunk_size=1000000000,
+        abort_time=None,
+        cooldown_time=None,
+        log=None,
+    ):
         """Initialize a loop, to be run to completion at most once.
 
         Parameters:
@@ -119,7 +123,7 @@ class LoopTuner:
         log: The log object to use. DEBUG level messages are logged
             giving iteration statistics.
         """
-        assert(ITunableLoop.providedBy(operation))
+        assert ITunableLoop.providedBy(operation)
         self.operation = operation
         self.goal_seconds = float(goal_seconds)
         self.minimum_chunk_size = minimum_chunk_size
@@ -152,7 +156,7 @@ class LoopTuner:
     def run(self):
         """Run the loop to completion."""
         # Cleanup function, if we have one.
-        cleanup = getattr(self.operation, 'cleanUp', lambda: None)
+        cleanup = getattr(self.operation, "cleanUp", lambda: None)
         try:
             chunk_size = self.minimum_chunk_size
             iteration = 0
@@ -163,7 +167,8 @@ class LoopTuner:
 
                 if self._isTimedOut():
                     self.log.info(
-                        "Task aborted after %d seconds.", self.abort_time)
+                        "Task aborted after %d seconds.", self.abort_time
+                    )
                     break
 
                 self.operation(chunk_size)
@@ -174,7 +179,10 @@ class LoopTuner:
 
                 self.log.debug2(
                     "Iteration %d (size %.1f): %.3f seconds",
-                    iteration, chunk_size, time_taken)
+                    iteration,
+                    chunk_size,
+                    time_taken,
+                )
 
                 last_clock = self._coolDown(last_clock)
 
@@ -202,8 +210,12 @@ class LoopTuner:
             self.log.debug2(
                 "Done. %d items in %d iterations, %3f seconds, "
                 "average size %f (%s/s)",
-                total_size, iteration, total_time, average_size,
-                average_speed)
+                total_size,
+                iteration,
+                total_time,
+                average_size,
+                average_speed,
+            )
         except Exception:
             exc_info = sys.exc_info()
             try:
@@ -288,6 +300,7 @@ class DBLoopTuner(LoopTuner):
         """When database replication lag is high, block until it drops."""
         # Lag is most meaningful on the master.
         from lp.services.librarian.model import LibraryFileAlias
+
         store = IMasterStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
@@ -300,7 +313,9 @@ class DBLoopTuner(LoopTuner):
             if msg_counter % 60 == 1:
                 self.log.info(
                     "Database replication lagged %s. "
-                    "Sleeping up to 10 minutes.", lag)
+                    "Sleeping up to 10 minutes.",
+                    lag,
+                )
 
             # Don't become a long running transaction!
             transaction.abort()
@@ -312,10 +327,14 @@ class DBLoopTuner(LoopTuner):
         if self.long_running_transaction is None:
             return
         from lp.services.librarian.model import LibraryFileAlias
+
         store = IMasterStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
-            results = list(store.execute(("""
+            results = list(
+                store.execute(
+                    (
+                        """
                 SELECT
                     CURRENT_TIMESTAMP - xact_start,
                     %(pid)s,
@@ -326,8 +345,12 @@ class DBLoopTuner(LoopTuner):
                 WHERE xact_start < CURRENT_TIMESTAMP - interval '%%f seconds'
                     AND datname = current_database()
                 ORDER BY xact_start LIMIT 4
-                """ % activity_cols(store))
-                % self.long_running_transaction).get_all())
+                """
+                        % activity_cols(store)
+                    )
+                    % self.long_running_transaction
+                ).get_all()
+            )
             if not results:
                 break
 
@@ -338,7 +361,12 @@ class DBLoopTuner(LoopTuner):
                 for runtime, pid, usename, datname, query in results:
                     self.log.info(
                         "Blocked on %s old xact %s@%s/%d - %s.",
-                        runtime, usename, datname, pid, query)
+                        runtime,
+                        usename,
+                        datname,
+                        pid,
+                        query,
+                    )
                 self.log.info("Sleeping for up to 10 minutes.")
             # Don't become a long running transaction!
             transaction.abort()
@@ -368,7 +396,7 @@ class TunableLoop:
 
     goal_seconds = 2
     minimum_chunk_size = 1
-    maximum_chunk_size = None  # Override.
+    maximum_chunk_size = None  # type: int
     cooldown_time = 0
 
     def __init__(self, log, abort_time=None):
@@ -380,12 +408,15 @@ class TunableLoop:
         raise NotImplementedError(self.isDone)
 
     def run(self):
-        assert self.maximum_chunk_size is not None, (
-            "Did not override maximum_chunk_size.")
+        assert (
+            self.maximum_chunk_size is not None
+        ), "Did not override maximum_chunk_size."
         self.tuner_class(
-            self, self.goal_seconds,
+            self,
+            self.goal_seconds,
             minimum_chunk_size=self.minimum_chunk_size,
             maximum_chunk_size=self.maximum_chunk_size,
             cooldown_time=self.cooldown_time,
             abort_time=self.abort_time,
-            log=self.log).run()
+            log=self.log,
+        ).run()

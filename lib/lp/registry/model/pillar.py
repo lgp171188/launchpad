@@ -6,42 +6,26 @@
 Pillars are currently Product, ProjectGroup and Distribution.
 """
 
-from operator import attrgetter
 import warnings
+from operator import attrgetter
 
 import six
 from storm.databases.postgres import Case
-from storm.expr import (
-    And,
-    Coalesce,
-    Desc,
-    LeftJoin,
-    Lower,
-    Or,
-    )
+from storm.expr import And, Coalesce, Desc, LeftJoin, Lower, Or
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.registry.interfaces.distribution import IDistribution, IDistributionSet
 from lp.registry.interfaces.pillar import (
     IPillarName,
     IPillarNameSet,
     IPillarPerson,
     IPillarPersonFactory,
-    )
-from lp.registry.interfaces.product import (
-    IProduct,
-    IProductSet,
-    )
+)
+from lp.registry.interfaces.product import IProduct, IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.registry.model.featuredproject import FeaturedProject
 from lp.services.config import config
@@ -49,60 +33,54 @@ from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    StringCol,
-    )
-from lp.services.database.stormexpr import (
-    fti_search,
-    rank_by_fti,
-    )
+from lp.services.database.sqlobject import BoolCol, ForeignKey, StringCol
+from lp.services.database.stormexpr import fti_search, rank_by_fti
 from lp.services.librarian.model import LibraryFileAlias
 
-
 __all__ = [
-    'pillar_sort_key',
-    'HasAliasMixin',
-    'PillarNameSet',
-    'PillarName',
-    'PillarPerson',
-    ]
+    "pillar_sort_key",
+    "HasAliasMixin",
+    "PillarNameSet",
+    "PillarName",
+    "PillarPerson",
+]
 
 
 def pillar_sort_key(pillar):
     """A sort key for a set of pillars. We want:
 
-          - products first, alphabetically
-          - distributions, with ubuntu first and the rest alphabetically
+    - products first, alphabetically
+    - distributions, with ubuntu first and the rest alphabetically
     """
-    product_name = ''
-    distribution_name = ''
+    product_name = ""
+    distribution_name = ""
     if IProduct.providedBy(pillar):
         product_name = pillar.name
     elif IDistribution.providedBy(pillar):
         distribution_name = pillar.name
     # Move ubuntu to the top.
-    if distribution_name == 'ubuntu':
-        distribution_name = '-'
+    if distribution_name == "ubuntu":
+        distribution_name = "-"
 
     return (distribution_name, product_name)
 
 
 @implementer(IPillarNameSet)
 class PillarNameSet:
-
     def __contains__(self, name):
         """See `IPillarNameSet`."""
         name = six.ensure_text(name)
-        result = IStore(PillarName).execute("""
+        result = IStore(PillarName).execute(
+            """
             SELECT TRUE
             FROM PillarName
             WHERE (id IN (SELECT alias_for FROM PillarName WHERE name=?)
                    OR name=?)
                 AND alias_for IS NULL
                 AND active IS TRUE
-            """, [name, name])
+            """,
+            [name, name],
+        )
         return result.get_one() is not None
 
     def __getitem__(self, name):
@@ -145,7 +123,8 @@ class PillarNameSet:
 
         assert len([column for column in row[1:] if column is None]) == 2, (
             "One (and only one) of product, project or distribution may be "
-            "NOT NULL: %s" % row[1:])
+            "NOT NULL: %s" % row[1:]
+        )
 
         id, product, projectgroup, distribution = row
 
@@ -163,21 +142,19 @@ class PillarNameSet:
         """
         # These classes are imported in this method to prevent an import loop.
         from lp.registry.model.distribution import Distribution
-        from lp.registry.model.product import (
-            Product,
-            ProductSet,
-            )
+        from lp.registry.model.product import Product, ProductSet
         from lp.registry.model.projectgroup import ProjectGroup
+
         OtherPillarName = ClassAlias(PillarName)
         origin = [
             PillarName,
             LeftJoin(
-                OtherPillarName, PillarName.alias_for == OtherPillarName.id),
+                OtherPillarName, PillarName.alias_for == OtherPillarName.id
+            ),
             LeftJoin(Product, PillarName.product == Product.id),
             LeftJoin(ProjectGroup, PillarName.projectgroup == ProjectGroup.id),
-            LeftJoin(
-                Distribution, PillarName.distribution == Distribution.id),
-            ]
+            LeftJoin(Distribution, PillarName.distribution == Distribution.id),
+        ]
         conditions = And(
             PillarName.active,
             Or(
@@ -187,12 +164,24 @@ class PillarNameSet:
                 fti_search(ProjectGroup, text),
                 Lower(ProjectGroup._title) == Lower(text),
                 fti_search(Distribution, text),
-                Lower(Distribution._title) == Lower(text)))
+                Lower(Distribution._title) == Lower(text),
+            ),
+        )
         columns = [
-            PillarName, OtherPillarName, Product, ProjectGroup, Distribution]
-        return IStore(PillarName).using(*origin).find(
-            tuple(columns),
-            And(conditions, ProductSet.getProductPrivacyFilter(user)))
+            PillarName,
+            OtherPillarName,
+            Product,
+            ProjectGroup,
+            Distribution,
+        ]
+        return (
+            IStore(PillarName)
+            .using(*origin)
+            .find(
+                tuple(columns),
+                And(conditions, ProductSet.getProductPrivacyFilter(user)),
+            )
+        )
 
     def count_search_matches(self, user, text):
         text = six.ensure_text(text)
@@ -203,10 +192,7 @@ class PillarNameSet:
         """See `IPillarSet`."""
         # Avoid circular imports.
         from lp.registry.model.distribution import Distribution
-        from lp.registry.model.product import (
-            get_precached_products,
-            Product,
-            )
+        from lp.registry.model.product import Product, get_precached_products
         from lp.registry.model.projectgroup import ProjectGroup
 
         text = six.ensure_text(text)
@@ -226,19 +212,28 @@ class PillarNameSet:
         # so the coalesce() is necessary to find the ts_rank() which
         # is not null.
         result.order_by(
-            Desc(Case(
-                cases=(
-                    (Or(
-                        PillarName.name == Lower(text),
-                        Lower(Product._title) == Lower(text),
-                        Lower(ProjectGroup._title) == Lower(text),
-                        Lower(Distribution._title) == Lower(text)),
-                     9999999),),
-                default=Coalesce(
-                    rank_by_fti(Product, text, desc=False),
-                    rank_by_fti(ProjectGroup, text, desc=False),
-                    rank_by_fti(Distribution, text, desc=False)))),
-            PillarName.name)
+            Desc(
+                Case(
+                    cases=(
+                        (
+                            Or(
+                                PillarName.name == Lower(text),
+                                Lower(Product._title) == Lower(text),
+                                Lower(ProjectGroup._title) == Lower(text),
+                                Lower(Distribution._title) == Lower(text),
+                            ),
+                            9999999,
+                        ),
+                    ),
+                    default=Coalesce(
+                        rank_by_fti(Product, text, desc=False),
+                        rank_by_fti(ProjectGroup, text, desc=False),
+                        rank_by_fti(Distribution, text, desc=False),
+                    ),
+                )
+            ),
+            PillarName.name,
+        )
         # People shouldn't be calling this method with too big limits
         longest_expected = 2 * config.launchpad.default_batch_size
         if limit > longest_expected:
@@ -246,11 +241,13 @@ class PillarNameSet:
                 "The search limit (%s) was greater "
                 "than the longest expected size (%s)"
                 % (limit, longest_expected),
-                stacklevel=2)
+                stacklevel=2,
+            )
         pillars = []
         products = []
-        for pillar_name, other, product, projectgroup, distro in (
-            result[:limit]):
+        for pillar_name, other, product, projectgroup, distro in result[
+            :limit
+        ]:
             pillar = pillar_name.pillar
             if IProduct.providedBy(pillar):
                 products.append(pillar)
@@ -261,23 +258,34 @@ class PillarNameSet:
 
     def add_featured_project(self, project):
         """See `IPillarSet`."""
-        existing = IStore(FeaturedProject).find(
-            FeaturedProject,
-            PillarName.name == project.name,
-            PillarName.id == FeaturedProject.pillar_name_id).one()
+        existing = (
+            IStore(FeaturedProject)
+            .find(
+                FeaturedProject,
+                PillarName.name == project.name,
+                PillarName.id == FeaturedProject.pillar_name_id,
+            )
+            .one()
+        )
         if existing is None:
-            pillar_name = IStore(PillarName).find(
-                PillarName, name=project.name).one()
+            pillar_name = (
+                IStore(PillarName).find(PillarName, name=project.name).one()
+            )
             featured_project = FeaturedProject(pillar_name=pillar_name)
             IStore(FeaturedProject).add(featured_project)
             return featured_project
 
     def remove_featured_project(self, project):
         """See `IPillarSet`."""
-        existing = IStore(FeaturedProject).find(
-            FeaturedProject,
-            PillarName.name == project.name,
-            PillarName.id == FeaturedProject.pillar_name_id).one()
+        existing = (
+            IStore(FeaturedProject)
+            .find(
+                FeaturedProject,
+                PillarName.name == project.name,
+                PillarName.id == FeaturedProject.pillar_name_id,
+            )
+            .one()
+        )
         if existing is not None:
             existing.destroySelf()
 
@@ -291,40 +299,47 @@ class PillarNameSet:
 
         store = IStore(PillarName)
         pillar_names = store.find(
-            PillarName, PillarName.id == FeaturedProject.pillar_name_id)
+            PillarName, PillarName.id == FeaturedProject.pillar_name_id
+        )
 
         def preload_pillars(rows):
-            pillar_names = (
-                set(rows).union(load_related(PillarName, rows, ['alias_for'])))
-            pillars = load_related(Product, pillar_names, ['productID'])
-            pillars.extend(load_related(
-                ProjectGroup, pillar_names, ['projectgroupID']))
-            pillars.extend(load_related(
-                Distribution, pillar_names, ['distributionID']))
-            load_related(LibraryFileAlias, pillars, ['iconID'])
+            pillar_names = set(rows).union(
+                load_related(PillarName, rows, ["alias_for"])
+            )
+            pillars = load_related(Product, pillar_names, ["productID"])
+            pillars.extend(
+                load_related(ProjectGroup, pillar_names, ["projectgroupID"])
+            )
+            pillars.extend(
+                load_related(Distribution, pillar_names, ["distributionID"])
+            )
+            load_related(LibraryFileAlias, pillars, ["iconID"])
 
-        return list(DecoratedResultSet(
-            pillar_names, result_decorator=attrgetter('pillar'),
-            pre_iter_hook=preload_pillars))
+        return list(
+            DecoratedResultSet(
+                pillar_names,
+                result_decorator=attrgetter("pillar"),
+                pre_iter_hook=preload_pillars,
+            )
+        )
 
 
 @implementer(IPillarName)
 class PillarName(SQLBase):
 
-    _table = 'PillarName'
-    _defaultOrder = 'name'
+    _table = "PillarName"
+    _defaultOrder = "name"
 
     name = StringCol(
-        dbName='name', notNull=True, unique=True, alternateID=True)
-    product = ForeignKey(
-        foreignKey='Product', dbName='product')
-    projectgroup = ForeignKey(
-        foreignKey='ProjectGroup', dbName='project')
-    distribution = ForeignKey(
-        foreignKey='Distribution', dbName='distribution')
-    active = BoolCol(dbName='active', notNull=True, default=True)
+        dbName="name", notNull=True, unique=True, alternateID=True
+    )
+    product = ForeignKey(foreignKey="Product", dbName="product")
+    projectgroup = ForeignKey(foreignKey="ProjectGroup", dbName="project")
+    distribution = ForeignKey(foreignKey="Distribution", dbName="distribution")
+    active = BoolCol(dbName="active", notNull=True, default=True)
     alias_for = ForeignKey(
-        foreignKey='PillarName', dbName='alias_for', default=None)
+        foreignKey="PillarName", dbName="alias_for", default=None
+    )
 
     @property
     def pillar(self):
@@ -360,19 +375,20 @@ class HasAliasMixin:
         to_add = set(names).difference(existing_aliases)
         for name in to_add:
             assert store.find(PillarName, name=name).count() == 0, (
-                "This alias is already in use: %s" % name)
+                "This alias is already in use: %s" % name
+            )
             PillarName(name=name, alias_for=self_pillar)
         for name in to_remove:
             pillar_name = store.find(PillarName, name=name).one()
-            assert pillar_name.alias_for == self_pillar, (
-                "Can't remove an alias of another pillar.")
+            assert (
+                pillar_name.alias_for == self_pillar
+            ), "Can't remove an alias of another pillar."
             store.remove(pillar_name)
 
 
 @implementer(IPillarPerson)
 @provider(IPillarPersonFactory)
 class PillarPerson:
-
     def __init__(self, pillar, person):
         self.pillar = pillar
         self.person = person

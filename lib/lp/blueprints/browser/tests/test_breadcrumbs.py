@@ -5,33 +5,37 @@ from lp.services.webapp.publisher import canonical_url
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 
 
-class TestHasSpecificationsBreadcrumbOnBlueprintsFacet(
-        BaseBreadcrumbTestCase):
+class TestHasSpecificationsBreadcrumbOnBlueprintsFacet(BaseBreadcrumbTestCase):
     """Test Breadcrumbs for IHasSpecifications on the blueprints vhost."""
 
     def setUp(self):
         super().setUp()
         self.person = self.factory.makePerson()
         self.person_specs_url = canonical_url(
-            self.person, rootsite='blueprints')
+            self.person, rootsite="blueprints"
+        )
         self.product = self.factory.makeProduct(
-            name='crumb-tester', displayname="Crumb Tester")
+            name="crumb-tester", displayname="Crumb Tester"
+        )
         self.product_specs_url = canonical_url(
-            self.product, rootsite='blueprints')
+            self.product, rootsite="blueprints"
+        )
 
     def test_product(self):
         crumbs = self.getBreadcrumbsForObject(
-            self.product, rootsite='blueprints')
+            self.product, rootsite="blueprints"
+        )
         last_crumb = crumbs[-1]
         self.assertEqual(last_crumb.url, self.product_specs_url)
-        self.assertEqual(last_crumb.text, 'Blueprints')
+        self.assertEqual(last_crumb.text, "Blueprints")
 
     def test_person(self):
         crumbs = self.getBreadcrumbsForObject(
-            self.person, rootsite='blueprints')
+            self.person, rootsite="blueprints"
+        )
         last_crumb = crumbs[-1]
         self.assertEqual(last_crumb.url, self.person_specs_url)
-        self.assertEqual(last_crumb.text, 'Blueprints')
+        self.assertEqual(last_crumb.text, "Blueprints")
 
 
 class TestSpecificationBreadcrumb(BaseBreadcrumbTestCase):
@@ -40,11 +44,14 @@ class TestSpecificationBreadcrumb(BaseBreadcrumbTestCase):
     def setUp(self):
         super().setUp()
         self.product = self.factory.makeProduct(
-            name='crumb-tester', displayname="Crumb Tester")
+            name="crumb-tester", displayname="Crumb Tester"
+        )
         self.specification = self.factory.makeSpecification(
-            title="Crumby Specification", product=self.product)
+            title="Crumby Specification", product=self.product
+        )
         self.specification_url = canonical_url(
-            self.specification, rootsite='blueprints')
+            self.specification, rootsite="blueprints"
+        )
 
     def test_specification(self):
         crumbs = self.getBreadcrumbsForObject(self.specification)

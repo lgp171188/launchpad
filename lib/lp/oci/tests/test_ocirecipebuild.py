@@ -3,15 +3,12 @@
 
 """Tests for OCI image building recipe functionality."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 from urllib.request import urlopen
 
+import pytz
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
-import pytz
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -19,17 +16,14 @@ from testtools.matchers import (
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    )
+)
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import (
-    ILaunchpadCelebrities,
-    IPrivacy,
-    )
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities, IPrivacy
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -37,21 +31,18 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-    )
+)
 from lp.oci.interfaces.ocirecipebuild import (
     CannotScheduleRegistryUpload,
     IOCIFileSet,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     OCIRecipeBuildRegistryUploadStatus,
-    )
+)
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.oci.tests.helpers import OCIConfigHelperMixin
-from lp.registry.enums import (
-    PersonVisibility,
-    TeamMembershipPolicy,
-    )
+from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -61,28 +52,28 @@ from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
-    )
+)
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
-    admin_logged_in,
     ANONYMOUS,
+    StormStatementRecorder,
+    TestCaseWithFactory,
+    admin_logged_in,
     api_url,
     login,
     logout,
     person_logged_in,
-    StormStatementRecorder,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
-    )
+)
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
 from lp.xmlrpc.interfaces import IPrivateApplication
@@ -94,7 +85,7 @@ class TestOCIFileSet(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_implements_interface(self):
         file_set = getUtility(IOCIFileSet)
@@ -120,7 +111,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         self.build = self.factory.makeOCIRecipeBuild()
 
     def test_implements_interface(self):
@@ -141,39 +132,45 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(files[0].library_file, result)
 
     def test_getFileByName_missing(self):
-        self.assertRaises(
-            NotFoundError,
-            self.build.getFileByName,
-            "missing")
+        self.assertRaises(NotFoundError, self.build.getFileByName, "missing")
 
     def test_getFileByName_logs(self):
         # getFileByName returns the logs when requested by name.
         self.build.setLog(
-            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz")
+        )
         self.assertEqual(
-            self.build.log, self.build.getFileByName("buildlog.txt.gz"))
+            self.build.log, self.build.getFileByName("buildlog.txt.gz")
+        )
         self.assertRaises(NotFoundError, self.build.getFileByName, "foo")
         self.build.storeUploadLog("uploaded")
         self.assertEqual(
             self.build.upload_log,
-            self.build.getFileByName(self.build.upload_log.filename))
+            self.build.getFileByName(self.build.upload_log.filename),
+        )
 
     def test_getLayerFileByDigest(self):
-        files = [self.factory.makeOCIFile(
-                    build=self.build, layer_file_digest=str(x))
-                 for x in range(3)]
+        files = [
+            self.factory.makeOCIFile(
+                build=self.build, layer_file_digest=str(x)
+            )
+            for x in range(3)
+        ]
         result, _, _ = self.build.getLayerFileByDigest(
-            files[0].layer_file_digest)
+            files[0].layer_file_digest
+        )
         self.assertEqual(result, files[0])
 
     def test_getLayerFileByDigest_missing(self):
-        [self.factory.makeOCIFile(
-            build=self.build, layer_file_digest=str(x))
-         for x in range(3)]
+        [
+            self.factory.makeOCIFile(
+                build=self.build, layer_file_digest=str(x)
+            )
+            for x in range(3)
+        ]
         self.assertRaises(
-            NotFoundError,
-            self.build.getLayerFileByDigest,
-            'missing')
+            NotFoundError, self.build.getLayerFileByDigest, "missing"
+        )
 
     def test_can_be_retried(self):
         ok_cases = [
@@ -183,7 +180,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
             BuildStatus.FAILEDTOUPLOAD,
             BuildStatus.CANCELLED,
             BuildStatus.SUPERSEDED,
-            ]
+        ]
         for status in BuildStatus.items:
             build = self.factory.makeOCIRecipeBuild(status=status)
             if status in ok_cases:
@@ -194,7 +191,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_can_be_retried_obsolete_series(self):
         # Builds for obsolete series cannot be retried.
         distroseries = self.factory.makeDistroSeries(
-            status=SeriesStatus.OBSOLETE)
+            status=SeriesStatus.OBSOLETE
+        )
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         build = self.factory.makeOCIRecipeBuild(distro_arch_series=das)
         self.assertFalse(build.can_be_retried)
@@ -204,7 +202,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         ok_cases = [
             BuildStatus.BUILDING,
             BuildStatus.NEEDSBUILD,
-            ]
+        ]
         for status in BuildStatus.items:
             build = self.factory.makeOCIRecipeBuild()
             build.queueBuild()
@@ -255,12 +253,15 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         # Previous successful builds of the same OCI recipe are used for
         # estimates.
         oci_build = self.factory.makeOCIRecipeBuild(
-            status=BuildStatus.FULLYBUILT, duration=timedelta(seconds=335))
+            status=BuildStatus.FULLYBUILT, duration=timedelta(seconds=335)
+        )
         for i in range(3):
             self.factory.makeOCIRecipeBuild(
-                requester=oci_build.requester, recipe=oci_build.recipe,
+                requester=oci_build.requester,
+                recipe=oci_build.recipe,
                 status=BuildStatus.FAILEDTOBUILD,
-                duration=timedelta(seconds=20))
+                duration=timedelta(seconds=20),
+            )
         self.assertEqual(335, oci_build.estimateDuration().seconds)
 
     def test_queueBuild(self):
@@ -268,7 +269,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         bq = self.build.queueBuild()
         self.assertProvides(bq, IBuildQueue)
         self.assertEqual(
-            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job)
+            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job
+        )
         self.assertEqual(self.build, bq.specific_build)
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
@@ -280,11 +282,14 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertFalse(self.build.private)
         private_team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED,
-            visibility=PersonVisibility.PRIVATE)
+            visibility=PersonVisibility.PRIVATE,
+        )
         with person_logged_in(private_team.teamowner):
             build = self.factory.makeOCIRecipeBuild(
-                requester=private_team.teamowner, owner=private_team,
-                information_type=InformationType.USERDATA)
+                requester=private_team.teamowner,
+                owner=private_team,
+                information_type=InformationType.USERDATA,
+            )
             self.assertTrue(build.is_private)
             self.assertTrue(build.private)
 
@@ -293,57 +298,81 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         # corresponding OCIRecipe.
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
+        )
         with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
             self.build.updateStatus(BuildStatus.FULLYBUILT)
         expected_payload = {
             "recipe_build": Equals(
-                canonical_url(self.build, force_local_path=True)),
+                canonical_url(self.build, force_local_path=True)
+            ),
             "action": Equals("status-changed"),
             "recipe": Equals(
-                 canonical_url(self.build.recipe, force_local_path=True)),
+                canonical_url(self.build.recipe, force_local_path=True)
+            ),
             "build_request": Is(None),
             "status": Equals("Successfully built"),
-            'registry_upload_status': Equals("Unscheduled"),
-            }
+            "registry_upload_status": Equals("Unscheduled"),
+        }
         self.assertThat(
-            logger.output, LogsScheduledWebhooks([
-                (hook, "oci-recipe:build:0.1",
-                 MatchesDict(expected_payload))]))
+            logger.output,
+            LogsScheduledWebhooks(
+                [(hook, "oci-recipe:build:0.1", MatchesDict(expected_payload))]
+            ),
+        )
 
         delivery = hook.deliveries.one()
         self.assertThat(
-            delivery, MatchesStructure(
+            delivery,
+            MatchesStructure(
                 event_type=Equals("oci-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload)))
+                payload=MatchesDict(expected_payload),
+            ),
+        )
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
-                "<WebhookDeliveryJob for webhook %d on %r>" % (
-                    hook.id, hook.target),
-                repr(delivery))
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
 
     def test_updateStatus_no_change_does_not_trigger_webhooks(self):
         # An updateStatus call that doesn't change the build's status
         # attribute does not trigger webhooks.
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
+        )
         with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
             self.build.updateStatus(BuildStatus.BUILDING)
         expected_logs = [
-            (hook, "oci-recipe:build:0.1", ContainsDict({
-                "action": Equals("status-changed"),
-                "status": Equals("Currently building"),
-                }))]
+            (
+                hook,
+                "oci-recipe:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Currently building"),
+                    }
+                ),
+            )
+        ]
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
         self.build.updateStatus(BuildStatus.BUILDING)
         expected_logs = [
-            (hook, "oci-recipe:build:0.1", ContainsDict({
-                "action": Equals("status-changed"),
-                "status": Equals("Currently building"),
-                }))]
+            (
+                hook,
+                "oci-recipe:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Currently building"),
+                    }
+                ),
+            )
+        ]
         self.assertEqual(1, hook.deliveries.count())
         self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
@@ -363,9 +392,10 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
             self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertEqual(0, len(list(self.build.registry_upload_jobs)))
         self.assertIn(
-            "%r is not configured for upload to registries." % (
-                self.build.recipe),
-            logger.output.splitlines())
+            "%r is not configured for upload to registries."
+            % (self.build.recipe),
+            logger.output.splitlines(),
+        )
 
     def test_updateStatus_fullybuilt_triggers_registry_uploads(self):
         # A completed OCIRecipeBuild triggers registry uploads.
@@ -377,7 +407,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(1, len(list(self.build.registry_upload_jobs)))
         self.assertIn(
             "Scheduling upload of %r to registries." % self.build,
-            logger.output.splitlines())
+            logger.output.splitlines(),
+        )
 
     def test_updateStatus_fullybuilt_distro_triggers_registry_uploads(self):
         # A completed OCIRecipeBuild with distribution credentials triggers
@@ -386,7 +417,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         distribution = self.factory.makeDistribution()
         distribution.oci_registry_credentials = (
-            self.factory.makeOCIRegistryCredentials())
+            self.factory.makeOCIRegistryCredentials()
+        )
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         build = self.factory.makeOCIRecipeBuild(recipe=recipe)
@@ -396,7 +428,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(1, len(list(build.registry_upload_jobs)))
         self.assertIn(
             "Scheduling upload of %r to registries." % build,
-            logger.output.splitlines())
+            logger.output.splitlines(),
+        )
 
     def test_eta(self):
         # OCIRecipeBuild.eta returns a non-None value when it should, or
@@ -429,14 +462,16 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
         self.assertEqual(
             OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED,
-            build.registry_upload_status)
+            build.registry_upload_status,
+        )
 
     def test_registry_upload_status_pending(self):
         build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
         getUtility(IOCIRegistryUploadJobSource).create(build)
         self.assertEqual(
             OCIRecipeBuildRegistryUploadStatus.PENDING,
-            build.registry_upload_status)
+            build.registry_upload_status,
+        )
 
     def test_registry_upload_status_uploaded(self):
         build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
@@ -445,7 +480,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         naked_job.job._status = JobStatus.COMPLETED
         self.assertEqual(
             OCIRecipeBuildRegistryUploadStatus.UPLOADED,
-            build.registry_upload_status)
+            build.registry_upload_status,
+        )
 
     def test_registry_upload_status_failed_to_upload(self):
         build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
@@ -454,7 +490,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         naked_job.job._status = JobStatus.FAILED
         self.assertEqual(
             OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD,
-            build.registry_upload_status)
+            build.registry_upload_status,
+        )
 
     def test_registry_upload_error_summary_no_job(self):
         build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
@@ -485,10 +522,11 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         job = getUtility(IOCIRegistryUploadJobSource).create(build)
         removeSecurityProxy(job).errors = [
             {"code": "BOOM", "message": "Boom", "detail": "It went boom"},
-            ]
+        ]
         self.assertEqual(
             [{"code": "BOOM", "message": "Boom", "detail": "It went boom"}],
-            build.registry_upload_errors)
+            build.registry_upload_errors,
+        )
 
     def test_scheduleRegistryUpload(self):
         # A build not previously uploaded to a registry can be uploaded
@@ -498,7 +536,8 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.factory.makeOCIFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         self.build.scheduleRegistryUpload()
         [job] = getUtility(IOCIRegistryUploadJobSource).iterReady()
         self.assertEqual(JobStatus.WAITING, job.job.status)
@@ -512,9 +551,11 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
             CannotScheduleRegistryUpload,
             "Cannot upload this build to registries because the recipe is not "
             "properly configured.",
-            self.build.scheduleRegistryUpload)
+            self.build.scheduleRegistryUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady())
+        )
 
     def test_scheduleRegistryUpload_no_files(self):
         # A build with no files cannot be uploaded to registries.
@@ -524,9 +565,11 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertRaisesWithContent(
             CannotScheduleRegistryUpload,
             "Cannot upload this build because it has no files.",
-            self.build.scheduleRegistryUpload)
+            self.build.scheduleRegistryUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady())
+        )
 
     def test_scheduleRegistryUpload_already_in_progress(self):
         # A build with an upload already in progress will not have another
@@ -536,15 +579,18 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.factory.makeOCIFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         old_job = getUtility(IOCIRegistryUploadJobSource).create(self.build)
         self.assertRaisesWithContent(
             CannotScheduleRegistryUpload,
             "An upload of this build is already in progress.",
-            self.build.scheduleRegistryUpload)
+            self.build.scheduleRegistryUpload,
+        )
         self.assertEqual(
             [old_job],
-            list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+            list(getUtility(IOCIRegistryUploadJobSource).iterReady()),
+        )
 
     def test_scheduleRegistryUpload_already_uploaded(self):
         # A build with an upload that has already completed will not have
@@ -554,15 +600,18 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.factory.makeOCIFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         old_job = getUtility(IOCIRegistryUploadJobSource).create(self.build)
         removeSecurityProxy(old_job).job._status = JobStatus.COMPLETED
         self.assertRaisesWithContent(
             CannotScheduleRegistryUpload,
             "Cannot upload this build because it has already been uploaded.",
-            self.build.scheduleRegistryUpload)
+            self.build.scheduleRegistryUpload,
+        )
         self.assertEqual(
-            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady()))
+            [], list(getUtility(IOCIRegistryUploadJobSource).iterReady())
+        )
 
     def test_scheduleRegistryUpload_triggers_webhooks(self):
         # Scheduling a registry upload triggers webhooks on the
@@ -572,36 +621,52 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeOCIFile(
             build=self.build,
-            library_file=self.factory.makeLibraryFileAlias(db_only=True))
+            library_file=self.factory.makeLibraryFileAlias(db_only=True),
+        )
         self.factory.makeOCIPushRule(recipe=self.build.recipe)
         hook = self.factory.makeWebhook(
-            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
+        )
         with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
             self.build.scheduleRegistryUpload()
         expected_payload = {
             "recipe_build": Equals(
-                canonical_url(self.build, force_local_path=True)),
+                canonical_url(self.build, force_local_path=True)
+            ),
             "action": Equals("status-changed"),
             "recipe": Equals(
-                canonical_url(self.build.recipe, force_local_path=True)),
+                canonical_url(self.build.recipe, force_local_path=True)
+            ),
             "build_request": Is(None),
             "status": Equals("Successfully built"),
             "registry_upload_status": Equals("Pending"),
-            }
+        }
         delivery = hook.deliveries.one()
         self.assertThat(
-            delivery, MatchesStructure(
+            delivery,
+            MatchesStructure(
                 event_type=Equals("oci-recipe:build:0.1"),
-                payload=MatchesDict(expected_payload)))
+                payload=MatchesDict(expected_payload),
+            ),
+        )
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
-                "<WebhookDeliveryJob for webhook %d on %r>" % (
-                    hook.id, hook.target),
-                repr(delivery))
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "oci-recipe:build:0.1",
-                     MatchesDict(expected_payload))]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (
+                            hook,
+                            "oci-recipe:build:0.1",
+                            MatchesDict(expected_payload),
+                        )
+                    ]
+                ),
+            )
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):
@@ -610,7 +675,7 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
 
     def test_implements_interface(self):
         target = OCIRecipeBuildSet()
@@ -621,15 +686,19 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         requester = self.factory.makePerson()
         distribution = self.factory.makeDistribution()
         distroseries = self.factory.makeDistroSeries(
-            distribution=distribution, status=SeriesStatus.CURRENT)
+            distribution=distribution, status=SeriesStatus.CURRENT
+        )
         processor = getUtility(IProcessorSet).getByName("386")
         distro_arch_series = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, distro_arch_series)
+            requester, recipe, distro_arch_series
+        )
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
             self.assertEqual(distro_arch_series, target.distro_arch_series)
@@ -638,18 +707,28 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         requester = self.factory.makePerson()
         distribution = self.factory.makeDistribution()
         distroseries = self.factory.makeDistroSeries(
-            distribution=distribution, status=SeriesStatus.CURRENT)
+            distribution=distribution, status=SeriesStatus.CURRENT
+        )
         processor = getUtility(IProcessorSet).getByName("386")
-        self.useFixture(FeatureFixture({
-            "oci.build_series.%s" % distribution.name: distroseries.name,
-            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.useFixture(
+            FeatureFixture(
+                {
+                    "oci.build_series.%s"
+                    % distribution.name: distroseries.name,
+                    OCI_RECIPE_ALLOW_CREATE: "on",
+                }
+            )
+        )
         distro_arch_series = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, architecturetag="i386",
-            processor=processor)
+            distroseries=distroseries,
+            architecturetag="i386",
+            processor=processor,
+        )
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, distro_arch_series)
+            requester, recipe, distro_arch_series
+        )
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
             self.assertEqual(distro_arch_series, target.distro_arch_series)
@@ -662,7 +741,8 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
     def test_getByBuildFarmJob(self):
         builds = [self.factory.makeOCIRecipeBuild() for x in range(3)]
         result = getUtility(IOCIRecipeBuildSet).getByBuildFarmJob(
-            builds[1].build_farm_job)
+            builds[1].build_farm_job
+        )
         self.assertEqual(result, builds[1])
 
     def test_getByBuildFarmJobs(self):
@@ -670,11 +750,14 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         self.assertContentEqual(
             builds,
             getUtility(IOCIRecipeBuildSet).getByBuildFarmJobs(
-                [build.build_farm_job for build in builds]))
+                [build.build_farm_job for build in builds]
+            ),
+        )
 
     def test_getByBuildFarmJobs_empty(self):
         self.assertContentEqual(
-            [], getUtility(IOCIRecipeBuildSet).getByBuildFarmJobs([]))
+            [], getUtility(IOCIRecipeBuildSet).getByBuildFarmJobs([])
+        )
 
     def test_virtualized_recipe_requires(self):
         recipe = self.factory.makeOCIRecipe(require_virtualized=True)
@@ -685,20 +768,26 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=self.factory.makeDistroSeries(
-                distribution=recipe.oci_project.distribution))
+                distribution=recipe.oci_project.distribution
+            )
+        )
         distro_arch_series.processor.supports_nonvirtualized = False
         target = self.factory.makeOCIRecipeBuild(
-            distro_arch_series=distro_arch_series, recipe=recipe)
+            distro_arch_series=distro_arch_series, recipe=recipe
+        )
         self.assertTrue(target.virtualized)
 
     def test_virtualized_no_support(self):
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=self.factory.makeDistroSeries(
-                distribution=recipe.oci_project.distribution))
+                distribution=recipe.oci_project.distribution
+            )
+        )
         distro_arch_series.processor.supports_nonvirtualized = True
         target = self.factory.makeOCIRecipeBuild(
-            recipe=recipe, distro_arch_series=distro_arch_series)
+            recipe=recipe, distro_arch_series=distro_arch_series
+        )
         self.assertFalse(target.virtualized)
 
 
@@ -711,7 +800,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         self.setConfig()
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
-            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+            self.person, permission=OAuthPermission.WRITE_PRIVATE
+        )
         self.webservice.default_api_version = "devel"
         login(ANONYMOUS)
 
@@ -725,15 +815,24 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         logout()
         build = self.webservice.get(build_url).jsonBody()
         with person_logged_in(self.person):
-            self.assertThat(build, ContainsDict({
-                "requester_link": Equals(self.getURL(self.person)),
-                "recipe_link": Equals(self.getURL(db_build.recipe)),
-                "distro_arch_series_link": Equals(
-                    self.getURL(db_build.distro_arch_series)),
-                "score": Is(None),
-                "can_be_rescored": Is(False),
-                "can_be_cancelled": Is(False),
-                }))
+            self.assertThat(
+                build,
+                ContainsDict(
+                    {
+                        "requester_link": Equals(self.getURL(self.person)),
+                        "recipe_link": Equals(self.getURL(db_build.recipe)),
+                        "distro_arch_series_link": Equals(
+                            self.getURL(db_build.distro_arch_series)
+                        ),
+                        "arch_tag": Equals(
+                            db_build.distro_arch_series.architecturetag
+                        ),
+                        "score": Is(None),
+                        "can_be_rescored": Is(False),
+                        "can_be_cancelled": Is(False),
+                    }
+                ),
+            )
 
     def test_public(self):
         # An OCIRecipeBuild with a public recipe and repository is itself
@@ -741,7 +840,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         db_build = self.factory.makeOCIRecipeBuild()
         build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         self.assertEqual(200, self.webservice.get(build_url).status)
@@ -750,15 +850,18 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_private_recipe(self):
         # An OCIRecipeBuild with a private recipe is private.
         db_team = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.MODERATED,
-            owner=self.person)
+            membership_policy=TeamMembershipPolicy.MODERATED, owner=self.person
+        )
         with person_logged_in(self.person):
             db_build = self.factory.makeOCIRecipeBuild(
-                requester=self.person, owner=db_team,
-                information_type=InformationType.USERDATA)
+                requester=self.person,
+                owner=db_team,
+                information_type=InformationType.USERDATA,
+            )
             build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         response = self.webservice.get(build_url)
@@ -769,14 +872,19 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         # An OCIRecipeBuild with a private recipe owner is private.
         db_team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED,
-            owner=self.person, visibility=PersonVisibility.PRIVATE)
+            owner=self.person,
+            visibility=PersonVisibility.PRIVATE,
+        )
         with person_logged_in(self.person):
             db_build = self.factory.makeOCIRecipeBuild(
-                requester=self.person, owner=db_team,
-                information_type=InformationType.USERDATA)
+                requester=self.person,
+                owner=db_team,
+                information_type=InformationType.USERDATA,
+            )
             build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         response = self.webservice.get(build_url)
@@ -790,7 +898,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         db_build.queueBuild()
         build_url = api_url(db_build)
         unpriv_webservice = webservice_for_person(
-            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC)
+            self.factory.makePerson(), permission=OAuthPermission.WRITE_PUBLIC
+        )
         unpriv_webservice.default_api_version = "devel"
         logout()
         build = self.webservice.get(build_url).jsonBody()
@@ -810,19 +919,23 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         db_build.queueBuild()
         build_url = api_url(db_build)
         buildd_admin = self.factory.makePerson(
-            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin])
+            member_of=[getUtility(ILaunchpadCelebrities).buildd_admin]
+        )
         buildd_admin_webservice = webservice_for_person(
-            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC)
+            buildd_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
         buildd_admin_webservice.default_api_version = "devel"
         logout()
         build = self.webservice.get(build_url).jsonBody()
         self.assertEqual(2510, build["score"])
         self.assertTrue(build["can_be_rescored"])
         response = self.webservice.named_post(
-            build["self_link"], "rescore", score=5000)
+            build["self_link"], "rescore", score=5000
+        )
         self.assertEqual(401, response.status)
         response = buildd_admin_webservice.named_post(
-            build["self_link"], "rescore", score=5000)
+            build["self_link"], "rescore", score=5000
+        )
         self.assertEqual(200, response.status)
         build = self.webservice.get(build_url).jsonBody()
         self.assertEqual(5000, build["score"])
@@ -854,7 +967,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         build_url = api_url(db_build)
         file_urls = [
             ProxiedLibraryFileAlias(file.library_file, db_build).http_url
-            for file in db_files]
+            for file in db_files
+        ]
         logout()
         response = self.webservice.named_get(build_url, "getFileUrls")
         self.assertEqual(200, response.status)
@@ -866,7 +980,8 @@ class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
 
 
 class TestOCIRecipeBuildMacaroonIssuer(
-    MacaroonTestMixin, OCIConfigHelperMixin, TestCaseWithFactory):
+    MacaroonTestMixin, OCIConfigHelperMixin, TestCaseWithFactory
+):
     """Test OCIRecipeBuild macaroon issuing and verification."""
 
     layer = LaunchpadZopelessLayer
@@ -875,32 +990,43 @@ class TestOCIRecipeBuildMacaroonIssuer(
         super().setUp()
         self.setConfig()
         self.pushConfig(
-            "launchpad", internal_macaroon_secret_key="some-secret")
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
 
     def getPrivateBuild(self):
         build = self.factory.makeOCIRecipeBuild()
         build.recipe.git_ref.repository.transitionToInformationType(
-            InformationType.PRIVATESECURITY, build.recipe.registrant)
+            InformationType.PRIVATESECURITY, build.recipe.registrant
+        )
         return build
 
     def test_issueMacaroon_refuses_public_ocirecipebuild(self):
         build = self.factory.makeOCIRecipeBuild()
         issuer = getUtility(IMacaroonIssuer, "oci-recipe-build")
         self.assertRaises(
-            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon,
-            build)
+            BadMacaroonContext,
+            removeSecurityProxy(issuer).issueMacaroon,
+            build,
+        )
 
     def test_issueMacaroon_good(self):
         build = self.getPrivateBuild()
         issuer = getUtility(IMacaroonIssuer, "oci-recipe-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
-        self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.test"),
-            identifier=Equals("oci-recipe-build"),
-            caveats=MatchesListwise([
-                MatchesStructure.byEquality(
-                    caveat_id="lp.oci-recipe-build %s" % build.id),
-                ])))
+        self.assertThat(
+            macaroon,
+            MatchesStructure(
+                location=Equals("launchpad.test"),
+                identifier=Equals("oci-recipe-build"),
+                caveats=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            caveat_id="lp.oci-recipe-build %s" % build.id
+                        ),
+                    ]
+                ),
+            ),
+        )
 
     def test_issueMacaroon_via_authserver(self):
         build = self.getPrivateBuild()
@@ -908,84 +1034,124 @@ class TestOCIRecipeBuildMacaroonIssuer(
         authserver = AuthServerAPIView(private_root.authserver, TestRequest())
         macaroon = Macaroon.deserialize(
             authserver.issueMacaroon(
-                "oci-recipe-build", "OCIRecipeBuild", build.id))
-        self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.test"),
-            identifier=Equals("oci-recipe-build"),
-            caveats=MatchesListwise([
-                MatchesStructure.byEquality(
-                    caveat_id="lp.oci-recipe-build %s" % build.id),
-                ])))
+                "oci-recipe-build", "OCIRecipeBuild", build.id
+            )
+        )
+        self.assertThat(
+            macaroon,
+            MatchesStructure(
+                location=Equals("launchpad.test"),
+                identifier=Equals("oci-recipe-build"),
+                caveats=MatchesListwise(
+                    [
+                        MatchesStructure.byEquality(
+                            caveat_id="lp.oci-recipe-build %s" % build.id
+                        ),
+                    ]
+                ),
+            ),
+        )
 
     def test_verifyMacaroon_good(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(
-            issuer, macaroon, build.recipe.git_ref.repository)
+            issuer, macaroon, build.recipe.git_ref.repository
+        )
 
     def test_verifyMacaroon_good_no_context(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonVerifies(
-            issuer, macaroon, None, require_context=False)
+            issuer, macaroon, None, require_context=False
+        )
         self.assertMacaroonVerifies(
-            issuer, macaroon, build.recipe.git_ref.repository,
-            require_context=False)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
 
     def test_verifyMacaroon_no_context_but_require_context(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
             ["Expected macaroon verification context but got None."],
-            issuer, macaroon, None)
+            issuer,
+            macaroon,
+            None,
+        )
 
     def test_verifyMacaroon_wrong_location(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = Macaroon(
-            location="another-location", key=issuer._root_secret)
+            location="another-location", key=issuer._root_secret
+        )
         self.assertMacaroonDoesNotVerify(
             ["Macaroon has unknown location 'another-location'."],
-            issuer, macaroon, build.recipe.git_ref.repository)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
         self.assertMacaroonDoesNotVerify(
             ["Macaroon has unknown location 'another-location'."],
-            issuer, macaroon, build.recipe.git_ref.repository,
-            require_context=False)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
 
     def test_verifyMacaroon_wrong_key(self):
         build = self.getPrivateBuild()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = Macaroon(
-            location=config.vhost.mainsite.hostname, key="another-secret")
+            location=config.vhost.mainsite.hostname, key="another-secret"
+        )
         self.assertMacaroonDoesNotVerify(
             ["Signatures do not match"],
-            issuer, macaroon, build.recipe.git_ref.repository)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
         self.assertMacaroonDoesNotVerify(
             ["Signatures do not match"],
-            issuer, macaroon, build.recipe.git_ref.repository,
-            require_context=False)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+            require_context=False,
+        )
 
     def test_verifyMacaroon_not_building(self):
         build = self.getPrivateBuild()
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
             ["Caveat check for 'lp.oci-recipe-build %s' failed." % build.id],
-            issuer, macaroon, build.recipe.git_ref.repository)
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
 
     def test_verifyMacaroon_wrong_build(self):
         build = self.getPrivateBuild()
@@ -993,20 +1159,30 @@ class TestOCIRecipeBuildMacaroonIssuer(
         other_build = self.getPrivateBuild()
         other_build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(other_build)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.oci-recipe-build %s' failed." %
-             other_build.id],
-            issuer, macaroon, build.recipe.git_ref.repository)
+            [
+                "Caveat check for 'lp.oci-recipe-build %s' failed."
+                % other_build.id
+            ],
+            issuer,
+            macaroon,
+            build.recipe.git_ref.repository,
+        )
 
     def test_verifyMacaroon_wrong_repository(self):
         build = self.getPrivateBuild()
         other_repository = self.factory.makeGitRepository()
         build.updateStatus(BuildStatus.BUILDING)
         issuer = removeSecurityProxy(
-            getUtility(IMacaroonIssuer, "oci-recipe-build"))
+            getUtility(IMacaroonIssuer, "oci-recipe-build")
+        )
         macaroon = issuer.issueMacaroon(build)
         self.assertMacaroonDoesNotVerify(
             ["Caveat check for 'lp.oci-recipe-build %s' failed." % build.id],
-            issuer, macaroon, other_repository)
+            issuer,
+            macaroon,
+            other_repository,
+        )

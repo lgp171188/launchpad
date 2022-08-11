@@ -25,7 +25,7 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarianserver.apachelogparser import (
     DBUSER,
     get_library_file_id,
-    )
+)
 
 
 class ParseLibrarianApacheLogs(ParseApacheLogs):
@@ -54,6 +54,6 @@ class ParseLibrarianApacheLogs(ParseApacheLogs):
             return None
 
 
-if __name__ == '__main__':
-    script = ParseLibrarianApacheLogs('parse-librarian-apache-logs', DBUSER)
+if __name__ == "__main__":
+    script = ParseLibrarianApacheLogs("parse-librarian-apache-logs", DBUSER)
     script.lock_and_run()

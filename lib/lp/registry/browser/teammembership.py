@@ -2,10 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'TeamMembershipBreadcrumb',
-    'TeamInvitationsView',
-    'TeamMembershipEditView',
-    ]
+    "TeamMembershipBreadcrumb",
+    "TeamInvitationsView",
+    "TeamMembershipEditView",
+]
 
 
 from datetime import datetime
@@ -20,10 +20,7 @@ from lp import _
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.date import DateWidget
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.breadcrumb import Breadcrumb
 
 
@@ -36,18 +33,17 @@ class TeamMembershipBreadcrumb(Breadcrumb):
 
 
 class TeamMembershipEditView(LaunchpadView):
-
     def __init__(self, context, request):
         super().__init__(context, request)
         self.errormessage = ""
-        self.prefix = 'membership'
-        self.max_year = 2050
-        fields = form.Fields(Date(
-            __name__='expirationdate', title=_('Expiration date')))
-        expiration_field = fields['expirationdate']
+        self.prefix = "membership"
+        fields = form.Fields(
+            Date(__name__="expirationdate", title=_("Expiration date"))
+        )
+        expiration_field = fields["expirationdate"]
         expiration_field.custom_widget = CustomWidgetFactory(DateWidget)
         expires = self.context.dateexpires
-        UTC = pytz.timezone('UTC')
+        UTC = pytz.timezone("UTC")
         if self.isExpired():
             # For expired members, we will present the team's default
             # renewal date.
@@ -62,11 +58,16 @@ class TeamMembershipEditView(LaunchpadView):
             # We get a datetime from the database, but we want to use a
             # datepicker so we must feed it a plain date without time.
             expires = expires.date()
-        data = {'expirationdate': expires}
+        data = {"expirationdate": expires}
         self.widgets = form.setUpWidgets(
-            fields, self.prefix, context, request, ignore_request=False,
-            data=data)
-        self.expiration_widget = self.widgets['expirationdate']
+            fields,
+            self.prefix,
+            context,
+            request,
+            ignore_request=False,
+            data=data,
+        )
+        self.expiration_widget = self.widgets["expirationdate"]
         # Set the acceptable date range for expiration.
         self.expiration_widget.from_date = datetime.now(UTC).date()
         # Disable the date widget if there is no current or required
@@ -78,27 +79,31 @@ class TeamMembershipEditView(LaunchpadView):
     def label(self):
         # This reproduces the logic of the old H1's in the pre-3.0 UI view.
         if self.isActive():
-            prefix = 'Active'
+            prefix = "Active"
         elif self.isInactive():
-            prefix = 'Inactive'
+            prefix = "Inactive"
         elif self.isProposed():
-            prefix = 'Proposed'
+            prefix = "Proposed"
         elif self.isDeclined():
-            prefix = 'Declined'
+            prefix = "Declined"
         elif self.isInvited() or self.isInvitationDeclined():
-            prefix = 'Invited'
+            prefix = "Invited"
         else:
-            raise AssertionError('status unknown')
-        return '%s member %s' % (prefix, self.context.person.displayname)
+            raise AssertionError("status unknown")
+        return "%s member %s" % (prefix, self.context.person.displayname)
 
     # Boolean helpers
     def isActive(self):
-        return self.context.status in [TeamMembershipStatus.APPROVED,
-                                       TeamMembershipStatus.ADMIN]
+        return self.context.status in [
+            TeamMembershipStatus.APPROVED,
+            TeamMembershipStatus.ADMIN,
+        ]
 
     def isInactive(self):
-        return self.context.status in [TeamMembershipStatus.EXPIRED,
-                                       TeamMembershipStatus.DEACTIVATED]
+        return self.context.status in [
+            TeamMembershipStatus.EXPIRED,
+            TeamMembershipStatus.DEACTIVATED,
+        ]
 
     def isAdmin(self):
         return self.context.status == TeamMembershipStatus.ADMIN
@@ -123,43 +128,43 @@ class TeamMembershipEditView(LaunchpadView):
 
     def adminIsSelected(self):
         """Whether the admin radiobutton should be selected."""
-        request_admin = self.request.get('admin')
-        if request_admin == 'yes':
-            return 'checked'
+        request_admin = self.request.get("admin")
+        if request_admin == "yes":
+            return "checked"
         if self.isAdmin():
-            return 'checked'
+            return "checked"
         return None
 
     def adminIsNotSelected(self):
         """Whether the not-admin radiobutton should be selected."""
-        if self.adminIsSelected() != 'checked':
-            return 'checked'
+        if self.adminIsSelected() != "checked":
+            return "checked"
         return None
 
     def expiresIsSelected(self):
         """Whether the expiration date radiobutton should be selected."""
-        request_expires = self.request.get('expires')
-        if request_expires == 'date':
-            return 'checked'
+        request_expires = self.request.get("expires")
+        if request_expires == "date":
+            return "checked"
         if self.isExpired():
             # Never checked when expired, because there's another
             # radiobutton in that situation.
             return None
         if self.membershipExpires():
-            return 'checked'
+            return "checked"
         return None
 
     def neverExpiresIsSelected(self):
         """Whether the never-expires radiobutton should be selected."""
-        request_expires = self.request.get('expires')
-        if request_expires == 'never':
-            return 'checked'
+        request_expires = self.request.get("expires")
+        if request_expires == "never":
+            return "checked"
         if self.isExpired():
             # Never checked when expired, because there's another
             # radiobutton in that situation.
             return None
         if not self.membershipExpires():
-            return 'checked'
+            return "checked"
         return None
 
     def canChangeExpirationDate(self):
@@ -183,14 +188,14 @@ class TeamMembershipEditView(LaunchpadView):
     #
 
     def processForm(self):
-        if self.request.method != 'POST':
+        if self.request.method != "POST":
             return
 
-        if self.request.form.get('editactive'):
+        if self.request.form.get("editactive"):
             self.processActiveMember()
-        elif self.request.form.get('editproposed'):
+        elif self.request.form.get("editproposed"):
             self.processProposedMember()
-        elif self.request.form.get('editinactive'):
+        elif self.request.form.get("editinactive"):
             self.processInactiveMember()
 
     def processActiveMember(self):
@@ -198,7 +203,7 @@ class TeamMembershipEditView(LaunchpadView):
         # crash because of users reposting a form.
         form = self.request.form
         context = self.context
-        if form.get('deactivate'):
+        if form.get("deactivate"):
             if self.context.status == TeamMembershipStatus.DEACTIVATED:
                 # This branch and redirect is necessary because
                 # TeamMembership.setStatus() does not allow us to set an
@@ -206,60 +211,74 @@ class TeamMembershipEditView(LaunchpadView):
                 # double form posts to crash there. We instead manually
                 # ensure that the double-post is harmless.
                 self.request.response.redirect(
-                    '%s/+members' % canonical_url(context.team))
+                    "%s/+members" % canonical_url(context.team)
+                )
                 return
             new_status = TeamMembershipStatus.DEACTIVATED
-        elif form.get('change'):
-            if (form.get('admin') == "no" and
-                context.status == TeamMembershipStatus.ADMIN):
+        elif form.get("change"):
+            if (
+                form.get("admin") == "no"
+                and context.status == TeamMembershipStatus.ADMIN
+            ):
                 new_status = TeamMembershipStatus.APPROVED
-            elif (form.get('admin') == "yes" and
-                  context.status == TeamMembershipStatus.APPROVED):
+            elif (
+                form.get("admin") == "yes"
+                and context.status == TeamMembershipStatus.APPROVED
+            ):
                 new_status = TeamMembershipStatus.ADMIN
             else:
                 # No status change will happen
                 new_status = self.context.status
         else:
             raise UnexpectedFormData(
-                "None of the expected actions were found.")
+                "None of the expected actions were found."
+            )
 
         if self._setMembershipData(new_status):
             self.request.response.redirect(
-                '%s/+members' % canonical_url(context.team))
+                "%s/+members" % canonical_url(context.team)
+            )
 
     def processProposedMember(self):
         if self.context.status != TeamMembershipStatus.PROPOSED:
             # Catch a double-form-post.
             self.errormessage = _(
-                'The membership request for %s has already been processed.' %
-                    self.context.person.displayname)
+                "The membership request for %s has already been processed."
+                % self.context.person.displayname
+            )
             return
 
         assert self.context.status == TeamMembershipStatus.PROPOSED
 
-        if self.request.form.get('decline'):
+        if self.request.form.get("decline"):
             status = TeamMembershipStatus.DECLINED
-        elif self.request.form.get('approve'):
+        elif self.request.form.get("approve"):
             status = TeamMembershipStatus.APPROVED
         else:
             raise UnexpectedFormData(
-                "None of the expected actions were found.")
+                "None of the expected actions were found."
+            )
         if self._setMembershipData(status):
             self.request.response.redirect(
-                '%s/+members' % canonical_url(self.context.team))
+                "%s/+members" % canonical_url(self.context.team)
+            )
 
     def processInactiveMember(self):
-        if self.context.status not in (TeamMembershipStatus.EXPIRED,
-                                       TeamMembershipStatus.DEACTIVATED):
+        if self.context.status not in (
+            TeamMembershipStatus.EXPIRED,
+            TeamMembershipStatus.DEACTIVATED,
+        ):
             # Catch a double-form-post.
             self.errormessage = _(
-                'The membership request for %s has already been processed.' %
-                    self.context.person.displayname)
+                "The membership request for %s has already been processed."
+                % self.context.person.displayname
+            )
             return
 
         if self._setMembershipData(TeamMembershipStatus.APPROVED):
             self.request.response.redirect(
-                '%s/+members' % canonical_url(self.context.team))
+                "%s/+members" % canonical_url(self.context.team)
+            )
 
     def _setMembershipData(self, status):
         """Set all data specified on the form, for this TeamMembership.
@@ -271,24 +290,23 @@ class TeamMembershipEditView(LaunchpadView):
         Callsites should not commit the transaction if we return False.
         """
         if self.canChangeExpirationDate():
-            if self.request.form.get('expires') == 'never':
+            if self.request.form.get("expires") == "never":
                 expires = None
             else:
                 try:
                     expires = self._getExpirationDate()
                 except ValueError as err:
-                    self.errormessage = (
-                        'Invalid expiration: %s' % err)
+                    self.errormessage = "Invalid expiration: %s" % err
                     return False
         else:
             expires = self.context.dateexpires
 
-        silent = self.request.form.get('silent', False)
+        silent = self.request.form.get("silent", False)
 
         self.context.setExpirationDate(expires, self.user)
         self.context.setStatus(
-            status, self.user, self.request.form_ng.getOne('comment'),
-            silent)
+            status, self.user, self.request.form_ng.getOne("comment"), silent
+        )
         return True
 
     def _getExpirationDate(self):
@@ -314,9 +332,10 @@ class TeamMembershipEditView(LaunchpadView):
 
         # We used a date picker, so we have a date. What we want is a
         # datetime in UTC
-        UTC = pytz.timezone('UTC')
-        expires = datetime(expires.year, expires.month, expires.day,
-                           tzinfo=UTC)
+        UTC = pytz.timezone("UTC")
+        expires = datetime(
+            expires.year, expires.month, expires.day, tzinfo=UTC
+        )
         return expires
 
 
@@ -325,4 +344,4 @@ class TeamInvitationsView(LaunchpadView):
 
     @property
     def label(self):
-        return 'Invitations for ' + self.context.displayname
+        return "Invitations for " + self.context.displayname

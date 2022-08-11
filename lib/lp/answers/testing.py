@@ -4,8 +4,8 @@
 """Helper functions for Answer Tracker tests."""
 
 __all__ = [
-    'QuestionFactory',
-    ]
+    "QuestionFactory",
+]
 
 from zope.component import getUtility
 
@@ -25,12 +25,14 @@ class QuestionFactory:
         provides `IQuestionTarget`.
         """
         assert isinstance(target_name, str), (
-            "expected a project name: %r", target_name)
+            "expected a project name: %r",
+            target_name,
+        )
         target = getUtility(IPillarNameSet).getByName(target_name)
-        assert target is not None, (
-            'No project with name %s' % target_name)
+        assert target is not None, "No project with name %s" % target_name
         assert IQuestionTarget.providedBy(target), (
-            "%r doesn't provide IQuestionTarget" % target)
+            "%r doesn't provide IQuestionTarget" % target
+        )
         return target
 
     @classmethod
@@ -63,9 +65,12 @@ class QuestionFactory:
         owner = getUtility(ILaunchBag).user
         created_questions = []
         for index in range(question_count):
-            replacements = {'index': index, 'target': target.displayname}
-            created_questions.append(target.newQuestion(
-                owner,
-                'Question %(index)s on %(target)s' % replacements,
-                'Description %(index)s on %(target)s' % replacements))
+            replacements = {"index": index, "target": target.displayname}
+            created_questions.append(
+                target.newQuestion(
+                    owner,
+                    "Question %(index)s on %(target)s" % replacements,
+                    "Description %(index)s on %(target)s" % replacements,
+                )
+            )
         return created_questions

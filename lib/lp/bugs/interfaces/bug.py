@@ -4,25 +4,26 @@
 """Interfaces related to bugs."""
 
 __all__ = [
-    'CreateBugParams',
-    'CreatedBugWithNoBugTasksError',
-    'IBug',
-    'IBugAddForm',
-    'IBugAppend',
-    'IBugBecameQuestionEvent',
-    'IBugDelta',
-    'IBugEdit',
-    'IBugMute',
-    'IBugPublic',
-    'IBugSet',
-    'IBugView',
-    'IFileBugData',
-    'IFrontPageBugAddForm',
-    'IProjectGroupBugAddForm',
-    ]
+    "CreateBugParams",
+    "CreatedBugWithNoBugTasksError",
+    "IBug",
+    "IBugAddForm",
+    "IBugAppend",
+    "IBugBecameQuestionEvent",
+    "IBugDelta",
+    "IBugEdit",
+    "IBugMute",
+    "IBugPublic",
+    "IBugSet",
+    "IBugView",
+    "IFileBugData",
+    "IFrontPageBugAddForm",
+    "IProjectGroupBugAddForm",
+]
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
+    REQUEST_USER,
     accessor_for,
     call_with,
     export_factory_operation,
@@ -36,18 +37,11 @@ from lazr.restful.declarations import (
     operation_returns_collection_of,
     operation_returns_entry,
     rename_parameters_as,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
     Bytes,
@@ -58,7 +52,7 @@ from zope.schema import (
     Object,
     Text,
     TextLine,
-    )
+)
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
@@ -67,11 +61,7 @@ from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.attachment import attachment_size_constraint
 from lp.app.validators.name import bug_name_validator
-from lp.bugs.enums import (
-    BugLockedStatus,
-    BugLockStatus,
-    BugNotificationLevel,
-    )
+from lp.bugs.enums import BugLockedStatus, BugLockStatus, BugNotificationLevel
 from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.bugs.interfaces.bugbranch import IBugBranch
@@ -79,9 +69,10 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     IBugTask,
-    )
+)
 from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.cve import ICve
+from lp.bugs.interfaces.vulnerability import IVulnerability
 from lp.code.interfaces.branchlink import IHasLinkedBranches
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import (
@@ -93,22 +84,37 @@ from lp.services.fields import (
     PublicPersonChoice,
     Tag,
     Title,
-    )
+)
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_reference_property,
-    )
+)
 
 
 class CreateBugParams:
     """The parameters used to create a bug."""
 
-    def __init__(self, owner, title, comment=None, description=None,
-                 msg=None, status=None, datecreated=None,
-                 information_type=None, subscribers=(), tags=None,
-                 subscribe_owner=True, filed_by=None, target=None,
-                 importance=None, milestone=None, assignee=None, cve=None):
+    def __init__(
+        self,
+        owner,
+        title,
+        comment=None,
+        description=None,
+        msg=None,
+        status=None,
+        datecreated=None,
+        information_type=None,
+        subscribers=(),
+        tags=None,
+        subscribe_owner=True,
+        filed_by=None,
+        target=None,
+        importance=None,
+        milestone=None,
+        assignee=None,
+        cve=None,
+    ):
         self.owner = owner
         self.title = title
         self.comment = comment
@@ -130,6 +136,7 @@ class CreateBugParams:
 
 class BugNameField(ContentNameField):
     """Provides a a way to retrieve bugs by name."""
+
     errormessage = _("%s is already in use by another bug.")
 
     @property
@@ -159,7 +166,7 @@ class CreatedBugWithNoBugTasksError(Exception):
 
 def optional_message_subject_field():
     """A modified message subject field allowing None as a value."""
-    subject_field = copy_field(IMessage['subject'])
+    subject_field = copy_field(IMessage["subject"])
     subject_field.required = False
     return subject_field
 
@@ -167,21 +174,30 @@ def optional_message_subject_field():
 class IBugPublic(IPrivacy):
     """Public attributes for a Bug."""
 
-    id = exported(
-        Int(title=_('Bug ID'), required=True, readonly=True))
+    id = exported(Int(title=_("Bug ID"), required=True, readonly=True))
     # This is redefined from IPrivacy.private because the attribute is
     # read-only. The value is guarded by setPrivate().
     private = exported(
-        Bool(title=_("This bug report should be private"), required=False,
-             description=_("Private bug reports are visible only to "
-                           "their subscribers."),
-             readonly=True))
+        Bool(
+            title=_("This bug report should be private"),
+            required=False,
+            description=_(
+                "Private bug reports are visible only to " "their subscribers."
+            ),
+            readonly=True,
+        )
+    )
     information_type = exported(
         Choice(
-            title=_('Information Type'), vocabulary=InformationType,
-            required=True, readonly=True,
+            title=_("Information Type"),
+            vocabulary=InformationType,
+            required=True,
+            readonly=True,
             description=_(
-                'The type of information contained in this bug report.')))
+                "The type of information contained in this bug report."
+            ),
+        )
+    )
 
     def userCanView(user):
         """Return True if `user` can see this IBug, false otherwise."""
@@ -192,157 +208,259 @@ class IBugView(Interface):
 
     name = exported(
         BugNameField(
-            title=_('Nickname'), required=False,
-            description=_("""A short and unique name.
+            title=_("Nickname"),
+            required=False,
+            description=_(
+                """A short and unique name.
                 Add one only if you often need to retype the URL
-                but have trouble remembering the bug number."""),
-            constraint=bug_name_validator))
+                but have trouble remembering the bug number."""
+            ),
+            constraint=bug_name_validator,
+        )
+    )
     title = exported(
-        Title(title=_('Summary'), required=True,
-              description=_("""A one-line summary of the problem.""")))
+        Title(
+            title=_("Summary"),
+            required=True,
+            description=_("""A one-line summary of the problem."""),
+        )
+    )
     description = exported(
-        Description(title=_('Description'), required=True,
-             description=_("""A detailed description of the problem,
-                 including the steps required to reproduce it."""),
-             strip_text=True, trailing_only=True,
-             min_length=1, max_length=50000))
-    ownerID = Int(title=_('Owner'), required=True, readonly=True)
+        Description(
+            title=_("Description"),
+            required=True,
+            description=_(
+                """A detailed description of the problem,
+                 including the steps required to reproduce it."""
+            ),
+            strip_text=True,
+            trailing_only=True,
+            min_length=1,
+            max_length=50000,
+        )
+    )
+    ownerID = Int(title=_("Owner"), required=True, readonly=True)
     owner = exported(
-        Reference(IPerson, title=_("The owner's IPerson"), readonly=True))
+        Reference(IPerson, title=_("The owner's IPerson"), readonly=True)
+    )
     bugtasks = exported(
         CollectionField(
-            title=_('BugTasks on this bug, sorted upstream, then '
-                    'by ubuntu, then by other distroseries.'),
+            title=_(
+                "BugTasks on this bug, sorted upstream, then "
+                "by ubuntu, then by other distroseries."
+            ),
             value_type=Reference(schema=IBugTask),
-            readonly=True),
-        exported_as='bug_tasks')
+            readonly=True,
+        ),
+        exported_as="bug_tasks",
+    )
     default_bugtask = Reference(
-        title=_("The first bug task to have been filed."),
-        schema=IBugTask)
+        title=_("The first bug task to have been filed."), schema=IBugTask
+    )
     duplicateof = exported(
-        DuplicateBug(title=_('Duplicate Of'), required=False, readonly=True),
-        exported_as='duplicate_of')
+        DuplicateBug(title=_("Duplicate Of"), required=False, readonly=True),
+        exported_as="duplicate_of",
+    )
     datecreated = exported(
-        Datetime(title=_('Date Created'), required=True, readonly=True),
-        exported_as='date_created')
-    displayname = TextLine(title=_("Text of the form 'Bug #X"),
-        readonly=True)
+        Datetime(title=_("Date Created"), required=True, readonly=True),
+        exported_as="date_created",
+    )
+    displayname = TextLine(title=_("Text of the form 'Bug #X"), readonly=True)
     activity = exported(
-        doNotSnapshot(CollectionField(
-            title=_('Log of activity that has occurred on this bug.'),
-            value_type=Reference(schema=IBugActivity),
-            readonly=True)))
+        doNotSnapshot(
+            CollectionField(
+                title=_("Log of activity that has occurred on this bug."),
+                value_type=Reference(schema=IBugActivity),
+                readonly=True,
+            )
+        )
+    )
     affected_pillars = Attribute(
-        'The "pillars", products or distributions, affected by this bug.')
+        'The "pillars", products or distributions, affected by this bug.'
+    )
     permits_expiration = Bool(
         title=_("Does the bug's state permit expiration?"),
         description=_(
             "Expiration is permitted when the bug is not valid anywhere, "
             "a message was sent to the bug reporter, and the bug is "
-            "associated with pillars that have enabled bug expiration."),
-        readonly=True)
+            "associated with pillars that have enabled bug expiration."
+        ),
+        readonly=True,
+    )
     can_expire = exported(
         Bool(
-            title=_("Can the Incomplete bug expire? "
+            title=_(
+                "Can the Incomplete bug expire? "
                 "Expiration may happen when the bug permits expiration, "
-                "and a bugtask cannot be confirmed."),
-            readonly=True),
-        ('devel', dict(exported=False)), exported=True)
+                "and a bugtask cannot be confirmed."
+            ),
+            readonly=True,
+        ),
+        ("devel", dict(exported=False)),
+        as_of="beta",
+        exported=True,
+    )
     subscriptions = exported(
-        doNotSnapshot(CollectionField(
-            title=_('Subscriptions'),
-            value_type=Reference(schema=Interface),
-            readonly=True)))
+        doNotSnapshot(
+            CollectionField(
+                title=_("Subscriptions"),
+                value_type=Reference(schema=Interface),
+                readonly=True,
+            )
+        )
+    )
     date_last_updated = exported(
-        Datetime(title=_('Date Last Updated'), required=True, readonly=True))
+        Datetime(title=_("Date Last Updated"), required=True, readonly=True)
+    )
     is_complete = Bool(
         title=_("Is Complete?"),
         description=_(
             "True or False depending on whether this bug is considered "
             "completely addressed. A bug in Launchpad is completely "
             "addressed when there are no tasks that are still open for "
-            "the bug."),
-        readonly=True)
+            "the bug."
+        ),
+        readonly=True,
+    )
     official_tags = Attribute("The official bug tags relevant to this bug.")
     who_made_private = exported(
         PublicPersonChoice(
-            title=_('Who Made Private'), required=False,
-            vocabulary='ValidPersonOrTeam',
+            title=_("Who Made Private"),
+            required=False,
+            vocabulary="ValidPersonOrTeam",
             description=_("The person who set this bug private."),
-            readonly=True))
+            readonly=True,
+        )
+    )
     date_made_private = exported(
-        Datetime(title=_('Date Made Private'), required=False, readonly=True))
+        Datetime(title=_("Date Made Private"), required=False, readonly=True)
+    )
     heat = exported(
-        Int(title=_("The 'heat' of the bug"),
-        required=False, readonly=True))
+        Int(title=_("The 'heat' of the bug"), required=False, readonly=True)
+    )
     watches = exported(
         CollectionField(
             title=_("All bug watches associated with this bug."),
             value_type=Object(schema=IBugWatch),
-            readonly=True),
-        exported_as='bug_watches')
+            readonly=True,
+        ),
+        exported_as="bug_watches",
+    )
     cves = exported(
         CollectionField(
-            title=_('CVE entries related to this bug.'),
+            title=_("CVE entries related to this bug."),
             value_type=Reference(schema=ICve),
-            readonly=True))
+            readonly=True,
+        )
+    )
     has_cves = Bool(title="True if the bug has cve entries.")
-    duplicates = exported(doNotSnapshot(
+    vulnerabilities = exported(
         CollectionField(
-            title=_("MultiJoin of bugs which are dupes of this one."),
-            value_type=BugField(), readonly=True)))
+            title=_("Vulnerability instances related to this bug."),
+            value_type=Reference(schema=IVulnerability),
+            readonly=True,
+        )
+    )
+    duplicates = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("MultiJoin of bugs which are dupes of this one."),
+                value_type=BugField(),
+                readonly=True,
+            )
+        )
+    )
     # See lp.bugs.model.bug.Bug.attachments for why there are two similar
     # properties here.
     # attachments_unpopulated would more naturally be attachments, and
-    # attachments be attachments_prepopulated, but lazr.resful cannot
+    # attachments be attachments_prepopulated, but lazr.restful cannot
     # export over a non-exported attribute in an interface.
     # https://bugs.launchpad.net/lazr.restful/+bug/625102
     attachments_unpopulated = CollectionField(
-            title=_("List of bug attachments."),
-            value_type=Reference(schema=IBugAttachment),
-            readonly=True)
-    attachments = doNotSnapshot(exported(
-        CollectionField(
-            title=_("List of bug attachments."),
-            value_type=Reference(schema=IBugAttachment),
-            readonly=True)))
+        title=_("List of bug attachments."),
+        value_type=Reference(schema=IBugAttachment),
+        readonly=True,
+    )
+    attachments = doNotSnapshot(
+        exported(
+            CollectionField(
+                title=_("List of bug attachments."),
+                value_type=Reference(schema=IBugAttachment),
+                readonly=True,
+            )
+        )
+    )
     security_related = exported(
-        Bool(title=_("This bug is a security vulnerability."),
-             required=False, readonly=True))
+        Bool(
+            title=_("This bug is a security vulnerability."),
+            required=False,
+            readonly=True,
+        )
+    )
     has_patches = Attribute("Does this bug have any patches?")
     latest_patch_uploaded = exported(
         Datetime(
-            title=_('Date when the most recent patch was uploaded.'),
-            required=False, readonly=True))
+            title=_("Date when the most recent patch was uploaded."),
+            required=False,
+            readonly=True,
+        )
+    )
     latest_patch = Attribute("The most recent patch of this bug.")
     initial_message = Attribute(
-        "The message that was specified when creating the bug")
+        "The message that was specified when creating the bug"
+    )
     questions = Attribute("List of questions related to this bug.")
     specifications = Attribute("List of related specifications.")
-    tags = exported(List(
-        title=_("Tags"),
-        description=_("Space-separated keywords for classifying "
-            "this bug report."),
-            value_type=Tag(), required=False))
-    messages = doNotSnapshot(CollectionField(
-            title=_("The messages related to this object, in reverse "
-                    "order of creation (so newest first)."),
+    tags = exported(
+        List(
+            title=_("Tags"),
+            description=_(
+                "Space-separated keywords for classifying " "this bug report."
+            ),
+            value_type=Tag(),
+            required=False,
+        )
+    )
+    messages = doNotSnapshot(
+        CollectionField(
+            title=_(
+                "The messages related to this object, in reverse "
+                "order of creation (so newest first)."
+            ),
             readonly=True,
-            value_type=Reference(schema=IMessage)))
+            value_type=Reference(schema=IMessage),
+        )
+    )
     followup_subject = Attribute("The likely subject of the next message.")
     date_last_message = exported(
-        Datetime(title=_("Date of last bug message"),
-                 required=False, readonly=True))
+        Datetime(
+            title=_("Date of last bug message"), required=False, readonly=True
+        )
+    )
     number_of_duplicates = exported(
-        Int(title=_('The number of bugs marked as duplicates of this bug'),
-            required=True, readonly=True))
+        Int(
+            title=_("The number of bugs marked as duplicates of this bug"),
+            required=True,
+            readonly=True,
+        )
+    )
     message_count = exported(
-        Int(title=_('The number of comments on this bug'),
-        required=True, readonly=True))
+        Int(
+            title=_("The number of comments on this bug"),
+            required=True,
+            readonly=True,
+        )
+    )
     users_affected_count = exported(
-        Int(title=_('The number of users affected by this bug '
-                    '(not including duplicates)'),
-            required=True, readonly=True))
+        Int(
+            title=_(
+                "The number of users affected by this bug "
+                "(not including duplicates)"
+            ),
+            required=True,
+            readonly=True,
+        )
+    )
     users_unaffected_count = exported(
         # We don't say "(not including duplicates)" here because
         # affected and unaffected are asymmetrical that way.  If a dup
@@ -350,63 +468,108 @@ class IBugView(Interface):
         # *doesn't* affect you, the master bug may or may not affect
         # you, since a dup is often a specific symptom of a more
         # general master bug.
-        Int(title=_('The number of users unaffected by this bug'),
-            required=True, readonly=True))
-    users_affected = exported(doNotSnapshot(CollectionField(
-            title=_('The number of users affected by this bug '
-                    '(not including duplicates)'),
-            value_type=Reference(schema=IPerson),
-            readonly=True)))
-    users_unaffected = exported(doNotSnapshot(CollectionField(
-            title=_('Users explicitly marked as unaffected '
-                    '(not including duplicates)'),
-            value_type=Reference(schema=IPerson),
-            readonly=True)))
+        Int(
+            title=_("The number of users unaffected by this bug"),
+            required=True,
+            readonly=True,
+        )
+    )
+    users_affected = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_(
+                    "The number of users affected by this bug "
+                    "(not including duplicates)"
+                ),
+                value_type=Reference(schema=IPerson),
+                readonly=True,
+            )
+        )
+    )
+    users_unaffected = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_(
+                    "Users explicitly marked as unaffected "
+                    "(not including duplicates)"
+                ),
+                value_type=Reference(schema=IPerson),
+                readonly=True,
+            )
+        )
+    )
     users_affected_count_with_dupes = exported(
-        Int(title=_('The number of users affected by this bug '
-            '(including duplicates)'),
-        required=True, readonly=True))
+        Int(
+            title=_(
+                "The number of users affected by this bug "
+                "(including duplicates)"
+            ),
+            required=True,
+            readonly=True,
+        )
+    )
     other_users_affected_count_with_dupes = exported(
-        Int(title=_('The number of users affected by this bug '
-            '(including duplicates), excluding the current user'),
-        required=True, readonly=True))
-    users_affected_with_dupes = exported(doNotSnapshot(CollectionField(
-        title=_('Users affected (including duplicates)'),
-        value_type=Reference(schema=IPerson),
-        readonly=True)))
+        Int(
+            title=_(
+                "The number of users affected by this bug "
+                "(including duplicates), excluding the current user"
+            ),
+            required=True,
+            readonly=True,
+        )
+    )
+    users_affected_with_dupes = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("Users affected (including duplicates)"),
+                value_type=Reference(schema=IPerson),
+                readonly=True,
+            )
+        )
+    )
     # Adding related BugMessages provides a hook for getting at
     # BugMessage.message.visible when building bug comments.
-    bug_messages = Attribute('The bug messages related to this object.')
+    bug_messages = Attribute("The bug messages related to this object.")
     comment_count = Attribute(
         "The number of comments on this bug, not including the initial "
-        "comment.")
-    indexed_messages = doNotSnapshot(exported(
-        CollectionField(
-            title=_("The messages related to this object, in reverse "
-                    "order of creation (so newest first)."),
-            readonly=True,
-            value_type=Reference(schema=IMessage)),
-        exported_as='messages'))
+        "comment."
+    )
+    indexed_messages = doNotSnapshot(
+        exported(
+            CollectionField(
+                title=_(
+                    "The messages related to this object, in reverse "
+                    "order of creation (so newest first)."
+                ),
+                readonly=True,
+                value_type=Reference(schema=IMessage),
+            ),
+            exported_as="messages",
+        )
+    )
     locked = Bool(
-        title=_('Locked?'),
-        description=_('Is this bug locked?'),
-        readonly=True
+        title=_("Locked?"), description=_("Is this bug locked?"), readonly=True
     )
     lock_status = exported(
         Choice(
-            title=_('Lock Status'), vocabulary=BugLockStatus,
+            title=_("Lock Status"),
+            vocabulary=BugLockStatus,
             default=BugLockStatus.UNLOCKED,
             description=_("The lock status of this bug."),
             readonly=True,
-            required=False),
-        as_of="devel")
+            required=False,
+        ),
+        as_of="devel",
+    )
     lock_reason = exported(
         Text(
-            title=_('Lock Reason'),
-            description=_('The reason for locking this bug.'),
+            title=_("Lock Reason"),
+            description=_("The reason for locking this bug."),
             readonly=True,
-            required=False),
-        as_of="devel")
+            required=False,
+        ),
+        as_of="devel",
+    )
 
     def getSpecifications(user):
         """List of related specifications that the user can view."""
@@ -524,7 +687,7 @@ class IBugView(Interface):
 
         A Question can be created from a bug if:
         1. There is only one bugtask with a status of New, Incomplete,
-           Confirmed, or Wont Fix. Any other bugtasks must be Invalid.
+           Confirmed, or Won't Fix. Any other bugtasks must be Invalid.
         2. The bugtask's target uses Launchpad to track bugs.
         3. The bug was not made into a question previously.
         """
@@ -543,8 +706,11 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
-        target=Reference(schema=Interface, title=_('Target')))
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        target=Reference(schema=Interface, title=_("Target"))
+    )
     @export_read_operation()
+    @operation_for_version("beta")
     def canBeNominatedFor(target):
         """Can this bug nominated for this target?
 
@@ -554,9 +720,13 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
-        target=Reference(schema=Interface, title=_('Target')))
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        target=Reference(schema=Interface, title=_("Target"))
+    )
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getNominationFor(target):
         """Return the IBugNomination for the target.
 
@@ -566,14 +736,19 @@ class IBugView(Interface):
         """
 
     @operation_parameters(
-        target=Reference(
-            schema=Interface, title=_('Target'), required=False),
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        target=Reference(schema=Interface, title=_("Target"), required=False),
         nominations=List(
             title=_("Nominations to search through."),
-            value_type=Reference(schema=Interface),  # IBugNomination
-            required=False))
-    @operation_returns_collection_of(Interface)  # IBugNomination
+            # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
+            value_type=Reference(schema=Interface),
+            required=False,
+        ),
+    )
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
+    @operation_returns_collection_of(Interface)
     @export_read_operation()
+    @operation_for_version("beta")
     def getNominations(target=None, nominations=None):
         """Return a list of all IBugNominations for this bug.
 
@@ -615,6 +790,7 @@ class IBugView(Interface):
 
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def isUserAffected(user):
         """Is :user: marked as affected by this bug?"""
 
@@ -638,9 +814,12 @@ class IBugView(Interface):
 
     @operation_parameters(
         days_old=Int(
-            title=_('Number of days of inactivity for which to check.'),
-            required=False))
+            title=_("Number of days of inactivity for which to check."),
+            required=False,
+        )
+    )
     @export_read_operation()
+    @operation_for_version("beta")
     def isExpirable(days_old=None):
         """Is this bug eligible for expiration and was it last updated
         more than X days ago?
@@ -699,11 +878,24 @@ class IBugAppend(Interface):
     @call_with(owner=REQUEST_USER, from_api=True)
     @operation_parameters(
         data=Bytes(constraint=attachment_size_constraint),
-        comment=Text(), filename=TextLine(), is_patch=Bool(),
-        content_type=TextLine(), description=Text())
+        comment=Text(),
+        filename=TextLine(),
+        is_patch=Bool(),
+        content_type=TextLine(),
+        description=Text(),
+    )
     @export_factory_operation(IBugAttachment, [])
-    def addAttachment(owner, data, comment, filename, is_patch=False,
-                      content_type=None, description=None, from_api=False):
+    @operation_for_version("beta")
+    def addAttachment(
+        owner,
+        data,
+        comment,
+        filename,
+        is_patch=False,
+        content_type=None,
+        description=None,
+        from_api=False,
+    ):
         """Attach a file to this bug.
 
         :owner: An IPerson.
@@ -714,8 +906,12 @@ class IBugAppend(Interface):
         :is_patch: A boolean.
         """
 
-    def addCommentNotification(message, recipients=None, activity=None,
-                               level=BugNotificationLevel.COMMENTS):
+    def addCommentNotification(
+        message,
+        recipients=None,
+        activity=None,
+        level=BugNotificationLevel.COMMENTS,
+    ):
         """Add a bug comment notification.
 
         If a BugActivity instance is provided as an `activity`, it is linked
@@ -733,10 +929,9 @@ class IBugAppend(Interface):
         """
 
     @call_with(owner=REQUEST_USER)
-    @rename_parameters_as(
-        bugtracker='bug_tracker', remotebug='remote_bug')
-    @export_factory_operation(
-        IBugWatch, ['bugtracker', 'remotebug'])
+    @rename_parameters_as(bugtracker="bug_tracker", remotebug="remote_bug")
+    @export_factory_operation(IBugWatch, ["bugtracker", "remotebug"])
+    @operation_for_version("beta")
     def addWatch(bugtracker, remotebug, owner):
         """Create a new watch for this bug on the given remote bug and bug
         tracker, owned by the person given as the owner.
@@ -760,8 +955,9 @@ class IBugAppend(Interface):
         The user is the one linking to the CVE.
         """
 
-    def linkAttachment(owner, file_alias, comment, is_patch=False,
-                       description=None):
+    def linkAttachment(
+        owner, file_alias, comment, is_patch=False, description=None
+    ):
         """Link an `ILibraryFileAlias` to this bug.
 
         :owner: An IPerson.
@@ -776,34 +972,38 @@ class IBugAppend(Interface):
         file_alias.restricted.
         """
 
-    def linkMessage(message, bugwatch=None, user=None,
-                    remote_comment_id=None):
+    def linkMessage(message, bugwatch=None, user=None, remote_comment_id=None):
         """Add a comment to this bug.
 
-            :param message: The `IMessage` to be used as a comment.
-            :param bugwatch: The `IBugWatch` of the bug this comment was
-                imported from, if it's an imported comment.
-            :param user: The `IPerson` adding the comment.
-            :param remote_comment_id: The id this comment has in the
-                remote bug tracker, if it's an imported comment.
+        :param message: The `IMessage` to be used as a comment.
+        :param bugwatch: The `IBugWatch` of the bug this comment was
+            imported from, if it's an imported comment.
+        :param user: The `IPerson` adding the comment.
+        :param remote_comment_id: The id this comment has in the
+            remote bug tracker, if it's an imported comment.
         """
 
     @operation_parameters(
         affected=Bool(
-            title=_("Does this bug affect you?"),
-            required=False, default=True))
+            title=_("Does this bug affect you?"), required=False, default=True
+        )
+    )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def markUserAffected(user, affected=True):
         """Mark :user: as affected by this bug."""
 
     @operation_parameters(
         comment_number=Int(
-            title=_('The number of the comment in the list of messages.'),
-            required=True),
-        visible=Bool(title=_('Show this comment?'), required=True))
+            title=_("The number of the comment in the list of messages."),
+            required=True,
+        ),
+        visible=Bool(title=_("Show this comment?"), required=True),
+    )
     @call_with(user=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setCommentVisibility(user, comment_number, visible):
         """Set the visible attribute on a bug comment.  This is restricted
         to Launchpad admins, and will return a HTTP Error 401: Unauthorized
@@ -811,18 +1011,20 @@ class IBugAppend(Interface):
         """
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
+        person=Reference(IPerson, title=_("Person"), required=False)
+    )
     @call_with(muted_by=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def mute(person, muted_by):
         """Add a muted subscription for `person`."""
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
+        person=Reference(IPerson, title=_("Person"), required=False)
+    )
     @call_with(unmuted_by=REQUEST_USER)
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def unmute(person, unmuted_by):
         """Remove a muted subscription for `person`.
 
@@ -830,19 +1032,23 @@ class IBugAppend(Interface):
 
     @operation_parameters(
         subject=optional_message_subject_field(),
-        content=copy_field(IMessage['content']))
+        content=copy_field(IMessage["content"]),
+    )
     @call_with(owner=REQUEST_USER)
     @export_factory_operation(IMessage, [])
+    @operation_for_version("beta")
     def newMessage(owner, subject, content):
         """Create a new message, and link it to this object."""
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=True),
+        person=Reference(IPerson, title=_("Person"), required=True),
         level=Choice(
-            vocabulary=BugNotificationLevel, required=False,
-            title=_('Level')))
+            vocabulary=BugNotificationLevel, required=False, title=_("Level")
+        ),
+    )
     @call_with(subscribed_by=REQUEST_USER, suppress_notify=False)
     @export_write_operation()
+    @operation_for_version("beta")
     def subscribe(person, subscribed_by, suppress_notify=True, level=None):
         """Subscribe `person` to the bug.
 
@@ -854,16 +1060,20 @@ class IBugAppend(Interface):
         """
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
+        person=Reference(IPerson, title=_("Person"), required=False)
+    )
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def unsubscribe(person, unsubscribed_by):
         """Remove this person's subscription to this bug."""
 
     @operation_parameters(
-        person=Reference(IPerson, title=_('Person'), required=False))
+        person=Reference(IPerson, title=_("Person"), required=False)
+    )
     @call_with(unsubscribed_by=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def unsubscribeFromDupes(person, unsubscribed_by):
         """Remove this person's subscription from all dupes of this bug."""
 
@@ -872,9 +1082,13 @@ class IBugEdit(Interface):
     """IBug attributes that require launchpad.Edit permission."""
 
     @operation_parameters(
-        target=Reference(schema=Interface, title=_('Target')))
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        target=Reference(schema=Interface, title=_("Target"))
+    )
     @call_with(owner=REQUEST_USER)
+    # Really IBugNomination, patched in lp.bugs.interfaces.webservice.
     @export_factory_operation(Interface, [])
+    @operation_for_version("beta")
     def addNomination(owner, target):
         """Nominate a bug for an IDistroSeries or IProductSeries.
 
@@ -886,8 +1100,9 @@ class IBugEdit(Interface):
         """
 
     @call_with(owner=REQUEST_USER)
-    @operation_parameters(target=copy_field(IBugTask['target']))
+    @operation_parameters(target=copy_field(IBugTask["target"]))
     @export_factory_operation(IBugTask, [])
+    @operation_for_version("beta")
     def addTask(owner, target):
         """Create a new bug task on this bug.
 
@@ -914,43 +1129,53 @@ class IBugEdit(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        # Really IBranchMergeProposal, patched in
+        # lp.bugs.interfaces.webservice.
         merge_proposal=Reference(
-            Interface, title=_('Merge proposal'), required=True))
+            Interface, title=_("Merge proposal"), required=True
+        )
+    )
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def linkMergeProposal(merge_proposal, user, check_permissions=True):
         """Ensure that this MP is linked to this bug."""
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        # Really IBranchMergeProposal, patched in
+        # lp.bugs.interfaces.webservice.
         merge_proposal=Reference(
-            Interface, title=_('Merge proposal'), required=True))
+            Interface, title=_("Merge proposal"), required=True
+        )
+    )
     @export_write_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def unlinkMergeProposal(merge_proposal, user, check_permissions=True):
-        """Ensure that any links between this bug and the given MP are removed.
+        """Ensure that any links between this bug and the given MP are
+        removed.
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
+    @operation_parameters(cve=Reference(ICve, title=_("CVE"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def linkCVE(cve, user, check_permissions=True):
         """Ensure that this CVE is linked to this bug."""
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
+    @operation_parameters(cve=Reference(ICve, title=_("CVE"), required=True))
     @export_write_operation()
+    @operation_for_version("beta")
     def unlinkCVE(cve, user, check_permissions=True):
         """Ensure that any links between this bug and the given CVE are
         removed.
         """
 
-    @mutator_for(IBugPublic['private'])
-    @operation_parameters(private=copy_field(IBugPublic['private']))
+    @mutator_for(IBugPublic["private"])
+    @operation_parameters(private=copy_field(IBugPublic["private"]))
     @call_with(who=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setPrivate(private, who):
         """Set bug privacy.
 
@@ -960,11 +1185,13 @@ class IBugEdit(Interface):
         Return True if a change is made, False otherwise.
         """
 
-    @mutator_for(IBugView['security_related'])
+    @mutator_for(IBugView["security_related"])
     @operation_parameters(
-        security_related=copy_field(IBugView['security_related']))
+        security_related=copy_field(IBugView["security_related"])
+    )
     @call_with(who=REQUEST_USER)
     @export_write_operation()
+    @operation_for_version("beta")
     def setSecurityRelated(security_related, who):
         """Set bug security.
 
@@ -975,8 +1202,8 @@ class IBugEdit(Interface):
         """
 
     @operation_parameters(
-        information_type=copy_field(IBugPublic['information_type']),
-        )
+        information_type=copy_field(IBugPublic["information_type"]),
+    )
     @call_with(who=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
@@ -987,9 +1214,10 @@ class IBugEdit(Interface):
         :who: The `IPerson` who is making the change.
         """
 
-    @mutator_for(IBugView['duplicateof'])
-    @operation_parameters(duplicate_of=copy_field(IBugView['duplicateof']))
+    @mutator_for(IBugView["duplicateof"])
+    @operation_parameters(duplicate_of=copy_field(IBugView["duplicateof"]))
     @export_write_operation()
+    @operation_for_version("beta")
     def markAsDuplicate(duplicate_of):
         """Mark this bug as a duplicate of another."""
 
@@ -1013,10 +1241,10 @@ class IBugModerate(Interface):
 
     @operation_parameters(
         status=copy_field(
-            IBugView['lock_status'],
+            IBugView["lock_status"],
             vocabulary=BugLockedStatus,
         ),
-        reason=copy_field(IBugView['lock_reason'])
+        reason=copy_field(IBugView["lock_reason"]),
     )
     @export_write_operation()
     @call_with(who=REQUEST_USER)
@@ -1041,37 +1269,46 @@ class IBugModerate(Interface):
         :param who: The IPerson who is making the change.
         """
 
-    @mutator_for(IBugView['lock_reason'])
-    @operation_parameters(reason=copy_field(IBugView['lock_reason']))
+    @mutator_for(IBugView["lock_reason"])
+    @operation_parameters(reason=copy_field(IBugView["lock_reason"]))
     @export_write_operation()
     @call_with(who=REQUEST_USER)
     @operation_for_version("devel")
     def setLockReason(reason, who):
         """Set the lock reason.
 
-            :reason: The reason for locking the bug.
-            :who: The IPerson who is making the change.
+        :reason: The reason for locking the bug.
+        :who: The IPerson who is making the change.
         """
 
 
-@exported_as_webservice_entry()
-class IBug(IBugPublic, IBugView, IBugAppend, IBugEdit, IBugModerate,
-           IHasLinkedBranches):
+@exported_as_webservice_entry(as_of="beta")
+class IBug(
+    IBugPublic,
+    IBugView,
+    IBugAppend,
+    IBugEdit,
+    IBugModerate,
+    IHasLinkedBranches,
+):
     """The core bug entry."""
 
     linked_bugbranches = exported(
         CollectionField(
             title=_(
                 "Bazaar branches associated with this bug, usually "
-                "branches on which this bug is being fixed."),
+                "branches on which this bug is being fixed."
+            ),
             value_type=Reference(schema=IBugBranch),
-            readonly=True),
-        exported_as='linked_branches')
+            readonly=True,
+        ),
+        exported_as="linked_branches",
+    )
 
     @accessor_for(linked_bugbranches)
     @call_with(user=REQUEST_USER)
     @export_read_operation()
-    @operation_for_version('beta')
+    @operation_for_version("beta")
     def getVisibleLinkedBranches(user):
         """Return all the branches linked to the bug that `user` can see."""
 
@@ -1079,34 +1316,36 @@ class IBug(IBugPublic, IBugView, IBugAppend, IBugEdit, IBugModerate,
         CollectionField(
             title=_(
                 "Merge proposals associated with this bug (currently only "
-                "Git-based merge proposals)."),
+                "Git-based merge proposals)."
+            ),
             # Really IBranchMergeProposal, patched in
-            # _schema_circular_imports.py.
+            # lp.bugs.interfaces.webservice.
             value_type=Reference(schema=Interface),
-            readonly=True),
-        as_of='devel')
+            readonly=True,
+        ),
+        as_of="devel",
+    )
 
     @accessor_for(linked_merge_proposals)
     @call_with(user=REQUEST_USER)
     @export_read_operation()
-    @operation_for_version('devel')
+    @operation_for_version("devel")
     def getVisibleLinkedMergeProposals(user):
         """Return all the MPs linked to the bug that `user` can see."""
 
 
 # We are forced to define these now to avoid circular import problems.
-patch_reference_property(IBugAttachment, 'bug', IBug)
-patch_reference_property(IBugWatch, 'bug', IBug)
-patch_collection_property(IMessage, 'bugs', IBug)
-patch_collection_property(ICve, 'bugs', IBug)
+patch_reference_property(IBugAttachment, "bug", IBug)
+patch_reference_property(IBugWatch, "bug", IBug)
+patch_collection_property(IMessage, "bugs", IBug)
+patch_collection_property(ICve, "bugs", IBug)
 
 # In order to avoid circular dependencies, we only import
 # IBugSubscription (which itself imports IBug) here, and assign it as
 # the value type for the `subscriptions` collection.
 from lp.bugs.interfaces.bugsubscription import IBugSubscription  # noqa: E402
 
-
-patch_collection_property(IBug, 'subscriptions', IBugSubscription)
+patch_collection_property(IBug, "subscriptions", IBugSubscription)
 
 
 class IBugDelta(Interface):
@@ -1122,108 +1361,152 @@ class IBugDelta(Interface):
     description = Attribute("A dict with two keys, 'old' and 'new', or None.")
     private = Attribute("A dict with two keys, 'old' and 'new', or None.")
     security_related = Attribute(
-        "A dict with two keys, 'old' and 'new', or None.")
+        "A dict with two keys, 'old' and 'new', or None."
+    )
     information_type = Attribute(
-        "A dict with two keys, 'old' and 'new', or None.")
+        "A dict with two keys, 'old' and 'new', or None."
+    )
     name = Attribute("A dict with two keys, 'old' and 'new', or None.")
     duplicateof = Attribute(
         "A dict with two keys, 'old' and 'new', or None. Key values are "
-        "IBug's")
+        "IBug's"
+    )
 
     # Other things linked to the bug.
     bugwatch = Attribute(
         "A dict with two keys, 'old' and 'new', or None. Key values are "
-        "IBugWatch's.")
+        "IBugWatch's."
+    )
     attachment = Attribute(
         "A dict with two keys, 'old' and 'new', or None. Key values are "
-        "IBugAttachment's.")
+        "IBugAttachment's."
+    )
     cve = Attribute(
         "A dict with two keys, 'old' and 'new', or None. Key values are "
-        "ICve's")
+        "ICve's"
+    )
     added_bugtasks = Attribute(
-        "A list or tuple of IBugTasks, one IBugTask, or None.")
+        "A list or tuple of IBugTasks, one IBugTask, or None."
+    )
     bugtask_deltas = Attribute(
-        "A sequence of IBugTaskDeltas, one IBugTaskDelta or None.")
+        "A sequence of IBugTaskDeltas, one IBugTaskDelta or None."
+    )
 
 
 # A simple vocabulary for the subscribe_to_existing_bug form field.
 SUBSCRIBE_TO_BUG_VOCABULARY = SimpleVocabulary.fromItems(
-    [('yes', True), ('no', False)])
+    [("yes", True), ("no", False)]
+)
 
 
 class IBugAddForm(IBug):
     """Information we need to create a bug"""
+
     id = Int(title=_("Bug #"), required=False)
     product = Choice(
-            title=_("Project"), required=False,
-            description=_("""The thing you found this bug in,
+        title=_("Project"),
+        required=False,
+        description=_(
+            """The thing you found this bug in,
             which was installed by something other than apt, rpm,
-            emerge or similar"""),
-            vocabulary="Product")
+            emerge or similar"""
+        ),
+        vocabulary="Product",
+    )
     packagename = Choice(
-            title=_("Package Name"), required=False,
-            description=_("""The package you found this bug in,
-            which was installed via apt, rpm, emerge or similar."""),
-            vocabulary="BinaryAndSourcePackageName")
-    title = Title(title=_('Summary'), required=True)
+        title=_("Package Name"),
+        required=False,
+        description=_(
+            """The package you found this bug in,
+            which was installed via apt, rpm, emerge or similar."""
+        ),
+        vocabulary="BinaryAndSourcePackageName",
+    )
+    title = Title(title=_("Summary"), required=True)
     distribution = Choice(
-            title=_("Linux Distribution"), required=True,
-            description=_(
-                "Ubuntu, Debian, Gentoo, etc. You can file bugs only on "
-                "distrubutions using Launchpad as their primary bug "
-                "tracker."),
-            vocabulary="DistributionUsingMalone")
+        title=_("Linux Distribution"),
+        required=True,
+        description=_(
+            "Ubuntu, Debian, Gentoo, etc. You can file bugs only on "
+            "distributions using Launchpad as their primary bug "
+            "tracker."
+        ),
+        vocabulary="DistributionUsingMalone",
+    )
     owner = Int(title=_("Owner"), required=True)
     comment = Description(
-        title=_('Further information'),
-        strip_text=True, trailing_only=True,
-        min_length=1, max_length=50000, required=False)
+        title=_("Further information"),
+        strip_text=True,
+        trailing_only=True,
+        min_length=1,
+        max_length=50000,
+        required=False,
+    )
     bug_already_reported_as = Choice(
-        title=_("This bug has already been reported as ..."), required=False,
-        vocabulary="Bug")
+        title=_("This bug has already been reported as ..."),
+        required=False,
+        vocabulary="Bug",
+    )
     filecontent = Bytes(
-        title="Attachment", required=False,
-        constraint=attachment_size_constraint)
-    patch = Bool(title="This attachment is a patch", required=False,
-        default=False)
-    attachment_description = Title(title='Description', required=False)
+        title="Attachment",
+        required=False,
+        constraint=attachment_size_constraint,
+    )
+    patch = Bool(
+        title="This attachment is a patch", required=False, default=False
+    )
+    attachment_description = Title(title="Description", required=False)
     status = Choice(
-        title=_('Status'),
+        title=_("Status"),
         values=list(
-            item for item in BugTaskStatus.items.items
-            if item != BugTaskStatus.UNKNOWN),
-        default=IBugTask['status'].default)
+            item
+            for item in BugTaskStatus.items.items
+            if item != BugTaskStatus.UNKNOWN
+        ),
+        default=IBugTask["status"].default,
+    )
     importance = Choice(
-        title=_('Importance'),
+        title=_("Importance"),
         values=list(
-            item for item in BugTaskImportance.items.items
-            if item != BugTaskImportance.UNKNOWN),
-        default=IBugTask['importance'].default)
+            item
+            for item in BugTaskImportance.items.items
+            if item != BugTaskImportance.UNKNOWN
+        ),
+        default=IBugTask["importance"].default,
+    )
     milestone = Choice(
-        title=_('Milestone'), required=False,
-        vocabulary='Milestone')
+        title=_("Milestone"), required=False, vocabulary="Milestone"
+    )
     assignee = PublicPersonChoice(
-        title=_('Assign to'), required=False,
-        vocabulary='ValidAssignee')
+        title=_("Assign to"), required=False, vocabulary="ValidAssignee"
+    )
     subscribe_to_existing_bug = Choice(
-        title='Subscribe to this bug',
+        title="Subscribe to this bug",
         vocabulary=SUBSCRIBE_TO_BUG_VOCABULARY,
-        required=True, default=False)
+        required=True,
+        default=False,
+    )
 
 
 class IProjectGroupBugAddForm(IBugAddForm):
     """Create a bug for an IProjectGroup."""
+
     product = Choice(
-        title=_("Project"), required=True,
-        vocabulary="ProjectProductsUsingMalone")
+        title=_("Project"),
+        required=True,
+        vocabulary="ProjectProductsUsingMalone",
+    )
 
 
 class IFrontPageBugAddForm(IBugAddForm):
     """Create a bug for any bug target."""
 
     bugtarget = Reference(
-        schema=Interface, title=_("Where did you find the bug?"),
-        required=True)
+        # Really IBugTarget, patched in lp.bugs.interfaces.webservice.
+        schema=Interface,
+        title=_("Where did you find the bug?"),
+        required=True,
+    )
 
 
 class IBugSet(Interface):
@@ -1260,7 +1543,7 @@ class IBugSet(Interface):
             applicable based on the bug report target) will be subscribed to
             all *public bugs only*
 
-          * if either product or distribution is specified, an appropiate
+          * if either product or distribution is specified, an appropriate
             bug task will be created
         """
 
@@ -1305,12 +1588,21 @@ class IBugMute(Interface):
     """A mute on an IBug."""
 
     person = PersonChoice(
-        title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
-        readonly=True, description=_("The person subscribed."))
+        title=_("Person"),
+        required=True,
+        vocabulary="ValidPersonOrTeam",
+        readonly=True,
+        description=_("The person subscribed."),
+    )
     bug = Reference(
-        IBug, title=_("Bug"),
-        required=True, readonly=True,
-        description=_("The bug to be muted."))
+        IBug,
+        title=_("Bug"),
+        required=True,
+        readonly=True,
+        description=_("The bug to be muted."),
+    )
     date_created = Datetime(
-        title=_("The date on which the mute was created."), required=False,
-        readonly=True)
+        title=_("The date on which the mute was created."),
+        required=False,
+        readonly=True,
+    )

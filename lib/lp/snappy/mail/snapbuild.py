@@ -2,21 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'SnapBuildMailer',
-    ]
+    "SnapBuildMailer",
+]
 
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.services.config import config
-from lp.services.mail.basemailer import (
-    BaseMailer,
-    RecipientReason,
-    )
+from lp.services.mail.basemailer import BaseMailer, RecipientReason
 from lp.services.webapp import canonical_url
 
 
 class SnapBuildMailer(BaseMailer):
 
-    app = 'snappy'
+    app = "snappy"
 
     @classmethod
     def forStatus(cls, build):
@@ -28,8 +25,12 @@ class SnapBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "[Snap build #%(build_id)d] %(build_title)s",
-            "snapbuild-notification.txt", recipients,
-            config.canonical.noreply_from_address, "snap-build-status", build)
+            "snapbuild-notification.txt",
+            recipients,
+            config.canonical.noreply_from_address,
+            "snap-build-status",
+            build,
+        )
 
     @classmethod
     def forUnauthorizedUpload(cls, build):
@@ -41,9 +42,12 @@ class SnapBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Store authorization failed for %(snap_name)s",
-            "snapbuild-unauthorized.txt", recipients,
+            "snapbuild-unauthorized.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "snap-build-upload-unauthorized", build)
+            "snap-build-upload-unauthorized",
+            build,
+        )
 
     @classmethod
     def forRefreshFailure(cls, build):
@@ -55,9 +59,12 @@ class SnapBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Refreshing store authorization failed for %(snap_name)s",
-            "snapbuild-refreshfailed.txt", recipients,
+            "snapbuild-refreshfailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "snap-build-upload-refresh-failed", build)
+            "snap-build-upload-refresh-failed",
+            build,
+        )
 
     @classmethod
     def forUploadFailure(cls, build):
@@ -69,9 +76,12 @@ class SnapBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Store upload failed for %(snap_name)s",
-            "snapbuild-uploadfailed.txt", recipients,
+            "snapbuild-uploadfailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "snap-build-upload-failed", build)
+            "snap-build-upload-failed",
+            build,
+        )
 
     @classmethod
     def forUploadScanFailure(cls, build):
@@ -83,15 +93,29 @@ class SnapBuildMailer(BaseMailer):
         recipients = {requester: RecipientReason.forBuildRequester(requester)}
         return cls(
             "Store upload scan failed for %(snap_name)s",
-            "snapbuild-scanfailed.txt", recipients,
+            "snapbuild-scanfailed.txt",
+            recipients,
             config.canonical.noreply_from_address,
-            "snap-build-upload-scan-failed", build)
+            "snap-build-upload-scan-failed",
+            build,
+        )
 
-    def __init__(self, subject, template_name, recipients, from_address,
-                 notification_type, build):
+    def __init__(
+        self,
+        subject,
+        template_name,
+        recipients,
+        from_address,
+        notification_type,
+        build,
+    ):
         super().__init__(
-            subject, template_name, recipients, from_address,
-            notification_type=notification_type)
+            subject,
+            template_name,
+            recipients,
+            from_address,
+            notification_type=notification_type,
+        )
         self.build = build
 
     def _getHeaders(self, email, recipient):
@@ -111,25 +135,28 @@ class SnapBuildMailer(BaseMailer):
             error_message = upload_job.error_message or ""
             store_url = upload_job.store_url or ""
         params = super()._getTemplateParams(email, recipient)
-        params.update({
-            "archive_tag": build.archive.reference,
-            "build_id": build.id,
-            "build_title": build.title,
-            "snap_name": build.snap.name,
-            "distroseries": build.snap.distro_series,
-            "architecturetag": build.distro_arch_series.architecturetag,
-            "pocket": build.pocket.name,
-            "build_state": build.status.title,
-            "build_duration": "",
-            "log_url": "",
-            "upload_log_url": "",
-            "builder_url": "",
-            "build_url": canonical_url(build),
-            "snap_authorize_url": canonical_url(
-                build.snap, view_name="+authorize"),
-            "store_error_message": error_message,
-            "store_url": store_url,
-            })
+        params.update(
+            {
+                "archive_tag": build.archive.reference,
+                "build_id": build.id,
+                "build_title": build.title,
+                "snap_name": build.snap.name,
+                "distroseries": build.snap.distro_series,
+                "architecturetag": build.distro_arch_series.architecturetag,
+                "pocket": build.pocket.name,
+                "build_state": build.status.title,
+                "build_duration": "",
+                "log_url": "",
+                "upload_log_url": "",
+                "builder_url": "",
+                "build_url": canonical_url(build),
+                "snap_authorize_url": canonical_url(
+                    build.snap, view_name="+authorize"
+                ),
+                "store_error_message": error_message,
+                "store_url": store_url,
+            }
+        )
         if build.duration is not None:
             duration_formatter = DurationFormatterAPI(build.duration)
             params["build_duration"] = duration_formatter.approximateduration()
@@ -143,5 +170,4 @@ class SnapBuildMailer(BaseMailer):
 
     def _getFooter(self, email, recipient, params):
         """See `BaseMailer`."""
-        return ("%(build_url)s\n"
-                "%(reason)s\n" % params)
+        return "%(build_url)s\n" "%(reason)s\n" % params

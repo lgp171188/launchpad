@@ -1,18 +1,15 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import defaultdict
 import io
 import os
 import re
 import time
+from collections import defaultdict
 
-from storm.expr import (
-    Desc,
-    Join,
-    )
-from storm.store import EmptyResultSet
 import transaction
+from storm.expr import Desc, Join
+from storm.store import EmptyResultSet
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -21,7 +18,7 @@ from lp.services.command_spawner import (
     CommandSpawner,
     OutputLineHandler,
     ReturnCodeReceiver,
-    )
+)
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import Concatenate
 from lp.services.librarian.model import LibraryFileAlias
@@ -30,20 +27,17 @@ from lp.soyuz.enums import (
     BinaryPackageFormat,
     IndexCompressionType,
     PackagePublishingStatus,
-    )
+)
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.component import Component
 from lp.soyuz.model.distroarchseries import DistroArchSeries
-from lp.soyuz.model.files import (
-    BinaryPackageFile,
-    SourcePackageReleaseFile,
-    )
+from lp.soyuz.model.files import BinaryPackageFile, SourcePackageReleaseFile
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
-    )
+)
 from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
@@ -61,8 +55,9 @@ def make_clean_dir(path, clean_pattern=".*"):
     """
     if os.path.isdir(path):
         for entry in list(os.scandir(path)):
-            if (entry.name == "by-hash" or
-                    not re.match(clean_pattern, entry.name)):
+            if entry.name == "by-hash" or not re.match(
+                clean_pattern, entry.name
+            ):
                 # Ignore existing by-hash directories; they will be cleaned
                 # up to match the rest of the directory tree later.
                 continue
@@ -123,23 +118,23 @@ tree "%(DISTS)s/%(DISTRORELEASEONDISK)s"
 """
 
 EXT_TO_SUBCOMPONENT = {
-    'udeb': 'debian-installer',
-    'ddeb': 'debug',
-    }
+    "udeb": "debian-installer",
+    "ddeb": "debug",
+}
 
 SUBCOMPONENT_TO_EXT = {
-    'debian-installer': 'udeb',
-    'debug': 'ddeb',
-    }
+    "debian-installer": "udeb",
+    "debug": "ddeb",
+}
 
 CLEANUP_FREQUENCY = 60 * 60 * 24
 
 COMPRESSOR_TO_CONFIG = {
-    IndexCompressionType.UNCOMPRESSED: '.',
-    IndexCompressionType.GZIP: 'gzip',
-    IndexCompressionType.BZIP2: 'bzip2',
-    IndexCompressionType.XZ: 'xz',
-    }
+    IndexCompressionType.UNCOMPRESSED: ".",
+    IndexCompressionType.GZIP: "gzip",
+    IndexCompressionType.BZIP2: "bzip2",
+    IndexCompressionType.XZ: "xz",
+}
 
 
 class AptFTPArchiveFailure(Exception):
@@ -189,11 +184,13 @@ class FTPArchiveHandler:
 
         returncodes = {}
         completion_handler = ReturnCodeReceiver()
-        returncodes['all'] = completion_handler
+        returncodes["all"] = completion_handler
         spawner.start(
-            base_command, stdout_handler=stdout_handler,
+            base_command,
+            stdout_handler=stdout_handler,
             stderr_handler=stderr_handler,
-            completion_handler=completion_handler)
+            completion_handler=completion_handler,
+        )
 
         spawner.complete()
         stdout_handler.finalize()
@@ -201,11 +198,13 @@ class FTPArchiveHandler:
         failures = sorted(
             (tag, receiver.returncode)
             for tag, receiver in returncodes.items()
-                if receiver.returncode != 0)
+            if receiver.returncode != 0
+        )
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
             raise AptFTPArchiveFailure(
-                "Failure(s) from apt-ftparchive: %s" % ", ".join(by_arch))
+                "Failure(s) from apt-ftparchive: %s" % ", ".join(by_arch)
+            )
 
     def runApt(self, apt_config_filename):
         self.runAptWithArgs(apt_config_filename, "--no-contents", "generate")
@@ -221,8 +220,11 @@ class FTPArchiveHandler:
         """
         for distroseries in self.distro.series:
             components = [
-                comp.name for comp in
-                self.publisher.archive.getComponentsForSeries(distroseries)]
+                comp.name
+                for comp in self.publisher.archive.getComponentsForSeries(
+                    distroseries
+                )
+            ]
             for pocket in PackagePublishingPocket.items:
                 if not fullpublish:
                     if not self.publisher.isDirty(distroseries, pocket):
@@ -232,7 +234,8 @@ class FTPArchiveHandler:
                         continue
 
                 self.publisher.release_files_needed.add(
-                    distroseries.getSuite(pocket))
+                    distroseries.getSuite(pocket)
+                )
 
                 for comp in components:
                     self.createEmptyPocketRequest(distroseries, pocket, comp)
@@ -246,28 +249,30 @@ class FTPArchiveHandler:
             (comp,),
             ("extra", comp),
             (comp, "src"),
-            ]
+        ]
         for sub_comp in self.publisher.subcomponents:
             needed_paths.append((comp, sub_comp))
 
         for path in needed_paths:
             full_path = os.path.join(
-                self._config.overrideroot,
-                ".".join(("override", suite) + path))
+                self._config.overrideroot, ".".join(("override", suite) + path)
+            )
             if not os.path.exists(full_path):
                 write_file(full_path, b"")
 
         # Create empty file lists if they don't already exist.
         def touch_list(*parts):
             full_path = os.path.join(
-                self._config.overrideroot,
-                "_".join((suite, ) + parts))
+                self._config.overrideroot, "_".join((suite,) + parts)
+            )
             if not os.path.exists(full_path):
                 write_file(full_path, b"")
+
         touch_list(comp, "source")
 
         arch_tags = [
-            a.architecturetag for a in distroseries.enabled_architectures]
+            a.architecturetag for a in distroseries.enabled_architectures
+        ]
         for arch in arch_tags:
             # Touch more file lists for the archs.
             touch_list(comp, "binary-" + arch)
@@ -290,26 +295,39 @@ class FTPArchiveHandler:
         """
         origins = (
             SourcePackagePublishingHistory,
-            Join(Component,
-                 Component.id == SourcePackagePublishingHistory.componentID),
-            Join(Section,
-                 Section.id == SourcePackagePublishingHistory.sectionID),
-            Join(SourcePackageRelease,
-                 SourcePackageRelease.id ==
-                     SourcePackagePublishingHistory.sourcepackagereleaseID),
-            Join(SourcePackageName,
-                 SourcePackageName.id ==
-                     SourcePackageRelease.sourcepackagenameID),
-            )
+            Join(
+                Component,
+                Component.id == SourcePackagePublishingHistory.componentID,
+            ),
+            Join(
+                Section, Section.id == SourcePackagePublishingHistory.sectionID
+            ),
+            Join(
+                SourcePackageRelease,
+                SourcePackageRelease.id
+                == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            ),
+            Join(
+                SourcePackageName,
+                SourcePackageName.id
+                == SourcePackageRelease.sourcepackagenameID,
+            ),
+        )
 
-        return IStore(SourcePackageName).using(*origins).find(
-            (SourcePackageName.name, Component.name, Section.name),
-            SourcePackagePublishingHistory.archive == self.publisher.archive,
-            SourcePackagePublishingHistory.distroseries == distroseries,
-            SourcePackagePublishingHistory.pocket == pocket,
-            SourcePackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED).order_by(
-                    Desc(SourcePackagePublishingHistory.id))
+        return (
+            IStore(SourcePackageName)
+            .using(*origins)
+            .find(
+                (SourcePackageName.name, Component.name, Section.name),
+                SourcePackagePublishingHistory.archive
+                == self.publisher.archive,
+                SourcePackagePublishingHistory.distroseries == distroseries,
+                SourcePackagePublishingHistory.pocket == pocket,
+                SourcePackagePublishingHistory.status
+                == PackagePublishingStatus.PUBLISHED,
+            )
+            .order_by(Desc(SourcePackagePublishingHistory.id))
+        )
 
     def getBinariesForOverrides(self, distroseries, pocket):
         """Fetch override information about all published binaries.
@@ -326,20 +344,29 @@ class FTPArchiveHandler:
         """
         origins = (
             BinaryPackagePublishingHistory,
-            Join(Component,
-                 Component.id == BinaryPackagePublishingHistory.componentID),
-            Join(Section,
-                 Section.id == BinaryPackagePublishingHistory.sectionID),
-            Join(BinaryPackageRelease,
-                 BinaryPackageRelease.id ==
-                     BinaryPackagePublishingHistory.binarypackagereleaseID),
-            Join(BinaryPackageName,
-                 BinaryPackageName.id ==
-                     BinaryPackageRelease.binarypackagenameID),
-            Join(DistroArchSeries,
-                 DistroArchSeries.id ==
-                     BinaryPackagePublishingHistory.distroarchseriesID),
-            )
+            Join(
+                Component,
+                Component.id == BinaryPackagePublishingHistory.componentID,
+            ),
+            Join(
+                Section, Section.id == BinaryPackagePublishingHistory.sectionID
+            ),
+            Join(
+                BinaryPackageRelease,
+                BinaryPackageRelease.id
+                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+            ),
+            Join(
+                BinaryPackageName,
+                BinaryPackageName.id
+                == BinaryPackageRelease.binarypackagenameID,
+            ),
+            Join(
+                DistroArchSeries,
+                DistroArchSeries.id
+                == BinaryPackagePublishingHistory.distroarchseriesID,
+            ),
+        )
 
         architectures_ids = [arch.id for arch in distroseries.architectures]
         if len(architectures_ids) == 0:
@@ -348,23 +375,34 @@ class FTPArchiveHandler:
         conditions = [
             BinaryPackagePublishingHistory.archive == self.publisher.archive,
             BinaryPackagePublishingHistory.distroarchseriesID.is_in(
-                architectures_ids),
+                architectures_ids
+            ),
             BinaryPackagePublishingHistory.pocket == pocket,
-            BinaryPackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
-            ]
+            BinaryPackagePublishingHistory.status
+            == PackagePublishingStatus.PUBLISHED,
+        ]
         if not self.publisher.archive.publish_debug_symbols:
             conditions.append(
                 BinaryPackageRelease.binpackageformat
-                    != BinaryPackageFormat.DDEB)
+                != BinaryPackageFormat.DDEB
+            )
 
-        result_set = IStore(BinaryPackageName).using(*origins).find(
-            (BinaryPackageName.name, Component.name, Section.name,
-             DistroArchSeries.architecturetag,
-             BinaryPackagePublishingHistory.priority,
-             BinaryPackageRelease.binpackageformat,
-             BinaryPackagePublishingHistory.phased_update_percentage),
-            *conditions)
+        result_set = (
+            IStore(BinaryPackageName)
+            .using(*origins)
+            .find(
+                (
+                    BinaryPackageName.name,
+                    Component.name,
+                    Section.name,
+                    DistroArchSeries.architecturetag,
+                    BinaryPackagePublishingHistory.priority,
+                    BinaryPackageRelease.binpackageformat,
+                    BinaryPackagePublishingHistory.phased_update_percentage,
+                ),
+                *conditions,
+            )
+        )
 
         return result_set.order_by(Desc(BinaryPackagePublishingHistory.id))
 
@@ -383,8 +421,9 @@ class FTPArchiveHandler:
                 bpphs = self.getBinariesForOverrides(distroseries, pocket)
                 self.publishOverrides(distroseries, pocket, spphs, bpphs)
 
-    def publishOverrides(self, distroseries, pocket,
-                         source_publications, binary_publications):
+    def publishOverrides(
+        self, distroseries, pocket, source_publications, binary_publications
+    ):
         """Output a set of override files for use in apt-ftparchive.
 
         Given the provided sourceoverrides and binaryoverrides, do the
@@ -413,12 +452,19 @@ class FTPArchiveHandler:
         # Ensure that we generate overrides for all the expected components,
         # even if they're currently empty.
         for component in self.publisher.archive.getComponentsForSeries(
-                distroseries):
+            distroseries
+        ):
             overrides[component.name]
 
-        def updateOverride(packagename, component, section, archtag=None,
-                           priority=None, binpackageformat=None,
-                           phased_update_percentage=None):
+        def updateOverride(
+            packagename,
+            component,
+            section,
+            archtag=None,
+            priority=None,
+            binpackageformat=None,
+            phased_update_percentage=None,
+        ):
             """Generates and packs tuples of data required for overriding.
 
             If archtag is provided, it's a binary tuple; otherwise, it's a
@@ -442,10 +488,15 @@ class FTPArchiveHandler:
                 subcomp = FORMAT_TO_SUBCOMPONENT.get(binpackageformat)
                 if subcomp is None:
                     package_arch = "%s/%s" % (packagename, archtag)
-                    override['bin'].add((
-                        package_arch, priority, section,
-                        0 if phased_update_percentage is None else 1,
-                        phased_update_percentage))
+                    override["bin"].add(
+                        (
+                            package_arch,
+                            priority,
+                            section,
+                            0 if phased_update_percentage is None else 1,
+                            phased_update_percentage,
+                        )
+                    )
                 elif subcomp in self.publisher.subcomponents:
                     # We pick up subcomponent packages here, although they
                     # do not need phased updates (and adding the
@@ -453,7 +504,7 @@ class FTPArchiveHandler:
                     # generateOverrideForComponent).
                     override[subcomp].add((packagename, priority, section))
             else:
-                override['src'].add((packagename, section))
+                override["src"].add((packagename, section))
 
         # Process huge iterations (more than 200k records) in batches.
         # See `PublishingTunableLoop`.
@@ -469,41 +520,54 @@ class FTPArchiveHandler:
 
         # Now generate the files on disk...
         for component in overrides:
-            self.log.debug("Generating overrides for %s/%s..." % (
-                suite, component))
+            self.log.debug(
+                "Generating overrides for %s/%s..." % (suite, component)
+            )
             self.generateOverrideForComponent(overrides, suite, component)
 
     def generateOverrideForComponent(self, overrides, suite, component):
         """Generates overrides for a specific component."""
-        src_overrides = sorted(overrides[component]['src'])
-        bin_overrides = sorted(overrides[component]['bin'])
+        src_overrides = sorted(overrides[component]["src"])
+        bin_overrides = sorted(overrides[component]["bin"])
 
         # Set up filepaths for the overrides we read
-        extra_extra_overrides = os.path.join(self._config.miscroot,
-            "more-extra.override.%s.main" % suite)
+        extra_extra_overrides = os.path.join(
+            self._config.miscroot, "more-extra.override.%s.main" % suite
+        )
         if not os.path.exists(extra_extra_overrides):
-            unpocketed_series = "-".join(suite.split('-')[:-1])
-            extra_extra_overrides = os.path.join(self._config.miscroot,
-                "more-extra.override.%s.main" % unpocketed_series)
+            unpocketed_series = "-".join(suite.split("-")[:-1])
+            extra_extra_overrides = os.path.join(
+                self._config.miscroot,
+                "more-extra.override.%s.main" % unpocketed_series,
+            )
         # And for the overrides we write out
-        main_override = os.path.join(self._config.overrideroot,
-                                     "override.%s.%s" % (suite, component))
-        ef_override = os.path.join(self._config.overrideroot,
-                                   "override.%s.extra.%s" % (suite, component))
+        main_override = os.path.join(
+            self._config.overrideroot, "override.%s.%s" % (suite, component)
+        )
+        ef_override = os.path.join(
+            self._config.overrideroot,
+            "override.%s.extra.%s" % (suite, component),
+        )
         ef_override_new = "{}.new".format(ef_override)
         # Create the files as .new and then move into place to prevent
         # race conditions with other processes handling these files
         main_override_new = "{}.new".format(main_override)
-        source_override = os.path.join(self._config.overrideroot,
-                                       "override.%s.%s.src" %
-                                       (suite, component))
+        source_override = os.path.join(
+            self._config.overrideroot,
+            "override.%s.%s.src" % (suite, component),
+        )
 
         # Start to write the files out
         ef = open(ef_override_new, "w")
         f = open(main_override_new, "w")
         basic_override_seen = set()
-        for (package_arch, priority, section, _,
-             phased_update_percentage) in bin_overrides:
+        for (
+            package_arch,
+            priority,
+            section,
+            _,
+            phased_update_percentage,
+        ) in bin_overrides:
             package = package_arch.split("/")[0]
             if package not in basic_override_seen:
                 basic_override_seen.add(package)
@@ -516,14 +580,26 @@ class FTPArchiveHandler:
                 # appropriate and look for bugs addresses etc in Launchpad.)
                 ef.write("\t".join([package, "Origin", "Ubuntu"]))
                 ef.write("\n")
-                ef.write("\t".join([
-                    package, "Bugs",
-                    "https://bugs.launchpad.net/ubuntu/+filebug"]))
+                ef.write(
+                    "\t".join(
+                        [
+                            package,
+                            "Bugs",
+                            "https://bugs.launchpad.net/ubuntu/+filebug",
+                        ]
+                    )
+                )
                 ef.write("\n")
             if phased_update_percentage is not None:
-                ef.write("\t".join([
-                    package_arch, "Phased-Update-Percentage",
-                    str(phased_update_percentage)]))
+                ef.write(
+                    "\t".join(
+                        [
+                            package_arch,
+                            "Phased-Update-Percentage",
+                            str(phased_update_percentage),
+                        ]
+                    )
+                )
                 ef.write("\n")
         f.close()
         # Move into place
@@ -569,7 +645,8 @@ class FTPArchiveHandler:
             if sub_overrides:
                 sub_path = os.path.join(
                     self._config.overrideroot,
-                    "override.%s.%s.%s" % (suite, component, subcomp))
+                    "override.%s.%s.%s" % (suite, component, subcomp),
+                )
                 _outputSimpleOverrides(sub_path, sub_overrides)
 
     #
@@ -590,27 +667,29 @@ class FTPArchiveHandler:
             SourcePackageName.name,
             LibraryFileAlias.filename,
             Component.name,
-            )
+        )
         join_conditions = [
-            SourcePackageReleaseFile.sourcepackagereleaseID ==
-                SourcePackagePublishingHistory.sourcepackagereleaseID,
-            SourcePackageName.id ==
-                SourcePackagePublishingHistory.sourcepackagenameID,
+            SourcePackageReleaseFile.sourcepackagereleaseID
+            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            SourcePackageName.id
+            == SourcePackagePublishingHistory.sourcepackagenameID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
             Component.id == SourcePackagePublishingHistory.componentID,
-            ]
+        ]
         select_conditions = [
             SourcePackagePublishingHistory.archive == self.publisher.archive,
             SourcePackagePublishingHistory.distroseriesID == distroseries.id,
             SourcePackagePublishingHistory.pocket == pocket,
-            SourcePackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
-            ]
+            SourcePackagePublishingHistory.status
+            == PackagePublishingStatus.PUBLISHED,
+        ]
 
         result_set = IStore(SourcePackageRelease).find(
-            columns, *(join_conditions + select_conditions))
+            columns, *(join_conditions + select_conditions)
+        )
         return result_set.order_by(
-            LibraryFileAlias.filename, SourcePackageReleaseFile.id)
+            LibraryFileAlias.filename, SourcePackageReleaseFile.id
+        )
 
     def getBinaryFiles(self, distroseries, pocket):
         """Fetch publishing information about all published binary files.
@@ -628,36 +707,39 @@ class FTPArchiveHandler:
             LibraryFileAlias.filename,
             Component.name,
             Concatenate("binary-", DistroArchSeries.architecturetag),
-            )
+        )
         join_conditions = [
-            BinaryPackageRelease.id ==
-                BinaryPackagePublishingHistory.binarypackagereleaseID,
-            BinaryPackageFile.binarypackagereleaseID ==
-                BinaryPackagePublishingHistory.binarypackagereleaseID,
+            BinaryPackageRelease.id
+            == BinaryPackagePublishingHistory.binarypackagereleaseID,
+            BinaryPackageFile.binarypackagereleaseID
+            == BinaryPackagePublishingHistory.binarypackagereleaseID,
             BinaryPackageBuild.id == BinaryPackageRelease.buildID,
             SourcePackageName.id == BinaryPackageBuild.source_package_name_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
-            DistroArchSeries.id ==
-                BinaryPackagePublishingHistory.distroarchseriesID,
+            DistroArchSeries.id
+            == BinaryPackagePublishingHistory.distroarchseriesID,
             Component.id == BinaryPackagePublishingHistory.componentID,
-            ]
+        ]
         select_conditions = [
             DistroArchSeries.distroseriesID == distroseries.id,
             BinaryPackagePublishingHistory.archive == self.publisher.archive,
             BinaryPackagePublishingHistory.pocket == pocket,
-            BinaryPackagePublishingHistory.status ==
-                PackagePublishingStatus.PUBLISHED,
-            ]
+            BinaryPackagePublishingHistory.status
+            == PackagePublishingStatus.PUBLISHED,
+        ]
 
         if not self.publisher.archive.publish_debug_symbols:
             select_conditions.append(
                 BinaryPackageRelease.binpackageformat
-                    != BinaryPackageFormat.DDEB)
+                != BinaryPackageFormat.DDEB
+            )
 
         result_set = IStore(BinaryPackageRelease).find(
-            columns, *(join_conditions + select_conditions))
+            columns, *(join_conditions + select_conditions)
+        )
         return result_set.order_by(
-            LibraryFileAlias.filename, BinaryPackageFile.id)
+            LibraryFileAlias.filename, BinaryPackageFile.id
+        )
 
     def generateFileLists(self, fullpublish=False):
         """Collect currently published FilePublishings and write filelists."""
@@ -686,15 +768,26 @@ class FTPArchiveHandler:
         # Ensure that we generate file lists for all the expected components
         # and architectures, even if they're currently empty.
         for component in self.publisher.archive.getComponentsForSeries(
-                distroseries):
+            distroseries
+        ):
             filelist[component.name]["source"]
             for das in distroseries.enabled_architectures:
                 filelist[component.name]["binary-%s" % das.architecturetag]
 
-        def updateFileList(sourcepackagename, filename, component,
-                           architecturetag=None):
+        def updateFileList(
+            sourcepackagename, filename, component, architecturetag=None
+        ):
+            # DiskPool.pathFor takes a source package version parameter.  We
+            # could fetch that in getSourceFiles/getBinaryFiles and pass it
+            # down here.  However, it adds another column to a query with an
+            # already large number of rows, and it's only needed for
+            # non-Debian-format archives, which by definition aren't
+            # involved here; so we just pass None as the version.
             ondiskname = str(
-                self._diskpool.pathFor(component, sourcepackagename, filename))
+                self._diskpool.pathFor(
+                    component, sourcepackagename, None, file=filename
+                )
+            )
             if architecturetag is None:
                 architecturetag = "source"
             filelist[component][architecturetag].append(ondiskname)
@@ -725,7 +818,8 @@ class FTPArchiveHandler:
                     enabled = das.enabled
                 if enabled:
                     self.writeFileList(
-                        architecture, file_names, suite, component)
+                        architecture, file_names, suite, component
+                    )
 
     def writeFileList(self, arch, file_names, dr_pocketed, component):
         """Output file lists for a series and architecture.
@@ -734,23 +828,30 @@ class FTPArchiveHandler:
         """
         files = defaultdict(list)
         for name in file_names:
-            files[EXT_TO_SUBCOMPONENT.get(name.rsplit('.', 1)[1])].append(name)
+            files[EXT_TO_SUBCOMPONENT.get(name.rsplit(".", 1)[1])].append(name)
 
-        lists = (
-            [(None, 'regular', '%s_%s_%s' % (dr_pocketed, component, arch))]
-            + [(subcomp, subcomp,
-                '%s_%s_%s_%s' % (dr_pocketed, component, subcomp, arch))
-               for subcomp in self.publisher.subcomponents])
+        lists = [
+            (None, "regular", "%s_%s_%s" % (dr_pocketed, component, arch))
+        ] + [
+            (
+                subcomp,
+                subcomp,
+                "%s_%s_%s_%s" % (dr_pocketed, component, subcomp, arch),
+            )
+            for subcomp in self.publisher.subcomponents
+        ]
         for subcomp, desc, filename in lists:
             self.log.debug(
-                "Writing %s file list for %s/%s/%s" % (
-                    desc, dr_pocketed, component, arch))
+                "Writing %s file list for %s/%s/%s"
+                % (desc, dr_pocketed, component, arch)
+            )
             # Prevent race conditions with other processes handling these
             # files, create as .new and then move into place
             new_path = os.path.join(
-                self._config.overrideroot, "{}.new".format(filename))
+                self._config.overrideroot, "{}.new".format(filename)
+            )
             final_path = os.path.join(self._config.overrideroot, filename)
-            with open(new_path, 'w') as f:
+            with open(new_path, "w") as f:
                 files[subcomp].sort(key=package_name)
                 f.write("\n".join(files[subcomp]))
                 if files[subcomp]:
@@ -772,10 +873,15 @@ class FTPArchiveHandler:
         explicitly marked as dirty.
         """
         apt_config = io.StringIO()
-        apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
-                                          self._config.overrideroot,
-                                          self._config.cacheroot,
-                                          self._config.miscroot))
+        apt_config.write(
+            CONFIG_HEADER
+            % (
+                self._config.archiveroot,
+                self._config.overrideroot,
+                self._config.cacheroot,
+                self._config.miscroot,
+            )
+        )
 
         # confixtext now contains a basic header. Add a dists entry for
         # each of the distroseries we've touched
@@ -784,11 +890,14 @@ class FTPArchiveHandler:
 
                 if not fullpublish:
                     if not self.publisher.isDirty(distroseries, pocket):
-                        self.log.debug("Skipping a-f stanza for %s/%s" %
-                                           (distroseries.name, pocket.name))
+                        self.log.debug(
+                            "Skipping a-f stanza for %s/%s"
+                            % (distroseries.name, pocket.name)
+                        )
                         continue
                     self.publisher.checkDirtySuiteBeforePublishing(
-                        distroseries, pocket)
+                        distroseries, pocket
+                    )
                 else:
                     if not self.publisher.isAllowed(distroseries, pocket):
                         continue
@@ -805,24 +914,29 @@ class FTPArchiveHandler:
         """Generates the config stanza for an individual pocket."""
         suite = distroseries.getSuite(pocket)
 
-        archs = [
-            a.architecturetag for a in distroseries.enabled_architectures]
+        archs = [a.architecturetag for a in distroseries.enabled_architectures]
         comps = [
-            comp.name for comp in
-            self.publisher.archive.getComponentsForSeries(distroseries)]
+            comp.name
+            for comp in self.publisher.archive.getComponentsForSeries(
+                distroseries
+            )
+        ]
 
         self.writeAptConfig(
-            apt_config, suite, comps, archs,
+            apt_config,
+            suite,
+            comps,
+            archs,
             distroseries.include_long_descriptions,
-            distroseries.index_compressors)
+            distroseries.index_compressors,
+        )
 
         # Make sure all the relevant directories exist and are empty.  Each
         # of these only contains files generated by apt-ftparchive, and may
         # contain files left over from previous configurations (e.g.
         # different compressor types).
         for comp in comps:
-            component_path = os.path.join(
-                self._config.distsroot, suite, comp)
+            component_path = os.path.join(self._config.distsroot, suite, comp)
             make_clean_dir(os.path.join(component_path, "source"))
             if not distroseries.include_long_descriptions:
                 # apt-ftparchive only generates the English
@@ -830,52 +944,71 @@ class FTPArchiveHandler:
                 # files here that we want to keep.
                 make_clean_dir(
                     os.path.join(component_path, "i18n"),
-                    r'Translation-en(\..*)?$')
+                    r"Translation-en(\..*)?$",
+                )
             for arch in archs:
                 make_clean_dir(os.path.join(component_path, "binary-" + arch))
                 for subcomp in self.publisher.subcomponents:
-                    make_clean_dir(os.path.join(
-                        component_path, subcomp, "binary-" + arch))
+                    make_clean_dir(
+                        os.path.join(component_path, subcomp, "binary-" + arch)
+                    )
 
-    def writeAptConfig(self, apt_config, suite, comps, archs,
-                       include_long_descriptions, index_compressors):
+    def writeAptConfig(
+        self,
+        apt_config,
+        suite,
+        comps,
+        archs,
+        include_long_descriptions,
+        index_compressors,
+    ):
         self.log.debug("Generating apt config for %s" % suite)
         compressors = " ".join(
-            COMPRESSOR_TO_CONFIG[c] for c in index_compressors)
-        apt_config.write(STANZA_TEMPLATE % {
-                         "LISTPATH": self._config.overrideroot,
-                         "DISTRORELEASE": suite,
-                         "DISTRORELEASEBYFILE": suite,
-                         "DISTRORELEASEONDISK": suite,
-                         "ARCHITECTURES": " ".join(archs + ["source"]),
-                         "SECTIONS": " ".join(comps),
-                         "EXTENSIONS": ".deb",
-                         "COMPRESSORS": compressors,
-                         "CACHEINSERT": "",
-                         "DISTS": os.path.basename(self._config.distsroot),
-                         "HIDEEXTRA": "",
-                         # Must match DdtpTarballUpload.shouldInstall.
-                         "LONGDESCRIPTION":
-                             "true" if include_long_descriptions else "false",
-                         })
+            COMPRESSOR_TO_CONFIG[c] for c in index_compressors
+        )
+        apt_config.write(
+            STANZA_TEMPLATE
+            % {
+                "LISTPATH": self._config.overrideroot,
+                "DISTRORELEASE": suite,
+                "DISTRORELEASEBYFILE": suite,
+                "DISTRORELEASEONDISK": suite,
+                "ARCHITECTURES": " ".join(archs + ["source"]),
+                "SECTIONS": " ".join(comps),
+                "EXTENSIONS": ".deb",
+                "COMPRESSORS": compressors,
+                "CACHEINSERT": "",
+                "DISTS": os.path.basename(self._config.distsroot),
+                "HIDEEXTRA": "",
+                # Must match DdtpTarballUpload.shouldInstall.
+                "LONGDESCRIPTION": "true"
+                if include_long_descriptions
+                else "false",
+            }
+        )
 
         if archs:
             for component in comps:
                 for subcomp in self.publisher.subcomponents:
-                    apt_config.write(STANZA_TEMPLATE % {
-                        "LISTPATH": self._config.overrideroot,
-                        "DISTRORELEASEONDISK": "%s/%s" % (suite, component),
-                        "DISTRORELEASEBYFILE": "%s_%s" % (suite, component),
-                        "DISTRORELEASE": "%s.%s" % (suite, component),
-                        "ARCHITECTURES": " ".join(archs),
-                        "SECTIONS": subcomp,
-                        "EXTENSIONS": '.%s' % SUBCOMPONENT_TO_EXT[subcomp],
-                        "COMPRESSORS": compressors,
-                        "CACHEINSERT": "-%s" % subcomp,
-                        "DISTS": os.path.basename(self._config.distsroot),
-                        "HIDEEXTRA": "// ",
-                        "LONGDESCRIPTION": "true",
-                        })
+                    apt_config.write(
+                        STANZA_TEMPLATE
+                        % {
+                            "LISTPATH": self._config.overrideroot,
+                            "DISTRORELEASEONDISK": "%s/%s"
+                            % (suite, component),
+                            "DISTRORELEASEBYFILE": "%s_%s"
+                            % (suite, component),
+                            "DISTRORELEASE": "%s.%s" % (suite, component),
+                            "ARCHITECTURES": " ".join(archs),
+                            "SECTIONS": subcomp,
+                            "EXTENSIONS": ".%s" % SUBCOMPONENT_TO_EXT[subcomp],
+                            "COMPRESSORS": compressors,
+                            "CACHEINSERT": "-%s" % subcomp,
+                            "DISTS": os.path.basename(self._config.distsroot),
+                            "HIDEEXTRA": "// ",
+                            "LONGDESCRIPTION": "true",
+                        }
+                    )
 
     def cleanCaches(self):
         """Clean apt-ftparchive caches.
@@ -885,7 +1018,8 @@ class FTPArchiveHandler:
         get too large and slow down normal runs of apt-ftparchive.
         """
         apt_config_filename = os.path.join(
-            self._config.miscroot, "apt-cleanup.conf")
+            self._config.miscroot, "apt-cleanup.conf"
+        )
         try:
             last_cleanup = os.stat(apt_config_filename).st_mtime
             if last_cleanup > time.time() - CLEANUP_FREQUENCY:
@@ -894,10 +1028,15 @@ class FTPArchiveHandler:
             pass
 
         apt_config = io.StringIO()
-        apt_config.write(CONFIG_HEADER % (self._config.archiveroot,
-                                          self._config.overrideroot,
-                                          self._config.cacheroot,
-                                          self._config.miscroot))
+        apt_config.write(
+            CONFIG_HEADER
+            % (
+                self._config.archiveroot,
+                self._config.overrideroot,
+                self._config.cacheroot,
+                self._config.miscroot,
+            )
+        )
 
         # "apt-ftparchive clean" doesn't care what suite it's given, but it
         # needs to know the union of all architectures and components for
@@ -908,11 +1047,17 @@ class FTPArchiveHandler:
             for a in distroseries.enabled_architectures:
                 archs.add(a.architecturetag)
             for comp in self.publisher.archive.getComponentsForSeries(
-                distroseries):
+                distroseries
+            ):
                 comps.add(comp.name)
         self.writeAptConfig(
-            apt_config, "nonexistent-suite", sorted(comps), sorted(archs),
-            True, [IndexCompressionType.UNCOMPRESSED])
+            apt_config,
+            "nonexistent-suite",
+            sorted(comps),
+            sorted(archs),
+            True,
+            [IndexCompressionType.UNCOMPRESSED],
+        )
 
         with open(apt_config_filename, "w") as fp:
             fp.write(apt_config.getvalue())

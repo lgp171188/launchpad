@@ -4,48 +4,40 @@
 """TALES formatter for strings."""
 
 __all__ = [
-    'add_word_breaks',
-    'break_long_words',
-    'extract_bug_numbers',
-    'extract_email_addresses',
-    'FormattersAPI',
-    'linkify_bug_numbers',
-    'parse_diff',
-    're_substitute',
-    'split_paragraphs',
-    ]
+    "add_word_breaks",
+    "break_long_words",
+    "extract_bug_numbers",
+    "extract_email_addresses",
+    "FormattersAPI",
+    "linkify_bug_numbers",
+    "parse_diff",
+    "re_substitute",
+    "split_paragraphs",
+]
 
-from base64 import urlsafe_b64encode
-from itertools import zip_longest
 import re
 import sys
+from base64 import urlsafe_b64encode
+from itertools import zip_longest
 
-from breezy.patches import hunk_from_header
-from lxml import html
+import bleach
+import bleach_allowlist
 import markdown
 import six
+from breezy.patches import hunk_from_header
+from lxml import html
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
-from zope.traversing.interfaces import (
-    ITraversable,
-    TraversalError,
-    )
+from zope.traversing.interfaces import ITraversable, TraversalError
 
 from lp.answers.interfaces.faq import IFAQSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
-from lp.services.utils import (
-    obfuscate_email,
-    re_email_address,
-    )
+from lp.services.utils import obfuscate_email, re_email_address
 from lp.services.webapp import canonical_url
-from lp.services.webapp.escaping import (
-    html_escape,
-    html_unescape,
-    structured,
-    )
+from lp.services.webapp.escaping import html_escape, html_unescape, structured
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -94,13 +86,13 @@ def re_substitute(pattern, replace_match, replace_nomatch, string):
     position = 0
     for match in re.finditer(pattern, string):
         if match.start() != position:
-            parts.append(replace_nomatch(string[position:match.start()]))
+            parts.append(replace_nomatch(string[position : match.start()]))
         parts.append(replace_match(match))
         position = match.end()
     remainder = string[position:]
     if remainder:
         parts.append(replace_nomatch(remainder))
-    return ''.join(parts)
+    return "".join(parts)
 
 
 def next_word_chunk(word, pos, minlen, maxlen):
@@ -117,10 +109,10 @@ def next_word_chunk(word, pos, minlen, maxlen):
     endpos = pos
     while endpos < len(word):
         # advance by one character
-        if word[endpos] == '&':
+        if word[endpos] == "&":
             # make sure we grab the entity as a whole
-            semicolon = word.find(';', endpos)
-            assert semicolon >= 0, 'badly formed entity: %r' % word[endpos:]
+            semicolon = word.find(";", endpos)
+            assert semicolon >= 0, "badly formed entity: %r" % word[endpos:]
             endpos = semicolon + 1
         else:
             endpos += 1
@@ -149,17 +141,20 @@ def add_word_breaks(word):
     while pos < len(word):
         chunk, pos = next_word_chunk(word, pos, 7, 15)
         broken.append(chunk)
-    return '<wbr />'.join(broken)
+    return "<wbr />".join(broken)
 
 
-break_text_pat = re.compile(r'''
+break_text_pat = re.compile(
+    r"""
   (?P<tag>
     <[^>]*>
   ) |
   (?P<longword>
     (?<![^\s<>])(?:[^\s<>&]|&[^;]*;){20,}
   )
-''', re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 
 def break_long_words(text):
@@ -169,17 +164,18 @@ def break_long_words(text):
     """
 
     def replace(match):
-        if match.group('tag'):
+        if match.group("tag"):
             return match.group()
-        elif match.group('longword'):
+        elif match.group("longword"):
             return add_word_breaks(match.group())
         else:
-            raise AssertionError('text matched but neither named group found')
+            raise AssertionError("text matched but neither named group found")
+
     return break_text_pat.sub(replace, text)
 
 
 def extract_bug_numbers(text):
-    '''Unique bug numbers matching the "LP: #n(, #n)*" pattern in the text.'''
+    """Unique bug numbers matching the "LP: #n(, #n)*" pattern in the text."""
     # FormattersAPI._linkify_substitution requires a match object
     # that has named groups "bug" and "bugnum".  The matching text for
     # the "bug" group is used as the link text and "bugnum" forms part
@@ -199,16 +195,16 @@ def extract_bug_numbers(text):
     unique_bug_matches = dict()
 
     line_matches = re.finditer(
-        r'LP:\s*(?P<buglist>(.+?[^,]))($|\n)', text,
-        re.DOTALL | re.IGNORECASE)
+        r"LP:\s*(?P<buglist>(.+?[^,]))($|\n)", text, re.DOTALL | re.IGNORECASE
+    )
 
     for line_match in line_matches:
         bug_matches = re.finditer(
-            r'\s*((?P<bug>#(?P<bugnum>\d+)),?\s*)',
-            line_match.group('buglist'))
+            r"\s*((?P<bug>#(?P<bugnum>\d+)),?\s*)", line_match.group("buglist")
+        )
 
         for bug_match in bug_matches:
-            bugnum = bug_match.group('bugnum')
+            bugnum = bug_match.group("bugnum")
             if bugnum in unique_bug_matches:
                 # We got this bug already, ignore it.
                 continue
@@ -221,7 +217,7 @@ def linkify_bug_numbers(text):
     """Linkify to a bug if LP: #number appears in the (changelog) text."""
     unique_bug_matches = extract_bug_numbers(text)
     for bug_match in unique_bug_matches.values():
-        replace_text = bug_match.group('bug')
+        replace_text = bug_match.group("bug")
         if replace_text is not None:
             # XXX julian 2008-01-10
             # Note that re.sub would be far more efficient to use
@@ -235,13 +231,13 @@ def linkify_bug_numbers(text):
             # #999.  The liklihood of this happening is very, very
             # small, however.
             text = text.replace(
-                replace_text,
-                FormattersAPI._linkify_substitution(bug_match))
+                replace_text, FormattersAPI._linkify_substitution(bug_match)
+            )
     return text
 
 
 def extract_email_addresses(text):
-    '''Unique email addresses in the text.'''
+    """Unique email addresses in the text."""
     matches = re.finditer(re_email_address, text)
     return list({match.group() for match in matches})
 
@@ -258,18 +254,20 @@ def parse_diff(text):
     mod_row = 0
     for row, line in enumerate(text.splitlines()[:max_format_lines]):
         row += 1
-        if (line.startswith('===') or
-                line.startswith('diff') or
-                line.startswith('index')):
-            yield 'diff-file text', row, None, None, line
+        if (
+            line.startswith("===")
+            or line.startswith("diff")
+            or line.startswith("index")
+        ):
+            yield "diff-file text", row, None, None, line
             header_next = True
-        elif (header_next and
-              (line.startswith('+++') or
-              line.startswith('---'))):
-            yield 'diff-header text', row, None, None, line
-        elif line.startswith('@@'):
+        elif header_next and (
+            line.startswith("+++") or line.startswith("---")
+        ):
+            yield "diff-header text", row, None, None, line
+        elif line.startswith("@@"):
             try:
-                hunk = hunk_from_header((line + '\n').encode('UTF-8'))
+                hunk = hunk_from_header((line + "\n").encode("UTF-8"))
                 # The positions indicate the per-file line numbers of
                 # the next row.
                 orig_row = hunk.orig_pos
@@ -278,22 +276,22 @@ def parse_diff(text):
                 getUtility(IErrorReportingUtility).raising(sys.exc_info())
                 orig_row = 1
                 mod_row = 1
-            yield 'diff-chunk text', row, None, None, line
+            yield "diff-chunk text", row, None, None, line
             header_next = False
-        elif line.startswith('+'):
-            yield 'diff-added text', row, None, mod_row, line
+        elif line.startswith("+"):
+            yield "diff-added text", row, None, mod_row, line
             mod_row += 1
-        elif line.startswith('-'):
-            yield 'diff-removed text', row, orig_row, None, line
+        elif line.startswith("-"):
+            yield "diff-removed text", row, orig_row, None, line
             orig_row += 1
-        elif line.startswith('#'):
+        elif line.startswith("#"):
             # This doesn't occur in normal unified diffs, but does
             # appear in merge directives, which use text/x-diff or
             # text/x-patch.
-            yield 'diff-comment text', row, None, None, line
+            yield "diff-comment text", row, None, None, line
             header_next = False
         else:
-            yield 'text', row, orig_row, mod_row, line
+            yield "text", row, orig_row, mod_row, line
             orig_row += 1
             mod_row += 1
             header_next = False
@@ -308,7 +306,7 @@ class FormattersAPI:
 
     def nl_to_br(self):
         """Quote HTML characters, then replace newlines with <br /> tags."""
-        return html_escape(self._stringtoformat).replace('\n', '<br />\n')
+        return html_escape(self._stringtoformat).replace("\n", "<br />\n")
 
     def escape(self):
         return html_escape(self._stringtoformat)
@@ -328,16 +326,15 @@ class FormattersAPI:
         """
         groups = match.groups()
         assert len(groups) == 1
-        return '&nbsp;' * len(groups[0])
+        return "&nbsp;" * len(groups[0])
 
     @staticmethod
-    def _linkify_bug_number(text, bugnum, trailers=''):
+    def _linkify_bug_number(text, bugnum, trailers=""):
         # Don't look up the bug or display anything about the bug, just
         # linkify to the general bug url.
-        url = '/bugs/%s' % bugnum
+        url = "/bugs/%s" % bugnum
         # The text will have already been cgi escaped.
-        return '<a href="%s" class="bug-link">%s</a>%s' % (
-            url, text, trailers)
+        return '<a href="%s" class="bug-link">%s</a>%s' % (url, text, trailers)
 
     @staticmethod
     def _handle_parens_in_trailers(url, trailers):
@@ -346,13 +343,13 @@ class FormattersAPI:
         If there are opening parens in the url that are matched by closing
         parens at the start of the trailer, those closing parens should be
         part of the url."""
-        assert trailers != '', ("Trailers must not be an empty string.")
-        opencount = url.count('(')
-        closedcount = url.count(')')
+        assert trailers != "", "Trailers must not be an empty string."
+        opencount = url.count("(")
+        closedcount = url.count(")")
         missing = opencount - closedcount
         slice_idx = 0
         while slice_idx < missing:
-            if trailers[slice_idx] == ')':
+            if trailers[slice_idx] == ")":
                 slice_idx += 1
             else:
                 break
@@ -369,47 +366,49 @@ class FormattersAPI:
         match = FormattersAPI._re_url_trailers.search(url)
         if match:
             trailers = match.group(1)
-            url = url[:-len(trailers)]
+            url = url[: -len(trailers)]
             return FormattersAPI._handle_parens_in_trailers(url, trailers)
         else:
             # No match, return URL with empty string for trailers
-            return url, ''
+            return url, ""
 
     @staticmethod
     def _linkify_url_should_be_ignored(url):
         """Don't linkify URIs consisting of just the protocol."""
 
         protocol_bases = [
-            'about',
-            'gopher',
-            'http',
-            'https',
-            'sftp',
-            'news',
-            'ftp',
-            'mailto',
-            'irc',
-            'jabber',
-            'apt',
-            ]
+            "about",
+            "gopher",
+            "http",
+            "https",
+            "sftp",
+            "news",
+            "ftp",
+            "mailto",
+            "irc",
+            "jabber",
+            "apt",
+        ]
 
         for base in protocol_bases:
-            if url in ('%s' % base, '%s:' % base, '%s://' % base):
+            if url in ("%s" % base, "%s:" % base, "%s://" % base):
                 return True
         return False
 
     @staticmethod
     def _linkify_substitution(match):
-        if match.group('bug') is not None:
+        if match.group("bug") is not None:
             return FormattersAPI._linkify_bug_number(
-                match.group('bug'), match.group('bugnum'))
-        elif match.group('url') is not None:
+                match.group("bug"), match.group("bugnum")
+            )
+        elif match.group("url") is not None:
             # The text will already have been cgi escaped.  We temporarily
             # unescape it so that we can strip common trailing characters
             # that aren't part of the URL.
-            full_url = match.group('url')
+            full_url = match.group("url")
             url, trailers = FormattersAPI._split_url_and_trailers(
-                html_unescape(full_url))
+                html_unescape(full_url)
+            )
             # We use nofollow for these links to reduce the value of
             # adding spam URLs to our comments; it's a way of moderately
             # devaluing the return on effort for spammers that consider
@@ -422,56 +421,67 @@ class FormattersAPI:
                     'href="%(url)s">%(linked_text)s</a>%(trailers)s',
                     url=url,
                     linked_text=structured(add_word_breaks(html_escape(url))),
-                    trailers=trailers).escapedtext
+                    trailers=trailers,
+                ).escapedtext
             else:
                 return full_url
-        elif match.group('faq') is not None:
+        elif match.group("faq") is not None:
             # This is *BAD*.  We shouldn't be doing database lookups to
             # linkify text.
-            text = match.group('faq')
-            faqnum = match.group('faqnum')
+            text = match.group("faq")
+            faqnum = match.group("faqnum")
             faqset = getUtility(IFAQSet)
             faq = faqset.getFAQ(faqnum)
             if not faq:
                 return text
             url = canonical_url(faq)
             return '<a href="%s">%s</a>' % (url, text)
-        elif match.group('oops') is not None:
-            text = match.group('oops')
+        elif match.group("oops") is not None:
+            text = match.group("oops")
 
             if not getUtility(ILaunchBag).developer:
                 return text
 
             root_url = config.launchpad.oops_root_url
-            url = root_url + "OOPS-" + match.group('oopscode')
+            url = root_url + "OOPS-" + match.group("oopscode")
             return '<a href="%s">%s</a>' % (url, text)
-        elif match.group('lpbranchurl') is not None:
-            lp_url = match.group('lpbranchurl')
-            path = match.group('branch')
+        elif match.group("lpbranchurl") is not None:
+            lp_url = match.group("lpbranchurl")
+            path = match.group("branch")
             lp_url, trailers = FormattersAPI._split_url_and_trailers(
-                html_unescape(lp_url))
+                html_unescape(lp_url)
+            )
             path, trailers = FormattersAPI._split_url_and_trailers(
-                html_unescape(path))
+                html_unescape(path)
+            )
             if path.isdigit():
                 return FormattersAPI._linkify_bug_number(
-                    lp_url, path, trailers)
-            url = '/+code/%s' % path
+                    lp_url, path, trailers
+                )
+            url = "/+code/%s" % path
             # Mark the links with a 'branch-short-link' class so they can be
             # harvested and validated when the page is rendered.
             return structured(
                 '<a href="%s" class="branch-short-link">%s</a>%s',
-                url, lp_url, trailers).escapedtext
+                url,
+                lp_url,
+                trailers,
+            ).escapedtext
         elif match.group("clbug") is not None:
             # 'clbug' matches Ubuntu changelog format bugs. 'bugnumbers' is
             # all of the bug numbers, that look something like "#1234, #434".
             # 'leader' is the 'LP: ' bit at the beginning.
             bug_parts = []
             # Split the bug numbers into multiple bugs.
-            splitted = re.split(r"(,(?:\s|<br\s*/>)+)",
-                    match.group("bugnumbers")) + [""]
+            splitted = re.split(
+                r"(,(?:\s|<br\s*/>)+)", match.group("bugnumbers")
+            ) + [""]
             for bug_id, spacer in zip(splitted[::2], splitted[1::2]):
-                bug_parts.append(FormattersAPI._linkify_bug_number(
-                    bug_id, bug_id.lstrip("#")))
+                bug_parts.append(
+                    FormattersAPI._linkify_bug_number(
+                        bug_id, bug_id.lstrip("#")
+                    )
+                )
                 bug_parts.append(spacer)
             return match.group("leader") + "".join(bug_parts)
         else:
@@ -486,8 +496,8 @@ class FormattersAPI:
         """
         linkified_text = FormattersAPI._linkify_substitution(match)
         element_tree = html.fromstring(linkified_text)
-        for link in element_tree.xpath('//a'):
-            link.set('target', '_new')
+        for link in element_tree.xpath("//a"):
+            link.set("target", "_new")
         # html.tostring returns bytes; we want text.  (Passing
         # encoding='unicode' would cause it to return text, but that would
         # also disable "&#...;" character encoding of non-ASCII characters,
@@ -495,7 +505,7 @@ class FormattersAPI:
         return six.ensure_text(html.tostring(element_tree))
 
     # match whitespace at the beginning of a line
-    _re_leadingspace = re.compile(r'^(\s+)')
+    _re_leadingspace = re.compile(r"^(\s+)")
 
     # From RFC 3986 ABNF for URIs:
     #
@@ -549,16 +559,17 @@ class FormattersAPI:
     # appear at the end of the URI since they may be incidental in the
     # flow of the text.
     #
-    # apport has at one time produced query strings containing sqaure
+    # apport has at one time produced query strings containing square
     # braces (that are not percent-encoded). In RFC 2986 they seem to be
     # allowed by section 2.2 "Reserved Characters", yet section 3.4
     # "Query" appears to provide a strict definition of the query string
     # that would forbid square braces. Either way, links with
     # non-percent-encoded square braces are being used on Launchpad so
-    # it's probably best to accomodate them.
+    # it's probably best to accommodate them.
 
     # Match urls or bugs or oopses.
-    _re_linkify = re.compile(r'''
+    _re_linkify = re.compile(
+        r"""
       (?P<url>
         \b
         (?:about|gopher|http|https|sftp|news|ftp|mailto|irc|jabber|apt)
@@ -624,17 +635,23 @@ class FormattersAPI:
         \blp:(?:///|/)?
         (?P<branch>%(unreserved)s(?:%(unreserved)s|/)*)
       )
-    ''' % {'unreserved': r"(?:[-a-zA-Z0-9._~%!$'()*+,;=]|&amp;|&\#x27;)"},
-                             re.IGNORECASE | re.VERBOSE)
+    """
+        % {"unreserved": r"(?:[-a-zA-Z0-9._~%!$'()*+,;=]|&amp;|&\#x27;)"},
+        re.IGNORECASE | re.VERBOSE,
+    )
 
     # There is various punctuation that can occur at the end of a link that
     # shouldn't be included. The regex below matches on the set of characters
     # we don't generally want. See also _handle_parens_in_trailers, which
     # re-attaches parens if we do want them to be part of the url.
-    _re_url_trailers = re.compile(r'([,.?:);>]+)$')
+    _re_url_trailers = re.compile(r"([,.?:);>]+)$")
 
-    def text_to_html(self, linkify_text=True, linkify_substitution=None,
-                     last_paragraph_class=None):
+    def text_to_html(
+        self,
+        linkify_text=True,
+        linkify_substitution=None,
+        last_paragraph_class=None,
+    ):
         """Quote text according to DisplayingParagraphsOfText."""
         # This is based on the algorithm in the
         # DisplayingParagraphsOfText spec, but is a little more
@@ -650,33 +667,35 @@ class FormattersAPI:
         last_paragraph_index = len(paras) - 1
         for index, para in enumerate(paras):
             if index > 0:
-                output.append('\n')
-            css_class = ''
+                output.append("\n")
+            css_class = ""
             if last_paragraph_class and index == last_paragraph_index:
                 css_class = ' class="%s"' % last_paragraph_class
-            output.append('<p%s>' % css_class)
+            output.append("<p%s>" % css_class)
 
             first_line = True
             for line in para:
                 if not first_line:
-                    output.append('<br />\n')
+                    output.append("<br />\n")
                 first_line = False
                 # escape ampersands, etc in text
                 line = html_escape(line)
                 # convert leading space in logical line to non-breaking space
                 line = self._re_leadingspace.sub(
-                    self._substitute_matchgroup_for_spaces, line)
+                    self._substitute_matchgroup_for_spaces, line
+                )
                 output.append(line)
-            output.append('</p>')
+            output.append("</p>")
 
-        text = ''.join(output)
+        text = "".join(output)
 
         # Linkify the text, if allowed.
         if linkify_text is True:
             if linkify_substitution is None:
                 linkify_substitution = self._linkify_substitution
-            text = re_substitute(self._re_linkify, linkify_substitution,
-                break_long_words, text)
+            text = re_substitute(
+                self._re_linkify, linkify_substitution, break_long_words, text
+            )
 
         return text
 
@@ -687,7 +706,8 @@ class FormattersAPI:
         """
         return self.text_to_html(
             linkify_text=True,
-            linkify_substitution=self._linkify_substitution_with_target)
+            linkify_substitution=self._linkify_substitution_with_target,
+        )
 
     def nice_pre(self):
         """<pre>, except the browser knows it is allowed to break long lines
@@ -702,9 +722,12 @@ class FormattersAPI:
         if not self._stringtoformat:
             return self._stringtoformat
         else:
-            linkified_text = re_substitute(self._re_linkify,
-                self._linkify_substitution, break_long_words,
-                html_escape(self._stringtoformat))
+            linkified_text = re_substitute(
+                self._re_linkify,
+                self._linkify_substitution,
+                break_long_words,
+                html_escape(self._stringtoformat),
+            )
             return '<pre class="wrap">%s</pre>' % linkified_text
 
     # Match lines that start with one or more quote symbols followed
@@ -713,11 +736,11 @@ class FormattersAPI:
     # '> > ' are valid quoting sequences.
     # The dpkg version is used for exceptional cases where it
     # is better to not assume '|' is a start of a quoted passage.
-    _re_quoted = re.compile('^(([|] ?)+|(&gt; ?)+)')
-    _re_dpkg_quoted = re.compile('^(&gt; ?)+ ')
+    _re_quoted = re.compile("^(([|] ?)+|(&gt; ?)+)")
+    _re_dpkg_quoted = re.compile("^(&gt; ?)+ ")
 
     # Match blocks that start as signatures or PGP inclusions.
-    _re_include = re.compile('^<p>(--<br />|-----BEGIN PGP)')
+    _re_include = re.compile("^<p>(--<br />|-----BEGIN PGP)")
 
     def email_to_html(self):
         """text_to_html and hide signatures and full-quoted emails.
@@ -731,7 +754,7 @@ class FormattersAPI:
         """
         start_fold_markup = '<span class="foldable">'
         start_fold_quoted_markup = '<span class="foldable-quoted">'
-        end_fold_markup = '%s\n</span></p>'
+        end_fold_markup = "%s\n</span></p>"
         re_quoted = self._re_quoted
         re_include = self._re_include
         output = []
@@ -747,17 +770,20 @@ class FormattersAPI:
             that next and previous lines of text consistently uses '>>> '
             as Python would.
             """
-            python_block = '&gt;&gt;&gt; '
-            return (not line.startswith(python_block)
-                and re_quoted.match(line) is not None)
+            python_block = "&gt;&gt;&gt; "
+            return (
+                not line.startswith(python_block)
+                and re_quoted.match(line) is not None
+            )
 
         def strip_leading_p_tag(line):
             """Return the characters after the paragraph mark (<p>).
 
             The caller must be certain the line starts with a paragraph mark.
             """
-            assert line.startswith('<p>'), (
-                "The line must start with a paragraph mark (<p>).")
+            assert line.startswith(
+                "<p>"
+            ), "The line must start with a paragraph mark (<p>)."
             return line[3:]
 
         def strip_trailing_p_tag(line):
@@ -765,12 +791,13 @@ class FormattersAPI:
 
             The caller must be certain the line ends with a paragraph mark.
             """
-            assert line.endswith('</p>'), (
-                "The line must end with a paragraph mark (</p>).")
+            assert line.endswith(
+                "</p>"
+            ), "The line must end with a paragraph mark (</p>)."
             return line[:-4]
 
-        for line in self.text_to_html().split('\n'):
-            if 'Desired=<wbr />Unknown/' in line and not in_fold:
+        for line in self.text_to_html().split("\n"):
+            if "Desired=<wbr />Unknown/" in line and not in_fold:
                 # When we see a evidence of dpkg output, we switch the
                 # quote matching rules. We do not assume lines that start
                 # with a pipe are quoted passages. dpkg output is often
@@ -782,15 +809,22 @@ class FormattersAPI:
                 # This line is a paragraph with a signature or PGP inclusion.
                 # Start a foldable paragraph.
                 in_fold = True
-                line = '<p>%s%s' % (start_fold_markup,
-                                    strip_leading_p_tag(line))
-            elif (not in_fold and line.startswith('<p>')
-                and is_quoted(strip_leading_p_tag(line))):
+                line = "<p>%s%s" % (
+                    start_fold_markup,
+                    strip_leading_p_tag(line),
+                )
+            elif (
+                not in_fold
+                and line.startswith("<p>")
+                and is_quoted(strip_leading_p_tag(line))
+            ):
                 # The paragraph starts with quoted marks.
                 # Start a foldable quoted paragraph.
                 in_fold = True
-                line = '<p>%s%s' % (
-                    start_fold_quoted_markup, strip_leading_p_tag(line))
+                line = "<p>%s%s" % (
+                    start_fold_quoted_markup,
+                    strip_leading_p_tag(line),
+                )
             elif not in_fold and is_quoted(line):
                 # This line in the paragraph is quoted.
                 # Start foldable quoted lines in a paragraph.
@@ -804,23 +838,23 @@ class FormattersAPI:
 
             # We must test line starts and ends in separate blocks to
             # close the rare single line that is foldable.
-            if in_fold and line.endswith('</p>') and in_false_paragraph:
+            if in_fold and line.endswith("</p>") and in_false_paragraph:
                 # The line ends with a false paragraph in a PGP signature.
                 # Restore the line break to join with the next paragraph.
-                line = '%s<br />\n<br />' % strip_trailing_p_tag(line)
-            elif (in_quoted and self._re_quoted.match(line) is None):
+                line = "%s<br />\n<br />" % strip_trailing_p_tag(line)
+            elif in_quoted and self._re_quoted.match(line) is None:
                 # The line is not quoted like the previous line.
                 # End fold before we append this line.
                 in_fold = False
                 in_quoted = False
                 output.append("</span>\n")
-            elif in_fold and line.endswith('</p>'):
+            elif in_fold and line.endswith("</p>"):
                 # The line is quoted or an inclusion, and ends the paragraph.
                 # End the fold before the close paragraph mark.
                 in_fold = False
                 in_quoted = False
                 line = end_fold_markup % strip_trailing_p_tag(line)
-            elif in_false_paragraph and line.startswith('<p>'):
+            elif in_false_paragraph and line.startswith("<p>"):
                 # This line continues a PGP signature, but starts a paragraph.
                 # Remove the paragraph to join with the previous paragraph.
                 in_false_paragraph = False
@@ -830,7 +864,7 @@ class FormattersAPI:
                 # This line is not a transition.
                 pass
 
-            if in_fold and 'PGP SIGNATURE' in line:
+            if in_fold and "PGP SIGNATURE" in line:
                 # PGP signature blocks are split into two paragraphs
                 # by the text_to_html. The foldable feature works with
                 # a single paragraph, so we merge this paragraph with
@@ -838,7 +872,7 @@ class FormattersAPI:
                 in_false_paragraph = True
 
             output.append(line)
-        return '\n'.join(output)
+        return "\n".join(output)
 
     def obfuscate_email(self):
         """Obfuscate an email address if there's no authenticated user.
@@ -900,14 +934,17 @@ class FormattersAPI:
             # Only linkify if person exists and does not want to hide
             # their email addresses.
             if person is not None and not person.hide_email_addresses:
-                # Circular dependancies now. Should be resolved by moving the
+                # Circular dependencies now. Should be resolved by moving the
                 # object image display api.
                 from lp.app.browser.tales import ObjectImageDisplayAPI
+
                 css_sprite = ObjectImageDisplayAPI(person).sprite_css()
                 seen_addresses.append(address)
                 text = text.replace(
-                    address, '<a href="%s" class="%s">%s</a>' % (
-                        canonical_url(person), css_sprite, address))
+                    address,
+                    '<a href="%s" class="%s">%s</a>'
+                    % (canonical_url(person), css_sprite, address),
+                )
 
         return text
 
@@ -918,7 +955,7 @@ class FormattersAPI:
     def shorten(self, maxlength):
         """Use like tal:content="context/foo/fmt:shorten/60"."""
         if len(self._stringtoformat) > maxlength:
-            return '%s...' % self._stringtoformat[:maxlength - 3]
+            return "%s..." % self._stringtoformat[: maxlength - 3]
         else:
             return self._stringtoformat
 
@@ -927,15 +964,17 @@ class FormattersAPI:
         if len(self._stringtoformat) > maxlength:
             length = (maxlength - 3) // 2
             return (
-                self._stringtoformat[:maxlength - length - 3] + '...' +
-                self._stringtoformat[-length:])
+                self._stringtoformat[: maxlength - length - 3]
+                + "..."
+                + self._stringtoformat[-length:]
+            )
         else:
             return self._stringtoformat
 
     def format_diff(self):
         """Format the string as a diff in a table with line numbers."""
         # Trim off trailing carriage returns.
-        text = self._stringtoformat.rstrip('\n')
+        text = self._stringtoformat.rstrip("\n")
         if len(text) == 0:
             return text
         result = ['<table class="diff unidiff">']
@@ -945,11 +984,13 @@ class FormattersAPI:
             result.append('<td class="line-no unselectable">%s</td>' % row)
             result.append(
                 structured(
-                    '<td class="%s">%s</td>', css_class, line).escapedtext)
-            result.append('</tr>')
+                    '<td class="%s">%s</td>', css_class, line
+                ).escapedtext
+            )
+            result.append("</tr>")
 
-        result.append('</table>')
-        return ''.join(result)
+        result.append("</table>")
+        return "".join(result)
 
     def _ssdiff_emit_line(self, result, row, cells):
         result.append('<tr id="diff-line-%s">' % row)
@@ -958,40 +999,42 @@ class FormattersAPI:
         # per-file line numbers.
         result.append(
             '<td class="line-no unselectable" '
-            'style="display: none">%s</td>' % row)
+            'style="display: none">%s</td>' % row
+        )
         result.extend(cells)
-        result.append('</tr>')
+        result.append("</tr>")
 
     def _ssdiff_emit_queued_lines(self, result, queue_removed, queue_added):
         for removed, added in zip_longest(queue_removed, queue_added):
             if removed:
                 removed_diff_row, removed_row, removed_line = removed
             else:
-                removed_diff_row, removed_row, removed_line = 0, '', ''
+                removed_diff_row, removed_row, removed_line = 0, "", ""
             if added:
                 added_diff_row, added_row, added_line = added
             else:
-                added_diff_row, added_row, added_line = 0, '', ''
+                added_diff_row, added_row, added_line = 0, "", ""
             cells = (
                 '<td class="ss-line-no unselectable">%s</td>' % removed_row,
                 structured(
-                    '<td class="diff-removed text">%s</td>',
-                    removed_line).escapedtext,
+                    '<td class="diff-removed text">%s</td>', removed_line
+                ).escapedtext,
                 '<td class="ss-line-no unselectable">%s</td>' % added_row,
                 structured(
-                    '<td class="diff-added text">%s</td>',
-                    added_line).escapedtext,
-                )
+                    '<td class="diff-added text">%s</td>', added_line
+                ).escapedtext,
+            )
             # Pick a reasonable row of the unified diff to attribute inline
             # comments to.  Whichever of the removed and added rows is later
             # will do.
             self._ssdiff_emit_line(
-                result, max(removed_diff_row, added_diff_row), cells)
+                result, max(removed_diff_row, added_diff_row), cells
+            )
 
     def format_ssdiff(self):
         """Format the string as a side-by-side diff."""
         # Trim off trailing carriage returns.
-        text = self._stringtoformat.rstrip('\n')
+        text = self._stringtoformat.rstrip("\n")
         if not text:
             return text
         result = ['<table class="diff ssdiff">']
@@ -1012,7 +1055,8 @@ class FormattersAPI:
                 # this line.
                 if queue_orig or queue_mod:
                     self._ssdiff_emit_queued_lines(
-                        result, queue_orig, queue_mod)
+                        result, queue_orig, queue_mod
+                    )
                     queue_orig = []
                     queue_mod = []
                 if orig_row is None and mod_row is None:
@@ -1020,31 +1064,35 @@ class FormattersAPI:
                     cells = [
                         structured(
                             '<td class="%s" colspan="4">%s</td>',
-                            css_class, line).escapedtext,
-                        ]
+                            css_class,
+                            line,
+                        ).escapedtext,
+                    ]
                 else:
                     # Line common to both versions.
-                    if line.startswith(' '):
+                    if line.startswith(" "):
                         line = line[1:]
                     cells = [
-                        '<td class="ss-line-no unselectable">%s</td>' %
-                            orig_row,
+                        '<td class="ss-line-no unselectable">%s</td>'
+                        % orig_row,
                         structured(
-                            '<td class="text">%s</td>', line).escapedtext,
-                        '<td class="ss-line-no unselectable">%s</td>' %
-                            mod_row,
+                            '<td class="text">%s</td>', line
+                        ).escapedtext,
+                        '<td class="ss-line-no unselectable">%s</td>'
+                        % mod_row,
                         structured(
-                            '<td class="text">%s</td>', line).escapedtext,
-                        ]
+                            '<td class="text">%s</td>', line
+                        ).escapedtext,
+                    ]
                 self._ssdiff_emit_line(result, row, cells)
         if queue_orig or queue_mod:
             self._ssdiff_emit_queued_lines(result, queue_orig, queue_mod)
 
-        result.append('</table>')
-        return ''.join(result)
+        result.append("</table>")
+        return "".join(result)
 
-    _css_id_strip_pattern = re.compile(r'[^a-zA-Z0-9-_]+')
-    _zope_css_id_strip_pattern = re.compile(r'[^a-zA-Z0-9-_\.]+')
+    _css_id_strip_pattern = re.compile(r"[^a-zA-Z0-9-_]+")
+    _zope_css_id_strip_pattern = re.compile(r"[^a-zA-Z0-9-_\.]+")
 
     def css_id(self, prefix=None):
         """Return a CSS compliant id."""
@@ -1074,7 +1122,7 @@ class FormattersAPI:
             raw_text = prefix + self._stringtoformat
         else:
             raw_text = self._stringtoformat
-        id_ = strip_pattern.sub('-', raw_text)
+        id_ = strip_pattern.sub("-", raw_text)
 
         # If any characters are converted to a hyphen, we cannot be 100%
         # assured of a unique id unless we take further action. Note that we
@@ -1086,17 +1134,18 @@ class FormattersAPI:
             # we also have to strip off any padding characters ("=") because
             # Python's URL-safe base 64 encoding includes those and they
             # aren't allowed in IDs either.
-            unique_suffix = (
-                urlsafe_b64encode(raw_text.encode('ASCII')).decode('ASCII'))
+            unique_suffix = urlsafe_b64encode(raw_text.encode("ASCII")).decode(
+                "ASCII"
+            )
             # Ensure we put a '-' between the id and base 64 encoding.
-            if id_[-1] != '-':
-                id_ += '-'
-            id_ += unique_suffix.replace('=', '')
+            if id_[-1] != "-":
+                id_ += "-"
+            id_ += unique_suffix.replace("=", "")
 
-        if id_[0] in '-_0123456789':
+        if id_[0] in "-_0123456789":
             # 'j' is least common starting character in technical usage;
             # engineers love 'z', 'q', and 'y'.
-            return 'j' + id_
+            return "j" + id_
         else:
             return id_
 
@@ -1111,75 +1160,94 @@ class FormattersAPI:
         return '<a href="%s">%s</a>' % (url, self._stringtoformat)
 
     def markdown(self):
-        if getFeatureFlag('markdown.enabled'):
+        if getFeatureFlag("markdown.enabled"):
             return format_markdown(self._stringtoformat)
         else:
             return self.text_to_html()
 
     def traverse(self, name, furtherPath):
-        if name == 'nl_to_br':
+        if name == "nl_to_br":
             return self.nl_to_br()
-        elif name == 'escape':
+        elif name == "escape":
             return self.escape()
-        elif name == 'lower':
+        elif name == "lower":
             return self.lower()
-        elif name == 'break-long-words':
+        elif name == "break-long-words":
             return self.break_long_words()
-        elif name == 'markdown':
+        elif name == "markdown":
             return self.markdown()
-        elif name == 'text-to-html':
+        elif name == "text-to-html":
             return self.text_to_html()
-        elif name == 'text-to-html-with-target':
+        elif name == "text-to-html-with-target":
             return self.text_to_html_with_target()
-        elif name == 'nice_pre':
+        elif name == "nice_pre":
             return self.nice_pre()
-        elif name == 'email-to-html':
+        elif name == "email-to-html":
             return self.email_to_html()
-        elif name == 'obfuscate-email':
+        elif name == "obfuscate-email":
             return self.obfuscate_email()
-        elif name == 'strip-email':
+        elif name == "strip-email":
             return self.strip_email()
-        elif name == 'linkify-email':
+        elif name == "linkify-email":
             return self.linkify_email()
-        elif name == 'shorten':
+        elif name == "shorten":
             if len(furtherPath) == 0:
                 raise TraversalError(
-                    "you need to traverse a number after fmt:shorten")
+                    "you need to traverse a number after fmt:shorten"
+                )
             maxlength = int(furtherPath.pop())
             return self.shorten(maxlength)
-        elif name == 'ellipsize':
+        elif name == "ellipsize":
             if len(furtherPath) == 0:
                 raise TraversalError(
-                    "you need to traverse a number after fmt:ellipsize")
+                    "you need to traverse a number after fmt:ellipsize"
+                )
             maxlength = int(furtherPath.pop())
             return self.ellipsize(maxlength)
-        elif name == 'diff':
+        elif name == "diff":
             return self.format_diff()
-        elif name == 'ssdiff':
+        elif name == "ssdiff":
             return self.format_ssdiff()
-        elif name == 'css-id':
+        elif name == "css-id":
             if len(furtherPath) > 0:
                 return self.css_id(furtherPath.pop())
             else:
                 return self.css_id()
-        elif name == 'zope-css-id':
+        elif name == "zope-css-id":
             if len(furtherPath) > 0:
                 return self.zope_css_id(furtherPath.pop())
             else:
                 return self.zope_css_id()
-        elif name == 'oops-id':
+        elif name == "oops-id":
             return self.oops_id()
         else:
             raise TraversalError(name)
 
 
+# Allow some additional tags used by the "tables" extension.
+markdown_tags = bleach_allowlist.markdown_tags + [
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "tr",
+]
+
+
 def format_markdown(text):
     """Return html form of marked-up text."""
     # This returns whole paragraphs (in p tags), similarly to text_to_html.
-    md = markdown.Markdown(
-        safe_mode='escape',
-        extensions=[
-            'tables',
-            'nl2br',
-            ])
-    return md.convert(text)  # How easy was that?
+    return bleach.clean(
+        markdown.markdown(
+            text,
+            extensions=[
+                "fenced_code",
+                "nl2br",
+                "tables",
+            ],
+        ),
+        markdown_tags,
+        bleach_allowlist.markdown_attrs,
+    )

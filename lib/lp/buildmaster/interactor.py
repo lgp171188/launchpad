@@ -2,64 +2,49 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BuilderInteractor',
-    'extract_vitals_from_db',
-    ]
+    "BuilderInteractor",
+    "extract_vitals_from_db",
+]
 
-from collections import (
-    namedtuple,
-    OrderedDict,
-    )
 import logging
 import os.path
 import sys
 import traceback
+from collections import OrderedDict, namedtuple
 from urllib.parse import urlparse
 
-from ampoule.pool import ProcessPool
 import six
 import transaction
-from twisted.internet import (
-    defer,
-    reactor as default_reactor,
-    )
+from ampoule.pool import ProcessPool
+from twisted.internet import defer
+from twisted.internet import reactor as default_reactor
 from twisted.internet.interfaces import IReactorCore
 from twisted.web import xmlrpc
 from twisted.web.client import HTTPConnectionPool
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.downloader import (
-    DownloadCommand,
-    RequestProcess,
-    )
-from lp.buildmaster.enums import (
-    BuilderCleanStatus,
-    BuilderResetProtocol,
-    )
+from lp.buildmaster.downloader import DownloadCommand, RequestProcess
+from lp.buildmaster.enums import BuilderCleanStatus, BuilderResetProtocol
 from lp.buildmaster.interfaces.builder import (
     BuildDaemonError,
     BuildDaemonIsolationError,
     CannotFetchFile,
     CannotResumeHost,
-    )
+)
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.services.config import config
-from lp.services.job.runner import (
-    QuietAMPConnector,
-    VirtualEnvProcessStarter,
-    )
-from lp.services.twistedsupport import cancel_on_timeout
+from lp.services.job.runner import QuietAMPConnector, VirtualEnvProcessStarter
+from lp.services.twistedsupport import cancel_on_timeout, gatherResults
 from lp.services.twistedsupport.processmonitor import ProcessWithTimeout
 from lp.services.webapp import urlappend
 
 
 class QuietQueryFactory(xmlrpc._QueryFactory):
     """XMLRPC client factory that doesn't splatter the log with junk."""
+
     noisy = False
 
 
@@ -105,7 +90,8 @@ def default_process_pool(reactor=None):
         _default_process_pool.start()
         if IReactorCore.providedBy(reactor):
             shutdown_id = reactor.addSystemEventTrigger(
-                "during", "shutdown", _default_process_pool.stop)
+                "during", "shutdown", _default_process_pool.stop
+            )
             _default_process_pool_shutdown = (reactor, shutdown_id)
     return _default_process_pool
 
@@ -135,8 +121,16 @@ class BuilderWorker:
     # many false positives in your test run and will most likely break
     # production.
 
-    def __init__(self, proxy, builder_url, vm_host, timeout, reactor,
-                 pool=None, process_pool=None):
+    def __init__(
+        self,
+        proxy,
+        builder_url,
+        vm_host,
+        timeout,
+        reactor,
+        pool=None,
+        process_pool=None,
+    ):
         """Initialize a BuilderWorker.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
@@ -146,7 +140,7 @@ class BuilderWorker:
         """
         self.url = builder_url
         self._vm_host = vm_host
-        self._file_cache_url = urlappend(builder_url, 'filecache')
+        self._file_cache_url = urlappend(builder_url, "filecache")
         self._server = proxy
         self.timeout = timeout
         if reactor is None:
@@ -160,8 +154,16 @@ class BuilderWorker:
         self.process_pool = process_pool
 
     @classmethod
-    def makeBuilderWorker(cls, builder_url, vm_host, timeout, reactor=None,
-                          proxy=None, pool=None, process_pool=None):
+    def makeBuilderWorker(
+        cls,
+        builder_url,
+        vm_host,
+        timeout,
+        reactor=None,
+        proxy=None,
+        pool=None,
+        process_pool=None,
+    ):
         """Create and return a `BuilderWorker`.
 
         :param builder_url: The URL of the worker buildd machine,
@@ -173,40 +175,46 @@ class BuilderWorker:
         :param pool: Used by tests to override the HTTPConnectionPool.
         :param process_pool: Used by tests to override the ProcessPool.
         """
-        rpc_url = urlappend(builder_url, 'rpc')
+        rpc_url = urlappend(builder_url, "rpc")
         if proxy is None:
             server_proxy = xmlrpc.Proxy(
-                rpc_url.encode('UTF-8'), allowNone=True,
-                connectTimeout=timeout)
+                rpc_url.encode("UTF-8"), allowNone=True, connectTimeout=timeout
+            )
             server_proxy.queryFactory = QuietQueryFactory
         else:
             server_proxy = proxy
         return cls(
-            server_proxy, builder_url, vm_host, timeout, reactor,
-            pool=pool, process_pool=process_pool)
+            server_proxy,
+            builder_url,
+            vm_host,
+            timeout,
+            reactor,
+            pool=pool,
+            process_pool=process_pool,
+        )
 
     def _with_timeout(self, d, timeout=None):
         return cancel_on_timeout(d, timeout or self.timeout, self.reactor)
 
     def abort(self):
         """Abort the current build."""
-        return self._with_timeout(self._server.callRemote('abort'))
+        return self._with_timeout(self._server.callRemote("abort"))
 
     def clean(self):
         """Clean up the waiting files and reset the worker's internal state."""
-        return self._with_timeout(self._server.callRemote('clean'))
+        return self._with_timeout(self._server.callRemote("clean"))
 
     def echo(self, *args):
         """Echo the arguments back."""
-        return self._with_timeout(self._server.callRemote('echo', *args))
+        return self._with_timeout(self._server.callRemote("echo", *args))
 
     def info(self):
         """Return the protocol version and the builder methods supported."""
-        return self._with_timeout(self._server.callRemote('info'))
+        return self._with_timeout(self._server.callRemote("info"))
 
     def status(self):
         """Return the status of the build daemon."""
-        return self._with_timeout(self._server.callRemote('status'))
+        return self._with_timeout(self._server.callRemote("status"))
 
     def ensurepresent(self, sha1sum, url, username, password):
         """Attempt to ensure the given file is present."""
@@ -215,8 +223,10 @@ class BuilderWorker:
         # downloads large files.
         return self._with_timeout(
             self._server.callRemote(
-                'ensurepresent', sha1sum, url, username, password),
-            self.timeout * 5)
+                "ensurepresent", sha1sum, url, username, password
+            ),
+            self.timeout * 5,
+        )
 
     def getURL(self, sha1):
         """Get the URL for a file on the builder with a given SHA-1."""
@@ -234,25 +244,37 @@ class BuilderWorker:
             errback with the error string.
         """
         file_url = self.getURL(sha_sum)
-        try:
-            # Download the file in a subprocess.  We used to download it
-            # asynchronously in Twisted, but in practice this only worked well
-            # up to a bit over a hundred builders; beyond that it struggled to
-            # keep up with incoming packets in time to avoid TCP timeouts
-            # (perhaps because of too much synchronous work being done on the
-            # reactor thread).
-            yield self.process_pool.doWork(
-                DownloadCommand,
-                file_url=file_url, path_to_write=path_to_write,
-                timeout=self.timeout)
-            if logger is not None:
-                logger.info("Grabbed %s" % file_url)
-        except Exception as e:
-            if logger is not None:
-                logger.info("Failed to grab %s: %s\n%s" % (
-                    file_url, e,
-                    " ".join(traceback.format_exception(*sys.exc_info()))))
-            raise
+        for attempt in range(config.builddmaster.download_attempts):
+            try:
+                # Download the file in a subprocess.  We used to download it
+                # asynchronously in Twisted, but in practice this only
+                # worked well up to a bit over a hundred builders; beyond
+                # that it struggled to keep up with incoming packets in time
+                # to avoid TCP timeouts (perhaps because of too much
+                # synchronous work being done on the reactor thread).
+                yield self.process_pool.doWork(
+                    DownloadCommand,
+                    file_url=file_url,
+                    path_to_write=path_to_write,
+                    timeout=self.timeout,
+                )
+                if logger is not None:
+                    logger.info("Grabbed %s" % file_url)
+                break
+            except Exception as e:
+                if logger is not None:
+                    logger.info(
+                        "Failed to grab %s: %s\n%s"
+                        % (
+                            file_url,
+                            e,
+                            " ".join(
+                                traceback.format_exception(*sys.exc_info())
+                            ),
+                        )
+                    )
+                if attempt == config.builddmaster.download_attempts - 1:
+                    raise
 
     def getFiles(self, files, logger=None):
         """Fetch many files from the builder.
@@ -263,9 +285,12 @@ class BuilderWorker:
 
         :return: A DeferredList that calls back when the download is done.
         """
-        dl = defer.gatherResults([
-            self.getFile(builder_file, local_file, logger=logger)
-            for builder_file, local_file in files])
+        dl = gatherResults(
+            [
+                self.getFile(builder_file, local_file, logger=logger)
+                for builder_file, local_file in files
+            ]
+        )
         return dl
 
     def resume(self, clock=None):
@@ -281,26 +306,28 @@ class BuilderWorker:
             (stdout, stderr, subprocess exitcode) triple
         """
         url_components = urlparse(self.url)
-        buildd_name = url_components.hostname.split('.')[0]
+        buildd_name = url_components.hostname.split(".")[0]
         resume_command = config.builddmaster.vm_resume_command % {
-            'vm_host': self._vm_host,
-            'buildd_name': buildd_name}
+            "vm_host": self._vm_host,
+            "buildd_name": buildd_name,
+        }
         # Twisted API requires string but the configuration provides unicode.
-        resume_argv = [
-            term.encode('utf-8') for term in resume_command.split()]
+        resume_argv = [term.encode("utf-8") for term in resume_command.split()]
         d = defer.Deferred()
         p = ProcessWithTimeout(d, self.timeout, clock=clock)
         p.spawnProcess(resume_argv[0], tuple(resume_argv))
         return d
 
     @defer.inlineCallbacks
-    def sendFileToWorker(self, sha1, url, username="", password="",
-                         logger=None):
+    def sendFileToWorker(
+        self, sha1, url, username="", password="", logger=None
+    ):
         """Helper to send the file at 'url' with 'sha1' to this builder."""
         if logger is not None:
             logger.info(
-                "Asking %s to ensure it has %s (%s%s)" % (
-                    self.url, sha1, url, ' with auth' if username else ''))
+                "Asking %s to ensure it has %s (%s%s)"
+                % (self.url, sha1, url, " with auth" if username else "")
+            )
         present, info = yield self.ensurepresent(sha1, url, username, password)
         if not present:
             raise CannotFetchFile(url, info)
@@ -318,15 +345,31 @@ class BuilderWorker:
         """
         if isinstance(filemap, OrderedDict):
             filemap = dict(filemap)
-        return self._with_timeout(self._server.callRemote(
-            'build', buildid, builder_type, chroot_sha1, filemap, args))
+        return self._with_timeout(
+            self._server.callRemote(
+                "build", buildid, builder_type, chroot_sha1, filemap, args
+            )
+        )
 
 
 BuilderVitals = namedtuple(
-    'BuilderVitals',
-    ('name', 'url', 'processor_names', 'virtualized', 'vm_host',
-     'vm_reset_protocol', 'builderok', 'manual', 'build_queue', 'version',
-     'clean_status', 'active', 'failure_count'))
+    "BuilderVitals",
+    (
+        "name",
+        "url",
+        "processor_names",
+        "virtualized",
+        "vm_host",
+        "vm_reset_protocol",
+        "builderok",
+        "manual",
+        "build_queue",
+        "version",
+        "clean_status",
+        "active",
+        "failure_count",
+    ),
+)
 
 _BQ_UNSPECIFIED = object()
 
@@ -335,15 +378,23 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
     if build_queue == _BQ_UNSPECIFIED:
         build_queue = builder.currentjob
     return BuilderVitals(
-        builder.name, builder.url,
+        builder.name,
+        builder.url,
         [processor.name for processor in builder.processors],
-        builder.virtualized, builder.vm_host, builder.vm_reset_protocol,
-        builder.builderok, builder.manual, build_queue, builder.version,
-        builder.clean_status, builder.active, builder.failure_count)
+        builder.virtualized,
+        builder.vm_host,
+        builder.vm_reset_protocol,
+        builder.builderok,
+        builder.manual,
+        build_queue,
+        builder.version,
+        builder.clean_status,
+        builder.active,
+        builder.failure_count,
+    )
 
 
 class BuilderInteractor:
-
     @staticmethod
     def makeWorkerFromVitals(vitals):
         if vitals.virtualized:
@@ -351,7 +402,8 @@ class BuilderInteractor:
         else:
             timeout = config.builddmaster.socket_timeout
         return BuilderWorker.makeBuilderWorker(
-            vitals.url, vitals.vm_host, timeout)
+            vitals.url, vitals.vm_host, timeout
+        )
 
     @staticmethod
     def getBuildBehaviour(queue_item, builder, worker):
@@ -376,10 +428,10 @@ class BuilderInteractor:
             whose value is a CannotResumeHost exception.
         """
         if not vitals.virtualized:
-            return defer.fail(CannotResumeHost('Builder is not virtualized.'))
+            return defer.fail(CannotResumeHost("Builder is not virtualized."))
 
         if not vitals.vm_host:
-            return defer.fail(CannotResumeHost('Undefined vm_host.'))
+            return defer.fail(CannotResumeHost("Undefined vm_host."))
 
         logger = cls._getWorkerScannerLogger()
         logger.info("Resuming %s (%s)" % (vitals.name, vitals.url))
@@ -393,8 +445,9 @@ class BuilderInteractor:
         def got_resume_bad(failure):
             stdout, stderr, code = failure.value
             raise CannotResumeHost(
-                "Resuming failed:\nOUT:\n%s\nERR:\n%s\n" %
-                (six.ensure_str(stdout), six.ensure_str(stderr)))
+                "Resuming failed:\nOUT:\n%s\nERR:\n%s\n"
+                % (six.ensure_str(stdout), six.ensure_str(stderr))
+            )
 
         return d.addCallback(got_resume_ok).addErrback(got_resume_bad)
 
@@ -414,7 +467,8 @@ class BuilderInteractor:
                 # once resumeWorkerHost returns the worker should be
                 # running.
                 builder_factory[vitals.name].setCleanStatus(
-                    BuilderCleanStatus.CLEANING)
+                    BuilderCleanStatus.CLEANING
+                )
                 transaction.commit()
                 yield cls.resumeWorkerHost(vitals, worker)
                 # We ping the resumed worker before we try to do anything
@@ -433,37 +487,39 @@ class BuilderInteractor:
                 if vitals.clean_status == BuilderCleanStatus.DIRTY:
                     yield cls.resumeWorkerHost(vitals, worker)
                     builder_factory[vitals.name].setCleanStatus(
-                        BuilderCleanStatus.CLEANING)
+                        BuilderCleanStatus.CLEANING
+                    )
                     transaction.commit()
                     logger = cls._getWorkerScannerLogger()
                     logger.info("%s is being cleaned.", vitals.name)
                 return False
             raise CannotResumeHost(
-                "Invalid vm_reset_protocol: %r" % vitals.vm_reset_protocol)
+                "Invalid vm_reset_protocol: %r" % vitals.vm_reset_protocol
+            )
         else:
             worker_status = yield worker.status()
-            status = worker_status.get('builder_status', None)
-            if status == 'BuilderStatus.IDLE':
+            status = worker_status.get("builder_status", None)
+            if status == "BuilderStatus.IDLE":
                 # This is as clean as we can get it.
                 return True
-            elif status == 'BuilderStatus.BUILDING':
+            elif status == "BuilderStatus.BUILDING":
                 # Asynchronously abort() the worker and wait until WAITING.
                 yield worker.abort()
                 return False
-            elif status == 'BuilderStatus.ABORTING':
+            elif status == "BuilderStatus.ABORTING":
                 # Wait it out until WAITING.
                 return False
-            elif status == 'BuilderStatus.WAITING':
+            elif status == "BuilderStatus.WAITING":
                 # Just a synchronous clean() call and we'll be idle.
                 yield worker.clean()
                 return True
-            raise BuildDaemonError(
-                "Invalid status during clean: %r" % status)
+            raise BuildDaemonError("Invalid status during clean: %r" % status)
 
     @classmethod
     @defer.inlineCallbacks
-    def _startBuild(cls, build_queue_item, vitals, builder, worker, behaviour,
-                    logger):
+    def _startBuild(
+        cls, build_queue_item, vitals, builder, worker, behaviour, logger
+    ):
         """Start a build on this builder.
 
         :param build_queue_item: A BuildQueueItem to build.
@@ -478,11 +534,13 @@ class BuilderInteractor:
         # Set the build behaviour depending on the provided build queue item.
         if not builder.builderok:
             raise BuildDaemonIsolationError(
-                "Attempted to start a build on a known-bad builder.")
+                "Attempted to start a build on a known-bad builder."
+            )
 
         if builder.clean_status != BuilderCleanStatus.CLEAN:
             raise BuildDaemonIsolationError(
-                "Attempted to start build on a dirty worker.")
+                "Attempted to start build on a dirty worker."
+            )
 
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
         transaction.commit()
@@ -508,21 +566,27 @@ class BuilderInteractor:
             candidate = builder_factory.acquireBuildCandidate(vitals, builder)
             if candidate is not None:
                 if candidate.specific_source.postprocessCandidate(
-                        candidate, logger):
+                    candidate, logger
+                ):
                     break
         else:
             logger.debug("No build candidates available for builder.")
             return None
 
         new_behaviour = cls.getBuildBehaviour(candidate, builder, worker)
-        needed_bfjb = type(removeSecurityProxy(
-            IBuildFarmJobBehaviour(candidate.specific_build)))
+        needed_bfjb = type(
+            removeSecurityProxy(
+                IBuildFarmJobBehaviour(candidate.specific_build)
+            )
+        )
         if not zope_isinstance(new_behaviour, needed_bfjb):
             raise AssertionError(
-                "Inappropriate IBuildFarmJobBehaviour: %r is not a %r" %
-                (new_behaviour, needed_bfjb))
+                "Inappropriate IBuildFarmJobBehaviour: %r is not a %r"
+                % (new_behaviour, needed_bfjb)
+            )
         yield cls._startBuild(
-            candidate, vitals, builder, worker, new_behaviour, logger)
+            candidate, vitals, builder, worker, new_behaviour, logger
+        )
         return candidate
 
     @staticmethod
@@ -543,7 +607,8 @@ class BuilderInteractor:
             # fixed number of bytes from the tail of the log.  Turn it into
             # Unicode as best we can.
             logtail = worker_status.get("logtail").data.decode(
-                "UTF-8", errors="replace")
+                "UTF-8", errors="replace"
+            )
             # PostgreSQL text columns can't contain \0 characters, and since
             # we only use this for web UI display purposes there's no point
             # in going through contortions to store them.
@@ -554,8 +619,15 @@ class BuilderInteractor:
 
     @classmethod
     @defer.inlineCallbacks
-    def updateBuild(cls, vitals, worker, worker_status, builder_factory,
-                    behaviour_factory, manager):
+    def updateBuild(
+        cls,
+        vitals,
+        worker,
+        worker_status,
+        builder_factory,
+        behaviour_factory,
+        manager,
+    ):
         """Verify the current build job status.
 
         Perform the required actions for each state.
@@ -566,15 +638,19 @@ class BuilderInteractor:
         # impossible to get past the cookie check unless the worker
         # matches the DB, and this method isn't called unless the DB
         # says there's a job.
-        builder_status = worker_status['builder_status']
+        builder_status = worker_status["builder_status"]
         if builder_status not in (
-                'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING',
-                'BuilderStatus.WAITING'):
+            "BuilderStatus.BUILDING",
+            "BuilderStatus.ABORTING",
+            "BuilderStatus.WAITING",
+        ):
             raise AssertionError("Unknown status %s" % builder_status)
         builder = builder_factory[vitals.name]
         behaviour = behaviour_factory(vitals.build_queue, builder, worker)
         if builder_status in (
-                'BuilderStatus.BUILDING', 'BuilderStatus.ABORTING'):
+            "BuilderStatus.BUILDING",
+            "BuilderStatus.ABORTING",
+        ):
             logtail = cls.extractLogTail(worker_status)
             if logtail is not None:
                 manager.addLogTail(vitals.build_queue.id, logtail)
@@ -589,5 +665,5 @@ class BuilderInteractor:
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('worker-scanner')
+        logger = logging.getLogger("worker-scanner")
         return logger

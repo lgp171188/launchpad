@@ -8,11 +8,12 @@ __all__ = [
     "ISnapBase",
     "ISnapBaseSet",
     "NoSuchSnapBase",
-    ]
+]
 
 import http.client
 
 from lazr.restful.declarations import (
+    REQUEST_USER,
     call_with,
     collection_default_content,
     error_status,
@@ -27,33 +28,19 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     operation_returns_entry,
-    REQUEST_USER,
-    )
-from lazr.restful.fields import (
-    CollectionField,
-    Reference,
-    )
+)
+from lazr.restful.fields import CollectionField, Reference
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Datetime,
-    Dict,
-    Int,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Datetime, Dict, Int, List, TextLine
 
 from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.services.fields import (
-    ContentNameField,
-    PublicPersonChoice,
-    )
+from lp.services.fields import ContentNameField, PublicPersonChoice
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.archivedependency import IArchiveDependency
 
@@ -92,24 +79,39 @@ class ISnapBaseView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    date_created = exported(Datetime(
-        title=_("Date created"), required=True, readonly=True))
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True, readonly=True)
+    )
 
-    registrant = exported(PublicPersonChoice(
-        title=_("Registrant"), required=True, readonly=True,
-        vocabulary="ValidPersonOrTeam",
-        description=_("The person who registered this base.")))
+    registrant = exported(
+        PublicPersonChoice(
+            title=_("Registrant"),
+            required=True,
+            readonly=True,
+            vocabulary="ValidPersonOrTeam",
+            description=_("The person who registered this base."),
+        )
+    )
 
-    is_default = exported(Bool(
-        title=_("Is default?"), required=True, readonly=True,
-        description=_(
-            "Whether this base is the default for snaps that do not specify a "
-            "base.")))
+    is_default = exported(
+        Bool(
+            title=_("Is default?"),
+            required=True,
+            readonly=True,
+            description=_(
+                "Whether this base is the default for snaps that do not "
+                "specify a base."
+            ),
+        )
+    )
 
-    dependencies = exported(CollectionField(
-        title=_("Archive dependencies for this snap base."),
-        value_type=Reference(schema=IArchiveDependency),
-        readonly=True))
+    dependencies = exported(
+        CollectionField(
+            title=_("Archive dependencies for this snap base."),
+            value_type=Reference(schema=IArchiveDependency),
+            readonly=True,
+        )
+    )
 
     @operation_parameters(dependency=Reference(schema=IArchive))
     @operation_returns_entry(schema=IArchiveDependency)
@@ -124,11 +126,14 @@ class ISnapBaseView(Interface):
             could not be found.
         """
 
-    processors = exported(CollectionField(
-        title=_("Processors"),
-        description=_("The architectures that the snap base supports."),
-        value_type=Reference(schema=IProcessor),
-        readonly=True))
+    processors = exported(
+        CollectionField(
+            title=_("Processors"),
+            description=_("The architectures that the snap base supports."),
+            value_type=Reference(schema=IProcessor),
+            readonly=True,
+        )
+    )
 
 
 class ISnapBaseEditableAttributes(Interface):
@@ -137,26 +142,44 @@ class ISnapBaseEditableAttributes(Interface):
     Anyone can view these attributes, but they need launchpad.Edit to change.
     """
 
-    name = exported(SnapBaseNameField(
-        title=_("Name"), required=True, readonly=False,
-        constraint=name_validator))
+    name = exported(
+        SnapBaseNameField(
+            title=_("Name"),
+            required=True,
+            readonly=False,
+            constraint=name_validator,
+        )
+    )
 
-    display_name = exported(TextLine(
-        title=_("Display name"), required=True, readonly=False))
+    display_name = exported(
+        TextLine(title=_("Display name"), required=True, readonly=False)
+    )
 
-    distro_series = exported(Reference(
-        IDistroSeries, title=_("Distro series"),
-        required=True, readonly=False))
+    distro_series = exported(
+        Reference(
+            IDistroSeries,
+            title=_("Distro series"),
+            required=True,
+            readonly=False,
+        )
+    )
 
-    build_channels = exported(Dict(
-        title=_("Source snap channels for builds"),
-        key_type=TextLine(), required=True, readonly=False,
-        description=_(
-            "A dictionary mapping snap names to channels to use when building "
-            "snaps that specify this base.  The special '_byarch' key may "
-            "have a mapping of architecture names to mappings of snap names "
-            "to channels, which if present override the channels declared at "
-            "the top level when building for those architectures.")))
+    build_channels = exported(
+        Dict(
+            title=_("Source snap channels for builds"),
+            key_type=TextLine(),
+            required=True,
+            readonly=False,
+            description=_(
+                "A dictionary mapping snap names to channels to use when "
+                "building snaps that specify this base.  The special "
+                "'_byarch' key may have a mapping of architecture names to "
+                "mappings of snap names to channels, which if present "
+                "override the channels declared at the top level when "
+                "building for those architectures."
+            ),
+        )
+    )
 
 
 class ISnapBaseEdit(Interface):
@@ -177,7 +200,8 @@ class ISnapBaseEdit(Interface):
         """
 
     @operation_parameters(
-        component=copy_field(IArchiveDependency["component_name"]))
+        component=copy_field(IArchiveDependency["component_name"])
+    )
     @export_operation_as("addArchiveDependency")
     @export_factory_operation(IArchiveDependency, ["dependency", "pocket"])
     @operation_for_version("devel")
@@ -195,8 +219,7 @@ class ISnapBaseEdit(Interface):
         :return: an `IArchiveDependency`.
         """
 
-    @operation_parameters(
-        dependency=Reference(schema=IArchive, required=True))
+    @operation_parameters(dependency=Reference(schema=IArchive, required=True))
     @export_write_operation()
     @operation_for_version("devel")
     def removeArchiveDependency(dependency):
@@ -206,8 +229,8 @@ class ISnapBaseEdit(Interface):
         """
 
     @operation_parameters(
-        processors=List(
-            value_type=Reference(schema=IProcessor), required=True))
+        processors=List(value_type=Reference(schema=IProcessor), required=True)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setProcessors(processors):
@@ -236,16 +259,27 @@ class ISnapBaseSetEdit(Interface):
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         processors=List(
-            value_type=Reference(schema=IProcessor), required=False))
+            value_type=Reference(schema=IProcessor), required=False
+        )
+    )
     @export_factory_operation(
-        ISnapBase, ["name", "display_name", "distro_series", "build_channels"])
+        ISnapBase, ["name", "display_name", "distro_series", "build_channels"]
+    )
     @operation_for_version("devel")
-    def new(registrant, name, display_name, distro_series, build_channels,
-            processors=None, date_created=None):
+    def new(
+        registrant,
+        name,
+        display_name,
+        distro_series,
+        build_channels,
+        processors=None,
+        date_created=None,
+    ):
         """Create an `ISnapBase`."""
 
     @operation_parameters(
-        snap_base=Reference(title=_("Base"), required=True, schema=ISnapBase))
+        snap_base=Reference(title=_("Base"), required=True, schema=ISnapBase)
+    )
     @export_write_operation()
     @operation_for_version("devel")
     def setDefault(snap_base):
@@ -268,8 +302,7 @@ class ISnapBaseSet(ISnapBaseSetEdit):
     def __getitem__(name):
         """Return the `ISnapBase` with this name."""
 
-    @operation_parameters(
-        name=TextLine(title=_("Base name"), required=True))
+    @operation_parameters(name=TextLine(title=_("Base name"), required=True))
     @operation_returns_entry(ISnapBase)
     @export_read_operation()
     @operation_for_version("devel")

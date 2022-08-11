@@ -2,21 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DistroArchSeriesBinaryPackageReleaseBreadcrumb',
-    'DistroArchSeriesBinaryPackageReleaseNavigation',
-    'DistroArchSeriesBinaryPackageReleaseView',
-    ]
+    "DistroArchSeriesBinaryPackageReleaseBreadcrumb",
+    "DistroArchSeriesBinaryPackageReleaseNavigation",
+    "DistroArchSeriesBinaryPackageReleaseView",
+]
 
 from lazr.restful.utils import smartquote
 
-from lp.services.webapp import (
-    LaunchpadView,
-    Navigation,
-    )
+from lp.services.webapp import LaunchpadView, Navigation
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.soyuz.interfaces.distroarchseriesbinarypackagerelease import (
     IDistroArchSeriesBinaryPackageRelease,
-    )
+)
 
 
 class DistroArchSeriesBinaryPackageReleaseBreadcrumb(Breadcrumb):
@@ -32,7 +29,6 @@ class DistroArchSeriesBinaryPackageReleaseNavigation(Navigation):
 
 
 class DistroArchSeriesBinaryPackageReleaseView(LaunchpadView):
-
     def __init__(self, context, request):
         self.context = context
         self.request = request

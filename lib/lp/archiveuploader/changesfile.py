@@ -8,30 +8,29 @@ files uploaded.
 """
 
 __all__ = [
-    'CannotDetermineFileTypeError',
-    'ChangesFile',
-    'determine_file_class_and_name',
-    ]
+    "CannotDetermineFileTypeError",
+    "ChangesFile",
+    "determine_file_class_and_name",
+]
 
 import os
 
 import six
 
 from lp.archiveuploader.buildinfofile import BuildInfoFile
-from lp.archiveuploader.dscfile import (
-    DSCFile,
-    SignableTagFile,
-    )
+from lp.archiveuploader.dscfile import DSCFile, SignableTagFile
 from lp.archiveuploader.nascentuploadfile import (
     BaseBinaryUploadFile,
     CustomUploadFile,
     DdebBinaryUploadFile,
     DebBinaryUploadFile,
     SourceUploadFile,
-    splitComponentAndSection,
     UdebBinaryUploadFile,
-    )
+    splitComponentAndSection,
+)
 from lp.archiveuploader.utils import (
+    UploadError,
+    UploadWarning,
     determine_binary_file_type,
     determine_source_file_type,
     parse_and_merge_file_lists,
@@ -40,13 +39,11 @@ from lp.archiveuploader.utils import (
     re_isbuildinfo,
     re_issource,
     rfc822_encode_address,
-    UploadError,
-    UploadWarning,
-    )
+)
 from lp.registry.interfaces.sourcepackage import (
     SourcePackageFileType,
     SourcePackageUrgency,
-    )
+)
 from lp.services.encoding import guess as guess_encoding
 from lp.soyuz.enums import BinaryPackageFileType
 
@@ -59,12 +56,19 @@ class ChangesFile(SignableTagFile):
     """Changesfile model."""
 
     mandatory_fields = {
-        "Source", "Architecture", "Version", "Distribution",
-        "Maintainer", "Files", "Changes", "Date",
+        "Source",
+        "Architecture",
+        "Version",
+        "Distribution",
+        "Maintainer",
+        "Files",
+        "Changes",
+        "Date",
         # Changed-By is not technically mandatory according to
         # Debian policy but Soyuz relies on it being set in
         # various places.
-        "Changed-By"}
+        "Changed-By",
+    }
 
     # Map urgencies to their dbschema values.
     # Debian policy only permits low, medium, high, emergency.
@@ -75,7 +79,7 @@ class ChangesFile(SignableTagFile):
         "high": SourcePackageUrgency.HIGH,
         "critical": SourcePackageUrgency.EMERGENCY,
         "emergency": SourcePackageUrgency.EMERGENCY,
-        }
+    }
 
     dsc = None
     buildinfo = None
@@ -116,7 +120,8 @@ class ChangesFile(SignableTagFile):
             if field not in self._dict:
                 yield UploadError(
                     "Unable to find mandatory field '%s' in the changes "
-                    "file." % field)
+                    "file." % field
+                )
                 return
 
         try:
@@ -128,7 +133,8 @@ class ChangesFile(SignableTagFile):
         if format < 1.5 or format > 2.0:
             yield UploadError(
                 "Format out of acceptable range for changes file. Range "
-                "1.5 - 2.0, format %g" % format)
+                "1.5 - 2.0, format %g" % format
+            )
 
     def checkFileName(self):
         """Make sure the changes file name is well-formed.
@@ -139,9 +145,10 @@ class ChangesFile(SignableTagFile):
         match_changes = re_changes_file_name.match(self.filename)
         if match_changes is None:
             yield UploadError(
-                '%s -> inappropriate changesfile name, '
+                "%s -> inappropriate changesfile name, "
                 'should follow "<pkg>_<version>_<arch>.changes" format'
-                % self.filename)
+                % self.filename
+            )
         else:
             self.filename_archtag = match_changes.group(3)
 
@@ -153,15 +160,15 @@ class ChangesFile(SignableTagFile):
         """
         if self.signer:
             # We only set the maintainer attribute up if we received a
-            # signed upload.  This is desireable because it avoids us
+            # signed upload.  This is desirable because it avoids us
             # doing ensurePerson() for buildds and sync owners.
             try:
-                self.maintainer = self.parseAddress(self._dict['Maintainer'])
+                self.maintainer = self.parseAddress(self._dict["Maintainer"])
             except UploadError as error:
                 yield error
 
         try:
-            self.changed_by = self.parseAddress(self._dict['Changed-By'])
+            self.changed_by = self.parseAddress(self._dict["Changed-By"])
         except UploadError as error:
             yield error
 
@@ -173,8 +180,9 @@ class ChangesFile(SignableTagFile):
         Further checks will be performed in CustomUploadFile class.
         """
         component_name, section_name = splitComponentAndSection(
-            component_and_section)
-        if section_name.startswith('raw-'):
+            component_and_section
+        )
+        if section_name.startswith("raw-"):
             return True
         return False
 
@@ -201,21 +209,36 @@ class ChangesFile(SignableTagFile):
                     # otherwise the tarballs in custom uploads match
                     # with source_match.
                     file_instance = CustomUploadFile(
-                        filepath, hashes, size, component_and_section,
-                        priority_name, self.policy, self.logger)
+                        filepath,
+                        hashes,
+                        size,
+                        component_and_section,
+                        priority_name,
+                        self.policy,
+                        self.logger,
+                    )
                 else:
                     try:
                         package, cls = determine_file_class_and_name(filename)
                     except CannotDetermineFileTypeError:
                         yield UploadError(
                             "Unable to identify file %s (%s) in changes."
-                            % (filename, component_and_section))
+                            % (filename, component_and_section)
+                        )
                         continue
 
                     file_instance = cls(
-                        filepath, hashes, size, component_and_section,
-                        priority_name, package, self.version, self,
-                        self.policy, self.logger)
+                        filepath,
+                        hashes,
+                        size,
+                        component_and_section,
+                        priority_name,
+                        package,
+                        self.version,
+                        self,
+                        self.policy,
+                        self.logger,
+                    )
 
                     if cls == DSCFile:
                         self.dsc = file_instance
@@ -240,20 +263,22 @@ class ChangesFile(SignableTagFile):
         if len(self.files) == 0:
             yield UploadError("No files found in the changes")
 
-        if 'Urgency' not in self._dict:
+        if "Urgency" not in self._dict:
             # Urgency is recommended but not mandatory. Default to 'low'
-            self._dict['Urgency'] = b"low"
+            self._dict["Urgency"] = b"low"
 
-        raw_urgency = six.ensure_text(self._dict['Urgency']).lower()
+        raw_urgency = six.ensure_text(self._dict["Urgency"]).lower()
         if raw_urgency not in self.urgency_map:
             yield UploadWarning(
                 "Unable to grok urgency %s, overriding with 'low'"
-                % (raw_urgency))
-            self._dict['Urgency'] = b"low"
+                % (raw_urgency)
+            )
+            self._dict["Urgency"] = b"low"
 
         if not self.policy.unsigned_changes_ok:
-            assert self.signer is not None, (
-                "Policy does not allow unsigned changesfile")
+            assert (
+                self.signer is not None
+            ), "Policy does not allow unsigned changesfile"
 
     #
     # useful properties
@@ -274,8 +299,11 @@ class ChangesFile(SignableTagFile):
         It ensure the files mentioned in the changes are already processed.
         """
         assert self.files is not None, "Files must but processed first."
-        return [upload_file for upload_file in self.files
-                if isinstance(upload_file, upload_filetype)]
+        return [
+            upload_file
+            for upload_file in self.files
+            if isinstance(upload_file, upload_filetype)
+        ]
 
     @property
     def binary_package_files(self):
@@ -298,7 +326,7 @@ class ChangesFile(SignableTagFile):
 
         For example, 'hoary' or 'hoary-security'.
         """
-        return six.ensure_text(self._dict['Distribution'])
+        return six.ensure_text(self._dict["Distribution"])
 
     @property
     def architectures(self):
@@ -307,23 +335,24 @@ class ChangesFile(SignableTagFile):
         For instance ['source', 'all'] or ['source', 'i386', 'amd64']
         or ['source'].
         """
-        return set(six.ensure_text(self._dict['Architecture']).split())
+        return set(six.ensure_text(self._dict["Architecture"]).split())
 
     @property
     def binaries(self):
         """Return set of binary package names listed."""
         return set(
-            six.ensure_text(self._dict.get('Binary', '')).strip().split())
+            six.ensure_text(self._dict.get("Binary", "")).strip().split()
+        )
 
     @property
     def converted_urgency(self):
         """Return the appropriate SourcePackageUrgency item."""
-        return self.urgency_map[six.ensure_text(self._dict['Urgency']).lower()]
+        return self.urgency_map[six.ensure_text(self._dict["Urgency"]).lower()]
 
     @property
     def version(self):
         """Return changesfile claimed version."""
-        return six.ensure_text(self._dict['Version'])
+        return six.ensure_text(self._dict["Version"])
 
     @classmethod
     def formatChangesComment(cls, comment):
@@ -333,31 +362,31 @@ class ChangesFile(SignableTagFile):
         # debian policy rules. First replacing the blank line
         # indicator '\n .' and then stripping one space from each
         # successive line.
-        comment = comment.replace('\n .', '\n')
-        comment = comment.replace('\n ', '\n')
+        comment = comment.replace("\n .", "\n")
+        comment = comment.replace("\n ", "\n")
         return comment
 
     @property
     def changes_comment(self):
         """Return changesfile 'change' comment."""
-        comment = guess_encoding(self._dict['Changes'])
+        comment = guess_encoding(self._dict["Changes"])
 
         return self.formatChangesComment(comment)
 
     @property
     def date(self):
         """Return changesfile date."""
-        return six.ensure_text(self._dict['Date'])
+        return six.ensure_text(self._dict["Date"])
 
     @property
     def source(self):
         """Return changesfile claimed source name."""
-        return six.ensure_text(self._dict['Source'])
+        return six.ensure_text(self._dict["Source"])
 
     @property
     def architecture_line(self):
         """Return changesfile archicteture line."""
-        return six.ensure_text(self._dict['Architecture'])
+        return six.ensure_text(self._dict["Architecture"])
 
     @property
     def simulated_changelog(self):
@@ -370,9 +399,12 @@ class ChangesFile(SignableTagFile):
         }}}
         """
         changes_author = rfc822_encode_address(
-            self.changed_by['name'], self.changed_by['email'])
-        return ('%s\n\n -- %s  %s' % (
-            self.changes_comment, changes_author, self.date)).encode('UTF-8')
+            self.changed_by["name"], self.changed_by["email"]
+        )
+        return (
+            "%s\n\n -- %s  %s"
+            % (self.changes_comment, changes_author, self.date)
+        ).encode("UTF-8")
 
 
 def determine_file_class_and_name(filename):
@@ -382,8 +414,7 @@ def determine_file_class_and_name(filename):
     buildinfo_match = re_isbuildinfo.match(filename)
     if source_match:
         package = source_match.group(1)
-        if (determine_source_file_type(filename) ==
-            SourcePackageFileType.DSC):
+        if determine_source_file_type(filename) == SourcePackageFileType.DSC:
             cls = DSCFile
         else:
             cls = SourceUploadFile
@@ -393,12 +424,13 @@ def determine_file_class_and_name(filename):
             BinaryPackageFileType.DEB: DebBinaryUploadFile,
             BinaryPackageFileType.DDEB: DdebBinaryUploadFile,
             BinaryPackageFileType.UDEB: UdebBinaryUploadFile,
-            }[determine_binary_file_type(filename)]
+        }[determine_binary_file_type(filename)]
     elif buildinfo_match:
         package = buildinfo_match.group(1)
         cls = BuildInfoFile
     else:
         raise CannotDetermineFileTypeError(
-            "Could not determine the type of %r" % filename)
+            "Could not determine the type of %r" % filename
+        )
 
     return package, cls

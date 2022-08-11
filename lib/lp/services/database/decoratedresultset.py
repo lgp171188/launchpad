@@ -2,20 +2,18 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'DecoratedResultSet',
-    ]
+    "DecoratedResultSet",
+]
 
 from lazr.delegates import delegate_to
 from storm import Undef
 from storm.zope.interfaces import IResultSet
-from zope.security.proxy import (
-    isinstance as zope_isinstance,
-    ProxyFactory,
-    removeSecurityProxy,
-    )
+from zope.security.proxy import ProxyFactory
+from zope.security.proxy import isinstance as zope_isinstance
+from zope.security.proxy import removeSecurityProxy
 
 
-@delegate_to(IResultSet, context='result_set')
+@delegate_to(IResultSet, context="result_set")
 class DecoratedResultSet:
     """A decorated Storm ResultSet for 'Magic' (presenter) classes.
 
@@ -35,8 +33,15 @@ class DecoratedResultSet:
     DistroArchSeries), hence a generalised solution.
     """
 
-    def __init__(self, result_set, result_decorator=None, pre_iter_hook=None,
-                 bulk_decorator=None, slice_info=False, return_both=False):
+    def __init__(
+        self,
+        result_set,
+        result_decorator=None,
+        pre_iter_hook=None,
+        bulk_decorator=None,
+        slice_info=False,
+        return_both=False,
+    ):
         """
         Wrap `result_set` in a decorator.
 
@@ -59,11 +64,13 @@ class DecoratedResultSet:
         :param return_both: If True return both the plain and decorated
             values as a tuple.
         """
-        if (bulk_decorator is not None and
-            (result_decorator is not None or pre_iter_hook is not None)):
+        if bulk_decorator is not None and (
+            result_decorator is not None or pre_iter_hook is not None
+        ):
             raise TypeError(
                 "bulk_decorator cannot be used with result_decorator or "
-                "pre_iter_hook")
+                "pre_iter_hook"
+            )
         self.result_set = result_set
         self.result_decorator = result_decorator
         self.pre_iter_hook = pre_iter_hook
@@ -80,11 +87,14 @@ class DecoratedResultSet:
         """
         if not results:
             return [], []
-        elif (zope_isinstance(self.result_set, DecoratedResultSet)
-              and self.return_both):
+        elif (
+            zope_isinstance(self.result_set, DecoratedResultSet)
+            and self.return_both
+        ):
             assert (
                 removeSecurityProxy(self.result_set).return_both
-                    == self.return_both)
+                == self.return_both
+            )
             return tuple(zip(*results))
         else:
             return results, results
@@ -106,7 +116,8 @@ class DecoratedResultSet:
             elif self.bulk_decorator is not None:
                 if self.slice_info:
                     [decorated] = self.bulk_decorator(
-                        [result], slice(row_index, row_index + 1))
+                        [result], slice(row_index, row_index + 1)
+                    )
                 else:
                     [decorated] = self.bulk_decorator([result])
             else:
@@ -123,15 +134,20 @@ class DecoratedResultSet:
         """
         new_result_set = self.result_set.copy(*args, **kwargs)
         return DecoratedResultSet(
-            new_result_set, self.result_decorator, self.pre_iter_hook,
-            self.bulk_decorator, self.slice_info, self.return_both)
+            new_result_set,
+            self.result_decorator,
+            self.pre_iter_hook,
+            self.bulk_decorator,
+            self.slice_info,
+            self.return_both,
+        )
 
     def config(self, *args, **kwargs):
         """See `IResultSet`.
 
         :return: The decorated result set.after updating the config.
         """
-        return_both = kwargs.pop('return_both', None)
+        return_both = kwargs.pop("return_both", None)
         if return_both is not None:
             self.return_both = return_both
             if zope_isinstance(self.result_set, DecoratedResultSet):
@@ -187,8 +203,12 @@ class DecoratedResultSet:
         naked_value = removeSecurityProxy(value)
         if IResultSet.providedBy(naked_value):
             return DecoratedResultSet(
-                value, self.result_decorator, self.pre_iter_hook,
-                self.bulk_decorator, self.slice_info)
+                value,
+                self.result_decorator,
+                self.pre_iter_hook,
+                self.bulk_decorator,
+                self.slice_info,
+            )
         else:
             return self.decorate_single(value)
 
@@ -239,8 +259,13 @@ class DecoratedResultSet:
         """
         new_result_set = self.result_set.order_by(*args, **kwargs)
         return DecoratedResultSet(
-            new_result_set, self.result_decorator, self.pre_iter_hook,
-            self.bulk_decorator, self.slice_info, self.return_both)
+            new_result_set,
+            self.result_decorator,
+            self.pre_iter_hook,
+            self.bulk_decorator,
+            self.slice_info,
+            self.return_both,
+        )
 
     def get_plain_result_set(self):
         """Return the plain Storm result set."""
@@ -261,5 +286,10 @@ class DecoratedResultSet:
         else:
             new_result_set = self.result_set.find(*args, **kwargs)
         return DecoratedResultSet(
-            new_result_set, self.result_decorator, self.pre_iter_hook,
-            self.bulk_decorator, self.slice_info, self.return_both)
+            new_result_set,
+            self.result_decorator,
+            self.pre_iter_hook,
+            self.bulk_decorator,
+            self.slice_info,
+            self.return_both,
+        )

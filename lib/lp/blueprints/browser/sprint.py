@@ -4,30 +4,31 @@
 """Sprint views."""
 
 __all__ = [
-    'HasSprintsView',
-    'SprintAddView',
-    'SprintAttendeesCsvExportView',
-    'SprintBrandingView',
-    'SprintDeleteView',
-    'SprintEditView',
-    'SprintFacets',
-    'SprintMeetingExportView',
-    'SprintNavigation',
-    'SprintOverviewMenu',
-    'SprintSetBreadcrumb',
-    'SprintSetNavigation',
-    'SprintSetView',
-    'SprintSpecificationsMenu',
-    'SprintTopicSetView',
-    'SprintView',
-    ]
+    "HasSprintsView",
+    "SprintAddView",
+    "SprintAttendeesCsvExportView",
+    "SprintBrandingView",
+    "SprintDeleteView",
+    "SprintEditView",
+    "SprintFacets",
+    "SprintMeetingExportView",
+    "SprintNavigation",
+    "SprintOverviewMenu",
+    "SprintSetBreadcrumb",
+    "SprintSetNavigation",
+    "SprintSetView",
+    "SprintSpecificationsMenu",
+    "SprintTopicSetView",
+    "SprintView",
+]
 
-from collections import defaultdict
 import csv
 import io
+from collections import defaultdict
+from typing import List
 
-from lazr.restful.utils import smartquote
 import pytz
+from lazr.restful.utils import smartquote
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
@@ -35,55 +36,46 @@ from zope.interface import implementer
 
 from lp import _
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
-from lp.app.interfaces.headings import (
-    IHeadingBreadcrumb,
-    IMajorHeadingView,
-    )
+    action,
+)
+from lp.app.interfaces.headings import IHeadingBreadcrumb, IMajorHeadingView
 from lp.app.widgets.date import DateTimeWidget
 from lp.blueprints.browser.specificationtarget import (
     HasSpecificationsMenuMixin,
     HasSpecificationsView,
-    )
+)
 from lp.blueprints.enums import (
     SpecificationFilter,
     SpecificationPriority,
     SpecificationSort,
-    )
-from lp.blueprints.interfaces.sprint import (
-    ISprint,
-    ISprintSet,
-    )
+)
+from lp.blueprints.interfaces.sprint import ISprint, ISprintSet
 from lp.blueprints.model.specificationsubscription import (
     SpecificationSubscription,
-    )
+)
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
     RegistryCollectionActionMenuBase,
-    )
+)
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.bulk import load_referencing
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
-    enabled_with_permission,
     GetitemNavigation,
     LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
     StandardLaunchpadFacets,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 from lp.services.webapp.batching import BatchNavigator
-from lp.services.webapp.breadcrumb import (
-    Breadcrumb,
-    TitleBreadcrumb,
-    )
+from lp.services.webapp.breadcrumb import Breadcrumb, TitleBreadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
 
@@ -92,9 +84,9 @@ class SprintFacets(StandardLaunchpadFacets):
 
     usedfor = ISprint
     enable_only = [
-        'overview',
-        'specifications',
-        ]
+        "overview",
+        "specifications",
+    ]
 
 
 class SprintNavigation(Navigation):
@@ -111,53 +103,58 @@ class SprintOverviewMenu(NavigationMenu):
     """Defines a menu used for the global actions."""
 
     usedfor = ISprint
-    facet = 'overview'
-    links = ['attendance', 'registration', 'attendee_export', 'edit',
-             'branding', 'delete']
+    facet = "overview"
+    links = [
+        "attendance",
+        "registration",
+        "attendee_export",
+        "edit",
+        "branding",
+        "delete",
+    ]
 
     def attendance(self):
-        text = 'Register yourself'
-        summary = 'Register as an attendee of the meeting'
-        return Link('+attend', text, summary, icon='add')
+        text = "Register yourself"
+        summary = "Register as an attendee of the meeting"
+        return Link("+attend", text, summary, icon="add")
 
     def registration(self):
-        text = 'Register someone else'
-        summary = 'Register someone else to attend the meeting'
-        return Link('+register', text, summary, icon='add')
+        text = "Register someone else"
+        summary = "Register someone else to attend the meeting"
+        return Link("+register", text, summary, icon="add")
 
-    @enabled_with_permission('launchpad.View')
+    @enabled_with_permission("launchpad.View")
     def attendee_export(self):
-        text = 'Export attendees to CSV'
-        summary = 'Export attendee contact information to CSV format'
-        return Link('+attendees-csv', text, summary, icon='info')
+        text = "Export attendees to CSV"
+        summary = "Export attendee contact information to CSV format"
+        return Link("+attendees-csv", text, summary, icon="info")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
-        summary = 'Modify the meeting description, dates or title'
-        return Link('+edit', text, summary, icon='edit')
+        text = "Change details"
+        summary = "Modify the meeting description, dates or title"
+        return Link("+edit", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def branding(self):
-        text = 'Change branding'
-        summary = 'Modify the imagery used to represent this meeting'
-        return Link('+branding', text, summary, icon='edit')
+        text = "Change branding"
+        summary = "Modify the imagery used to represent this meeting"
+        return Link("+branding", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.Moderate')
+    @enabled_with_permission("launchpad.Moderate")
     def delete(self):
-        return Link('+delete', 'Delete sprint', icon='trash-icon')
+        return Link("+delete", "Delete sprint", icon="trash-icon")
 
 
-class SprintSpecificationsMenu(NavigationMenu,
-                               HasSpecificationsMenuMixin):
+class SprintSpecificationsMenu(NavigationMenu, HasSpecificationsMenuMixin):
     usedfor = ISprint
-    facet = 'specifications'
-    links = ['assignments', 'listdeclined', 'settopics', 'new']
+    facet = "specifications"
+    links = ["assignments", "listdeclined", "settopics", "new"]
 
-    @enabled_with_permission('launchpad.Driver')
+    @enabled_with_permission("launchpad.Driver")
     def settopics(self):
-        text = 'Set agenda'
-        return Link('+settopics', text, icon='edit')
+        text = "Set agenda"
+        return Link("+settopics", text, icon="edit")
 
 
 class SprintSetNavigation(GetitemNavigation):
@@ -167,12 +164,13 @@ class SprintSetNavigation(GetitemNavigation):
 
 class SprintSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ISprintSet`."""
-    text = 'Meetings'
+
+    text = "Meetings"
 
 
 class HasSprintsView(LaunchpadView):
 
-    page_title = 'Events'
+    page_title = "Events"
 
 
 @implementer(IMajorHeadingView)
@@ -186,7 +184,7 @@ class SprintView(HasSpecificationsView):
 
     @property
     def page_title(self):
-        return '%s (sprint or meeting)' % self.context.title
+        return "%s (sprint or meeting)" % self.context.title
 
     def initialize(self):
         self.notices = []
@@ -220,35 +218,40 @@ class SprintView(HasSpecificationsView):
     @cachedproperty
     def latest_approved(self):
         filter = [SpecificationFilter.ACCEPTED]
-        return self.context.specifications(self.user, filter=filter,
-                    quantity=self.latest_specs_limit,
-                    sort=SpecificationSort.DATE)
+        return self.context.specifications(
+            self.user,
+            filter=filter,
+            quantity=self.latest_specs_limit,
+            sort=SpecificationSort.DATE,
+        )
 
     def formatDateTime(self, dt):
         """Format a datetime value according to the sprint's time zone"""
         dt = dt.astimezone(self.tzinfo)
-        return dt.strftime('%Y-%m-%d %H:%M %Z')
+        return dt.strftime("%Y-%m-%d %H:%M %Z")
 
     def formatDate(self, dt):
         """Format a date value according to the sprint's time zone"""
         dt = dt.astimezone(self.tzinfo)
-        return dt.strftime('%Y-%m-%d')
+        return dt.strftime("%Y-%m-%d")
 
-    _local_timeformat = '%H:%M %Z on %A, %Y-%m-%d'
+    _local_timeformat = "%H:%M %Z on %A, %Y-%m-%d"
 
     @property
     def local_start(self):
         """The sprint start time, in the local time zone, as text."""
         tz = pytz.timezone(self.context.time_zone)
         return self.context.time_starts.astimezone(tz).strftime(
-                    self._local_timeformat)
+            self._local_timeformat
+        )
 
     @property
     def local_end(self):
         """The sprint end time, in the local time zone, as text."""
         tz = pytz.timezone(self.context.time_zone)
         return self.context.time_ends.astimezone(tz).strftime(
-                    self._local_timeformat)
+            self._local_timeformat
+        )
 
 
 class SprintAddView(LaunchpadFormView):
@@ -256,57 +259,68 @@ class SprintAddView(LaunchpadFormView):
 
     schema = ISprint
     label = "Register a meeting"
-    field_names = ['name', 'title', 'summary', 'home_page', 'driver',
-                   'time_zone', 'time_starts', 'time_ends', 'is_physical',
-                   'address',
-                   ]
+    field_names = [
+        "name",
+        "title",
+        "summary",
+        "home_page",
+        "driver",
+        "time_zone",
+        "time_starts",
+        "time_ends",
+        "is_physical",
+        "address",
+    ]
     custom_widget_summary = CustomWidgetFactory(TextAreaWidget, height=5)
     custom_widget_time_starts = CustomWidgetFactory(
-        DateTimeWidget, display_zone=False)
+        DateTimeWidget, display_zone=False
+    )
     custom_widget_time_ends = CustomWidgetFactory(
-        DateTimeWidget, display_zone=False)
+        DateTimeWidget, display_zone=False
+    )
     custom_widget_address = CustomWidgetFactory(TextAreaWidget, height=3)
 
     sprint = None
 
     def setUpWidgets(self):
         LaunchpadFormView.setUpWidgets(self)
-        timeformat = '%Y-%m-%d %H:%M'
-        self.widgets['time_starts'].timeformat = timeformat
-        self.widgets['time_ends'].timeformat = timeformat
-        time_zone_widget = self.widgets['time_zone']
+        timeformat = "%Y-%m-%d %H:%M"
+        self.widgets["time_starts"].timeformat = timeformat
+        self.widgets["time_ends"].timeformat = timeformat
+        time_zone_widget = self.widgets["time_zone"]
         if time_zone_widget.hasValidInput():
             tz = pytz.timezone(time_zone_widget.getInputValue())
-            self.widgets['time_starts'].required_time_zone = tz
-            self.widgets['time_ends'].required_time_zone = tz
+            self.widgets["time_starts"].required_time_zone = tz
+            self.widgets["time_ends"].required_time_zone = tz
 
     def validate(self, data):
-        time_starts = data.get('time_starts')
-        time_ends = data.get('time_ends')
+        time_starts = data.get("time_starts")
+        time_ends = data.get("time_ends")
         if time_starts and time_ends and time_ends < time_starts:
             self.setFieldError(
-                'time_ends', "This event can't start after it ends")
+                "time_ends", "This event can't start after it ends"
+            )
 
-    @action(_('Add Sprint'), name='add')
+    @action(_("Add Sprint"), name="add")
     def add_action(self, action, data):
         self.sprint = getUtility(ISprintSet).new(
             owner=self.user,
-            name=data['name'],
-            title=data['title'],
-            summary=data['summary'],
-            home_page=data['home_page'],
-            driver=data['driver'],
-            time_zone=data['time_zone'],
-            time_starts=data['time_starts'],
-            time_ends=data['time_ends'],
-            is_physical=data['is_physical'],
-            address=data['address'],
-            )
-        self.request.response.addInfoNotification('Sprint created.')
+            name=data["name"],
+            title=data["title"],
+            summary=data["summary"],
+            home_page=data["home_page"],
+            driver=data["driver"],
+            time_zone=data["time_zone"],
+            time_starts=data["time_starts"],
+            time_ends=data["time_ends"],
+            is_physical=data["is_physical"],
+            address=data["address"],
+        )
+        self.request.response.addInfoNotification("Sprint created.")
 
     @property
     def next_url(self):
-        assert self.sprint is not None, 'No sprint has been created'
+        assert self.sprint is not None, "No sprint has been created"
         return canonical_url(self.sprint)
 
     @property
@@ -319,7 +333,7 @@ class SprintBrandingView(BrandingChangeView):
     schema = ISprint
     # sabdfl 2007-03-28 deliberately leaving icon off the list, i think it
     # would be overkill, we can add it later if people ask for it
-    field_names = ['logo', 'mugshot']
+    field_names = ["logo", "mugshot"]
 
 
 class SprintEditView(LaunchpadEditFormView):
@@ -328,39 +342,50 @@ class SprintEditView(LaunchpadEditFormView):
     schema = ISprint
     label = "Edit sprint details"
 
-    field_names = ['name', 'title', 'summary', 'home_page', 'driver',
-                   'time_zone', 'time_starts', 'time_ends', 'is_physical',
-                   'address',
-                   ]
+    field_names = [
+        "name",
+        "title",
+        "summary",
+        "home_page",
+        "driver",
+        "time_zone",
+        "time_starts",
+        "time_ends",
+        "is_physical",
+        "address",
+    ]
     custom_widget_summary = CustomWidgetFactory(TextAreaWidget, height=5)
     custom_widget_time_starts = CustomWidgetFactory(
-        DateTimeWidget, display_zone=False)
+        DateTimeWidget, display_zone=False
+    )
     custom_widget_time_ends = CustomWidgetFactory(
-        DateTimeWidget, display_zone=False)
+        DateTimeWidget, display_zone=False
+    )
     custom_widget_address = CustomWidgetFactory(TextAreaWidget, height=3)
 
     def setUpWidgets(self):
         LaunchpadEditFormView.setUpWidgets(self)
-        timeformat = '%Y-%m-%d %H:%M'
-        self.widgets['time_starts'].timeformat = timeformat
-        self.widgets['time_ends'].timeformat = timeformat
-        time_zone_widget = self.widgets['time_zone']
+        timeformat = "%Y-%m-%d %H:%M"
+        self.widgets["time_starts"].timeformat = timeformat
+        self.widgets["time_ends"].timeformat = timeformat
+        time_zone_widget = self.widgets["time_zone"]
         # What time zone are the start and end values relative to?
         if time_zone_widget.hasValidInput():
             tz = pytz.timezone(time_zone_widget.getInputValue())
         else:
             tz = pytz.timezone(self.context.time_zone)
-        self.widgets['time_starts'].required_time_zone = tz
-        self.widgets['time_ends'].required_time_zone = tz
+        self.widgets["time_starts"].required_time_zone = tz
+        self.widgets["time_ends"].required_time_zone = tz
 
     def validate(self, data):
-        time_starts = data.get('time_starts')
-        time_ends = data.get('time_ends')
+        time_starts = data.get("time_starts")
+        time_ends = data.get("time_ends")
         if time_starts and time_ends and time_ends < time_starts:
             self.setFieldError(
-                'time_ends', "This event can't start after it ends")
+                "time_ends", "This event can't start after it ends"
+            )
 
-    @action(_('Change'), name='change')
+    @action(_("Change"), name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
 
@@ -377,7 +402,7 @@ class SprintDeleteView(LaunchpadFormView):
     """Form for deleting sprints."""
 
     schema = ISprint
-    field_names = []
+    field_names = []  # type: List[str]
 
     @property
     def label(self):
@@ -403,15 +428,19 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
     @property
     def label(self):
         return smartquote(
-            'Review discussion topics for "%s" sprint' % self.context.title)
+            'Review discussion topics for "%s" sprint' % self.context.title
+        )
 
-    page_title = label
+    @property
+    def page_title(self):
+        return self.label
 
     def initialize(self):
         self.status_message = None
         self.process_form()
         self.attendee_ids = {
-            attendance.attendeeID for attendance in self.context.attendances}
+            attendance.attendeeID for attendance in self.context.attendances
+        }
 
     @cachedproperty
     def spec_filter(self):
@@ -433,50 +462,55 @@ class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
         """
         form = self.request.form
 
-        if 'SUBMIT_CANCEL' in form:
-            self.status_message = 'Cancelled'
+        if "SUBMIT_CANCEL" in form:
+            self.status_message = "Cancelled"
             self.request.response.redirect(
-                canonical_url(self.context) + '/+specs')
+                canonical_url(self.context) + "/+specs"
+            )
             return
 
-        if 'SUBMIT_ACCEPT' not in form and 'SUBMIT_DECLINE' not in form:
-            self.status_message = ''
+        if "SUBMIT_ACCEPT" not in form and "SUBMIT_DECLINE" not in form:
+            self.status_message = ""
             return
 
-        if self.request.method == 'POST':
-            if 'speclink' not in form:
+        if self.request.method == "POST":
+            if "speclink" not in form:
                 self.status_message = (
-                    'Please select specifications to accept or decline.')
+                    "Please select specifications to accept or decline."
+                )
                 return
             # determine if we are accepting or declining
-            if 'SUBMIT_ACCEPT' in form:
-                assert 'SUBMIT_DECLINE' not in form
-                action = 'Accepted'
+            if "SUBMIT_ACCEPT" in form:
+                assert "SUBMIT_DECLINE" not in form
+                action = "Accepted"
             else:
-                assert 'SUBMIT_DECLINE' in form
-                action = 'Declined'
+                assert "SUBMIT_DECLINE" in form
+                action = "Declined"
 
-        selected_specs = form['speclink']
+        selected_specs = form["speclink"]
         if isinstance(selected_specs, str):
             # only a single item was selected, but we want to deal with a
             # list for the general case, so convert it to a list
             selected_specs = [selected_specs]
         selected_specs = [int(speclink) for speclink in selected_specs]
 
-        if action == 'Accepted':
+        if action == "Accepted":
             action_fn = self.context.acceptSpecificationLinks
         else:
             action_fn = self.context.declineSpecificationLinks
         leftover = action_fn(selected_specs, self.user)
 
         # Status message like: "Accepted 27 specification(s)."
-        self.status_message = '%s %d specification(s).' % (
-            action, len(selected_specs))
+        self.status_message = "%s %d specification(s)." % (
+            action,
+            len(selected_specs),
+        )
 
         if leftover == 0:
             # they are all done, so redirect back to the spec listing page
             self.request.response.redirect(
-                canonical_url(self.context) + '/+specs')
+                canonical_url(self.context) + "/+specs"
+            )
 
 
 class SprintMeetingExportView(LaunchpadView):
@@ -486,16 +520,22 @@ class SprintMeetingExportView(LaunchpadView):
         self.attendees = []
         attendee_set = set()
         for attendance in self.context.attendances:
-            self.attendees.append(dict(
-                name=attendance.attendee.name,
-                displayname=attendance.attendee.displayname,
-                start=attendance.time_starts.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                end=attendance.time_ends.strftime('%Y-%m-%dT%H:%M:%SZ')))
+            self.attendees.append(
+                dict(
+                    name=attendance.attendee.name,
+                    displayname=attendance.attendee.displayname,
+                    start=attendance.time_starts.strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    ),
+                    end=attendance.time_ends.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                )
+            )
             attendee_set.add(attendance.attendeeID)
 
         model_specs = []
         for spec in self.context.specifications(
-            self.user, filter=[SpecificationFilter.ACCEPTED]):
+            self.user, filter=[SpecificationFilter.ACCEPTED]
+        ):
 
             # Skip sprints with no priority or less than LOW.
             if spec.priority < SpecificationPriority.UNDEFINED:
@@ -504,12 +544,14 @@ class SprintMeetingExportView(LaunchpadView):
 
         people = defaultdict(dict)
         # Attendees per specification.
-        for subscription in load_referencing(SpecificationSubscription,
-                model_specs, ['specification_id']):
+        for subscription in load_referencing(
+            SpecificationSubscription, model_specs, ["specification_id"]
+        ):
             if subscription.person_id not in attendee_set:
                 continue
             people[subscription.specification_id][
-                subscription.person_id] = subscription.essential
+                subscription.person_id
+            ] = subscription.essential
 
         # Spec specials - drafter/assignee.  Don't need approver for
         # performance, as specifications() above eager-loaded the
@@ -523,48 +565,59 @@ class SprintMeetingExportView(LaunchpadView):
             if spec.drafter is not None:
                 spec_people[spec.drafter.id] = True
                 attendee_set.add(spec.drafter.id)
-        people_by_id = {person.id: person for person in
-            getUtility(IPersonSet).getPrecachedPersonsFromIDs(attendee_set)}
+        people_by_id = {
+            person.id: person
+            for person in getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                attendee_set
+            )
+        }
         self.specifications = [
-            dict(spec=spec, interested=[
+            dict(
+                spec=spec,
+                interested=[
                     dict(name=people_by_id[person_id].name, required=required)
-                    for (person_id, required) in people[spec.id].items()]
-                ) for spec in model_specs]
+                    for (person_id, required) in people[spec.id].items()
+                ],
+            )
+            for spec in model_specs
+        ]
 
     def render(self):
         self.request.response.setHeader(
-            'content-type', 'application/xml;charset=utf-8')
+            "content-type", "application/xml;charset=utf-8"
+        )
         body = super().render()
-        return body.encode('utf-8')
+        return body.encode("utf-8")
 
 
 class SprintSetNavigationMenu(RegistryCollectionActionMenuBase):
     """Action menu for sprints index."""
-    usedfor = ISprintSet
-    links = (
-        'register_team',
-        'register_project',
-        'register_sprint',
-        'create_account',
-        'view_all_sprints',
-        )
 
-    @enabled_with_permission('launchpad.View')
+    usedfor = ISprintSet
+    links = [
+        "register_team",
+        "register_project",
+        "register_sprint",
+        "create_account",
+        "view_all_sprints",
+    ]
+
+    @enabled_with_permission("launchpad.View")
     def register_sprint(self):
-        text = 'Register a meeting'
-        summary = 'Register a developer sprint, summit, or gathering'
-        return Link('+new', text, summary=summary, icon='add')
+        text = "Register a meeting"
+        summary = "Register a developer sprint, summit, or gathering"
+        return Link("+new", text, summary=summary, icon="add")
 
     def view_all_sprints(self):
-        text = 'Show all meetings'
-        return Link('+all', text, icon='list')
+        text = "Show all meetings"
+        return Link("+all", text, icon="list")
 
 
 @implementer(IRegistryCollectionNavigationMenu)
 class SprintSetView(LaunchpadView):
     """View for the /sprints top level collection page."""
 
-    page_title = 'Meetings and sprints registered in Launchpad'
+    page_title = "Meetings and sprints registered in Launchpad"
 
     def all_batched(self):
         return BatchNavigator(self.context.all, self.request)
@@ -575,48 +628,61 @@ class SprintAttendeesCsvExportView(LaunchpadView):
 
     def render(self):
         """Render a CSV output of all the attendees for a sprint."""
-        rows = [('Launchpad username',
-                 'Display name',
-                 'Email',
-                 'IRC nickname',
-                 'Phone',
-                 'Organization',
-                 'City',
-                 'Country',
-                 'Timezone',
-                 'Arriving',
-                 'Leaving',
-                 'Physically present',
-                 )]
+        rows = [
+            (
+                "Launchpad username",
+                "Display name",
+                "Email",
+                "IRC nickname",
+                "Phone",
+                "Organization",
+                "City",
+                "Country",
+                "Timezone",
+                "Arriving",
+                "Leaving",
+                "Physically present",
+            )
+        ]
         for attendance in self.context.attendances:
-            time_zone = ''
+            time_zone = ""
             location = attendance.attendee.location
             if location is not None and location.visible:
                 time_zone = attendance.attendee.time_zone
-            irc_nicknames = ', '.join(sorted({
-                ircid.nickname for ircid
-                 in attendance.attendee.ircnicknames}))
+            irc_nicknames = ", ".join(
+                sorted(
+                    {
+                        ircid.nickname
+                        for ircid in attendance.attendee.ircnicknames
+                    }
+                )
+            )
             rows.append(
-                (attendance.attendee.name,
-                 attendance.attendee.displayname,
-                 attendance.attendee.safe_email_or_blank,
-                 irc_nicknames,
-                 # We used to store phone, organization, city and
-                 # country, but this was a lie because users could not
-                 # update these fields.
-                 '',  # attendance.attendee.phone
-                 '',  # attendance.attendee.organization
-                 '',  # attendance.attendee.city
-                 '',  # country
-                 time_zone,
-                 attendance.time_starts.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                 attendance.time_ends.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                 str(attendance.is_physical)))
+                (
+                    attendance.attendee.name,
+                    attendance.attendee.displayname,
+                    attendance.attendee.safe_email_or_blank,
+                    irc_nicknames,
+                    # We used to store phone, organization, city and
+                    # country, but this was a lie because users could not
+                    # update these fields.
+                    "",  # attendance.attendee.phone
+                    "",  # attendance.attendee.organization
+                    "",  # attendance.attendee.city
+                    "",  # country
+                    time_zone,
+                    attendance.time_starts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    attendance.time_ends.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    str(attendance.is_physical),
+                )
+            )
         self.request.response.setHeader(
-            'Content-type', 'text/csv;charset="utf-8"')
+            "Content-type", 'text/csv;charset="utf-8"'
+        )
         self.request.response.setHeader(
-            'Content-disposition',
-            'attachment; filename=%s-attendees.csv' % self.context.name)
+            "Content-disposition",
+            "attachment; filename=%s-attendees.csv" % self.context.name,
+        )
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerows(rows)

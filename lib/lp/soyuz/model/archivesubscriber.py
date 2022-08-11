@@ -4,35 +4,20 @@
 """Database class for table ArchiveSubscriber."""
 
 __all__ = [
-    'ArchiveSubscriber',
-    ]
+    "ArchiveSubscriber",
+]
 
 from operator import itemgetter
 
 import pytz
-from storm.expr import (
-    And,
-    Desc,
-    Join,
-    LeftJoin,
-    )
-from storm.locals import (
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Storm,
-    Unicode,
-    )
+from storm.expr import And, Desc, Join, LeftJoin
+from storm.locals import DateTime, Int, Reference, Store, Storm, Unicode
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
-from lp.registry.interfaces.person import (
-    IPersonSet,
-    validate_person,
-    )
+from lp.registry.interfaces.person import IPersonSet, validate_person
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_related
@@ -47,7 +32,7 @@ from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
 from lp.soyuz.interfaces.archivesubscriber import (
     IArchiveSubscriber,
     IArchiveSubscriberSet,
-    )
+)
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 
@@ -55,44 +40,50 @@ from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 @implementer(IArchiveSubscriber)
 class ArchiveSubscriber(Storm):
     """See `IArchiveSubscriber`."""
-    __storm_table__ = 'ArchiveSubscriber'
+
+    __storm_table__ = "ArchiveSubscriber"
 
     id = Int(primary=True)
 
-    archive_id = Int(name='archive', allow_none=False)
-    archive = Reference(archive_id, 'Archive.id')
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
 
-    registrant_id = Int(name='registrant', allow_none=False)
-    registrant = Reference(registrant_id, 'Person.id')
+    registrant_id = Int(name="registrant", allow_none=False)
+    registrant = Reference(registrant_id, "Person.id")
 
     date_created = DateTime(
-        name='date_created', allow_none=False, tzinfo=pytz.UTC)
+        name="date_created", allow_none=False, tzinfo=pytz.UTC
+    )
 
     subscriber_id = Int(
-        name='subscriber', allow_none=False,
-        validator=validate_person)
-    subscriber = Reference(subscriber_id, 'Person.id')
+        name="subscriber", allow_none=False, validator=validate_person
+    )
+    subscriber = Reference(subscriber_id, "Person.id")
 
     date_expires = DateTime(
-        name='date_expires', allow_none=True, tzinfo=pytz.UTC)
+        name="date_expires", allow_none=True, tzinfo=pytz.UTC
+    )
 
     status = DBEnum(
-        name='status', allow_none=False,
-        enum=ArchiveSubscriberStatus)
+        name="status", allow_none=False, enum=ArchiveSubscriberStatus
+    )
 
-    description = Unicode(name='description', allow_none=True)
+    description = Unicode(name="description", allow_none=True)
 
     date_cancelled = DateTime(
-        name='date_cancelled', allow_none=True, tzinfo=pytz.UTC)
+        name="date_cancelled", allow_none=True, tzinfo=pytz.UTC
+    )
 
-    cancelled_by_id = Int(name='cancelled_by', allow_none=True)
-    cancelled_by = Reference(cancelled_by_id, 'Person.id')
+    cancelled_by_id = Int(name="cancelled_by", allow_none=True)
+    cancelled_by = Reference(cancelled_by_id, "Person.id")
 
     @property
     def displayname(self):
         """See `IArchiveSubscriber`."""
         return "%s's access to %s" % (
-            self.subscriber.displayname, self.archive.displayname)
+            self.subscriber.displayname,
+            self.archive.displayname,
+        )
 
     def cancel(self, cancelled_by):
         """See `IArchiveSubscriber`."""
@@ -100,7 +91,8 @@ class ArchiveSubscriber(Storm):
         # got this far then we know the caller has enough permissions to
         # cancel just this subscription.
         removeSecurityProxy(getUtility(IArchiveSubscriberSet)).cancel(
-            [self.id], cancelled_by)
+            [self.id], cancelled_by
+        )
 
     def getNonActiveSubscribers(self):
         """See `IArchiveSubscriber`."""
@@ -111,35 +103,45 @@ class ArchiveSubscriber(Storm):
             # this archive (for example, through separate subscriptions).
             auth_token = LeftJoin(
                 ArchiveAuthToken,
-                And(ArchiveAuthToken.person_id == Person.id,
+                And(
+                    ArchiveAuthToken.person_id == Person.id,
                     ArchiveAuthToken.archive_id == self.archive_id,
-                    ArchiveAuthToken.date_deactivated == None))
+                    ArchiveAuthToken.date_deactivated == None,
+                ),
+            )
 
             team_participation = Join(
-                TeamParticipation,
-                TeamParticipation.personID == Person.id)
+                TeamParticipation, TeamParticipation.personID == Person.id
+            )
 
             # Only return people with preferred email address set.
             preferred_email = Join(
-                EmailAddress, EmailAddress.personID == Person.id)
+                EmailAddress, EmailAddress.personID == Person.id
+            )
 
             # We want to get all participants who are themselves
             # individuals, not teams:
             non_active_subscribers = store.using(
-                Person, team_participation, preferred_email, auth_token).find(
+                Person, team_participation, preferred_email, auth_token
+            ).find(
                 (Person, EmailAddress),
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
                 TeamParticipation.teamID == self.subscriber_id,
                 Person.teamowner == None,
                 # There is no existing archive auth token.
-                ArchiveAuthToken.person_id == None)
+                ArchiveAuthToken.person_id == None,
+            )
             non_active_subscribers.order_by(Person.name)
             return non_active_subscribers
         else:
             # Subscriber is not a team.
             token_set = getUtility(IArchiveAuthTokenSet)
-            if token_set.getActiveTokenForArchiveAndPerson(
-                self.archive, self.subscriber) is not None:
+            if (
+                token_set.getActiveTokenForArchiveAndPerson(
+                    self.archive, self.subscriber
+                )
+                is not None
+            ):
                 # There are active tokens, so return an empty result
                 # set.
                 return EmptyResultSet()
@@ -150,15 +152,17 @@ class ArchiveSubscriber(Storm):
                 (Person, EmailAddress),
                 Person.id == self.subscriber_id,
                 EmailAddress.personID == Person.id,
-                EmailAddress.status == EmailAddressStatus.PREFERRED)
+                EmailAddress.status == EmailAddressStatus.PREFERRED,
+            )
 
 
 @implementer(IArchiveSubscriberSet)
 class ArchiveSubscriberSet:
     """See `IArchiveSubscriberSet`."""
 
-    def _getBySubscriber(self, subscriber, archive, current_only,
-                         with_active_tokens):
+    def _getBySubscriber(
+        self, subscriber, archive, current_only, with_active_tokens
+    ):
         """Return all the subscriptions for a person.
 
         :param subscriber: An `IPerson` for whom to return all
@@ -174,12 +178,15 @@ class ArchiveSubscriberSet:
         # Grab the extra Storm expressions, for this query,
         # depending on the params:
         extra_exprs = self._getExprsForSubscriptionQueries(
-            archive, current_only)
+            archive, current_only
+        )
         origin = [
             ArchiveSubscriber,
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == ArchiveSubscriber.subscriber_id)]
+                TeamParticipation.teamID == ArchiveSubscriber.subscriber_id,
+            ),
+        ]
 
         if with_active_tokens:
             result_row = (ArchiveSubscriber, ArchiveAuthToken)
@@ -189,10 +196,13 @@ class ArchiveSubscriberSet:
                 LeftJoin(
                     ArchiveAuthToken,
                     And(
-                        ArchiveAuthToken.archive_id ==
-                            ArchiveSubscriber.archive_id,
+                        ArchiveAuthToken.archive_id
+                        == ArchiveSubscriber.archive_id,
                         ArchiveAuthToken.person_id == subscriber.id,
-                        ArchiveAuthToken.date_deactivated == None)))
+                        ArchiveAuthToken.date_deactivated == None,
+                    ),
+                )
+            )
         else:
             result_row = ArchiveSubscriber
 
@@ -204,10 +214,15 @@ class ArchiveSubscriberSet:
         # showing that each person is a member of the "team" that
         # consists of themselves.
         store = Store.of(subscriber)
-        return store.using(*origin).find(
-            result_row,
-            TeamParticipation.personID == subscriber.id,
-            *extra_exprs).order_by(Desc(ArchiveSubscriber.date_created))
+        return (
+            store.using(*origin)
+            .find(
+                result_row,
+                TeamParticipation.personID == subscriber.id,
+                *extra_exprs,
+            )
+            .order_by(Desc(ArchiveSubscriber.date_created))
+        )
 
     def getBySubscriber(self, subscriber, archive=None, current_only=True):
         """See `IArchiveSubscriberSet`."""
@@ -220,27 +235,36 @@ class ArchiveSubscriberSet:
         def eager_load(rows):
             subscriptions = [row[0] for row in rows]
             precache_permission_for_objects(
-                None, 'launchpad.View', subscriptions)
-            archives = load_related(Archive, subscriptions, ['archive_id'])
-            list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                [archive.ownerID for archive in archives], need_validity=True))
+                None, "launchpad.View", subscriptions
+            )
+            archives = load_related(Archive, subscriptions, ["archive_id"])
+            list(
+                getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                    [archive.ownerID for archive in archives],
+                    need_validity=True,
+                )
+            )
 
         return DecoratedResultSet(result, pre_iter_hook=eager_load)
 
     def getByArchive(self, archive, current_only=True):
         """See `IArchiveSubscriberSet`."""
         extra_exprs = self._getExprsForSubscriptionQueries(
-            archive, current_only)
+            archive, current_only
+        )
 
         store = Store.of(archive)
-        result = store.using(ArchiveSubscriber,
-             Join(Person, ArchiveSubscriber.subscriber_id == Person.id)).find(
-            (ArchiveSubscriber, Person),
-            *extra_exprs).order_by(Person.name)
+        result = (
+            store.using(
+                ArchiveSubscriber,
+                Join(Person, ArchiveSubscriber.subscriber_id == Person.id),
+            )
+            .find((ArchiveSubscriber, Person), *extra_exprs)
+            .order_by(Person.name)
+        )
         return DecoratedResultSet(result, itemgetter(0))
 
-    def _getExprsForSubscriptionQueries(self, archive=None,
-                                        current_only=True):
+    def _getExprsForSubscriptionQueries(self, archive=None, current_only=True):
         """Return the Storm expressions required for the parameters.
 
         Just to keep the code DRY.
@@ -255,7 +279,8 @@ class ArchiveSubscriberSet:
         # if requested:
         if current_only:
             extra_exprs.append(
-                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT)
+                ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT
+            )
 
         return extra_exprs
 
@@ -263,7 +288,9 @@ class ArchiveSubscriberSet:
         """See `IArchiveSubscriberSet`."""
         Store.of(cancelled_by).find(
             ArchiveSubscriber,
-            ArchiveSubscriber.id.is_in(archive_subscriber_ids)).set(
-                date_cancelled=UTC_NOW,
-                cancelled_by_id=cancelled_by.id,
-                status=ArchiveSubscriberStatus.CANCELLED)
+            ArchiveSubscriber.id.is_in(archive_subscriber_ids),
+        ).set(
+            date_cancelled=UTC_NOW,
+            cancelled_by_id=cancelled_by.id,
+            status=ArchiveSubscriberStatus.CANCELLED,
+        )

@@ -4,13 +4,12 @@
 """Implementation of the HAProxy probe URL."""
 
 __all__ = [
-    'HAProxyStatusView',
-    'set_going_down_flag',
-    'switch_going_down_flag',
-    ]
+    "HAProxyStatusView",
+    "set_going_down_flag",
+    "switch_going_down_flag",
+]
 
 from lp.services.config import config
-
 
 # This is the global flag, when this is True, the HAProxy view
 # will return 500, it returns 200 otherwise.
@@ -63,7 +62,8 @@ class HAProxyStatusView:
 
         if going_down_flag:
             self.request.response.setStatus(
-                config.haproxy_status_view.going_down_status)
+                config.haproxy_status_view.going_down_status
+            )
             return "May day! May day! I'm going down. Stop the flood gate."
         else:
             self.request.response.setStatus(200)

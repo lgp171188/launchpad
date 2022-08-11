@@ -2,25 +2,19 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'OAuthAccessTokenView',
-    'OAuthAuthorizeTokenView',
-    'OAuthRequestTokenView',
-    'lookup_oauth_context']
+    "OAuthAccessTokenView",
+    "OAuthAuthorizeTokenView",
+    "OAuthRequestTokenView",
+    "lookup_oauth_context",
+]
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime, timedelta
 
-from lazr.restful import HTTPResource
 import pytz
 import simplejson
+from lazr.restful import HTTPResource
 from zope.component import getUtility
-from zope.formlib.form import (
-    Action,
-    Actions,
-    expandPrefix,
-    )
+from zope.formlib.form import Action, Actions, expandPrefix
 from zope.security.interfaces import Unauthorized
 
 from lp.app.browser.launchpadform import LaunchpadFormView
@@ -28,24 +22,22 @@ from lp.app.errors import UnexpectedFormData
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.services.oauth.interfaces import (
+    OAUTH_CHALLENGE,
     IOAuthConsumerSet,
     IOAuthRequestToken,
     IOAuthRequestTokenSet,
-    OAUTH_CHALLENGE,
-    )
+)
 from lp.services.oauth.model import OAuthValidationError
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.authentication import (
     check_oauth_signature,
     get_oauth_authorization,
-    )
+)
 from lp.services.webapp.interfaces import OAuthPermission
 
 
 class JSONTokenMixin:
-
-    def getJSONRepresentation(self, permissions, token=None,
-                              secret=None):
+    def getJSONRepresentation(self, permissions, token=None, secret=None):
         """Return a JSON representation of the authorization policy.
 
         This includes a description of some subset of OAuthPermission,
@@ -53,18 +45,19 @@ class JSONTokenMixin:
         """
         structure = {}
         if token is not None:
-            structure['oauth_token'] = token.key
-            structure['oauth_token_consumer'] = token.consumer.key
+            structure["oauth_token"] = token.key
+            structure["oauth_token_consumer"] = token.consumer.key
             if secret is not None:
-                structure['oauth_token_secret'] = secret
-        access_levels = [{
-                'value': permission.name,
-                'title': permission.title,
-                }
-                for permission in permissions]
-        structure['access_levels'] = access_levels
-        self.request.response.setHeader(
-            'Content-Type', HTTPResource.JSON_TYPE)
+                structure["oauth_token_secret"] = secret
+        access_levels = [
+            {
+                "value": permission.name,
+                "title": permission.title,
+            }
+            for permission in permissions
+        ]
+        structure["access_levels"] = access_levels
+        self.request.response.setHeader("Content-Type", HTTPResource.JSON_TYPE)
         return simplejson.dumps(structure)
 
 
@@ -82,10 +75,10 @@ class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):
             form = get_oauth_authorization(self.request)
         except UnicodeDecodeError:
             raise UnexpectedFormData("Invalid UTF-8.")
-        consumer_key = form.get('oauth_consumer_key')
+        consumer_key = form.get("oauth_consumer_key")
         if not consumer_key:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return ''
+            return ""
 
         consumer_set = getUtility(IOAuthConsumerSet)
         consumer = consumer_set.getByKey(consumer_key)
@@ -93,20 +86,22 @@ class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):
             consumer = consumer_set.new(key=consumer_key)
 
         if not check_oauth_signature(self.request, consumer, None):
-            return ''
+            return ""
 
         token, secret = consumer.newRequestToken()
-        if self.request.headers.get('Accept') == HTTPResource.JSON_TYPE:
+        if self.request.headers.get("Accept") == HTTPResource.JSON_TYPE:
             # Don't show the client the DESKTOP_INTEGRATION access
             # level. If they have a legitimate need to use it, they'll
             # already know about it.
             permissions = [
-                permission for permission in OAuthPermission.items
+                permission
+                for permission in OAuthPermission.items
                 if (permission != OAuthPermission.DESKTOP_INTEGRATION)
-                ]
+            ]
             return self.getJSONRepresentation(
-                permissions, token, secret=secret)
-        return 'oauth_token=%s&oauth_token_secret=%s' % (token.key, secret)
+                permissions, token, secret=secret
+            )
+        return "oauth_token=%s&oauth_token_secret=%s" % (token.key, secret)
 
 
 def token_exists_and_is_not_reviewed(form, action):
@@ -129,7 +124,7 @@ class TemporaryIntegrations:
         HOUR: 60 * 60,
         DAY: 60 * 60 * 24,
         WEEK: 60 * 60 * 24 * 7,
-        }
+    }
 
 
 def create_oauth_permission_actions():
@@ -145,9 +140,11 @@ def create_oauth_permission_actions():
     desktop_permission = OAuthPermission.DESKTOP_INTEGRATION
     for permission in OAuthPermission.items:
         action = Action(
-            permission.title, name=permission.name,
+            permission.title,
+            name=permission.name,
             success=token_review_success,
-            condition=token_exists_and_is_not_reviewed)
+            condition=token_exists_and_is_not_reviewed,
+        )
         action.permission = permission
         action.duration = None
         all_actions.append(action)
@@ -157,13 +154,16 @@ def create_oauth_permission_actions():
     # Add special actions for the time-limited DESKTOP_INTEGRATION
     # tokens.
     for duration in (
-        TemporaryIntegrations.HOUR, TemporaryIntegrations.DAY,
-        TemporaryIntegrations.WEEK):
+        TemporaryIntegrations.HOUR,
+        TemporaryIntegrations.DAY,
+        TemporaryIntegrations.WEEK,
+    ):
         action = Action(
             ("For One %s" % duration),
             name=expandPrefix(desktop_permission.name) + duration,
             success=token_review_success,
-            condition=token_exists_and_is_not_reviewed)
+            condition=token_exists_and_is_not_reviewed,
+        )
         action.permission = desktop_permission
         action.duration = duration
         all_actions.append(action)
@@ -174,8 +174,10 @@ def create_oauth_permission_actions():
 class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
     """Where users authorize consumers to access Launchpad on their behalf."""
 
-    actions, actions_excluding_special_permissions = (
-        create_oauth_permission_actions())
+    (
+        actions,
+        actions_excluding_special_permissions,
+    ) = create_oauth_permission_actions()
     label = "Authorize application to access Launchpad on your behalf"
     page_title = label
     schema = IOAuthRequestToken
@@ -203,7 +205,8 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
         """
 
         allowed_permissions = set(
-            self.request.form_ng.getAll('allow_permission'))
+            self.request.form_ng.getAll("allow_permission")
+        )
         if len(allowed_permissions) == 0:
             return self.actions_excluding_special_permissions
         actions = Actions()
@@ -220,8 +223,10 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
         # use DESKTOP_INTEGRATION, remove it from the list.
         desktop_permission = OAuthPermission.DESKTOP_INTEGRATION
 
-        if (desktop_permission.name in allowed_permissions
-            and len(allowed_permissions) > 1):
+        if (
+            desktop_permission.name in allowed_permissions
+            and len(allowed_permissions) > 1
+        ):
             allowed_permissions.remove(desktop_permission.name)
 
         if desktop_permission.name in allowed_permissions:
@@ -231,9 +236,9 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
                 # user-recognizable desktop name (eg. the hostname).
                 raise Unauthorized(
                     'Consumer "%s" asked for desktop integration, '
-                     "but didn't say what kind of desktop it is, or name "
-                     "the computer being integrated."
-                     % self.token.consumer.key)
+                    "but didn't say what kind of desktop it is, or name "
+                    "the computer being integrated." % self.token.consumer.key
+                )
 
             # We're going for desktop integration. There are four
             # possibilities: "allow permanently", "allow for one
@@ -250,30 +255,37 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
             # else.
             desktop_name = self.token.consumer.integrated_desktop_name
             allow_action = [
-                action for action in self.actions
-                if action.name == desktop_permission.name][0]
+                action
+                for action in self.actions
+                if action.name == desktop_permission.name
+            ][0]
             allow_action.label = "Until I Disable It"
             actions.append(allow_action)
 
             # Bring in all of the temporary integration actions.
             for action in self.actions:
-                if (action.permission == desktop_permission
-                    and action.name != desktop_permission.name):
+                if (
+                    action.permission == desktop_permission
+                    and action.name != desktop_permission.name
+                ):
                     actions.append(action)
 
             # Fionally, customize the "deny" message.
-            label = (
-                'Do Not Allow "%s" to Access my Launchpad Account.')
+            label = 'Do Not Allow "%s" to Access my Launchpad Account.'
             deny_action = [
-                action for action in self.actions
-                if action.name == OAuthPermission.UNAUTHORIZED.name][0]
+                action
+                for action in self.actions
+                if action.name == OAuthPermission.UNAUTHORIZED.name
+            ][0]
             deny_action.label = label % desktop_name
             actions.append(deny_action)
         else:
             # We're going for web-based integration.
             for action in self.actions_excluding_special_permissions:
-                if (action.permission.name in allowed_permissions
-                    or action.permission is OAuthPermission.UNAUTHORIZED):
+                if (
+                    action.permission.name in allowed_permissions
+                    or action.permission is OAuthPermission.UNAUTHORIZED
+                ):
                     actions.append(action)
 
         if len(list(actions)) == 1:
@@ -304,7 +316,8 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
                 return action
         raise AssertionError(
             "UNAUTHORIZED permission level should always be visible, "
-            "but wasn't.")
+            "but wasn't."
+        )
 
     def initialize(self):
         self.storeTokenContext()
@@ -312,20 +325,23 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
             form = get_oauth_authorization(self.request)
         except UnicodeDecodeError:
             raise UnexpectedFormData("Invalid UTF-8.")
-        key = form.get('oauth_token')
+        key = form.get("oauth_token")
         if key:
             self.token = getUtility(IOAuthRequestTokenSet).getByKey(key)
 
-        callback = self.request.form.get('oauth_callback')
-        if (self.token is not None
-            and self.token.consumer.is_integrated_desktop):
+        callback = self.request.form.get("oauth_callback")
+        if (
+            self.token is not None
+            and self.token.consumer.is_integrated_desktop
+        ):
             # Nip problems in the bud by appling special rules about
             # what desktop integrations are allowed to do.
             if callback is not None:
                 # A desktop integration is not allowed to specify a callback.
                 raise Unauthorized(
                     "A desktop integration may not specify an "
-                    "OAuth callback URL.")
+                    "OAuth callback URL."
+                )
             # A desktop integration token can only have one of two
             # permission levels: "Desktop Integration" and
             # "Unauthorized". It shouldn't even be able to ask for any
@@ -333,18 +349,23 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
             for action in self.visible_actions:
                 if action.permission not in (
                     OAuthPermission.DESKTOP_INTEGRATION,
-                    OAuthPermission.UNAUTHORIZED):
+                    OAuthPermission.UNAUTHORIZED,
+                ):
                     raise Unauthorized(
-                        ("Desktop integration token requested a permission "
-                         '("%s") not supported for desktop-wide use.')
-                         % action.label)
+                        (
+                            "Desktop integration token requested a permission "
+                            '("%s") not supported for desktop-wide use.'
+                        )
+                        % action.label
+                    )
 
         super().initialize()
 
     def render(self):
-        if self.request.headers.get('Accept') == HTTPResource.JSON_TYPE:
-            permissions = [action.permission
-                           for action in self.visible_actions]
+        if self.request.headers.get("Accept") == HTTPResource.JSON_TYPE:
+            permissions = [
+                action.permission for action in self.visible_actions
+            ]
             return self.getJSONRepresentation(permissions, self.token)
         return super().render()
 
@@ -358,9 +379,9 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
             oauth_data = get_oauth_authorization(self.request)
         except UnicodeDecodeError:
             raise UnexpectedFormData("Invalid UTF-8.")
-        context = oauth_data.get('lp.context')
+        context = oauth_data.get("lp.context")
         if not context:
-            context = self.request.form.get('lp.context')
+            context = self.request.form.get("lp.context")
             if not context:
                 return
         try:
@@ -374,17 +395,21 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
         if duration_seconds is not None:
             duration_delta = timedelta(seconds=duration_seconds)
             expiration_date = (
-                datetime.now(pytz.timezone('UTC')) + duration_delta)
+                datetime.now(pytz.timezone("UTC")) + duration_delta
+            )
         else:
             expiration_date = None
         try:
             self.token.review(
-                self.user, permission, self.token_context,
-                date_expires=expiration_date)
+                self.user,
+                permission,
+                self.token_context,
+                date_expires=expiration_date,
+            )
         except OAuthValidationError as e:
             self.request.response.addErrorNotification(str(e))
             return
-        callback = self.request.form.get('oauth_callback')
+        callback = self.request.form.get("oauth_callback")
         if callback:
             self.next_url = callback
 
@@ -394,8 +419,8 @@ def lookup_oauth_context(context):
 
     :param context: A string to turn into a context object.
     """
-    if '/' in context:
-        distro, package = context.split('/')
+    if "/" in context:
+        distro, package = context.split("/")
         distro = getUtility(IDistributionSet).getByName(distro)
         if distro is None:
             raise ValueError(distro)
@@ -425,28 +450,29 @@ class OAuthAccessTokenView(LaunchpadView):
         """
         form = self.request.form
         consumer = getUtility(IOAuthConsumerSet).getByKey(
-            form.get('oauth_consumer_key'))
+            form.get("oauth_consumer_key")
+        )
 
         if consumer is None:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return ''
+            return ""
 
-        token = consumer.getRequestToken(form.get('oauth_token'))
+        token = consumer.getRequestToken(form.get("oauth_token"))
         if token is None:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return 'No request token specified.'
+            return "No request token specified."
 
         if not check_oauth_signature(self.request, consumer, token):
-            return 'Invalid OAuth signature.'
+            return "Invalid OAuth signature."
 
         if not token.is_reviewed:
             self.request.unauthorized(OAUTH_CHALLENGE)
-            return (
-                "Request token has not yet been reviewed. Try again later.")
+            return "Request token has not yet been reviewed. Try again later."
 
         if token.permission == OAuthPermission.UNAUTHORIZED:
             return self._set_status_and_error(
-                'End-user refused to authorize request token.')
+                "End-user refused to authorize request token."
+            )
 
         try:
             access_token, access_secret = token.createAccessToken()
@@ -456,6 +482,9 @@ class OAuthAccessTokenView(LaunchpadView):
         context_name = None
         if access_token.context is not None:
             context_name = access_token.context.name
-        body = 'oauth_token=%s&oauth_token_secret=%s&lp.context=%s' % (
-            access_token.key, access_secret, context_name)
+        body = "oauth_token=%s&oauth_token_secret=%s&lp.context=%s" % (
+            access_token.key,
+            access_secret,
+            context_name,
+        )
         return body

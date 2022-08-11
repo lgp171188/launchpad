@@ -4,41 +4,32 @@
 """The vocabularies relating to dependencies of specifications."""
 
 __all__ = [
-    'SpecificationDepCandidatesVocabulary',
-    'SpecificationDependenciesVocabulary',
-    ]
+    "SpecificationDepCandidatesVocabulary",
+    "SpecificationDependenciesVocabulary",
+]
 
-from storm.locals import (
-    And,
-    SQL,
-    Store,
-    )
+from storm.locals import SQL, And, Store
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.blueprints.model.specification import (
-    recursive_blocked_query,
     Specification,
-    )
-from lp.blueprints.model.specificationdependency import (
-    SpecificationDependency,
-    )
+    recursive_blocked_query,
+)
+from lp.blueprints.model.specificationdependency import SpecificationDependency
 from lp.blueprints.model.specificationsearch import (
     get_specification_privacy_filter,
-    )
+)
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.services.database.stormexpr import fti_search
-from lp.services.webapp import (
-    canonical_url,
-    urlparse,
-    )
+from lp.services.webapp import canonical_url, urlparse
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
     SQLObjectVocabularyBase,
-    )
+)
 
 
 @implementer(IHugeVocabulary)
@@ -63,9 +54,9 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
     """
 
     _table = Specification
-    _orderBy = 'name'
-    displayname = 'Select a blueprint'
-    step_title = 'Search'
+    _orderBy = "name"
+    displayname = "Select a blueprint"
+    step_title = "Search"
 
     def _is_valid_candidate(self, spec):
         """Is `spec` a valid candidate spec for self.context?
@@ -73,14 +64,14 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         Invalid candidates are:
 
          * None
-         * The spec that we're adding a depdency to
+         * The spec that we're adding a dependency to
          * Specs that depend on this one
 
         Preventing the last category prevents loops in the dependency graph.
         """
         if spec is None or spec == self.context:
             return False
-        user = getattr(getUtility(ILaunchBag), 'user', None)
+        user = getattr(getUtility(ILaunchBag), "user", None)
         return spec not in set(self.context.all_blocked(user=user))
 
     def _order_by(self):
@@ -98,32 +89,36 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         spec = self.context
         if spec.product is not None:
             order_statements.append(
-                "(CASE Specification.product WHEN %s THEN 0 ELSE 1 END)" %
-                spec.product.id)
+                "(CASE Specification.product WHEN %s THEN 0 ELSE 1 END)"
+                % spec.product.id
+            )
             if spec.productseries is not None:
                 order_statements.append(
                     "(CASE Specification.productseries"
-                    " WHEN %s THEN 0 ELSE 1 END)" %
-                    spec.productseries.id)
+                    " WHEN %s THEN 0 ELSE 1 END)" % spec.productseries.id
+                )
         elif spec.distribution is not None:
             order_statements.append(
                 "(CASE Specification.distribution WHEN %s THEN 0 ELSE 1 END)"
-                % spec.distribution.id)
+                % spec.distribution.id
+            )
             if spec.distroseries is not None:
                 order_statements.append(
                     "(CASE Specification.distroseries"
-                    " WHEN %s THEN 0 ELSE 1 END)" %
-                    spec.distroseries.id)
+                    " WHEN %s THEN 0 ELSE 1 END)" % spec.distroseries.id
+                )
         order_statements.append("Specification.name")
         order_statements.append("Specification.id")
-        return SQL(', '.join(order_statements))
+        return SQL(", ".join(order_statements))
 
     def _exclude_blocked_query(self):
         """Return the select statement to exclude already blocked specs."""
-        user = getattr(getUtility(ILaunchBag), 'user', None)
+        user = getattr(getUtility(ILaunchBag), "user", None)
         return SQL(
-            "Specification.id not in (WITH %s select id from blocked)" % (
-                recursive_blocked_query(user)), params=(self.context.id,))
+            "Specification.id not in (WITH %s select id from blocked)"
+            % (recursive_blocked_query(user)),
+            params=(self.context.id,),
+        )
 
     def toTerm(self, obj):
         if obj.target == self.context.target:
@@ -144,16 +139,17 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         if not scheme or not netloc:
             # Not enough like a URL
             return None
-        path_segments = path.strip('/').split('/')
+        path_segments = path.strip("/").split("/")
         if len(path_segments) != 3:
             # Can't be a spec url
             return None
         pillar_name, plus_spec, spec_name = path_segments
-        if plus_spec != '+spec':
+        if plus_spec != "+spec":
             # Can't be a spec url
             return None
         pillar = getUtility(IPillarNameSet).getByName(
-            pillar_name, ignore_inactive=True)
+            pillar_name, ignore_inactive=True
+        )
         if pillar is None:
             return None
         return pillar.getSpecification(spec_name)
@@ -184,11 +180,15 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         if self._is_valid_candidate(spec):
             return CountableIterator(1, [spec])
 
-        return Store.of(self.context).find(
-            Specification,
-            fti_search(Specification, query),
-            self._exclude_blocked_query(),
-            ).order_by(self._order_by())
+        return (
+            Store.of(self.context)
+            .find(
+                Specification,
+                fti_search(Specification, query),
+                self._exclude_blocked_query(),
+            )
+            .order_by(self._order_by())
+        )
 
     def __iter__(self):
         # We don't ever want to iterate over everything.
@@ -202,12 +202,13 @@ class SpecificationDependenciesVocabulary(SQLObjectVocabularyBase):
     """List specifications on which the current specification depends."""
 
     _table = Specification
-    _orderBy = 'title'
+    _orderBy = "title"
 
     @property
     def _filter(self):
-        user = getattr(getUtility(ILaunchBag), 'user', None)
+        user = getattr(getUtility(ILaunchBag), "user", None)
         return And(
             SpecificationDependency.specificationID == self.context.id,
             SpecificationDependency.dependencyID == Specification.id,
-            *get_specification_privacy_filter(user))
+            *get_specification_privacy_filter(user),
+        )

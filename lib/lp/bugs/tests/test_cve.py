@@ -12,16 +12,13 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.bugs.interfaces.cve import (
-    CveStatus,
-    ICveSet,
-    )
+from lp.bugs.interfaces.cve import CveStatus, ICveSet
 from lp.testing import (
+    TestCaseWithFactory,
     login_person,
     person_logged_in,
-    TestCaseWithFactory,
     verifyObject,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -49,7 +46,7 @@ class TestCveSet(TestCaseWithFactory):
     def makeCVE(self):
         """Create a CVE."""
         self.cve_index += 1
-        return self.factory.makeCVE('2000-%04i' % self.cve_index)
+        return self.factory.makeCVE("2000-%04i" % self.cve_index)
 
     def test_CveSet_implements_ICveSet(self):
         cveset = getUtility(ICveSet)
@@ -59,7 +56,8 @@ class TestCveSet(TestCaseWithFactory):
         # ICveSet.getBugCvesForBugTasks() returns tuples (bug, cve)
         # for the given bugtasks.
         bugtasks = self.distroseries.searchTasks(
-            BugTaskSearchParams(self.distroseries.owner, has_cve=True))
+            BugTaskSearchParams(self.distroseries.owner, has_cve=True)
+        )
         bug_cves = getUtility(ICveSet).getBugCvesForBugTasks(bugtasks)
         found_bugs = [bug for bug, cve in bug_cves]
         found_cves = [cve for bug, cve in bug_cves]
@@ -75,15 +73,20 @@ class TestCveSet(TestCaseWithFactory):
             return cve.displayname
 
         bugtasks = self.distroseries.searchTasks(
-            BugTaskSearchParams(self.distroseries.owner, has_cve=True))
+            BugTaskSearchParams(self.distroseries.owner, has_cve=True)
+        )
         bug_cves = getUtility(ICveSet).getBugCvesForBugTasks(
-            bugtasks, cve_name)
+            bugtasks, cve_name
+        )
         found_bugs = [bug for bug, cve in bug_cves]
         cve_data = [cve for bug, cve in bug_cves]
         self.assertEqual(self.bugs, found_bugs)
         expected = [
-            'CVE-2000-0001', 'CVE-2000-0002', 'CVE-2000-0003',
-            'CVE-2000-0004']
+            "CVE-2000-0001",
+            "CVE-2000-0002",
+            "CVE-2000-0003",
+            "CVE-2000-0004",
+        ]
         self.assertEqual(expected, cve_data)
 
     def test_getBugCveCount(self):
@@ -92,8 +95,8 @@ class TestCveSet(TestCaseWithFactory):
         base = getUtility(ICveSet).getBugCveCount()
         bug1 = self.factory.makeBug()
         bug2 = self.factory.makeBug()
-        cve1 = self.factory.makeCVE(sequence='2099-1234')
-        cve2 = self.factory.makeCVE(sequence='2099-2468')
+        cve1 = self.factory.makeCVE(sequence="2099-1234")
+        cve2 = self.factory.makeCVE(sequence="2099-2468")
         self.assertEqual(base, getUtility(ICveSet).getBugCveCount())
         cve1.linkBug(bug1)
         self.assertEqual(base + 1, getUtility(ICveSet).getBugCveCount())
@@ -116,8 +119,8 @@ class TestBugLinks(TestCaseWithFactory):
 
         bug1 = self.factory.makeBug()
         bug2 = self.factory.makeBug()
-        cve1 = self.factory.makeCVE(sequence='2099-1234')
-        cve2 = self.factory.makeCVE(sequence='2099-2468')
+        cve1 = self.factory.makeCVE(sequence="2099-1234")
+        cve2 = self.factory.makeCVE(sequence="2099-2468")
         self.assertContentEqual([], bug1.cves)
         self.assertContentEqual([], bug2.cves)
         self.assertContentEqual([], cve1.bugs)
@@ -151,71 +154,80 @@ class TestCve(TestCaseWithFactory):
 
     def test_cveset_new_method_optional_parameters(self):
         cve = getUtility(ICveSet).new(
-            sequence='2099-1234',
-            description='A critical vulnerability',
-            status=CveStatus.CANDIDATE
-        )
-        self.assertThat(cve, MatchesStructure.byEquality(
-            sequence='2099-1234',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             status=CveStatus.CANDIDATE,
-            description='A critical vulnerability',
-            date_made_public=None,
-            discoverer=None,
-            cvss={}
-        ))
+        )
+        self.assertThat(
+            cve,
+            MatchesStructure.byEquality(
+                sequence="2099-1234",
+                status=CveStatus.CANDIDATE,
+                description="A critical vulnerability",
+                date_made_public=None,
+                discoverer=None,
+                cvss={},
+            ),
+        )
 
     def test_cveset_new_method_parameters(self):
         person = self.factory.makePerson()
         today = datetime.now(tz=pytz.UTC)
-        cvss = {
-            'nvd': 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H'
-        }
+        cvss = {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
         cve = getUtility(ICveSet).new(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             status=CveStatus.CANDIDATE,
             date_made_public=today,
             discoverer=person,
-            cvss=cvss
+            cvss=cvss,
         )
-        self.assertThat(cve, MatchesStructure.byEquality(
-            sequence='2099-1234',
-            status=CveStatus.CANDIDATE,
-            description='A critical vulnerability',
-            date_made_public=today,
-            discoverer=person,
-            cvss=cvss
-        ))
+        self.assertThat(
+            cve,
+            MatchesStructure.byEquality(
+                sequence="2099-1234",
+                status=CveStatus.CANDIDATE,
+                description="A critical vulnerability",
+                date_made_public=today,
+                discoverer=person,
+                cvss=cvss,
+            ),
+        )
 
     def test_cve_date_made_public_invalid_values(self):
-        invalid_values = ['', 'abcd', {'a': 1},
-                          [1, 'a', '2', 'b'], '2022-01-01']
+        invalid_values = [
+            "",
+            "abcd",
+            {"a": 1},
+            [1, "a", "2", "b"],
+            "2022-01-01",
+        ]
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
         )
         for invalid_value in invalid_values:
-            with ExpectedException(TypeError, 'Expected datetime,.*'):
+            with ExpectedException(TypeError, "Expected datetime,.*"):
                 removeSecurityProxy(cve).date_made_public = invalid_value
 
     def test_cve_discoverer_id_invalid_values(self):
-        invalid_values = ['', 'abcd', '2022-01-01', datetime.now()]
+        invalid_values = ["", "abcd", "2022-01-01", datetime.now()]
 
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
         )
         for invalid_value in invalid_values:
-            with ExpectedException(TypeError, 'Expected int,.*'):
+            with ExpectedException(TypeError, "Expected int,.*"):
                 removeSecurityProxy(cve).discoverer_id = invalid_value
 
     def test_cve_cvss_invalid_values(self):
-        invalid_values = ['', 'abcd', '2022-01-01', datetime.now()]
+        invalid_values = ["", "abcd", "2022-01-01", datetime.now()]
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
         )
         for invalid_value in invalid_values:
@@ -224,8 +236,8 @@ class TestCve(TestCaseWithFactory):
 
     def test_cvss_value_returned_when_null(self):
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
         )
         cve = removeSecurityProxy(cve)
@@ -234,8 +246,8 @@ class TestCve(TestCaseWithFactory):
 
     def test_setCVSSVectorForAuthority_initially_unset(self):
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
         )
         unproxied_cve = removeSecurityProxy(cve)
@@ -244,59 +256,59 @@ class TestCve(TestCaseWithFactory):
 
         cve.setCVSSVectorForAuthority(
             authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
         )
 
         self.assertEqual(
             {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
-            unproxied_cve.cvss
+            unproxied_cve.cvss,
         )
 
     def test_setCVSSVectorForAuthority_overwrite_existing_key_value(self):
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
-            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
+            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
         )
         unproxied_cve = removeSecurityProxy(cve)
         self.assertEqual(
             {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
-            unproxied_cve.cvss
+            unproxied_cve.cvss,
         )
 
         cve.setCVSSVectorForAuthority(
             authority="nvd",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
         )
 
         self.assertEqual(
             {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"},
-            unproxied_cve.cvss
+            unproxied_cve.cvss,
         )
 
     def test_setCVSSVectorForAuthority_add_new_when_initial_value_set(self):
         cve = self.factory.makeCVE(
-            sequence='2099-1234',
-            description='A critical vulnerability',
+            sequence="2099-1234",
+            description="A critical vulnerability",
             cvestate=CveStatus.CANDIDATE,
-            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
+            cvss={"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
         )
         unproxied_cve = removeSecurityProxy(cve)
         self.assertEqual(
             {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
-            unproxied_cve.cvss
+            unproxied_cve.cvss,
         )
 
         cve.setCVSSVectorForAuthority(
             authority="nist",
-            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+            vector_string="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
         )
 
         self.assertEqual(
             {
                 "nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-                "nist": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                "nist": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
             },
-            unproxied_cve.cvss
+            unproxied_cve.cvss,
         )

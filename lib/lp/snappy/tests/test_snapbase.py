@@ -10,11 +10,8 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesRegex,
     MatchesStructure,
-    )
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+)
+from zope.component import getAdapter, getUtility
 
 from lp.app.interfaces.security import IAuthorization
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -24,20 +21,17 @@ from lp.snappy.interfaces.snapbase import (
     ISnapBase,
     ISnapBaseSet,
     NoSuchSnapBase,
-    )
+)
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     api_url,
     celebrity_logged_in,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.testing.pages import webservice_for_person
 
 
@@ -67,7 +61,8 @@ class TestSnapBase(TestCaseWithFactory):
         self.assertEqual(snap_base, snap_base_set.getByName(snap_base_name))
         snap_base.destroySelf()
         self.assertRaises(
-            NoSuchSnapBase, snap_base_set.getByName, snap_base_name)
+            NoSuchSnapBase, snap_base_set.getByName, snap_base_name
+        )
 
     def test_destroySelf_refuses_default(self):
         snap_base = self.factory.makeSnapBase()
@@ -82,17 +77,21 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
     def setUp(self):
         super().setUp(user="foo.bar@canonical.com")
         self.unrestricted_procs = [
-            self.factory.makeProcessor() for _ in range(3)]
+            self.factory.makeProcessor() for _ in range(3)
+        ]
         self.restricted_procs = [
             self.factory.makeProcessor(restricted=True, build_by_default=False)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         self.procs = self.unrestricted_procs + self.restricted_procs
         self.factory.makeProcessor()
         self.distroseries = self.factory.makeDistroSeries()
         for processor in self.procs:
             self.factory.makeDistroArchSeries(
-                distroseries=self.distroseries, architecturetag=processor.name,
-                processor=processor)
+                distroseries=self.distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+            )
 
     def test_new_default_processors(self):
         # SnapBaseSet.new creates a SnapBaseArch for each available
@@ -101,7 +100,9 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
             registrant=self.factory.makePerson(),
             name=self.factory.getUniqueUnicode(),
             display_name=self.factory.getUniqueUnicode(),
-            distro_series=self.distroseries, build_channels={})
+            distro_series=self.distroseries,
+            build_channels={},
+        )
         self.assertContentEqual(self.procs, snap_base.processors)
 
     def test_new_override_processors(self):
@@ -110,8 +111,10 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
             registrant=self.factory.makePerson(),
             name=self.factory.getUniqueUnicode(),
             display_name=self.factory.getUniqueUnicode(),
-            distro_series=self.distroseries, build_channels={},
-            processors=self.procs[:2])
+            distro_series=self.distroseries,
+            build_channels={},
+            processors=self.procs[:2],
+        )
         self.assertContentEqual(self.procs[:2], snap_base.processors)
 
     def test_set(self):
@@ -150,15 +153,18 @@ class TestSnapBaseSet(TestCaseWithFactory):
         snap_base_set.setDefault(snap_bases[0])
         self.assertEqual(
             [True, False, False],
-            [snap_base.is_default for snap_base in snap_bases])
+            [snap_base.is_default for snap_base in snap_bases],
+        )
         snap_base_set.setDefault(snap_bases[1])
         self.assertEqual(
             [False, True, False],
-            [snap_base.is_default for snap_base in snap_bases])
+            [snap_base.is_default for snap_base in snap_bases],
+        )
         snap_base_set.setDefault(None)
         self.assertEqual(
             [False, False, False],
-            [snap_base.is_default for snap_base in snap_bases])
+            [snap_base.is_default for snap_base in snap_bases],
+        )
 
     def test_getAll(self):
         snap_bases = [self.factory.makeSnapBase() for _ in range(3)]
@@ -175,12 +181,17 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         distroseries_url = api_url(distroseries)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            "/+snap-bases", "new",
-            name="dummy", display_name="Dummy", distro_series=distroseries_url,
-            build_channels={"snapcraft": "stable"})
+            "/+snap-bases",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            distro_series=distroseries_url,
+            build_channels={"snapcraft": "stable"},
+        )
         self.assertEqual(401, response.status)
 
     def test_new(self):
@@ -189,26 +200,38 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         distroseries_url = api_url(distroseries)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_post(
-            "/+snap-bases", "new",
-            name="dummy", display_name="Dummy", distro_series=distroseries_url,
-            build_channels={"snapcraft": "stable"})
+            "/+snap-bases",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            distro_series=distroseries_url,
+            build_channels={"snapcraft": "stable"},
+        )
         self.assertEqual(201, response.status)
         snap_base = webservice.get(response.getHeader("Location")).jsonBody()
         with person_logged_in(person):
-            self.assertThat(snap_base, ContainsDict({
-                "registrant_link": Equals(
-                    webservice.getAbsoluteUrl(api_url(person))),
-                "name": Equals("dummy"),
-                "display_name": Equals("Dummy"),
-                "distro_series_link": Equals(
-                    webservice.getAbsoluteUrl(distroseries_url)),
-                "build_channels": Equals({"snapcraft": "stable"}),
-                "is_default": Is(False),
-                }))
+            self.assertThat(
+                snap_base,
+                ContainsDict(
+                    {
+                        "registrant_link": Equals(
+                            webservice.getAbsoluteUrl(api_url(person))
+                        ),
+                        "name": Equals("dummy"),
+                        "display_name": Equals("Dummy"),
+                        "distro_series_link": Equals(
+                            webservice.getAbsoluteUrl(distroseries_url)
+                        ),
+                        "build_channels": Equals({"snapcraft": "stable"}),
+                        "is_default": Is(False),
+                    }
+                ),
+            )
 
     def test_new_duplicate_name(self):
         # An attempt to create a SnapBase with a duplicate name is rejected.
@@ -216,32 +239,44 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         distroseries_url = api_url(distroseries)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_post(
-            "/+snap-bases", "new",
-            name="dummy", display_name="Dummy", distro_series=distroseries_url,
-            build_channels={"snapcraft": "stable"})
+            "/+snap-bases",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            distro_series=distroseries_url,
+            build_channels={"snapcraft": "stable"},
+        )
         self.assertEqual(201, response.status)
         response = webservice.named_post(
-            "/+snap-bases", "new",
-            name="dummy", display_name="Dummy", distro_series=distroseries_url,
-            build_channels={"snapcraft": "stable"})
+            "/+snap-bases",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            distro_series=distroseries_url,
+            build_channels={"snapcraft": "stable"},
+        )
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"name: dummy is already in use by another base.", response.body)
+            b"name: dummy is already in use by another base.", response.body
+        )
 
     def test_getByName(self):
         # lp.snap_bases.getByName returns a matching SnapBase.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         with celebrity_logged_in("registry_experts"):
             self.factory.makeSnapBase(name="dummy")
         response = webservice.named_get(
-            "/+snap-bases", "getByName", name="dummy")
+            "/+snap-bases", "getByName", name="dummy"
+        )
         self.assertEqual(200, response.status)
         self.assertEqual("dummy", response.jsonBody()["name"])
 
@@ -249,11 +284,13 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         # lp.snap_bases.getByName returns 404 for a non-existent SnapBase.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_get(
-            "/+snap-bases", "getByName", name="nonexistent")
+            "/+snap-bases", "getByName", name="nonexistent"
+        )
         self.assertEqual(404, response.status)
         self.assertEqual(b"No such base: 'nonexistent'.", response.body)
 
@@ -261,14 +298,16 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         # lp.snap_bases.getDefault returns the default SnapBase, if any.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_get("/+snap-bases", "getDefault")
         self.assertEqual(200, response.status)
         self.assertIsNone(response.jsonBody())
         with celebrity_logged_in("registry_experts"):
             getUtility(ISnapBaseSet).setDefault(
-                self.factory.makeSnapBase(name="default-base"))
+                self.factory.makeSnapBase(name="default-base")
+            )
             self.factory.makeSnapBase()
         response = webservice.named_get("/+snap-bases", "getDefault")
         self.assertEqual(200, response.status)
@@ -281,10 +320,12 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_base = self.factory.makeSnapBase()
             snap_base_url = api_url(snap_base)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            "/+snap-bases", "setDefault", snap_base=snap_base_url)
+            "/+snap-bases", "setDefault", snap_base=snap_base_url
+        )
         self.assertEqual(401, response.status)
 
     def test_setDefault(self):
@@ -294,20 +335,25 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_bases = [self.factory.makeSnapBase() for _ in range(3)]
             snap_base_urls = [api_url(snap_base) for snap_base in snap_bases]
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            "/+snap-bases", "setDefault", snap_base=snap_base_urls[0])
+            "/+snap-bases", "setDefault", snap_base=snap_base_urls[0]
+        )
         self.assertEqual(200, response.status)
         with person_logged_in(person):
             self.assertEqual(
-                snap_bases[0], getUtility(ISnapBaseSet).getDefault())
+                snap_bases[0], getUtility(ISnapBaseSet).getDefault()
+            )
         response = webservice.named_post(
-            "/+snap-bases", "setDefault", snap_base=snap_base_urls[1])
+            "/+snap-bases", "setDefault", snap_base=snap_base_urls[1]
+        )
         self.assertEqual(200, response.status)
         with person_logged_in(person):
             self.assertEqual(
-                snap_bases[1], getUtility(ISnapBaseSet).getDefault())
+                snap_bases[1], getUtility(ISnapBaseSet).getDefault()
+            )
 
     def test_addArchiveDependency_unpriv(self):
         # An unprivileged user cannot add an archive dependency.
@@ -318,14 +364,25 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_base_url = api_url(snap_base)
             archive_url = api_url(archive)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            snap_base_url, "addArchiveDependency",
-            dependency=archive_url, pocket="Release", component="main")
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401),
-            body=MatchesRegex(br".*addArchiveDependency.*launchpad.Edit.*")))
+            snap_base_url,
+            "addArchiveDependency",
+            dependency=archive_url,
+            pocket="Release",
+            component="main",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401),
+                body=MatchesRegex(
+                    rb".*addArchiveDependency.*launchpad.Edit.*"
+                ),
+            ),
+        )
 
     def test_addArchiveDependency(self):
         # A registry expert can add an archive dependency.
@@ -337,24 +394,36 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             archive_url = api_url(archive)
             self.assertEqual([], list(snap_base.dependencies))
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            snap_base_url, "addArchiveDependency",
-            dependency=archive_url, pocket="Release", component="main")
+            snap_base_url,
+            "addArchiveDependency",
+            dependency=archive_url,
+            pocket="Release",
+            component="main",
+        )
         self.assertEqual(201, response.status)
         with person_logged_in(person):
-            self.assertThat(list(snap_base.dependencies), MatchesListwise([
-                MatchesStructure(
-                    archive=Is(None),
-                    snap_base=Equals(snap_base),
-                    dependency=Equals(archive),
-                    pocket=Equals(PackagePublishingPocket.RELEASE),
-                    component=Equals(getUtility(IComponentSet)["main"]),
-                    component_name=Equals("main"),
-                    title=Equals(archive.displayname),
-                    ),
-                ]))
+            self.assertThat(
+                list(snap_base.dependencies),
+                MatchesListwise(
+                    [
+                        MatchesStructure(
+                            archive=Is(None),
+                            snap_base=Equals(snap_base),
+                            dependency=Equals(archive),
+                            pocket=Equals(PackagePublishingPocket.RELEASE),
+                            component=Equals(
+                                getUtility(IComponentSet)["main"]
+                            ),
+                            component_name=Equals("main"),
+                            title=Equals(archive.displayname),
+                        ),
+                    ]
+                ),
+            )
 
     def test_addArchiveDependency_invalid(self):
         # Invalid requests generate a BadRequest error.
@@ -363,17 +432,27 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_base = self.factory.makeSnapBase()
             archive = self.factory.makeArchive()
             snap_base.addArchiveDependency(
-                archive, PackagePublishingPocket.RELEASE)
+                archive, PackagePublishingPocket.RELEASE
+            )
             snap_base_url = api_url(snap_base)
             archive_url = api_url(archive)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            snap_base_url, "addArchiveDependency",
-            dependency=archive_url, pocket="Release", component="main")
-        self.assertThat(response, MatchesStructure.byEquality(
-            status=400, body=b"This dependency is already registered."))
+            snap_base_url,
+            "addArchiveDependency",
+            dependency=archive_url,
+            pocket="Release",
+            component="main",
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=400, body=b"This dependency is already registered."
+            ),
+        )
 
     def test_removeArchiveDependency_unpriv(self):
         # An unprivileged user cannot remove an archive dependency.
@@ -382,18 +461,26 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_base = self.factory.makeSnapBase()
             archive = self.factory.makeArchive()
             snap_base.addArchiveDependency(
-                archive, PackagePublishingPocket.RELEASE)
+                archive, PackagePublishingPocket.RELEASE
+            )
             snap_base_url = api_url(snap_base)
             archive_url = api_url(archive)
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            snap_base_url, "removeArchiveDependency", dependency=archive_url)
-        self.assertThat(response, MatchesStructure(
-            status=Equals(401),
-            body=MatchesRegex(
-                br".*removeArchiveDependency.*launchpad.Edit.*")))
+            snap_base_url, "removeArchiveDependency", dependency=archive_url
+        )
+        self.assertThat(
+            response,
+            MatchesStructure(
+                status=Equals(401),
+                body=MatchesRegex(
+                    rb".*removeArchiveDependency.*launchpad.Edit.*"
+                ),
+            ),
+        )
 
     def test_removeArchiveDependency(self):
         # A registry expert can remove an archive dependency.
@@ -402,50 +489,66 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             snap_base = self.factory.makeSnapBase()
             archive = self.factory.makeArchive()
             snap_base.addArchiveDependency(
-                archive, PackagePublishingPocket.RELEASE)
+                archive, PackagePublishingPocket.RELEASE
+            )
             snap_base_url = api_url(snap_base)
             archive_url = api_url(archive)
             self.assertNotEqual([], list(snap_base.dependencies))
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            snap_base_url, "removeArchiveDependency", dependency=archive_url)
+            snap_base_url, "removeArchiveDependency", dependency=archive_url
+        )
         self.assertEqual(200, response.status)
         with person_logged_in(person):
             self.assertEqual([], list(snap_base.dependencies))
 
     def setUpProcessors(self):
         self.unrestricted_procs = [
-            self.factory.makeProcessor() for _ in range(3)]
+            self.factory.makeProcessor() for _ in range(3)
+        ]
         self.unrestricted_proc_names = [
-            processor.name for processor in self.unrestricted_procs]
+            processor.name for processor in self.unrestricted_procs
+        ]
         self.restricted_procs = [
             self.factory.makeProcessor(restricted=True, build_by_default=False)
-            for _ in range(2)]
+            for _ in range(2)
+        ]
         self.restricted_proc_names = [
-            processor.name for processor in self.restricted_procs]
+            processor.name for processor in self.restricted_procs
+        ]
         self.procs = self.unrestricted_procs + self.restricted_procs
         self.factory.makeProcessor()
         self.distroseries = self.factory.makeDistroSeries()
         for processor in self.procs:
             self.factory.makeDistroArchSeries(
-                distroseries=self.distroseries, architecturetag=processor.name,
-                processor=processor)
+                distroseries=self.distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+            )
 
     def setProcessors(self, user, snap_base_url, names):
         ws = webservice_for_person(
-            user, permission=OAuthPermission.WRITE_PUBLIC)
+            user, permission=OAuthPermission.WRITE_PUBLIC
+        )
         return ws.named_post(
-            snap_base_url, "setProcessors",
+            snap_base_url,
+            "setProcessors",
             processors=["/+processors/%s" % name for name in names],
-            api_version="devel")
+            api_version="devel",
+        )
 
     def assertProcessors(self, user, snap_base_url, names):
-        body = webservice_for_person(user).get(
-            snap_base_url + "/processors", api_version="devel").jsonBody()
+        body = (
+            webservice_for_person(user)
+            .get(snap_base_url + "/processors", api_version="devel")
+            .jsonBody()
+        )
         self.assertContentEqual(
-            names, [entry["name"] for entry in body["entries"]])
+            names, [entry["name"] for entry in body["entries"]]
+        )
 
     def test_setProcessors_admin(self):
         """An admin can change the supported processor set."""
@@ -453,38 +556,47 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         with admin_logged_in():
             snap_base = self.factory.makeSnapBase(
                 distro_series=self.distroseries,
-                processors=self.unrestricted_procs)
+                processors=self.unrestricted_procs,
+            )
             snap_base_url = api_url(snap_base)
         admin = self.factory.makeAdministrator()
         self.assertProcessors(
-            admin, snap_base_url, self.unrestricted_proc_names)
+            admin, snap_base_url, self.unrestricted_proc_names
+        )
 
         response = self.setProcessors(
-            admin, snap_base_url,
-            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]])
+            admin,
+            snap_base_url,
+            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]],
+        )
         self.assertEqual(200, response.status)
         self.assertProcessors(
-            admin, snap_base_url,
-            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]])
+            admin,
+            snap_base_url,
+            [self.unrestricted_proc_names[0], self.restricted_proc_names[0]],
+        )
 
     def test_setProcessors_non_admin_forbidden(self):
         """Only admins and registry experts can call setProcessors."""
         self.setUpProcessors()
         with admin_logged_in():
             snap_base = self.factory.makeSnapBase(
-                distro_series=self.distroseries)
+                distro_series=self.distroseries
+            )
             snap_base_url = api_url(snap_base)
         person = self.factory.makePerson()
 
         response = self.setProcessors(
-            person, snap_base_url, [self.unrestricted_proc_names[0]])
+            person, snap_base_url, [self.unrestricted_proc_names[0]]
+        )
         self.assertEqual(401, response.status)
 
     def test_collection(self):
         # lp.snap_bases is a collection of all SnapBases.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         with celebrity_logged_in("registry_experts"):
             for i in range(3):
@@ -493,4 +605,5 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ["base-0", "base-1", "base-2"],
-            [entry["name"] for entry in response.jsonBody()["entries"]])
+            [entry["name"] for entry in response.jsonBody()["entries"]],
+        )

@@ -7,26 +7,17 @@ __all__ = [
     "CharmhubUploadJob",
     "CharmRecipeBuildJob",
     "CharmRecipeBuildJobType",
-    ]
+]
 
 from datetime import timedelta
 
-from lazr.delegates import delegate_to
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
-from storm.databases.postgres import JSON
-from storm.locals import (
-    Int,
-    Reference,
-    )
 import transaction
+from lazr.delegates import delegate_to
+from lazr.enum import DBEnumeratedType, DBItem
+from storm.databases.postgres import JSON
+from storm.locals import Int, Reference
 from zope.component import getUtility
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
 from lp.charms.interfaces.charmhubclient import (
@@ -38,24 +29,18 @@ from lp.charms.interfaces.charmhubclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotReviewedYetResponse,
-    )
+)
 from lp.charms.interfaces.charmrecipebuildjob import (
     ICharmhubUploadJob,
     ICharmhubUploadJobSource,
     ICharmRecipeBuildJob,
-    )
+)
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import (
-    EnumeratedSubclass,
-    Job,
-    )
+from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.snapshot import notify_modified
@@ -64,11 +49,14 @@ from lp.services.webapp.snapshot import notify_modified
 class CharmRecipeBuildJobType(DBEnumeratedType):
     """Values that `ICharmRecipeBuildJob.job_type` can take."""
 
-    CHARMHUB_UPLOAD = DBItem(0, """
+    CHARMHUB_UPLOAD = DBItem(
+        0,
+        """
         Charmhub upload
 
         This job uploads a charm recipe build to Charmhub.
-        """)
+        """,
+    )
 
 
 @implementer(ICharmRecipeBuildJob)
@@ -110,8 +98,8 @@ class CharmRecipeBuildJob(StormBase):
 
 @delegate_to(ICharmRecipeBuildJob)
 class CharmRecipeBuildJobDerived(
-        BaseRunnableJob, metaclass=EnumeratedSubclass):
-
+    BaseRunnableJob, metaclass=EnumeratedSubclass
+):
     def __init__(self, charm_recipe_build_job):
         self.context = charm_recipe_build_job
 
@@ -119,8 +107,12 @@ class CharmRecipeBuildJobDerived(
         """An informative representation of the job."""
         recipe = self.build.recipe
         return "<%s for ~%s/%s/+charm/%s/+build/%d>" % (
-            self.__class__.__name__, recipe.owner.name, recipe.project.name,
-            recipe.name, self.build.id)
+            self.__class__.__name__,
+            recipe.owner.name,
+            recipe.project.name,
+            recipe.name,
+            self.build.id,
+        )
 
     @classmethod
     def get(cls, job_id):
@@ -132,11 +124,13 @@ class CharmRecipeBuildJobDerived(
             or its `job_type` does not match the desired subclass.
         """
         charm_recipe_build_job = IStore(CharmRecipeBuildJob).get(
-            CharmRecipeBuildJob, job_id)
+            CharmRecipeBuildJob, job_id
+        )
         if charm_recipe_build_job.job_type != cls.class_job_type:
             raise NotFoundError(
-                "No object found with id %d and type %s" %
-                (job_id, cls.class_job_type.title))
+                "No object found with id %d and type %s"
+                % (job_id, cls.class_job_type.title)
+            )
         return cls(charm_recipe_build_job)
 
     @classmethod
@@ -146,21 +140,24 @@ class CharmRecipeBuildJobDerived(
             CharmRecipeBuildJob,
             CharmRecipeBuildJob.job_type == cls.class_job_type,
             CharmRecipeBuildJob.job == Job.id,
-            Job.id.is_in(Job.ready_jobs))
+            Job.id.is_in(Job.ready_jobs),
+        )
         return (cls(job) for job in jobs)
 
     def getOopsVars(self):
         """See `IRunnableJob`."""
         oops_vars = super().getOopsVars()
         recipe = self.context.build.recipe
-        oops_vars.extend([
-            ("job_id", self.context.job.id),
-            ("job_type", self.context.job_type.title),
-            ("build_id", self.context.build.id),
-            ("recipe_owner_name", recipe.owner.name),
-            ("recipe_project_name", recipe.project.name),
-            ("recipe_name", recipe.name),
-            ])
+        oops_vars.extend(
+            [
+                ("job_id", self.context.job.id),
+                ("job_type", self.context.job_type.title),
+                ("build_id", self.context.build.id),
+                ("recipe_owner_name", recipe.owner.name),
+                ("recipe_project_name", recipe.project.name),
+                ("recipe_name", recipe.name),
+            ]
+        )
         return oops_vars
 
 
@@ -179,7 +176,7 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         UnauthorizedUploadResponse,
         ReviewFailedResponse,
         ReleaseFailedResponse,
-        )
+    )
 
     retry_error_types = (UploadNotReviewedYetResponse, RetryableCharmhubError)
     max_retries = 30
@@ -192,7 +189,8 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         edited_fields = set()
         with notify_modified(build, edited_fields) as before_modification:
             charm_recipe_build_job = CharmRecipeBuildJob(
-                build, cls.class_job_type, {})
+                build, cls.class_job_type, {}
+            )
             job = cls(charm_recipe_build_job)
             job.celeryRunOnCommit()
             del get_property_cache(build).last_store_upload_job
@@ -267,12 +265,14 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
     # the individual Job lifecycle methods instead.
-    def _do_lifecycle(self, method_name, manage_transaction=False,
-                      *args, **kwargs):
+    def _do_lifecycle(
+        self, method_name, manage_transaction=False, *args, **kwargs
+    ):
         edited_fields = set()
         with notify_modified(self.build, edited_fields) as before_modification:
             getattr(super(), method_name)(
-                *args, manage_transaction=manage_transaction, **kwargs)
+                *args, manage_transaction=manage_transaction, **kwargs
+            )
             upload_status = self.build.store_upload_status
             if upload_status != before_modification.store_upload_status:
                 edited_fields.add("store_upload_status")
@@ -324,9 +324,13 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
         try:
             try:
                 charm_lfa = next(
-                    (lfa for _, lfa, _ in self.build.getFiles()
-                     if lfa.filename.endswith(".charm")),
-                    None)
+                    (
+                        lfa
+                        for _, lfa, _ in self.build.getFiles()
+                        if lfa.filename.endswith(".charm")
+                    ),
+                    None,
+                )
                 if charm_lfa is None:
                     # Nothing to do.
                     self.error_message = None
@@ -341,11 +345,13 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
                     self.attempt_count = 1
                 if self.store_revision is None:
                     self.store_revision = client.checkStatus(
-                        self.build, self.status_url)
+                        self.build, self.status_url
+                    )
                     if self.store_revision is None:
                         raise AssertionError(
                             "checkStatus returned successfully but with no "
-                            "revision")
+                            "revision"
+                        )
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
                 if self.build.recipe.store_channels:
@@ -354,21 +360,27 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
             except self.retry_error_types:
                 raise
             except Exception as e:
-                if (isinstance(e, CharmhubError) and e.can_retry and
-                        self.attempt_count <= self.max_retries):
+                if (
+                    isinstance(e, CharmhubError)
+                    and e.can_retry
+                    and self.attempt_count <= self.max_retries
+                ):
                     raise RetryableCharmhubError(e.args[0], detail=e.detail)
                 self.error_message = str(e)
                 self.error_detail = getattr(e, "detail", None)
                 mailer_factory = None
                 if isinstance(e, UnauthorizedUploadResponse):
                     mailer_factory = (
-                        CharmRecipeBuildMailer.forUnauthorizedUpload)
+                        CharmRecipeBuildMailer.forUnauthorizedUpload
+                    )
                 elif isinstance(e, UploadFailedResponse):
                     mailer_factory = CharmRecipeBuildMailer.forUploadFailure
                 elif isinstance(
-                        e, (BadReviewStatusResponse, ReviewFailedResponse)):
+                    e, (BadReviewStatusResponse, ReviewFailedResponse)
+                ):
                     mailer_factory = (
-                        CharmRecipeBuildMailer.forUploadReviewFailure)
+                        CharmRecipeBuildMailer.forUploadReviewFailure
+                    )
                 elif isinstance(e, ReleaseFailedResponse):
                     mailer_factory = CharmRecipeBuildMailer.forReleaseFailure
                 if mailer_factory is not None:

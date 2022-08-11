@@ -12,17 +12,13 @@ from zope.security.management import setSecurityPolicy
 from lp.services.testing import build_test_suite
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
     setUp,
     tearDown,
-    )
-
+)
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -51,38 +47,43 @@ def zopelessLaunchpadSecurityTearDown(test):
 
 
 special = {
-    'codeimport-machine.txt': LayeredDocFileSuite(
-        '../doc/codeimport-machine.txt',
+    "codeimport-machine.rst": LayeredDocFileSuite(
+        "../doc/codeimport-machine.rst",
         setUp=zopelessLaunchpadSecuritySetUp,
         tearDown=zopelessLaunchpadSecurityTearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'revision.txt': LayeredDocFileSuite(
-        '../doc/revision.txt',
-        setUp=branchscannerSetUp, tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
-    'codeimport-result.txt': LayeredDocFileSuite(
-        '../doc/codeimport-result.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "revision.rst": LayeredDocFileSuite(
+        "../doc/revision.rst",
+        setUp=branchscannerSetUp,
+        tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+    ),
+    "codeimport-result.rst": LayeredDocFileSuite(
+        "../doc/codeimport-result.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
-        ),
-    'branch-merge-proposal-notifications.txt': LayeredDocFileSuite(
-        '../doc/branch-merge-proposal-notifications.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "branch-merge-proposal-notifications.rst": LayeredDocFileSuite(
+        "../doc/branch-merge-proposal-notifications.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'branch-notifications.txt': LayeredDocFileSuite(
-        '../doc/branch-notifications.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "branch-notifications.rst": LayeredDocFileSuite(
+        "../doc/branch-notifications.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    'codereviewcomment.txt': LayeredDocFileSuite(
-        '../doc/codereviewcomment.txt',
-        setUp=setUp, tearDown=tearDown,
+    ),
+    "codereviewcomment.rst": LayeredDocFileSuite(
+        "../doc/codereviewcomment.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=LaunchpadZopelessLayer,
-        ),
-    }
+    ),
+}
 
 
 def test_suite():

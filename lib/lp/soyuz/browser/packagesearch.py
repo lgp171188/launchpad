@@ -1,9 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    'PackageSearchViewBase'
-    ]
+__all__ = ["PackageSearchViewBase"]
 
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.batching import BatchNavigator
@@ -24,7 +22,7 @@ class PackageSearchViewBase(LaunchpadView):
             self.text = self.text.strip()
             # We need to ensure the form on the refreshed page shows the
             # correct text.
-            self.request.form['text'] = self.text
+            self.request.form["text"] = self.text
 
     @property
     def search_requested(self):
@@ -60,4 +58,4 @@ class PackageSearchViewBase(LaunchpadView):
         """Call the context specific search."""
         raise NotImplementedError(
             "do_context_specific_search needs to be implemented in sub-class"
-            )
+        )

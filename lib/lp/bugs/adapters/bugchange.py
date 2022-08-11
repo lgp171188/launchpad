@@ -4,89 +4,85 @@
 """Implementations for bug changes."""
 
 __all__ = [
-    'ATTACHMENT_ADDED',
-    'ATTACHMENT_REMOVED',
-    'BRANCH_LINKED',
-    'BRANCH_UNLINKED',
-    'BranchLinkedToBug',
-    'BranchUnlinkedFromBug',
-    'BUG_WATCH_ADDED',
-    'BUG_WATCH_REMOVED',
-    'BugAttachmentChange',
-    'BugConvertedToQuestion',
-    'BugDescriptionChange',
-    'BugDuplicateChange',
-    'BugInformationTypeChange',
-    'BugLocked',
-    'BugLockReasonSet',
-    'BugTagsChange',
-    'BugTaskAdded',
-    'BugTaskAssigneeChange',
-    'BugTaskBugWatchChange',
-    'BugTaskDeleted',
-    'BugTaskImportanceChange',
-    'BugTaskMilestoneChange',
-    'BugTaskStatusChange',
-    'BugTaskTargetChange',
-    'BugTitleChange',
-    'BugUnlocked',
-    'BugWatchAdded',
-    'BugWatchRemoved',
-    'CHANGED_DUPLICATE_MARKER',
-    'CVE_LINKED',
-    'CVE_UNLINKED',
-    'CveLinkedToBug',
-    'CveUnlinkedFromBug',
-    'get_bug_change_class',
-    'get_bug_changes',
-    'MARKED_AS_DUPLICATE',
-    'MERGE_PROPOSAL_LINKED',
-    'MERGE_PROPOSAL_UNLINKED',
-    'MergeProposalLinkedToBug',
-    'MergeProposalUnlinkedFromBug',
-    'REMOVED_DUPLICATE_MARKER',
-    'REMOVED_SUBSCRIBER',
-    'SeriesNominated',
-    'UnsubscribedFromBug',
-    ]
+    "ATTACHMENT_ADDED",
+    "ATTACHMENT_REMOVED",
+    "BRANCH_LINKED",
+    "BRANCH_UNLINKED",
+    "BranchLinkedToBug",
+    "BranchUnlinkedFromBug",
+    "BUG_WATCH_ADDED",
+    "BUG_WATCH_REMOVED",
+    "BugAttachmentChange",
+    "BugConvertedToQuestion",
+    "BugDescriptionChange",
+    "BugDuplicateChange",
+    "BugInformationTypeChange",
+    "BugLocked",
+    "BugLockReasonSet",
+    "BugTagsChange",
+    "BugTaskAdded",
+    "BugTaskAssigneeChange",
+    "BugTaskBugWatchChange",
+    "BugTaskDeleted",
+    "BugTaskImportanceChange",
+    "BugTaskMilestoneChange",
+    "BugTaskStatusChange",
+    "BugTaskTargetChange",
+    "BugTitleChange",
+    "BugUnlocked",
+    "BugWatchAdded",
+    "BugWatchRemoved",
+    "CHANGED_DUPLICATE_MARKER",
+    "CVE_LINKED",
+    "CVE_UNLINKED",
+    "CveLinkedToBug",
+    "CveUnlinkedFromBug",
+    "get_bug_change_class",
+    "get_bug_changes",
+    "MARKED_AS_DUPLICATE",
+    "MERGE_PROPOSAL_LINKED",
+    "MERGE_PROPOSAL_UNLINKED",
+    "MergeProposalLinkedToBug",
+    "MergeProposalUnlinkedFromBug",
+    "REMOVED_DUPLICATE_MARKER",
+    "REMOVED_SUBSCRIBER",
+    "SeriesNominated",
+    "UnsubscribedFromBug",
+]
 
 from textwrap import dedent
 
 from zope.interface import implementer
 from zope.security.proxy import isinstance as zope_isinstance
 
-from lp.bugs.enums import (
-    BugLockStatus,
-    BugNotificationLevel,
-    )
+from lp.bugs.enums import BugLockStatus, BugNotificationLevel
 from lp.bugs.interfaces.bugchange import IBugChange
 from lp.bugs.interfaces.bugtask import (
-    IBugTask,
     RESOLVED_BUGTASK_STATUSES,
     UNRESOLVED_BUGTASK_STATUSES,
-    )
+    IBugTask,
+)
 from lp.registry.interfaces.product import IProduct
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
-
 
 # These are used lp.bugs.model.bugactivity.BugActivity.attribute to normalize
 # the output from these change objects into the attribute that actually
 # changed.  It is fragile, but a reasonable incremental step.
 ATTACHMENT_ADDED = "attachment added"
 ATTACHMENT_REMOVED = "attachment removed"
-BRANCH_LINKED = 'branch linked'
-BRANCH_UNLINKED = 'branch unlinked'
-BUG_WATCH_ADDED = 'bug watch added'
-BUG_WATCH_REMOVED = 'bug watch removed'
-CHANGED_DUPLICATE_MARKER = 'changed duplicate marker'
-CVE_LINKED = 'cve linked'
-CVE_UNLINKED = 'cve unlinked'
-MARKED_AS_DUPLICATE = 'marked as duplicate'
-MERGE_PROPOSAL_LINKED = 'merge proposal linked'
-MERGE_PROPOSAL_UNLINKED = 'merge proposal unlinked'
-REMOVED_DUPLICATE_MARKER = 'removed duplicate marker'
-REMOVED_SUBSCRIBER = 'removed subscriber'
+BRANCH_LINKED = "branch linked"
+BRANCH_UNLINKED = "branch unlinked"
+BUG_WATCH_ADDED = "bug watch added"
+BUG_WATCH_REMOVED = "bug watch removed"
+CHANGED_DUPLICATE_MARKER = "changed duplicate marker"
+CVE_LINKED = "cve linked"
+CVE_UNLINKED = "cve unlinked"
+MARKED_AS_DUPLICATE = "marked as duplicate"
+MERGE_PROPOSAL_LINKED = "merge proposal linked"
+MERGE_PROPOSAL_UNLINKED = "merge proposal unlinked"
+REMOVED_DUPLICATE_MARKER = "removed duplicate marker"
+REMOVED_SUBSCRIBER = "removed subscriber"
 
 
 class NoBugChangeFoundError(Exception):
@@ -106,7 +102,8 @@ def get_bug_change_class(obj, field_name):
     except KeyError:
         raise NoBugChangeFoundError(
             "Unable to find a suitable BugChange for field '%s' on object "
-            "%s" % (field_name, obj))
+            "%s" % (field_name, obj)
+        )
 
 
 def get_bug_changes(bug_delta):
@@ -114,15 +111,25 @@ def get_bug_changes(bug_delta):
     # The order of the field names in this list is important; this is
     # the order in which changes will appear both in the bug activity
     # log and in notification emails.
-    bug_change_field_names = ['duplicateof', 'title', 'description',
-        'information_type', 'tags', 'attachment']
+    bug_change_field_names = [
+        "duplicateof",
+        "title",
+        "description",
+        "information_type",
+        "tags",
+        "attachment",
+    ]
     for field_name in bug_change_field_names:
         field_delta = getattr(bug_delta, field_name)
         if field_delta is not None:
             bug_change_class = get_bug_change_class(bug_delta.bug, field_name)
             yield bug_change_class(
-                when=None, person=bug_delta.user, what_changed=field_name,
-                old_value=field_delta['old'], new_value=field_delta['new'])
+                when=None,
+                person=bug_delta.user,
+                what_changed=field_name,
+                old_value=field_delta["old"],
+                new_value=field_delta["new"],
+            )
 
     if bug_delta.bugtask_deltas is not None:
         bugtask_deltas = bug_delta.bugtask_deltas
@@ -133,21 +140,30 @@ def get_bug_changes(bug_delta):
 
         # The order here is important; see bug_change_field_names.
         bugtask_change_field_names = [
-            'target', 'importance', 'status', 'milestone', 'bugwatch',
-            'assignee', 'importance_explanation', 'status_explanation',
-            ]
+            "target",
+            "importance",
+            "status",
+            "milestone",
+            "bugwatch",
+            "assignee",
+            "importance_explanation",
+            "status_explanation",
+        ]
         for bugtask_delta in bugtask_deltas:
             for field_name in bugtask_change_field_names:
                 field_delta = getattr(bugtask_delta, field_name)
                 if field_delta is not None:
                     bug_change_class = get_bug_change_class(
-                        bugtask_delta.bugtask, field_name)
+                        bugtask_delta.bugtask, field_name
+                    )
                     yield bug_change_class(
                         bug_task=bugtask_delta.bugtask,
-                        when=None, person=bug_delta.user,
+                        when=None,
+                        person=bug_delta.user,
                         what_changed=field_name,
-                        old_value=field_delta['old'],
-                        new_value=field_delta['new'])
+                        old_value=field_delta["old"],
+                        new_value=field_delta["new"],
+                    )
 
 
 @implementer(IBugChange)
@@ -182,10 +198,10 @@ class AttributeChange(BugChangeBase):
     def getBugActivity(self):
         """Return the BugActivity data for the textual change."""
         return {
-            'newvalue': self.new_value,
-            'oldvalue': self.old_value,
-            'whatchanged': self.what_changed,
-            }
+            "newvalue": self.new_value,
+            "oldvalue": self.old_value,
+            "whatchanged": self.what_changed,
+        }
 
 
 class UnsubscribedFromBug(BugChangeBase):
@@ -194,20 +210,20 @@ class UnsubscribedFromBug(BugChangeBase):
     def __init__(self, when, person, unsubscribed_user, **kwargs):
         super().__init__(when, person)
         self.unsubscribed_user = unsubscribed_user
-        self.send_notification = kwargs.get('send_notification', False)
-        self.notification_text = kwargs.get('notification_text')
+        self.send_notification = kwargs.get("send_notification", False)
+        self.notification_text = kwargs.get("notification_text")
 
     def getBugActivity(self):
         """See `IBugChange`."""
         return dict(
-            whatchanged='%s %s' % (
-                REMOVED_SUBSCRIBER,
-                self.unsubscribed_user.displayname))
+            whatchanged="%s %s"
+            % (REMOVED_SUBSCRIBER, self.unsubscribed_user.displayname)
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         if self.send_notification and self.notification_text:
-            return {'text': '** %s' % self.notification_text}
+            return {"text": "** %s" % self.notification_text}
         else:
             return None
 
@@ -222,16 +238,17 @@ class BugConvertedToQuestion(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange`."""
         return dict(
-            whatchanged='converted to question',
-            newvalue=str(self.question.id))
+            whatchanged="converted to question", newvalue=str(self.question.id)
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
-                '** Converted to question:\n'
-                '   %s' % canonical_url(self.question)),
-            }
+            "text": (
+                "** Converted to question:\n"
+                "   %s" % canonical_url(self.question)
+            ),
+        }
 
 
 class BugTaskAdded(BugChangeBase):
@@ -246,30 +263,31 @@ class BugTaskAdded(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange`."""
         return dict(
-            whatchanged='bug task added',
-            newvalue=self.bug_task.bugtargetname)
+            whatchanged="bug task added", newvalue=self.bug_task.bugtargetname
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         lines = []
         if self.bug_task.bugwatch:
-            lines.append("** Also affects: %s via" % (
-                self.bug_task.bugtargetname))
+            lines.append(
+                "** Also affects: %s via" % (self.bug_task.bugtargetname)
+            )
             lines.append("   %s" % self.bug_task.bugwatch.url)
         else:
-            lines.append("** Also affects: %s" % (
-                self.bug_task.bugtargetname))
-        lines.append("%13s: %s" % (
-            "Importance", self.bug_task.importance.title))
+            lines.append("** Also affects: %s" % (self.bug_task.bugtargetname))
+        lines.append(
+            "%13s: %s" % ("Importance", self.bug_task.importance.title)
+        )
         if self.bug_task.assignee:
             assignee = self.bug_task.assignee
-            lines.append("%13s: %s" % (
-                "Assignee", assignee.unique_displayname))
-        lines.append("%13s: %s" % (
-            "Status", self.bug_task.status.title))
+            lines.append(
+                "%13s: %s" % ("Assignee", assignee.unique_displayname)
+            )
+        lines.append("%13s: %s" % ("Status", self.bug_task.status.title))
         return {
-            'text': '\n'.join(lines),
-            }
+            "text": "\n".join(lines),
+        }
 
 
 class BugTaskDeleted(BugChangeBase):
@@ -283,16 +301,13 @@ class BugTaskDeleted(BugChangeBase):
 
     def getBugActivity(self):
         """See `IBugChange`."""
-        return dict(
-            whatchanged='bug task deleted',
-            oldvalue=self.targetname)
+        return dict(whatchanged="bug task deleted", oldvalue=self.targetname)
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
-                "** No longer affects: %s" % self.targetname),
-            }
+            "text": ("** No longer affects: %s" % self.targetname),
+        }
 
 
 class SeriesNominated(BugChangeBase):
@@ -305,8 +320,9 @@ class SeriesNominated(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange`."""
         return dict(
-            whatchanged='nominated for series',
-            newvalue=self.series.bugtargetname)
+            whatchanged="nominated for series",
+            newvalue=self.series.bugtargetname,
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
@@ -322,19 +338,21 @@ class BugWatchAdded(BugChangeBase):
 
     def getBugActivity(self):
         """See `IBugChange`."""
-        return dict(
-            whatchanged=BUG_WATCH_ADDED,
-            newvalue=self.bug_watch.url)
+        return dict(whatchanged=BUG_WATCH_ADDED, newvalue=self.bug_watch.url)
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
+            "text": (
                 "** Bug watch added: %s #%s\n"
-                "   %s" % (
-                    self.bug_watch.bugtracker.title, self.bug_watch.remotebug,
-                    self.bug_watch.url)),
-            }
+                "   %s"
+                % (
+                    self.bug_watch.bugtracker.title,
+                    self.bug_watch.remotebug,
+                    self.bug_watch.url,
+                )
+            ),
+        }
 
 
 class BugWatchRemoved(BugChangeBase):
@@ -346,19 +364,21 @@ class BugWatchRemoved(BugChangeBase):
 
     def getBugActivity(self):
         """See `IBugChange`."""
-        return dict(
-            whatchanged=BUG_WATCH_REMOVED,
-            oldvalue=self.bug_watch.url)
+        return dict(whatchanged=BUG_WATCH_REMOVED, oldvalue=self.bug_watch.url)
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
+            "text": (
                 "** Bug watch removed: %s #%s\n"
-                "   %s" % (
-                    self.bug_watch.bugtracker.title, self.bug_watch.remotebug,
-                    self.bug_watch.url)),
-            }
+                "   %s"
+                % (
+                    self.bug_watch.bugtracker.title,
+                    self.bug_watch.remotebug,
+                    self.bug_watch.url,
+                )
+            ),
+        }
 
 
 class BranchLinkedToBug(BugChangeBase):
@@ -374,14 +394,14 @@ class BranchLinkedToBug(BugChangeBase):
         if self.branch.private:
             return None
         return dict(
-            whatchanged=BRANCH_LINKED,
-            newvalue=self.branch.bzr_identity)
+            whatchanged=BRANCH_LINKED, newvalue=self.branch.bzr_identity
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         if self.branch.private or self.bug.is_complete:
             return None
-        return {'text': '** Branch linked: %s' % self.branch.bzr_identity}
+        return {"text": "** Branch linked: %s" % self.branch.bzr_identity}
 
 
 class BranchUnlinkedFromBug(BugChangeBase):
@@ -397,14 +417,14 @@ class BranchUnlinkedFromBug(BugChangeBase):
         if self.branch.private:
             return None
         return dict(
-            whatchanged=BRANCH_UNLINKED,
-            oldvalue=self.branch.bzr_identity)
+            whatchanged=BRANCH_UNLINKED, oldvalue=self.branch.bzr_identity
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         if self.branch.private or self.bug.is_complete:
             return None
-        return {'text': '** Branch unlinked: %s' % self.branch.bzr_identity}
+        return {"text": "** Branch unlinked: %s" % self.branch.bzr_identity}
 
 
 class MergeProposalLinkedToBug(BugChangeBase):
@@ -421,17 +441,19 @@ class MergeProposalLinkedToBug(BugChangeBase):
             return None
         return dict(
             whatchanged=MERGE_PROPOSAL_LINKED,
-            newvalue=canonical_url(self.merge_proposal))
+            newvalue=canonical_url(self.merge_proposal),
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         if self.merge_proposal.private or self.bug.is_complete:
             return None
         return {
-            'text': (
-                '** Merge proposal linked:\n'
-                '   %s' % canonical_url(self.merge_proposal)),
-            }
+            "text": (
+                "** Merge proposal linked:\n"
+                "   %s" % canonical_url(self.merge_proposal)
+            ),
+        }
 
 
 class MergeProposalUnlinkedFromBug(BugChangeBase):
@@ -448,17 +470,19 @@ class MergeProposalUnlinkedFromBug(BugChangeBase):
             return None
         return dict(
             whatchanged=MERGE_PROPOSAL_UNLINKED,
-            oldvalue=canonical_url(self.merge_proposal))
+            oldvalue=canonical_url(self.merge_proposal),
+        )
 
     def getBugNotification(self):
         """See `IBugChange`."""
         if self.merge_proposal.private or self.bug.is_complete:
             return None
         return {
-            'text': (
-                '** Merge proposal unlinked:\n'
-                '   %s' % canonical_url(self.merge_proposal)),
-            }
+            "text": (
+                "** Merge proposal unlinked:\n"
+                "   %s" % canonical_url(self.merge_proposal)
+            ),
+        }
 
 
 class BugDescriptionChange(AttributeChange):
@@ -466,23 +490,26 @@ class BugDescriptionChange(AttributeChange):
 
     def getBugNotification(self):
         from lp.services.mail.notification import get_unified_diff
-        description_diff = get_unified_diff(
-            self.old_value, self.new_value, 72)
-        notification_text = (
-            "** Description changed:\n\n%s" % description_diff)
-        return {'text': notification_text}
+
+        description_diff = get_unified_diff(self.old_value, self.new_value, 72)
+        notification_text = "** Description changed:\n\n%s" % description_diff
+        return {"text": notification_text}
 
 
 def _is_status_change_lifecycle_change(old_status, new_status):
     """Is a status change a lifecycle change?"""
     # Bug is moving from one of unresolved bug statuses (like
     # 'in progress') to one of resolved ('fix released').
-    bug_is_closed = (old_status in UNRESOLVED_BUGTASK_STATUSES and
-                     new_status in RESOLVED_BUGTASK_STATUSES)
+    bug_is_closed = (
+        old_status in UNRESOLVED_BUGTASK_STATUSES
+        and new_status in RESOLVED_BUGTASK_STATUSES
+    )
 
     # Bug is moving back from one of resolved bug statuses (reopening).
-    bug_is_reopened = (old_status in RESOLVED_BUGTASK_STATUSES and
-                       new_status in UNRESOLVED_BUGTASK_STATUSES)
+    bug_is_reopened = (
+        old_status in RESOLVED_BUGTASK_STATUSES
+        and new_status in UNRESOLVED_BUGTASK_STATUSES
+    )
     return bug_is_closed or bug_is_reopened
 
 
@@ -498,17 +525,19 @@ class BugDuplicateChange(AttributeChange):
             # Bug was already a duplicate of one bug,
             # and we are changing it to be a duplicate of another bug.
             lifecycle = _is_status_change_lifecycle_change(
-                old_bug.default_bugtask.status,
-                new_bug.default_bugtask.status)
+                old_bug.default_bugtask.status, new_bug.default_bugtask.status
+            )
         elif new_bug is not None:
             # old_bug is None here, so we are just adding a duplicate marker.
-            lifecycle = (new_bug.default_bugtask.status in
-                         RESOLVED_BUGTASK_STATUSES)
+            lifecycle = (
+                new_bug.default_bugtask.status in RESOLVED_BUGTASK_STATUSES
+            )
         elif old_bug is not None:
             # Unmarking a bug as duplicate.  This is lifecycle change
             # only if bug has been reopened as a result.
-            lifecycle = (old_bug.default_bugtask.status in
-                         RESOLVED_BUGTASK_STATUSES)
+            lifecycle = (
+                old_bug.default_bugtask.status in RESOLVED_BUGTASK_STATUSES
+            )
         else:
             pass
 
@@ -520,42 +549,47 @@ class BugDuplicateChange(AttributeChange):
     def getBugActivity(self):
         if self.old_value is not None and self.new_value is not None:
             return {
-                'whatchanged': CHANGED_DUPLICATE_MARKER,
-                'oldvalue': str(self.old_value.id),
-                'newvalue': str(self.new_value.id),
-                }
+                "whatchanged": CHANGED_DUPLICATE_MARKER,
+                "oldvalue": str(self.old_value.id),
+                "newvalue": str(self.new_value.id),
+            }
         elif self.old_value is None:
             return {
-                'whatchanged': MARKED_AS_DUPLICATE,
-                'newvalue': str(self.new_value.id),
-                }
+                "whatchanged": MARKED_AS_DUPLICATE,
+                "newvalue": str(self.new_value.id),
+            }
         elif self.new_value is None:
             return {
-                'whatchanged': REMOVED_DUPLICATE_MARKER,
-                'oldvalue': str(self.old_value.id),
-                }
+                "whatchanged": REMOVED_DUPLICATE_MARKER,
+                "oldvalue": str(self.old_value.id),
+            }
         else:
             raise AssertionError(
-                "There is no change: both the old bug and new bug are None.")
+                "There is no change: both the old bug and new bug are None."
+            )
 
     def getBugNotification(self):
         if self.old_value is not None and self.new_value is not None:
             if self.old_value.private:
                 old_value_text = (
                     "** This bug is no longer a duplicate of private bug "
-                    "%d" % self.old_value.id)
+                    "%d" % self.old_value.id
+                )
             else:
                 old_value_text = (
                     "** This bug is no longer a duplicate of bug %d\n"
-                    "   %s" % (self.old_value.id, self.old_value.title))
+                    "   %s" % (self.old_value.id, self.old_value.title)
+                )
             if self.new_value.private:
                 new_value_text = (
                     "** This bug has been marked a duplicate of private bug "
-                    "%d" % self.new_value.id)
+                    "%d" % self.new_value.id
+                )
             else:
                 new_value_text = (
                     "** This bug has been marked a duplicate of bug %d\n"
-                    "   %s" % (self.new_value.id, self.new_value.title))
+                    "   %s" % (self.new_value.id, self.new_value.title)
+                )
 
             text = "\n".join((old_value_text, new_value_text))
 
@@ -563,27 +597,32 @@ class BugDuplicateChange(AttributeChange):
             if self.new_value.private:
                 text = (
                     "** This bug has been marked a duplicate of private bug "
-                    "%d" % self.new_value.id)
+                    "%d" % self.new_value.id
+                )
             else:
                 text = (
                     "** This bug has been marked a duplicate of bug %d\n"
-                    "   %s" % (self.new_value.id, self.new_value.title))
+                    "   %s" % (self.new_value.id, self.new_value.title)
+                )
 
         elif self.new_value is None:
             if self.old_value.private:
                 text = (
                     "** This bug is no longer a duplicate of private bug "
-                    "%d" % self.old_value.id)
+                    "%d" % self.old_value.id
+                )
             else:
                 text = (
                     "** This bug is no longer a duplicate of bug %d\n"
-                    "   %s" % (self.old_value.id, self.old_value.title))
+                    "   %s" % (self.old_value.id, self.old_value.title)
+                )
 
         else:
             raise AssertionError(
-                "There is no change: both the old bug and new bug are None.")
+                "There is no change: both the old bug and new bug are None."
+            )
 
-        return {'text': text}
+        return {"text": text}
 
 
 class BugTitleChange(AttributeChange):
@@ -595,16 +634,19 @@ class BugTitleChange(AttributeChange):
         # We return 'summary' instead of 'title' for title changes
         # because the bug's title is referred to as its summary in the
         # UI.
-        activity['whatchanged'] = 'summary'
+        activity["whatchanged"] = "summary"
         return activity
 
     def getBugNotification(self):
-        notification_text = dedent("""\
+        notification_text = dedent(
+            """\
             ** Summary changed:
 
             - %s
-            + %s""" % (self.old_value, self.new_value))
-        return {'text': notification_text}
+            + %s"""
+            % (self.old_value, self.new_value)
+        )
+        return {"text": notification_text}
 
 
 class BugInformationTypeChange(AttributeChange):
@@ -612,15 +654,16 @@ class BugInformationTypeChange(AttributeChange):
 
     def getBugActivity(self):
         return {
-            'newvalue': self.new_value.title,
-            'oldvalue': self.old_value.title,
-            'whatchanged': 'information type'
-             }
+            "newvalue": self.new_value.title,
+            "oldvalue": self.old_value.title,
+            "whatchanged": "information type",
+        }
 
     def getBugNotification(self):
         return {
-            'text': "** Information type changed from %s to %s" % (
-                self.old_value.title, self.new_value.title)}
+            "text": "** Information type changed from %s to %s"
+            % (self.old_value.title, self.new_value.title)
+        }
 
 
 class BugTagsChange(AttributeChange):
@@ -633,10 +676,10 @@ class BugTagsChange(AttributeChange):
         old_value = " ".join(sorted(set(self.old_value)))
 
         return {
-            'newvalue': new_value,
-            'oldvalue': old_value,
-            'whatchanged': self.what_changed,
-            }
+            "newvalue": new_value,
+            "oldvalue": old_value,
+            "whatchanged": self.what_changed,
+        }
 
     def getBugNotification(self):
         new_tags = set(self.new_value)
@@ -647,18 +690,17 @@ class BugTagsChange(AttributeChange):
         messages = []
         if len(removed_tags) > 0:
             messages.append(
-                "** Tags removed: %s" % " ".join(sorted(removed_tags)))
+                "** Tags removed: %s" % " ".join(sorted(removed_tags))
+            )
         if len(added_tags) > 0:
-            messages.append(
-                "** Tags added: %s" % " ".join(sorted(added_tags)))
+            messages.append("** Tags added: %s" % " ".join(sorted(added_tags)))
 
-        return {'text': "\n".join(messages)}
+        return {"text": "\n".join(messages)}
 
 
 def download_url_of_bugattachment(attachment):
     """Return the URL of the ProxiedLibraryFileAlias for the attachment."""
-    return ProxiedLibraryFileAlias(
-        attachment.libraryfile, attachment).http_url
+    return ProxiedLibraryFileAlias(attachment.libraryfile, attachment).http_url
 
 
 class BugAttachmentChange(AttributeChange):
@@ -670,39 +712,45 @@ class BugAttachmentChange(AttributeChange):
             old_value = None
             new_value = "%s %s" % (
                 self.new_value.title,
-                download_url_of_bugattachment(self.new_value))
+                download_url_of_bugattachment(self.new_value),
+            )
         else:
             what_changed = ATTACHMENT_REMOVED
             old_value = "%s %s" % (
                 self.old_value.title,
-                download_url_of_bugattachment(self.old_value))
+                download_url_of_bugattachment(self.old_value),
+            )
             new_value = None
 
         return {
-            'newvalue': new_value,
-            'oldvalue': old_value,
-            'whatchanged': what_changed,
-            }
+            "newvalue": new_value,
+            "oldvalue": old_value,
+            "whatchanged": what_changed,
+        }
 
     def getBugNotification(self):
         if self.old_value is None:
             if self.new_value.is_patch:
-                attachment_str = 'Patch'
+                attachment_str = "Patch"
             else:
-                attachment_str = 'Attachment'
+                attachment_str = "Attachment"
             message = '** %s added: "%s"\n   %s' % (
-                attachment_str, self.new_value.title,
-                download_url_of_bugattachment(self.new_value))
+                attachment_str,
+                self.new_value.title,
+                download_url_of_bugattachment(self.new_value),
+            )
         else:
             if self.old_value.is_patch:
-                attachment_str = 'Patch'
+                attachment_str = "Patch"
             else:
-                attachment_str = 'Attachment'
+                attachment_str = "Attachment"
             message = '** %s removed: "%s"\n   %s' % (
-                attachment_str, self.old_value.title,
-                download_url_of_bugattachment(self.old_value))
+                attachment_str,
+                self.old_value.title,
+                download_url_of_bugattachment(self.old_value),
+            )
 
-        return {'text': message}
+        return {"text": message}
 
 
 class CveLinkedToBug(BugChangeBase):
@@ -714,13 +762,11 @@ class CveLinkedToBug(BugChangeBase):
 
     def getBugActivity(self):
         """See `IBugChange`."""
-        return dict(
-            newvalue=self.cve.sequence,
-            whatchanged=CVE_LINKED)
+        return dict(newvalue=self.cve.sequence, whatchanged=CVE_LINKED)
 
     def getBugNotification(self):
         """See `IBugChange`."""
-        return {'text': "** CVE added: %s" % self.cve.url}
+        return {"text": "** CVE added: %s" % self.cve.url}
 
 
 class CveUnlinkedFromBug(BugChangeBase):
@@ -732,20 +778,17 @@ class CveUnlinkedFromBug(BugChangeBase):
 
     def getBugActivity(self):
         """See `IBugChange`."""
-        return dict(
-            oldvalue=self.cve.sequence,
-            whatchanged=CVE_UNLINKED)
+        return dict(oldvalue=self.cve.sequence, whatchanged=CVE_UNLINKED)
 
     def getBugNotification(self):
         """See `IBugChange`."""
-        return {'text': "** CVE removed: %s" % self.cve.url}
+        return {"text": "** CVE removed: %s" % self.cve.url}
 
 
 class BugLocked(BugChangeBase):
     """Used to represent the locking of a bug."""
 
-    def __init__(self, when, person, old_status,
-                 new_status, reason, **kwargs):
+    def __init__(self, when, person, old_status, new_status, reason, **kwargs):
         super().__init__(when, person)
         self.old_status = old_status
         self.new_status = new_status
@@ -754,12 +797,12 @@ class BugLocked(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange'."""
         activity = dict(
-            whatchanged='lock status',
+            whatchanged="lock status",
             oldvalue=str(self.old_status),
             newvalue=str(self.new_status),
         )
         if self.reason:
-            activity['message'] = self.reason
+            activity["message"] = self.reason
 
         return activity
 
@@ -769,9 +812,8 @@ class BugLocked(BugChangeBase):
         if self.reason:
             text = "{}: {}".format(text, self.reason)
 
-        return {
-            'text': text
-        }
+        return {"text": text}
+
 
 class BugUnlocked(BugChangeBase):
     """Used to represent the unlocking of a bug."""
@@ -783,16 +825,14 @@ class BugUnlocked(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange'."""
         return dict(
-            whatchanged='lock status',
+            whatchanged="lock status",
             newvalue=str(BugLockStatus.UNLOCKED),
             oldvalue=str(self.old_status),
         )
 
     def getBugNotification(self):
         """See `IBugChange`."""
-        return {
-            'text': "** Bug unlocked"
-        }
+        return {"text": "** Bug unlocked"}
 
 
 class BugLockReasonSet(BugChangeBase):
@@ -806,9 +846,9 @@ class BugLockReasonSet(BugChangeBase):
     def getBugActivity(self):
         """See `IBugChange`."""
         return dict(
-            whatchanged='lock reason',
-            oldvalue=self.old_reason if self.old_reason else 'unset',
-            newvalue=self.new_reason if self.new_reason else 'unset',
+            whatchanged="lock reason",
+            oldvalue=self.old_reason if self.old_reason else "unset",
+            newvalue=self.new_reason if self.new_reason else "unset",
         )
 
     def getBugNotification(self):
@@ -816,11 +856,9 @@ class BugLockReasonSet(BugChangeBase):
         if self.new_reason is None:
             text = "Bug lock reason unset"
         else:
-            text = '** Bug lock reason changed: {}'.format(self.new_reason)
+            text = "** Bug lock reason changed: {}".format(self.new_reason)
 
-        return {
-            'text': text
-        }
+        return {"text": text}
 
 
 class BugTaskAttributeChange(AttributeChange):
@@ -835,8 +873,9 @@ class BugTaskAttributeChange(AttributeChange):
     sending notifications.
     """
 
-    def __init__(self, bug_task, when, person, what_changed, old_value,
-                 new_value):
+    def __init__(
+        self, bug_task, when, person, what_changed, old_value, new_value
+    ):
         super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
@@ -844,13 +883,15 @@ class BugTaskAttributeChange(AttributeChange):
             self.display_old_value = None
         else:
             self.display_old_value = getattr(
-                self.old_value, self.display_attribute)
+                self.old_value, self.display_attribute
+            )
 
         if self.new_value is None:
             self.display_new_value = None
         else:
             self.display_new_value = getattr(
-                self.new_value, self.display_attribute)
+                self.new_value, self.display_attribute
+            )
 
     @property
     def display_activity_label(self):
@@ -876,11 +917,11 @@ class BugTaskAttributeChange(AttributeChange):
         target so as to make it clear in which task the change was made.
         """
         return {
-            'whatchanged': '%s: %s' % (
-                self.bug_task.bugtargetname, self.display_activity_label),
-            'oldvalue': self.display_old_value,
-            'newvalue': self.display_new_value,
-            }
+            "whatchanged": "%s: %s"
+            % (self.bug_task.bugtargetname, self.display_activity_label),
+            "oldvalue": self.display_old_value,
+            "newvalue": self.display_new_value,
+        }
 
     def getBugNotification(self):
         """Return the bug notification text for this change.
@@ -890,35 +931,38 @@ class BugTaskAttributeChange(AttributeChange):
         """
         text = (
             "** Changed in: %(bug_target_name)s\n"
-            "%(label)13s: %(oldval)s => %(newval)s\n" % {
-                'bug_target_name': self.bug_task.bugtargetname,
-                'label': self.display_notification_label,
-                'oldval': self.display_old_value,
-                'newval': self.display_new_value,
-            })
+            "%(label)13s: %(oldval)s => %(newval)s\n"
+            % {
+                "bug_target_name": self.bug_task.bugtargetname,
+                "label": self.display_notification_label,
+                "oldval": self.display_old_value,
+                "newval": self.display_new_value,
+            }
+        )
 
-        return {'text': text.rstrip()}
+        return {"text": text.rstrip()}
 
 
 class BugTaskImportanceChange(BugTaskAttributeChange):
     """Represents a change in BugTask.importance."""
 
     # Use `importance.title` in activity records and notifications.
-    display_attribute = 'title'
+    display_attribute = "title"
 
 
 class BugTaskStatusChange(BugTaskAttributeChange):
     """Represents a change in BugTask.status."""
 
     # Use `status.title` in activity records and notifications.
-    display_attribute = 'title'
+    display_attribute = "title"
 
     @property
     def change_level(self):
         """See `IBugChange`."""
         # Is bug being closed or reopened?
         lifecycle_change = _is_status_change_lifecycle_change(
-            self.old_value, self.new_value)
+            self.old_value, self.new_value
+        )
 
         if lifecycle_change:
             return BugNotificationLevel.LIFECYCLE
@@ -930,25 +974,26 @@ class BugTaskMilestoneChange(BugTaskAttributeChange):
     """Represents a change in BugTask.milestone."""
 
     # Use `milestone.name` in activity records and notifications.
-    display_attribute = 'name'
+    display_attribute = "name"
 
 
 class BugTaskBugWatchChange(BugTaskAttributeChange):
     """Represents a change in BugTask.bugwatch."""
 
     # Use the term "remote watch" as this is used in the UI.
-    display_activity_label = 'remote watch'
-    display_notification_label = 'Remote watch'
+    display_activity_label = "remote watch"
+    display_notification_label = "Remote watch"
 
     # Use `bugwatch.title` in activity records and notifications.
-    display_attribute = 'title'
+    display_attribute = "title"
 
 
 class BugTaskAssigneeChange(AttributeChange):
     """Represents a change in BugTask.assignee."""
 
-    def __init__(self, bug_task, when, person,
-                 what_changed, old_value, new_value):
+    def __init__(
+        self, bug_task, when, person, what_changed, old_value, new_value
+    ):
         super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
@@ -962,10 +1007,10 @@ class BugTaskAssigneeChange(AttributeChange):
                 return assignee.unique_displayname
 
         return {
-            'whatchanged': '%s: assignee' % self.bug_task.bugtargetname,
-            'oldvalue': assignee_for_display(self.old_value),
-            'newvalue': assignee_for_display(self.new_value),
-            }
+            "whatchanged": "%s: assignee" % self.bug_task.bugtargetname,
+            "oldvalue": assignee_for_display(self.old_value),
+            "newvalue": assignee_for_display(self.new_value),
+        }
 
     def getBugNotification(self):
         """See `IBugChange`."""
@@ -977,13 +1022,16 @@ class BugTaskAssigneeChange(AttributeChange):
                 return assignee.unique_displayname
 
         return {
-            'text': (
+            "text": (
                 "** Changed in: %s\n"
-                "     Assignee: %s => %s" % (
+                "     Assignee: %s => %s"
+                % (
                     self.bug_task.bugtargetname,
                     assignee_for_display(self.old_value),
-                    assignee_for_display(self.new_value))),
-            }
+                    assignee_for_display(self.new_value),
+                )
+            ),
+        }
 
 
 class BugTaskTargetChange(AttributeChange):
@@ -991,18 +1039,19 @@ class BugTaskTargetChange(AttributeChange):
 
     change_level = BugNotificationLevel.LIFECYCLE
 
-    def __init__(self, bug_task, when, person,
-                 what_changed, old_value, new_value):
+    def __init__(
+        self, bug_task, when, person, what_changed, old_value, new_value
+    ):
         super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
     def getBugActivity(self):
         """See `IBugChange`."""
         return {
-            'whatchanged': 'affects',
-            'oldvalue': self.old_value.bugtargetname,
-            'newvalue': self.new_value.bugtargetname,
-            }
+            "whatchanged": "affects",
+            "oldvalue": self.old_value.bugtargetname,
+            "newvalue": self.new_value.bugtargetname,
+        }
 
     def getBugNotification(self):
         """See `IBugChange`."""
@@ -1012,15 +1061,17 @@ class BugTaskTargetChange(AttributeChange):
             template = "** Package changed: %s => %s"
         text = template % (
             self.old_value.bugtargetname,
-            self.new_value.bugtargetname)
-        return {'text': text}
+            self.new_value.bugtargetname,
+        )
+        return {"text": text}
 
 
 class BugTaskImportanceExplanationChange(AttributeChange):
     """Represents a change in BugTask.importance_explanation."""
 
-    def __init__(self, bug_task, when, person,
-                 what_changed, old_value, new_value):
+    def __init__(
+        self, bug_task, when, person, what_changed, old_value, new_value
+    ):
         # XXX: lgp171188 2022-04-12: This is a sub-class of
         # the `AttributeChange` class instead of
         # the `BugTaskAttributeChange` class because the latter
@@ -1037,23 +1088,22 @@ class BugTaskImportanceExplanationChange(AttributeChange):
         super().__init__(when, person, what_changed, old_value, new_value)
         self.bug_task = bug_task
 
-
     def getBugActivity(self):
         """See `IBugChange`."""
         return {
-            'whatchanged': '%s: importance explanation' % (
-                self.bug_task.bugtargetname,
-            ),
-            'oldvalue': self.old_value or 'unset',
-            'newvalue': self.new_value or 'unset',
+            "whatchanged": "%s: importance explanation"
+            % (self.bug_task.bugtargetname,),
+            "oldvalue": self.old_value or "unset",
+            "newvalue": self.new_value or "unset",
         }
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
+            "text": (
                 "** Changed in %s\n"
-                "     Importance explanation: %s => %s" % (
+                "     Importance explanation: %s => %s"
+                % (
                     self.bug_task.bugtargetname,
                     self.old_value or "unset",
                     self.new_value or "unset",
@@ -1065,8 +1115,9 @@ class BugTaskImportanceExplanationChange(AttributeChange):
 class BugTaskStatusExplanationChange(AttributeChange):
     """Represents a change in BugTask.status_explanation."""
 
-    def __init__(self, bug_task, when, person,
-                 what_changed, old_value, new_value):
+    def __init__(
+        self, bug_task, when, person, what_changed, old_value, new_value
+    ):
         # XXX: lgp171188 2022-04-12: This is a sub-class of
         # the `AttributeChange` class instead of
         # the `BugTaskAttributeChange` class because the latter
@@ -1086,44 +1137,44 @@ class BugTaskStatusExplanationChange(AttributeChange):
     def getBugActivity(self):
         """See `IBugChange`."""
         return {
-            'whatchanged': '%s: status explanation' % (
-                self.bug_task.bugtargetname,
-            ),
-            'oldvalue': self.old_value or 'unset',
-            'newvalue': self.new_value or 'unset',
+            "whatchanged": "%s: status explanation"
+            % (self.bug_task.bugtargetname,),
+            "oldvalue": self.old_value or "unset",
+            "newvalue": self.new_value or "unset",
         }
 
     def getBugNotification(self):
         """See `IBugChange`."""
         return {
-            'text': (
-                '** Changed in %s\n'
-                '     Status explanation: %s => %s' % (
+            "text": (
+                "** Changed in %s\n"
+                "     Status explanation: %s => %s"
+                % (
                     self.bug_task.bugtargetname,
-                    self.old_value or 'unset',
-                    self.new_value or 'unset',
+                    self.old_value or "unset",
+                    self.new_value or "unset",
                 )
             )
         }
 
 
 BUG_CHANGE_LOOKUP = {
-    'description': BugDescriptionChange,
-    'information_type': BugInformationTypeChange,
-    'tags': BugTagsChange,
-    'title': BugTitleChange,
-    'attachment': BugAttachmentChange,
-    'duplicateof': BugDuplicateChange,
-    }
+    "description": BugDescriptionChange,
+    "information_type": BugInformationTypeChange,
+    "tags": BugTagsChange,
+    "title": BugTitleChange,
+    "attachment": BugAttachmentChange,
+    "duplicateof": BugDuplicateChange,
+}
 
 
 BUGTASK_CHANGE_LOOKUP = {
-    'importance': BugTaskImportanceChange,
-    'status': BugTaskStatusChange,
-    'target': BugTaskTargetChange,
-    'milestone': BugTaskMilestoneChange,
-    'bugwatch': BugTaskBugWatchChange,
-    'assignee': BugTaskAssigneeChange,
-    'importance_explanation': BugTaskImportanceExplanationChange,
-    'status_explanation': BugTaskStatusExplanationChange,
-    }
+    "importance": BugTaskImportanceChange,
+    "status": BugTaskStatusChange,
+    "target": BugTaskTargetChange,
+    "milestone": BugTaskMilestoneChange,
+    "bugwatch": BugTaskBugWatchChange,
+    "assignee": BugTaskAssigneeChange,
+    "importance_explanation": BugTaskImportanceExplanationChange,
+    "status_explanation": BugTaskStatusExplanationChange,
+}

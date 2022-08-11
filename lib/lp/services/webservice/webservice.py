@@ -10,7 +10,7 @@ which tells `lazr.restful` that it should look for webservice exports here.
 """
 
 __all__ = [
-    'IWebServiceApplication',
-    ]
+    "IWebServiceApplication",
+]
 
 from lp.services.webservice.interfaces import IWebServiceApplication

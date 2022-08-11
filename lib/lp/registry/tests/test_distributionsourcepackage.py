@@ -3,12 +3,9 @@
 
 """Tests for DistributionSourcePackage."""
 
-from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    MatchesStructure,
-    )
 import transaction
+from storm.store import Store
+from testtools.matchers import Equals, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -16,7 +13,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackage,
     DistributionSourcePackageInDatabase,
-    )
+)
 from lp.registry.model.karma import KarmaTotalCache
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
@@ -24,15 +21,12 @@ from lp.services.webapp.authorization import check_permission
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
-    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
-    )
+    person_logged_in,
+)
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
 
 
@@ -43,14 +37,20 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
     def test_dsp_with_no_series_summary(self):
         distribution_set = getUtility(IDistributionSet)
 
-        distribution = distribution_set.new(name='wart',
-            display_name='wart', title='wart', description='lots of warts',
-            summary='lots of warts', domainname='wart.dumb',
-            members=self.factory.makeTeam(), owner=self.factory.makePerson(),
-            registrant=self.factory.makePerson())
+        distribution = distribution_set.new(
+            name="wart",
+            display_name="wart",
+            title="wart",
+            description="lots of warts",
+            summary="lots of warts",
+            domainname="wart.dumb",
+            members=self.factory.makeTeam(),
+            owner=self.factory.makePerson(),
+            registrant=self.factory.makePerson(),
+        )
         naked_distribution = removeSecurityProxy(distribution)
         self.factory.makeSourcePackage(distroseries=distribution)
-        dsp = naked_distribution.getSourcePackage(name='pmount')
+        dsp = naked_distribution.getSourcePackage(name="pmount")
         self.assertEqual(None, dsp.summary)
 
     def test_binary_names_built(self):
@@ -71,15 +71,16 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # if one does not exist.
         spph = self.factory.makeSourcePackagePublishingHistory()
         spph_dsp = spph.distroseries.distribution.getSourcePackage(
-            spph.sourcepackagerelease.sourcepackagename)
+            spph.sourcepackagerelease.sourcepackagename
+        )
         DistributionSourcePackage.ensure(spph)
         new_dsp = DistributionSourcePackage._get(
-            spph_dsp.distribution, spph_dsp.sourcepackagename)
+            spph_dsp.distribution, spph_dsp.sourcepackagename
+        )
         self.assertIsNot(None, new_dsp)
         self.assertIsNot(spph_dsp, new_dsp)
         self.assertEqual(spph_dsp.distribution, new_dsp.distribution)
-        self.assertEqual(
-            spph_dsp.sourcepackagename, new_dsp.sourcepackagename)
+        self.assertEqual(spph_dsp.sourcepackagename, new_dsp.sourcepackagename)
 
     def test_ensure_spph_dsp_in_db_exists(self):
         # The DSP.ensure() class method does not create duplicate
@@ -97,13 +98,14 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # The DSP.ensure() class method creates a persistent instance
         # if one does not exist.
         archive = self.factory.makeArchive()
-        spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive)
+        spph = self.factory.makeSourcePackagePublishingHistory(archive=archive)
         spph_dsp = spph.distroseries.distribution.getSourcePackage(
-            spph.sourcepackagerelease.sourcepackagename)
+            spph.sourcepackagerelease.sourcepackagename
+        )
         DistributionSourcePackage.ensure(spph)
         new_dsp = DistributionSourcePackage._get(
-            spph_dsp.distribution, spph_dsp.sourcepackagename)
+            spph_dsp.distribution, spph_dsp.sourcepackagename
+        )
         self.assertIs(None, new_dsp)
 
     def test_ensure_suitesourcepackage_creates_a_dsp_in_db(self):
@@ -112,11 +114,13 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         sourcepackage = self.factory.makeSourcePackage()
         DistributionSourcePackage.ensure(sourcepackage=sourcepackage)
         new_dsp = DistributionSourcePackage._get(
-            sourcepackage.distribution, sourcepackage.sourcepackagename)
+            sourcepackage.distribution, sourcepackage.sourcepackagename
+        )
         self.assertIsNot(None, new_dsp)
         self.assertEqual(sourcepackage.distribution, new_dsp.distribution)
         self.assertEqual(
-            sourcepackage.sourcepackagename, new_dsp.sourcepackagename)
+            sourcepackage.sourcepackagename, new_dsp.sourcepackagename
+        )
 
     def test_delete_without_dsp_in_db(self):
         # Calling delete() on a DSP without persistence returns False.
@@ -128,7 +132,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # Once a package is uploaded, it cannot be deleted.
         spph = self.factory.makeSourcePackagePublishingHistory()
         dsp = spph.distroseries.distribution.getSourcePackage(
-            spph.sourcepackagerelease.sourcepackagename)
+            spph.sourcepackagerelease.sourcepackagename
+        )
         DistributionSourcePackage.ensure(spph=spph)
         transaction.commit()
         self.assertFalse(dsp.delete())
@@ -156,7 +161,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # DSP.drivers returns the drivers for the distribution.
         distribution = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         self.assertNotEqual([], distribution.drivers)
         self.assertEqual(dsp.drivers, distribution.drivers)
 
@@ -164,7 +170,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # A distribution driver has driver permissions on a DSP.
         distribution = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         driver = distribution.drivers[0]
         self.assertTrue(dsp.personHasDriverRights(driver))
 
@@ -174,13 +181,20 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # the version strings exactly.
         distribution = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(
-            distribution=distribution)
+            distribution=distribution
+        )
         spph = self.factory.makeSourcePackagePublishingHistory(
             archive=distribution.main_archive,
-            sourcepackagename=dsp.sourcepackagename, version="0.7-4")
-        self.assertThat(dsp.getVersion("0.7-4"), MatchesStructure.byEquality(
-            distribution=distribution,
-            sourcepackagerelease=spph.sourcepackagerelease))
+            sourcepackagename=dsp.sourcepackagename,
+            version="0.7-4",
+        )
+        self.assertThat(
+            dsp.getVersion("0.7-4"),
+            MatchesStructure.byEquality(
+                distribution=distribution,
+                sourcepackagerelease=spph.sourcepackagerelease,
+            ),
+        )
         self.assertIsNone(dsp.getVersion("0.07-4"))
 
     def test_non_uploader_cannot_edit(self):
@@ -199,7 +213,9 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
             archive=dsp.distribution.main_archive,
             distroseries=dsp.distribution.currentseries,
             sourcepackagename=dsp.sourcepackagename,
-            component="main", status=PackagePublishingStatus.PUBLISHED)
+            component="main",
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         person = self.factory.makePerson()
         with person_logged_in(dsp.distribution.main_archive.owner):
             dsp.distribution.main_archive.newComponentUploader(person, "main")
@@ -212,11 +228,14 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
             archive=dsp.distribution.main_archive,
             distroseries=dsp.distribution.currentseries,
             sourcepackagename=dsp.sourcepackagename,
-            component="main", status=PackagePublishingStatus.PUBLISHED)
+            component="main",
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         person = self.factory.makePerson()
         with person_logged_in(dsp.distribution.main_archive.owner):
             dsp.distribution.main_archive.newComponentUploader(
-                person, "universe")
+                person, "universe"
+            )
         with person_logged_in(person):
             self.assertFalse(check_permission("launchpad.Edit", dsp))
 
@@ -229,15 +248,17 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
         """Publish some gedit sources in main and PPAs."""
         super().setUp()
 
-        self.distribution = getUtility(IDistributionSet)['ubuntutest']
+        self.distribution = getUtility(IDistributionSet)["ubuntutest"]
 
         # Create two PPAs for gedit.
         self.archives = {}
-        self.archives['ubuntu-main'] = self.distribution.main_archive
-        self.archives['gedit-nightly'] = self.factory.makeArchive(
-            name="gedit-nightly", distribution=self.distribution)
-        self.archives['gedit-beta'] = self.factory.makeArchive(
-            name="gedit-beta", distribution=self.distribution)
+        self.archives["ubuntu-main"] = self.distribution.main_archive
+        self.archives["gedit-nightly"] = self.factory.makeArchive(
+            name="gedit-nightly", distribution=self.distribution
+        )
+        self.archives["gedit-beta"] = self.factory.makeArchive(
+            name="gedit-beta", distribution=self.distribution
+        )
 
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
@@ -245,68 +266,80 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
         # Publish gedit in all three archives.
         self.person_nightly = self.factory.makePerson()
         self.gedit_nightly_src_hist = self.publisher.getPubSource(
-            sourcename="gedit", archive=self.archives['gedit-nightly'],
+            sourcename="gedit",
+            archive=self.archives["gedit-nightly"],
             creator=self.person_nightly,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
 
         self.person_beta = self.factory.makePerson()
         self.gedit_beta_src_hist = self.publisher.getPubSource(
-            sourcename="gedit", archive=self.archives['gedit-beta'],
+            sourcename="gedit",
+            archive=self.archives["gedit-beta"],
             creator=self.person_beta,
-            status=PackagePublishingStatus.PUBLISHED)
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         self.gedit_main_src_hist = self.publisher.getPubSource(
-            sourcename="gedit", archive=self.archives['ubuntu-main'],
-            status=PackagePublishingStatus.PUBLISHED)
+            sourcename="gedit",
+            archive=self.archives["ubuntu-main"],
+            status=PackagePublishingStatus.PUBLISHED,
+        )
 
         # Save the gedit source package for easy access.
-        self.source_package = self.distribution.getSourcePackage('gedit')
+        self.source_package = self.distribution.getSourcePackage("gedit")
 
         # Add slightly more soyuz karma for person_nightly for this package.
-        switch_dbuser('karma')
+        switch_dbuser("karma")
         self.person_beta_karma = KarmaTotalCache(
-            person=self.person_beta, karma_total=200)
+            person=self.person_beta, karma_total=200
+        )
         self.person_nightly_karma = KarmaTotalCache(
-            person=self.person_nightly, karma_total=201)
-        switch_dbuser('launchpad')
+            person=self.person_nightly, karma_total=201
+        )
+        switch_dbuser("launchpad")
 
     def test_order_by_soyuz_package_karma(self):
         # Returned archives are ordered by the soyuz karma of the
         # package uploaders for the particular package
 
         related_archives = self.source_package.findRelatedArchives()
-        related_archive_names = [
-            archive.name for archive in related_archives]
+        related_archive_names = [archive.name for archive in related_archives]
 
-        self.assertEqual(related_archive_names, [
-            'gedit-nightly',
-            'gedit-beta',
-            ])
+        self.assertEqual(
+            related_archive_names,
+            [
+                "gedit-nightly",
+                "gedit-beta",
+            ],
+        )
 
         # Update the soyuz karma for person_beta for this package so that
         # it is greater than person_nightly's.
-        switch_dbuser('karma')
+        switch_dbuser("karma")
         self.person_beta_karma.karma_total = 202
-        switch_dbuser('launchpad')
+        switch_dbuser("launchpad")
 
         related_archives = self.source_package.findRelatedArchives()
-        related_archive_names = [
-            archive.name for archive in related_archives]
+        related_archive_names = [archive.name for archive in related_archives]
 
-        self.assertEqual(related_archive_names, [
-            'gedit-beta',
-            'gedit-nightly',
-            ])
+        self.assertEqual(
+            related_archive_names,
+            [
+                "gedit-beta",
+                "gedit-nightly",
+            ],
+        )
 
     def test_require_package_karma(self):
         # Only archives where the related package was created by a person
         # with the required soyuz karma for this package.
 
         related_archives = self.source_package.findRelatedArchives(
-            required_karma=201)
-        related_archive_names = [
-            archive.name for archive in related_archives]
+            required_karma=201
+        )
+        related_archive_names = [archive.name for archive in related_archives]
 
-        self.assertEqual(related_archive_names, ['gedit-nightly'])
+        self.assertEqual(related_archive_names, ["gedit-nightly"])
 
     def test_development_version(self):
         # IDistributionSourcePackage.development_version is the ISourcePackage
@@ -315,7 +348,8 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
         series = self.factory.makeDistroSeries(distribution=dsp.distribution)
         self.assertEqual(series, dsp.distribution.currentseries)
         development_version = dsp.distribution.currentseries.getSourcePackage(
-            dsp.sourcepackagename)
+            dsp.sourcepackagename
+        )
         self.assertEqual(development_version, dsp.development_version)
 
     def test_development_version_no_current_series(self):
@@ -334,13 +368,12 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
         # Ensure that the gedit package in gedit-nightly was originally
         # uploaded to gedit-beta (ie. copied from there).
         gedit_release = self.gedit_nightly_src_hist.sourcepackagerelease
-        gedit_release.upload_archive = self.archives['gedit-beta']
+        gedit_release.upload_archive = self.archives["gedit-beta"]
 
         related_archives = self.source_package.findRelatedArchives()
-        related_archive_names = [
-            archive.name for archive in related_archives]
+        related_archive_names = [archive.name for archive in related_archives]
 
-        self.assertEqual(related_archive_names, ['gedit-beta'])
+        self.assertEqual(related_archive_names, ["gedit-beta"])
 
 
 class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
@@ -353,7 +386,8 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         DistributionSourcePackageInDatabase._cache["Frank"] = "Sinatra"
         transaction.abort()
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.as_dict())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict()
+        )
 
     def test_mapping_cache_cleared_on_commit(self):
         # DistributionSourcePackageInDatabase._cache is cleared when a
@@ -361,7 +395,8 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         DistributionSourcePackageInDatabase._cache["Frank"] = "Sinatra"
         transaction.commit()
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.as_dict())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict()
+        )
 
     def test_new(self):
         # DistributionSourcePackageInDatabase.new() creates a new DSP, adds it
@@ -369,11 +404,13 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         sourcepackagename = self.factory.makeSourcePackageName()
         dsp = DistributionSourcePackageInDatabase.new(
-            distribution, sourcepackagename)
+            distribution, sourcepackagename
+        )
         self.assertIs(Store.of(distribution), Store.of(dsp))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.as_dict())
+            DistributionSourcePackageInDatabase._cache.as_dict(),
+        )
 
     def test_getDirect_not_found(self):
         # DistributionSourcePackageInDatabase.getDirect() returns None if a
@@ -384,11 +421,13 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.getDirect(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(None, dsp)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.as_dict())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict()
+        )
 
     def test_getDirect_found(self):
         # DistributionSourcePackageInDatabase.getDirect() returns the
@@ -397,16 +436,19 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         sourcepackagename = self.factory.makeSourcePackageName()
         dsp = DistributionSourcePackageInDatabase.new(
-            distribution, sourcepackagename)
+            distribution, sourcepackagename
+        )
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp_found = DistributionSourcePackageInDatabase.getDirect(
-                dsp.distribution, dsp.sourcepackagename)
+                dsp.distribution, dsp.sourcepackagename
+            )
             self.assertIs(dsp, dsp_found)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.as_dict())
+            DistributionSourcePackageInDatabase._cache.as_dict(),
+        )
 
     def test_get_not_cached_and_not_found(self):
         # DistributionSourcePackageInDatabase.get() returns None if a DSP does
@@ -417,11 +459,13 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(None, dsp)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.as_dict())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict()
+        )
 
     def test_get_cached_and_not_found(self):
         # DistributionSourcePackageInDatabase.get() returns None if a DSP does
@@ -434,7 +478,8 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(None, dsp)
         # A stale mapping means that we have to issue two queries: the first
         # queries for the stale DSP from the database, the second gets the
@@ -449,16 +494,19 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         sourcepackagename = self.factory.makeSourcePackageName()
         # Put a bogus entry into the mapping cache.
         bogus_dsp = DistributionSourcePackageInDatabase.new(
-            distribution, self.factory.makeSourcePackageName())
+            distribution, self.factory.makeSourcePackageName()
+        )
         bogus_dsp_cache_key = distribution.id, sourcepackagename.id
         DistributionSourcePackageInDatabase._cache[
-            bogus_dsp_cache_key] = bogus_dsp.id
+            bogus_dsp_cache_key
+        ] = bogus_dsp.id
         # Invalidate the bogus DSP from Storm's cache.
         Store.of(bogus_dsp).invalidate(bogus_dsp)
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(None, dsp)
         # A stale mapping means that we have to issue two queries: the first
         # gets the bogus DSP from the database, the second gets the correct
@@ -473,14 +521,17 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         sourcepackagename = self.factory.makeSourcePackageName()
         # Put a bogus entry into the mapping cache.
         bogus_dsp = DistributionSourcePackageInDatabase.new(
-            distribution, self.factory.makeSourcePackageName())
+            distribution, self.factory.makeSourcePackageName()
+        )
         bogus_dsp_cache_key = distribution.id, sourcepackagename.id
         DistributionSourcePackageInDatabase._cache[
-            bogus_dsp_cache_key] = bogus_dsp.id
+            bogus_dsp_cache_key
+        ] = bogus_dsp.id
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(None, dsp)
         # A stale mapping means that we ordinarily have to issue two queries:
         # the first gets the bogus DSP from the database, the second gets the
@@ -495,18 +546,21 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         sourcepackagename = self.factory.makeSourcePackageName()
         dsp = DistributionSourcePackageInDatabase.new(
-            distribution, sourcepackagename)
+            distribution, sourcepackagename
+        )
         # new() updates the mapping cache so we must clear it.
         DistributionSourcePackageInDatabase._cache.clear()
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp_found = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(dsp, dsp_found)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.as_dict())
+            DistributionSourcePackageInDatabase._cache.as_dict(),
+        )
 
     def test_get_cached_and_found(self):
         # DistributionSourcePackageInDatabase.get() returns the DSP if it's
@@ -514,11 +568,13 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         sourcepackagename = self.factory.makeSourcePackageName()
         dsp = DistributionSourcePackageInDatabase.new(
-            distribution, sourcepackagename)
+            distribution, sourcepackagename
+        )
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp_found = DistributionSourcePackageInDatabase.get(
-                distribution, sourcepackagename)
+                distribution, sourcepackagename
+            )
             self.assertIs(dsp, dsp_found)
         # Hurrah! This is what we're aiming for: a DSP that is in the mapping
         # cache *and* in Storm's cache.

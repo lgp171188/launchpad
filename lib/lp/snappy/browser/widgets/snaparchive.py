@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'SnapArchiveWidget',
-    ]
+    "SnapArchiveWidget",
+]
 
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -12,14 +12,14 @@ from zope.formlib.interfaces import (
     IInputWidget,
     MissingInputError,
     WidgetInputError,
-    )
+)
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (
     BrowserWidget,
     InputErrors,
     InputWidget,
     renderElement,
-    )
+)
 from zope.interface import implementer
 from zope.schema import Choice
 
@@ -29,7 +29,7 @@ from lp.app.validators import LaunchpadValidationError
 from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     IMultiLineWidgetLayout,
-    )
+)
 from lp.snappy.interfaces.snap import ISnap
 from lp.soyuz.interfaces.archive import IArchive
 
@@ -46,11 +46,13 @@ class SnapArchiveWidget(BrowserWidget, InputWidget):
             return
         fields = [
             Choice(
-                __name__="ppa", title="PPA", required=True, vocabulary="PPA"),
-            ]
+                __name__="ppa", title="PPA", required=True, vocabulary="PPA"
+            ),
+        ]
         for field in fields:
             setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name)
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
         self._widgets_set_up = True
 
     def setUpOptions(self):
@@ -58,18 +60,25 @@ class SnapArchiveWidget(BrowserWidget, InputWidget):
         self.options = {}
         for option in ["primary", "ppa"]:
             attributes = dict(
-                type="radio", name=self.name, value=option,
-                id="%s.option.%s" % (self.name, option))
-            if (self.default_option is not None and
-                self.request.form_ng.getOne(
-                    self.name, self.default_option) == option):
+                type="radio",
+                name=self.name,
+                value=option,
+                id="%s.option.%s" % (self.name, option),
+            )
+            if (
+                self.default_option is not None
+                and self.request.form_ng.getOne(self.name, self.default_option)
+                == option
+            ):
                 attributes["checked"] = "checked"
             self.options[option] = renderElement("input", **attributes)
 
     @property
     def main_archive(self):
-        if (ISnap.providedBy(self.context.context) and
-                self.context.context.distro_series is not None):
+        if (
+            ISnap.providedBy(self.context.context)
+            and self.context.context.distro_series is not None
+        ):
             return self.context.context.distro_series.main_archive
         else:
             return getUtility(ILaunchpadCelebrities).ubuntu.main_archive
@@ -118,16 +127,22 @@ class SnapArchiveWidget(BrowserWidget, InputWidget):
                 ppa = self.ppa_widget.getInputValue()
             except MissingInputError:
                 raise WidgetInputError(
-                    self.name, self.label,
-                    LaunchpadValidationError("Please choose a PPA."))
+                    self.name,
+                    self.label,
+                    LaunchpadValidationError("Please choose a PPA."),
+                )
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
-                    "%s.ppa" % self.name)
+                    "%s.ppa" % self.name
+                )
                 raise WidgetInputError(
-                    self.name, self.label,
+                    self.name,
+                    self.label,
                     LaunchpadValidationError(
-                        "There is no PPA named '%s' registered in Launchpad." %
-                        entered_name))
+                        "There is no PPA named '%s' registered in Launchpad."
+                        % entered_name
+                    ),
+                )
             return ppa
 
     def error(self):

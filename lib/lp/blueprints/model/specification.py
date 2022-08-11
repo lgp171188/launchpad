@@ -2,36 +2,28 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'HasSpecificationsMixin',
-    'recursive_blocked_query',
-    'Specification',
-    'SPECIFICATION_POLICY_ALLOWED_TYPES',
-    'SPECIFICATION_POLICY_DEFAULT_TYPES',
-    'SpecificationSet',
-    ]
+    "HasSpecificationsMixin",
+    "recursive_blocked_query",
+    "Specification",
+    "SPECIFICATION_POLICY_ALLOWED_TYPES",
+    "SPECIFICATION_POLICY_DEFAULT_TYPES",
+    "SpecificationSet",
+]
 
 import operator
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
-from storm.locals import (
-    Count,
-    Desc,
-    Join,
-    Or,
-    ReferenceSet,
-    SQL,
-    Store,
-    )
+from storm.locals import SQL, Count, Desc, Join, Or, ReferenceSet, Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
 
 from lp.app.enums import (
-    InformationType,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
-    )
+    InformationType,
+)
 from lp.app.errors import UserCannotUnsubscribePerson
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.services import IService
@@ -47,20 +39,18 @@ from lp.blueprints.enums import (
     SpecificationPriority,
     SpecificationSort,
     SpecificationWorkItemStatus,
-    )
+)
 from lp.blueprints.errors import TargetAlreadyHasSpecification
 from lp.blueprints.interfaces.specification import (
     GoalProposeError,
     ISpecification,
     ISpecificationSet,
-    )
+)
 from lp.blueprints.model.specificationbranch import SpecificationBranch
-from lp.blueprints.model.specificationdependency import (
-    SpecificationDependency,
-    )
+from lp.blueprints.model.specificationdependency import SpecificationDependency
 from lp.blueprints.model.specificationsubscription import (
     SpecificationSubscription,
-    )
+)
 from lp.blueprints.model.specificationworkitem import SpecificationWorkItem
 from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.bugtask import IBugTaskSet
@@ -72,7 +62,7 @@ from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessArtifactSource,
-    )
+)
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import validate_public_person
@@ -80,18 +70,15 @@ from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.model.milestone import Milestone
 from lp.services.database import bulk
-from lp.services.database.constants import (
-    DEFAULT,
-    UTC_NOW,
-    )
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    convert_storm_clause_to_string,
     SQLBase,
+    convert_storm_clause_to_string,
     sqlvalues,
-    )
+)
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
@@ -99,12 +86,9 @@ from lp.services.database.sqlobject import (
     SQLMultipleJoin,
     SQLRelatedJoin,
     StringCol,
-    )
+)
 from lp.services.mail.helpers import get_contact_email_addresses
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
-    )
+from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.xref.interfaces import IXRefSet
@@ -113,7 +97,8 @@ from lp.services.xref.interfaces import IXRefSet
 def recursive_blocked_query(user):
     from lp.blueprints.model.specificationsearch import (
         get_specification_privacy_filter,
-        )
+    )
+
     return """
         RECURSIVE blocked(id) AS (
             SELECT ?
@@ -122,14 +107,15 @@ def recursive_blocked_query(user):
             FROM blocked b, specificationdependency sd
             JOIN specification ON sd.specification = specification.id
             WHERE sd.dependency = b.id AND (%s))""" % (
-                convert_storm_clause_to_string(
-                    *get_specification_privacy_filter(user)))
+        convert_storm_clause_to_string(*get_specification_privacy_filter(user))
+    )
 
 
 def recursive_dependent_query(user):
     from lp.blueprints.model.specificationsearch import (
         get_specification_privacy_filter,
-        )
+    )
+
     return """
         RECURSIVE dependencies(id) AS (
             SELECT ?
@@ -138,153 +124,248 @@ def recursive_dependent_query(user):
             FROM dependencies d, specificationdependency sd
             JOIN specification ON sd.dependency = specification.id
             WHERE sd.specification = d.id AND (%s))""" % (
-                convert_storm_clause_to_string(
-                    *get_specification_privacy_filter(user)))
+        convert_storm_clause_to_string(*get_specification_privacy_filter(user))
+    )
 
 
 SPECIFICATION_POLICY_ALLOWED_TYPES = {
     SpecificationSharingPolicy.PUBLIC: [InformationType.PUBLIC],
-    SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY:
-        [InformationType.PUBLIC, InformationType.PROPRIETARY],
-    SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC:
-        [InformationType.PUBLIC, InformationType.PROPRIETARY],
+    SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY: [
+        InformationType.PUBLIC,
+        InformationType.PROPRIETARY,
+    ],
+    SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC: [
+        InformationType.PUBLIC,
+        InformationType.PROPRIETARY,
+    ],
     SpecificationSharingPolicy.PROPRIETARY: [InformationType.PROPRIETARY],
-    SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY:
-        [InformationType.PROPRIETARY, InformationType.EMBARGOED],
+    SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY: [
+        InformationType.PROPRIETARY,
+        InformationType.EMBARGOED,
+    ],
     SpecificationSharingPolicy.FORBIDDEN: [],
-    }
+}
 
 SPECIFICATION_POLICY_DEFAULT_TYPES = {
     SpecificationSharingPolicy.PUBLIC: InformationType.PUBLIC,
-    SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY: (
-        InformationType.PUBLIC),
+    SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY: (InformationType.PUBLIC),
     SpecificationSharingPolicy.PROPRIETARY_OR_PUBLIC: (
-        InformationType.PROPRIETARY),
+        InformationType.PROPRIETARY
+    ),
     SpecificationSharingPolicy.PROPRIETARY: InformationType.PROPRIETARY,
     SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY: (
-        InformationType.EMBARGOED),
-    }
+        InformationType.EMBARGOED
+    ),
+}
 
 
 @implementer(ISpecification, IBugLinkTarget, IInformationType)
 class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     """See ISpecification."""
 
-    _defaultOrder = ['-priority', 'definition_status', 'name', 'id']
+    _defaultOrder = ["-priority", "definition_status", "name", "id"]
 
     # db field names
     name = StringCol(unique=True, notNull=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=True)
     definition_status = DBEnum(
-        enum=SpecificationDefinitionStatus, allow_none=False,
-        default=SpecificationDefinitionStatus.NEW)
+        enum=SpecificationDefinitionStatus,
+        allow_none=False,
+        default=SpecificationDefinitionStatus.NEW,
+    )
     priority = DBEnum(
-        enum=SpecificationPriority, allow_none=False,
-        default=SpecificationPriority.UNDEFINED)
-    _assignee = ForeignKey(dbName='assignee', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    _drafter = ForeignKey(dbName='drafter', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
-    _approver = ForeignKey(dbName='approver', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        enum=SpecificationPriority,
+        allow_none=False,
+        default=SpecificationPriority.UNDEFINED,
+    )
+    _assignee = ForeignKey(
+        dbName="assignee",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
+    _drafter = ForeignKey(
+        dbName="drafter",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
+    _approver = ForeignKey(
+        dbName="approver",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     owner = ForeignKey(
-        dbName='owner', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+        dbName="owner",
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        notNull=True,
+    )
     datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    product = ForeignKey(dbName='product', foreignKey='Product',
-        notNull=False, default=None)
-    productseries = ForeignKey(dbName='productseries',
-        foreignKey='ProductSeries', notNull=False, default=None)
-    distribution = ForeignKey(dbName='distribution',
-        foreignKey='Distribution', notNull=False, default=None)
-    distroseries = ForeignKey(dbName='distroseries',
-        foreignKey='DistroSeries', notNull=False, default=None)
+    product = ForeignKey(
+        dbName="product", foreignKey="Product", notNull=False, default=None
+    )
+    productseries = ForeignKey(
+        dbName="productseries",
+        foreignKey="ProductSeries",
+        notNull=False,
+        default=None,
+    )
+    distribution = ForeignKey(
+        dbName="distribution",
+        foreignKey="Distribution",
+        notNull=False,
+        default=None,
+    )
+    distroseries = ForeignKey(
+        dbName="distroseries",
+        foreignKey="DistroSeries",
+        notNull=False,
+        default=None,
+    )
     goalstatus = DBEnum(
-        enum=SpecificationGoalStatus, allow_none=False,
-        default=SpecificationGoalStatus.PROPOSED)
-    goal_proposer = ForeignKey(dbName='goal_proposer', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        enum=SpecificationGoalStatus,
+        allow_none=False,
+        default=SpecificationGoalStatus.PROPOSED,
+    )
+    goal_proposer = ForeignKey(
+        dbName="goal_proposer",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     date_goal_proposed = UtcDateTimeCol(notNull=False, default=None)
-    goal_decider = ForeignKey(dbName='goal_decider', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    goal_decider = ForeignKey(
+        dbName="goal_decider",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     date_goal_decided = UtcDateTimeCol(notNull=False, default=None)
-    milestone = ForeignKey(dbName='milestone',
-        foreignKey='Milestone', notNull=False, default=None)
+    milestone = ForeignKey(
+        dbName="milestone", foreignKey="Milestone", notNull=False, default=None
+    )
     specurl = StringCol(notNull=False, default=None)
     whiteboard = StringCol(notNull=False, default=None)
     direction_approved = BoolCol(notNull=True, default=False)
     man_days = IntCol(notNull=False, default=None)
     implementation_status = DBEnum(
-        enum=SpecificationImplementationStatus, allow_none=False,
-        default=SpecificationImplementationStatus.UNKNOWN)
-    superseded_by = ForeignKey(dbName='superseded_by',
-        foreignKey='Specification', notNull=False, default=None)
-    completer = ForeignKey(dbName='completer', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+        enum=SpecificationImplementationStatus,
+        allow_none=False,
+        default=SpecificationImplementationStatus.UNKNOWN,
+    )
+    superseded_by = ForeignKey(
+        dbName="superseded_by",
+        foreignKey="Specification",
+        notNull=False,
+        default=None,
+    )
+    completer = ForeignKey(
+        dbName="completer",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     date_completed = UtcDateTimeCol(notNull=False, default=None)
-    starter = ForeignKey(dbName='starter', notNull=False,
-        foreignKey='Person',
-        storm_validator=validate_public_person, default=None)
+    starter = ForeignKey(
+        dbName="starter",
+        notNull=False,
+        foreignKey="Person",
+        storm_validator=validate_public_person,
+        default=None,
+    )
     date_started = UtcDateTimeCol(notNull=False, default=None)
 
     # useful joins
     _subscriptions = ReferenceSet(
-        'id', 'SpecificationSubscription.specification_id',
-        order_by='SpecificationSubscription.id')
+        "id",
+        "SpecificationSubscription.specification_id",
+        order_by="SpecificationSubscription.id",
+    )
     subscribers = ReferenceSet(
-        'id', 'SpecificationSubscription.specification_id',
-        'SpecificationSubscription.person_id', 'Person.id',
-        order_by=('Person.display_name', 'Person.name'))
+        "id",
+        "SpecificationSubscription.specification_id",
+        "SpecificationSubscription.person_id",
+        "Person.id",
+        order_by=("Person.display_name", "Person.name"),
+    )
     sprint_links = ReferenceSet(
-        '<primary key>', 'SprintSpecification.specification_id',
-        order_by='SprintSpecification.id')
+        "<primary key>",
+        "SprintSpecification.specification_id",
+        order_by="SprintSpecification.id",
+    )
     sprints = ReferenceSet(
-        '<primary key>', 'SprintSpecification.specification_id',
-        'SprintSpecification.sprint_id', 'Sprint.id',
-        order_by='Sprint.name')
-    spec_dependency_links = SQLMultipleJoin('SpecificationDependency',
-        joinColumn='specification', orderBy='id')
+        "<primary key>",
+        "SprintSpecification.specification_id",
+        "SprintSpecification.sprint_id",
+        "Sprint.id",
+        order_by="Sprint.name",
+    )
+    spec_dependency_links = SQLMultipleJoin(
+        "SpecificationDependency", joinColumn="specification", orderBy="id"
+    )
 
-    dependencies = SQLRelatedJoin('Specification', joinColumn='specification',
-        otherColumn='dependency', orderBy='title',
-        intermediateTable='SpecificationDependency')
+    dependencies = SQLRelatedJoin(
+        "Specification",
+        joinColumn="specification",
+        otherColumn="dependency",
+        orderBy="title",
+        intermediateTable="SpecificationDependency",
+    )
     information_type = DBEnum(
-        enum=InformationType, allow_none=False, default=InformationType.PUBLIC)
+        enum=InformationType, allow_none=False, default=InformationType.PUBLIC
+    )
 
     @cachedproperty
     def linked_branches(self):
-        return list(Store.of(self).find(
-            SpecificationBranch,
-            SpecificationBranch.specification == self).order_by(
-                SpecificationBranch.id))
+        return list(
+            Store.of(self)
+            .find(
+                SpecificationBranch, SpecificationBranch.specification == self
+            )
+            .order_by(SpecificationBranch.id)
+        )
 
     def _fetch_children_or_parents(self, join_cond, cond, user):
         from lp.blueprints.model.specificationsearch import (
             get_specification_privacy_filter,
+        )
+
+        return list(
+            Store.of(self)
+            .using(
+                Specification,
+                Join(SpecificationDependency, join_cond == self.id),
             )
-        return list(Store.of(self).using(
-            Specification,
-            Join(SpecificationDependency, join_cond == self.id)).find(
-            Specification,
-            cond == Specification.id, *get_specification_privacy_filter(user)
-            ).order_by(Specification.title))
+            .find(
+                Specification,
+                cond == Specification.id,
+                *get_specification_privacy_filter(user),
+            )
+            .order_by(Specification.title)
+        )
 
     def getDependencies(self, user=None):
         return self._fetch_children_or_parents(
             SpecificationDependency.specificationID,
-            SpecificationDependency.dependencyID, user)
+            SpecificationDependency.dependencyID,
+            user,
+        )
 
     def getBlockedSpecs(self, user=None):
         return self._fetch_children_or_parents(
             SpecificationDependency.dependencyID,
-            SpecificationDependency.specificationID, user)
+            SpecificationDependency.specificationID,
+            user,
+        )
 
     def set_assignee(self, person):
         self.subscribeIfAccessGrantNeeded(person)
@@ -326,8 +407,10 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def subscriptions(self):
         """Sort the subscriptions"""
         from lp.registry.model.person import person_sort_key
+
         return sorted(
-            self._subscriptions, key=lambda sub: person_sort_key(sub.person))
+            self._subscriptions, key=lambda sub: person_sort_key(sub.person)
+        )
 
     @property
     def workitems_text(self):
@@ -341,7 +424,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                 return "Work items for %s:" % milestone.name
 
         if len(self.work_items) == 0:
-            return ''
+            return ""
         milestone = self.work_items[0].milestone
         # Start by appending a header for the milestone of the first work
         # item. After this we're going to write a new header whenever we see a
@@ -359,8 +442,9 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                 assignee_part = ""
             # work_items are ordered by sequence
             workitems_lines.append(
-                "%s%s: %s" % (
-                    assignee_part, work_item.title, work_item.status.name))
+                "%s%s: %s"
+                % (assignee_part, work_item.title, work_item.status.name)
+            )
         return "\n".join(workitems_lines)
 
     @property
@@ -370,17 +454,30 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             return self.product
         return self.distribution
 
-    def newWorkItem(self, title, sequence,
-                    status=SpecificationWorkItemStatus.TODO, assignee=None,
-                    milestone=None):
+    def newWorkItem(
+        self,
+        title,
+        sequence,
+        status=SpecificationWorkItemStatus.TODO,
+        assignee=None,
+        milestone=None,
+    ):
         """See ISpecification."""
         if milestone is not None:
-            assert milestone.target == self.target, (
-                "%s does not belong to this spec's target (%s)" %
-                    (milestone.displayname, self.target.name))
+            assert (
+                milestone.target == self.target
+            ), "%s does not belong to this spec's target (%s)" % (
+                milestone.displayname,
+                self.target.name,
+            )
         return SpecificationWorkItem(
-            title=title, status=status, specification=self, assignee=assignee,
-            milestone=milestone, sequence=sequence)
+            title=title,
+            status=status,
+            specification=self,
+            assignee=assignee,
+            milestone=milestone,
+            sequence=sequence,
+        )
 
     @cachedproperty
     def work_items(self):
@@ -389,12 +486,14 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     @property
     def _work_items(self):
-        return Store.of(self).find(
-            SpecificationWorkItem, specification=self,
-            deleted=False).order_by("sequence")
+        return (
+            Store.of(self)
+            .find(SpecificationWorkItem, specification=self, deleted=False)
+            .order_by("sequence")
+        )
 
     def setWorkItems(self, new_work_items):
-        field = ISpecification['workitems_text'].bind(self)
+        field = ISpecification["workitems_text"].bind(self)
         self.updateWorkItems(field.parseAndValidate(new_work_items))
 
     def _deleteWorkItemsNotMatching(self, titles):
@@ -405,8 +504,10 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         title_counts = self._list_to_dict_of_frequency(titles)
 
         for work_item in self._work_items:
-            if (work_item.title not in title_counts or
-                title_counts[work_item.title] == 0):
+            if (
+                work_item.title not in title_counts
+                or title_counts[work_item.title] == 0
+            ):
                 work_item.deleted = True
 
             elif title_counts[work_item.title] > 0:
@@ -426,7 +527,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         # First mark work items with titles that are no longer present as
         # deleted.
         self._deleteWorkItemsNotMatching(
-            [wi['title'] for wi in new_work_items])
+            [wi["title"] for wi in new_work_items]
+        )
         work_items = self._work_items
         # At this point the list of new_work_items is necessarily the same
         # size (or longer) than the list of existing ones, so we can just
@@ -437,32 +539,42 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         existing_title_count = self._list_to_dict_of_frequency(existing_titles)
 
         for i, new_wi in enumerate(new_work_items):
-            if (new_wi['title'] not in existing_titles or
-                existing_title_count[new_wi['title']] == 0):
+            if (
+                new_wi["title"] not in existing_titles
+                or existing_title_count[new_wi["title"]] == 0
+            ):
                 to_insert.append((i, new_wi))
             else:
-                existing_title_count[new_wi['title']] -= 1
+                existing_title_count[new_wi["title"]] -= 1
                 # Get an existing work item with the same title and update
                 # it to match what we have now.
-                existing_wi_index = existing_titles.index(new_wi['title'])
+                existing_wi_index = existing_titles.index(new_wi["title"])
                 existing_wi = work_items[existing_wi_index]
                 # Mark a work item as dirty - don't use it again this update.
                 existing_titles[existing_wi_index] = None
                 # Update the sequence to match its current position on the
                 # list entered by the user.
                 existing_wi.sequence = i
-                existing_wi.status = new_wi['status']
-                existing_wi.assignee = new_wi['assignee']
-                milestone = new_wi['milestone']
+                existing_wi.status = new_wi["status"]
+                existing_wi.assignee = new_wi["assignee"]
+                milestone = new_wi["milestone"]
                 if milestone is not None:
-                    assert milestone.target == self.target, (
-                        "%s does not belong to this spec's target (%s)" %
-                            (milestone.displayname, self.target.name))
+                    assert (
+                        milestone.target == self.target
+                    ), "%s does not belong to this spec's target (%s)" % (
+                        milestone.displayname,
+                        self.target.name,
+                    )
                 existing_wi.milestone = milestone
 
         for sequence, item in to_insert:
-            self.newWorkItem(item['title'], sequence, item['status'],
-                             item['assignee'], item['milestone'])
+            self.newWorkItem(
+                item["title"],
+                sequence,
+                item["status"],
+                item["assignee"],
+                item["milestone"],
+            )
         Store.of(self).flush()
         del get_property_cache(self).work_items
 
@@ -516,16 +628,16 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             # we are clearing goals
             self.productseries = None
             self.distroseries = None
-        elif (IProductSeries.providedBy(goal) and
-              goal.product == self.target):
+        elif IProductSeries.providedBy(goal) and goal.product == self.target:
             # set the product series as a goal
             self.productseries = goal
             self.goal_proposer = proposer
             self.date_goal_proposed = UTC_NOW
             # and make sure there is no leftover distroseries goal
             self.distroseries = None
-        elif (IDistroSeries.providedBy(goal) and
-              goal.distribution == self.target):
+        elif (
+            IDistroSeries.providedBy(goal) and goal.distribution == self.target
+        ):
             # set the distroseries goal
             self.distroseries = goal
             self.goal_proposer = proposer
@@ -533,7 +645,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             # and make sure there is no leftover distroseries goal
             self.productseries = None
         else:
-            raise GoalProposeError('Inappropriate goal.')
+            raise GoalProposeError("Inappropriate goal.")
         # record who made the proposal, and when
         self.goal_proposer = proposer
         self.date_goal_proposed = UTC_NOW
@@ -567,15 +679,23 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def notificationRecipientAddresses(self):
         """See ISpecification."""
         related_people = [
-            self.owner, self.assignee, self.approver, self.drafter]
+            self.owner,
+            self.assignee,
+            self.approver,
+            self.drafter,
+        ]
         related_people = [
-            person for person in related_people if person is not None]
+            person for person in related_people if person is not None
+        ]
         subscribers = [
-            subscription.person for subscription in self.subscriptions]
+            subscription.person for subscription in self.subscriptions
+        ]
         notify_people = set(related_people + subscribers)
         without_access = set(
-            getUtility(IService, 'sharing').getPeopleWithoutAccess(
-                self, notify_people))
+            getUtility(IService, "sharing").getPeopleWithoutAccess(
+                self, notify_people
+            )
+        )
         notify_people -= without_access
         addresses = set()
         for person in notify_people:
@@ -592,19 +712,24 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def is_complete(self):
         """See `ISpecification`."""
         # Implemented blueprints are by definition complete.
-        if (self.implementation_status ==
-            SpecificationImplementationStatus.IMPLEMENTED):
+        if (
+            self.implementation_status
+            == SpecificationImplementationStatus.IMPLEMENTED
+        ):
             return True
         # Obsolete and superseded blueprints are considered complete.
         if self.definition_status in (
             SpecificationDefinitionStatus.OBSOLETE,
-            SpecificationDefinitionStatus.SUPERSEDED):
+            SpecificationDefinitionStatus.SUPERSEDED,
+        ):
             return True
         # Approved information blueprints are also considered complete.
-        if ((self.implementation_status ==
-             SpecificationImplementationStatus.INFORMATIONAL) and
-            (self.definition_status ==
-             SpecificationDefinitionStatus.APPROVED)):
+        if (
+            self.implementation_status
+            == SpecificationImplementationStatus.INFORMATIONAL
+        ) and (
+            self.definition_status == SpecificationDefinitionStatus.APPROVED
+        ):
             return True
         else:
             return False
@@ -614,16 +739,21 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See ISpecification. This is a code implementation of the
         SQL in spec_started_clause
         """
-        return (self.implementation_status not in [
-                    SpecificationImplementationStatus.UNKNOWN,
-                    SpecificationImplementationStatus.NOTSTARTED,
-                    SpecificationImplementationStatus.DEFERRED,
-                    SpecificationImplementationStatus.INFORMATIONAL,
-                    ]
-                or ((self.implementation_status ==
-                     SpecificationImplementationStatus.INFORMATIONAL) and
-                    (self.definition_status ==
-                     SpecificationDefinitionStatus.APPROVED)))
+        return self.implementation_status not in [
+            SpecificationImplementationStatus.UNKNOWN,
+            SpecificationImplementationStatus.NOTSTARTED,
+            SpecificationImplementationStatus.DEFERRED,
+            SpecificationImplementationStatus.INFORMATIONAL,
+        ] or (
+            (
+                self.implementation_status
+                == SpecificationImplementationStatus.INFORMATIONAL
+            )
+            and (
+                self.definition_status
+                == SpecificationDefinitionStatus.APPROVED
+            )
+        )
 
     @property
     def lifecycle_status(self):
@@ -683,20 +813,39 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     @property
     def has_accepted_goal(self):
         """See ISpecification."""
-        if (self.goal is not None and
-            self.goalstatus == SpecificationGoalStatus.ACCEPTED):
+        if (
+            self.goal is not None
+            and self.goalstatus == SpecificationGoalStatus.ACCEPTED
+        ):
             return True
         return False
 
     def getDelta(self, old_spec, user):
         """See ISpecification."""
         delta = ObjectDelta(old_spec, self)
-        delta.recordNewValues(("title", "summary",
-                               "specurl", "productseries",
-                               "distroseries", "milestone"))
-        delta.recordNewAndOld(("name", "priority", "definition_status",
-                               "target", "approver", "assignee", "drafter",
-                               "whiteboard", "workitems_text"))
+        delta.recordNewValues(
+            (
+                "title",
+                "summary",
+                "specurl",
+                "productseries",
+                "distroseries",
+                "milestone",
+            )
+        )
+        delta.recordNewAndOld(
+            (
+                "name",
+                "priority",
+                "definition_status",
+                "target",
+                "approver",
+                "assignee",
+                "drafter",
+                "whiteboard",
+                "workitems_text",
+            )
+        )
         delta.recordListAddedAndRemoved("bugs", "bugs_linked", "bugs_unlinked")
 
         if delta.changes:
@@ -713,14 +862,19 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """For backwards compatibility:
         implemented as a value in implementation_status.
         """
-        return (self.implementation_status ==
-                SpecificationImplementationStatus.INFORMATIONAL)
+        return (
+            self.implementation_status
+            == SpecificationImplementationStatus.INFORMATIONAL
+        )
 
     # subscriptions
     def subscription(self, person):
         """See ISpecification."""
-        return IStore(SpecificationSubscription).find(
-            SpecificationSubscription, specification=self, person=person).one()
+        return (
+            IStore(SpecificationSubscription)
+            .find(SpecificationSubscription, specification=self, person=person)
+            .one()
+        )
 
     def getSubscriptionByName(self, name):
         """See ISpecification."""
@@ -742,28 +896,32 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                 # 'essential' changes, there's no need to create a new
                 # subscription, but we modify the existing subscription
                 # and notify the user about the change.
-                with notify_modified(sub, ['essential'], user=subscribed_by):
+                with notify_modified(sub, ["essential"], user=subscribed_by):
                     sub.essential = essential
             return sub
         # since no previous subscription existed, create and return a new one
-        sub = SpecificationSubscription(specification=self,
-            person=person, essential=essential)
+        sub = SpecificationSubscription(
+            specification=self, person=person, essential=essential
+        )
         property_cache = get_property_cache(self)
-        if 'subscription' in property_cache:
+        if "subscription" in property_cache:
             from lp.registry.model.person import person_sort_key
+
             property_cache.subscriptions.append(sub)
             property_cache.subscriptions.sort(
-                key=lambda sub: person_sort_key(sub.person))
+                key=lambda sub: person_sort_key(sub.person)
+            )
         if self.information_type in PRIVATE_INFORMATION_TYPES:
             # Grant the subscriber access if they can't see the
             # specification.
-            service = getUtility(IService, 'sharing')
+            service = getUtility(IService, "sharing")
             shared_specs = service.getVisibleArtifacts(
-                person, specifications=[self],
-                ignore_permissions=True)["specifications"]
+                person, specifications=[self], ignore_permissions=True
+            )["specifications"]
             if not shared_specs:
                 service.ensureAccessGrants(
-                    [person], subscribed_by, specifications=[self])
+                    [person], subscribed_by, specifications=[self]
+                )
         notify(ObjectCreatedEvent(sub, user=subscribed_by))
         return sub
 
@@ -774,18 +932,22 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             person = unsubscribed_by
         for sub in self.subscriptions:
             if sub.person.id == person.id:
-                if (not sub.canBeUnsubscribedByUser(unsubscribed_by) and
-                    not ignore_permissions):
+                if (
+                    not sub.canBeUnsubscribedByUser(unsubscribed_by)
+                    and not ignore_permissions
+                ):
                     raise UserCannotUnsubscribePerson(
-                        '%s does not have permission to unsubscribe %s.' % (
-                            unsubscribed_by.displayname,
-                            person.displayname))
+                        "%s does not have permission to unsubscribe %s."
+                        % (unsubscribed_by.displayname, person.displayname)
+                    )
                 get_property_cache(self).subscriptions.remove(sub)
                 IStore(SpecificationSubscription).remove(sub)
-                artifacts_to_delete = getUtility(
-                    IAccessArtifactSource).find([self])
+                artifacts_to_delete = getUtility(IAccessArtifactSource).find(
+                    [self]
+                )
                 getUtility(IAccessArtifactGrantSource).revokeByArtifact(
-                    artifacts_to_delete, [person])
+                    artifacts_to_delete, [person]
+                )
                 return
 
     def isSubscribed(self, person):
@@ -798,11 +960,16 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     @property
     def bugs(self):
         from lp.bugs.model.bug import Bug
+
         bug_ids = [
-            int(id) for _, id in getUtility(IXRefSet).findFrom(
-                ('specification', str(self.id)), types=['bug'])]
-        return list(sorted(
-            bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
+            int(id)
+            for _, id in getUtility(IXRefSet).findFrom(
+                ("specification", str(self.id)), types=["bug"]
+            )
+        ]
+        return list(
+            sorted(bulk.load(Bug, bug_ids), key=operator.attrgetter("id"))
+        )
 
     def createBugLink(self, bug, props=None):
         """See BugLinkTargetMixin."""
@@ -810,25 +977,27 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
             props = {}
         # XXX: Should set creator.
         getUtility(IXRefSet).create(
-            {('specification', str(self.id)): {('bug', str(bug.id)): props}})
+            {("specification", str(self.id)): {("bug", str(bug.id)): props}}
+        )
 
     def deleteBugLink(self, bug):
         """See BugLinkTargetMixin."""
         getUtility(IXRefSet).delete(
-            {('specification', str(self.id)): [('bug', str(bug.id))]})
+            {("specification", str(self.id)): [("bug", str(bug.id))]}
+        )
 
     # sprint linking
     def linkSprint(self, sprint, user):
         """See ISpecification."""
-        from lp.blueprints.model.sprintspecification import (
-            SprintSpecification,
-            )
+        from lp.blueprints.model.sprintspecification import SprintSpecification
+
         for sprint_link in self.sprint_links:
             # sprints have unique names
             if sprint_link.sprint.name == sprint.name:
                 return sprint_link
-        sprint_link = SprintSpecification(specification=self,
-            sprint=sprint, registrant=user)
+        sprint_link = SprintSpecification(
+            specification=self, sprint=sprint, registrant=user
+        )
         if sprint.isDriver(user):
             sprint_link.acceptBy(user)
         return sprint_link
@@ -847,8 +1016,9 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         for deplink in self.spec_dependency_links:
             if deplink.dependency.id == specification.id:
                 return deplink
-        return SpecificationDependency(specification=self,
-            dependency=specification)
+        return SpecificationDependency(
+            specification=self, dependency=specification
+        )
 
     def removeDependency(self, specification):
         """See ISpecification."""
@@ -859,35 +1029,49 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
                 return deplink
 
     def all_deps(self, user=None):
-        return list(Store.of(self).with_(
-            SQL(recursive_dependent_query(user), params=(self.id,))).find(
-            Specification,
-            Specification.id != self.id,
-            Specification.id.is_in(SQL('select id from dependencies')),
-            ).order_by(Specification.name, Specification.id))
+        return list(
+            Store.of(self)
+            .with_(SQL(recursive_dependent_query(user), params=(self.id,)))
+            .find(
+                Specification,
+                Specification.id != self.id,
+                Specification.id.is_in(SQL("select id from dependencies")),
+            )
+            .order_by(Specification.name, Specification.id)
+        )
 
     def all_blocked(self, user=None):
         """See `ISpecification`."""
-        return list(Store.of(self).with_(
-            SQL(recursive_blocked_query(user), params=(self.id,))).find(
-            Specification,
-            Specification.id != self.id,
-            Specification.id.is_in(SQL('select id from blocked')),
-            ).order_by(Specification.name, Specification.id))
+        return list(
+            Store.of(self)
+            .with_(SQL(recursive_blocked_query(user), params=(self.id,)))
+            .find(
+                Specification,
+                Specification.id != self.id,
+                Specification.id.is_in(SQL("select id from blocked")),
+            )
+            .order_by(Specification.name, Specification.id)
+        )
 
     # branches
     def getBranchLink(self, branch):
-        return Store.of(self).find(
-            SpecificationBranch,
-            SpecificationBranch.specification == self,
-            SpecificationBranch.branch == branch).one()
+        return (
+            Store.of(self)
+            .find(
+                SpecificationBranch,
+                SpecificationBranch.specification == self,
+                SpecificationBranch.branch == branch,
+            )
+            .one()
+        )
 
     def linkBranch(self, branch, registrant):
         branch_link = self.getBranchLink(branch)
         if branch_link is not None:
             return branch_link
         branch_link = SpecificationBranch(
-            specification=self, branch=branch, registrant=registrant)
+            specification=self, branch=branch, registrant=registrant
+        )
         Store.of(self).flush()
         del get_property_cache(self).linked_branches
         notify(ObjectCreatedEvent(branch_link))
@@ -914,8 +1098,11 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         return filter_bugtasks_by_context(context, tasks)
 
     def __repr__(self):
-        return '<Specification %s %r for %r>' % (
-            self.id, self.name, self.target.name)
+        return "<Specification %s %r for %r>" % (
+            self.id,
+            self.name,
+            self.target.name,
+        )
 
     def getAllowedInformationTypes(self, who):
         """See `ISpecification`."""
@@ -926,29 +1113,36 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         # avoid circular imports.
         from lp.registry.model.accesspolicy import (
             reconcile_access_for_artifacts,
-            )
+        )
+
         if self.information_type == information_type:
             return False
         if information_type not in self.getAllowedInformationTypes(who):
             raise CannotChangeInformationType("Forbidden by project policy.")
         self.information_type = information_type
         reconcile_access_for_artifacts([self], information_type, [self.target])
-        if (information_type in PRIVATE_INFORMATION_TYPES and
-                not self.subscribers.is_empty()):
+        if (
+            information_type in PRIVATE_INFORMATION_TYPES
+            and not self.subscribers.is_empty()
+        ):
             # Grant the subscribers access if they do not have a
             # policy grant.
-            service = getUtility(IService, 'sharing')
+            service = getUtility(IService, "sharing")
             blind_subscribers = service.getPeopleWithoutAccess(
-                self, self.subscribers)
+                self, self.subscribers
+            )
             if len(blind_subscribers):
                 service.ensureAccessGrants(
-                    blind_subscribers, who, specifications=[self],
-                    ignore_permissions=True)
+                    blind_subscribers,
+                    who,
+                    specifications=[self],
+                    ignore_permissions=True,
+                )
         return True
 
     @cachedproperty
     def _known_viewers(self):
-        """A set of known persons able to view the specifcation."""
+        """A set of known persons able to view the specification."""
         return set()
 
     def userCanView(self, user):
@@ -956,7 +1150,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         # Avoid circular imports.
         from lp.blueprints.model.specificationsearch import (
             get_specification_privacy_filter,
-            )
+        )
+
         if self.information_type in PUBLIC_INFORMATION_TYPES:
             return True
         if user is None:
@@ -964,9 +1159,15 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         if user.id in self._known_viewers:
             return True
 
-        if not Store.of(self).find(
-            Specification, Specification.id == self.id,
-            *get_specification_privacy_filter(user)).is_empty():
+        if (
+            not Store.of(self)
+            .find(
+                Specification,
+                Specification.id == self.id,
+                *get_specification_privacy_filter(user),
+            )
+            .is_empty()
+        ):
             self._known_viewers.add(user.id)
             return True
         return False
@@ -977,9 +1178,16 @@ class HasSpecificationsMixin:
     for other classes that have specifications.
     """
 
-    def specifications(self, user, sort=None, quantity=None, filter=None,
-                       need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        self,
+        user,
+        sort=None,
+        quantity=None,
+        filter=None,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         """See IHasSpecifications."""
         # This should be implemented by the actual context class.
         raise NotImplementedError
@@ -992,8 +1200,10 @@ class HasSpecificationsMixin:
         # sort by priority descending, by default
         if sort is None or sort == SpecificationSort.PRIORITY:
             return (
-                Desc(Specification.priority), Specification.definition_status,
-                Specification.name)
+                Desc(Specification.priority),
+                Specification.definition_status,
+                Specification.name,
+            )
         elif sort == SpecificationSort.DATE:
             return (Desc(Specification.datecreated), Specification.id)
 
@@ -1007,17 +1217,20 @@ class HasSpecificationsMixin:
         """See IHasSpecifications."""
         user = getUtility(ILaunchBag).user
         return self.specifications(
-            user, filter=[SpecificationFilter.VALID], **kwargs)
+            user, filter=[SpecificationFilter.VALID], **kwargs
+        )
 
     @property
     def api_valid_specifications(self):
         return self.valid_specifications(
-            need_people=True, need_branches=True, need_workitems=True)
+            need_people=True, need_branches=True, need_workitems=True
+        )
 
     def specificationCount(self, user):
         """See IHasSpecifications."""
         return self.specifications(
-            user, filter=[SpecificationFilter.ALL]).count()
+            user, filter=[SpecificationFilter.ALL]
+        ).count()
 
 
 @implementer(ISpecificationSet)
@@ -1026,31 +1239,55 @@ class SpecificationSet(HasSpecificationsMixin):
 
     def __init__(self):
         """See ISpecificationSet."""
-        self.title = 'Specifications registered in Launchpad'
-        self.displayname = 'All Specifications'
+        self.title = "Specifications registered in Launchpad"
+        self.displayname = "All Specifications"
 
     def getStatusCountsForProductSeries(self, product_series):
         """See `ISpecificationSet`."""
         # Find specs targeted to the series or a milestone in the
         # series. The milestone set is materialised client-side to
         # get a good plan for the specification query.
-        return list(IStore(Specification).find(
-            (Specification.implementation_status, Count()),
-            Or(
-                Specification.productseries == product_series,
-                Specification.milestoneID.is_in(list(
-                    product_series.all_milestones.values(Milestone.id)))))
-            .group_by(Specification.implementation_status))
+        return list(
+            IStore(Specification)
+            .find(
+                (Specification.implementation_status, Count()),
+                Or(
+                    Specification.productseries == product_series,
+                    Specification.milestoneID.is_in(
+                        list(
+                            product_series.all_milestones.values(Milestone.id)
+                        )
+                    ),
+                ),
+            )
+            .group_by(Specification.implementation_status)
+        )
 
-    def specifications(self, user, sort=None, quantity=None, filter=None,
-                       need_people=True, need_branches=True,
-                       need_workitems=False):
+    def specifications(
+        self,
+        user,
+        sort=None,
+        quantity=None,
+        filter=None,
+        need_people=True,
+        need_branches=True,
+        need_workitems=False,
+    ):
         from lp.blueprints.model.specificationsearch import (
             search_specifications,
-            )
+        )
+
         return search_specifications(
-            self, [], user, sort, quantity, filter, need_people=need_people,
-            need_branches=need_branches, need_workitems=need_workitems)
+            self,
+            [],
+            user,
+            sort,
+            quantity,
+            filter,
+            need_people=need_people,
+            need_branches=need_branches,
+            need_workitems=need_workitems,
+        )
 
     def getByURL(self, url):
         """See ISpecificationSet."""
@@ -1069,18 +1306,32 @@ class SpecificationSet(HasSpecificationsMixin):
     def coming_sprints(self):
         """See ISpecificationSet."""
         from lp.blueprints.model.sprint import Sprint
+
         rows = IStore(Sprint).find(Sprint, Sprint.time_ends > UTC_NOW)
         return rows.order_by(Sprint.time_starts).config(limit=5)
 
-    def new(self, name, title, specurl, summary, definition_status,
-            owner, target, approver=None, assignee=None, drafter=None,
-            whiteboard=None, information_type=None):
+    def new(
+        self,
+        name,
+        title,
+        specurl,
+        summary,
+        definition_status,
+        owner,
+        target,
+        approver=None,
+        assignee=None,
+        drafter=None,
+        whiteboard=None,
+        information_type=None,
+    ):
         """See ISpecificationSet."""
         # Calculates a the default information_type based on the context
         # specification_sharing_policy.
         if information_type is None:
             information_type = (
-                target.pillar.getDefaultSpecificationInformationType())
+                target.pillar.getDefaultSpecificationInformationType()
+            )
         # Adapt the NewSpecificationDefinitionStatus item to a
         # SpecificationDefinitionStatus item.
         status_name = definition_status.name
@@ -1088,13 +1339,21 @@ class SpecificationSet(HasSpecificationsMixin):
         if status_name not in status_names:
             raise AssertionError(
                 "definition_status must an item found in "
-                "NewSpecificationDefinitionStatus.")
+                "NewSpecificationDefinitionStatus."
+            )
         definition_status = SpecificationDefinitionStatus.items[status_name]
         spec = Specification(
-            name=name, title=title, specurl=specurl, summary=summary,
-            definition_status=definition_status, owner=owner,
-            _approver=approver, _assignee=assignee, _drafter=drafter,
-            whiteboard=whiteboard)
+            name=name,
+            title=title,
+            specurl=specurl,
+            summary=summary,
+            definition_status=definition_status,
+            owner=owner,
+            _approver=approver,
+            _assignee=assignee,
+            _drafter=drafter,
+            whiteboard=whiteboard,
+        )
         spec.setTarget(target)
         spec.transitionToInformationType(information_type, None)
         return spec
@@ -1106,7 +1365,10 @@ class SpecificationSet(HasSpecificationsMixin):
         if len(specification_ids) == 0:
             return {}
 
-        results = Store.of(specifications[0]).execute("""
+        results = (
+            Store.of(specifications[0])
+            .execute(
+                """
             SELECT SpecificationDependency.specification,
                    SpecificationDependency.dependency
             FROM SpecificationDependency, Specification
@@ -1114,7 +1376,11 @@ class SpecificationSet(HasSpecificationsMixin):
             AND SpecificationDependency.dependency = Specification.id
             ORDER BY Specification.priority DESC, Specification.name,
                      Specification.id
-        """ % sqlvalues(specification_ids)).get_all()
+        """
+                % sqlvalues(specification_ids)
+            )
+            .get_all()
+        )
 
         dependencies = {}
         for spec_id, dep_id in results:

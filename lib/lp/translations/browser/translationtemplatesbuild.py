@@ -4,8 +4,8 @@
 """Display `TranslationTemplateBuild`s."""
 
 __all__ = [
-    'TranslationTemplatesBuildView',
-    ]
+    "TranslationTemplatesBuildView",
+]
 
 from zope.component import getUtility
 
@@ -14,7 +14,7 @@ from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.services.webapp.publisher import LaunchpadView
 from lp.translations.model.translationtemplatesbuild import (
     HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE,
-    )
+)
 
 
 class TranslationTemplatesBuildView(LaunchpadView):
@@ -24,13 +24,16 @@ class TranslationTemplatesBuildView(LaunchpadView):
         """`ProducSeries` that will consume the generated templates."""
         utility = getUtility(IProductSeriesSet)
         return list(
-            utility.findByTranslationsImportBranch(self.context.branch))
+            utility.findByTranslationsImportBranch(self.context.branch)
+        )
 
     def _renderTime(self, time):
         """Represent `time` as HTML."""
         formatter = DateTimeFormatterAPI(time)
         return """<span title="%s">%s</span>""" % (
-            formatter.datetime(), formatter.approximatedate())
+            formatter.datetime(),
+            formatter.approximatedate(),
+        )
 
     def initalize(self):
         """See `LaunchpadView`."""
@@ -53,7 +56,7 @@ class TranslationTemplatesBuildView(LaunchpadView):
         # completion times as well.
         if self.context.date_finished is None:
             if self.context.date_started is None:
-                return ''
+                return ""
             else:
                 return "Not finished yet."
         else:

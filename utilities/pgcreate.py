@@ -16,21 +16,20 @@ import psycopg2
 
 def main():
     if len(sys.argv) != 3:
-        print('Usage: %s [template] [dbname]' % sys.argv[0], file=sys.stderr)
+        print("Usage: %s [template] [dbname]" % sys.argv[0], file=sys.stderr)
         return 1
 
     template, dbname = sys.argv[1:]
 
     for attempt in range(0, 10):
-        con = psycopg2.connect('dbname=template1')
+        con = psycopg2.connect("dbname=template1")
         con.set_isolation_level(0)
         try:
             cur = con.cursor()
             cur.execute(
-                    "CREATE DATABASE %s TEMPLATE = %s ENCODING = 'UTF8'" % (
-                        dbname, template
-                        )
-                    )
+                "CREATE DATABASE %s TEMPLATE = %s ENCODING = 'UTF8'"
+                % (dbname, template)
+            )
         except psycopg2.Error:
             if attempt == 9:
                 raise
@@ -40,5 +39,6 @@ def main():
             return 0
     return 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     sys.exit(main())

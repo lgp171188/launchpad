@@ -316,7 +316,7 @@ and queued for review and approval.
 
 Instead of a distribution tracking one set of bugs and upstream projects
 tracking their own set of sometimes duplicated bugs, both upstream and
-downstream developers can seamlessly accesses both sets of bugs.
+downstream developers can seamlessly access both sets of bugs.
 
 
 Glossary

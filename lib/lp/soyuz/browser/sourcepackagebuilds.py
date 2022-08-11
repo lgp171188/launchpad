@@ -4,8 +4,8 @@
 """Browser views for source package builds."""
 
 __all__ = [
-    'SourcePackageBuildsView',
-    ]
+    "SourcePackageBuildsView",
+]
 
 
 from lp.soyuz.browser.build import BuildRecordsView

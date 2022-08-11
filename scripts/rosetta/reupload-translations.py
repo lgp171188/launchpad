@@ -8,9 +8,8 @@ import _pythonpath  # noqa: F401
 
 from lp.translations.scripts.reupload_translations import (
     ReuploadPackageTranslations,
-    )
+)
 
-
-if __name__ == '__main__':
-    script = ReuploadPackageTranslations('reupload-translations')
+if __name__ == "__main__":
+    script = ReuploadPackageTranslations("reupload-translations")
     script.run()

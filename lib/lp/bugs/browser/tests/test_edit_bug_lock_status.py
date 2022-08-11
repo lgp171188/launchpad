@@ -3,25 +3,19 @@
 
 """Tests related to the view for editing the bug lock status."""
 
-from soupmatchers import (
-    HTMLContains,
-    Tag,
-    )
-from testtools.matchers import (
-    MatchesStructure,
-    Not,
-    )
+from soupmatchers import HTMLContains, Tag
+from testtools.matchers import MatchesStructure, Not
 from zope.security.interfaces import Unauthorized
 
 from lp.bugs.enums import BugLockStatus
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
-    anonymous_logged_in,
     BrowserTestCase,
-    person_logged_in,
     TestCaseWithFactory,
-    )
+    anonymous_logged_in,
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
@@ -41,18 +35,16 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
     def test_form_submission_missing_required_fields(self):
         bug = self.factory.makeBug(target=self.target)
         form = {
-            'a': 1,
-            'b': 2,
+            "a": 1,
+            "b": 2,
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
@@ -73,16 +65,20 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
 
         with anonymous_logged_in():
             self.assertRaises(
-                Unauthorized, create_initialized_view,
-                bug.default_bugtask, name='+lock-status',
-                form=form
+                Unauthorized,
+                create_initialized_view,
+                bug.default_bugtask,
+                name="+lock-status",
+                form=form,
             )
 
         with person_logged_in(self.person):
             self.assertRaises(
-                Unauthorized, create_initialized_view,
-                bug.default_bugtask, name='+lock-status',
-                form=form
+                Unauthorized,
+                create_initialized_view,
+                bug.default_bugtask,
+                name="+lock-status",
+                form=form,
             )
 
     def test_locking_a_locked_bug(self):
@@ -101,13 +97,11 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
@@ -128,13 +122,11 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
@@ -148,10 +140,10 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
             bug.lock(
                 who=self.target.owner,
                 status=BugLockStatus.COMMENT_ONLY,
-                reason='too hot'
+                reason="too hot",
             )
         self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
-        self.assertEqual('too hot', bug.lock_reason)
+        self.assertEqual("too hot", bug.lock_reason)
 
         form = {
             "field.actions.change": "Change",
@@ -161,13 +153,11 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-               method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
@@ -189,27 +179,25 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
         self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
-        self.assertEqual('too hot', bug.lock_reason)
+        self.assertEqual("too hot", bug.lock_reason)
         self.assertEqual(2, bug.activity.count())
         self.assertThat(
             bug.activity[1],
             MatchesStructure.byEquality(
                 person=self.target.owner,
-                whatchanged='lock status',
+                whatchanged="lock status",
                 oldvalue=str(BugLockStatus.UNLOCKED),
                 newvalue=str(BugLockStatus.COMMENT_ONLY),
-            )
+            ),
         )
 
     def test_unlocking_a_locked_bug(self):
@@ -220,10 +208,10 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
             bug.lock(
                 who=self.target.owner,
                 status=BugLockStatus.COMMENT_ONLY,
-                reason='too hot'
+                reason="too hot",
             )
         self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
-        self.assertEqual('too hot', bug.lock_reason)
+        self.assertEqual("too hot", bug.lock_reason)
         self.assertEqual(2, bug.activity.count())
 
         form = {
@@ -234,13 +222,11 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
@@ -251,10 +237,10 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
             bug.activity[2],
             MatchesStructure.byEquality(
                 person=self.target.owner,
-                whatchanged='lock status',
+                whatchanged="lock status",
                 oldvalue=str(BugLockStatus.COMMENT_ONLY),
                 newvalue=str(BugLockStatus.UNLOCKED),
-            )
+            ),
         )
 
     def test_changing_lock_reason_of_a_locked_bug(self):
@@ -265,10 +251,10 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
             bug.lock(
                 who=self.target.owner,
                 status=BugLockStatus.COMMENT_ONLY,
-                reason='too hot'
+                reason="too hot",
             )
         self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
-        self.assertEqual('too hot', bug.lock_reason)
+        self.assertEqual("too hot", bug.lock_reason)
         self.assertEqual(2, bug.activity.count())
 
         form = {
@@ -279,28 +265,27 @@ class TestBugLockStatusEditView(TestCaseWithFactory):
         }
         with person_logged_in(self.target.owner):
             request = LaunchpadTestRequest(
-                method='POST',
+                method="POST",
                 form=form,
             )
             view = create_initialized_view(
-                bug.default_bugtask,
-                name='+lock-status',
-                request=request
+                bug.default_bugtask, name="+lock-status", request=request
             )
             self.assertEqual([], view.errors)
 
         self.assertEqual(BugLockStatus.COMMENT_ONLY, bug.lock_status)
-        self.assertEqual('too hot!', bug.lock_reason)
+        self.assertEqual("too hot!", bug.lock_reason)
         self.assertEqual(3, bug.activity.count())
         self.assertThat(
             bug.activity[2],
             MatchesStructure.byEquality(
                 person=self.target.owner,
-                whatchanged='lock reason',
-                oldvalue='too hot',
-                newvalue='too hot!',
-            )
+                whatchanged="lock reason",
+                oldvalue="too hot",
+                newvalue="too hot!",
+            ),
         )
+
 
 class TestBugLockFeatures(BrowserTestCase):
     """Test for the features related to the locking, unlocking a bug."""
@@ -324,16 +309,16 @@ class TestBugLockFeatures(BrowserTestCase):
             Not(
                 HTMLContains(
                     Tag(
-                        'change lock status link tag',
-                        'a',
-                        text='Change lock status',
+                        "change lock status link tag",
+                        "a",
+                        text="Change lock status",
                         attrs={
-                            'class': "edit",
-                            'href': '{}/+lock-status'.format(bugtask_url),
-                        }
+                            "class": "edit",
+                            "href": "{}/+lock-status".format(bugtask_url),
+                        },
                     )
                 )
-            )
+            ),
         )
 
     def test_bug_lock_status_page_linked_for_moderators(self):
@@ -348,15 +333,15 @@ class TestBugLockFeatures(BrowserTestCase):
             browser.contents,
             HTMLContains(
                 Tag(
-                    'change lock status link tag',
-                    'a',
-                    text='Change lock status',
+                    "change lock status link tag",
+                    "a",
+                    text="Change lock status",
                     attrs={
-                        'class': "edit",
-                        'href': '{}/+lock-status'.format(bugtask_url),
-                    }
+                        "class": "edit",
+                        "href": "{}/+lock-status".format(bugtask_url),
+                    },
                 )
-            )
+            ),
         )
 
     def test_bug_readonly_icon_displayed_when_bug_is_locked(self):
@@ -365,7 +350,7 @@ class TestBugLockFeatures(BrowserTestCase):
             bug.lock(
                 who=self.target.owner,
                 status=BugLockStatus.COMMENT_ONLY,
-                reason='too hot'
+                reason="too hot",
             )
 
         bugtask_url = canonical_url(bug.default_bugtask)
@@ -378,14 +363,11 @@ class TestBugLockFeatures(BrowserTestCase):
             browser.contents,
             HTMLContains(
                 Tag(
-                    'read-only icon tag',
-                    'span',
-                    attrs={
-                        'class': 'read-only',
-                        'title': 'Locked'
-                    }
+                    "read-only icon tag",
+                    "span",
+                    attrs={"class": "read-only", "title": "Locked"},
                 )
-            )
+            ),
         )
 
     def test_bug_readonly_icon_not_displayed_when_bug_is_unlocked(self):
@@ -402,13 +384,10 @@ class TestBugLockFeatures(BrowserTestCase):
             Not(
                 HTMLContains(
                     Tag(
-                        'read-only icon tag',
-                        'span',
-                        attrs={
-                            'class': 'read-only',
-                            'title': 'Locked'
-                        }
+                        "read-only icon tag",
+                        "span",
+                        attrs={"class": "read-only", "title": "Locked"},
                     )
                 )
-            )
+            ),
         )

@@ -1,19 +1,16 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['BranchSubscription']
+__all__ = ["BranchSubscription"]
 
-from storm.locals import (
-    Int,
-    Reference,
-    )
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
-    )
+)
 from lp.code.interfaces.branchsubscription import IBranchSubscription
 from lp.code.interfaces.branchtarget import IHasBranchTarget
 from lp.code.security import BranchSubscriptionEdit
@@ -28,26 +25,39 @@ from lp.services.database.stormbase import StormBase
 class BranchSubscription(StormBase):
     """A relationship between a person and a branch."""
 
-    __storm_table__ = 'BranchSubscription'
+    __storm_table__ = "BranchSubscription"
 
     id = Int(primary=True)
 
-    person_id = Int(name='person', allow_none=False, validator=validate_person)
-    person = Reference(person_id, 'Person.id')
-    branch_id = Int(name='branch', allow_none=False)
-    branch = Reference(branch_id, 'Branch.id')
-    notification_level = DBEnum(enum=BranchSubscriptionNotificationLevel,
-                                allow_none=False, default=DEFAULT)
-    max_diff_lines = DBEnum(enum=BranchSubscriptionDiffSize,
-                            allow_none=True, default=DEFAULT)
-    review_level = DBEnum(enum=CodeReviewNotificationLevel,
-                          allow_none=False, default=DEFAULT)
+    person_id = Int(name="person", allow_none=False, validator=validate_person)
+    person = Reference(person_id, "Person.id")
+    branch_id = Int(name="branch", allow_none=False)
+    branch = Reference(branch_id, "Branch.id")
+    notification_level = DBEnum(
+        enum=BranchSubscriptionNotificationLevel,
+        allow_none=False,
+        default=DEFAULT,
+    )
+    max_diff_lines = DBEnum(
+        enum=BranchSubscriptionDiffSize, allow_none=True, default=DEFAULT
+    )
+    review_level = DBEnum(
+        enum=CodeReviewNotificationLevel, allow_none=False, default=DEFAULT
+    )
     subscribed_by_id = Int(
-        name='subscribed_by', allow_none=False, validator=validate_person)
-    subscribed_by = Reference(subscribed_by_id, 'Person.id')
+        name="subscribed_by", allow_none=False, validator=validate_person
+    )
+    subscribed_by = Reference(subscribed_by_id, "Person.id")
 
-    def __init__(self, person, branch, notification_level, max_diff_lines,
-                 review_level, subscribed_by):
+    def __init__(
+        self,
+        person,
+        branch,
+        notification_level,
+        max_diff_lines,
+        review_level,
+        subscribed_by,
+    ):
         super().__init__()
         self.person = person
         self.branch = branch

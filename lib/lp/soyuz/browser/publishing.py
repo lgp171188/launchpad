@@ -4,11 +4,11 @@
 """Browser views for Soyuz publishing records."""
 
 __all__ = [
-    'BinaryPublishingRecordView',
-    'SourcePublicationURL',
-    'SourcePublishingRecordSelectableView',
-    'SourcePublishingRecordView',
-    ]
+    "BinaryPublishingRecordView",
+    "SourcePublicationURL",
+    "SourcePublishingRecordSelectableView",
+    "SourcePublishingRecordView",
+]
 
 from operator import attrgetter
 
@@ -20,16 +20,13 @@ from lp.archiveuploader.utils import re_isadeb
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import Navigation
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ICanonicalUrlData
-from lp.services.webapp.publisher import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp.publisher import LaunchpadView, canonical_url
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
@@ -38,12 +35,13 @@ from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     IPublishingSet,
     ISourcePackagePublishingHistory,
-    )
+)
 
 
 @implementer(ICanonicalUrlData)
 class PublicationURLBase:
     """Dynamic URL declaration for `I*PackagePublishingHistory`"""
+
     rootsite = None
 
     def __init__(self, context):
@@ -56,6 +54,7 @@ class PublicationURLBase:
 
 class SourcePublicationURL(PublicationURLBase):
     """Dynamic URL declaration for `ISourcePackagePublishingHistory`"""
+
     @property
     def path(self):
         return "+sourcepub/%s" % self.context.id
@@ -63,13 +62,15 @@ class SourcePublicationURL(PublicationURLBase):
 
 class BinaryPublicationURL(PublicationURLBase):
     """Dynamic URL declaration for `IBinaryPackagePublishingHistory`"""
+
     @property
     def path(self):
         return "+binarypub/%s" % self.context.id
 
 
-class SourcePackagePublishingHistoryNavigation(Navigation,
-                                               FileNavigationMixin):
+class SourcePackagePublishingHistoryNavigation(
+    Navigation, FileNavigationMixin
+):
     usedfor = ISourcePackagePublishingHistory
 
 
@@ -107,15 +108,15 @@ class BasePublishingRecordView(LaunchpadView):
     # The reason we define the map below outside the only function that uses
     # it (date_last_changed()) is that this allows us to test whether the map
     # covers all PackagePublishingStatus enumeration values.
-    # The pertinent tests in doc/publishing-pages.txt will fail if we add a
+    # The pertinent tests in doc/publishing-pages.rst will fail if we add a
     # new value to the PackagePublishingStatus enumeration but do not update
     # this map.
     timestamp_map = {
-        PackagePublishingStatus.DELETED: 'dateremoved',
-        PackagePublishingStatus.OBSOLETE: 'scheduleddeletiondate',
-        PackagePublishingStatus.PENDING: 'datecreated',
-        PackagePublishingStatus.PUBLISHED: 'datepublished',
-        PackagePublishingStatus.SUPERSEDED: 'datesuperseded'
+        PackagePublishingStatus.DELETED: "dateremoved",
+        PackagePublishingStatus.OBSOLETE: "scheduleddeletiondate",
+        PackagePublishingStatus.PENDING: "datecreated",
+        PackagePublishingStatus.PUBLISHED: "datepublished",
+        PackagePublishingStatus.SUPERSEDED: "datesuperseded",
     }
 
     @property
@@ -188,15 +189,17 @@ class BasePublishingRecordView(LaunchpadView):
         """Return the removal comment or 'None provided'."""
         removal_comment = self.context.removal_comment
         if removal_comment is None or not removal_comment.strip():
-            removal_comment = 'None provided.'
+            removal_comment = "None provided."
 
         return removal_comment
 
     @property
     def phased_update_percentage(self):
         """Return the formatted phased update percentage, or empty."""
-        if (self.is_binary and
-            self.context.phased_update_percentage is not None):
+        if (
+            self.is_binary
+            and self.context.phased_update_percentage is not None
+        ):
             return "%d%% of users" % self.context.phased_update_percentage
         return ""
 
@@ -210,7 +213,7 @@ class BasePublishingRecordView(LaunchpadView):
         archive = self.context.copied_from_archive
         if archive is None:
             return False
-        return archive.is_ppa and check_permission('launchpad.View', archive)
+        return archive.is_ppa and check_permission("launchpad.View", archive)
 
 
 class SourcePublishingRecordView(BasePublishingRecordView):
@@ -224,20 +227,20 @@ class SourcePublishingRecordView(BasePublishingRecordView):
     @property
     def builds_successful_and_published(self):
         """Return whether all builds were successful and published."""
-        status = self.build_status_summary['status']
+        status = self.build_status_summary["status"]
         return status == BuildSetStatus.FULLYBUILT
 
     @property
     def builds_successful_and_pending(self):
         """Return whether builds were successful but not all published."""
-        status = self.build_status_summary['status']
+        status = self.build_status_summary["status"]
         return status == BuildSetStatus.FULLYBUILT_PENDING
 
     @property
     def pending_builds(self):
         """Return a list of successful builds pending publication."""
         if self.builds_successful_and_pending:
-            return self.build_status_summary['builds']
+            return self.build_status_summary["builds"]
         else:
             return []
 
@@ -245,13 +248,13 @@ class SourcePublishingRecordView(BasePublishingRecordView):
     def build_status_img_src(self):
         """Return the image path for the current build status summary."""
         image_map = {
-            BuildSetStatus.BUILDING: '/@@/processing',
-            BuildSetStatus.NEEDSBUILD: '/@@/build-needed',
-            BuildSetStatus.FAILEDTOBUILD: '/@@/no',
-            BuildSetStatus.FULLYBUILT_PENDING: '/@@/build-success-publishing'
-            }
+            BuildSetStatus.BUILDING: "/@@/processing",
+            BuildSetStatus.NEEDSBUILD: "/@@/build-needed",
+            BuildSetStatus.FAILEDTOBUILD: "/@@/no",
+            BuildSetStatus.FULLYBUILT_PENDING: "/@@/build-success-publishing",
+        }
 
-        return image_map.get(self.build_status_summary['status'], '/@@/yes')
+        return image_map.get(self.build_status_summary["status"], "/@@/yes")
 
     def wasCopied(self):
         """Whether or not a source is published in its original location.
@@ -294,7 +297,8 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         """Return list of dictionaries representing published files."""
         files = sorted(
             self.context.getSourceAndBinaryLibraryFiles(),
-            key=attrgetter('filename'))
+            key=attrgetter("filename"),
+        )
         result = []
         urls = set()
         for library_file in files:
@@ -310,13 +314,15 @@ class SourcePublishingRecordView(BasePublishingRecordView):
             custom_dict["filename"] = library_file.filename
             custom_dict["filesize"] = library_file.content.filesize
             if re_isadeb.match(library_file.filename):
-                custom_dict['class'] = 'binary'
+                custom_dict["class"] = "binary"
                 custom_dict["url"] = ProxiedLibraryFileAlias(
-                    library_file, self.context.archive).http_url
+                    library_file, self.context.archive
+                ).http_url
             else:
-                custom_dict['class'] = 'source'
+                custom_dict["class"] = "source"
                 custom_dict["url"] = ProxiedSourceLibraryFileAlias(
-                    library_file, self.context).http_url
+                    library_file, self.context
+                ).http_url
 
             result.append(custom_dict)
 
@@ -327,7 +333,8 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         package_diffs = self.context.sourcepackagerelease.package_diffs
         return [
             ProxiedPackageDiff(package_diff, self.context.archive)
-            for package_diff in package_diffs]
+            for package_diff in package_diffs
+        ]
 
     @property
     def built_packages(self):
@@ -340,7 +347,8 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         """
         publishing_set = getUtility(IPublishingSet)
         return publishing_set.getBuiltPackagesSummaryForSourcePublication(
-            self.context)
+            self.context
+        )
 
     @cachedproperty
     def builds(self):
@@ -360,7 +368,7 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         if not archive.is_ppa:
             return False
 
-        return check_permission('launchpad.View', archive)
+        return check_permission("launchpad.View", archive)
 
     @property
     def recipe_build_details(self):
@@ -370,16 +378,20 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         sprb = self.context.sourcepackagerelease.source_package_recipe_build
         if sprb is not None:
             if sprb.recipe is None:
-                recipe = 'deleted recipe'
+                recipe = "deleted recipe"
             else:
                 recipe = structured(
                     'recipe <a href="%s">%s</a>',
-                    canonical_url(sprb.recipe), sprb.recipe.name)
+                    canonical_url(sprb.recipe),
+                    sprb.recipe.name,
+                )
             return structured(
                 '<a href="%s">Built</a> by %s for <a href="%s">%s</a>',
-                    canonical_url(sprb), recipe,
-                    canonical_url(sprb.requester),
-                    sprb.requester.displayname).escapedtext
+                canonical_url(sprb),
+                recipe,
+                canonical_url(sprb.requester),
+                sprb.requester.displayname,
+            ).escapedtext
         return None
 
 

@@ -19,7 +19,6 @@ from lp.services.scripts.base import LaunchpadCronScript
 
 
 class UpdateRemoteProduct(LaunchpadCronScript):
-
     def main(self):
         start_time = time.time()
 
@@ -30,7 +29,8 @@ class UpdateRemoteProduct(LaunchpadCronScript):
         self.logger.info("Time for this run: %.3f seconds." % run_time)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     script = UpdateRemoteProduct(
-        "updateremoteproduct", dbuser=config.updateremoteproduct.dbuser)
+        "updateremoteproduct", dbuser=config.updateremoteproduct.dbuser
+    )
     script.lock_and_run()

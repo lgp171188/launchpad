@@ -3,36 +3,21 @@
 
 """Tests for lp.services.daemons.tachandler"""
 
-from os.path import (
-    dirname,
-    exists,
-    join,
-    )
 import subprocess
 import warnings
+from os.path import dirname, exists, join
 
-from fixtures import TempDir
 import testtools
-from testtools.matchers import (
-    Matcher,
-    Mismatch,
-    Not,
-    )
+from fixtures import TempDir
+from testtools.matchers import Matcher, Mismatch, Not
 
 from lp.services.daemons.readyservice import LOG_MAGIC
-from lp.services.daemons.tachandler import (
-    TacException,
-    TacTestSetup,
-    )
-from lp.services.osutils import (
-    get_pid_from_file,
-    override_environ,
-    )
+from lp.services.daemons.tachandler import TacException, TacTestSetup
+from lp.services.osutils import get_pid_from_file, override_environ
 from lp.testing.layers import DatabaseLayer
 
 
 class SimpleTac(TacTestSetup):
-
     def __init__(self, name, tempdir):
         super().__init__()
         self.name, self.tempdir = name, tempdir
@@ -43,15 +28,15 @@ class SimpleTac(TacTestSetup):
 
     @property
     def tacfile(self):
-        return join(self.root, '%s.tac' % self.name)
+        return join(self.root, "%s.tac" % self.name)
 
     @property
     def pidfile(self):
-        return join(self.tempdir, '%s.pid' % self.name)
+        return join(self.tempdir, "%s.pid" % self.name)
 
     @property
     def logfile(self):
-        return join(self.tempdir, '%s.log' % self.name)
+        return join(self.tempdir, "%s.log" % self.name)
 
     def setUpRoot(self):
         pass
@@ -154,7 +139,8 @@ class TacTestSetupTestCase(testtools.TestCase):
 
         # One deprecation warning is emitted.
         self.assertEqual(
-            [UserWarning], [item.category for item in warnings_log])
+            [UserWarning], [item.category for item in warnings_log]
+        )
 
     def test_truncateLog(self):
         """
@@ -191,4 +177,5 @@ class TacTestSetupTestCase(testtools.TestCase):
         with open(fixture.logfile, "rb") as logfile:
             self.assertEqual(
                 ("One\nTwo\nThree, %s\n" % LOG_MAGIC).encode("UTF-8"),
-                logfile.read())
+                logfile.read(),
+            )

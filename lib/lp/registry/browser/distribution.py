@@ -1,43 +1,44 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for distributions."""
 
 __all__ = [
-    'DistributionAddView',
-    'DistributionAdminView',
-    'DistributionArchiveMirrorsRSSView',
-    'DistributionArchiveMirrorsView',
-    'DistributionArchivesView',
-    'DistributionChangeMembersView',
-    'DistributionChangeMirrorAdminView',
-    'DistributionChangeOCIProjectAdminView',
-    'DistributionCountryArchiveMirrorsView',
-    'DistributionDisabledMirrorsView',
-    'DistributionEditView',
-    'DistributionFacets',
-    'DistributionNavigation',
-    'DistributionPPASearchView',
-    'DistributionPackageSearchView',
-    'DistributionPendingReviewMirrorsView',
-    'DistributionPublisherConfigView',
-    'DistributionReassignmentView',
-    'DistributionSeriesView',
-    'DistributionDerivativesView',
-    'DistributionSeriesMirrorsRSSView',
-    'DistributionSeriesMirrorsView',
-    'DistributionSetActionNavigationMenu',
-    'DistributionSetBreadcrumb',
-    'DistributionSetContextMenu',
-    'DistributionSetNavigation',
-    'DistributionSetView',
-    'DistributionSpecificationsMenu',
-    'DistributionUnofficialMirrorsView',
-    'DistributionView',
-    ]
+    "DistributionAddView",
+    "DistributionAdminView",
+    "DistributionArchiveMirrorsRSSView",
+    "DistributionArchiveMirrorsView",
+    "DistributionArchivesView",
+    "DistributionChangeMembersView",
+    "DistributionChangeMirrorAdminView",
+    "DistributionChangeOCIProjectAdminView",
+    "DistributionChangeSecurityAdminView",
+    "DistributionCountryArchiveMirrorsView",
+    "DistributionDisabledMirrorsView",
+    "DistributionEditView",
+    "DistributionFacets",
+    "DistributionNavigation",
+    "DistributionPPASearchView",
+    "DistributionPackageSearchView",
+    "DistributionPendingReviewMirrorsView",
+    "DistributionPublisherConfigView",
+    "DistributionReassignmentView",
+    "DistributionSeriesView",
+    "DistributionDerivativesView",
+    "DistributionSeriesMirrorsRSSView",
+    "DistributionSeriesMirrorsView",
+    "DistributionSetActionNavigationMenu",
+    "DistributionSetBreadcrumb",
+    "DistributionSetContextMenu",
+    "DistributionSetNavigation",
+    "DistributionSetView",
+    "DistributionSpecificationsMenu",
+    "DistributionUnofficialMirrorsView",
+    "DistributionView",
+]
 
-from collections import defaultdict
 import datetime
+from collections import defaultdict
 
 from lazr.restful.utils import smartquote
 from zope.component import getUtility
@@ -54,10 +55,10 @@ from zope.security.interfaces import Unauthorized
 from lp.answers.browser.faqtarget import FAQTargetNavigationMixin
 from lp.answers.browser.questiontarget import QuestionTargetTraversalMixin
 from lp.app.browser.launchpadform import (
-    action,
     LaunchpadEditFormView,
     LaunchpadFormView,
-    )
+    action,
+)
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
 from lp.app.enums import PILLAR_INFORMATION_TYPES
@@ -67,77 +68,71 @@ from lp.app.widgets.image import ImageChangeWidget
 from lp.app.widgets.itemswidgets import (
     LabeledMultiCheckBoxWidget,
     LaunchpadRadioWidgetWithDescription,
-    )
+)
 from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
-    )
+)
 from lp.blueprints.browser.specificationtarget import (
     HasSpecificationsMenuMixin,
-    )
+)
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.bugs.browser.structuralsubscription import (
-    expose_structural_subscription_data_to_js,
     StructuralSubscriptionMenuMixin,
     StructuralSubscriptionTargetTraversalMixin,
-    )
+    expose_structural_subscription_data_to_js,
+)
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
-from lp.registry.browser import (
-    add_subscribe_link,
-    RegistryEditFormView,
-    )
+from lp.registry.browser import RegistryEditFormView, add_subscribe_link
 from lp.registry.browser.announcement import HasAnnouncementsView
 from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
     RegistryCollectionActionMenuBase,
-    )
+)
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
 from lp.registry.browser.pillar import (
     PillarBugsMenu,
     PillarNavigationMixin,
     PillarViewMixin,
-    )
+)
 from lp.registry.browser.widgets.ocicredentialswidget import (
     OCICredentialsWidget,
-    )
+)
 from lp.registry.enums import DistributionDefaultTraversalPolicy
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionMirrorMenuMarker,
     IDistributionSet,
-    )
+)
 from lp.registry.interfaces.distributionmirror import (
     MirrorContent,
     MirrorSpeed,
-    )
+)
 from lp.registry.interfaces.ociproject import (
-    IOCIProjectSet,
     OCI_PROJECT_ALLOW_CREATE,
-    )
+    IOCIProjectSet,
+)
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
-from lp.services.geoip.helpers import (
-    ipaddress_from_request,
-    request_country,
-    )
+from lp.services.geoip.helpers import ipaddress_from_request, request_country
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     ApplicationMenu,
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     LaunchpadView,
     Link,
     Navigation,
     NavigationMenu,
-    redirection,
     StandardLaunchpadFacets,
+    canonical_url,
+    enabled_with_permission,
+    redirection,
     stepthrough,
-    )
+)
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
@@ -149,59 +144,70 @@ from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class DistributionNavigation(
-    Navigation, BugTargetTraversalMixin, QuestionTargetTraversalMixin,
-    FAQTargetNavigationMixin, StructuralSubscriptionTargetTraversalMixin,
-    PillarNavigationMixin, TargetDefaultVCSNavigationMixin):
+    Navigation,
+    BugTargetTraversalMixin,
+    QuestionTargetTraversalMixin,
+    FAQTargetNavigationMixin,
+    StructuralSubscriptionTargetTraversalMixin,
+    PillarNavigationMixin,
+    TargetDefaultVCSNavigationMixin,
+):
 
     usedfor = IDistribution
 
-    @redirection('+source', status=301)
+    @redirection("+source", status=301)
     def redirect_source(self):
         return canonical_url(self.context)
 
-    @stepthrough('+mirror')
+    @stepthrough("+mirror")
     def traverse_mirrors(self, name):
         return self.context.getMirrorByName(name)
 
-    @stepthrough('+source')
+    @stepthrough("+source")
     def traverse_sources(self, name):
         dsp = self.context.getSourcePackage(name)
         policy = self.context.default_traversal_policy
-        if (policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE and
-                not self.context.redirect_default_traversal):
+        if (
+            policy == DistributionDefaultTraversalPolicy.SOURCE_PACKAGE
+            and not self.context.redirect_default_traversal
+        ):
             return self.redirectSubTree(
-                canonical_url(dsp, request=self.request), status=303)
+                canonical_url(dsp, request=self.request), status=303
+            )
         else:
             return dsp
 
-    @stepthrough('+oci')
+    @stepthrough("+oci")
     def traverse_oci(self, name):
         oci_project = self.context.getOCIProject(name)
         policy = self.context.default_traversal_policy
-        if (policy == DistributionDefaultTraversalPolicy.OCI_PROJECT and
-                not self.context.redirect_default_traversal):
+        if (
+            policy == DistributionDefaultTraversalPolicy.OCI_PROJECT
+            and not self.context.redirect_default_traversal
+        ):
             return self.redirectSubTree(
-                canonical_url(oci_project, request=self.request), status=303)
+                canonical_url(oci_project, request=self.request), status=303
+            )
         else:
             return oci_project
 
-    @stepthrough('+milestone')
+    @stepthrough("+milestone")
     def traverse_milestone(self, name):
         return self.context.getMilestone(name)
 
-    @stepthrough('+announcement')
+    @stepthrough("+announcement")
     def traverse_announcement(self, name):
         return self.context.getAnnouncement(name)
 
-    @stepthrough('+spec')
+    @stepthrough("+spec")
     def traverse_spec(self, name):
         return self.context.getSpecification(name)
 
-    @stepthrough('+archive')
+    @stepthrough("+archive")
     def traverse_archive(self, name):
         return self.context.getArchive(name)
 
-    @stepthrough('+commercialsubscription')
+    @stepthrough("+commercialsubscription")
     def traverse_commercialsubscription(self, name):
         return self.context.commercial_subscription
 
@@ -212,21 +218,24 @@ class DistributionNavigation(
             resolved = self.context.resolveSeriesAlias(name)
             return resolved, True
 
-    @stepthrough('+series')
+    @stepthrough("+series")
     def traverse_series(self, name):
         series, redirect = self._resolveSeries(name)
         if not redirect:
             policy = self.context.default_traversal_policy
-            if (policy == DistributionDefaultTraversalPolicy.SERIES and
-                    not self.context.redirect_default_traversal):
+            if (
+                policy == DistributionDefaultTraversalPolicy.SERIES
+                and not self.context.redirect_default_traversal
+            ):
                 redirect = True
         if redirect:
             return self.redirectSubTree(
-                canonical_url(series, request=self.request), status=303)
+                canonical_url(series, request=self.request), status=303
+            )
         else:
             return series
 
-    @stepthrough('+vulnerability')
+    @stepthrough("+vulnerability")
     def traverse_vulnerability(self, id):
         try:
             id = int(id)
@@ -248,12 +257,14 @@ class DistributionNavigation(
             redirect = False
         else:
             raise AssertionError(
-                "Unknown default traversal policy %r" % policy)
+                "Unknown default traversal policy %r" % policy
+            )
         if obj is None:
             return None
         if redirect or self.context.redirect_default_traversal:
             return self.redirectSubTree(
-                canonical_url(obj, request=self.request), status=303)
+                canonical_url(obj, request=self.request), status=303
+            )
         else:
             return obj
 
@@ -277,37 +288,39 @@ class DistributionFacets(StandardLaunchpadFacets):
 
 class DistributionSetBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `IDistributionSet`."""
-    text = 'Distributions'
+
+    text = "Distributions"
 
 
 class DistributionSetContextMenu(ContextMenu):
 
     usedfor = IDistributionSet
-    links = ['products', 'distributions', 'people', 'meetings']
+    links = ["products", "distributions", "people", "meetings"]
 
     def distributions(self):
-        return Link('/distros/', 'View distributions')
+        return Link("/distros/", "View distributions")
 
     def products(self):
-        return Link('/projects/', 'View projects')
+        return Link("/projects/", "View projects")
 
     def people(self):
-        return Link('/people/', 'View people')
+        return Link("/people/", "View people")
 
     def meetings(self):
-        return Link('/sprints/', 'View meetings')
+        return Link("/sprints/", "View meetings")
 
 
 class DistributionMirrorsNavigationMenu(NavigationMenu):
 
     usedfor = IDistributionMirrorMenuMarker
-    facet = 'overview'
-    links = ('cdimage_mirrors',
-             'archive_mirrors',
-             'disabled_mirrors',
-             'pending_review_mirrors',
-             'unofficial_mirrors',
-             )
+    facet = "overview"
+    links = (
+        "cdimage_mirrors",
+        "archive_mirrors",
+        "disabled_mirrors",
+        "pending_review_mirrors",
+        "unofficial_mirrors",
+    )
 
     @property
     def distribution(self):
@@ -318,54 +331,58 @@ class DistributionMirrorsNavigationMenu(NavigationMenu):
         return self.context.context
 
     def cdimage_mirrors(self):
-        text = 'CD mirrors'
-        return Link('+cdmirrors', text, icon='info')
+        text = "CD mirrors"
+        return Link("+cdmirrors", text, icon="info")
 
     def archive_mirrors(self):
-        text = 'Archive mirrors'
-        return Link('+archivemirrors', text, icon='info')
+        text = "Archive mirrors"
+        return Link("+archivemirrors", text, icon="info")
 
     def newmirror(self):
-        text = 'Register mirror'
-        return Link('+newmirror', text, icon='add')
+        text = "Register mirror"
+        return Link("+newmirror", text, icon="add")
 
     def _userCanSeeNonPublicMirrorListings(self):
         """Does the user have rights to see non-public mirrors listings?"""
         user = getUtility(ILaunchBag).user
-        return (self.distribution.supports_mirrors
-                and user is not None
-                and user.inTeam(self.distribution.mirror_admin))
+        return (
+            self.distribution.supports_mirrors
+            and user is not None
+            and user.inTeam(self.distribution.mirror_admin)
+        )
 
     def disabled_mirrors(self):
-        text = 'Disabled mirrors'
+        text = "Disabled mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
-        return Link('+disabledmirrors', text, enabled=enabled, icon='info')
+        return Link("+disabledmirrors", text, enabled=enabled, icon="info")
 
     def pending_review_mirrors(self):
-        text = 'Pending-review mirrors'
+        text = "Pending-review mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
         return Link(
-            '+pendingreviewmirrors', text, enabled=enabled, icon='info')
+            "+pendingreviewmirrors", text, enabled=enabled, icon="info"
+        )
 
     def unofficial_mirrors(self):
-        text = 'Unofficial mirrors'
+        text = "Unofficial mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
-        return Link('+unofficialmirrors', text, enabled=enabled, icon='info')
+        return Link("+unofficialmirrors", text, enabled=enabled, icon="info")
 
 
 class DistributionLinksMixin(StructuralSubscriptionMenuMixin):
     """A mixin to provide common links to menus."""
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def edit(self):
-        text = 'Change details'
-        return Link('+edit', text, icon='edit')
+        text = "Change details"
+        return Link("+edit", text, icon="edit")
 
 
 class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
     """A menu of context actions."""
+
     usedfor = IDistribution
-    facet = 'overview'
+    facet = "overview"
 
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
@@ -377,215 +394,232 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         text = "Configure publisher"
         return Link("+pubconf", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Driver')
+    @enabled_with_permission("launchpad.Driver")
     def sharing(self):
-        return Link('+sharing', 'Sharing', icon='edit')
+        return Link("+sharing", "Sharing", icon="edit")
 
     def new_oci_project(self):
-        text = 'Create an OCI project'
-        link = Link('+new-oci-project', text, icon='add')
-        link.enabled = (
-            bool(getFeatureFlag(OCI_PROJECT_ALLOW_CREATE))
-            and self.context.canAdministerOCIProjects(self.user))
+        text = "Create an OCI project"
+        link = Link("+new-oci-project", text, icon="add")
+        link.enabled = bool(
+            getFeatureFlag(OCI_PROJECT_ALLOW_CREATE)
+        ) and self.context.canAdministerOCIProjects(self.user)
         return link
 
     def search_oci_project(self):
         oci_projects = getUtility(IOCIProjectSet).findByPillarAndName(
-            self.context, '')
-        text = 'Search for OCI project'
-        link = Link('+search-oci-project', text, icon='info')
+            self.context, ""
+        )
+        text = "Search for OCI project"
+        link = Link("+search-oci-project", text, icon="info")
         link.enabled = not oci_projects.is_empty()
         return link
 
     @cachedproperty
     def links(self):
         return [
-            'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing', 'new_oci_project',
-            'search_oci_project']
+            "edit",
+            "admin",
+            "pubconf",
+            "subscribe_to_bug_mail",
+            "edit_bug_mail",
+            "sharing",
+            "new_oci_project",
+            "search_oci_project",
+        ]
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
 
     usedfor = IDistribution
-    facet = 'overview'
+    facet = "overview"
     links = [
-        'edit',
-        'branding',
-        'driver',
-        'search',
-        'members',
-        'mirror_admin',
-        'oci_project_admin',
-        'reassign',
-        'addseries',
-        'series',
-        'derivatives',
-        'milestones',
-        'top_contributors',
-        'builds',
-        'cdimage_mirrors',
-        'archive_mirrors',
-        'pending_review_mirrors',
-        'disabled_mirrors',
-        'unofficial_mirrors',
-        'newmirror',
-        'announce',
-        'announcements',
-        'ppas',
-        'configure_answers',
-        'configure_blueprints',
-        'configure_translations',
-        ]
+        "edit",
+        "branding",
+        "driver",
+        "search",
+        "members",
+        "mirror_admin",
+        "oci_project_admin",
+        "security_admin",
+        "reassign",
+        "addseries",
+        "series",
+        "derivatives",
+        "milestones",
+        "top_contributors",
+        "builds",
+        "cdimage_mirrors",
+        "archive_mirrors",
+        "pending_review_mirrors",
+        "disabled_mirrors",
+        "unofficial_mirrors",
+        "newmirror",
+        "announce",
+        "announcements",
+        "ppas",
+        "configure_answers",
+        "configure_blueprints",
+        "configure_translations",
+    ]
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def branding(self):
-        text = 'Change branding'
-        return Link('+branding', text, icon='edit')
+        text = "Change branding"
+        return Link("+branding", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def driver(self):
-        text = 'Appoint driver'
-        summary = 'Someone with permission to set goals for all series'
-        return Link('+driver', text, summary, icon='edit')
+        text = "Appoint driver"
+        summary = "Someone with permission to set goals for all series"
+        return Link("+driver", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def reassign(self):
-        text = 'Change maintainer'
-        return Link('+reassign', text, icon='edit')
+        text = "Change maintainer"
+        return Link("+reassign", text, icon="edit")
 
     def newmirror(self):
-        text = 'Register a new mirror'
+        text = "Register a new mirror"
         enabled = self.context.supports_mirrors
-        return Link('+newmirror', text, enabled=enabled, icon='add')
+        return Link("+newmirror", text, enabled=enabled, icon="add")
 
     def top_contributors(self):
-        text = 'More contributors'
-        return Link('+topcontributors', text, icon='info')
+        text = "More contributors"
+        return Link("+topcontributors", text, icon="info")
 
     def cdimage_mirrors(self):
-        text = 'CD mirrors'
-        return Link('+cdmirrors', text, icon='info')
+        text = "CD mirrors"
+        return Link("+cdmirrors", text, icon="info")
 
     def archive_mirrors(self):
-        text = 'Archive mirrors'
-        return Link('+archivemirrors', text, icon='info')
+        text = "Archive mirrors"
+        return Link("+archivemirrors", text, icon="info")
 
     def _userCanSeeNonPublicMirrorListings(self):
         """Does the user have rights to see non-public mirrors listings?"""
         user = getUtility(ILaunchBag).user
-        return (self.context.supports_mirrors
-                and user is not None
-                and user.inTeam(self.context.mirror_admin))
+        return (
+            self.context.supports_mirrors
+            and user is not None
+            and user.inTeam(self.context.mirror_admin)
+        )
 
     def disabled_mirrors(self):
-        text = 'Disabled mirrors'
+        text = "Disabled mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
-        return Link('+disabledmirrors', text, enabled=enabled, icon='info')
+        return Link("+disabledmirrors", text, enabled=enabled, icon="info")
 
     def pending_review_mirrors(self):
-        text = 'Pending-review mirrors'
+        text = "Pending-review mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
         return Link(
-            '+pendingreviewmirrors', text, enabled=enabled, icon='info')
+            "+pendingreviewmirrors", text, enabled=enabled, icon="info"
+        )
 
     def unofficial_mirrors(self):
-        text = 'Unofficial mirrors'
+        text = "Unofficial mirrors"
         enabled = self._userCanSeeNonPublicMirrorListings()
-        return Link('+unofficialmirrors', text, enabled=enabled, icon='info')
+        return Link("+unofficialmirrors", text, enabled=enabled, icon="info")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def members(self):
-        text = 'Change members team'
-        return Link('+selectmemberteam', text, icon='edit')
+        text = "Change members team"
+        return Link("+selectmemberteam", text, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def mirror_admin(self):
-        text = 'Change mirror admins'
+        text = "Change mirror admins"
         enabled = self.context.supports_mirrors
-        return Link('+selectmirroradmins', text, enabled=enabled, icon='edit')
+        return Link("+selectmirroradmins", text, enabled=enabled, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def oci_project_admin(self):
-        text = 'Change OCI project admins'
-        return Link('+select-oci-project-admins', text, icon='edit')
+        text = "Change OCI project admins"
+        return Link("+select-oci-project-admins", text, icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
+    def security_admin(self):
+        text = "Change security admins"
+        return Link("+select-security-admins", text, icon="edit")
 
     def search(self):
-        text = 'Search packages'
-        return Link('+search', text, icon='search')
+        text = "Search packages"
+        return Link("+search", text, icon="search")
 
-    @enabled_with_permission('launchpad.Moderate')
+    @enabled_with_permission("launchpad.Moderate")
     def addseries(self):
-        text = 'Add series'
-        return Link('+addseries', text, icon='add')
+        text = "Add series"
+        return Link("+addseries", text, icon="add")
 
     def series(self):
-        text = 'All series'
-        return Link('+series', text, icon='info')
+        text = "All series"
+        return Link("+series", text, icon="info")
 
     def derivatives(self):
-        text = 'All derivatives'
-        return Link('+derivatives', text, icon='info')
+        text = "All derivatives"
+        return Link("+derivatives", text, icon="info")
 
     def milestones(self):
-        text = 'All milestones'
-        return Link('+milestones', text, icon='info')
+        text = "All milestones"
+        return Link("+milestones", text, icon="info")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def announce(self):
-        text = 'Make announcement'
-        summary = 'Publish an item of news for this project'
-        return Link('+announce', text, summary, icon='add')
+        text = "Make announcement"
+        summary = "Publish an item of news for this project"
+        return Link("+announce", text, summary, icon="add")
 
     def announcements(self):
-        text = 'Read all announcements'
+        text = "Read all announcements"
         enabled = bool(self.context.getAnnouncements())
-        return Link('+announcements', text, icon='info', enabled=enabled)
+        return Link("+announcements", text, icon="info", enabled=enabled)
 
     def builds(self):
-        text = 'Builds'
-        return Link('+builds', text, icon='info')
+        text = "Builds"
+        return Link("+builds", text, icon="info")
 
     def ppas(self):
-        text = 'Personal Package Archives'
-        return Link('+ppas', text, icon='info')
+        text = "Personal Package Archives"
+        return Link("+ppas", text, icon="info")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def configure_answers(self):
-        text = 'Configure support tracker'
-        summary = 'Allow users to ask questions on this project'
-        return Link('+edit', text, summary, icon='edit')
+        text = "Configure support tracker"
+        summary = "Allow users to ask questions on this project"
+        return Link("+edit", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def configure_blueprints(self):
-        text = 'Configure blueprints'
-        summary = 'Enable tracking of feature planning.'
-        return Link('+edit', text, summary, icon='edit')
+        text = "Configure blueprints"
+        summary = "Enable tracking of feature planning."
+        return Link("+edit", text, summary, icon="edit")
 
-    @enabled_with_permission('launchpad.TranslationsAdmin')
+    @enabled_with_permission("launchpad.TranslationsAdmin")
     def configure_translations(self):
-        text = 'Configure translations'
-        summary = 'Allow users to provide translations for this project.'
-        return Link('+configure-translations', text, summary, icon='edit')
+        text = "Configure translations"
+        summary = "Allow users to provide translations for this project."
+        return Link("+configure-translations", text, summary, icon="edit")
 
 
 class DistributionBugsMenu(PillarBugsMenu):
 
     usedfor = IDistribution
-    facet = 'bugs'
+    facet = "bugs"
 
     @property
     def links(self):
-        links = ['bugsupervisor', 'cve', 'filebug']
+        links = ["bugsupervisor", "cve", "filebug"]
         add_subscribe_link(links)
         return links
 
 
-class DistributionSpecificationsMenu(NavigationMenu,
-                                     HasSpecificationsMenuMixin):
+class DistributionSpecificationsMenu(
+    NavigationMenu, HasSpecificationsMenuMixin
+):
     usedfor = IDistribution
-    facet = 'specifications'
-    links = ['listall', 'doc', 'assignments', 'new', 'register_sprint']
+    facet = "specifications"
+    links = ["listall", "doc", "assignments", "new", "register_sprint"]
 
 
 class DistributionPackageSearchView(PackageSearchViewBase):
@@ -599,9 +633,9 @@ class DistributionPackageSearchView(PackageSearchViewBase):
         # default to searches on binary names, but allow the user to
         # select.
         if self.context.has_published_binaries:
-            self.search_type = self.request.get("search_type", 'binary')
+            self.search_type = self.request.get("search_type", "binary")
         else:
-            self.search_type = 'source'
+            self.search_type = "source"
 
     def contextSpecificSearch(self):
         """See `AbstractPackageSearchView`."""
@@ -610,7 +644,8 @@ class DistributionPackageSearchView(PackageSearchViewBase):
             return self.context.searchBinaryPackages(self.text)
         else:
             non_exact_matches = self.context.searchSourcePackageCaches(
-                self.text)
+                self.text
+            )
 
             # The searchBinaryPackageCaches() method returns tuples, so we
             # use the DecoratedResultSet here to just get the
@@ -619,7 +654,8 @@ class DistributionPackageSearchView(PackageSearchViewBase):
                 return cache_name_tuple[0]
 
             non_exact_matches = DecoratedResultSet(
-                non_exact_matches, tuple_to_package_cache)
+                non_exact_matches, tuple_to_package_cache
+            )
 
         return non_exact_matches.config(distinct=True)
 
@@ -646,13 +682,14 @@ class DistributionPackageSearchView(PackageSearchViewBase):
         """
         return "%s/+search?search_type=source&%s" % (
             canonical_url(self.context),
-            self.request.get('QUERY_STRING'),
-            )
+            self.request.get("QUERY_STRING"),
+        )
 
     @cachedproperty
     def exact_matches(self):
         return self.context.searchBinaryPackages(
-            self.text, exact_match=True).order_by('name')
+            self.text, exact_match=True
+        ).order_by("name")
 
     @property
     def has_exact_matches(self):
@@ -669,20 +706,20 @@ class DistributionPackageSearchView(PackageSearchViewBase):
 
         for package_cache in self.batchnav.currentBatch():
             names[package_cache.name] = self._listFirstFiveMatchingNames(
-                self.text, package_cache.binpkgnames)
+                self.text, package_cache.binpkgnames
+            )
 
         return names
 
     def _listFirstFiveMatchingNames(self, match_text, space_separated_list):
         """Returns a comma-separated list of the first five matching items"""
-        name_list = space_separated_list.split(' ')
+        name_list = space_separated_list.split(" ")
 
-        matching_names = [
-            name for name in name_list if match_text in name]
+        matching_names = [name for name in name_list if match_text in name]
 
         if len(matching_names) > 5:
             matching_names = matching_names[:5]
-            matching_names.append('...')
+            matching_names.append("...")
 
         return ", ".join(matching_names)
 
@@ -697,8 +734,9 @@ class DistributionPackageSearchView(PackageSearchViewBase):
             # create a list, convert the list to a set and back again:
             distroseries_list = [
                 pubrec.distroseries.name
-                    for pubrec in package.current_publishing_records
-                        if pubrec.distroseries.active]
+                for pubrec in package.current_publishing_records
+                if pubrec.distroseries.active
+            ]
             distroseries_list = list(set(distroseries_list))
 
             # Yay for alphabetical series names.
@@ -725,73 +763,111 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     def initialize(self):
         super().initialize()
         expose_structural_subscription_data_to_js(
-            self.context, self.request, self.user)
+            self.context, self.request, self.user
+        )
 
     @property
     def page_title(self):
-        return '%s in Launchpad' % self.context.displayname
+        return "%s in Launchpad" % self.context.displayname
 
     @property
     def maintainer_widget(self):
         return InlinePersonEditPickerWidget(
-            self.context, IDistribution['owner'],
+            self.context,
+            IDistribution["owner"],
             format_link(self.context.owner),
-            header='Change maintainer', edit_view='+reassign',
-            step_title='Select a new maintainer', show_create_team=True)
+            header="Change maintainer",
+            edit_view="+reassign",
+            step_title="Select a new maintainer",
+            show_create_team=True,
+        )
 
     @property
     def driver_widget(self):
-        if canWrite(self.context, 'driver'):
-            empty_value = 'Specify a driver'
+        if canWrite(self.context, "driver"):
+            empty_value = "Specify a driver"
         else:
-            empty_value = 'None'
+            empty_value = "None"
         return InlinePersonEditPickerWidget(
-            self.context, IDistribution['driver'],
+            self.context,
+            IDistribution["driver"],
             format_link(self.context.driver, empty_value=empty_value),
-            header='Change driver', edit_view='+driver',
+            header="Change driver",
+            edit_view="+driver",
             null_display_value=empty_value,
-            step_title='Select a new driver', show_create_team=True)
+            step_title="Select a new driver",
+            show_create_team=True,
+        )
 
     @property
     def members_widget(self):
-        if canWrite(self.context, 'members'):
-            empty_value = ' Specify the members team'
+        if canWrite(self.context, "members"):
+            empty_value = " Specify the members team"
         else:
-            empty_value = 'None'
+            empty_value = "None"
         return InlinePersonEditPickerWidget(
-            self.context, IDistribution['members'],
+            self.context,
+            IDistribution["members"],
             format_link(self.context.members, empty_value=empty_value),
-            header='Change the members team', edit_view='+selectmemberteam',
+            header="Change the members team",
+            edit_view="+selectmemberteam",
             null_display_value=empty_value,
-            step_title='Select a new members team')
+            step_title="Select a new members team",
+        )
 
     @property
     def mirror_admin_widget(self):
-        if canWrite(self.context, 'mirror_admin'):
-            empty_value = ' Specify a mirror administrator'
+        if canWrite(self.context, "mirror_admin"):
+            empty_value = " Specify a mirror administrator"
         else:
-            empty_value = 'None'
+            empty_value = "None"
         return InlinePersonEditPickerWidget(
-            self.context, IDistribution['mirror_admin'],
+            self.context,
+            IDistribution["mirror_admin"],
             format_link(self.context.mirror_admin, empty_value=empty_value),
-            header='Change the mirror administrator',
-            edit_view='+selectmirroradmins', null_display_value=empty_value,
-            step_title='Select a new mirror administrator')
+            header="Change the mirror administrator",
+            edit_view="+selectmirroradmins",
+            null_display_value=empty_value,
+            step_title="Select a new mirror administrator",
+        )
 
     @property
     def oci_project_admin_widget(self):
-        if canWrite(self.context, 'oci_project_admin'):
-            empty_value = ' Specify an OCI project administrator'
+        if canWrite(self.context, "oci_project_admin"):
+            empty_value = " Specify an OCI project administrator"
         else:
-            empty_value = 'None'
+            empty_value = "None"
         return InlinePersonEditPickerWidget(
-            self.context, IDistribution['oci_project_admin'],
+            self.context,
+            IDistribution["oci_project_admin"],
             format_link(
-                self.context.oci_project_admin, empty_value=empty_value),
-            header='Change the OCI project administrator',
-            edit_view='+select-oci-project-admins',
+                self.context.oci_project_admin, empty_value=empty_value
+            ),
+            header="Change the OCI project administrator",
+            edit_view="+select-oci-project-admins",
             null_display_value=empty_value,
-            step_title='Select a new OCI project administrator')
+            step_title="Select a new OCI project administrator",
+        )
+
+    @property
+    def security_admin_widget(self):
+        if canWrite(self.context, "security_admin"):
+            empty_value = " Specify a security administrator"
+        else:
+            empty_value = "None"
+
+        return InlinePersonEditPickerWidget(
+            self.context,
+            IDistribution["security_admin"],
+            format_link(
+                self.context.security_admin,
+                empty_value=empty_value,
+            ),
+            header="Change the security administrator",
+            edit_view="+select-security-admins",
+            null_display_value=empty_value,
+            step_title="Select a new security administrator",
+        )
 
     def linkedMilestonesForSeries(self, series):
         """Return a string of linkified milestones in the series."""
@@ -803,8 +879,9 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
         linked_milestones = []
         for milestone in milestones:
             linked_milestones.append(
-                "<a href=%s>%s</a>" % (
-                    canonical_url(milestone), milestone.name))
+                "<a href=%s>%s</a>"
+                % (canonical_url(milestone), milestone.name)
+            )
 
         return english_list(linked_milestones)
 
@@ -822,15 +899,15 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
         first two are allowed via the Launchpad.Edit permission.  The latter
         is allowed via Launchpad.Commercial.
         """
-        return (check_permission('launchpad.Edit', self.context) or
-                check_permission('launchpad.Commercial', self.context))
+        return check_permission(
+            "launchpad.Edit", self.context
+        ) or check_permission("launchpad.Commercial", self.context)
 
 
 class DistributionArchivesView(LaunchpadView):
-
     @property
     def page_title(self):
-        return '%s Copy Archives' % self.context.title
+        return "%s Copy Archives" % self.context.title
 
     @property
     def batchnav(self):
@@ -844,9 +921,12 @@ class DistributionArchivesView(LaunchpadView):
         The context may be an IDistroSeries or a users archives.
         """
         results = getUtility(IArchiveSet).getArchivesForDistribution(
-            self.context, purposes=[ArchivePurpose.COPY], user=self.user,
-            exclude_disabled=False)
-        return results.order_by('date_created DESC')
+            self.context,
+            purposes=[ArchivePurpose.COPY],
+            user=self.user,
+            exclude_disabled=False,
+        )
+        return results.order_by("date_created DESC")
 
 
 class DistributionPPASearchView(LaunchpadView):
@@ -855,7 +935,7 @@ class DistributionPPASearchView(LaunchpadView):
     page_title = "Personal Package Archives"
 
     def initialize(self):
-        self.name_filter = self.request.get('name_filter')
+        self.name_filter = self.request.get("name_filter")
         if isinstance(self.name_filter, list):
             # This happens if someone hand-hacks the URL so that it has
             # more than one name_filter field.  We could do something
@@ -863,11 +943,11 @@ class DistributionPPASearchView(LaunchpadView):
             # but we can acutally do better and join the terms supplied
             # instead.
             self.name_filter = " ".join(self.name_filter)
-        self.show_inactive = self.request.get('show_inactive')
+        self.show_inactive = self.request.get("show_inactive")
 
     @property
     def label(self):
-        return 'Personal Package Archives for %s' % self.context.title
+        return "Personal Package Archives for %s" % self.context.title
 
     @property
     def search_results(self):
@@ -878,11 +958,11 @@ class DistributionPPASearchView(LaunchpadView):
         # Preserve self.show_inactive state because it's used in the
         # template and build a boolean field to be passed for
         # searchPPAs.
-        show_inactive = (self.show_inactive == 'on')
+        show_inactive = self.show_inactive == "on"
 
         ppas = self.context.searchPPAs(
-            text=self.name_filter, show_inactive=show_inactive,
-            user=self.user)
+            text=self.name_filter, show_inactive=show_inactive, user=self.user
+        )
 
         self.batchnav = BatchNavigator(ppas, self.request)
         return self.batchnav.currentBatch()
@@ -896,14 +976,16 @@ class DistributionPPASearchView(LaunchpadView):
         """Return the last 5 sources publication in the context PPAs."""
         archive_set = getUtility(IArchiveSet)
         return archive_set.getLatestPPASourcePublicationsForDistribution(
-            distribution=self.context)
+            distribution=self.context
+        )
 
     @property
     def most_active_ppas(self):
         """Return the last 5 most active PPAs."""
         archive_set = getUtility(IArchiveSet)
         return archive_set.getMostActivePPAsForDistribution(
-            distribution=self.context)
+            distribution=self.context
+        )
 
 
 class DistributionSetActionNavigationMenu(RegistryCollectionActionMenuBase):
@@ -911,15 +993,18 @@ class DistributionSetActionNavigationMenu(RegistryCollectionActionMenuBase):
 
     usedfor = IDistributionSet
     links = [
-        'register_team', 'register_project', 'register_distribution',
-        'create_account']
+        "register_team",
+        "register_project",
+        "register_distribution",
+        "create_account",
+    ]
 
 
 @implementer(IRegistryCollectionNavigationMenu)
 class DistributionSetView(LaunchpadView):
     """View for /distros top level collection."""
 
-    page_title = 'Distributions registered in Launchpad'
+    page_title = "Distributions registered in Launchpad"
 
     @cachedproperty
     def count(self):
@@ -932,20 +1017,24 @@ class RequireVirtualizedBuildersMixin:
     def createRequireVirtualized(self):
         return form.Fields(
             Bool(
-                __name__='require_virtualized',
+                __name__="require_virtualized",
                 title="Require virtualized builders",
                 description=(
                     "Only build the distribution's packages on virtual "
-                    "builders."),
-                required=True))
+                    "builders."
+                ),
+                required=True,
+            )
+        )
 
     def updateRequireVirtualized(self, require_virtualized, archive):
         if archive.require_virtualized != require_virtualized:
             archive.require_virtualized = require_virtualized
 
 
-class DistributionAddView(LaunchpadFormView, RequireVirtualizedBuildersMixin,
-                          EnableProcessorsMixin):
+class DistributionAddView(
+    LaunchpadFormView, RequireVirtualizedBuildersMixin, EnableProcessorsMixin
+):
 
     schema = IDistribution
     label = "Register a new distribution"
@@ -960,7 +1049,7 @@ class DistributionAddView(LaunchpadFormView, RequireVirtualizedBuildersMixin,
         "blueprints_usage",
         "translations_usage",
         "answers_usage",
-        ]
+    ]
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
 
@@ -972,9 +1061,9 @@ class DistributionAddView(LaunchpadFormView, RequireVirtualizedBuildersMixin,
     @property
     def initial_values(self):
         return {
-            'processors': getUtility(IProcessorSet).getAll(),
-            'require_virtualized': False,
-            }
+            "processors": getUtility(IProcessorSet).getAll(),
+            "require_virtualized": False,
+        }
 
     @property
     def cancel_url(self):
@@ -988,62 +1077,69 @@ class DistributionAddView(LaunchpadFormView, RequireVirtualizedBuildersMixin,
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
             "The architectures on which the distribution's main archive can "
-            "build.")
+            "build.",
+        )
 
-    @action("Save", name='save')
+    @action("Save", name="save")
     def save_action(self, action, data):
         distribution = getUtility(IDistributionSet).new(
-            name=data['name'],
-            display_name=data['display_name'],
-            title=data['display_name'],
-            summary=data['summary'],
-            description=data['description'],
-            domainname=data['domainname'],
-            members=data['members'],
+            name=data["name"],
+            display_name=data["display_name"],
+            title=data["display_name"],
+            summary=data["summary"],
+            description=data["description"],
+            domainname=data["domainname"],
+            members=data["members"],
             owner=self.user,
             registrant=self.user,
-            )
+        )
         archive = distribution.main_archive
-        self.updateRequireVirtualized(data['require_virtualized'], archive)
+        self.updateRequireVirtualized(data["require_virtualized"], archive)
         archive.setProcessors(
-            data['processors'], check_permissions=True, user=self.user)
+            data["processors"], check_permissions=True, user=self.user
+        )
 
         notify(ObjectCreatedEvent(distribution))
         self.next_url = canonical_url(distribution)
 
 
-class DistributionEditView(RegistryEditFormView,
-                           RequireVirtualizedBuildersMixin,
-                           EnableProcessorsMixin):
+class DistributionEditView(
+    RegistryEditFormView,
+    RequireVirtualizedBuildersMixin,
+    EnableProcessorsMixin,
+):
 
     schema = IDistribution
     field_names = [
-        'display_name',
-        'summary',
-        'description',
-        'bug_reporting_guidelines',
-        'bug_reported_acknowledgement',
-        'package_derivatives_email',
-        'icon',
-        'logo',
-        'mugshot',
-        'official_malone',
-        'enable_bug_expiration',
-        'blueprints_usage',
-        'translations_usage',
-        'answers_usage',
-        'translation_focus',
-        'default_traversal_policy',
-        'redirect_default_traversal',
-        'oci_registry_credentials',
-        ]
+        "display_name",
+        "summary",
+        "description",
+        "bug_reporting_guidelines",
+        "bug_reported_acknowledgement",
+        "package_derivatives_email",
+        "icon",
+        "logo",
+        "mugshot",
+        "official_malone",
+        "enable_bug_expiration",
+        "blueprints_usage",
+        "translations_usage",
+        "answers_usage",
+        "translation_focus",
+        "default_traversal_policy",
+        "redirect_default_traversal",
+        "oci_registry_credentials",
+    ]
 
     custom_widget_icon = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
     custom_widget_logo = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
     custom_widget_mugshot = CustomWidgetFactory(
-        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE)
+        ImageChangeWidget, ImageChangeWidget.EDIT_STYLE
+    )
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
     custom_widget_oci_registry_credentials = OCICredentialsWidget
@@ -1051,7 +1147,7 @@ class DistributionEditView(RegistryEditFormView,
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Change %s details' % self.context.displayname
+        return "Change %s details" % self.context.displayname
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
@@ -1060,44 +1156,56 @@ class DistributionEditView(RegistryEditFormView,
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
             "The architectures on which the distribution's main archive can "
-            "build.")
+            "build.",
+        )
 
     @property
     def initial_values(self):
+        main_archive = self.context.main_archive
         return {
-            'require_virtualized':
-                self.context.main_archive.require_virtualized,
-            'processors': self.context.main_archive.processors
-            }
+            "require_virtualized": main_archive.require_virtualized,
+            "processors": main_archive.processors,
+        }
 
     def validate(self, data):
         """Constrain bug expiration to Launchpad Bugs tracker."""
         # enable_bug_expiration is disabled by JavaScript when official_malone
         # is set False. The contraint is enforced here in case the JavaScript
         # fails to load or activate.
-        official_malone = data.get('official_malone', False)
+        official_malone = data.get("official_malone", False)
         if not official_malone:
-            data['enable_bug_expiration'] = False
+            data["enable_bug_expiration"] = False
+        if "processors" in data:
+            widget = self.widgets["processors"]
+            for processor in self.context.main_archive.processors:
+                if processor not in data["processors"]:
+                    if processor.name in widget.disabled_items:
+                        # This processor is restricted and currently
+                        # enabled.  Leave it untouched.
+                        data["processors"].append(processor)
 
     def change_archive_fields(self, data):
         # Update context.main_archive.
-        new_require_virtualized = data.get('require_virtualized')
+        new_require_virtualized = data.get("require_virtualized")
         if new_require_virtualized is not None:
             self.updateRequireVirtualized(
-                new_require_virtualized, self.context.main_archive)
-            del(data['require_virtualized'])
-        new_processors = data.get('processors')
+                new_require_virtualized, self.context.main_archive
+            )
+            del data["require_virtualized"]
+        new_processors = data.get("processors")
         if new_processors is not None:
-            if (set(self.context.main_archive.processors) !=
-                    set(new_processors)):
+            if set(self.context.main_archive.processors) != set(
+                new_processors
+            ):
                 self.context.main_archive.setProcessors(
-                    new_processors, check_permissions=True, user=self.user)
-            del(data['processors'])
+                    new_processors, check_permissions=True, user=self.user
+                )
+            del data["processors"]
 
-    @action("Change", name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         self.change_archive_fields(data)
-        new_credentials = data.pop('oci_registry_credentials', None)
+        new_credentials = data.pop("oci_registry_credentials", None)
         old_credentials = self.context.oci_registry_credentials
         if self.context.oci_registry_credentials != new_credentials:
             # Remove the old credentials as we're assigning new ones
@@ -1112,38 +1220,40 @@ class DistributionAdminView(LaunchpadEditFormView):
 
     schema = IDistribution
     field_names = [
-        'official_packages',
-        'supports_ppas',
-        'supports_mirrors',
-        'default_traversal_policy',
-        'redirect_default_traversal',
-        'information_type',
-        ]
+        "official_packages",
+        "supports_ppas",
+        "supports_mirrors",
+        "default_traversal_policy",
+        "redirect_default_traversal",
+        "information_type",
+    ]
 
     custom_widget_information_type = CustomWidgetFactory(
         LaunchpadRadioWidgetWithDescription,
-        vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES))
+        vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES),
+    )
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Administer %s' % self.context.displayname
+        return "Administer %s" % self.context.displayname
 
     def validate(self, data):
         super().validate(data)
-        information_type = data.get('information_type')
+        information_type = data.get("information_type")
         if information_type:
             errors = [
-                str(e) for e in self.context.checkInformationType(
-                    information_type)]
+                str(e)
+                for e in self.context.checkInformationType(information_type)
+            ]
             if len(errors) > 0:
-                self.setFieldError('information_type', ' '.join(errors))
+                self.setFieldError("information_type", " ".join(errors))
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
 
-    @action("Change", name='change')
+    @action("Change", name="change")
     def change_action(self, action, data):
         self.updateContextFromData(data)
         self.next_url = canonical_url(self.context)
@@ -1151,31 +1261,35 @@ class DistributionAdminView(LaunchpadEditFormView):
 
 class DistributionSeriesBaseView(LaunchpadView):
     """A base view to list distroseries."""
+
     @cachedproperty
     def styled_series(self):
         """A list of dicts; keys: series, css_class, is_development_focus"""
         all_series = []
         for series in self._displayed_series:
-            all_series.append({
-                'series': series,
-                'css_class': self.getCssClass(series),
-                })
+            all_series.append(
+                {
+                    "series": series,
+                    "css_class": self.getCssClass(series),
+                }
+            )
         return all_series
 
     def getCssClass(self, series):
         """The highlight, lowlight, or normal CSS class."""
         if series.status == SeriesStatus.DEVELOPMENT:
-            return 'highlight'
+            return "highlight"
         elif series.status == SeriesStatus.OBSOLETE:
-            return 'lowlight'
+            return "lowlight"
         else:
             # This is normal presentation.
-            return ''
+            return ""
 
 
 class DistributionSeriesView(DistributionSeriesBaseView):
     """A view to list the distribution series."""
-    label = 'Timeline'
+
+    label = "Timeline"
     show_add_series_link = True
     show_milestones_link = True
 
@@ -1186,7 +1300,8 @@ class DistributionSeriesView(DistributionSeriesBaseView):
 
 class DistributionDerivativesView(DistributionSeriesBaseView):
     """A view to list the distribution derivatives."""
-    label = 'Derivatives'
+
+    label = "Derivatives"
     show_add_series_link = False
     show_milestones_link = False
 
@@ -1197,8 +1312,9 @@ class DistributionDerivativesView(DistributionSeriesBaseView):
 
 class DistributionChangeMirrorAdminView(RegistryEditFormView):
     """A view to change the mirror administrator."""
+
     schema = IDistribution
-    field_names = ['mirror_admin']
+    field_names = ["mirror_admin"]
 
     @property
     def label(self):
@@ -1208,20 +1324,37 @@ class DistributionChangeMirrorAdminView(RegistryEditFormView):
 
 class DistributionChangeOCIProjectAdminView(RegistryEditFormView):
     """A view to change the OCI project administrator."""
+
     schema = IDistribution
-    field_names = ['oci_project_admin']
+    field_names = ["oci_project_admin"]
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
         return "Change the %s OCI project administrator" % (
-            self.context.displayname)
+            self.context.displayname
+        )
+
+
+class DistributionChangeSecurityAdminView(RegistryEditFormView):
+    """A view to change the security administrator."""
+
+    schema = IDistribution
+    field_names = ["security_admin"]
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return "Change the %s security administrator" % (
+            self.context.displayname
+        )
 
 
 class DistributionChangeMembersView(RegistryEditFormView):
     """A view to change the members team."""
+
     schema = IDistribution
-    field_names = ['members']
+    field_names = ["members"]
 
     @property
     def label(self):
@@ -1241,27 +1374,30 @@ class DistributionCountryArchiveMirrorsView(LaunchpadView):
         request = self.request
         if not self.context.supports_mirrors:
             request.response.setStatus(404)
-            return ''
+            return ""
         ip_address = ipaddress_from_request(request)
         country = request_country(request)
         mirrors = self.context.getBestMirrorsForCountry(
-            country, MirrorContent.ARCHIVE)
+            country, MirrorContent.ARCHIVE
+        )
         body = "\n".join(mirror.base_url for mirror in mirrors)
-        request.response.setHeader('content-type', 'text/plain;charset=utf-8')
+        request.response.setHeader("content-type", "text/plain;charset=utf-8")
         if country is None:
-            country_name = 'Unknown'
+            country_name = "Unknown"
         else:
             country_name = country.name
-        request.response.setHeader('X-Generated-For-Country', country_name)
-        request.response.setHeader('X-Generated-For-IP', ip_address)
+        request.response.setHeader("X-Generated-For-Country", country_name)
+        request.response.setHeader("X-Generated-For-IP", ip_address)
         # XXX: Guilherme Salgado 2008-01-09 bug=173729: These are here only
         # for debugging.
         request.response.setHeader(
-            'X-REQUEST-HTTP_X_FORWARDED_FOR',
-            request.get('HTTP_X_FORWARDED_FOR'))
+            "X-REQUEST-HTTP_X_FORWARDED_FOR",
+            request.get("HTTP_X_FORWARDED_FOR"),
+        )
         request.response.setHeader(
-            'X-REQUEST-REMOTE_ADDR', request.get('REMOTE_ADDR'))
-        return body.encode('utf-8')
+            "X-REQUEST-REMOTE_ADDR", request.get("REMOTE_ADDR")
+        )
+        return body.encode("utf-8")
 
 
 @implementer(IDistributionMirrorMenuMarker)
@@ -1269,7 +1405,7 @@ class DistributionMirrorsView(LaunchpadView):
     show_freshness = True
     show_mirror_type = False
     description = None
-    page_title = 'Mirrors'
+    page_title = "Mirrors"
 
     @cachedproperty
     def mirror_count(self):
@@ -1315,13 +1451,13 @@ class DistributionMirrorsView(LaunchpadView):
             else:
                 # need to be made aware of new values in
                 # interfaces/distributionmirror.py MirrorSpeed
-                return 'Indeterminate'
+                return "Indeterminate"
         if throughput < 1000:
-            return str(throughput) + ' Kbps'
+            return str(throughput) + " Kbps"
         elif throughput < 1000000:
-            return str(throughput // 1000) + ' Mbps'
+            return str(throughput // 1000) + " Mbps"
         else:
-            return str(throughput // 1000000) + ' Gbps'
+            return str(throughput // 1000000) + " Gbps"
 
     @cachedproperty
     def total_throughput(self):
@@ -1337,18 +1473,24 @@ class DistributionMirrorsView(LaunchpadView):
         for mirror in self.mirrors:
             mirrors_by_country[mirror.country.name].append(mirror)
 
-        return [dict(country=country,
-                     mirrors=mirrors,
-                     number=len(mirrors),
-                     throughput=self._sum_throughput(mirrors))
-                for country, mirrors in sorted(mirrors_by_country.items())]
+        return [
+            dict(
+                country=country,
+                mirrors=mirrors,
+                number=len(mirrors),
+                throughput=self._sum_throughput(mirrors),
+            )
+            for country, mirrors in sorted(mirrors_by_country.items())
+        ]
 
 
 class DistributionArchiveMirrorsView(DistributionMirrorsView):
 
-    heading = 'Official Archive Mirrors'
-    description = ('These mirrors provide repositories and archives of all '
-                   'software for the distribution.')
+    heading = "Official Archive Mirrors"
+    description = (
+        "These mirrors provide repositories and archives of all "
+        "software for the distribution."
+    )
 
     @cachedproperty
     def mirrors(self):
@@ -1357,9 +1499,11 @@ class DistributionArchiveMirrorsView(DistributionMirrorsView):
 
 class DistributionSeriesMirrorsView(DistributionMirrorsView):
 
-    heading = 'Official CD Mirrors'
-    description = ('These mirrors offer ISO images which you can download '
-                   'and burn to CD to make installation disks.')
+    heading = "Official CD Mirrors"
+    description = (
+        "These mirrors offer ISO images which you can download "
+        "and burn to CD to make installation disks."
+    )
     show_freshness = False
 
     @cachedproperty
@@ -1375,15 +1519,16 @@ class DistributionMirrorsRSSBaseView(LaunchpadView):
 
     def render(self):
         self.request.response.setHeader(
-            'content-type', 'text/xml;charset=utf-8')
+            "content-type", "text/xml;charset=utf-8"
+        )
         body = LaunchpadView.render(self)
-        return body.encode('utf-8')
+        return body.encode("utf-8")
 
 
 class DistributionArchiveMirrorsRSSView(DistributionMirrorsRSSBaseView):
     """The RSS feed for archive mirrors."""
 
-    heading = 'Archive Mirrors'
+    heading = "Archive Mirrors"
 
     @cachedproperty
     def mirrors(self):
@@ -1393,7 +1538,7 @@ class DistributionArchiveMirrorsRSSView(DistributionMirrorsRSSBaseView):
 class DistributionSeriesMirrorsRSSView(DistributionMirrorsRSSBaseView):
     """The RSS feed for series mirrors."""
 
-    heading = 'CD Mirrors'
+    heading = "CD Mirrors"
 
     @cachedproperty
     def mirrors(self):
@@ -1401,7 +1546,6 @@ class DistributionSeriesMirrorsRSSView(DistributionMirrorsRSSBaseView):
 
 
 class DistributionMirrorsAdminView(DistributionMirrorsView):
-
     def initialize(self):
         """Raise an Unauthorized exception if the user is not a member of this
         distribution's mirror_admin team.
@@ -1412,12 +1556,12 @@ class DistributionMirrorsAdminView(DistributionMirrorsView):
         # that permission on a Distribution would be able to see them. That's
         # why we have to do the permission check here.
         if not (self.user and self.user.inTeam(self.context.mirror_admin)):
-            raise Unauthorized('Forbidden')
+            raise Unauthorized("Forbidden")
 
 
 class DistributionUnofficialMirrorsView(DistributionMirrorsAdminView):
 
-    heading = 'Unofficial Mirrors'
+    heading = "Unofficial Mirrors"
 
     @cachedproperty
     def mirrors(self):
@@ -1426,7 +1570,7 @@ class DistributionUnofficialMirrorsView(DistributionMirrorsAdminView):
 
 class DistributionPendingReviewMirrorsView(DistributionMirrorsAdminView):
 
-    heading = 'Pending-review mirrors'
+    heading = "Pending-review mirrors"
     show_mirror_type = True
     show_freshness = False
 
@@ -1437,7 +1581,7 @@ class DistributionPendingReviewMirrorsView(DistributionMirrorsAdminView):
 
 class DistributionDisabledMirrorsView(DistributionMirrorsAdminView):
 
-    heading = 'Disabled Mirrors'
+    heading = "Disabled Mirrors"
 
     @cachedproperty
     def mirrors(self):
@@ -1446,7 +1590,8 @@ class DistributionDisabledMirrorsView(DistributionMirrorsAdminView):
 
 class DistributionReassignmentView(ObjectReassignmentView):
     """View class for changing distribution maintainer."""
-    ownerOrMaintainerName = 'maintainer'
+
+    ownerOrMaintainerName = "maintainer"
 
 
 class DistributionPublisherConfigView(LaunchpadFormView):
@@ -1454,13 +1599,14 @@ class DistributionPublisherConfigView(LaunchpadFormView):
 
     It redirects to the main distroseries page after a successful edit.
     """
+
     schema = IPublisherConfig
-    field_names = ['root_dir', 'base_url', 'copy_base_url']
+    field_names = ["root_dir", "base_url", "copy_base_url"]
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
-        return 'Publisher configuration for %s' % self.context.title
+        return "Publisher configuration for %s" % self.context.title
 
     @property
     def page_title(self):
@@ -1475,8 +1621,9 @@ class DistributionPublisherConfigView(LaunchpadFormView):
     @property
     def initial_values(self):
         """If the config already exists, set up the fields with data."""
-        config = getUtility(
-            IPublisherConfigSet).getByDistribution(self.context)
+        config = getUtility(IPublisherConfigSet).getByDistribution(
+            self.context
+        )
         values = {}
         if config is not None:
             for name in self.field_names:
@@ -1488,16 +1635,19 @@ class DistributionPublisherConfigView(LaunchpadFormView):
     def save_action(self, action, data):
         """Update the context and redirect to its overview page."""
         config = getUtility(IPublisherConfigSet).getByDistribution(
-            self.context)
+            self.context
+        )
         if config is None:
             config = getUtility(IPublisherConfigSet).new(
                 distribution=self.context,
-                root_dir=data['root_dir'],
-                base_url=data['base_url'],
-                copy_base_url=data['copy_base_url'])
+                root_dir=data["root_dir"],
+                base_url=data["base_url"],
+                copy_base_url=data["copy_base_url"],
+            )
         else:
             form.applyChanges(config, self.form_fields, data, self.adapters)
 
         self.request.response.addInfoNotification(
-            'Your changes have been applied.')
+            "Your changes have been applied."
+        )
         self.next_url = canonical_url(self.context)

@@ -1,56 +1,61 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = ['Translator', 'TranslatorSet']
+__all__ = ["Translator", "TranslatorSet"]
 
-from storm.expr import Join
-from storm.store import Store
+import pytz
+from storm.locals import DateTime, Int, Join, Reference, Store, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
-from lp.translations.interfaces.translator import (
-    ITranslator,
-    ITranslatorSet,
-    )
+from lp.services.database.stormbase import StormBase
+from lp.translations.interfaces.translator import ITranslator, ITranslatorSet
 
 
 @implementer(ITranslator)
-class Translator(SQLBase):
+class Translator(StormBase):
     """A Translator in a TranslationGroup."""
 
+    __storm_table__ = "Translator"
     # default to listing newest first
-    _defaultOrder = '-id'
+    __storm_order__ = "-id"
 
-    # db field names
-    translationgroup = ForeignKey(dbName='translationgroup',
-        foreignKey='TranslationGroup', notNull=True)
-    language = ForeignKey(dbName='language',
-        foreignKey='Language', notNull=True)
-    translator = ForeignKey(
-        dbName='translator', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    style_guide_url = StringCol(notNull=False, default=None)
+    id = Int(primary=True)
+
+    translationgroup_id = Int(name="translationgroup", allow_none=False)
+    translationgroup = Reference(translationgroup_id, "TranslationGroup.id")
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, "Language.id")
+    translator_id = Int(
+        name="translator", validator=validate_public_person, allow_none=False
+    )
+    translator = Reference(translator_id, "Person.id")
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    style_guide_url = Unicode(allow_none=True, default=None)
+
+    def __init__(
+        self, translationgroup, language, translator, style_guide_url=None
+    ):
+        super().__init__()
+        self.translationgroup = translationgroup
+        self.language = language
+        self.translator = translator
+        self.style_guide_url = style_guide_url
 
 
 @implementer(ITranslatorSet)
 class TranslatorSet:
-
-    def new(self, translationgroup, language,
-            translator, style_guide_url=None):
+    def new(
+        self, translationgroup, language, translator, style_guide_url=None
+    ):
         return Translator(
             translationgroup=translationgroup,
             language=language,
             translator=translator,
-            style_guide_url=style_guide_url)
+            style_guide_url=style_guide_url,
+        )
 
     def getByTranslator(self, translator):
         """See ITranslatorSet."""
@@ -60,12 +65,17 @@ class TranslatorSet:
         # a cyclic import.
         origin = [
             Translator,
-            Join(TeamParticipation,
-                TeamParticipation.teamID == Translator.translatorID),
-            Join("TranslationGroup",
-                 on="TranslationGroup.id = Translator.translationgroup")
-            ]
+            Join(
+                TeamParticipation,
+                TeamParticipation.teamID == Translator.translator_id,
+            ),
+            Join(
+                "TranslationGroup",
+                on="TranslationGroup.id = Translator.translationgroup",
+            ),
+        ]
         result = store.using(*origin).find(
-            Translator, TeamParticipation.person == translator)
+            Translator, TeamParticipation.person == translator
+        )
 
         return result.order_by("TranslationGroup.title")

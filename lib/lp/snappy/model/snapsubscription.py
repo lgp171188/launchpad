@@ -3,15 +3,10 @@
 
 """Snap subscription model."""
 
-__all__ = [
-    'SnapSubscription'
-]
+__all__ = ["SnapSubscription"]
 
 import pytz
-from storm.properties import (
-    DateTime,
-    Int,
-    )
+from storm.properties import DateTime, Int
 from storm.references import Reference
 from zope.interface import implementer
 
@@ -26,12 +21,11 @@ from lp.snappy.interfaces.snapsubscription import ISnapSubscription
 class SnapSubscription(StormBase):
     """A relationship between a person and a snap recipe."""
 
-    __storm_table__ = 'SnapSubscription'
+    __storm_table__ = "SnapSubscription"
 
     id = Int(primary=True)
 
-    person_id = Int(
-        "person", allow_none=False, validator=validate_person)
+    person_id = Int("person", allow_none=False, validator=validate_person)
     person = Reference(person_id, "Person.id")
 
     snap_id = Int("snap", allow_none=False)
@@ -40,7 +34,8 @@ class SnapSubscription(StormBase):
     date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
     subscribed_by_id = Int(
-        "subscribed_by", allow_none=False, validator=validate_person)
+        "subscribed_by", allow_none=False, validator=validate_person
+    )
     subscribed_by = Reference(subscribed_by_id, "Person.id")
 
     def __init__(self, snap, person, subscribed_by):
@@ -53,7 +48,9 @@ class SnapSubscription(StormBase):
         """See `ISnapSubscription`."""
         if user is None:
             return False
-        return (user.inTeam(self.snap.owner) or
-                user.inTeam(self.person) or
-                user.inTeam(self.subscribed_by) or
-                IPersonRoles(user).in_admin)
+        return (
+            user.inTeam(self.snap.owner)
+            or user.inTeam(self.person)
+            or user.inTeam(self.subscribed_by)
+            or IPersonRoles(user).in_admin
+        )

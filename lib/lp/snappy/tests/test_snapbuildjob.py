@@ -5,16 +5,15 @@
 
 from datetime import timedelta
 
+import transaction
 from fixtures import FakeLogger
-import six
 from testtools.matchers import (
     Equals,
     Is,
     MatchesDict,
     MatchesListwise,
     MatchesStructure,
-    )
-import transaction
+)
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -30,7 +29,7 @@ from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuildjob import (
     ISnapBuildJob,
     ISnapStoreUploadJob,
-    )
+)
 from lp.snappy.interfaces.snapstoreclient import (
     BadRefreshResponse,
     ISnapStoreClient,
@@ -38,21 +37,18 @@ from lp.snappy.interfaces.snapstoreclient import (
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotScannedYetResponse,
-    )
+)
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapbuildjob import (
     SnapBuildJob,
     SnapBuildJobType,
     SnapStoreUploadJob,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -69,7 +65,6 @@ def run_isolated_jobs(jobs):
 
 @implementer(ISnapStoreClient)
 class FakeSnapStoreClient:
-
     def __init__(self):
         self.uploadFile = FakeMethod()
         self.push = FakeMethod()
@@ -77,16 +72,21 @@ class FakeSnapStoreClient:
 
 
 class FileUploaded(MatchesListwise):
-
     def __init__(self, filename):
-        super().__init__([
-            MatchesListwise([
-                MatchesListwise([
-                    MatchesStructure.byEquality(filename=filename),
-                    ]),
-                MatchesDict({}),
-                ]),
-            ])
+        super().__init__(
+            [
+                MatchesListwise(
+                    [
+                        MatchesListwise(
+                            [
+                                MatchesStructure.byEquality(filename=filename),
+                            ]
+                        ),
+                        MatchesDict({}),
+                    ]
+                ),
+            ]
+        )
 
 
 class TestSnapBuildJob(TestCaseWithFactory):
@@ -102,7 +102,8 @@ class TestSnapBuildJob(TestCaseWithFactory):
         snapbuild = self.factory.makeSnapBuild()
         self.assertProvides(
             SnapBuildJob(snapbuild, SnapBuildJobType.STORE_UPLOAD, {}),
-            ISnapBuildJob)
+            ISnapBuildJob,
+        )
 
 
 class TestSnapStoreUploadJob(TestCaseWithFactory):
@@ -126,57 +127,77 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         snapbuild = self.factory.makeSnapBuild()
         job = SnapStoreUploadJob.create(snapbuild)
         self.assertEqual(
-            "<SnapStoreUploadJob for ~%s/+snap/%s/+build/%d>" % (
-                snapbuild.snap.owner.name, snapbuild.snap.name, snapbuild.id),
-            repr(job))
+            "<SnapStoreUploadJob for ~%s/+snap/%s/+build/%d>"
+            % (snapbuild.snap.owner.name, snapbuild.snap.name, snapbuild.id),
+            repr(job),
+        )
 
     def makeSnapBuild(self, **kwargs):
         # Make a build with a builder, a file, and a webhook.
         snapbuild = self.factory.makeSnapBuild(
-            builder=self.factory.makeBuilder(), **kwargs)
+            builder=self.factory.makeBuilder(), **kwargs
+        )
         snapbuild.updateStatus(BuildStatus.FULLYBUILT)
         irrelevant_lfa = self.factory.makeLibraryFileAlias(
-            filename="000-irrelevant.txt", content=b"irrelevant file")
+            filename="000-irrelevant.txt", content=b"irrelevant file"
+        )
         self.factory.makeSnapFile(
-            snapbuild=snapbuild, libraryfile=irrelevant_lfa)
+            snapbuild=snapbuild, libraryfile=irrelevant_lfa
+        )
         snap_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-snap.snap", content=b"dummy snap content")
+            filename="test-snap.snap", content=b"dummy snap content"
+        )
         self.factory.makeSnapFile(snapbuild=snapbuild, libraryfile=snap_lfa)
         self.factory.makeWebhook(
-            target=snapbuild.snap, event_types=["snap:build:0.1"])
+            target=snapbuild.snap, event_types=["snap:build:0.1"]
+        )
         return snapbuild
 
-    def assertWebhookDeliveries(self, snapbuild,
-                                expected_store_upload_statuses, logger):
+    def assertWebhookDeliveries(
+        self, snapbuild, expected_store_upload_statuses, logger
+    ):
         hook = snapbuild.snap.webhooks.one()
         deliveries = list(hook.deliveries)
         deliveries.reverse()
-        expected_payloads = [{
-            "snap_build": Equals(
-                canonical_url(snapbuild, force_local_path=True)),
-            "action": Equals("status-changed"),
-            "snap": Equals(
-                canonical_url(snapbuild.snap, force_local_path=True)),
-            "build_request": Is(None),
-            "status": Equals("Successfully built"),
-            "store_upload_status": Equals(expected),
-            } for expected in expected_store_upload_statuses]
+        expected_payloads = [
+            {
+                "snap_build": Equals(
+                    canonical_url(snapbuild, force_local_path=True)
+                ),
+                "action": Equals("status-changed"),
+                "snap": Equals(
+                    canonical_url(snapbuild.snap, force_local_path=True)
+                ),
+                "build_request": Is(None),
+                "status": Equals("Successfully built"),
+                "store_upload_status": Equals(expected),
+            }
+            for expected in expected_store_upload_statuses
+        ]
         matchers = [
             MatchesStructure(
                 event_type=Equals("snap:build:0.1"),
-                payload=MatchesDict(expected_payload))
-            for expected_payload in expected_payloads]
+                payload=MatchesDict(expected_payload),
+            )
+            for expected_payload in expected_payloads
+        ]
         self.assertThat(deliveries, MatchesListwise(matchers))
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             for delivery in deliveries:
                 self.assertEqual(
-                    "<WebhookDeliveryJob for webhook %d on %r>" % (
-                        hook.id, hook.target),
-                    repr(delivery))
+                    "<WebhookDeliveryJob for webhook %d on %r>"
+                    % (hook.id, hook.target),
+                    repr(delivery),
+                )
             self.assertThat(
-                logger.output, LogsScheduledWebhooks([
-                    (hook, "snap:build:0.1", MatchesDict(expected_payload))
-                    for expected_payload in expected_payloads]))
+                logger.output,
+                LogsScheduledWebhooks(
+                    [
+                        (hook, "snap:build:0.1", MatchesDict(expected_payload))
+                        for expected_payload in expected_payloads
+                    ]
+                ),
+            )
 
     def test_run(self):
         # The job uploads the build to the store and records the store URL
@@ -193,18 +214,21 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
-        self.assertEqual(1,
-                         removeSecurityProxy(snapbuild)._store_upload_revision)
+        self.assertEqual(
+            1, removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Uploaded"], logger)
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
 
     def test_run_failed(self):
         # A failed run sets the store upload status to FAILED.
@@ -218,73 +242,91 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual("An upload failure", job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"], logger)
+            snapbuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_unauthorized_notifies(self):
         # A run that gets 401 from the store sends mail.
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         snapbuild = self.makeSnapBuild(
-            requester=requester_team, name="test-snap", owner=requester_team)
+            requester=requester_team, name="test-snap", owner=requester_team
+        )
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
         client.uploadFile.result = 1
         client.push.failure = UnauthorizedUploadResponse(
-            "Authorization failed.")
+            "Authorization failed."
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual("Authorization failed.", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual("Store authorization failed for test-snap", subject)
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "snap-build-upload-unauthorized",
-            notification["X-Launchpad-Notification-Type"])
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)).split("\n-- \n")
+            notification["X-Launchpad-Notification-Type"],
+        )
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn(
             "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
-            body)
+            body,
+        )
         self.assertEqual(
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            snapbuild.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % snapbuild.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"], logger)
+            snapbuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_502_retries(self):
         # A run that gets a 502 error from the store schedules itself to be
@@ -295,19 +337,22 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
@@ -323,19 +368,22 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
-        self.assertEqual(1,
-                         removeSecurityProxy(snapbuild)._store_upload_revision)
+        self.assertEqual(
+            1, removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Uploaded"], logger)
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
 
     def test_run_refresh_failure_notifies(self):
         # A run that gets a failure when trying to refresh macaroons sends
@@ -343,9 +391,11 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         snapbuild = self.makeSnapBuild(
-            requester=requester_team, name="test-snap", owner=requester_team)
+            requester=requester_team, name="test-snap", owner=requester_team
+        )
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -355,43 +405,56 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual("SSO melted.", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual(
-            "Refreshing store authorization failed for test-snap", subject)
+            "Refreshing store authorization failed for test-snap", subject
+        )
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "snap-build-upload-refresh-failed",
-            notification["X-Launchpad-Notification-Type"])
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)).split("\n-- \n")
+            notification["X-Launchpad-Notification-Type"],
+        )
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn(
             "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
-            body)
+            body,
+        )
         self.assertEqual(
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            snapbuild.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % snapbuild.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"], logger)
+            snapbuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_upload_failure_notifies(self):
         # A run that gets some other upload failure from the store sends
@@ -399,57 +462,73 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         snapbuild = self.makeSnapBuild(
-            requester=requester_team, name="test-snap", owner=requester_team)
+            requester=requester_team, name="test-snap", owner=requester_team
+        )
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Failed to upload", detail="The proxy exploded.\n")
+            "Failed to upload", detail="The proxy exploded.\n"
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual("Failed to upload", job.error_message)
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual("Store upload failed for test-snap", subject)
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "snap-build-upload-failed",
-            notification["X-Launchpad-Notification-Type"])
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)).split("\n-- \n")
+            notification["X-Launchpad-Notification-Type"],
+        )
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Failed to upload", body)
         build_url = (
-            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d" %
-            snapbuild.id)
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d"
+            % snapbuild.id
+        )
         self.assertIn(build_url, body)
         self.assertEqual(
-            "%s\nYour team Requester Team is the requester of the build.\n" %
-            build_url, footer)
+            "%s\nYour team Requester Team is the requester of the build.\n"
+            % build_url,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"], logger)
+            snapbuild, ["Pending", "Failed to upload"], logger
+        )
         self.assertIn(
-            ("error_detail", "The proxy exploded.\n"), job.getOopsVars())
+            ("error_detail", "The proxy exploded.\n"), job.getOopsVars()
+        )
 
     def test_run_scan_pending_retries(self):
         # A run that finds that the store has not yet finished scanning the
@@ -466,14 +545,16 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
@@ -494,22 +575,26 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
-        self.assertEqual(1,
-                         removeSecurityProxy(snapbuild)._store_upload_revision)
+        self.assertEqual(
+            1, removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Uploaded"], logger)
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
 
     def test_run_scan_failure_notifies(self):
         # A run that gets a scan failure from the store sends mail.
         logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
+            owner=requester, name="requester-team", members=[requester]
+        )
         snapbuild = self.makeSnapBuild(
-            requester=requester_team, name="test-snap", owner=requester_team)
+            requester=requester_team, name="test-snap", owner=requester_team
+        )
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
@@ -519,50 +604,67 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "Scan failed.\nConfinement not allowed.",
             messages=[
                 {"message": "Scan failed.", "link": "link1"},
-                {"message": "Confinement not allowed.", "link": "link2"}])
+                {"message": "Confinement not allowed.", "link": "link2"},
+            ],
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 2), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual(
-            "Scan failed.\nConfinement not allowed.", job.error_message)
-        self.assertEqual([
-            {"message": "Scan failed.", "link": "link1"},
-            {"message": "Confinement not allowed.", "link": "link2"}],
-            job.error_messages)
+            "Scan failed.\nConfinement not allowed.", job.error_message
+        )
+        self.assertEqual(
+            [
+                {"message": "Scan failed.", "link": "link1"},
+                {"message": "Confinement not allowed.", "link": "link2"},
+            ],
+            job.error_messages,
+        )
         [notification] = pop_notifications()
         self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
+            config.canonical.noreply_from_address, notification["From"]
+        )
         self.assertEqual(
             "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
+            notification["To"],
+        )
         subject = notification["Subject"].replace("\n ", " ")
         self.assertEqual("Store upload scan failed for test-snap", subject)
         self.assertEqual(
             "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
+            notification["X-Launchpad-Message-Rationale"],
+        )
         self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
+            requester_team.name, notification["X-Launchpad-Message-For"]
+        )
         self.assertEqual(
             "snap-build-upload-scan-failed",
-            notification["X-Launchpad-Notification-Type"])
-        body, footer = six.ensure_text(
-            notification.get_payload(decode=True)).split("\n-- \n")
+            notification["X-Launchpad-Notification-Type"],
+        )
+        body, footer = (
+            notification.get_payload(decode=True).decode().split("\n-- \n")
+        )
         self.assertIn("Scan failed.", body)
         self.assertEqual(
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            snapbuild.id, footer)
+            "Your team Requester Team is the requester of the build.\n"
+            % snapbuild.id,
+            footer,
+        )
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"], logger)
+            snapbuild, ["Pending", "Failed to upload"], logger
+        )
 
     def test_run_scan_review_queued(self):
         # A run that finds that the store has queued the package behind
@@ -580,18 +682,21 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Uploaded"], logger)
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
 
     def test_run_release(self):
         # A run configured to automatically release the package to certain
@@ -608,18 +713,21 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertThat(
-            client.uploadFile.calls, FileUploaded("test-snap.snap"))
+            client.uploadFile.calls, FileUploaded("test-snap.snap")
+        )
         self.assertEqual([((snapbuild, 1), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
-        self.assertEqual(1,
-                         removeSecurityProxy(snapbuild)._store_upload_revision)
+        self.assertEqual(
+            1, removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Uploaded"], logger)
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
 
     def test_retry_delay(self):
         # The job is retried every minute, unless it just made one of its
@@ -630,7 +738,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         job = SnapStoreUploadJob.create(snapbuild)
         client = FakeSnapStoreClient()
         client.uploadFile.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
@@ -640,7 +749,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         client.uploadFile.failure = None
         client.uploadFile.result = 1
         client.push.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
         self.assertIn("upload_id", job.snapbuild.store_upload_metadata)
@@ -656,7 +766,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             self.assertIn("status_url", job.snapbuild.store_upload_metadata)
             self.assertIsNone(job.store_url)
             self.assertEqual(
-                timedelta(seconds=expected_delay), job.retry_delay)
+                timedelta(seconds=expected_delay), job.retry_delay
+            )
             job.scheduled_start = None
         client.checkStatus.failure = None
         client.checkStatus.result = (self.store_url, 1)
@@ -677,7 +788,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         client = FakeSnapStoreClient()
         client.uploadFile.result = 1
         client.push.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
+            "Proxy error", can_retry=True
+        )
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             run_isolated_jobs([job])
@@ -686,7 +798,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual(timedelta(seconds=60), job.retry_delay)
         self.assertEqual(1, len(client.uploadFile.calls))
         self.assertIsNone(job.error_message)
@@ -728,7 +841,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
         self.assertIsNone(
-            removeSecurityProxy(snapbuild)._store_upload_revision)
+            removeSecurityProxy(snapbuild)._store_upload_revision
+        )
         self.assertEqual(timedelta(seconds=15), job.retry_delay)
         self.assertEqual(1, len(client.uploadFile.calls))
         self.assertEqual(1, len(client.push.calls))
@@ -772,11 +886,11 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         loaded_build = store.find(SnapBuild, id=unsecure_db_build.id).one()
 
         job = SnapStoreUploadJob.create(loaded_build)
-        job.status_url = 'http://example.org'
+        job.status_url = "http://example.org"
         store.flush()
 
         loaded_build = store.find(SnapBuild, id=unsecure_db_build.id).one()
         self.assertEqual(
-            'http://example.org',
-            loaded_build.store_upload_metadata['status_url']
-            )
+            "http://example.org",
+            loaded_build.store_upload_metadata["status_url"],
+        )

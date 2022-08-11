@@ -4,10 +4,7 @@
 """Test snappy series."""
 
 from testtools.matchers import MatchesStructure
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getAdapter, getUtility
 
 from lp.app.interfaces.security import IAuthorization
 from lp.services.database.interfaces import IStore
@@ -19,22 +16,16 @@ from lp.snappy.interfaces.snappyseries import (
     ISnappySeries,
     ISnappySeriesSet,
     NoSuchSnappySeries,
-    )
-from lp.snappy.model.snappyseries import (
-    SnappyDistroSeries,
-    SnappySeries,
-    )
+)
+from lp.snappy.model.snappyseries import SnappyDistroSeries, SnappySeries
 from lp.testing import (
+    TestCaseWithFactory,
     admin_logged_in,
     api_url,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    ZopelessDatabaseLayer,
-    )
+)
+from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 from lp.testing.pages import webservice_for_person
 
 
@@ -54,7 +45,8 @@ class TestSnappySeries(TestCaseWithFactory):
     def test_set_preferred_distro_series(self):
         dses = [self.factory.makeDistroSeries() for _ in range(2)]
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[dses[0]])
+            usable_distro_series=[dses[0]]
+        )
         self.assertIsNone(snappy_series.preferred_distro_series)
         snappy_series.preferred_distro_series = dses[1]
         self.assertEqual(dses[1], snappy_series.preferred_distro_series)
@@ -73,7 +65,8 @@ class TestSnappySeries(TestCaseWithFactory):
     def test_set_usable_distro_series(self):
         dses = [self.factory.makeDistroSeries() for _ in range(3)]
         snappy_series = self.factory.makeSnappySeries(
-            usable_distro_series=[dses[0]])
+            usable_distro_series=[dses[0]]
+        )
         self.assertContentEqual([dses[0]], snappy_series.usable_distro_series)
         snappy_series.usable_distro_series = dses
         self.assertContentEqual(dses, snappy_series.usable_distro_series)
@@ -117,14 +110,16 @@ class TestSnappySeriesSet(TestCaseWithFactory):
         snappy_series_set = getUtility(ISnappySeriesSet)
         self.assertEqual(snappy_series, snappy_series_set.getByName("foo"))
         self.assertRaises(
-            NoSuchSnappySeries, snappy_series_set.getByName, "bar")
+            NoSuchSnappySeries, snappy_series_set.getByName, "bar"
+        )
 
     def test_getAll(self):
         sample_snappy_serieses = list(IStore(SnappySeries).find(SnappySeries))
         snappy_serieses = [self.factory.makeSnappySeries() for _ in range(3)]
         self.assertContentEqual(
             snappy_serieses + sample_snappy_serieses,
-            getUtility(ISnappySeriesSet).getAll())
+            getUtility(ISnappySeriesSet).getAll(),
+        )
 
 
 class TestSnappySeriesWebservice(TestCaseWithFactory):
@@ -139,30 +134,42 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
         # An unprivileged user cannot create a SnappySeries.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            "/+snappy-series", "new",
-            name="dummy", display_name="dummy", status="Experimental")
+            "/+snappy-series",
+            "new",
+            name="dummy",
+            display_name="dummy",
+            status="Experimental",
+        )
         self.assertEqual(401, response.status)
 
     def test_new(self):
         # A registry expert can create a SnappySeries.
         person = self.factory.makeRegistryExpert()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_post(
-            "/+snappy-series", "new",
-            name="dummy", display_name="Dummy", status="Experimental")
+            "/+snappy-series",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            status="Experimental",
+        )
         self.assertEqual(201, response.status)
         snappy_series = webservice.get(
-            response.getHeader("Location")).jsonBody()
+            response.getHeader("Location")
+        ).jsonBody()
         with person_logged_in(person):
             self.assertEqual(
                 webservice.getAbsoluteUrl(api_url(person)),
-                snappy_series["registrant_link"])
+                snappy_series["registrant_link"],
+            )
             self.assertEqual("dummy", snappy_series["name"])
             self.assertEqual("Dummy", snappy_series["display_name"])
             self.assertEqual("Experimental", snappy_series["status"])
@@ -172,30 +179,42 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
         # rejected.
         person = self.factory.makeRegistryExpert()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.WRITE_PUBLIC)
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_post(
-            "/+snappy-series", "new",
-            name="dummy", display_name="Dummy", status="Experimental")
+            "/+snappy-series",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            status="Experimental",
+        )
         self.assertEqual(201, response.status)
         response = webservice.named_post(
-            "/+snappy-series", "new",
-            name="dummy", display_name="Dummy", status="Experimental")
+            "/+snappy-series",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            status="Experimental",
+        )
         self.assertEqual(400, response.status)
         self.assertEqual(
-            b"name: dummy is already in use by another series.", response.body)
+            b"name: dummy is already in use by another series.", response.body
+        )
 
     def test_getByName(self):
         # lp.snappy_serieses.getByName returns a matching SnappySeries.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         with admin_logged_in():
             self.factory.makeSnappySeries(name="dummy")
         response = webservice.named_get(
-            "/+snappy-series", "getByName", name="dummy")
+            "/+snappy-series", "getByName", name="dummy"
+        )
         self.assertEqual(200, response.status)
         self.assertEqual("dummy", response.jsonBody()["name"])
 
@@ -204,20 +223,24 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
         # SnappySeries.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         logout()
         response = webservice.named_get(
-            "/+snappy-series", "getByName", name="nonexistent")
+            "/+snappy-series", "getByName", name="nonexistent"
+        )
         self.assertEqual(404, response.status)
         self.assertEqual(
-            b"No such snappy series: 'nonexistent'.", response.body)
+            b"No such snappy series: 'nonexistent'.", response.body
+        )
 
     def test_collection(self):
         # lp.snappy_serieses is a collection of all SnappySeries.
         person = self.factory.makePerson()
         webservice = webservice_for_person(
-            person, permission=OAuthPermission.READ_PUBLIC)
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
         webservice.default_api_version = "devel"
         with admin_logged_in():
             for i in range(3):
@@ -226,7 +249,8 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ["ss-0", "ss-1", "ss-2", "15.04-core", "16"],
-            [entry["name"] for entry in response.jsonBody()["entries"]])
+            [entry["name"] for entry in response.jsonBody()["entries"]],
+        )
 
 
 class TestSnappyDistroSeriesSet(TestCaseWithFactory):
@@ -245,9 +269,12 @@ class TestSnappyDistroSeriesSet(TestCaseWithFactory):
         self.assertThat(
             sds_set.getByBothSeries(snappy_serieses[0], dses[0]),
             MatchesStructure.byEquality(
-                snappy_series=snappy_serieses[0], distro_series=dses[0],
-                title="%s, for %s" % (
-                    dses[0].fullseriesname, snappy_serieses[0].title)))
+                snappy_series=snappy_serieses[0],
+                distro_series=dses[0],
+                title="%s, for %s"
+                % (dses[0].fullseriesname, snappy_serieses[0].title),
+            ),
+        )
         self.assertIsNone(sds_set.getByBothSeries(snappy_serieses[0], dses[1]))
         self.assertIsNone(sds_set.getByBothSeries(snappy_serieses[1], dses[0]))
         self.assertIsNone(sds_set.getByBothSeries(snappy_serieses[1], dses[1]))
@@ -257,8 +284,11 @@ class TestSnappyDistroSeriesSet(TestCaseWithFactory):
         self.assertThat(
             sds_set.getByBothSeries(snappy_serieses[0], None),
             MatchesStructure.byEquality(
-                snappy_series=snappy_serieses[0], distro_series=None,
-                title=snappy_serieses[0].title))
+                snappy_series=snappy_serieses[0],
+                distro_series=None,
+                title=snappy_serieses[0].title,
+            ),
+        )
         self.assertIsNone(sds_set.getByBothSeries(snappy_serieses[1], None))
 
     def test_getAll(self):

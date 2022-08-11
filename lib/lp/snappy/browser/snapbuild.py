@@ -4,33 +4,30 @@
 """SnapBuild views."""
 
 __all__ = [
-    'SnapBuildContextMenu',
-    'SnapBuildNavigation',
-    'SnapBuildView',
-    ]
+    "SnapBuildContextMenu",
+    "SnapBuildNavigation",
+    "SnapBuildView",
+]
 
 from zope.interface import Interface
 
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
-    )
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    canonical_url,
     ContextMenu,
-    enabled_with_permission,
     Link,
     Navigation,
-    )
+    canonical_url,
+    enabled_with_permission,
+)
 from lp.snappy.interfaces.snapbuild import (
     CannotScheduleStoreUpload,
     ISnapBuild,
-    )
+)
 from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
 
 
@@ -43,27 +40,36 @@ class SnapBuildContextMenu(ContextMenu):
 
     usedfor = ISnapBuild
 
-    facet = 'overview'
+    facet = "overview"
 
-    links = ('retry', 'cancel', 'rescore')
+    links = ("retry", "cancel", "rescore")
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def retry(self):
         return Link(
-            '+retry', 'Retry this build', icon='retry',
-            enabled=self.context.can_be_retried)
+            "+retry",
+            "Retry this build",
+            icon="retry",
+            enabled=self.context.can_be_retried,
+        )
 
-    @enabled_with_permission('launchpad.Edit')
+    @enabled_with_permission("launchpad.Edit")
     def cancel(self):
         return Link(
-            '+cancel', 'Cancel build', icon='remove',
-            enabled=self.context.can_be_cancelled)
+            "+cancel",
+            "Cancel build",
+            icon="remove",
+            enabled=self.context.can_be_cancelled,
+        )
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission("launchpad.Admin")
     def rescore(self):
         return Link(
-            '+rescore', 'Rescore build', icon='edit',
-            enabled=self.context.can_be_rescored)
+            "+rescore",
+            "Rescore build",
+            icon="edit",
+            enabled=self.context.can_be_rescored,
+        )
 
 
 class SnapBuildView(LaunchpadFormView):
@@ -86,7 +92,9 @@ class SnapBuildView(LaunchpadFormView):
 
         return [
             ProxiedLibraryFileAlias(alias, self.context)
-            for _, alias, _ in self.context.getFiles() if not alias.deleted]
+            for _, alias, _ in self.context.getFiles()
+            if not alias.deleted
+        ]
 
     @cachedproperty
     def has_files(self):
@@ -96,7 +104,7 @@ class SnapBuildView(LaunchpadFormView):
     def next_url(self):
         return canonical_url(self.context)
 
-    @action('Upload build to store', name='upload')
+    @action("Upload build to store", name="upload")
     def upload_action(self, action, data):
         """Schedule an upload of this build to the store."""
         try:
@@ -106,7 +114,8 @@ class SnapBuildView(LaunchpadFormView):
         else:
             self.request.response.addInfoNotification(
                 "An upload has been scheduled and will run as soon as "
-                "possible.")
+                "possible."
+            )
 
 
 class SnapBuildRetryView(LaunchpadFormView):
@@ -115,22 +124,24 @@ class SnapBuildRetryView(LaunchpadFormView):
     class schema(Interface):
         """Schema for retrying a build."""
 
-    page_title = label = 'Retry build'
+    page_title = label = "Retry build"
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
-    @action('Retry build', name='retry')
+    @action("Retry build", name="retry")
     def request_action(self, action, data):
         """Retry the build."""
         if not self.context.can_be_retried:
             self.request.response.addErrorNotification(
-                'Build cannot be retried')
+                "Build cannot be retried"
+            )
         else:
             self.context.retry()
-            self.request.response.addInfoNotification('Build has been queued')
+            self.request.response.addInfoNotification("Build has been queued")
 
         self.request.response.redirect(self.next_url)
 
@@ -141,14 +152,15 @@ class SnapBuildCancelView(LaunchpadFormView):
     class schema(Interface):
         """Schema for cancelling a build."""
 
-    page_title = label = 'Cancel build'
+    page_title = label = "Cancel build"
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
-    @action('Cancel build', name='cancel')
+    @action("Cancel build", name="cancel")
     def request_action(self, action, data):
         """Cancel the build."""
         self.context.cancel()
@@ -159,27 +171,29 @@ class SnapBuildRescoreView(LaunchpadFormView):
 
     schema = IBuildRescoreForm
 
-    page_title = label = 'Rescore build'
+    page_title = label = "Rescore build"
 
     def __call__(self):
         if self.context.can_be_rescored:
             return super().__call__()
         self.request.response.addWarningNotification(
-            "Cannot rescore this build because it is not queued.")
+            "Cannot rescore this build because it is not queued."
+        )
         self.request.response.redirect(canonical_url(self.context))
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
     next_url = cancel_url
 
-    @action('Rescore build', name='rescore')
+    @action("Rescore build", name="rescore")
     def request_action(self, action, data):
         """Rescore the build."""
-        score = data.get('priority')
+        score = data.get("priority")
         self.context.rescore(score)
-        self.request.response.addNotification('Build rescored to %s.' % score)
+        self.request.response.addNotification("Build rescored to %s." % score)
 
     @property
     def initial_values(self):
-        return {'score': str(self.context.buildqueue_record.lastscore)}
+        return {"score": str(self.context.buildqueue_record.lastscore)}

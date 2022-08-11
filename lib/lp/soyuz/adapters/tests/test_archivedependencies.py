@@ -5,12 +5,9 @@
 
 import os.path
 
-from testtools.matchers import (
-    MatchesSetwise,
-    StartsWith,
-    )
-from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
+from testtools.matchers import MatchesSetwise, StartsWith
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from twisted.internet.threads import deferToThread
 from zope.component import getUtility
@@ -18,10 +15,10 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
-    )
+)
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
-    )
+)
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
@@ -34,7 +31,7 @@ from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
     get_sources_list_for_building,
     pocket_dependencies,
-    )
+)
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.component import IComponentSet
@@ -43,10 +40,7 @@ from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
-from lp.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
+from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
 
 
 class TestOgreModel(TestCaseWithFactory):
@@ -68,7 +62,8 @@ class TestOgreModel(TestCaseWithFactory):
             component = getUtility(IComponentSet)[component_name]
             self.assertEqual(
                 expected_components,
-                get_components_for_context(component, distroseries, pocket))
+                get_components_for_context(component, distroseries, pocket),
+            )
 
     def test_strict_supported_component_dependencies(self):
         # In strict-supported-component-dependencies mode, a source
@@ -82,10 +77,11 @@ class TestOgreModel(TestCaseWithFactory):
             "universe": ["main", "universe"],
             "multiverse": ["main", "restricted", "universe", "multiverse"],
             "partner": ["partner"],
-            }
+        }
         self.setUpComponents(distroseries, expected.keys())
         self.assertComponentMap(
-            expected, distroseries, PackagePublishingPocket.RELEASE)
+            expected, distroseries, PackagePublishingPocket.RELEASE
+        )
 
     def test_lax_supported_component_dependencies(self):
         # In lax-supported-component-dependencies mode, source packages in
@@ -100,10 +96,11 @@ class TestOgreModel(TestCaseWithFactory):
             "universe": ["main", "universe"],
             "multiverse": ["main", "restricted", "universe", "multiverse"],
             "partner": ["partner"],
-            }
+        }
         self.setUpComponents(distroseries, expected.keys())
         self.assertComponentMap(
-            expected, distroseries, PackagePublishingPocket.RELEASE)
+            expected, distroseries, PackagePublishingPocket.RELEASE
+        )
 
     def test_backports(self):
         # Source packages in the BACKPORTS pocket are allowed to
@@ -117,10 +114,11 @@ class TestOgreModel(TestCaseWithFactory):
             "universe": ["main", "restricted", "universe", "multiverse"],
             "multiverse": ["main", "restricted", "universe", "multiverse"],
             "partner": ["main", "restricted", "universe", "multiverse"],
-            }
+        }
         self.setUpComponents(distroseries, expected.keys())
         self.assertComponentMap(
-            expected, distroseries, PackagePublishingPocket.BACKPORTS)
+            expected, distroseries, PackagePublishingPocket.BACKPORTS
+        )
 
 
 class TestSourcesList(TestCaseWithFactory):
@@ -130,13 +128,19 @@ class TestSourcesList(TestCaseWithFactory):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     ubuntu_components = [
-        "main", "restricted", "universe", "multiverse", "partner"]
+        "main",
+        "restricted",
+        "universe",
+        "multiverse",
+        "partner",
+    ]
 
     fingerprints = {
         "ppa-sample@canonical.com": "0D57E99656BEFB0897606EE9A022DD1F5001B46D",
         "ppa-sample-4096@canonical.com": (
-            "B7B1966662BA8D3F5A6ED89BD640F4A593B2CF67"),
-        }
+            "B7B1966662BA8D3F5A6ED89BD640F4A593B2CF67"
+        ),
+    }
 
     def setUp(self):
         super().setUp()
@@ -155,17 +159,25 @@ class TestSourcesList(TestCaseWithFactory):
         # Updates pockets from the primary archive, and all its available
         # components.
         self.assertEqual(
-            PackagePublishingPocket.UPDATES, default_pocket_dependency)
+            PackagePublishingPocket.UPDATES, default_pocket_dependency
+        )
         self.assertEqual("multiverse", default_component_dependency_name)
         self.assertEqual(
-            (PackagePublishingPocket.RELEASE,
-             PackagePublishingPocket.SECURITY,
-             PackagePublishingPocket.UPDATES),
-            pocket_dependencies[default_pocket_dependency])
+            (
+                PackagePublishingPocket.RELEASE,
+                PackagePublishingPocket.SECURITY,
+                PackagePublishingPocket.UPDATES,
+            ),
+            pocket_dependencies[default_pocket_dependency],
+        )
 
     @defer.inlineCallbacks
-    def makeArchive(self, signing_key_name="ppa-sample@canonical.com",
-                    publish_binary=False, **kwargs):
+    def makeArchive(
+        self,
+        signing_key_name="ppa-sample@canonical.com",
+        publish_binary=False,
+        **kwargs
+    ):
         try:
             getattr(config, "in-process-key-server-fixture")
         except AttributeError:
@@ -174,10 +186,12 @@ class TestSourcesList(TestCaseWithFactory):
         if signing_key_name is not None:
             key_path = os.path.join(gpgkeysdir, "%s.sec" % signing_key_name)
             yield IArchiveGPGSigningKey(archive).setSigningKey(
-                key_path, async_keyserver=True)
+                key_path, async_keyserver=True
+            )
         if publish_binary:
             self.publisher.getPubBinaries(
-                archive=archive, status=PackagePublishingStatus.PUBLISHED)
+                archive=archive, status=PackagePublishingStatus.PUBLISHED
+            )
         return archive
 
     def makeBuild(self, **kwargs):
@@ -189,12 +203,16 @@ class TestSourcesList(TestCaseWithFactory):
         self.assertEqual(
             expected,
             get_primary_current_component(
-                build.archive, build.distro_series,
-                build.source_package_release.name).name)
+                build.archive,
+                build.distro_series,
+                build.source_package_release.name,
+            ).name,
+        )
 
     @defer.inlineCallbacks
-    def assertSourcesListAndKeys(self, expected_sources_list,
-                                 expected_key_names, build, **kwargs):
+    def assertSourcesListAndKeys(
+        self, expected_sources_list, expected_key_names, build, **kwargs
+    ):
         expected_lines = []
         for archive_or_prefix, suffixes in expected_sources_list:
             if IArchive.providedBy(archive_or_prefix):
@@ -204,12 +222,16 @@ class TestSourcesList(TestCaseWithFactory):
             expected_lines.extend([prefix + suffix for suffix in suffixes])
         behaviour = IBuildFarmJobBehaviour(build)
         sources_list, trusted_keys = yield get_sources_list_for_building(
-            behaviour, build.distro_arch_series,
-            build.source_package_release.name, **kwargs)
+            behaviour,
+            build.distro_arch_series,
+            build.source_package_release.name,
+            **kwargs,
+        )
         self.assertEqual(expected_lines, sources_list)
         key_matchers = [
             Base64KeyMatches(self.fingerprints[key_name])
-            for key_name in expected_key_names]
+            for key_name in expected_key_names
+        ]
         self.assertThat(trusted_keys, MatchesSetwise(*key_matchers))
 
     @defer.inlineCallbacks
@@ -219,16 +241,26 @@ class TestSourcesList(TestCaseWithFactory):
         ppa = yield self.makeArchive()
         build = self.makeBuild(archive=ppa)
         self.assertEqual(
-            0, ppa.getAllPublishedBinaries(
+            0,
+            ppa.getAllPublishedBinaries(
                 distroarchseries=build.distro_arch_series,
-                status=PackagePublishingStatus.PUBLISHED).count())
+                status=PackagePublishingStatus.PUBLISHED,
+            ).count(),
+        )
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_ppa_with_binaries(self):
@@ -237,56 +269,81 @@ class TestSourcesList(TestCaseWithFactory):
         ppa = yield self.makeArchive(publish_binary=True)
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], ["ppa-sample@canonical.com"], build)
+            [
+                (ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com"],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_dependent_ppa_with_no_binaries(self):
         # A depended-upon PPA is not considered if it has no published
         # binaries.
         lower_ppa = yield self.makeArchive(
-            signing_key_name="ppa-sample-4096@canonical.com")
+            signing_key_name="ppa-sample-4096@canonical.com"
+        )
         upper_ppa = yield self.makeArchive(publish_binary=True)
         upper_ppa.addArchiveDependency(
-            lower_ppa, PackagePublishingPocket.RELEASE,
-            getUtility(IComponentSet)["main"])
+            lower_ppa,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"],
+        )
         build = self.makeBuild(archive=upper_ppa)
         yield self.assertSourcesListAndKeys(
-            [(upper_ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], ["ppa-sample@canonical.com"], build)
+            [
+                (upper_ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com"],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_dependent_ppa_with_binaries(self):
         # A depended-upon PPA is considered if it has published binaries.
         lower_ppa = yield self.makeArchive(
             signing_key_name="ppa-sample-4096@canonical.com",
-            publish_binary=True)
+            publish_binary=True,
+        )
         upper_ppa = yield self.makeArchive(publish_binary=True)
         upper_ppa.addArchiveDependency(
-            lower_ppa, PackagePublishingPocket.RELEASE,
-            getUtility(IComponentSet)["main"])
+            lower_ppa,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"],
+        )
         build = self.makeBuild(archive=upper_ppa)
         yield self.assertSourcesListAndKeys(
-            [(upper_ppa, ["hoary main"]),
-             (lower_ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ],
+            [
+                (upper_ppa, ["hoary main"]),
+                (lower_ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
             ["ppa-sample@canonical.com", "ppa-sample-4096@canonical.com"],
-            build)
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_lax_supported_component_dependencies(self):
@@ -295,39 +352,54 @@ class TestSourcesList(TestCaseWithFactory):
         # PPAs only have the "main" component.
         lower_ppa = yield self.makeArchive(
             signing_key_name="ppa-sample-4096@canonical.com",
-            publish_binary=True)
+            publish_binary=True,
+        )
         upper_ppa = yield self.makeArchive(publish_binary=True)
         upper_ppa.addArchiveDependency(
-            lower_ppa, PackagePublishingPocket.RELEASE,
-            getUtility(IComponentSet)["main"])
+            lower_ppa,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"],
+        )
         upper_ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.UPDATES,
-            getUtility(IComponentSet)["restricted"])
+            self.ubuntu.main_archive,
+            PackagePublishingPocket.UPDATES,
+            getUtility(IComponentSet)["restricted"],
+        )
         build = self.makeBuild(archive=upper_ppa)
         yield self.assertSourcesListAndKeys(
-            [(upper_ppa, ["hoary main"]),
-             (lower_ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted",
-                 "hoary-security main restricted",
-                 "hoary-updates main restricted",
-                 ]),
-             ],
+            [
+                (upper_ppa, ["hoary main"]),
+                (lower_ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted",
+                        "hoary-security main restricted",
+                        "hoary-updates main restricted",
+                    ],
+                ),
+            ],
             ["ppa-sample@canonical.com", "ppa-sample-4096@canonical.com"],
-            build)
+            build,
+        )
         self.hoary.strict_supported_component_dependencies = False
         transaction.commit()
         yield self.assertSourcesListAndKeys(
-            [(upper_ppa, ["hoary main"]),
-             (lower_ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ],
+            [
+                (upper_ppa, ["hoary main"]),
+                (lower_ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
             ["ppa-sample@canonical.com", "ppa-sample-4096@canonical.com"],
-            build)
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_no_op_primary_archive_dependency(self):
@@ -335,16 +407,25 @@ class TestSourcesList(TestCaseWithFactory):
         # the same values has no effect.
         ppa = yield self.makeArchive()
         ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.UPDATES,
-            getUtility(IComponentSet)["multiverse"])
+            self.ubuntu.main_archive,
+            PackagePublishingPocket.UPDATES,
+            getUtility(IComponentSet)["multiverse"],
+        )
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_primary_archive_dependency_security(self):
@@ -355,28 +436,45 @@ class TestSourcesList(TestCaseWithFactory):
         # the source was last published in the primary archive.
         ppa = yield self.makeArchive()
         ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.SECURITY)
+            self.ubuntu.main_archive, PackagePublishingPocket.SECURITY
+        )
         build = self.makeBuild(archive=ppa)
         self.assertPrimaryCurrentComponent("universe", build)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main universe",
-                 "hoary-security main universe",
-                 ]),
-             ], [], build)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main universe",
+                        "hoary-security main universe",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
         self.publisher.getPubSource(
-            sourcename="with-ancestry", version="1.0",
-            archive=self.ubuntu.main_archive)
+            sourcename="with-ancestry",
+            version="1.0",
+            archive=self.ubuntu.main_archive,
+        )
         [build_with_ancestry] = self.publisher.getPubSource(
-            sourcename="with-ancestry", version="1.1",
-            archive=ppa).createMissingBuilds()
+            sourcename="with-ancestry", version="1.1", archive=ppa
+        ).createMissingBuilds()
         self.assertPrimaryCurrentComponent("main", build_with_ancestry)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main",
-                 "hoary-security main",
-                 ]),
-             ], [], build_with_ancestry)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main",
+                        "hoary-security main",
+                    ],
+                ),
+            ],
+            [],
+            build_with_ancestry,
+        )
 
     @defer.inlineCallbacks
     def test_primary_archive_dependency_release(self):
@@ -385,11 +483,14 @@ class TestSourcesList(TestCaseWithFactory):
         # original release of the corresponding series.
         ppa = yield self.makeArchive()
         ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.RELEASE,
-            getUtility(IComponentSet)["restricted"])
+            self.ubuntu.main_archive,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["restricted"],
+        )
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, ["hoary main restricted"])], [], build)
+            [(self.ubuntu.main_archive, ["hoary main restricted"])], [], build
+        )
 
     @defer.inlineCallbacks
     def test_primary_archive_dependency_proposed(self):
@@ -397,17 +498,26 @@ class TestSourcesList(TestCaseWithFactory):
         # environment for PROPOSED.
         ppa = yield self.makeArchive()
         ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.PROPOSED,
-            getUtility(IComponentSet)["multiverse"])
+            self.ubuntu.main_archive,
+            PackagePublishingPocket.PROPOSED,
+            getUtility(IComponentSet)["multiverse"],
+        )
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 "hoary-proposed main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                        "hoary-proposed main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_primary_archive_dependency_backports(self):
@@ -415,17 +525,26 @@ class TestSourcesList(TestCaseWithFactory):
         # environment for PROPOSED.
         ppa = yield self.makeArchive()
         ppa.addArchiveDependency(
-            self.ubuntu.main_archive, PackagePublishingPocket.BACKPORTS,
-            getUtility(IComponentSet)["multiverse"])
+            self.ubuntu.main_archive,
+            PackagePublishingPocket.BACKPORTS,
+            getUtility(IComponentSet)["multiverse"],
+        )
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 "hoary-backports main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                        "hoary-backports main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_partner(self):
@@ -436,17 +555,26 @@ class TestSourcesList(TestCaseWithFactory):
         # partner applications.
         primary, partner = self.ubuntu.all_distro_archives
         self.publisher.getPubBinaries(
-            archive=partner, component="partner",
-            status=PackagePublishingStatus.PUBLISHED)
+            archive=partner,
+            component="partner",
+            status=PackagePublishingStatus.PUBLISHED,
+        )
         build = self.makeBuild(archive=partner, component="partner")
         yield self.assertSourcesListAndKeys(
-            [(partner, ["hoary partner"]),
-             (primary, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (partner, ["hoary partner"]),
+                (
+                    primary,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_partner_proposed(self):
@@ -455,26 +583,42 @@ class TestSourcesList(TestCaseWithFactory):
         # unless overridden by ArchiveDependency.
         primary, partner = self.ubuntu.all_distro_archives
         self.publisher.getPubBinaries(
-            archive=partner, component="partner",
-            status=PackagePublishingStatus.PUBLISHED)
-        self.publisher.getPubBinaries(
-            archive=partner, component="partner",
+            archive=partner,
+            component="partner",
             status=PackagePublishingStatus.PUBLISHED,
-            pocket=PackagePublishingPocket.PROPOSED)
+        )
+        self.publisher.getPubBinaries(
+            archive=partner,
+            component="partner",
+            status=PackagePublishingStatus.PUBLISHED,
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
         build = self.makeBuild(
-            archive=partner, component="partner",
-            pocket=PackagePublishingPocket.PROPOSED)
+            archive=partner,
+            component="partner",
+            pocket=PackagePublishingPocket.PROPOSED,
+        )
         yield self.assertSourcesListAndKeys(
-            [(partner, [
-                 "hoary partner",
-                 "hoary-proposed partner",
-                 ]),
-             (primary, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], [], build)
+            [
+                (
+                    partner,
+                    [
+                        "hoary partner",
+                        "hoary-proposed partner",
+                    ],
+                ),
+                (
+                    primary,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_archive_external_dependencies(self):
@@ -485,21 +629,32 @@ class TestSourcesList(TestCaseWithFactory):
         ppa.external_dependencies = (
             "deb http://user:pass@repository zoing everything\n"
             "deb http://user:pass@repository %(series)s public private\n"
-            "deb http://user:pass@repository %(series)s-extra public")
+            "deb http://user:pass@repository %(series)s-extra public"
+        )
         build = self.makeBuild(archive=ppa)
         yield self.assertSourcesListAndKeys(
-            [(ppa, ["hoary main"]),
-             ("deb http://user:pass@repository", [
-                 "zoing everything",
-                 "hoary public private",
-                 "hoary-extra public",
-                 ]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], ["ppa-sample@canonical.com"], build)
+            [
+                (ppa, ["hoary main"]),
+                (
+                    "deb http://user:pass@repository",
+                    [
+                        "zoing everything",
+                        "hoary public private",
+                        "hoary-extra public",
+                    ],
+                ),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com"],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_build_external_dependencies(self):
@@ -508,16 +663,24 @@ class TestSourcesList(TestCaseWithFactory):
         ppa = yield self.makeArchive(publish_binary=True)
         build = self.makeBuild(archive=ppa)
         build.api_external_dependencies = (
-            "deb http://user:pass@repository foo bar")
+            "deb http://user:pass@repository foo bar"
+        )
         yield self.assertSourcesListAndKeys(
-            [(ppa, ["hoary main"]),
-             ("deb http://user:pass@repository", ["foo bar"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ], ["ppa-sample@canonical.com"], build)
+            [
+                (ppa, ["hoary main"]),
+                ("deb http://user:pass@repository", ["foo bar"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com"],
+            build,
+        )
 
     @defer.inlineCallbacks
     def test_build_tools(self):
@@ -535,20 +698,27 @@ class TestSourcesList(TestCaseWithFactory):
         gpghandler = removeSecurityProxy(getUtility(IGPGHandler))
         gpghandler.importSecretKey(secret_key_export)
         yield deferToThread(
-            gpghandler.uploadPublicKey, self.fingerprints[tools_key_name])
+            gpghandler.uploadPublicKey, self.fingerprints[tools_key_name]
+        )
 
         yield self.assertSourcesListAndKeys(
-            [(ppa, ["hoary main"]),
-             ("deb http://example.org", ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ],
-            ["ppa-sample@canonical.com", tools_key_name], build,
+            [
+                (ppa, ["hoary main"]),
+                ("deb http://example.org", ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com", tools_key_name],
+            build,
             tools_source="deb http://example.org %(series)s main",
-            tools_fingerprint=self.fingerprints[tools_key_name])
+            tools_fingerprint=self.fingerprints[tools_key_name],
+        )
 
     @defer.inlineCallbacks
     def test_build_tools_bad_formatting(self):
@@ -558,18 +728,28 @@ class TestSourcesList(TestCaseWithFactory):
         build = self.makeBuild(archive=ppa)
         logger = BufferLogger()
         yield self.assertSourcesListAndKeys(
-            [(ppa, ["hoary main"]),
-             (self.ubuntu.main_archive, [
-                 "hoary main restricted universe multiverse",
-                 "hoary-security main restricted universe multiverse",
-                 "hoary-updates main restricted universe multiverse",
-                 ]),
-             ],
-            ["ppa-sample@canonical.com"], build,
+            [
+                (ppa, ["hoary main"]),
+                (
+                    self.ubuntu.main_archive,
+                    [
+                        "hoary main restricted universe multiverse",
+                        "hoary-security main restricted universe multiverse",
+                        "hoary-updates main restricted universe multiverse",
+                    ],
+                ),
+            ],
+            ["ppa-sample@canonical.com"],
+            build,
             tools_source="deb http://example.org %(series) main",
-            logger=logger)
-        self.assertThat(logger.getLogBuffer(), StartsWith(
-            "ERROR Exception processing build tools sources.list entry:\n"))
+            logger=logger,
+        )
+        self.assertThat(
+            logger.getLogBuffer(),
+            StartsWith(
+                "ERROR Exception processing build tools sources.list entry:\n"
+            ),
+        )
 
     @defer.inlineCallbacks
     def test_overlay(self):
@@ -577,25 +757,38 @@ class TestSourcesList(TestCaseWithFactory):
         # a PPA.  This means that the parent's details gets added to the
         # sources.list passed to the builders.
         depdistro = self.factory.makeDistribution(
-            "depdistro", publish_base_url="http://archive.launchpad.test/")
+            "depdistro", publish_base_url="http://archive.launchpad.test/"
+        )
         depseries = self.factory.makeDistroSeries(
-            distribution=depdistro, name="depseries")
+            distribution=depdistro, name="depseries"
+        )
         self.factory.makeDistroArchSeries(
-            distroseries=depseries, architecturetag="i386")
+            distroseries=depseries, architecturetag="i386"
+        )
         self.publisher.addFakeChroots(depseries)
         for component_name in self.ubuntu_components:
             component = getUtility(IComponentSet)[component_name]
             self.factory.makeComponentSelection(depseries, component)
         self.factory.makeDistroSeriesParent(
-            derived_series=self.hoary, parent_series=depseries,
-            initialized=True, is_overlay=True,
+            derived_series=self.hoary,
+            parent_series=depseries,
+            initialized=True,
+            is_overlay=True,
             pocket=PackagePublishingPocket.SECURITY,
-            component=getUtility(IComponentSet)["universe"])
+            component=getUtility(IComponentSet)["universe"],
+        )
         build = self.makeBuild()
         yield self.assertSourcesListAndKeys(
-            [(self.ubuntu.main_archive, ["hoary main"]),
-             (depdistro.main_archive, [
-                 "depseries main universe",
-                 "depseries-security main universe",
-                 ]),
-             ], [], build)
+            [
+                (self.ubuntu.main_archive, ["hoary main"]),
+                (
+                    depdistro.main_archive,
+                    [
+                        "depseries main universe",
+                        "depseries-security main universe",
+                    ],
+                ),
+            ],
+            [],
+            build,
+        )

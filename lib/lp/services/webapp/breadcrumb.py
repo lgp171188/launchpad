@@ -4,19 +4,16 @@
 """Classes for creating navigation breadcrumbs."""
 
 __all__ = [
-    'Breadcrumb',
-    'DisplaynameBreadcrumb',
-    'NameBreadcrumb',
-    'TitleBreadcrumb',
-    ]
+    "Breadcrumb",
+    "DisplaynameBreadcrumb",
+    "NameBreadcrumb",
+    "TitleBreadcrumb",
+]
 
 from zope.interface import implementer
 
 from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import (
-    IBreadcrumb,
-    ICanonicalUrlData,
-    )
+from lp.services.webapp.interfaces import IBreadcrumb, ICanonicalUrlData
 
 
 @implementer(IBreadcrumb)
@@ -26,14 +23,15 @@ class Breadcrumb:
     This class is intended for use as an adapter.
     """
 
-    text = None
+    text = None  # type: str
     _detail = None
     _url = None
     inside = None
     rootsite_override = None
 
-    def __init__(self, context, url=None, text=None, inside=None,
-                 rootsite=None):
+    def __init__(
+        self, context, url=None, text=None, inside=None, rootsite=None
+    ):
         self.context = context
         if url is not None:
             self._url = url
@@ -57,7 +55,7 @@ class Breadcrumb:
         if url_data.rootsite:
             return url_data.rootsite
         else:
-            return 'mainsite'
+            return "mainsite"
 
     @property
     def url(self):
@@ -77,7 +75,10 @@ class Breadcrumb:
 
     def __repr__(self):
         return "<%s url='%s' text='%s'>" % (
-            self.__class__.__name__, self.url, self.text)
+            self.__class__.__name__,
+            self.url,
+            self.text,
+        )
 
 
 class NameBreadcrumb(Breadcrumb):

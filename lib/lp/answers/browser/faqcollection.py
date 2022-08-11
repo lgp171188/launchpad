@@ -4,34 +4,26 @@
 """IFAQCollection browser views."""
 
 __all__ = [
-    'FAQCollectionMenu',
-    'SearchFAQsView',
-    ]
+    "FAQCollectionMenu",
+    "SearchFAQsView",
+]
 
+from typing import Type
 from urllib.parse import urlencode
 
+from zope.interface import Interface
+
 from lp import _
-from lp.answers.enums import (
-    QUESTION_STATUS_DEFAULT_SEARCH,
-    QuestionSort,
-    )
+from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH, QuestionSort
 from lp.answers.interfaces.faqcollection import (
     FAQSort,
     IFAQCollection,
     ISearchFAQsForm,
-    )
-from lp.app.browser.launchpadform import (
-    action,
-    LaunchpadFormView,
-    safe_action,
-    )
+)
+from lp.app.browser.launchpadform import LaunchpadFormView, action, safe_action
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    canonical_url,
-    Link,
-    NavigationMenu,
-    )
+from lp.services.webapp import Link, NavigationMenu, canonical_url
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.menu import enabled_with_permission
 
@@ -39,9 +31,9 @@ from lp.services.webapp.menu import enabled_with_permission
 class FAQCollectionMenu(NavigationMenu):
     """Base menu definition for `IFAQCollection`."""
 
-    usedfor = IFAQCollection
-    facet = 'answers'
-    links = ['list_all', 'create_faq']
+    usedfor = IFAQCollection  # type: Type[Interface]
+    facet = "answers"
+    links = ["list_all", "create_faq"]
 
     def list_all(self):
         """Return a Link to list all FAQs."""
@@ -49,21 +41,22 @@ class FAQCollectionMenu(NavigationMenu):
         # on objects which don't provide `IFAQCollection` directly, but for
         # which an adapter exists that gives the proper context.
         collection = IFAQCollection(self.context)
-        url = canonical_url(collection, rootsite='answers') + '/+faqs'
-        return Link(url, 'All FAQs', icon='info')
+        url = canonical_url(collection, rootsite="answers") + "/+faqs"
+        return Link(url, "All FAQs", icon="info")
 
-    @enabled_with_permission('launchpad.Append')
+    @enabled_with_permission("launchpad.Append")
     def create_faq(self):
         """Return a Link to create a new FAQ."""
         collection = IFAQCollection(self.context)
         if IProjectGroup.providedBy(self.context):
-            url = ''
+            url = ""
             enabled = False
         else:
             url = canonical_url(
-                collection, view_name='+createfaq', rootsite='answers')
+                collection, view_name="+createfaq", rootsite="answers"
+            )
             enabled = True
-        return Link(url, 'Create a new FAQ', icon='add', enabled=enabled)
+        return Link(url, "Create a new FAQ", icon="add", enabled=enabled)
 
 
 class SearchFAQsView(LaunchpadFormView):
@@ -82,28 +75,36 @@ class SearchFAQsView(LaunchpadFormView):
     def page_title(self):
         """Return the page_title that should be used for the listing."""
         replacements = dict(
-            displayname=self.context.displayname,
-            search_text=self.search_text)
+            displayname=self.context.displayname, search_text=self.search_text
+        )
         if self.search_text:
-            return _('FAQs matching \u201c${search_text}\u201d for '
-                     '$displayname', mapping=replacements)
+            return _(
+                "FAQs matching \u201c${search_text}\u201d for " "$displayname",
+                mapping=replacements,
+            )
         else:
-            return _('FAQs for $displayname', mapping=replacements)
+            return _("FAQs for $displayname", mapping=replacements)
 
-    label = page_title
+    @property
+    def label(self):
+        return self.page_title
 
     @property
     def empty_listing_message(self):
         """Return the message to render when there are no FAQs to display."""
         replacements = dict(
-            displayname=self.context.displayname,
-            search_text=self.search_text)
+            displayname=self.context.displayname, search_text=self.search_text
+        )
         if self.search_text:
-            return _('There are no FAQs for $displayname matching '
-                     '\u201c${search_text}\u201d.', mapping=replacements)
+            return _(
+                "There are no FAQs for $displayname matching "
+                "\u201c${search_text}\u201d.",
+                mapping=replacements,
+            )
         else:
-            return _('There are no FAQs for $displayname.',
-                     mapping=replacements)
+            return _(
+                "There are no FAQs for $displayname.", mapping=replacements
+            )
 
     def getMatchingFAQs(self):
         """Return a BatchNavigator of the matching FAQs."""
@@ -114,7 +115,8 @@ class SearchFAQsView(LaunchpadFormView):
     def portlet_action(self):
         """The action URL of the portlet form."""
         return canonical_url(
-            self.context, view_name='+faqs', rootsite='answers')
+            self.context, view_name="+faqs", rootsite="answers"
+        )
 
     @cachedproperty
     def latest_faqs(self):
@@ -124,26 +126,38 @@ class SearchFAQsView(LaunchpadFormView):
         """
         quantity = 5
         faqs = self.context.searchFAQs(
-            search_text=self.search_text, sort=FAQSort.NEWEST_FIRST)
+            search_text=self.search_text, sort=FAQSort.NEWEST_FIRST
+        )
         return list(faqs[:quantity])
 
     @safe_action
-    @action(_('Search'), name='search')
+    @action(_("Search"), name="search")
     def search_action(self, action, data):
         """Filter the search results by keywords."""
-        self.search_text = data.get('search_text', None)
+        self.search_text = data.get("search_text", None)
         if self.search_text:
             matching_questions = self.context.searchQuestions(
-                search_text=self.search_text)
+                search_text=self.search_text
+            )
             self.matching_questions_count = matching_questions.count()
 
     @property
     def matching_questions_url(self):
         """Return the URL to the questions matching the same keywords."""
-        return canonical_url(self.context) + '/+questions?' + urlencode(
-            {'field.status': [
-                status.title for status in QUESTION_STATUS_DEFAULT_SEARCH],
-             'field.search_text': self.search_text,
-             'field.actions.search': 'Search',
-             'field.sort': QuestionSort.RELEVANCY.title,
-             'field.language-empty-marker': 1}, doseq=True)
+        return (
+            canonical_url(self.context)
+            + "/+questions?"
+            + urlencode(
+                {
+                    "field.status": [
+                        status.title
+                        for status in QUESTION_STATUS_DEFAULT_SEARCH
+                    ],
+                    "field.search_text": self.search_text,
+                    "field.actions.search": "Search",
+                    "field.sort": QuestionSort.RELEVANCY.title,
+                    "field.language-empty-marker": 1,
+                },
+                doseq=True,
+            )
+        )

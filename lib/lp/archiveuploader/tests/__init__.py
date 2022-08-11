@@ -4,11 +4,11 @@
 """Tests for the archive uploader."""
 
 __all__ = [
-    'datadir',
-    'getPolicy',
-    'insertFakeChangesFile',
-    'insertFakeChangesFileForAllPackageUploads',
-    ]
+    "datadir",
+    "getPolicy",
+    "insertFakeChangesFile",
+    "insertFakeChangesFileForAllPackageUploads",
+]
 
 import os
 
@@ -16,12 +16,11 @@ from zope.component import getGlobalSiteManager
 
 from lp.archiveuploader.uploadpolicy import (
     AbstractUploadPolicy,
-    findPolicyByName,
     IArchiveUploadPolicy,
-    )
+    findPolicyByName,
+)
 from lp.services.librarianserver.testing.server import fillLibrarianFile
 from lp.soyuz.model.queue import PackageUploadSet
-
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -30,7 +29,7 @@ def datadir(path):
     """Return fully-qualified path inside the test data directory."""
     if path.startswith("/"):
         raise ValueError("Path is not relative: %s" % path)
-    return os.path.join(here, 'data', path)
+    return os.path.join(here, "data", path)
 
 
 def insertFakeChangesFile(fileID, path=None):
@@ -42,7 +41,7 @@ def insertFakeChangesFile(fileID, path=None):
     """
     if path is None:
         path = datadir("ed-0.2-21/ed_0.2-21_source.changes")
-    with open(path, 'rb') as changes_file_obj:
+    with open(path, "rb") as changes_file_obj:
         test_changes_file = changes_file_obj.read()
     fillLibrarianFile(fileID, content=test_changes_file)
 
@@ -56,12 +55,12 @@ def insertFakeChangesFileForAllPackageUploads():
 class MockUploadOptions:
     """Mock upload policy options helper"""
 
-    def __init__(self, distro='ubuntutest', distroseries=None):
+    def __init__(self, distro="ubuntutest", distroseries=None):
         self.distro = distro
         self.distroseries = distroseries
 
 
-def getPolicy(name='anything', distro='ubuntu', distroseries=None):
+def getPolicy(name="anything", distro="ubuntu", distroseries=None):
     """Build and return an Upload Policy for the given context."""
     policy = findPolicyByName(name)
     options = MockUploadOptions(distro, distroseries)
@@ -75,7 +74,7 @@ class AnythingGoesUploadPolicy(AbstractUploadPolicy):
     We require a signed changes file but that's it.
     """
 
-    name = 'anything'
+    name = "anything"
 
     def __init__(self):
         AbstractUploadPolicy.__init__(self)
@@ -99,7 +98,7 @@ class AbsolutelyAnythingGoesUploadPolicy(AnythingGoesUploadPolicy):
     of dealing with inappropriate checks in tests.
     """
 
-    name = 'absolutely-anything'
+    name = "absolutely-anything"
 
     def __init__(self):
         AnythingGoesUploadPolicy.__init__(self)
@@ -111,9 +110,9 @@ class AbsolutelyAnythingGoesUploadPolicy(AnythingGoesUploadPolicy):
 
 
 def register_archive_upload_policy_adapters():
-    policies = [
-        AnythingGoesUploadPolicy, AbsolutelyAnythingGoesUploadPolicy]
+    policies = [AnythingGoesUploadPolicy, AbsolutelyAnythingGoesUploadPolicy]
     sm = getGlobalSiteManager()
     for policy in policies:
         sm.registerUtility(
-            component=policy, provided=IArchiveUploadPolicy, name=policy.name)
+            component=policy, provided=IArchiveUploadPolicy, name=policy.name
+        )

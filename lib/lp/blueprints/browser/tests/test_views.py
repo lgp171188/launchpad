@@ -13,19 +13,15 @@ from testtools.matchers import LessThan
 
 from lp.services.webapp import canonical_url
 from lp.testing import (
-    login,
-    logout,
     RequestTimelineCollector,
     TestCaseWithFactory,
-    )
+    login,
+    logout,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import ADMIN_EMAIL
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 class TestAssignments(TestCaseWithFactory):
@@ -45,8 +41,9 @@ class TestAssignments(TestCaseWithFactory):
         store.invalidate()
         browser.open(url)
 
-    def check_query_counts_scaling_with_unique_people(self,
-        target, targettype):
+    def check_query_counts_scaling_with_unique_people(
+        self, target, targettype
+    ):
         """Check that a particular hasSpecifications target scales well.
 
         :param target: A spec target like a product.
@@ -59,8 +56,9 @@ class TestAssignments(TestCaseWithFactory):
             people.append(self.factory.makePerson())
         specs = []
         for _ in range(10):
-            specs.append(self.factory.makeSpecification(
-                **{targettype: target}))
+            specs.append(
+                self.factory.makeSpecification(**{targettype: target})
+            )
         collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
@@ -83,15 +81,18 @@ class TestAssignments(TestCaseWithFactory):
         logout()
         self.invalidate_and_render(browser, target, url)
         self.assertThat(
-            collector, HasQueryCount(LessThan(no_assignees_count + 5)))
+            collector, HasQueryCount(LessThan(no_assignees_count + 5))
+        )
 
     def test_product_query_counts_scale_below_unique_people(self):
         self.check_query_counts_scaling_with_unique_people(
-            self.factory.makeProduct(), 'product')
+            self.factory.makeProduct(), "product"
+        )
 
     def test_distro_query_counts_scale_below_unique_people(self):
         self.check_query_counts_scaling_with_unique_people(
-            self.factory.makeDistribution(), 'distribution')
+            self.factory.makeDistribution(), "distribution"
+        )
 
 
 def test_suite():
@@ -100,18 +101,22 @@ def test_suite():
     testsdir = os.path.abspath(here)
 
     # Add tests using default setup/teardown
-    filenames = [filename
-                 for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt')]
+    filenames = [
+        filename
+        for filename in os.listdir(testsdir)
+        if filename.endswith(".rst")
+    ]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:
         path = filename
         one_test = LayeredDocFileSuite(
             path,
-            setUp=setUp, tearDown=tearDown,
+            setUp=setUp,
+            tearDown=tearDown,
             layer=DatabaseFunctionalLayer,
-            stdout_logging_level=logging.WARNING)
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(one_test)
 
     return suite

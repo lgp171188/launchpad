@@ -4,10 +4,10 @@
 """Views, menus and traversal related to PersonDistributionSourcePackages."""
 
 __all__ = [
-    'PersonDistributionSourcePackageBreadcrumb',
-    'PersonDistributionSourcePackageFacets',
-    'PersonDistributionSourcePackageNavigation',
-    ]
+    "PersonDistributionSourcePackageBreadcrumb",
+    "PersonDistributionSourcePackageFacets",
+    "PersonDistributionSourcePackageNavigation",
+]
 
 
 from zope.component import queryAdapter
@@ -18,18 +18,19 @@ from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
-    )
+)
 from lp.services.webapp import (
-    canonical_url,
     Navigation,
     StandardLaunchpadFacets,
-    )
+    canonical_url,
+)
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
 
 class PersonDistributionSourcePackageNavigation(
-        PersonTargetDefaultVCSNavigationMixin, Navigation):
+    PersonTargetDefaultVCSNavigationMixin, Navigation
+):
     usedfor = IPersonDistributionSourcePackage
 
     def traverse(self, branch_name):
@@ -52,19 +53,20 @@ class PersonDistributionSourcePackageBreadcrumb(Breadcrumb):
     def url(self):
         if self._url is None:
             return canonical_url(
-                self.context.distro_source_package, rootsite=self.rootsite)
+                self.context.distro_source_package, rootsite=self.rootsite
+            )
         else:
             return self._url
 
     @property
     def icon(self):
         return queryAdapter(
-            self.context.distro_source_package, IPathAdapter,
-            name='image').icon()
+            self.context.distro_source_package, IPathAdapter, name="image"
+        ).icon()
 
 
 class PersonDistributionSourcePackageFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an IPersonDSP."""
 
     usedfor = IPersonDistributionSourcePackage
-    enable_only = ['branches']
+    enable_only = ["branches"]

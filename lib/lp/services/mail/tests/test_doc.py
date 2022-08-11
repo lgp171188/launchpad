@@ -11,16 +11,8 @@ from lp.services.config import config
 from lp.services.testing import build_test_suite
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadZopelessLayer,
-    )
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -45,12 +37,14 @@ class ProcessMailLayer(LaunchpadZopelessLayer):
 
 
 special = {
-    'emailauthentication.txt': LayeredDocFileSuite(
-        '../doc/emailauthentication.txt',
-        setUp=setUp, tearDown=tearDown,
+    "emailauthentication.rst": LayeredDocFileSuite(
+        "../doc/emailauthentication.rst",
+        setUp=setUp,
+        tearDown=tearDown,
         layer=ProcessMailLayer,
-        stdout_logging=False)
-    }
+        stdout_logging=False,
+    )
+}
 
 
 def test_suite():

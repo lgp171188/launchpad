@@ -2,44 +2,37 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'get_gpg_path',
-    'get_gpgme_context',
-    'GPG_INJECT',
-    'GPGKeyAlgorithm',
-    'GPGKeyDoesNotExistOnServer',
-    'GPGKeyExpired',
-    'GPGKeyNotFoundError',
-    'GPGKeyRevoked',
-    'GPGKeyMismatchOnServer',
-    'GPGKeyTemporarilyNotFoundError',
-    'GPGUploadFailure',
-    'GPGVerificationError',
-    'IGPGHandler',
-    'IPymeKey',
-    'IPymeSignature',
-    'IPymeUserId',
-    'MoreThanOneGPGKeyFound',
-    'SecretGPGKeyImportDetected',
-    'valid_fingerprint',
-    'valid_keyid',
-    ]
+    "get_gpg_path",
+    "get_gpgme_context",
+    "GPG_INJECT",
+    "GPGKeyAlgorithm",
+    "GPGKeyDoesNotExistOnServer",
+    "GPGKeyExpired",
+    "GPGKeyNotFoundError",
+    "GPGKeyRevoked",
+    "GPGKeyMismatchOnServer",
+    "GPGKeyTemporarilyNotFoundError",
+    "GPGUploadFailure",
+    "GPGVerificationError",
+    "IGPGHandler",
+    "IPymeKey",
+    "IPymeSignature",
+    "IPymeUserId",
+    "MoreThanOneGPGKeyFound",
+    "SecretGPGKeyImportDetected",
+    "valid_fingerprint",
+    "valid_keyid",
+]
 
 import http.client
 import os.path
 import re
 
-from lazr.enum import (
-    DBEnumeratedType,
-    DBItem,
-    )
+from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import error_status
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Attribute, Interface
 
-
-GPG_INJECT = 'gpg.signing_service.injection.enabled'
+GPG_INJECT = "gpg.signing_service.injection.enabled"
 
 
 def valid_fingerprint(fingerprint):
@@ -103,25 +96,37 @@ class GPGKeyAlgorithm(DBEnumeratedType):
 
     """
 
-    R = DBItem(1, """
+    R = DBItem(
+        1,
+        """
         R
 
-        RSA""")
+        RSA""",
+    )
 
-    LITTLE_G = DBItem(16, """
+    LITTLE_G = DBItem(
+        16,
+        """
          g
 
-         ElGamal""")
+         ElGamal""",
+    )
 
-    D = DBItem(17, """
+    D = DBItem(
+        17,
+        """
         D
 
-        DSA""")
+        DSA""",
+    )
 
-    G = DBItem(20, """
+    G = DBItem(
+        20,
+        """
         G
 
-        ElGamal, compromised""")
+        ElGamal, compromised""",
+    )
 
 
 class MoreThanOneGPGKeyFound(Exception):
@@ -132,40 +137,42 @@ class MoreThanOneGPGKeyFound(Exception):
 
 
 class GPGKeyNotFoundError(Exception):
-    """The GPG key with the given fingerprint was not found on the keyserver.
-    """
+    """The GPG key with this fingerprint was not found on the keyserver."""
 
     def __init__(self, fingerprint, message=None):
         self.fingerprint = fingerprint
         if message is None:
-            message = (
-            "No GPG key found with the given content: %s" % (fingerprint, ))
+            message = "No GPG key found with the given content: %s" % (
+                fingerprint,
+            )
         super().__init__(message)
 
 
 @error_status(http.client.INTERNAL_SERVER_ERROR)
 class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
-    """The GPG key with the given fingerprint was not found on the keyserver.
+    """The GPG key with this fingerprint was not found on the keyserver.
 
     The reason is a timeout while accessing the server, a general
     server error, a network problem or some other temporary issue.
     """
+
     def __init__(self, fingerprint):
         message = (
             "GPG key %s not found due to a server or network failure."
-            % fingerprint)
+            % fingerprint
+        )
         super().__init__(fingerprint, message)
 
 
 @error_status(http.client.NOT_FOUND)
 class GPGKeyDoesNotExistOnServer(GPGKeyNotFoundError):
-    """The GPG key with the given fingerprint was not found on the keyserver.
+    """The GPG key with this fingerprint was not found on the keyserver.
 
     The server returned an explicit "not found".
     """
+
     def __init__(self, fingerprint):
-        message = (
-            "GPG key %s does not exist on the keyserver." % fingerprint)
+        message = "GPG key %s does not exist on the keyserver." % fingerprint
         super().__init__(fingerprint, message)
 
 
@@ -174,7 +181,7 @@ class GPGKeyRevoked(Exception):
 
     def __init__(self, key):
         self.key = key
-        super().__init__("%s has been publicly revoked" % (key.fingerprint, ))
+        super().__init__("%s has been publicly revoked" % (key.fingerprint,))
 
 
 class GPGKeyExpired(Exception):
@@ -182,7 +189,7 @@ class GPGKeyExpired(Exception):
 
     def __init__(self, key):
         self.key = key
-        super().__init__("%s has expired" % (key.fingerprint, ))
+        super().__init__("%s has expired" % (key.fingerprint,))
 
 
 class GPGKeyMismatchOnServer(Exception):
@@ -190,12 +197,14 @@ class GPGKeyMismatchOnServer(Exception):
 
     This may indicate a keyserver compromise.
     """
+
     def __init__(self, expected_fingerprint, keyserver_fingerprint):
         self.expected_fingerprint = expected_fingerprint
         self.keyserver_fingerprint = keyserver_fingerprint
         message = (
-            "The keyserver returned the wrong key: expected %s, got %s." %
-            (expected_fingerprint, keyserver_fingerprint))
+            "The keyserver returned the wrong key: expected %s, got %s."
+            % (expected_fingerprint, keyserver_fingerprint)
+        )
         super().__init__(message)
 
 
@@ -220,7 +229,7 @@ class IGPGHandler(Interface):
     def sanitizeFingerprint(fingerprint):
         """Return sanitized fingerprint if well-formed.
 
-        If the firgerprint cannot be sanitized return None.
+        If the fingerprint cannot be sanitized return None.
         """
 
     def getURLForKeyInServer(fingerprint, action=None, public=False):
@@ -314,7 +323,7 @@ class IGPGHandler(Interface):
         :return: the encrypted content or None if failed.
         """
 
-    def signContent(content, key, password='', mode=None):
+    def signContent(content, key, password="", mode=None):
         """Signs content with a given GPG key.
 
         :param content: the content to sign.
@@ -393,7 +402,7 @@ class IGPGHandler(Interface):
 
         Resets OpenPGP keyrings and trust database.
         """
-        #FIXME RBC: this should be a zope test cleanup thing per SteveA.
+        # FIXME RBC: this should be a zope test cleanup thing per SteveA.
 
 
 class IPymeSignature(Interface):
@@ -417,7 +426,8 @@ class IPymeKey(Interface):
     keyid = Attribute("Pseudo Key ID, composed by last fingerprint 8 digits ")
     uids = Attribute("List of user IDs associated with this key")
     emails = Attribute(
-        "List containing only well formed and non-revoked emails")
+        "List containing only well formed and non-revoked emails"
+    )
     displayname = Attribute("Key displayname: <size><type>/<keyid>")
     owner_trust = Attribute("The owner trust")
 
@@ -425,7 +435,8 @@ class IPymeKey(Interface):
     can_sign = Attribute("Whether the key can be used for signing")
     can_certify = Attribute("Whether the key can be used for certification")
     can_authenticate = Attribute(
-        "Whether the key can be used for authentication")
+        "Whether the key can be used for authentication"
+    )
 
     def export():
         """Export the context key in ASCII-armored mode.
@@ -446,8 +457,10 @@ class IPymeUserId(Interface):
 
     revoked = Attribute("True if the user ID has been revoked")
     invalid = Attribute("True if the user ID is invalid")
-    validity = Attribute("""A measure of the validity of the user ID,
-                         based on owner trust values and signatures.""")
+    validity = Attribute(
+        """A measure of the validity of the user ID,
+                         based on owner trust values and signatures."""
+    )
     uid = Attribute("A string identifying this user ID")
     name = Attribute("The name portion of this user ID")
     email = Attribute("The email portion of this user ID")

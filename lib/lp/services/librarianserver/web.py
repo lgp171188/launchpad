@@ -1,42 +1,28 @@
 # Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
 import time
+from datetime import datetime
 from urllib.parse import urlparse
 
-from pymacaroons import Macaroon
 import six
+from pymacaroons import Macaroon
 from storm.exceptions import DisconnectionError
-from twisted.internet import (
-    abstract,
-    defer,
-    reactor,
-    )
+from twisted.internet import abstract, defer, reactor
 from twisted.internet.interfaces import IPushProducer
 from twisted.internet.threads import deferToThread
 from twisted.python import log
 from twisted.python.compat import intToBytes
-from twisted.web import (
-    http,
-    proxy,
-    resource,
-    server,
-    static,
-    util,
-    )
+from twisted.web import http, proxy, resource, server, static, util
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.database import (
-    read_transaction,
-    write_transaction,
-    )
+from lp.services.database import read_transaction, write_transaction
 from lp.services.librarian.client import url_path_quote
 from lp.services.librarian.utils import guess_librarian_encoding
 
-
-defaultResource = static.Data(b"""
+defaultResource = static.Data(
+    b"""
         <html>
         <body>
         <h1>Launchpad Librarian</h1>
@@ -48,8 +34,10 @@ defaultResource = static.Data(b"""
         <p><small>Copyright 2004-2022 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
-        """, type='text/html')
-fourOhFour = resource.NoResource('No such resource')
+        """,
+    type="text/html",
+)
+fourOhFour = resource.NoResource("No such resource")
 
 
 class NotFound(Exception):
@@ -64,18 +52,18 @@ class LibraryFileResource(resource.Resource):
         self.upstreamPort = upstreamPort
 
     def getChild(self, name, request):
-        if name == b'':
+        if name == b"":
             # Root resource
             return defaultResource
         try:
             aliasID = int(name)
         except ValueError:
-            log.msg(
-                "404: alias is not an int: %r" % (name,))
+            log.msg("404: alias is not an int: %r" % (name,))
             return fourOhFour
 
-        return LibraryFileAliasResource(self.storage, aliasID,
-                self.upstreamHost, self.upstreamPort)
+        return LibraryFileAliasResource(
+            self.storage, aliasID, self.upstreamHost, self.upstreamPort
+        )
 
 
 class LibraryFileAliasResource(resource.Resource):
@@ -96,8 +84,7 @@ class LibraryFileAliasResource(resource.Resource):
             try:
                 self.aliasID = int(filename)
             except ValueError:
-                log.msg(
-                    "404 (old URL): alias is not an int: %r" % (filename,))
+                log.msg("404 (old URL): alias is not an int: %r" % (filename,))
                 return fourOhFour
             filename = request.postpath[0]
 
@@ -107,22 +94,23 @@ class LibraryFileAliasResource(resource.Resource):
         # (specifically to stop people putting a good prefix to the left of an
         # attacking one).
         hostname = six.ensure_str(request.getRequestHostname())
-        if '.restricted.' in hostname:
+        if ".restricted." in hostname:
             # Configs can change without warning: evaluate every time.
             download_url = config.librarian.download_url
             parsed = list(urlparse(download_url))
             netloc = parsed[1]
             # Strip port if present
-            if netloc.find(':') > -1:
-                netloc = netloc[:netloc.find(':')]
-            expected_hostname = 'i%d.restricted.%s' % (self.aliasID, netloc)
+            if netloc.find(":") > -1:
+                netloc = netloc[: netloc.find(":")]
+            expected_hostname = "i%d.restricted.%s" % (self.aliasID, netloc)
             if expected_hostname != hostname:
                 log.msg(
-                    '404: expected_hostname != hostname: %r != %r' %
-                    (expected_hostname, hostname))
+                    "404: expected_hostname != hostname: %r != %r"
+                    % (expected_hostname, hostname)
+                )
                 return fourOhFour
 
-        token = request.args.get(b'token', [None])[0]
+        token = request.args.get(b"token", [None])[0]
         if token is None:
             if not request.getUser() and request.getPassword():
                 try:
@@ -132,11 +120,8 @@ class LibraryFileAliasResource(resource.Resource):
                 except Exception:
                     pass
         path = six.ensure_text(request.path)
-        deferred = deferToThread(
-            self._getFileAlias, self.aliasID, token, path)
-        deferred.addCallback(
-                self._cb_getFileAlias, filename, request
-                )
+        deferred = deferToThread(self._getFileAlias, self.aliasID, token, path)
+        deferred.addCallback(self._cb_getFileAlias, filename, request)
         deferred.addErrback(self._eb_getFileAlias)
         return util.DeferredResource(deferred)
 
@@ -144,9 +129,14 @@ class LibraryFileAliasResource(resource.Resource):
     def _getFileAlias(self, aliasID, token, path):
         try:
             alias = self.storage.getFileAlias(aliasID, token, path)
-            return (alias.contentID, alias.filename,
-                alias.mimetype, alias.date_created, alias.content.filesize,
-                alias.restricted)
+            return (
+                alias.contentID,
+                alias.filename,
+                alias.mimetype,
+                alias.date_created,
+                alias.content.filesize,
+                alias.restricted,
+            )
         except LookupError:
             raise NotFound
 
@@ -154,24 +144,33 @@ class LibraryFileAliasResource(resource.Resource):
         err = failure.trap(NotFound, DisconnectionError)
         if err == DisconnectionError:
             return resource.ErrorPage(
-                503, 'Database unavailable',
-                'A required database is unavailable.\n'
-                'See https://twitter.com/launchpadstatus '
-                'for maintenance and outage notifications.')
+                503,
+                "Database unavailable",
+                "A required database is unavailable.\n"
+                "See https://twitter.com/launchpadstatus "
+                "for maintenance and outage notifications.",
+            )
         else:
             return fourOhFour
 
     @defer.inlineCallbacks
     def _cb_getFileAlias(self, results, filename, request):
-        (dbcontentID, dbfilename, mimetype, date_created, size,
-         restricted) = results
+        (
+            dbcontentID,
+            dbfilename,
+            mimetype,
+            date_created,
+            size,
+            restricted,
+        ) = results
         # Return a 404 if the filename in the URL is incorrect. This offers
         # a crude form of access control (stuff we care about can have
         # unguessable names effectively using the filename as a secret).
-        if dbfilename.encode('utf-8') != filename:
+        if dbfilename.encode("utf-8") != filename:
             log.msg(
                 "404: dbfilename.encode('utf-8') != filename: %r != %r"
-                % (dbfilename.encode('utf-8'), filename))
+                % (dbfilename.encode("utf-8"), filename)
+            )
             return fourOhFour
 
         stream = yield self.storage.open(dbcontentID)
@@ -183,16 +182,20 @@ class LibraryFileAliasResource(resource.Resource):
             # Set our caching headers. Public Librarian files can be
             # cached forever, while private ones mustn't be at all.
             request.setHeader(
-                'Cache-Control',
-                'max-age=31536000, public'
-                if not restricted else 'max-age=0, private')
+                "Cache-Control",
+                "max-age=31536000, public"
+                if not restricted
+                else "max-age=0, private",
+            )
             return file
         elif self.upstreamHost is not None:
             return proxy.ReverseProxyResource(
-                self.upstreamHost, self.upstreamPort, request.path)
+                self.upstreamHost, self.upstreamPort, request.path
+            )
         else:
             raise AssertionError(
-                "Content %d missing from storage." % dbcontentID)
+                "Content %d missing from storage." % dbcontentID
+            )
 
     def render_GET(self, request):
         return defaultResource.render(request)
@@ -207,24 +210,27 @@ class File(resource.Resource):
         offset = datetime.utcnow() - datetime.now()
         local_modification_time = modification_time - offset
         self._modification_time = time.mktime(
-            local_modification_time.timetuple())
+            local_modification_time.timetuple()
+        )
         self.type = contentType
         self.encoding = encoding
         self.stream = stream
         self.size = size
 
     def _setContentHeaders(self, request):
-        request.setHeader(b'content-length', intToBytes(self.size))
+        request.setHeader(b"content-length", intToBytes(self.size))
         if self.type:
             request.setHeader(
-                b'content-type', six.ensure_binary(self.type, 'ASCII'))
+                b"content-type", six.ensure_binary(self.type, "ASCII")
+            )
         if self.encoding:
             request.setHeader(
-                b'content-encoding', six.ensure_binary(self.encoding, 'ASCII'))
+                b"content-encoding", six.ensure_binary(self.encoding, "ASCII")
+            )
 
     def render_GET(self, request):
         """See `Resource`."""
-        request.setHeader(b'accept-ranges', b'none')
+        request.setHeader(b"accept-ranges", b"none")
 
         if request.setLastModified(self._modification_time) is http.CACHED:
             # `setLastModified` also sets the response code for us, so if
@@ -232,13 +238,13 @@ class File(resource.Resource):
             # sure that the request would otherwise succeed and return an
             # empty body.
             self.stream.close()
-            return b''
+            return b""
 
-        if request.method == b'HEAD':
+        if request.method == b"HEAD":
             # Set the content headers here, rather than making a producer.
             self._setContentHeaders(request)
             self.stream.close()
-            return b''
+            return b""
 
         # static.File has HTTP range support, which would be nice to have.
         # Unfortunately, static.File isn't a good match for producing data
@@ -311,10 +317,9 @@ class DigestSearchResource(resource.Resource):
 
     def render_GET(self, request):
         try:
-            digest = six.ensure_text(request.args[b'digest'][0])
+            digest = six.ensure_text(request.args[b"digest"][0])
         except (LookupError, UnicodeDecodeError):
-            return static.Data(
-                b'Bad search', 'text/plain').render(request)
+            return static.Data(b"Bad search", "text/plain").render(request)
 
         deferred = deferToThread(self._matchingAliases, digest)
         deferred.addCallback(self._cb_matchingAliases, request)
@@ -324,25 +329,30 @@ class DigestSearchResource(resource.Resource):
     @read_transaction
     def _matchingAliases(self, digest):
         library = self.storage.library
-        matches = ['%s/%s' % (aID, url_path_quote(aName))
-                   for fID in library.lookupBySHA1(digest)
-                   for aID, aName, aType in library.getAliases(fID)]
+        matches = [
+            "%s/%s" % (aID, url_path_quote(aName))
+            for fID in library.lookupBySHA1(digest)
+            for aID, aName, aType in library.getAliases(fID)
+        ]
         return matches
 
     def _cb_matchingAliases(self, matches, request):
-        text = '\n'.join([str(len(matches))] + matches)
+        text = "\n".join([str(len(matches))] + matches)
         response = static.Data(
-            text.encode('utf-8'),
-            'text/plain; charset=utf-8').render(request)
+            text.encode("utf-8"), "text/plain; charset=utf-8"
+        ).render(request)
         request.write(response)
         request.finish()
 
 
 # Ask robots not to index or archive anything in the librarian.
-robotsTxt = static.Data(b"""
+robotsTxt = static.Data(
+    b"""
 User-agent: *
 Disallow: /
-""", type='text/plain')
+""",
+    type="text/plain",
+)
 
 
 def _eb(failure, request):

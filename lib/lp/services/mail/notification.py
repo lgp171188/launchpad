@@ -3,17 +3,17 @@
 """Event handlers that send email notifications."""
 
 __all__ = [
-    'send_process_error_notification',
-    'get_unified_diff',
-    ]
+    "send_process_error_notification",
+    "get_unified_diff",
+]
 
 
-from difflib import unified_diff
 import email
+import re
+from difflib import unified_diff
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import re
 
 from lp.bugs.mail.bugnotificationbuilder import get_bugmail_error_address
 from lp.services.config import config
@@ -21,14 +21,17 @@ from lp.services.mail.helpers import get_email_template
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.mail.sendmail import sendmail
 
-
-CC = "CC"
 MAX_RETURN_MESSAGE_SIZE = config.processmail.max_error_message_return_size
 
 
-def send_process_error_notification(to_address, subject, error_msg,
-                                    original_msg, failing_command=None,
-                                    max_return_size=MAX_RETURN_MESSAGE_SIZE):
+def send_process_error_notification(
+    to_address,
+    subject,
+    error_msg,
+    original_msg,
+    failing_command=None,
+    max_return_size=MAX_RETURN_MESSAGE_SIZE,
+):
     """Send a mail about an error occurring while using the email interface.
 
     Tells the user that an error was encountered while processing their
@@ -49,24 +52,26 @@ def send_process_error_notification(to_address, subject, error_msg,
         failing_commands = []
     else:
         failing_commands = [failing_command]
-    failed_commands_information = ''
+    failed_commands_information = ""
     if len(failing_commands) > 0:
-        failed_commands_information = 'Failing command:'
+        failed_commands_information = "Failing command:"
         for failing_command in failing_commands:
-            failed_commands_information += '\n    %s' % str(failing_command)
+            failed_commands_information += "\n    %s" % str(failing_command)
 
     body = get_email_template(
-        'email-processing-error.txt', app='services/mail') % {
-            'failed_command_information': failed_commands_information,
-            'error_msg': error_msg}
+        "email-processing-error.txt", app="services/mail"
+    ) % {
+        "failed_command_information": failed_commands_information,
+        "error_msg": error_msg,
+    }
     mailwrapper = MailWrapper(width=72)
     body = mailwrapper.format(body)
-    error_part = MIMEText(body.encode('utf-8'), 'plain', 'utf-8')
+    error_part = MIMEText(body.encode("utf-8"), "plain", "utf-8")
 
     msg = MIMEMultipart()
-    msg['To'] = to_address
-    msg['From'] = get_bugmail_error_address()
-    msg['Subject'] = subject
+    msg["To"] = to_address
+    msg["From"] = get_bugmail_error_address()
+    msg["Subject"] = subject
     msg.attach(error_part)
     original_msg_str = bytes(original_msg)
     if len(original_msg_str) > max_return_size:
@@ -83,7 +88,7 @@ def get_unified_diff(old_text, new_text, text_width):
     width.
 
         >>> print(get_unified_diff(
-        ...     'Some text\nAnother line\n',get_un
+        ...     'Some text\nAnother line\n',
         ...     'Some more text\nAnother line\n',
         ...     text_width=72))
         - Some text
@@ -92,25 +97,26 @@ def get_unified_diff(old_text, new_text, text_width):
 
     """
     mailwrapper = MailWrapper(width=72)
-    old_text_wrapped = mailwrapper.format(old_text or '')
-    new_text_wrapped = mailwrapper.format(new_text or '')
+    old_text_wrapped = mailwrapper.format(old_text or "")
+    new_text_wrapped = mailwrapper.format(new_text or "")
 
     lines_of_context = len(old_text_wrapped.splitlines())
     text_diff = unified_diff(
         old_text_wrapped.splitlines(),
         new_text_wrapped.splitlines(),
-        n=lines_of_context)
+        n=lines_of_context,
+    )
     # Remove the diff header, which consists of the first three
     # lines.
     text_diff = list(text_diff)[3:]
     # Let's simplify the diff output by removing the helper lines,
     # which begin with '?'.
     text_diff = [
-        diff_line for diff_line in text_diff
-        if not diff_line.startswith('?')]
+        diff_line for diff_line in text_diff if not diff_line.startswith("?")
+    ]
     # Add a whitespace between the +/- and the text line.
     text_diff = [
-        re.sub(r'^([\+\- ])(.*)', r'\1 \2', line)
-        for line in text_diff]
-    text_diff = '\n'.join(text_diff)
+        re.sub(r"^([\+\- ])(.*)", r"\1 \2", line) for line in text_diff
+    ]
+    text_diff = "\n".join(text_diff)
     return text_diff

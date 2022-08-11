@@ -9,25 +9,17 @@ import logging
 import os
 import unittest
 
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
-from lp.testing.systemdocs import (
-    LayeredDocFileSuite,
-    setUp,
-    tearDown,
-    )
-
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
+from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 special_test_layer = {
-    'bug-views.txt': LaunchpadFunctionalLayer,
-    'bugtarget-filebug-views.txt': LaunchpadFunctionalLayer,
-    'bugtask-target-link-titles.txt': LaunchpadFunctionalLayer,
-    }
+    "bug-views.rst": LaunchpadFunctionalLayer,
+    "bugtarget-filebug-views.rst": LaunchpadFunctionalLayer,
+    "bugtask-target-link-titles.rst": LaunchpadFunctionalLayer,
+}
 
 
 def test_suite():
@@ -35,9 +27,11 @@ def test_suite():
     testsdir = os.path.abspath(here)
 
     # Add tests using default setup/teardown
-    filenames = [filename
-                 for filename in os.listdir(testsdir)
-                 if filename.endswith('.txt')]
+    filenames = [
+        filename
+        for filename in os.listdir(testsdir)
+        if filename.endswith(".rst")
+    ]
     # Sort the list to give a predictable order.
     filenames.sort()
     for filename in filenames:
@@ -45,8 +39,11 @@ def test_suite():
         layer = special_test_layer.get(path, DatabaseFunctionalLayer)
         one_test = LayeredDocFileSuite(
             path,
-            setUp=setUp, tearDown=tearDown,
-            layer=layer, stdout_logging_level=logging.WARNING)
+            setUp=setUp,
+            tearDown=tearDown,
+            layer=layer,
+            stdout_logging_level=logging.WARNING,
+        )
         suite.addTest(one_test)
 
     return suite

@@ -29,7 +29,6 @@
   <include package="zope.principalregistry" />
 
   <include package="zope.login" />
-  <include package="zope.session" />
 
   <include package="zope.app.publisher.xmlrpc" />
 
@@ -81,9 +80,6 @@
       for="zope.publisher.interfaces.http.IHTTPRequest"
       provides="zope.i18n.interfaces.IModifiableUserPreferredLanguages"
       />
-
-
-  <include package="zope.app.wsgi" />
 
   <!-- Default XMLRPC pre-marshalling. -->
   <include package="zope.publisher" />

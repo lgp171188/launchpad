@@ -17,9 +17,8 @@ from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 
 
 class StatUpdater(LaunchpadCronScript):
-
     def main(self):
-        self.logger.debug('Starting the stats update')
+        self.logger.debug("Starting the stats update")
 
         # Note that we do not issue commits here in the script; content
         # objects are responsible for committing.
@@ -33,9 +32,9 @@ class StatUpdater(LaunchpadCronScript):
 
         getUtility(IPersonSet).updateStatistics()
 
-        self.logger.debug('Finished the stats update')
+        self.logger.debug("Finished the stats update")
 
 
-if __name__ == '__main__':
-    script = StatUpdater('launchpad-stats', dbuser=config.statistician.dbuser)
+if __name__ == "__main__":
+    script = StatUpdater("launchpad-stats", dbuser=config.statistician.dbuser)
     script.lock_and_run()

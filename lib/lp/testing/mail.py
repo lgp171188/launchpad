@@ -3,31 +3,28 @@
 
 """Useful helper functions used for testing."""
 
-from email.utils import formatdate
 import os
+from email.utils import formatdate
 
 from zope.component import getUtility
 
 from lp.services.mail.mailbox import IMailBox
-from lp.services.mail.sendmail import (
-    get_msgid,
-    MailController,
-    )
+from lp.services.mail.sendmail import MailController, get_msgid
 
 
-def create_mail_for_directoryMailBox(from_addr, to_addrs, subject, body,
-                                     headers=None):
+def create_mail_for_directoryMailBox(
+    from_addr, to_addrs, subject, body, headers=None
+):
     """Create a email in the DirectoryMailBox."""
     mc = MailController(from_addr, to_addrs, subject, body, headers)
     message = mc.makeMessage()
-    if 'message-id' not in message:
-        message['Message-Id'] = get_msgid()
-    if 'date' not in message:
-        message['Date'] = formatdate()
+    if "message-id" not in message:
+        message["Message-Id"] = get_msgid()
+    if "date" not in message:
+        message["Date"] = formatdate()
     # Since this is faking incoming email, set the X-Original-To.
-    message['X-Original-To'] = to_addrs
+    message["X-Original-To"] = to_addrs
     mailbox = getUtility(IMailBox)
-    msg_file = open(
-        os.path.join(mailbox.mail_dir, message['Message-Id']), 'w')
+    msg_file = open(os.path.join(mailbox.mail_dir, message["Message-Id"]), "w")
     msg_file.write(message.as_string())
     msg_file.close()

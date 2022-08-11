@@ -4,8 +4,8 @@
 """Tests for `ExportFileStorage`."""
 
 import io
-from tarfile import TarFile
 import unittest
+from tarfile import TarFile
 
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.utilities.translation_export import ExportFileStorage
@@ -13,6 +13,7 @@ from lp.translations.utilities.translation_export import ExportFileStorage
 
 class ExportFileStorageTestCase(unittest.TestCase):
     """Test class for translation importer component."""
+
     layer = LaunchpadZopelessLayer
 
     def testEmpty(self):
@@ -26,9 +27,9 @@ class ExportFileStorageTestCase(unittest.TestCase):
 
     def testFull(self):
         """Behaviour of isFull."""
-        mime = 'application/x-po'
+        mime = "application/x-po"
         storage = ExportFileStorage()
-        storage.addFile('/tmp/a/test/file.po', 'po', b'test file', mime)
+        storage.addFile("/tmp/a/test/file.po", "po", b"test file", mime)
         # The storage object starts out with a SingleFileStorageStrategy, so
         # it's full now that we've added one file.
         self.assertTrue(storage._store.isFull())
@@ -36,33 +37,36 @@ class ExportFileStorageTestCase(unittest.TestCase):
         # switches to a TarballFileStorageStrategy.  That type of storage
         # object is never full.
         storage.addFile(
-            '/tmp/another/test/file.po', 'po', b'test file two', mime)
+            "/tmp/another/test/file.po", "po", b"test file two", mime
+        )
         self.assertFalse(storage._store.isFull())
         # We can now add any number of files without filling the storage
         # object.
         storage.addFile(
-            '/tmp/yet/another/test/file.po', 'po', b'test file 3', mime)
+            "/tmp/yet/another/test/file.po", "po", b"test file 3", mime
+        )
         self.assertFalse(storage._store.isFull())
 
     def testSingle(self):
         """Test export of single file."""
-        mime = 'application/x-po'
+        mime = "application/x-po"
         storage = ExportFileStorage()
-        storage.addFile('/tmp/a/test/file.po', 'po', b'test file', mime)
+        storage.addFile("/tmp/a/test/file.po", "po", b"test file", mime)
         outfile = storage.export()
-        self.assertEqual(outfile.path, '/tmp/a/test/file.po')
-        self.assertEqual(outfile.file_extension, 'po')
-        self.assertEqual(outfile.read(), b'test file')
+        self.assertEqual(outfile.path, "/tmp/a/test/file.po")
+        self.assertEqual(outfile.file_extension, "po")
+        self.assertEqual(outfile.read(), b"test file")
 
     def testTarball(self):
         """Test export of tarball."""
-        mime = 'application/x-po'
+        mime = "application/x-po"
         storage = ExportFileStorage()
-        storage.addFile('/tmp/a/test/file.po', 'po', b'test file', mime)
+        storage.addFile("/tmp/a/test/file.po", "po", b"test file", mime)
         storage.addFile(
-            '/tmp/another/test.po', 'po', b'another test file', mime)
+            "/tmp/another/test.po", "po", b"another test file", mime
+        )
         outfile = storage.export()
-        tarball = TarFile.open(mode='r|gz', fileobj=io.BytesIO(outfile.read()))
+        tarball = TarFile.open(mode="r|gz", fileobj=io.BytesIO(outfile.read()))
         elements = set(tarball.getnames())
-        self.assertTrue('/tmp/a/test/file.po' in elements)
-        self.assertTrue('/tmp/another/test.po' in elements)
+        self.assertTrue("/tmp/a/test/file.po" in elements)
+        self.assertTrue("/tmp/another/test.po" in elements)

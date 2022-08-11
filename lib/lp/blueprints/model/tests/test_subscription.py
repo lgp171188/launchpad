@@ -6,19 +6,13 @@ from zope.component import getUtility
 from lp.app.enums import InformationType
 from lp.app.errors import UserCannotUnsubscribePerson
 from lp.app.interfaces.services import IService
-from lp.registry.enums import (
-    SharingPermission,
-    SpecificationSharingPolicy,
-    )
-from lp.testing import (
-    person_logged_in,
-    TestCaseWithFactory,
-    )
+from lp.registry.enums import SharingPermission, SpecificationSharingPolicy
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestSpecificationSubscription(TestCaseWithFactory):
-    """ Test whether a user can unsubscribe someone
+    """Test whether a user can unsubscribe someone
 
     As user can't unsubscribe just anyone from a spec. To check whether
     someone can be unusubscribed, the canBeUnsubscribedByUser() method on
@@ -33,15 +27,17 @@ class TestSpecificationSubscription(TestCaseWithFactory):
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         product_owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            specification_sharing_policy=policy, owner=product_owner)
+            specification_sharing_policy=policy, owner=product_owner
+        )
         if proprietary_subscription:
             info_type = InformationType.PROPRIETARY
             with person_logged_in(product_owner):
                 permissions = {
                     InformationType.PROPRIETARY: SharingPermission.ALL,
-                    }
-                getUtility(IService, 'sharing').sharePillarInformation(
-                    product, subscribed_by, product_owner, permissions)
+                }
+                getUtility(IService, "sharing").sharePillarInformation(
+                    product, subscribed_by, product_owner, permissions
+                )
         else:
             info_type = InformationType.PUBLIC
         if proprietary_subscription:
@@ -53,7 +49,8 @@ class TestSpecificationSubscription(TestCaseWithFactory):
         else:
             assignee = None
         spec = self.factory.makeSpecification(
-            product=product, information_type=info_type, assignee=assignee)
+            product=product, information_type=info_type, assignee=assignee
+        )
         with person_logged_in(subscribed_by):
             subscription = spec.subscribe(subscriber, subscribed_by)
         return spec, subscriber, subscribed_by, subscription
@@ -61,37 +58,57 @@ class TestSpecificationSubscription(TestCaseWithFactory):
     def test_can_unsubscribe_self(self):
         # The user can of course unsubscribe themselves, even if someone
         # else subscribed them.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         self.assertTrue(subscription.canBeUnsubscribedByUser(subscriber))
 
     # XXX Abel Deuring 2012-11-21, bug=1081677
-    # The two tests below show a weird inconsisteny: Sometimes
+    # The two tests below show a weird inconsistency: Sometimes
     # subscribed_by can unsubscribe, sometimes not.
     def test_subscriber_cannot_unsubscribe_user_from_public_spec(self):
         # For public specifications, the one who subscribed the
         # subscriber doesn't have permission to unsubscribe them.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         self.assertFalse(subscription.canBeUnsubscribedByUser(subscribed_by))
 
     def test_subscriber_can_unsubscribe_user_from_private_spec(self):
         # For private specifications, the one who subscribed the
         # subscriber has permission to unsubscribe them.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription(True)
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription(True)
         self.assertTrue(subscription.canBeUnsubscribedByUser(subscribed_by))
 
     def test_anonymous_cannot_unsubscribe(self):
         # The anonymous user (represented by None) can't unsubscribe anyone.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         self.assertFalse(subscription.canBeUnsubscribedByUser(None))
 
     def test_can_unsubscribe_team(self):
         # A user can unsubscribe a team they're a member of.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         team = self.factory.makeTeam()
         member = self.factory.makePerson()
         with person_logged_in(member):
@@ -104,8 +121,12 @@ class TestSpecificationSubscription(TestCaseWithFactory):
 
     def test_cannot_unsubscribe_team(self):
         # A user cannot unsubscribe a team they're not a member of.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         team = self.factory.makeTeam()
         member = self.factory.makePerson()
         with person_logged_in(member):
@@ -119,21 +140,34 @@ class TestSpecificationSubscription(TestCaseWithFactory):
         # that the unsubscribing user has the appropriate permissions.
         # unsubscribe will raise an exception if the user does not have
         # permission.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         person = self.factory.makePerson()
         self.assertRaises(
-            UserCannotUnsubscribePerson, spec.unsubscribe, subscriber, person)
+            UserCannotUnsubscribePerson, spec.unsubscribe, subscriber, person
+        )
 
     def test_spec_owner_can_unsubscribe(self):
         # The owner of a specification can unsubscribe any subscriber.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         self.assertTrue(subscription.canBeUnsubscribedByUser(spec.owner))
 
     def test_admin_can_unsubscribe(self):
         # LP admins can unsubscribe any subscriber.
-        (spec, subscriber,
-            subscribed_by, subscription) = self._make_subscription()
+        (
+            spec,
+            subscriber,
+            subscribed_by,
+            subscription,
+        ) = self._make_subscription()
         admin = self.factory.makeAdministrator()
         self.assertTrue(subscription.canBeUnsubscribedByUser(admin))

@@ -1,21 +1,18 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
 import json
 import re
 import unittest
+from datetime import datetime
 
-from fixtures import FakeLogger
-from lazr.restful.interfaces import IJSONRequestCache
 import pytz
 import soupmatchers
-from testtools.matchers import (
-    Equals,
-    Not,
-    )
-from testtools.testcase import ExpectedException
 import transaction
+from fixtures import FakeLogger
+from lazr.restful.interfaces import IJSONRequestCache
+from testtools.matchers import Equals, Not
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
@@ -29,7 +26,7 @@ from lp.blueprints.enums import SpecificationImplementationStatus
 from lp.blueprints.interfaces.specification import (
     ISpecification,
     ISpecificationSet,
-    )
+)
 from lp.registry.enums import SpecificationSharingPolicy
 from lp.registry.interfaces.person import PersonVisibility
 from lp.registry.interfaces.product import IProductSeries
@@ -41,23 +38,20 @@ from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     BrowserTestCase,
     FakeLaunchpadRequest,
+    TestCaseWithFactory,
     login_celebrity,
     login_person,
     logout,
     person_logged_in,
-    TestCaseWithFactory,
-    )
+)
 from lp.testing.layers import DatabaseFunctionalLayer
-from lp.testing.matchers import (
-    BrowsesWithQueryLimit,
-    DocTestMatches,
-    )
+from lp.testing.matchers import BrowsesWithQueryLimit, DocTestMatches
 from lp.testing.pages import (
     extract_text,
     find_tag_by_id,
     setupBrowser,
     setupBrowserForUser,
-    )
+)
 from lp.testing.views import create_initialized_view
 
 
@@ -68,8 +62,8 @@ class TestSpecificationSearch(TestCaseWithFactory):
     def test_search_with_percent(self):
         # Using '%' in a search should not error.
         specs = getUtility(ISpecificationSet)
-        form = {'field.search_text': r'%'}
-        view = create_initialized_view(specs, '+index', form=form)
+        form = {"field.search_text": r"%"}
+        view = create_initialized_view(specs, "+index", form=form)
         self.assertEqual([], view.errors)
 
 
@@ -89,59 +83,67 @@ class TestBranchTraversal(TestCaseWithFactory):
         self.specification.linkBranch(branch, self.factory.makePerson())
 
     def traverse(self, segments):
-        stack = list(reversed(['+branch'] + segments))
+        stack = list(reversed(["+branch"] + segments))
         name = stack.pop()
         request = FakeLaunchpadRequest([], stack)
         traverser = specification.SpecificationNavigation(
-            self.specification, request)
+            self.specification, request
+        )
         return traverser.publishTraverse(request, name)
 
     def test_junk_branch(self):
         branch = self.factory.makePersonalBranch()
         self.linkBranch(branch)
-        segments = [branch.owner.name, '+junk', branch.name]
+        segments = [branch.owner.name, "+junk", branch.name]
         self.assertEqual(
-            self.specification.getBranchLink(branch), self.traverse(segments))
+            self.specification.getBranchLink(branch), self.traverse(segments)
+        )
 
     def test_junk_branch_no_such_person(self):
         person_name = self.factory.getUniqueString()
         branch_name = self.factory.getUniqueString()
         self.assertRaises(
-            NotFound, self.traverse, [person_name, '+junk', branch_name])
+            NotFound, self.traverse, [person_name, "+junk", branch_name]
+        )
 
     def test_junk_branch_no_such_branch(self):
         person = self.factory.makePerson()
         branch_name = self.factory.getUniqueString()
         self.assertRaises(
-            NotFound, self.traverse, [person.name, '+junk', branch_name])
+            NotFound, self.traverse, [person.name, "+junk", branch_name]
+        )
 
     def test_product_branch(self):
         branch = self.factory.makeProductBranch()
         self.linkBranch(branch)
         segments = [branch.owner.name, branch.product.name, branch.name]
         self.assertEqual(
-            self.specification.getBranchLink(branch), self.traverse(segments))
+            self.specification.getBranchLink(branch), self.traverse(segments)
+        )
 
     def test_product_branch_no_such_person(self):
         person_name = self.factory.getUniqueString()
         product_name = self.factory.getUniqueString()
         branch_name = self.factory.getUniqueString()
         self.assertRaises(
-            NotFound, self.traverse, [person_name, product_name, branch_name])
+            NotFound, self.traverse, [person_name, product_name, branch_name]
+        )
 
     def test_product_branch_no_such_product(self):
         person = self.factory.makePerson()
         product_name = self.factory.getUniqueString()
         branch_name = self.factory.getUniqueString()
         self.assertRaises(
-            NotFound, self.traverse, [person.name, product_name, branch_name])
+            NotFound, self.traverse, [person.name, product_name, branch_name]
+        )
 
     def test_product_branch_no_such_branch(self):
         person = self.factory.makePerson()
         product = self.factory.makeProduct()
         branch_name = self.factory.getUniqueString()
         self.assertRaises(
-            NotFound, self.traverse, [person.name, product.name, branch_name])
+            NotFound, self.traverse, [person.name, product.name, branch_name]
+        )
 
     def test_package_branch(self):
         branch = self.factory.makePackageBranch()
@@ -151,9 +153,11 @@ class TestBranchTraversal(TestCaseWithFactory):
             branch.distribution.name,
             branch.distroseries.name,
             branch.sourcepackagename.name,
-            branch.name]
+            branch.name,
+        ]
         self.assertEqual(
-            self.specification.getBranchLink(branch), self.traverse(segments))
+            self.specification.getBranchLink(branch), self.traverse(segments)
+        )
 
 
 class TestSpecificationView(BrowserTestCase):
@@ -165,23 +169,24 @@ class TestSpecificationView(BrowserTestCase):
         """The specification URL is rendered when present."""
         spec = self.factory.makeSpecification()
         login_person(spec.owner)
-        spec.specurl = 'http://eg.dom/parrot'
+        spec.specurl = "http://eg.dom/parrot"
         view = create_initialized_view(
-            spec, name='+index', principal=spec.owner,
-            rootsite='blueprints')
-        li = find_tag_by_id(view.render(), 'spec-url')
-        self.assertEqual(['nofollow'], li.a['rel'])
-        self.assertEqual(spec.specurl, li.a['href'])
+            spec, name="+index", principal=spec.owner, rootsite="blueprints"
+        )
+        li = find_tag_by_id(view.render(), "spec-url")
+        self.assertEqual(["nofollow"], li.a["rel"])
+        self.assertEqual(spec.specurl, li.a["href"])
 
     def test_registration_date_displayed(self):
         """The time frame does not prepend on incorrectly."""
         spec = self.factory.makeSpecification(
-            owner=self.factory.makePerson(displayname="Some Person"))
-        html = create_initialized_view(
-                spec, '+index')()
+            owner=self.factory.makePerson(displayname="Some Person")
+        )
+        html = create_initialized_view(spec, "+index")()
         self.assertThat(
-            extract_text(html), DocTestMatches(
-                "... Registered by Some Person ... ago ..."))
+            extract_text(html),
+            DocTestMatches("... Registered by Some Person ... ago ..."),
+        )
 
     def test_private_specification_without_authorization(self):
         # Users without access get a 404 when trying to view private
@@ -189,12 +194,15 @@ class TestSpecificationView(BrowserTestCase):
         self.useFixture(FakeLogger())
         owner = self.factory.makePerson()
         policy = SpecificationSharingPolicy.PROPRIETARY
-        product = self.factory.makeProduct(owner=owner,
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=policy
+        )
         with person_logged_in(owner):
             spec = self.factory.makeSpecification(
-                product=product, owner=owner,
-                information_type=InformationType.PROPRIETARY)
+                product=product,
+                owner=owner,
+                information_type=InformationType.PROPRIETARY,
+            )
             url = canonical_url(spec)
         self.assertRaises(NotFound, self.getUserBrowser, url=url, user=None)
 
@@ -204,12 +212,14 @@ class TestSpecificationView(BrowserTestCase):
         owner = self.factory.makePerson()
         user = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner,
-            information_type=InformationType.PROPRIETARY)
+            owner=owner, information_type=InformationType.PROPRIETARY
+        )
         with person_logged_in(owner):
             spec = self.factory.makeSpecification(
-                product=product, owner=owner,
-                information_type=InformationType.PROPRIETARY)
+                product=product,
+                owner=owner,
+                information_type=InformationType.PROPRIETARY,
+            )
             spec.subscribe(user, subscribed_by=owner)
             spec_name = spec.name
         # Creating the view does not raise any exceptions.
@@ -225,30 +235,31 @@ class TestSpecificationSet(BrowserTestCase):
         """Blueprints home page tolerates proprietary Specifications."""
         specs = getUtility(ISpecificationSet)
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
         spec = self.factory.makeSpecification(product=product)
         spec_name = spec.name
         spec_owner = spec.owner
         browser = self.getViewBrowser(specs)
-        self.assertNotIn('Not allowed', browser.contents)
+        self.assertNotIn("Not allowed", browser.contents)
         self.assertIn(spec_name, browser.contents)
         with person_logged_in(spec_owner):
             removeSecurityProxy(spec.target)._ensurePolicies(
-                [InformationType.PROPRIETARY])
+                [InformationType.PROPRIETARY]
+            )
             spec.transitionToInformationType(
-                InformationType.PROPRIETARY, spec.owner)
+                InformationType.PROPRIETARY, spec.owner
+            )
         browser = self.getViewBrowser(specs)
-        self.assertNotIn('Not allowed', browser.contents)
+        self.assertNotIn("Not allowed", browser.contents)
         self.assertNotIn(spec_name, browser.contents)
 
     def test_query_count(self):
         product = self.factory.makeProduct()
         removeSecurityProxy(product).official_blueprints = True
         self.factory.makeSpecification(product=product)
-        limit = BrowsesWithQueryLimit(30, product.owner, rootsite='blueprints')
+        limit = BrowsesWithQueryLimit(30, product.owner, rootsite="blueprints")
         self.assertThat(product, limit)
-        login_celebrity('admin')
+        login_celebrity("admin")
         [self.factory.makeSpecification(product=product) for i in range(4)]
         self.assertThat(product, limit)
 
@@ -258,7 +269,8 @@ class TestSpecificationInformationType(BrowserTestCase):
     layer = DatabaseFunctionalLayer
 
     portlet_tag = soupmatchers.Tag(
-        'info-type-portlet', True, attrs=dict(id='information-type-summary'))
+        "info-type-portlet", True, attrs=dict(id="information-type-summary")
+    )
 
     def assertBrowserMatches(self, matcher):
         browser = self.getViewBrowser(self.factory.makeSpecification())
@@ -270,33 +282,42 @@ class TestSpecificationInformationType(BrowserTestCase):
     def test_has_privacy_banner(self):
         owner = self.factory.makePerson()
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
-        target = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        target = self.factory.makeProduct(specification_sharing_policy=policy)
         removeSecurityProxy(target)._ensurePolicies(
-            [InformationType.PROPRIETARY])
+            [InformationType.PROPRIETARY]
+        )
         spec = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY, owner=owner,
-            product=target)
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+            product=target,
+        )
         with person_logged_in(target.owner):
-            getUtility(IService, 'sharing').ensureAccessGrants(
-                [owner], target.owner, specifications=[spec])
+            getUtility(IService, "sharing").ensureAccessGrants(
+                [owner], target.owner, specifications=[spec]
+            )
         with person_logged_in(owner):
             browser = self.getViewBrowser(spec, user=owner)
-        privacy_banner = soupmatchers.Tag('privacy-banner', True,
-                attrs={'class': 'private_banner_container'})
+        privacy_banner = soupmatchers.Tag(
+            "privacy-banner", True, attrs={"class": "private_banner_container"}
+        )
         self.assertThat(
-            browser.contents, soupmatchers.HTMLContains(privacy_banner))
+            browser.contents, soupmatchers.HTMLContains(privacy_banner)
+        )
 
-    def set_secrecy(self, spec, owner, information_type='PROPRIETARY'):
+    def set_secrecy(self, spec, owner, information_type="PROPRIETARY"):
         form = {
-            'field.actions.change': 'Change',
-            'field.information_type': information_type,
-            'field.validate_change': 'off',
+            "field.actions.change": "Change",
+            "field.information_type": information_type,
+            "field.validate_change": "off",
         }
         with person_logged_in(owner):
             view = create_initialized_view(
-                spec, '+secrecy', form, principal=owner,
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                spec,
+                "+secrecy",
+                form,
+                principal=owner,
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
             body = view.render()
         return view.request.response.getStatus(), body
 
@@ -304,15 +325,16 @@ class TestSpecificationInformationType(BrowserTestCase):
         """Setting the value via '+secrecy' works."""
         owner = self.factory.makePerson()
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
         spec = self.factory.makeSpecification(owner=owner, product=product)
         removeSecurityProxy(spec.target)._ensurePolicies(
-            [InformationType.PROPRIETARY])
+            [InformationType.PROPRIETARY]
+        )
         self.set_secrecy(spec, owner)
         with person_logged_in(owner):
             self.assertEqual(
-                InformationType.PROPRIETARY, spec.information_type)
+                InformationType.PROPRIETARY, spec.information_type
+            )
 
     def test_secrecy_change_nonsense(self):
         """Invalid values produce sane errors."""
@@ -320,18 +342,19 @@ class TestSpecificationInformationType(BrowserTestCase):
         spec = self.factory.makeSpecification(owner=owner)
         transaction.commit()
         status, body = self.set_secrecy(
-            spec, owner, information_type=self.factory.getUniqueString())
+            spec, owner, information_type=self.factory.getUniqueString()
+        )
         self.assertEqual(400, status)
         error_data = json.loads(body)
-        self.assertEqual({'field.information_type': 'Invalid value'},
-                         error_data['errors'])
+        self.assertEqual(
+            {"field.information_type": "Invalid value"}, error_data["errors"]
+        )
         self.assertEqual(InformationType.PUBLIC, spec.information_type)
 
     def test_secrecy_change_unprivileged(self):
         """Unprivileged users cannot change information_type."""
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
         spec = self.factory.makeSpecification(product=product)
         person = self.factory.makePerson()
         with ExpectedException(Unauthorized):
@@ -343,57 +366,65 @@ class TestSpecificationInformationType(BrowserTestCase):
         owner = self.factory.makePerson()
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         product = self.factory.makeProduct(
-            owner=owner,
-            specification_sharing_policy=policy)
+            owner=owner, specification_sharing_policy=policy
+        )
         spec = self.factory.makeSpecification(
-            information_type=InformationType.PROPRIETARY, owner=owner,
-            product=product)
+            information_type=InformationType.PROPRIETARY,
+            owner=owner,
+            product=product,
+        )
 
-        privacy_banner = soupmatchers.Tag('privacy-banner', True,
-                text=re.compile('The information on this page is private'))
+        privacy_banner = soupmatchers.Tag(
+            "privacy-banner",
+            True,
+            text=re.compile("The information on this page is private"),
+        )
 
-        getUtility(IService, 'sharing').ensureAccessGrants(
-              [owner], owner, specifications=[spec],
-              ignore_permissions=True)
+        getUtility(IService, "sharing").ensureAccessGrants(
+            [owner], owner, specifications=[spec], ignore_permissions=True
+        )
 
-        browser = self.getViewBrowser(spec, '+index', user=owner)
+        browser = self.getViewBrowser(spec, "+index", user=owner)
         self.assertThat(
-            browser.contents, soupmatchers.HTMLContains(privacy_banner))
-        browser = self.getViewBrowser(spec, '+subscribe', user=owner)
+            browser.contents, soupmatchers.HTMLContains(privacy_banner)
+        )
+        browser = self.getViewBrowser(spec, "+subscribe", user=owner)
         self.assertThat(
-            browser.contents, soupmatchers.HTMLContains(privacy_banner))
+            browser.contents, soupmatchers.HTMLContains(privacy_banner)
+        )
 
 
 # canonical_url erroneously returns http://blueprints.launchpad.test/+new
-NEW_SPEC_FROM_ROOT_URL = 'http://blueprints.launchpad.test/specs/+new'
+NEW_SPEC_FROM_ROOT_URL = "http://blueprints.launchpad.test/specs/+new"
 
 
 class NewSpecificationTests:
 
-    expected_keys = {'PROPRIETARY', 'PUBLIC', 'EMBARGOED'}
+    expected_keys = {"PROPRIETARY", "PUBLIC", "EMBARGOED"}
 
     def _create_form_data(self, context):
         return {
-            'field.actions.register': 'Register Blueprint',
-            'field.definition_status': 'NEW',
-            'field.target': context,
-            'field.name': 'TestBlueprint',
-            'field.title': 'Test Blueprint',
-            'field.summary': 'Test Blueprint Summary',
+            "field.actions.register": "Register Blueprint",
+            "field.definition_status": "NEW",
+            "field.target": context,
+            "field.name": "TestBlueprint",
+            "field.title": "Test Blueprint",
+            "field.summary": "Test Blueprint Summary",
         }
 
     def _assert_information_type_validation_error(self, context, form, owner):
         """Helper to check for invalid information type on submit."""
         with person_logged_in(owner):
-            view = create_initialized_view(context, '+addspec', form=form)
-            expected = ('This information type is not permitted for'
-                        ' this product')
+            view = create_initialized_view(context, "+addspec", form=form)
+            expected = (
+                "This information type is not permitted for" " this product"
+            )
             self.assertIn(expected, view.errors)
 
     def test_cache_contains_information_type(self):
         view = self.createInitializedView()
         cache = IJSONRequestCache(view.request)
-        info_data = cache.objects.get('information_type_data')
+        info_data = cache.objects.get("information_type_data")
         self.assertIsNot(None, info_data)
         self.assertEqual(self.expected_keys, set(info_data.keys()))
 
@@ -402,104 +433,112 @@ class NewSpecificationTests:
         # specifications.
         view = self.createInitializedView()
         self.assertEqual(
-            InformationType.PUBLIC, view.initial_values['information_type'])
+            InformationType.PUBLIC, view.initial_values["information_type"]
+        )
 
     def test_default_drafter_is_user(self):
         drafter = self.factory.makePerson()
         with person_logged_in(drafter):
             view = self.createInitializedView()
-            self.assertEqual(drafter, view.widgets['drafter']._getFormValue())
+            self.assertEqual(drafter, view.widgets["drafter"]._getFormValue())
 
 
-class TestNewSpecificationFromRootView(TestCaseWithFactory,
-                                       NewSpecificationTests):
+class TestNewSpecificationFromRootView(
+    TestCaseWithFactory, NewSpecificationTests
+):
 
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
         context = getUtility(ISpecificationSet)
-        return create_initialized_view(context, '+new')
+        return create_initialized_view(context, "+new")
 
     def test_allowed_info_type_validated(self):
         """information_type must be validated against context"""
         context = getUtility(ISpecificationSet)
         product = self.factory.makeProduct()
         form = self._create_form_data(product.name)
-        form['field.information_type'] = 'PROPRIETARY'
-        view = create_initialized_view(context, '+new', form=form)
-        expected = 'This information type is not permitted for this product'
+        form["field.information_type"] = "PROPRIETARY"
+        view = create_initialized_view(context, "+new", form=form)
+        expected = "This information type is not permitted for this product"
         self.assertIn(expected, view.errors)
 
 
-class TestNewSpecificationFromSprintView(TestCaseWithFactory,
-                                         NewSpecificationTests):
+class TestNewSpecificationFromSprintView(
+    TestCaseWithFactory, NewSpecificationTests
+):
 
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
         sprint = self.factory.makeSprint()
-        return create_initialized_view(sprint, '+addspec')
+        return create_initialized_view(sprint, "+addspec")
 
     def test_allowed_info_type_validated(self):
         """information_type must be validated against context"""
         sprint = self.factory.makeSprint()
         product = self.factory.makeProduct(owner=sprint.owner)
         form = self._create_form_data(product.name)
-        form['field.information_type'] = 'PROPRIETARY'
+        form["field.information_type"] = "PROPRIETARY"
         self._assert_information_type_validation_error(
-            sprint, form, sprint.owner)
+            sprint, form, sprint.owner
+        )
 
 
-class TestNewSpecificationFromProjectGroupView(TestCaseWithFactory,
-                                               NewSpecificationTests):
+class TestNewSpecificationFromProjectGroupView(
+    TestCaseWithFactory, NewSpecificationTests
+):
 
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
         projectgroup = self.factory.makeProject()
-        return create_initialized_view(projectgroup, '+addspec')
+        return create_initialized_view(projectgroup, "+addspec")
 
     def test_allowed_info_type_validated(self):
         """information_type must be validated against context"""
         projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(projectgroup=projectgroup)
         form = self._create_form_data(product.name)
-        form['field.information_type'] = 'PROPRIETARY'
+        form["field.information_type"] = "PROPRIETARY"
         self._assert_information_type_validation_error(
-            projectgroup, form, projectgroup.owner)
+            projectgroup, form, projectgroup.owner
+        )
 
 
-class TestNewSpecificationFromProductView(TestCaseWithFactory,
-                                          NewSpecificationTests):
+class TestNewSpecificationFromProductView(
+    TestCaseWithFactory, NewSpecificationTests
+):
 
     layer = DatabaseFunctionalLayer
 
-    expected_keys = {'PROPRIETARY', 'EMBARGOED'}
+    expected_keys = {"PROPRIETARY", "EMBARGOED"}
 
     def createInitializedView(self):
         policy = SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
-        return create_initialized_view(product, '+addspec')
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
+        return create_initialized_view(product, "+addspec")
 
     def test_default_info_type(self):
         # In this case the default info type cannot be PUBlIC as it's not
         # among the allowed types.
         view = self.createInitializedView()
         self.assertEqual(
-            InformationType.EMBARGOED, view.initial_values['information_type'])
+            InformationType.EMBARGOED, view.initial_values["information_type"]
+        )
 
 
-class TestNewSpecificationFromDistributionView(TestCaseWithFactory,
-                                               NewSpecificationTests):
+class TestNewSpecificationFromDistributionView(
+    TestCaseWithFactory, NewSpecificationTests
+):
 
     layer = DatabaseFunctionalLayer
 
-    expected_keys = {'PUBLIC'}
+    expected_keys = {"PUBLIC"}
 
     def createInitializedView(self):
         distro = self.factory.makeDistribution()
-        return create_initialized_view(distro, '+addspec')
+        return create_initialized_view(distro, "+addspec")
 
 
 class TestNewSpecificationInformationType(BrowserTestCase):
@@ -509,7 +548,8 @@ class TestNewSpecificationInformationType(BrowserTestCase):
     def setUp(self):
         super().setUp()
         it_field = soupmatchers.Tag(
-            'it-field', True, attrs=dict(name='field.information_type'))
+            "it-field", True, attrs=dict(name="field.information_type")
+        )
         self.match_it = soupmatchers.HTMLContains(it_field)
 
     def test_from_root(self):
@@ -520,16 +560,16 @@ class TestNewSpecificationInformationType(BrowserTestCase):
     def test_from_sprint(self):
         """Information_type is included creating from a sprint."""
         sprint = self.factory.makeSprint()
-        browser = self.getViewBrowser(sprint, view_name='+addspec')
+        browser = self.getViewBrowser(sprint, view_name="+addspec")
         self.assertThat(browser.contents, self.match_it)
 
     def submitSpec(self, browser):
         """Submit a Specification via a browser."""
         name = self.factory.getUniqueString()
-        browser.getControl('Name').value = name
-        browser.getControl('Title').value = self.factory.getUniqueString()
-        browser.getControl('Summary').value = self.factory.getUniqueString()
-        browser.getControl('Register Blueprint').click()
+        browser.getControl("Name").value = name
+        browser.getControl("Title").value = self.factory.getUniqueString()
+        browser.getControl("Summary").value = self.factory.getUniqueString()
+        browser.getControl("Register Blueprint").click()
         return name
 
     def createSpec(self, information_type, sharing_policy=None):
@@ -539,7 +579,7 @@ class TestNewSpecificationInformationType(BrowserTestCase):
             if sharing_policy is not None:
                 self.factory.makeCommercialSubscription(product)
                 product.setSpecificationSharingPolicy(sharing_policy)
-            browser = self.getViewBrowser(product, view_name='+addspec')
+            browser = self.getViewBrowser(product, view_name="+addspec")
             control = browser.getControl(information_type.title)
             if not control.selected:
                 control.click()
@@ -553,36 +593,38 @@ class TestNewSpecificationInformationType(BrowserTestCase):
         """Creating honours information types."""
         spec = self.createSpec(
             InformationType.PUBLIC,
-            sharing_policy=SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            sharing_policy=SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        )
         self.assertEqual(InformationType.PUBLIC, spec.information_type)
         spec = self.createSpec(
             InformationType.PROPRIETARY,
-            sharing_policy=SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY)
+            sharing_policy=SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY,
+        )
         self.assertEqual(InformationType.PROPRIETARY, spec.information_type)
         spec = self.createSpec(
             InformationType.EMBARGOED,
-            SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY)
+            SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY,
+        )
         self.assertEqual(InformationType.EMBARGOED, spec.information_type)
 
     def test_from_productseries(self):
         """Information_type is included creating from productseries."""
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
-        product = self.factory.makeProduct(
-            specification_sharing_policy=policy)
+        product = self.factory.makeProduct(specification_sharing_policy=policy)
         series = self.factory.makeProductSeries(product=product)
-        browser = self.getViewBrowser(series, view_name='+addspec')
+        browser = self.getViewBrowser(series, view_name="+addspec")
         self.assertThat(browser.contents, self.match_it)
 
     def test_from_distribution(self):
         """information_type is excluded creating from distro."""
         distro = self.factory.makeDistribution()
-        browser = self.getViewBrowser(distro, view_name='+addspec')
+        browser = self.getViewBrowser(distro, view_name="+addspec")
         self.assertThat(browser.contents, Not(self.match_it))
 
     def test_from_distroseries(self):
         """information_type is excluded creating from distroseries."""
         series = self.factory.makeDistroSeries()
-        browser = self.getViewBrowser(series, view_name='+addspec')
+        browser = self.getViewBrowser(series, view_name="+addspec")
         self.assertThat(browser.contents, Not(self.match_it))
 
 
@@ -592,11 +634,12 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
 
     def _setUp(self):
         it_field = soupmatchers.Tag(
-            'it-field', True, attrs=dict(name='field.information_type'))
+            "it-field", True, attrs=dict(name="field.information_type")
+        )
         self.match_it = soupmatchers.HTMLContains(it_field)
 
     def makeTarget(self, policy, owner=None):
-        raise NotImplementedError('makeTarget')
+        raise NotImplementedError("makeTarget")
 
     def ensurePolicy(self, target, information_type):
         """Helper to call _ensurePolicies
@@ -623,17 +666,17 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
     def submitSpec(self, browser):
         """Submit a Specification via a browser."""
         name = self.factory.getUniqueString()
-        browser.getControl('Name').value = name
-        browser.getControl('Title').value = self.factory.getUniqueString()
-        browser.getControl('Summary').value = self.factory.getUniqueString()
-        browser.getControl('Register Blueprint').click()
+        browser.getControl("Name").value = name
+        browser.getControl("Title").value = self.factory.getUniqueString()
+        browser.getControl("Summary").value = self.factory.getUniqueString()
+        browser.getControl("Register Blueprint").click()
         return name
 
     def test_public(self):
         """Creating from PUBLIC policy allows only PUBLIC."""
         policy = SpecificationSharingPolicy.PUBLIC
         target = self.makeTarget(policy)
-        browser = self.getViewBrowser(target, view_name='+addspec')
+        browser = self.getViewBrowser(target, view_name="+addspec")
         self.assertThat(browser.contents, Not(self.match_it))
         spec = self.getSpecification(target, self.submitSpec(browser))
         self.assertEqual(spec.information_type, InformationType.PUBLIC)
@@ -642,7 +685,7 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
         """Creating from PUBLIC_OR_PROPRIETARY defaults to PUBLIC."""
         policy = SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY
         target = self.makeTarget(policy)
-        browser = self.getViewBrowser(target, view_name='+addspec')
+        browser = self.getViewBrowser(target, view_name="+addspec")
         self.assertThat(browser.contents, self.match_it)
         spec = self.getSpecification(target, self.submitSpec(browser))
         self.assertEqual(spec.information_type, InformationType.PUBLIC)
@@ -653,8 +696,7 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
         owner = self.factory.makePerson()
         target = self.makeTarget(policy, owner=owner)
         self.ensurePolicy(target, [InformationType.PROPRIETARY])
-        browser = self.getViewBrowser(
-            target, view_name='+addspec', user=owner)
+        browser = self.getViewBrowser(target, view_name="+addspec", user=owner)
         self.assertThat(browser.contents, self.match_it)
         spec = self.getSpecification(target, self.submitSpec(browser))
         self.assertEqual(spec.information_type, InformationType.PROPRIETARY)
@@ -665,8 +707,7 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
         owner = self.factory.makePerson()
         target = self.makeTarget(policy, owner=owner)
         self.ensurePolicy(target, [InformationType.PROPRIETARY])
-        browser = self.getViewBrowser(
-            target, view_name='+addspec', user=owner)
+        browser = self.getViewBrowser(target, view_name="+addspec", user=owner)
         self.assertThat(browser.contents, Not(self.match_it))
         spec = self.getSpecification(target, self.submitSpec(browser))
         self.assertEqual(spec.information_type, InformationType.PROPRIETARY)
@@ -677,38 +718,39 @@ class BaseNewSpecificationInformationTypeDefaultMixin:
         owner = self.factory.makePerson()
         target = self.makeTarget(policy, owner=owner)
         self.ensurePolicy(target, [InformationType.EMBARGOED])
-        browser = self.getViewBrowser(
-            target, view_name='+addspec', user=owner)
+        browser = self.getViewBrowser(target, view_name="+addspec", user=owner)
         self.assertThat(browser.contents, self.match_it)
         spec = self.getSpecification(target, self.submitSpec(browser))
         self.assertEqual(spec.information_type, InformationType.EMBARGOED)
 
 
 class TestNewSpecificationDefaultInformationTypeProduct(
-    BrowserTestCase, BaseNewSpecificationInformationTypeDefaultMixin):
-
+    BrowserTestCase, BaseNewSpecificationInformationTypeDefaultMixin
+):
     def makeTarget(self, policy, owner=None):
         self._setUp()
         if owner is None:
             owner = self.factory.makePerson()
         return self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=policy)
+            owner=owner, specification_sharing_policy=policy
+        )
 
 
 class TestNewSpecificationDefaultInformationTypeProductSeries(
-    BrowserTestCase, BaseNewSpecificationInformationTypeDefaultMixin):
-
+    BrowserTestCase, BaseNewSpecificationInformationTypeDefaultMixin
+):
     def makeTarget(self, policy, owner=None):
         self._setUp()
         if owner is None:
             owner = self.factory.makePerson()
         product = self.factory.makeProduct(
-            owner=owner, specification_sharing_policy=policy)
+            owner=owner, specification_sharing_policy=policy
+        )
         return self.factory.makeProductSeries(product=product)
 
 
 class TestSpecificationViewPrivateArtifacts(BrowserTestCase):
-    """ Tests that specifications with private team artifacts can be viewed.
+    """Tests that specifications with private team artifacts can be viewed.
 
     A Specification may be associated with a private team as follows:
     - a subscriber is a private team
@@ -732,37 +774,38 @@ class TestSpecificationViewPrivateArtifacts(BrowserTestCase):
     def test_view_specification_with_private_subscriber(self):
         # A specification with a private subscriber is rendered.
         private_subscriber = self.factory.makeTeam(
-            name="privateteam",
-            visibility=PersonVisibility.PRIVATE)
+            name="privateteam", visibility=PersonVisibility.PRIVATE
+        )
         spec = self.factory.makeSpecification()
         with person_logged_in(spec.owner):
             spec.subscribe(private_subscriber, spec.owner)
             # Ensure the specification subscriber is rendered.
-            url = canonical_url(spec, rootsite='blueprints')
+            url = canonical_url(spec, rootsite="blueprints")
             user = self.factory.makePerson()
             browser = self._getBrowser(user)
             browser.open(url)
             soup = BeautifulSoup(browser.contents)
-            subscriber_portlet = soup.find(
-                'div', attrs={'id': 'subscribers'})
+            subscriber_portlet = soup.find("div", attrs={"id": "subscribers"})
             self.assertIsNotNone(
-                subscriber_portlet.find('a', text='Privateteam'))
+                subscriber_portlet.find("a", text="Privateteam")
+            )
 
     def test_anonymous_view_specification_with_private_subscriber(self):
         # A specification with a private subscriber is not rendered for anon.
         private_subscriber = self.factory.makeTeam(
-            name="privateteam",
-            visibility=PersonVisibility.PRIVATE)
+            name="privateteam", visibility=PersonVisibility.PRIVATE
+        )
         spec = self.factory.makeSpecification()
         with person_logged_in(spec.owner):
             spec.subscribe(private_subscriber, spec.owner)
             # Viewing the specification doesn't display private subscriber.
-            url = canonical_url(spec, rootsite='blueprints')
+            url = canonical_url(spec, rootsite="blueprints")
             browser = self._getBrowser()
             browser.open(url)
             soup = BeautifulSoup(browser.contents)
             self.assertIsNone(
-                soup.find('div', attrs={'id': 'subscriber-privateteam'}))
+                soup.find("div", attrs={"id": "subscriber-privateteam"})
+            )
 
 
 class TestSpecificationEditStatusView(TestCaseWithFactory):
@@ -773,78 +816,88 @@ class TestSpecificationEditStatusView(TestCaseWithFactory):
     def test_records_started(self):
         not_started = SpecificationImplementationStatus.NOTSTARTED
         spec = self.factory.makeSpecification(
-            implementation_status=not_started)
+            implementation_status=not_started
+        )
         login_person(spec.owner)
         form = {
-            'field.implementation_status': 'STARTED',
-            'field.actions.change': 'Change',
-            }
-        view = create_initialized_view(spec, name='+status', form=form)
+            "field.implementation_status": "STARTED",
+            "field.actions.change": "Change",
+        }
+        view = create_initialized_view(spec, name="+status", form=form)
         self.assertEqual(
             SpecificationImplementationStatus.STARTED,
-            spec.implementation_status)
+            spec.implementation_status,
+        )
         self.assertEqual(spec.owner, spec.starter)
         [notification] = view.request.notifications
         self.assertEqual(BrowserNotificationLevel.INFO, notification.level)
         self.assertEqual(
             html_escape('Blueprint is now considered "Started".'),
-            notification.message)
+            notification.message,
+        )
 
     def test_unchanged_lifecycle_has_no_notification(self):
         spec = self.factory.makeSpecification(
-            implementation_status=SpecificationImplementationStatus.STARTED)
+            implementation_status=SpecificationImplementationStatus.STARTED
+        )
         login_person(spec.owner)
         form = {
-            'field.implementation_status': 'SLOW',
-            'field.actions.change': 'Change',
-            }
-        view = create_initialized_view(spec, name='+status', form=form)
+            "field.implementation_status": "SLOW",
+            "field.actions.change": "Change",
+        }
+        view = create_initialized_view(spec, name="+status", form=form)
         self.assertEqual(
-            SpecificationImplementationStatus.SLOW,
-            spec.implementation_status)
+            SpecificationImplementationStatus.SLOW, spec.implementation_status
+        )
         self.assertEqual(0, len(view.request.notifications))
 
     def test_records_unstarting(self):
         # If a spec was started, and is changed to not started,
         # a notice is shown. Also the spec.starter is cleared out.
         spec = self.factory.makeSpecification(
-            implementation_status=SpecificationImplementationStatus.STARTED)
+            implementation_status=SpecificationImplementationStatus.STARTED
+        )
         login_person(spec.owner)
         form = {
-            'field.implementation_status': 'NOTSTARTED',
-            'field.actions.change': 'Change',
-            }
-        view = create_initialized_view(spec, name='+status', form=form)
+            "field.implementation_status": "NOTSTARTED",
+            "field.actions.change": "Change",
+        }
+        view = create_initialized_view(spec, name="+status", form=form)
         self.assertEqual(
             SpecificationImplementationStatus.NOTSTARTED,
-            spec.implementation_status)
+            spec.implementation_status,
+        )
         self.assertIs(None, spec.starter)
         [notification] = view.request.notifications
         self.assertEqual(BrowserNotificationLevel.INFO, notification.level)
         self.assertEqual(
             html_escape('Blueprint is now considered "Not started".'),
-            notification.message)
+            notification.message,
+        )
 
     def test_records_completion(self):
         # If a spec is marked as implemented the user is notifiec it is now
         # complete.
         spec = self.factory.makeSpecification(
-            implementation_status=SpecificationImplementationStatus.STARTED)
+            implementation_status=SpecificationImplementationStatus.STARTED
+        )
         login_person(spec.owner)
         form = {
-            'field.implementation_status': 'IMPLEMENTED',
-            'field.actions.change': 'Change',
-            }
-        view = create_initialized_view(spec, name='+status', form=form)
+            "field.implementation_status": "IMPLEMENTED",
+            "field.actions.change": "Change",
+        }
+        view = create_initialized_view(spec, name="+status", form=form)
         self.assertEqual(
             SpecificationImplementationStatus.IMPLEMENTED,
-            spec.implementation_status)
+            spec.implementation_status,
+        )
         self.assertEqual(spec.owner, spec.completer)
         [notification] = view.request.notifications
         self.assertEqual(BrowserNotificationLevel.INFO, notification.level)
         self.assertEqual(
             html_escape('Blueprint is now considered "Complete".'),
-            notification.message)
+            notification.message,
+        )
 
 
 class TestSecificationHelpers(unittest.TestCase):
@@ -853,16 +906,14 @@ class TestSecificationHelpers(unittest.TestCase):
     def test_dict_to_DOT_attrs(self):
         """Verify that dicts are converted to a sorted DOT attr string."""
         expected_attrs = (
-            '  [\n'
+            "  [\n"
             '  "bar"="bar \\" \\n bar",\n'
             '  "baz"="zab",\n'
             '  "foo"="foo"\n'
-            '  ]')
-        dict_attrs = dict(
-            foo="foo",
-            bar="bar \" \n bar",
-            baz="zab")
-        dot_attrs = specification.dict_to_DOT_attrs(dict_attrs, indent='  ')
+            "  ]"
+        )
+        dict_attrs = dict(foo="foo", bar='bar " \n bar', baz="zab")
+        dot_attrs = specification.dict_to_DOT_attrs(dict_attrs, indent="  ")
         self.assertEqual(dot_attrs, expected_attrs)
 
 
@@ -873,8 +924,9 @@ class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
     def test_starter_empty(self):
         blueprint = self.factory.makeBlueprint()
         repr_method = specification.starter_xhtml_representation(
-            blueprint, ISpecification['starter'], None)
-        self.assertThat(repr_method(), Equals(''))
+            blueprint, ISpecification["starter"], None
+        )
+        self.assertThat(repr_method(), Equals(""))
 
     def test_starter_set(self):
         user = self.factory.makePerson()
@@ -882,18 +934,21 @@ class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
         when = datetime(2011, 1, 1, tzinfo=pytz.UTC)
         with person_logged_in(user):
             blueprint.setImplementationStatus(
-                SpecificationImplementationStatus.STARTED, user)
+                SpecificationImplementationStatus.STARTED, user
+            )
         removeSecurityProxy(blueprint).date_started = when
         repr_method = specification.starter_xhtml_representation(
-            blueprint, ISpecification['starter'], None)
-        expected = format_link(user) + ' on 2011-01-01'
+            blueprint, ISpecification["starter"], None
+        )
+        expected = format_link(user) + " on 2011-01-01"
         self.assertThat(repr_method(), Equals(expected))
 
     def test_completer_empty(self):
         blueprint = self.factory.makeBlueprint()
         repr_method = specification.completer_xhtml_representation(
-            blueprint, ISpecification['completer'], None)
-        self.assertThat(repr_method(), Equals(''))
+            blueprint, ISpecification["completer"], None
+        )
+        self.assertThat(repr_method(), Equals(""))
 
     def test_completer_set(self):
         user = self.factory.makePerson()
@@ -901,9 +956,11 @@ class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
         when = datetime(2011, 1, 1, tzinfo=pytz.UTC)
         with person_logged_in(user):
             blueprint.setImplementationStatus(
-                SpecificationImplementationStatus.IMPLEMENTED, user)
+                SpecificationImplementationStatus.IMPLEMENTED, user
+            )
         removeSecurityProxy(blueprint).date_completed = when
         repr_method = specification.completer_xhtml_representation(
-            blueprint, ISpecification['completer'], None)
-        expected = format_link(user) + ' on 2011-01-01'
+            blueprint, ISpecification["completer"], None
+        )
+        expected = format_link(user) + " on 2011-01-01"
         self.assertThat(repr_method(), Equals(expected))

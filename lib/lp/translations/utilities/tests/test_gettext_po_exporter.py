@@ -11,24 +11,25 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
-    )
+)
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
-    )
+)
 from lp.translations.utilities.gettext_po_exporter import (
-    comments_text_representation,
     GettextPOExporter,
+    comments_text_representation,
     strip_last_newline,
-    )
+)
 from lp.translations.utilities.gettext_po_parser import POParser
 from lp.translations.utilities.translation_common_format import (
     TranslationMessageData,
-    )
+)
 from lp.translations.utilities.translation_export import ExportFileStorage
 
 
 class GettextPOExporterTestCase(TestCaseWithFactory):
     """Class test for gettext's .po file exports"""
+
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -46,32 +47,42 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             return
 
         import_lines = [
-            six.ensure_text(line, errors='replace')
-            for line in import_file.split(b'\n')]
+            six.ensure_text(line, errors="replace")
+            for line in import_file.split(b"\n")
+        ]
         # Remove X-Launchpad-Export-Date line to prevent time bombs in tests.
         export_lines = [
-            six.ensure_text(line, errors='replace')
-            for line in export_file.split(b'\n')
-            if (not line.startswith(b'"X-Launchpad-Export-Date:') and
-                not line.startswith(b'"X-Generator: Launchpad'))]
+            six.ensure_text(line, errors="replace")
+            for line in export_file.split(b"\n")
+            if (
+                not line.startswith(b'"X-Launchpad-Export-Date:')
+                and not line.startswith(b'"X-Generator: Launchpad')
+            )
+        ]
 
         line_pairs = zip(export_lines, import_lines)
         debug_diff = test_diff(import_lines, export_lines)
         for export_line, import_line in line_pairs:
             self.assertEqual(
-                export_line, import_line,
-                "Output doesn't match:\n\n %s" % debug_diff)
+                export_line,
+                import_line,
+                "Output doesn't match:\n\n %s" % debug_diff,
+            )
 
         self.assertEqual(
-            len(export_lines), len(import_lines),
-            "Output has excess lines:\n\n %s" % debug_diff)
+            len(export_lines),
+            len(import_lines),
+            "Output has excess lines:\n\n %s" % debug_diff,
+        )
 
     def testInterface(self):
         """Check whether the object follows the interface."""
         self.assertTrue(
-            verifyObject(ITranslationFormatExporter,
-                         self.translation_exporter),
-            "GettextPOExporter doesn't follow the interface")
+            verifyObject(
+                ITranslationFormatExporter, self.translation_exporter
+            ),
+            "GettextPOExporter doesn't follow the interface",
+        )
 
     def testSupportedFormats(self):
         """Check that the exporter reports the correct formats."""
@@ -79,18 +90,21 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             self.translation_exporter.format,
             TranslationFileFormat.PO,
             "Expected GettextPOExporter to provide PO format "
-            "but got %r instead." % self.translation_exporter.format)
+            "but got %r instead." % self.translation_exporter.format,
+        )
         self.assertEqual(
             self.translation_exporter.supported_source_formats,
             [TranslationFileFormat.PO, TranslationFileFormat.KDEPO],
             "Expected GettextPOExporter to support PO and KDEPO source "
-            "formats but got %r instead." % (
-                self.translation_exporter.supported_source_formats))
+            "formats but got %r instead."
+            % (self.translation_exporter.supported_source_formats),
+        )
 
     def testGeneralExport(self):
         """Check different kind of messages export."""
 
-        pofile_cy = dedent('''
+        pofile_cy = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: foo\\n"
@@ -129,23 +143,27 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             #~ msgid "zot"
             #~ msgstr "zat"
-            ''').encode('UTF-8')  # noqa: E501
+            """  # noqa: E501
+        ).encode("UTF-8")
         cy_translation_file = self.parser.parse(pofile_cy)
         cy_translation_file.is_template = False
-        cy_translation_file.language_code = 'cy'
-        cy_translation_file.path = 'po/cy.po'
-        cy_translation_file.translation_domain = 'testing'
+        cy_translation_file.language_code = "cy"
+        cy_translation_file.path = "po/cy.po"
+        cy_translation_file.translation_domain = "testing"
         storage = ExportFileStorage()
         self.translation_exporter.exportTranslationFile(
-            cy_translation_file, storage)
+            cy_translation_file, storage
+        )
 
         self._compareImportAndExport(
-            pofile_cy.strip(), storage.export().read().strip())
+            pofile_cy.strip(), storage.export().read().strip()
+        )
 
     def testObsoleteExport(self):
         """Check how obsoleted messages are exported."""
 
-        pofile_eo = dedent('''
+        pofile_eo = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: Kumquats 1.0\\n"
@@ -164,9 +182,11 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             #| msgid "zog"
             msgid "zig"
             msgstr "zag"
-            ''').encode('UTF-8')
+            """
+        ).encode("UTF-8")
 
-        pofile_eo_obsolete = dedent('''
+        pofile_eo_obsolete = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: Kumquats 1.0\\n"
@@ -184,48 +204,54 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             #~| msgid "zog"
             #~ msgid "zig"
             #~ msgstr "zag"
-            ''').encode('UTF-8')
+            """
+        ).encode("UTF-8")
         eo_translation_file = self.parser.parse(pofile_eo)
         eo_translation_file.is_template = False
-        eo_translation_file.language_code = 'eo'
-        eo_translation_file.path = 'po/eo.po'
-        eo_translation_file.translation_domain = 'testing'
+        eo_translation_file.language_code = "eo"
+        eo_translation_file.path = "po/eo.po"
+        eo_translation_file.translation_domain = "testing"
         eo_translation_file.messages[0].is_obsolete = True
         storage = ExportFileStorage()
         self.translation_exporter.exportTranslationFile(
-            eo_translation_file, storage)
+            eo_translation_file, storage
+        )
 
         self._compareImportAndExport(
-            pofile_eo_obsolete.strip(), storage.export().read().strip())
+            pofile_eo_obsolete.strip(), storage.export().read().strip()
+        )
 
     def testEncodingExport(self):
         """Test that PO headers specifying character sets are respected."""
 
         def compare(self, pofile):
-            "Compare the original text with the exported one."""
+            "Compare the original text with the exported one." ""
             # This is the word 'Japanese' in Japanese, in Unicode.
-            nihongo_unicode = '\u65e5\u672c\u8a9e'
+            nihongo_unicode = "\u65e5\u672c\u8a9e"
             translation_file = self.parser.parse(pofile)
             translation_file.is_template = False
-            translation_file.language_code = 'ja'
-            translation_file.path = 'po/ja.po'
-            translation_file.translation_domain = 'testing'
+            translation_file.language_code = "ja"
+            translation_file.path = "po/ja.po"
+            translation_file.translation_domain = "testing"
 
             # We are sure that 'Japanese' is correctly stored as Unicode so
             # we are sure the exporter does its job instead of just export
             # what was imported.
             self.assertEqual(
-                translation_file.messages[0].translations,
-                [nihongo_unicode])
+                translation_file.messages[0].translations, [nihongo_unicode]
+            )
 
             storage = ExportFileStorage()
             self.translation_exporter.exportTranslationFile(
-                translation_file, storage)
+                translation_file, storage
+            )
 
             self._compareImportAndExport(
-                pofile.strip(), storage.export().read().strip())
+                pofile.strip(), storage.export().read().strip()
+            )
 
-        pofile_content = dedent('''
+        pofile_content = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: foo\\n"
@@ -240,30 +266,33 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             msgid "Japanese"
             msgstr "\u65e5\u672c\u8a9e"
-            ''')
-        for charset in ('UTF-8', 'Shift-JIS', 'EUC-JP'):
-            pofile = (pofile_content % {'charset': charset}).encode(charset)
+            """
+        )
+        for charset in ("UTF-8", "Shift-JIS", "EUC-JP"):
+            pofile = (pofile_content % {"charset": charset}).encode(charset)
             compare(self, pofile)
 
     def _testBrokenEncoding(self, pofile_content):
         translation_file = self.parser.parse(
-            (pofile_content %
-             {'charset': 'ISO-8859-15'}).encode('ISO-8859-15'))
+            (pofile_content % {"charset": "ISO-8859-15"}).encode("ISO-8859-15")
+        )
         translation_file.is_template = False
-        translation_file.language_code = 'es'
-        translation_file.path = 'po/es.po'
-        translation_file.translation_domain = 'testing'
+        translation_file.language_code = "es"
+        translation_file.path = "po/es.po"
+        translation_file.translation_domain = "testing"
         # Force the export as ASCII, it will not be possible because
         # translation is not available in that encoding and thus, we should
         # get an export in UTF-8.
-        translation_file.header.charset = 'ASCII'
+        translation_file.header.charset = "ASCII"
         storage = ExportFileStorage()
         self.translation_exporter.exportTranslationFile(
-            translation_file, storage)
+            translation_file, storage
+        )
 
         self._compareImportAndExport(
-            (pofile_content.strip() % {'charset': 'UTF-8'}).encode('UTF-8'),
-            storage.export().read().strip())
+            (pofile_content.strip() % {"charset": "UTF-8"}).encode("UTF-8"),
+            storage.export().read().strip(),
+        )
 
     def testBrokenEncodingExport(self):
         """Test what happens when the content and the encoding don't agree.
@@ -273,7 +302,8 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         pofile exported accordingly.
         """
 
-        pofile_content = dedent('''
+        pofile_content = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: foo\\n"
@@ -288,7 +318,8 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             msgid "a"
             msgstr "\xe1"
-            ''')
+            """
+        )
         self._testBrokenEncoding(pofile_content)
 
     def testBrokenEncodingHeader(self):
@@ -302,7 +333,8 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         pofile exported accordingly.
         """
 
-        pofile_content = dedent('''
+        pofile_content = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: foo\\n"
@@ -317,13 +349,15 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
 
             msgid "a"
             msgstr "b"
-            ''')
+            """
+        )
         self._testBrokenEncoding(pofile_content)
 
     def testIncompletePluralMessage(self):
         """Test export correctness for partial plural messages."""
 
-        pofile = dedent('''
+        pofile = dedent(
+            """
             msgid ""
             msgstr ""
             "Project-Id-Version: foo\\n"
@@ -340,19 +374,22 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             msgid "1 dead horse"
             msgid_plural "%%d dead horses"
             msgstr[0] "ning\xfan caballo muerto"
-            %s''')
-        translation_file = self.parser.parse((pofile % '').encode('UTF-8'))
+            %s"""
+        )
+        translation_file = self.parser.parse((pofile % "").encode("UTF-8"))
         translation_file.is_template = False
-        translation_file.language_code = 'es'
-        translation_file.path = 'po/es.po'
-        translation_file.translation_domain = 'testing'
+        translation_file.language_code = "es"
+        translation_file.path = "po/es.po"
+        translation_file.translation_domain = "testing"
         storage = ExportFileStorage()
         self.translation_exporter.exportTranslationFile(
-            translation_file, storage)
+            translation_file, storage
+        )
 
         self._compareImportAndExport(
-            (pofile.strip() % 'msgstr[1] ""').encode('UTF-8'),
-            storage.export().read().strip())
+            (pofile.strip() % 'msgstr[1] ""').encode("UTF-8"),
+            storage.export().read().strip(),
+        )
 
     def testClashingSingularMsgIds(self):
         # We don't accept it in gettext imports directly, since it's not
@@ -362,22 +399,30 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # first of the two messages is exported.
         template = self.factory.makePOTemplate()
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foos', sequence=1)
+            template, singular="%d foo", plural="%d foos", sequence=1
+        )
         self.factory.makePOTMsgSet(
-            template, singular='%d foo', plural='%d foox', sequence=2)
+            template, singular="%d foo", plural="%d foox", sequence=2
+        )
 
         exported_file = template.export()
 
         # The "foos" (as opposed to "foox") tells us that the exporter
         # has picked the first message for export.
-        expected_output = dedent("""
+        expected_output = (
+            dedent(
+                """
             msgid "%d foo"
             msgid_plural "%d foos"
             msgstr[0] ""
             msgstr[1] ""
-            """).strip().encode('UTF-8')
+            """
+            )
+            .strip()
+            .encode("UTF-8")
+        )
 
-        body = exported_file.split(b'\n\n', 1)[1].strip()
+        body = exported_file.split(b"\n\n", 1)[1].strip()
         self.assertEqual(body, expected_output)
 
     def testObsoleteMessageYieldsToNonObsoleteClashingOne(self):
@@ -388,19 +433,26 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # non-obsolete one is exported.
         template = self.factory.makePOTemplate()
         obsolete_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d goos', sequence=0)
+            template, singular="%d goo", plural="%d goos", sequence=0
+        )
         current_message = self.factory.makePOTMsgSet(
-            template, singular='%d goo', plural='%d gooim', sequence=1)
+            template, singular="%d goo", plural="%d gooim", sequence=1
+        )
 
         pofile = self.factory.makePOFile(
-            potemplate=template, language_code='nl')
+            potemplate=template, language_code="nl"
+        )
 
         self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=obsolete_message,
-            translations=['%d splut', '%d splutjes'])
+            pofile=pofile,
+            potmsgset=obsolete_message,
+            translations=["%d splut", "%d splutjes"],
+        )
         self.factory.makeCurrentTranslationMessage(
-            pofile=pofile, potmsgset=current_message,
-            translations=['%d gargl', '%d garglii'])
+            pofile=pofile,
+            potmsgset=current_message,
+            translations=["%d gargl", "%d garglii"],
+        )
 
         exported_file = pofile.export()
 
@@ -408,57 +460,67 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
         # has picked the non-obsolete message for export.  The "gargl"
         # and "garglii" tell us we're not just getting the msgid from
         # the non-obsolete message, but the translations as well.
-        expected_output = dedent("""
+        expected_output = (
+            dedent(
+                """
             msgid "%d goo"
             msgid_plural "%d gooim"
             msgstr[0] "%d gargl"
             msgstr[1] "%d garglii"
-            """).strip().encode('UTF-8')
+            """
+            )
+            .strip()
+            .encode("UTF-8")
+        )
 
-        body = exported_file.split(b'\n\n', 1)[1].strip()
+        body = exported_file.split(b"\n\n", 1)[1].strip()
         self.assertEqual(expected_output, body)
 
     def test_strip_last_newline(self):
         # `strip_last_newline` strips only the last newline.
-        self.assertEqual('text\n', strip_last_newline('text\n\n'))
-        self.assertEqual('text\nx', strip_last_newline('text\nx'))
-        self.assertEqual('text', strip_last_newline('text'))
+        self.assertEqual("text\n", strip_last_newline("text\n\n"))
+        self.assertEqual("text\nx", strip_last_newline("text\nx"))
+        self.assertEqual("text", strip_last_newline("text"))
 
         # It supports '\r' as well (Mac-style).
-        self.assertEqual('text', strip_last_newline('text\r'))
+        self.assertEqual("text", strip_last_newline("text\r"))
         # And DOS-style '\r\n'.
-        self.assertEqual('text', strip_last_newline('text\r\n'))
+        self.assertEqual("text", strip_last_newline("text\r\n"))
 
         # With weird combinations, it strips only the last
         # newline-indicating character.
-        self.assertEqual('text\n', strip_last_newline('text\n\r'))
+        self.assertEqual("text\n", strip_last_newline("text\n\r"))
 
     def test_comments_text_representation_multiline(self):
         # Comments with newlines should be correctly exported.
         data = TranslationMessageData()
         data.comment = "Line One\nLine Two"
-        self.assertEqual("#Line One\n#Line Two",
-                         comments_text_representation(data))
+        self.assertEqual(
+            "#Line One\n#Line Two", comments_text_representation(data)
+        )
 
         # It works the same when there's a final newline as well.
         data.comment = "Line One\nLine Two\n"
-        self.assertEqual("#Line One\n#Line Two",
-                         comments_text_representation(data))
+        self.assertEqual(
+            "#Line One\n#Line Two", comments_text_representation(data)
+        )
 
         # And similar processing happens for source comments.
         data = TranslationMessageData()
         data.source_comment = "Line One\nLine Two"
-        self.assertEqual("#. Line One\n#. Line Two",
-                         comments_text_representation(data))
+        self.assertEqual(
+            "#. Line One\n#. Line Two", comments_text_representation(data)
+        )
 
         # It works the same when there's a final newline as well.
         data.source_comment = "Line One\nLine Two\n"
-        self.assertEqual("#. Line One\n#. Line Two",
-                         comments_text_representation(data))
+        self.assertEqual(
+            "#. Line One\n#. Line Two", comments_text_representation(data)
+        )
 
     def test_export_handles_empty_files(self):
         # Exporting an empty gettext file does not break the exporter.
         # The output does contain one message: the header.
-        output = self.factory.makePOFile('nl').export()
-        self.assertTrue(output.startswith(b'# Dutch translation for '))
-        self.assertEqual(1, output.count(b'msgid'))
+        output = self.factory.makePOFile("nl").export()
+        self.assertTrue(output.startswith(b"# Dutch translation for "))
+        self.assertEqual(1, output.count(b"msgid"))

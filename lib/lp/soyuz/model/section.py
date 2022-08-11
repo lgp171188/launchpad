@@ -1,32 +1,25 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    'Section',
-    'SectionSelection',
-    'SectionSet'
-    ]
+__all__ = ["Section", "SectionSelection", "SectionSet"]
 
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    StringCol,
-    )
+from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.soyuz.interfaces.section import (
     ISection,
     ISectionSelection,
     ISectionSet,
-    )
+)
 
 
 @implementer(ISection)
 class Section(SQLBase):
     """See ISection"""
 
-    _defaultOrder = ['id']
+    _defaultOrder = ["id"]
 
     name = StringCol(notNull=True, alternateID=True)
 
@@ -35,12 +28,12 @@ class Section(SQLBase):
 class SectionSelection(SQLBase):
     """See ISectionSelection."""
 
-    _defaultOrder = ['id']
+    _defaultOrder = ["id"]
 
-    distroseries = ForeignKey(dbName='distroseries',
-        foreignKey='DistroSeries', notNull=True)
-    section = ForeignKey(dbName='section',
-        foreignKey='Section', notNull=True)
+    distroseries = ForeignKey(
+        dbName="distroseries", foreignKey="DistroSeries", notNull=True
+    )
+    section = ForeignKey(dbName="section", foreignKey="Section", notNull=True)
 
 
 @implementer(ISectionSet)

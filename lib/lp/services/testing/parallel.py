@@ -13,11 +13,7 @@ import tempfile
 from breezy.osutils import local_concurrency
 from subunit import ProtocolTestCase
 from subunit.run import SubunitTestRunner
-from testtools import (
-    ConcurrentTestSuite,
-    TestResult,
-    TextTestResult,
-    )
+from testtools import ConcurrentTestSuite, TestResult, TextTestResult
 from testtools.compat import unicode_output_stream
 
 
@@ -29,11 +25,11 @@ def prepare_argv(argv):
         if skipn:
             skipn -= 1
             continue
-        if arg in ('--subunit', '--parallel'):
+        if arg in ("--subunit", "--parallel"):
             continue
-        if arg.startswith('--load-list='):
+        if arg.startswith("--load-list="):
             continue
-        if arg == '--load-list':
+        if arg == "--load-list":
             skipn = 1
             continue
         result.append(arg)
@@ -44,9 +40,9 @@ def find_load_list(args):
     """Get the value passed in to --load-list=FOO."""
     load_list = None
     for pos, arg in enumerate(args):
-        if arg.startswith('--load-list='):
-            load_list = arg[len('--load-list='):]
-        if arg == '--load-list':
+        if arg.startswith("--load-list="):
+            load_list = arg[len("--load-list=") :]
+        if arg == "--load-list":
             load_list = args[pos + 1]
     return load_list
 
@@ -74,23 +70,23 @@ def find_tests(argv):
     if load_list:
         # just use the load_list
         with open(load_list) as list_file:
-            return [id for id in list_file.read().split('\n') if id]
+            return [id for id in list_file.read().split("\n") if id]
     # run in --list-tests mode
-    argv = prepare_argv(argv) + ['--list-tests', '--subunit']
-    process = subprocess.Popen(argv, stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE)
+    argv = prepare_argv(argv) + ["--list-tests", "--subunit"]
+    process = subprocess.Popen(
+        argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+    )
     process.stdin.close()
     test = ProtocolTestCase(process.stdout)
     result = GatherIDs()
     test.run(result)
     process.wait()
     if process.returncode:
-        raise Exception('error listing tests: %s' % process.returncode)
+        raise Exception("error listing tests: %s" % process.returncode)
     return result.ids
 
 
 class ListTestCase(ProtocolTestCase):
-
     def __init__(self, test_ids, args):
         """Create a ListTestCase.
 
@@ -102,14 +98,18 @@ class ListTestCase(ProtocolTestCase):
         self._args = args
 
     def run(self, result):
-        with tempfile.NamedTemporaryFile(mode='w+') as test_list_file:
+        with tempfile.NamedTemporaryFile(mode="w+") as test_list_file:
             for test_id in self._test_ids:
-                test_list_file.write(test_id + '\n')
+                test_list_file.write(test_id + "\n")
             test_list_file.flush()
             argv = self._args + [
-                '--subunit', '--load-list', test_list_file.name]
-            process = subprocess.Popen(argv, stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, bufsize=1)
+                "--subunit",
+                "--load-list",
+                test_list_file.name,
+            ]
+            process = subprocess.Popen(
+                argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=1
+            )
             try:
                 # If it tries to read, give it EOF.
                 process.stdin.close()
@@ -154,11 +154,13 @@ def main(argv, prepare_args=prepare_argv, find_tests=find_tests):
         count = concurrency()
         partitions = partition_tests(test_ids, count)
         return [
-            ListTestCase(partition, child_args) for partition in partitions]
+            ListTestCase(partition, child_args) for partition in partitions
+        ]
 
     suite = ConcurrentTestSuite(
-        ListTestCase(test_ids, None), parallelise_tests)
-    if '--subunit' in argv:
+        ListTestCase(test_ids, None), parallelise_tests
+    )
+    if "--subunit" in argv:
         runner = SubunitTestRunner(sys.stdout)
         result = runner.run(suite)
     else:

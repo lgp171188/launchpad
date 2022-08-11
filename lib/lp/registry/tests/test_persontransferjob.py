@@ -7,7 +7,7 @@ from lp.registry.enums import PersonTransferJobType
 from lp.registry.model.persontransferjob import (
     PersonTransferJob,
     PersonTransferJobDerived,
-    )
+)
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -23,24 +23,26 @@ class PersonTransferJobTestCase(TestCaseWithFactory):
         person = self.factory.makePerson()
         team = self.factory.makeTeam()
 
-        metadata = ('some', 'arbitrary', 'metadata')
+        metadata = ("some", "arbitrary", "metadata")
         person_transfer_job = PersonTransferJob(
             person,
             team,
             PersonTransferJobType.MEMBERSHIP_NOTIFICATION,
-            metadata)
+            metadata,
+        )
 
         self.assertEqual(person, person_transfer_job.minor_person)
         self.assertEqual(team, person_transfer_job.major_person)
         self.assertEqual(
             PersonTransferJobType.MEMBERSHIP_NOTIFICATION,
-            person_transfer_job.job_type)
+            person_transfer_job.job_type,
+        )
 
         # When we actually access the PersonTransferJob's metadata it
         # gets unserialized from JSON, so the representation returned by
         # person_transfer_job.metadata will be different from what we
         # originally passed in.
-        metadata_expected = ['some', 'arbitrary', 'metadata']
+        metadata_expected = ["some", "arbitrary", "metadata"]
         self.assertEqual(metadata_expected, person_transfer_job.metadata)
 
 
@@ -54,7 +56,11 @@ class PersonTransferJobDerivedTestCase(TestCaseWithFactory):
         # needs to be subclassed to work properly.
         person = self.factory.makePerson()
         team = self.factory.makeTeam()
-        metadata = {'foo': 'bar'}
+        metadata = {"foo": "bar"}
         self.assertRaises(
             AttributeError,
-            PersonTransferJobDerived.create, person, team, metadata)
+            PersonTransferJobDerived.create,
+            person,
+            team,
+            metadata,
+        )

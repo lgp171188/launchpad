@@ -8,19 +8,13 @@ from testtools.matchers import (
     MatchesAll,
     MatchesListwise,
     MatchesStructure,
-    )
+)
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
-from zope.interface import (
-    implementer,
-    Interface,
-    )
+from zope.interface import Interface, implementer
 from zope.schema import Int
 
 from lp.services.webapp.snapshot import notify_modified
-from lp.testing import (
-    EventRecorder,
-    TestCaseWithFactory,
-    )
+from lp.testing import EventRecorder, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.matchers import Provides
 
@@ -32,7 +26,6 @@ class IThing(Interface):
 
 @implementer(IThing)
 class Thing:
-
     def __init__(self, attr):
         self.attr = attr
 
@@ -46,17 +39,25 @@ class TestNotifyModified(TestCaseWithFactory):
         with EventRecorder() as recorder:
             with notify_modified(obj, ["attr"]):
                 obj.attr = 1
-        self.assertThat(recorder.events, MatchesListwise([
-            MatchesAll(
-                Provides(IObjectModifiedEvent),
-                MatchesStructure(
-                    object=MatchesStructure(attr=Equals(1)),
-                    object_before_modification=MatchesAll(
-                        Provides(IThing),
-                        MatchesStructure(attr=Equals(0))),
-                    edited_fields=Equals(["attr"]),
-                    user=Provides(IUnauthenticatedPrincipal))),
-            ]))
+        self.assertThat(
+            recorder.events,
+            MatchesListwise(
+                [
+                    MatchesAll(
+                        Provides(IObjectModifiedEvent),
+                        MatchesStructure(
+                            object=MatchesStructure(attr=Equals(1)),
+                            object_before_modification=MatchesAll(
+                                Provides(IThing),
+                                MatchesStructure(attr=Equals(0)),
+                            ),
+                            edited_fields=Equals(["attr"]),
+                            user=Provides(IUnauthenticatedPrincipal),
+                        ),
+                    ),
+                ]
+            ),
+        )
 
     def test_mutate_edited_fields_within_block(self):
         obj = Thing(0)
@@ -65,17 +66,25 @@ class TestNotifyModified(TestCaseWithFactory):
             with notify_modified(obj, edited_fields):
                 obj.attr = 1
                 edited_fields.add("attr")
-        self.assertThat(recorder.events, MatchesListwise([
-            MatchesAll(
-                Provides(IObjectModifiedEvent),
-                MatchesStructure(
-                    object=MatchesStructure(attr=Equals(1)),
-                    object_before_modification=MatchesAll(
-                        Provides(IThing),
-                        MatchesStructure(attr=Equals(0))),
-                    edited_fields=Equals(["attr"]),
-                    user=Provides(IUnauthenticatedPrincipal))),
-            ]))
+        self.assertThat(
+            recorder.events,
+            MatchesListwise(
+                [
+                    MatchesAll(
+                        Provides(IObjectModifiedEvent),
+                        MatchesStructure(
+                            object=MatchesStructure(attr=Equals(1)),
+                            object_before_modification=MatchesAll(
+                                Provides(IThing),
+                                MatchesStructure(attr=Equals(0)),
+                            ),
+                            edited_fields=Equals(["attr"]),
+                            user=Provides(IUnauthenticatedPrincipal),
+                        ),
+                    ),
+                ]
+            ),
+        )
 
     def test_yields_previous_object(self):
         obj = Thing(0)
@@ -90,14 +99,22 @@ class TestNotifyModified(TestCaseWithFactory):
         with EventRecorder() as recorder:
             with notify_modified(obj, ["attr"], user=user):
                 obj.attr = 1
-        self.assertThat(recorder.events, MatchesListwise([
-            MatchesAll(
-                Provides(IObjectModifiedEvent),
-                MatchesStructure(
-                    object=MatchesStructure(attr=Equals(1)),
-                    object_before_modification=MatchesAll(
-                        Provides(IThing),
-                        MatchesStructure(attr=Equals(0))),
-                    edited_fields=Equals(["attr"]),
-                    user=Equals(user))),
-            ]))
+        self.assertThat(
+            recorder.events,
+            MatchesListwise(
+                [
+                    MatchesAll(
+                        Provides(IObjectModifiedEvent),
+                        MatchesStructure(
+                            object=MatchesStructure(attr=Equals(1)),
+                            object_before_modification=MatchesAll(
+                                Provides(IThing),
+                                MatchesStructure(attr=Equals(0)),
+                            ),
+                            edited_fields=Equals(["attr"]),
+                            user=Equals(user),
+                        ),
+                    ),
+                ]
+            ),
+        )
