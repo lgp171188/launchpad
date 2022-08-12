@@ -11,7 +11,6 @@ __all__ = [
 from typing import List, Tuple
 
 import six
-from storm.exceptions import IntegrityError
 from storm.expr import And, LeftJoin, Lower, Or
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -409,25 +408,60 @@ def close_account(username, log):
         (person.id,),
     )
 
-    # Purge deleted PPAs.  This is safe because the archive can only be in
-    # the DELETED status if the publisher has removed it from disk and set
-    # all its publications to DELETED.
-    # XXX cjwatson 2019-08-09: This will fail if anything non-trivial has
-    # been done in this person's PPAs; and it's not obvious what to do in
-    # more complicated cases such as builds having been copied out
-    # elsewhere.  It's good enough for some simple cases, though.
-    try:
+    # Purge deleted PPAs that are either not referenced, or the reference
+    # allows cascade deletion.
+    # This is safe because the archive can only be in the DELETED status if
+    # the publisher has removed it from disk and set all its publications
+    # to DELETED.
+    # Deleted PPAs that are still referenced are ignored.
+    deleted_ppa_ids = set(
         store.find(
-            Archive,
+            Archive.id,
             Archive.owner == person,
             Archive.status == ArchiveStatus.DELETED,
-        ).remove()
-    except IntegrityError:
-        raise LaunchpadScriptFailure(
-            "Can't delete non-trivial PPAs for user %s" % person_name
         )
+    )
+    ppa_references = list(postgresql.listReferences(cur, "archive", "id"))
+    referenced_ppa_ids = set()
+    for ppa_id in deleted_ppa_ids:
+        for src_tab, src_col, *_, delete_action in ppa_references:
+            if delete_action == "c":
+                # cascade deletion is enabled, so the reference may be ignored
+                continue
+            result = store.execute(
+                """
+                SELECT COUNT(*) FROM %(src_tab)s WHERE %(src_col)s = ?
+                """
+                % {
+                    "src_tab": src_tab,
+                    "src_col": src_col,
+                },
+                (ppa_id,),
+            )
+            count = result.get_one()[0]
+            if count:
+                referenced_ppa_ids.add(ppa_id)
+                reference = "{}.{}".format(src_tab, src_col)
+                log.warning(
+                    "PPA %d is still referenced by %d %s values"
+                    % (ppa_id, count, reference)
+                )
+
+    non_referenced_ppa_ids = deleted_ppa_ids - referenced_ppa_ids
+    if non_referenced_ppa_ids:
+        store.find(Archive, Archive.id.is_in(non_referenced_ppa_ids)).remove()
 
     reference_counts = []  # type: List[Tuple[str, int]]
+
+    # Check for non-deleted PPAs
+    count = store.find(
+        Archive,
+        Archive.owner == person,
+        Archive.status != ArchiveStatus.DELETED,
+    ).count()
+    if count:
+        reference_counts.append(("archive.owner", count))
+    skip.add(("archive", "owner"))
 
     # Check for active related projects, and skip inactive ones.
     for col in "bug_supervisor", "driver", "owner":
@@ -549,7 +583,7 @@ def close_account(username, log):
     # by this point.  If not, it's safer to bail out.  It's OK if this
     # doesn't work in all conceivable situations, since some of them may
     # require careful thought and decisions by a human administrator.
-    for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
+    for src_tab, src_col, *_ in references:
         if (src_tab, src_col) in skip:
             continue
         result = store.execute(
