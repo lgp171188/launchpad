@@ -108,7 +108,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     builder_type = "ci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
-    ALLOWED_STATUS_NOTIFICATIONS = []
+    ALLOWED_STATUS_NOTIFICATIONS = ["PACKAGEFAIL"]
 
     def redactXmlrpcArguments(self, args):
         # we do not want to have secrets in logs
