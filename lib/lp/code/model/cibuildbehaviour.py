@@ -56,10 +56,27 @@ def build_environment_variables(distribution_name: str) -> dict:
 
 
 def build_apt_repositories(distribution_name: str) -> list:
+    # deprecated - will be removed in favor of `build_package_repositories`
+    # once the renaming process had been finished
     # - load apt repository configuration lines from JSON Array
     # - replace authentication placeholder
     try:
         lines = config["cibuild." + distribution_name]["apt_repositories"]
+    except NoSectionError:
+        return []
+    if lines is None:
+        return []
+    rv = []
+    for line in json.loads(lines):
+        rv.append(replace_auth_placeholder(line))
+    return rv
+
+
+def build_package_repositories(distribution_name: str) -> list:
+    # - load package repository configuration lines from JSON Array
+    # - replace authentication placeholder
+    try:
+        lines = config["cibuild." + distribution_name]["package_repositories"]
     except NoSectionError:
         return []
     if lines is None:
@@ -191,6 +208,9 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 distribution_name
             )
             args["apt_repositories"] = build_apt_repositories(
+                distribution_name
+            )
+            args["package_repositories"] = build_package_repositories(
                 distribution_name
             )
             args["plugin_settings"] = build_plugin_settings(distribution_name)
