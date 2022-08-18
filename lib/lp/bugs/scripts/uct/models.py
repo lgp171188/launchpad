@@ -13,9 +13,9 @@ import dateutil.parser
 from contrib.cve_lib import load_cve
 from zope.component import getUtility
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
@@ -661,6 +661,11 @@ class CVE:
                     series_name = "devel"
                 else:
                     series_name = series.name
+                distro_name = distro_package.package.distribution.name
+                if distro_name != "ubuntu":
+                    if distro_name == "ubuntu-esm":
+                        distro_name = "esm"
+                    series_name = "{}/{}".format(series_name, distro_name)
                 statuses.append(
                     UCTRecord.SeriesPackageStatus(
                         series=series_name,
@@ -777,18 +782,20 @@ class CVE:
         if "/" in distro_series_name:
             series_name, distro_name = distro_series_name.split("/", 1)
             if distro_name == "esm":
-                # TODO: ESM needs special handling
-                pass
-            return
+                distro_name = "ubuntu-esm"
         else:
+            distro_name = "ubuntu"
             series_name = distro_series_name
-            distribution = getUtility(ILaunchpadCelebrities).ubuntu
-            if series_name == "devel":
-                distro_series = cls.get_devel_series(distribution)
-            else:
-                distro_series = getUtility(IDistroSeriesSet).queryByName(
-                    distribution, series_name
-                )
+        distribution = getUtility(IDistributionSet).getByName(distro_name)
+        if distribution is None:
+            logger.warning("Could not find the distribution: %s", distro_name)
+            return
+        if series_name == "devel":
+            distro_series = cls.get_devel_series(distribution)
+        else:
+            distro_series = getUtility(IDistroSeriesSet).queryByName(
+                distribution, series_name
+            )
         if not distro_series:
             logger.warning(
                 "Could not find the distro series: %s", distro_series_name

@@ -425,7 +425,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         super().setUp(*args, **kwargs)
         celebrities = getUtility(ILaunchpadCelebrities)
         self.ubuntu = celebrities.ubuntu
-        self.esm = self.factory.makeDistribution("esm")
+        self.esm = self.factory.makeDistribution("ubuntu-esm")
         self.bug_importer = celebrities.bug_importer
         self.ubuntu_supported_series = self.factory.makeDistroSeries(
             distribution=self.ubuntu,
@@ -983,4 +983,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.importer.import_cve(self.cve)
         bug = self.importer._find_existing_bug(self.cve, self.lp_cve)
         cve = self.exporter._make_cve_from_bug(bug)
+        self.checkCVE(self.cve, cve)
+
+    def test_export_bug_to_uct_file(self):
+        self.importer.import_cve(self.cve)
+        bug = self.importer._find_existing_bug(self.cve, self.lp_cve)
+        output_dir = Path(self.makeTemporaryDirectory())
+        cve_path = self.exporter.export_bug_to_uct_file(bug.id, output_dir)
+        uct_record = UCTRecord.load(cve_path)
+        cve = CVE.make_from_uct_record(uct_record)
         self.checkCVE(self.cve, cve)
