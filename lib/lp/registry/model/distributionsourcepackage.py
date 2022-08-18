@@ -141,6 +141,9 @@ class DistributionSourcePackage(
         self.distribution = distribution
         self.sourcepackagename = sourcepackagename
 
+    def __repr__(self):
+        return "<{} '{}'>".format(self.__class__.__name__, self.display_name)
+
     @property
     def name(self):
         """See `IDistributionSourcePackage`."""
