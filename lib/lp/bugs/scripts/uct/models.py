@@ -2,7 +2,7 @@
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -18,6 +18,7 @@ from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
@@ -26,6 +27,7 @@ from lp.registry.model.distributionsourcepackage import (
 )
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
+from lp.registry.model.product import Product
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.propertycache import cachedproperty
@@ -73,10 +75,10 @@ class UCTRecord:
         NEEDED = "needed"
         PENDING = "pending"
 
-    DistroSeriesPackageStatus = NamedTuple(
-        "DistroSeriesPackageStatus",
+    SeriesPackageStatus = NamedTuple(
+        "SeriesPackageStatus",
         (
-            ("distroseries", str),
+            ("series", str),
             ("status", PackageStatus),
             ("reason", str),
             ("priority", Optional[Priority]),
@@ -95,7 +97,7 @@ class UCTRecord:
         "Package",
         (
             ("name", str),
-            ("statuses", List[DistroSeriesPackageStatus]),
+            ("statuses", List[SeriesPackageStatus]),
             ("priority", Optional[Priority]),
             ("tags", Set[str]),
             ("patches", List[Patch]),
@@ -167,23 +169,23 @@ class UCTRecord:
             cve_data, "pkgs"
         ).items():
             statuses = []
-            for distroseries, (status, reason) in statuses_dict.items():
-                distroseries_priority = cls._pop_cve_property(
+            for series, (status, reason) in statuses_dict.items():
+                series_priority = cls._pop_cve_property(
                     cve_data,
-                    "Priority_{package}_{distroseries}".format(
+                    "Priority_{package}_{series}".format(
                         package=package,
-                        distroseries=distroseries,
+                        series=series,
                     ),
                     required=False,
                 )
                 statuses.append(
-                    cls.DistroSeriesPackageStatus(
-                        distroseries=distroseries,
+                    cls.SeriesPackageStatus(
+                        series=series,
                         status=cls.PackageStatus(status),
                         reason=reason,
                         priority=(
-                            cls.Priority(distroseries_priority)
-                            if distroseries_priority
+                            cls.Priority(series_priority)
+                            if series_priority
                             else None
                         ),
                     )
@@ -334,7 +336,7 @@ class UCTRecord:
             )
             for status in package.statuses:
                 self._write_field(
-                    "{}_{}".format(status.distroseries, package.name),
+                    "{}_{}".format(status.series, package.name),
                     (
                         "{} ({})".format(status.status.value, status.reason)
                         if status.reason
@@ -351,9 +353,7 @@ class UCTRecord:
             for status in package.statuses:
                 if status.priority:
                     self._write_field(
-                        "Priority_{}_{}".format(
-                            package.name, status.distroseries
-                        ),
+                        "Priority_{}_{}".format(package.name, status.series),
                         status.priority.value,
                         output,
                     )
@@ -436,6 +436,16 @@ class CVE:
         ),
     )
 
+    UpstreamPackage = NamedTuple(
+        "UpstreamPackage",
+        (
+            ("package", Product),
+            ("importance", Optional[BugTaskImportance]),
+            ("status", BugTaskStatus),
+            ("status_explanation", str),
+        ),
+    )
+
     PRIORITY_MAP = {
         UCTRecord.Priority.CRITICAL: BugTaskImportance.CRITICAL,
         UCTRecord.Priority.HIGH: BugTaskImportance.HIGH,
@@ -478,6 +488,7 @@ class CVE:
         public_date_at_USN: Optional[datetime],
         distro_packages: List[DistroPackage],
         series_packages: List[SeriesPackage],
+        upstream_packages: List[UpstreamPackage],
         importance: BugTaskImportance,
         status: VulnerabilityStatus,
         assignee: Optional[Person],
@@ -496,6 +507,7 @@ class CVE:
         self.public_date_at_USN = public_date_at_USN
         self.distro_packages = distro_packages
         self.series_packages = series_packages
+        self.upstream_packages = upstream_packages
         self.importance = importance
         self.status = status
         self.assignee = assignee
@@ -518,6 +530,7 @@ class CVE:
 
         distro_packages = []
         series_packages = []
+        upstream_packages = []
 
         spn_set = getUtility(ISourcePackageNameSet)
 
@@ -530,17 +543,40 @@ class CVE:
             )
 
             for uct_package_status in uct_package.statuses:
-                distro_series = cls.get_distro_series(
-                    uct_package_status.distroseries
-                )
-                if distro_series is None:
-                    continue
 
                 if uct_package_status.status not in cls.BUG_TASK_STATUS_MAP:
                     logger.warning(
                         "Can't find a suitable bug task status for %s",
                         uct_package_status.status,
                     )
+                    continue
+
+                series_package_importance = (
+                    cls.PRIORITY_MAP[uct_package_status.priority]
+                    if uct_package_status.priority
+                    else None
+                )
+
+                if uct_package_status.series == "upstream":
+                    product = cls.get_product(uct_package.name)
+                    if product is None:
+                        continue
+                    upstream_packages.append(
+                        cls.UpstreamPackage(
+                            package=product,
+                            importance=series_package_importance,
+                            status=cls.BUG_TASK_STATUS_MAP[
+                                uct_package_status.status
+                            ],
+                            status_explanation=uct_package_status.reason,
+                        )
+                    )
+                    continue
+
+                distro_series = cls.get_distro_series(
+                    uct_package_status.series
+                )
+                if distro_series is None:
                     continue
 
                 distro_package = cls.DistroPackage(
@@ -552,12 +588,6 @@ class CVE:
                 )
                 if distro_package not in distro_packages:
                     distro_packages.append(distro_package)
-
-                series_package_importance = (
-                    cls.PRIORITY_MAP[uct_package_status.priority]
-                    if uct_package_status.priority
-                    else None
-                )
 
                 series_packages.append(
                     cls.SeriesPackage(
@@ -589,6 +619,7 @@ class CVE:
             public_date_at_USN=uct_record.public_date_at_USN,
             distro_packages=distro_packages,
             series_packages=series_packages,
+            upstream_packages=upstream_packages,
             importance=cls.PRIORITY_MAP[uct_record.priority],
             status=cls.infer_vulnerability_status(uct_record),
             assignee=assignee,
@@ -616,14 +647,14 @@ class CVE:
                 series_package.package.sourcepackagename
             ].append(series_package)
 
-        packages = []  # type: List[UCTRecord.Package]
+        packages_by_name = OrderedDict()  # type: Dict[str, UCTRecord.Package]
         processed_packages = set()  # type: Set[SourcePackageName]
         for distro_package in self.distro_packages:
             spn = distro_package.package.sourcepackagename
             if spn in processed_packages:
                 continue
             processed_packages.add(spn)
-            statuses = []  # type: List[UCTRecord.DistroSeriesPackageStatus]
+            statuses = []  # type: List[UCTRecord.SeriesPackageStatus]
             for series_package in series_packages_by_name[spn]:
                 series = series_package.package.distroseries
                 if series.status == SeriesStatus.DEVELOPMENT:
@@ -631,8 +662,8 @@ class CVE:
                 else:
                     series_name = series.name
                 statuses.append(
-                    UCTRecord.DistroSeriesPackageStatus(
-                        distroseries=series_name,
+                    UCTRecord.SeriesPackageStatus(
+                        series=series_name,
                         status=self.BUG_TASK_STATUS_MAP_REVERSE[
                             series_package.status
                         ],
@@ -647,19 +678,43 @@ class CVE:
                     )
                 )
 
-            packages.append(
-                UCTRecord.Package(
-                    name=spn.name,
-                    statuses=statuses,
-                    priority=(
-                        self.PRIORITY_MAP_REVERSE[distro_package.importance]
-                        if distro_package.importance
-                        else None
-                    ),
+            packages_by_name[spn.name] = UCTRecord.Package(
+                name=spn.name,
+                statuses=statuses,
+                priority=(
+                    self.PRIORITY_MAP_REVERSE[distro_package.importance]
+                    if distro_package.importance
+                    else None
+                ),
+                tags=set(),
+                patches=[],
+            )
+
+        for upstream_package in self.upstream_packages:
+            status = UCTRecord.SeriesPackageStatus(
+                series="upstream",
+                status=self.BUG_TASK_STATUS_MAP_REVERSE[
+                    upstream_package.status
+                ],
+                reason=upstream_package.status_explanation,
+                priority=(
+                    self.PRIORITY_MAP_REVERSE[upstream_package.importance]
+                    if upstream_package.importance
+                    else None
+                ),
+            )
+            package_name = upstream_package.package.name
+            if package_name in packages_by_name:
+                packages_by_name[package_name].statuses.append(status)
+            else:
+                packages_by_name[package_name] = UCTRecord.Package(
+                    name=package_name,
+                    statuses=[status],
+                    priority=None,
                     tags=set(),
                     patches=[],
                 )
-            )
+
         return UCTRecord(
             parent_dir=self.VULNERABILITY_STATUS_MAP_REVERSE.get(
                 self.status, ""
@@ -678,7 +733,7 @@ class CVE:
             priority=self.PRIORITY_MAP_REVERSE[self.importance],
             references=self.references,
             ubuntu_description=self.ubuntu_description,
-            packages=packages,
+            packages=list(packages_by_name.values()),
         )
 
     @property
@@ -739,3 +794,10 @@ class CVE:
                 "Could not find the distro series: %s", distro_series_name
             )
         return distro_series
+
+    @classmethod
+    def get_product(cls, product_name: str) -> Optional[Product]:
+        product = getUtility(IProductSet).getByName(product_name)
+        if not product:
+            logger.warning("Could not find the product: %s", product_name)
+        return product
