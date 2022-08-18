@@ -1375,7 +1375,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # in the database, so if the revision_date is a future date, then we
         # use the date created instead.
         if db_revision is None:
-            revision_id = six.ensure_text(NULL_REVISION)
+            revision_id = NULL_REVISION.decode()
             revision_date = UTC_NOW
         else:
             revision_id = db_revision.revision_id

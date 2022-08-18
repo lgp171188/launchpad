@@ -139,7 +139,6 @@ from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
-from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
@@ -1955,8 +1954,10 @@ class LaunchpadObjectFactory(ObjectFactory):
             parent_ids = []
         if rev_id is None:
             rev_id = self.getUniqueUnicode("revision-id")
+        elif isinstance(rev_id, bytes):
+            rev_id = rev_id.decode()
         else:
-            rev_id = six.ensure_text(rev_id)
+            rev_id = rev_id
         if log_body is None:
             log_body = self.getUniqueString("log-body")
         return getUtility(IRevisionSet).new(
@@ -4077,8 +4078,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             potemplate = self.makePOTemplate(owner=owner, side=side)
         else:
             assert side is None, "Cannot specify both side and potemplate."
-        return potemplate.newPOFile(
-            language_code, create_sharing=create_sharing
+        return ProxyFactory(
+            potemplate.newPOFile(language_code, create_sharing=create_sharing)
         )
 
     def makePOTMsgSet(
@@ -4112,7 +4113,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if flagscomment is not None:
             potmsgset.flagscomment = flagscomment
         removeSecurityProxy(potmsgset).sync()
-        return potmsgset
+        return ProxyFactory(potmsgset)
 
     def makePOFileAndPOTMsgSet(
         self, language_code=None, msgid=None, with_plural=False, side=None
@@ -4178,7 +4179,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
             naked_translation_message.date_created = date_created
             naked_translation_message.sync()
-        return translation_message
+        return ProxyFactory(translation_message)
 
     def makeCurrentTranslationMessage(
         self,
@@ -4292,7 +4293,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
         message.markReviewed(reviewer, date_reviewed)
 
-        return message
+        return ProxyFactory(message)
 
     def makeDivergedTranslationMessage(
         self,
@@ -6447,7 +6448,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             registrant = self.makePerson()
         if oci_project is None:
             oci_project = self.makeOCIProject(**kwargs)
-        return oci_project.newSeries(name, summary, registrant)
+        return ProxyFactory(oci_project.newSeries(name, summary, registrant))
 
     def makeOCIRecipe(
         self,
@@ -6501,14 +6502,6 @@ class LaunchpadObjectFactory(ObjectFactory):
             build_args=build_args,
             information_type=information_type,
         )
-
-    def makeOCIRecipeArch(self, recipe=None, processor=None):
-        """Make a new OCIRecipeArch."""
-        if recipe is None:
-            recipe = self.makeOCIRecipe()
-        if processor is None:
-            processor = self.makeProcessor()
-        return OCIRecipeArch(recipe, processor)
 
     def makeOCIRecipeBuild(
         self,
@@ -6585,10 +6578,12 @@ class LaunchpadObjectFactory(ObjectFactory):
             library_file = self.makeLibraryFileAlias(
                 content=content, filename=filename
             )
-        return OCIFile(
-            build=build,
-            library_file=library_file,
-            layer_file_digest=layer_file_digest,
+        return ProxyFactory(
+            OCIFile(
+                build=build,
+                library_file=library_file,
+                layer_file_digest=layer_file_digest,
+            )
         )
 
     def makeOCIRecipeBuildJob(self, build=None):
@@ -6599,7 +6594,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             build, OCIRecipeBuildJobType.REGISTRY_UPLOAD, {}
         )
         store.add(job)
-        return job
+        return ProxyFactory(job)
 
     def makeOCIRegistryCredentials(
         self, registrant=None, owner=None, url=None, credentials=None

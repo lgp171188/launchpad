@@ -189,7 +189,8 @@ class DiskPoolEntry:
             if component in components:
                 return component
 
-        return
+        # https://github.com/python/mypy/issues/7511
+        return None
 
     @cachedproperty
     def file_hash(self) -> str:

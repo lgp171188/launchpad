@@ -8,19 +8,26 @@ __all__ = [
     "CloseAccountScript",
 ]
 
+from typing import List, Tuple
+
 import six
-from storm.exceptions import IntegrityError
-from storm.expr import LeftJoin, Lower, Or
+from storm.expr import And, LeftJoin, Lower, Or
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.blueprints.model.specification import Specification
 from lp.bugs.model.bugtask import BugTask
+from lp.code.model.branch import Branch
 from lp.registry.interfaces.person import PersonCreationRationale
+from lp.registry.model.announcement import Announcement
+from lp.registry.model.milestone import Milestone
+from lp.registry.model.milestonetag import MilestoneTag
 from lp.registry.model.person import Person, PersonSettings
 from lp.registry.model.product import Product
+from lp.registry.model.productrelease import ProductRelease, ProductReleaseFile
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database import postgresql
 from lp.services.database.constants import DEFAULT
@@ -401,25 +408,60 @@ def close_account(username, log):
         (person.id,),
     )
 
-    # Purge deleted PPAs.  This is safe because the archive can only be in
-    # the DELETED status if the publisher has removed it from disk and set
-    # all its publications to DELETED.
-    # XXX cjwatson 2019-08-09: This will fail if anything non-trivial has
-    # been done in this person's PPAs; and it's not obvious what to do in
-    # more complicated cases such as builds having been copied out
-    # elsewhere.  It's good enough for some simple cases, though.
-    try:
+    # Purge deleted PPAs that are either not referenced, or the reference
+    # allows cascade deletion.
+    # This is safe because the archive can only be in the DELETED status if
+    # the publisher has removed it from disk and set all its publications
+    # to DELETED.
+    # Deleted PPAs that are still referenced are ignored.
+    deleted_ppa_ids = set(
         store.find(
-            Archive,
+            Archive.id,
             Archive.owner == person,
             Archive.status == ArchiveStatus.DELETED,
-        ).remove()
-    except IntegrityError:
-        raise LaunchpadScriptFailure(
-            "Can't delete non-trivial PPAs for user %s" % person_name
         )
+    )
+    ppa_references = list(postgresql.listReferences(cur, "archive", "id"))
+    referenced_ppa_ids = set()
+    for ppa_id in deleted_ppa_ids:
+        for src_tab, src_col, *_, delete_action in ppa_references:
+            if delete_action == "c":
+                # cascade deletion is enabled, so the reference may be ignored
+                continue
+            result = store.execute(
+                """
+                SELECT COUNT(*) FROM %(src_tab)s WHERE %(src_col)s = ?
+                """
+                % {
+                    "src_tab": src_tab,
+                    "src_col": src_col,
+                },
+                (ppa_id,),
+            )
+            count = result.get_one()[0]
+            if count:
+                referenced_ppa_ids.add(ppa_id)
+                reference = "{}.{}".format(src_tab, src_col)
+                log.warning(
+                    "PPA %d is still referenced by %d %s values"
+                    % (ppa_id, count, reference)
+                )
 
-    has_references = False
+    non_referenced_ppa_ids = deleted_ppa_ids - referenced_ppa_ids
+    if non_referenced_ppa_ids:
+        store.find(Archive, Archive.id.is_in(non_referenced_ppa_ids)).remove()
+
+    reference_counts = []  # type: List[Tuple[str, int]]
+
+    # Check for non-deleted PPAs
+    count = store.find(
+        Archive,
+        Archive.owner == person,
+        Archive.status != ArchiveStatus.DELETED,
+    ).count()
+    if count:
+        reference_counts.append(("archive.owner", count))
+    skip.add(("archive", "owner"))
 
     # Check for active related projects, and skip inactive ones.
     for col in "bug_supervisor", "driver", "owner":
@@ -434,11 +476,7 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
-            log.error(
-                "User %s is still referenced by %d product.%s values"
-                % (person_name, count, col)
-            )
-            has_references = True
+            reference_counts.append(("product.{}".format(col), count))
         skip.add(("product", col))
     for col in "driver", "owner":
         count = store.find(
@@ -448,18 +486,104 @@ def close_account(username, log):
             getattr(ProductSeries, col) == person,
         ).count()
         if count:
-            log.error(
-                "User %s is still referenced by %d productseries.%s values"
-                % (person_name, count, col)
-            )
-            has_references = True
+            reference_counts.append(("productseries.{}".format(col), count))
         skip.add(("productseries", col))
+
+    # Check announcements, skipping the ones
+    # that are related to inactive products.
+    count = store.find(
+        Announcement,
+        Or(
+            And(Announcement.product == Product.id, Product.active),
+            Announcement.product == None,
+        ),
+        Announcement.registrant == person,
+    ).count()
+    if count:
+        reference_counts.append(("announcement.registrant", count))
+    skip.add(("announcement", "registrant"))
+
+    # Check MilestoneTags, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        MilestoneTag,
+        MilestoneTag.milestone_id == Milestone.id,
+        Or(
+            And(Milestone.product == Product.id, Product.active),
+            Milestone.product == None,
+        ),
+        MilestoneTag.created_by_id == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("milestonetag.created_by", count))
+    skip.add(("milestonetag", "created_by"))
+
+    # Check ProductReleases, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        ProductRelease,
+        ProductRelease.milestone == Milestone.id,
+        Milestone.product == Product.id,
+        Product.active,
+        ProductRelease.owner == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("productrelease.owner", count))
+    skip.add(("productrelease", "owner"))
+
+    # Check ProductReleases, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        ProductReleaseFile,
+        ProductReleaseFile.productrelease == ProductRelease.id,
+        ProductRelease.milestone == Milestone.id,
+        Milestone.product == Product.id,
+        Product.active,
+        ProductReleaseFile.uploader == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("productreleasefile.uploader", count))
+    skip.add(("productreleasefile", "uploader"))
+
+    # Check Branches, skipping the ones that are related to inactive products.
+    for col_name in "owner", "reviewer":
+        count = store.find(
+            Branch,
+            Or(
+                And(
+                    Branch.product == Product.id,
+                    Product.active,
+                ),
+                Branch.product == None,
+            ),
+            getattr(Branch, col_name) == person.id,
+        ).count()
+        if count:
+            reference_counts.append(("branch.{}".format(col_name), count))
+        skip.add(("branch", col_name))
+
+    # Check Specification, skipping the ones
+    # that are related to inactive products / product series.
+    count = store.find(
+        Specification,
+        Or(
+            And(
+                Specification.product == Product.id,
+                Product.active,
+            ),
+            Specification.product == None,
+        ),
+        Specification._assignee == person.id,
+    ).count()
+    if count:
+        reference_counts.append(("specification.assignee", count))
+    skip.add(("specification", "assignee"))
 
     # Closing the account will only work if all references have been handled
     # by this point.  If not, it's safer to bail out.  It's OK if this
     # doesn't work in all conceivable situations, since some of them may
     # require careful thought and decisions by a human administrator.
-    for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
+    for src_tab, src_col, *_ in references:
         if (src_tab, src_col) in skip:
             continue
         result = store.execute(
@@ -474,12 +598,14 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
+            reference_counts.append(("{}.{}".format(src_tab, src_col), count))
+
+    if reference_counts:
+        for reference, count in reference_counts:
             log.error(
-                "User %s is still referenced by %d %s.%s values"
-                % (person_name, count, src_tab, src_col)
+                "User %s is still referenced by %d %s values"
+                % (person_name, count, reference)
             )
-            has_references = True
-    if has_references:
         raise LaunchpadScriptFailure(
             "User %s is still referenced" % person_name
         )

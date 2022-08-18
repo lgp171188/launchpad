@@ -18,6 +18,7 @@ import operator
 import os
 import shutil
 import tempfile
+from typing import Optional
 
 import six
 import transaction
@@ -551,8 +552,7 @@ class RevisionsAddedJob(BranchJobDerived):
         """Iterate through revisions added to the mainline."""
         repository = self.bzr_branch.repository
         added_revisions = repository.get_graph().find_unique_ancestors(
-            six.ensure_binary(self.last_revision_id),
-            [six.ensure_binary(self.last_scanned_id)],
+            self.last_revision_id.encode(), [self.last_scanned_id.encode()]
         )
         # Avoid hitting the database since breezy makes it easy to check.
         # There are possibly more efficient ways to get the mainline
@@ -714,7 +714,7 @@ class RevisionsAddedJob(BranchJobDerived):
             BranchMergeProposal.target_branch == self.branch.id,
             BranchMergeProposal.source_branch == Branch.id,
             Branch.last_scanned_id.is_in(
-                {six.ensure_text(revision_id) for revision_id in revision_ids}
+                {revision_id.decode() for revision_id in revision_ids}
             ),
             (
                 BranchMergeProposal.queue_status
@@ -846,14 +846,18 @@ class RosettaUploadJob(BranchJobDerived):
         return not productseries.is_empty()
 
     @classmethod
-    def create(cls, branch, from_revision_id, force_translations_upload=False):
+    def create(
+        cls,
+        branch,
+        from_revision_id: Optional[str],
+        force_translations_upload: bool = False,
+    ):
         """See `IRosettaUploadJobSource`."""
         if branch is None:
             return None
 
         if from_revision_id is None:
-            from_revision_id = NULL_REVISION
-        from_revision_id = six.ensure_text(from_revision_id)
+            from_revision_id = NULL_REVISION.decode()
 
         if force_translations_upload or cls.providesTranslationFiles(branch):
             metadata = cls.getMetadata(
@@ -941,10 +945,10 @@ class RosettaUploadJob(BranchJobDerived):
 
         bzrbranch = self.branch.getBzrBranch()
         from_tree = bzrbranch.repository.revision_tree(
-            six.ensure_binary(self.from_revision_id)
+            self.from_revision_id.encode()
         )
         to_tree = bzrbranch.repository.revision_tree(
-            six.ensure_binary(self.branch.last_scanned_id)
+            self.branch.last_scanned_id.encode()
         )
 
         importer = TranslationImporter()

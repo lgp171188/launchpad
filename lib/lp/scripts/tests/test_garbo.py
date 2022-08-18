@@ -1088,7 +1088,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         store = IMasterStore(OCIFile)
         ocifile = self.factory.makeOCIFile()
-        ocifile.date_last_used = THIRTY_DAYS_AGO
+        removeSecurityProxy(ocifile).date_last_used = THIRTY_DAYS_AGO
         self.assertEqual(1, store.find(OCIFile).count())
 
         self.runDaily()
@@ -1115,7 +1115,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         store = IMasterStore(OCIFile)
         ocifile = self.factory.makeOCIFile()
-        ocifile.date_last_used = THIRTY_DAYS_AGO
+        removeSecurityProxy(ocifile).date_last_used = THIRTY_DAYS_AGO
         self.factory.makeOCIFile()
         self.assertEqual(2, store.find(OCIFile).count())
 

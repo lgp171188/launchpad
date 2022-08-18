@@ -5,7 +5,6 @@
 
 import logging
 
-import six
 import transaction
 from breezy.revision import NULL_REVISION
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -262,7 +261,7 @@ class TestMergeDetection(TestCaseWithFactory):
         # of the branch is the NULL_REVISION no merge event is emitted for
         # that branch.
         source = self.factory.makeProductBranch(product=self.product)
-        source.last_scanned_id = six.ensure_text(NULL_REVISION)
+        source.last_scanned_id = NULL_REVISION.decode()
         self.autoMergeBranches(self.db_branch, ["revid"])
         self.assertEqual([], self.merges)
 

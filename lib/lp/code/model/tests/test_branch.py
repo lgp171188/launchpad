@@ -6,7 +6,6 @@
 import json
 from datetime import datetime, timedelta
 
-import six
 import transaction
 from breezy.branch import Branch
 from breezy.bzr.bzrdir import BzrDir
@@ -2548,9 +2547,7 @@ class TestRevisionHistory(TestCaseWithFactory):
         # breezy.revision.NULL_REVISION.
         branch = self.factory.makeBranch()
         branch.updateScannedDetails(None, 0)
-        self.assertEqual(
-            six.ensure_text(NULL_REVISION), branch.last_scanned_id
-        )
+        self.assertEqual(NULL_REVISION.decode(), branch.last_scanned_id)
         self.assertIs(None, branch.getTipRevision())
 
     def test_tip_revision_is_updated(self):
@@ -2759,7 +2756,7 @@ class TestPendingWritesAndUpdates(TestCaseWithFactory):
         # Cheat! The actual API for marking a branch as scanned is to run
         # the BranchScanJob. That requires a revision in the database
         # though.
-        removeSecurityProxy(branch).last_scanned_id = six.ensure_text(rev_id)
+        removeSecurityProxy(branch).last_scanned_id = rev_id.decode()
         [job] = getUtility(IBranchScanJobSource).iterReady()
         removeSecurityProxy(job).job._status = JobStatus.COMPLETED
         self.assertFalse(branch.pending_writes)

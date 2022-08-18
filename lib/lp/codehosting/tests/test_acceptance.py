@@ -9,7 +9,6 @@ import xmlrpc.client
 from urllib.request import urlopen
 
 import breezy.branch
-import six
 from breezy.tests import TestCaseWithTransport
 from breezy.tests.per_repository import all_repository_format_scenarios
 from breezy.urlutils import local_path_from_url
@@ -111,7 +110,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         self.local_branch_path = local_path_from_url(self.local_branch.base)
         self.build_tree(["local/foo"])
         tree.add("foo")
-        self.revid = six.ensure_text(tree.commit("Added foo"))
+        self.revid = tree.commit("Added foo").decode()
 
     def __str__(self):
         return self.id()

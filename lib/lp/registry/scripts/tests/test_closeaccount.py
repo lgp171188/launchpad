@@ -2,7 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the close-account script."""
+from datetime import datetime
 
+import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import (
@@ -25,6 +27,7 @@ from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
+from lp.registry.model.productrelease import ProductRelease
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.database.interfaces import IStore
@@ -962,11 +965,10 @@ class TestCloseAccount(TestCaseWithFactory):
         )
         self.assertNotRemoved(account_id, person_id)
 
-    def test_fails_on_deleted_ppa_with_builds(self):
-        # XXX cjwatson 2019-08-09: A PPA that has ever had builds can't
-        # currently be purged.  It's not clear what to do about this case.
+    def test_ignores_deleted_ppa_with_builds(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(owner=person)
+        ppa_id = ppa.id
         self.factory.makeBinaryPackageBuild(archive=ppa)
         ppa.delete(person)
         Publisher(
@@ -976,15 +978,11 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         script = self.makeScript([person.name])
         with dbuser("launchpad"):
-            self.assertRaisesWithContent(
-                LaunchpadScriptFailure,
-                "Can't delete non-trivial PPAs for user %s" % person.name,
-                self.runScript,
-                script,
-            )
-        self.assertNotRemoved(account_id, person_id)
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(ppa, Store.of(ppa).get(Archive, ppa_id))
 
-    def test_handles_empty_deleted_ppa(self):
+    def test_purges_empty_deleted_ppa(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(owner=person)
         ppa_id = ppa.id
@@ -1005,3 +1003,231 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertIsNone(store.get(Archive, ppa_id))
         self.assertEqual(other_ppa, store.get(Archive, other_ppa_id))
+
+    def test_skips_announcements_in_deactivated_products(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        product = self.factory.makeProduct()
+        product.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
+
+        product.active = False
+        with dbuser("launchpad"):
+            self.runScript(script)
+
+        self.assertRemoved(account_id, person_id)
+
+    def test_non_product_announcements_are_not_skipped(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+
+        distro = self.factory.makeDistribution()
+        distro.announce(person, "announcement")
+
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "User %s is still referenced" % person.name,
+                self.runScript,
+                script,
+            )
+        self.assertNotRemoved(account_id, person_id)
+
+    def test_skip_milestone_tags_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+            ({"distribution": self.factory.makeDistribution()}, False),
+            ({"distroseries": self.factory.makeDistroSeries()}, False),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            milestone.setTags(["tag"], person)
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_product_releases_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            milestone.createProductRelease(person, datetime.now(pytz.UTC))
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_product_releases_files_from_inactive_products(self):
+
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        active_product_series = self.factory.makeProductSeries(
+            product=active_product
+        )
+        inactive_product_series = self.factory.makeProductSeries(
+            product=inactive_product
+        )
+
+        for milestone_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"productseries": active_product_series}, False),
+            ({"productseries": inactive_product_series}, True),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            milestone = self.factory.makeMilestone(**milestone_target)
+            product_release = milestone.createProductRelease(
+                milestone.product.owner, datetime.now(pytz.UTC)
+            )  # type: ProductRelease
+            product_release.addReleaseFile(
+                "test.txt", b"test", "text/plain", person
+            )
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)
+
+    def test_skip_branches_from_inactive_products(self):
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        for branch_target, expected_to_be_removed in (
+            (active_product, False),
+            (inactive_product, True),
+            (self.factory.makeSourcePackage(), False),
+        ):
+            for col_name in "owner", "reviewer":
+                person = self.factory.makePerson()
+                self.factory.makeBranch(
+                    target=branch_target, **{col_name: person}
+                )
+                person_id = person.id
+                account_id = person.account.id
+                script = self.makeScript([person.name])
+                with dbuser("launchpad"):
+                    if not expected_to_be_removed:
+                        self.assertRaisesWithContent(
+                            LaunchpadScriptFailure,
+                            "User %s is still referenced" % person.name,
+                            self.runScript,
+                            script,
+                        )
+                        self.assertNotRemoved(account_id, person_id)
+                    else:
+                        self.runScript(script)
+                        self.assertRemoved(account_id, person_id)
+
+    def test_skip_specifications_from_inactive_products(self):
+        active_product = self.factory.makeProduct()
+        inactive_product = self.factory.makeProduct()
+        inactive_product.active = False
+
+        for specification_target, expected_to_be_removed in (
+            ({"product": active_product}, False),
+            ({"product": inactive_product}, True),
+            ({"distribution": self.factory.makeDistribution()}, False),
+        ):
+            person = self.factory.makePerson()
+            person_id = person.id
+            account_id = person.account.id
+
+            self.factory.makeSpecification(
+                assignee=person, **specification_target
+            )
+            script = self.makeScript([person.name])
+            with dbuser("launchpad"):
+                if not expected_to_be_removed:
+                    self.assertRaisesWithContent(
+                        LaunchpadScriptFailure,
+                        "User %s is still referenced" % person.name,
+                        self.runScript,
+                        script,
+                    )
+                    self.assertNotRemoved(account_id, person_id)
+                else:
+                    self.runScript(script)
+                    self.assertRemoved(account_id, person_id)

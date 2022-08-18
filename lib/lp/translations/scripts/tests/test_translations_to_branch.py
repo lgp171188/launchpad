@@ -8,7 +8,6 @@ import re
 from textwrap import dedent
 
 import pytz
-import six
 import transaction
 from breezy.errors import NotBranchError
 from testtools.matchers import MatchesRegex
@@ -174,8 +173,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.becomeDbUser("translationstobranch")
         self.assertFalse(db_branch.pending_writes)
         self.assertNotEqual(
-            db_branch.last_mirrored_id,
-            six.ensure_text(tree.branch.last_revision()),
+            db_branch.last_mirrored_id, tree.branch.last_revision().decode()
         )
         # The export code works on a Branch from the standby store.  It
         # shouldn't stop the scan request.
@@ -184,8 +182,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         )
         exporter._exportToBranch(standby_series)
         self.assertEqual(
-            db_branch.last_mirrored_id,
-            six.ensure_text(tree.branch.last_revision()),
+            db_branch.last_mirrored_id, tree.branch.last_revision().decode()
         )
         self.assertTrue(db_branch.pending_writes)
         matches = MatchesRegex(

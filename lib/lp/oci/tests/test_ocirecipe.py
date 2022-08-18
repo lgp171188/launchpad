@@ -256,20 +256,20 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_requestBuild(self):
         ocirecipe = self.factory.makeOCIRecipe()
-        oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
-        build = ocirecipe.requestBuild(ocirecipe.owner, oci_arch)
+        das = self.factory.makeDistroArchSeries()
+        build = ocirecipe.requestBuild(ocirecipe.owner, das)
         self.assertEqual(build.status, BuildStatus.NEEDSBUILD)
 
     def test_requestBuild_already_exists(self):
         ocirecipe = self.factory.makeOCIRecipe()
-        oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
-        ocirecipe.requestBuild(ocirecipe.owner, oci_arch)
+        das = self.factory.makeDistroArchSeries()
+        ocirecipe.requestBuild(ocirecipe.owner, das)
 
         self.assertRaises(
             OCIRecipeBuildAlreadyPending,
             ocirecipe.requestBuild,
             ocirecipe.owner,
-            oci_arch,
+            das,
         )
 
     def test_requestBuild_triggers_webhooks(self):
@@ -282,11 +282,11 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             }
         ):
             recipe = self.factory.makeOCIRecipe()
-            oci_arch = self.factory.makeOCIRecipeArch(recipe=recipe)
+            das = self.factory.makeDistroArchSeries()
             hook = self.factory.makeWebhook(
                 target=recipe, event_types=["oci-recipe:build:0.1"]
             )
-            build = recipe.requestBuild(recipe.owner, oci_arch)
+            build = recipe.requestBuild(recipe.owner, das)
 
         expected_payload = {
             "recipe_build": Equals(

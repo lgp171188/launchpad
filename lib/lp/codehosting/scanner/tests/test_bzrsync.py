@@ -9,7 +9,6 @@ import random
 import time
 
 import pytz
-import six
 from breezy.revision import NULL_REVISION
 from breezy.revision import Revision as BzrRevision
 from breezy.tests import TestCaseWithTransport
@@ -407,14 +406,14 @@ class TestBzrSync(BzrSyncTestCase):
         # test that the last scanned revision ID is recorded
         self.syncAndCount()
         self.assertEqual(
-            six.ensure_text(NULL_REVISION), self.db_branch.last_scanned_id
+            NULL_REVISION.decode(), self.db_branch.last_scanned_id
         )
         last_modified = self.db_branch.date_last_modified
         last_scanned = self.db_branch.last_scanned
         self.commitRevision()
         self.syncAndCount(new_revisions=1, new_numbers=1, new_authors=1)
         self.assertEqual(
-            six.ensure_text(self.bzr_branch.last_revision()),
+            self.bzr_branch.last_revision().decode(),
             self.db_branch.last_scanned_id,
         )
         self.assertTrue(
@@ -520,7 +519,7 @@ class TestBzrSync(BzrSyncTestCase):
         self.commitRevision(rev_id=b"rev-1")
         bzrsync = self.makeBzrSync(self.db_branch)
         bzr_history = [
-            six.ensure_text(revid)
+            revid.decode()
             for revid in branch_revision_history(self.bzr_branch)
         ]
         added_ancestry = bzrsync.getAncestryDelta(self.bzr_branch)[0]
@@ -537,7 +536,7 @@ class TestBzrSync(BzrSyncTestCase):
         )
         bzrsync = self.makeBzrSync(db_branch)
         bzr_history = [
-            six.ensure_text(revid)
+            revid.decode()
             for revid in branch_revision_history(bzr_tree.branch)
         ]
         added_ancestry = bzrsync.getAncestryDelta(bzr_tree.branch)[0]
@@ -632,19 +631,19 @@ class TestPlanDatabaseChanges(BzrSyncTestCase):
         # If a BranchRevision is being added, and it's already in the DB, but
         # not found through the graph operations, we should schedule it for
         # deletion anyway.
-        rev1_id = six.ensure_text(
-            self.bzr_tree.commit("initial commit", committer="me@example.org")
-        )
+        rev1_id = self.bzr_tree.commit(
+            "initial commit", committer="me@example.org"
+        ).decode()
         merge_tree = self.bzr_tree.controldir.sprout(
             "merge"
         ).open_workingtree()
-        merge_id = six.ensure_text(
-            merge_tree.commit("mergeable commit", committer="me@example.org")
-        )
+        merge_id = merge_tree.commit(
+            "mergeable commit", committer="me@example.org"
+        ).decode()
         self.bzr_tree.merge_from_branch(merge_tree.branch)
-        rev2_id = six.ensure_text(
-            self.bzr_tree.commit("merge", committer="me@example.org")
-        )
+        rev2_id = self.bzr_tree.commit(
+            "merge", committer="me@example.org"
+        ).decode()
         self.useContext(read_locked(self.bzr_tree))
         syncer = BzrSync(self.db_branch)
         syncer.syncBranchAndClose(self.bzr_tree.branch)
@@ -675,8 +674,8 @@ class TestBzrSyncRevisions(BzrSyncTestCase):
 
         # Fake revision with negative timestamp.
         fake_rev = BzrRevision(
-            revision_id="rev42",
-            parent_ids=["rev1", "rev2"],
+            revision_id=b"rev42",
+            parent_ids=[b"rev1", b"rev2"],
             committer=self.factory.getUniqueString(),
             message=self.LOG,
             timestamp=old_timestamp,
@@ -691,7 +690,7 @@ class TestBzrSyncRevisions(BzrSyncTestCase):
         # Find the revision we just synced and check that it has the correct
         # date.
         revision = getUtility(IRevisionSet).getByRevisionId(
-            fake_rev.revision_id
+            fake_rev.revision_id.decode()
         )
         self.assertEqual(old_date, revision.revision_date)
 
@@ -732,8 +731,8 @@ class TestBzrTranslationsUploadJob(BzrSyncTestCase):
         self._makeProductSeries(TranslationsBranchImportMode.IMPORT_TEMPLATES)
         revision_id = self.commitRevision()
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
-        self.db_branch.last_mirrored_id = six.ensure_text(revision_id)
-        self.db_branch.last_scanned_id = six.ensure_text(revision_id)
+        self.db_branch.last_mirrored_id = revision_id.decode()
+        self.db_branch.last_scanned_id = revision_id.decode()
         ready_jobs = list(getUtility(IRosettaUploadJobSource).iterReady())
         self.assertEqual(1, len(ready_jobs))
         job = ready_jobs[0]
@@ -780,7 +779,7 @@ class TestGenerateIncrementalDiffJob(BzrSyncTestCase):
             parent_id,
             revision_date=self.factory.getUniqueDate(),
         )
-        self.db_branch.last_scanned_id = six.ensure_text(parent_id)
+        self.db_branch.last_scanned_id = parent_id.decode()
         # Make sure that the merge proposal is created in the past.
         date_created = datetime.datetime.now(pytz.UTC) - datetime.timedelta(
             days=7
@@ -794,8 +793,8 @@ class TestGenerateIncrementalDiffJob(BzrSyncTestCase):
         switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         (job,) = self.getPending()
-        self.assertEqual(six.ensure_text(revision_id), job.new_revision_id)
-        self.assertEqual(six.ensure_text(parent_id), job.old_revision_id)
+        self.assertEqual(revision_id.decode(), job.new_revision_id)
+        self.assertEqual(parent_id.decode(), job.old_revision_id)
 
 
 class TestSetRecipeStale(BzrSyncTestCase):
@@ -879,7 +878,7 @@ class TestTriggerWebhooks(BzrSyncTestCase):
                 target=self.db_branch, event_types=["bzr:push:0.1"]
             )
         self.commitRevision()
-        new_revid = six.ensure_text(self.bzr_branch.last_revision())
+        new_revid = self.bzr_branch.last_revision().decode()
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         delivery = hook.deliveries.one()
         payload_matcher = MatchesDict(

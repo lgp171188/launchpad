@@ -940,9 +940,7 @@ class TestCaseWithFactory(TestCase):
         if parent:
             bzr_branch.pull(parent)
             naked_branch = removeSecurityProxy(db_branch)
-            naked_branch.last_scanned_id = six.ensure_text(
-                bzr_branch.last_revision()
-            )
+            naked_branch.last_scanned_id = bzr_branch.last_revision().decode()
         return bzr_branch
 
     def useTempBzrHome(self):

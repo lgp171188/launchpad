@@ -15,7 +15,6 @@ __all__ = [
 import logging
 
 import pytz
-import six
 import transaction
 from breezy.graph import DictParentsProvider
 from breezy.revision import NULL_REVISION
@@ -85,8 +84,7 @@ class BzrSync:
         # if something is wrong with the branch.
         self.logger.info("Retrieving history from breezy.")
         bzr_history = [
-            six.ensure_text(revid)
-            for revid in branch_revision_history(bzr_branch)
+            revid.decode() for revid in branch_revision_history(bzr_branch)
         ]
         # The BranchRevision, Revision and RevisionParent tables are only
         # written to by the branch-scanner, so they are not subject to
@@ -154,9 +152,7 @@ class BzrSync:
             Revision.id == BranchRevision.revision_id,
         )
         parent_map = {
-            six.ensure_binary(r.revision_id): [
-                six.ensure_binary(revid) for revid in r.parent_ids
-            ]
+            r.revision_id.encode(): [revid.encode() for revid in r.parent_ids]
             for r in revisions
         }
         parents_provider = DictParentsProvider(parent_map)
@@ -176,16 +172,14 @@ class BzrSync:
             added_ancestry = get_ancestry(bzr_branch.repository, bzr_last)
             removed_ancestry = set()
         else:
-            db_last = six.ensure_binary(db_last)
+            db_last = db_last.encode()
             graph = self._getRevisionGraph(bzr_branch, db_last)
             added_ancestry, removed_ancestry = graph.find_difference(
                 bzr_last, db_last
             )
             added_ancestry.discard(NULL_REVISION)
-        added_ancestry = {six.ensure_text(revid) for revid in added_ancestry}
-        removed_ancestry = {
-            six.ensure_text(revid) for revid in removed_ancestry
-        }
+        added_ancestry = {revid.decode() for revid in added_ancestry}
+        removed_ancestry = {revid.decode() for revid in removed_ancestry}
         return added_ancestry, removed_ancestry
 
     def getHistoryDelta(self, bzr_history, db_history):
@@ -267,7 +261,7 @@ class BzrSync:
             Revision objects for.
         """
         revisions = bzr_branch.repository.get_parent_map(
-            [six.ensure_binary(revid) for revid in revisions]
+            [revid.encode() for revid in revisions]
         )
         return bzr_branch.repository.get_revisions(revisions.keys())
 
@@ -283,7 +277,7 @@ class BzrSync:
         self.revision_set.newFromBazaarRevisions(bzr_revisions)
         mainline_revisions = []
         for bzr_revision in bzr_revisions:
-            revision_id = six.ensure_text(bzr_revision.revision_id)
+            revision_id = bzr_revision.revision_id.decode()
             if revids_to_insert[revision_id] is None:
                 continue
             mainline_revisions.append(bzr_revision)

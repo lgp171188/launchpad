@@ -9,7 +9,6 @@ __all__ = []
 import os
 from subprocess import PIPE, Popen
 
-import six
 import transaction
 from breezy import errors
 from breezy.branch import Branch
@@ -78,8 +77,7 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         self.assertEqual(0, db_branch.mirror_failures)
         mirrored_branch = self.openBranchAsUser(db_branch, accessing_user)
         self.assertEqual(
-            six.ensure_text(source_branch.last_revision()),
-            db_branch.last_mirrored_id,
+            source_branch.last_revision().decode(), db_branch.last_mirrored_id
         )
         self.assertEqual(
             source_branch.last_revision(), mirrored_branch.last_revision()
