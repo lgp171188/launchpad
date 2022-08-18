@@ -41,7 +41,7 @@
                 <img src="images/join/main-image.png" alt="Bring your project -- open source or closed -- to Launchpad today" />
             </p>
             <p class="intro-text">
-                <strong><a href="https://launchpad.net/projects/+new">Register your project</a> to collaborate with a community of thousands.</strong> Join <a href="https://launchpad.net/mysql">MySQL</a>, <a href="https://launchpad.net/zope">Zope</a> and <a href="https://launchpad.net/ubuntu">Ubuntu</a> in choosing Launchpad for your project.
+                <strong><a href="https://launchpad.net/projects/+new">Register your project</a> to collaborate with a community of thousands.</strong> Join <a href="https://launchpad.net/ubuntu">Ubuntu</a> in choosing Launchpad for your project.
 <br /><br />
 Launchpad is free to use for <a href="https://help.launchpad.net/Legal/ProjectLicensing">open source</a> software projects.</p>
             <div id="link-holder"><a href="https://launchpad.net/projects/+new">Add your project to Launchpad &gt;</a></div>
