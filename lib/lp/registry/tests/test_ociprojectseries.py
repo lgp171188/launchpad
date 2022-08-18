@@ -133,17 +133,11 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
                 oci_project=project, registrant=self.person
             )
             url = api_url(series)
-
-        expected_url = "{project}/+series/{name}".format(
-            project=api_url(project), name=series.name
-        )
-        self.assertEqual(expected_url, url)
-
-        ws_series = self.load_from_api(url)
-
-        self.assertThat(
-            ws_series,
-            ContainsDict(
+            expected_url = "{project}/+series/{name}".format(
+                project=api_url(project), name=series.name
+            )
+            self.assertEqual(expected_url, url)
+            series_matcher = ContainsDict(
                 {
                     "date_created": Equals(series.date_created.isoformat()),
                     "name": Equals(series.name),
@@ -154,8 +148,11 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
                     "status": Equals(series.status.title),
                     "summary": Equals(series.summary),
                 }
-            ),
-        )
+            )
+
+        ws_series = self.load_from_api(url)
+
+        self.assertThat(ws_series, series_matcher)
 
     def test_get_non_existent_series(self):
         with person_logged_in(self.person):
@@ -165,9 +162,9 @@ class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
             series = self.factory.makeOCIProjectSeries(
                 oci_project=project, registrant=self.person
             )
+            url = "{project}/+series/{name}trash".format(
+                project=api_url(project), name=series.name
+            )
 
-        url = "{project}/+series/{name}trash".format(
-            project=api_url(project), name=series.name
-        )
         resp = self.webservice.get(url + "trash")
         self.assertEqual(404, resp.status, resp.body)
