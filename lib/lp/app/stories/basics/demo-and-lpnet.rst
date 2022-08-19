@@ -44,7 +44,7 @@ For a 3-0 page:
     <style...url(/@@/demo)...</style>
     ...
     >>> print(extract_text(find_tag_by_id(browser.contents, 'lp-version')))
-    • r... devmode demo site (Get the code!)
+    • ... devmode demo site (Get the code!)
 
     >>> print(extract_text(find_tags_by_class(
     ...     browser.contents, 'sitemessage')[0]))
@@ -62,6 +62,6 @@ First for a 3-0 page:
 
     >>> browser.open('http://launchpad.test/ubuntu')
     >>> print(extract_text(find_tag_by_id(browser.contents, 'lp-version')))
-    • r... devmode (Get the code!)
+    • ... devmode (Get the code!)
     >>> len(find_tags_by_class(browser.contents, 'sitemessage'))
     0
