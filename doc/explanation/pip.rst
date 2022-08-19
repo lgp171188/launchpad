@@ -277,6 +277,7 @@ confusion across build environments will happen.
 
 .. _`requirements specifiers`: https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers
 
+.. _upgrade-package:
 
 Upgrade a Package
 =================
