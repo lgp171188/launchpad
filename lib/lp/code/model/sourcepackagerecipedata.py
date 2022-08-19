@@ -13,7 +13,7 @@ __all__ = ["SourcePackageRecipeData"]
 import re
 
 import six
-from breezy.plugins.builder.recipe import (
+from brzbuildrecipe.recipe import (
     SAFE_INSTRUCTIONS,
     BaseRecipeBranch,
     MergeInstruction,

@@ -1256,19 +1256,19 @@
        />
   </class>
   <class
-     class="breezy.plugins.builder.recipe.BaseRecipeBranch">
+     class="brzbuildrecipe.recipe.BaseRecipeBranch">
     <allow attributes="name url revspec revid child_branches deb_version __str__" />
   </class>
   <class
-     class="breezy.plugins.builder.recipe.RecipeBranch">
+     class="brzbuildrecipe.recipe.RecipeBranch">
     <allow attributes="name url revspec revid child_branches __str__" />
   </class>
   <class
-     class="breezy.plugins.builder.recipe.MergeInstruction">
+     class="brzbuildrecipe.recipe.MergeInstruction">
     <allow attributes="as_tuple recipe_branch nest_path" />
   </class>
   <class
-     class="breezy.plugins.builder.recipe.NestInstruction">
+     class="brzbuildrecipe.recipe.NestInstruction">
     <allow attributes="as_tuple recipe_branch nest_path" />
   </class>
 

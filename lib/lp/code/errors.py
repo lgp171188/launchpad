@@ -68,7 +68,7 @@ __all__ = [
 
 import http.client
 
-from breezy.plugins.builder.recipe import RecipeParseError
+from brzbuildrecipe.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
 
 from lp.app.errors import NameLookupFailed, NotFoundError
