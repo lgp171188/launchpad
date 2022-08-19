@@ -175,6 +175,7 @@ from lp.snappy.interfaces.snapbuild import ISnapBuild, ISnapBuildSet
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.snappy.model.snapbase import SnapBase
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
 from lp.snappy.model.snapsubscription import SnapSubscription
@@ -898,7 +899,9 @@ class Snap(Storm, WebhookTargetMixin):
         return self.getBuildRequest(job.job_id)
 
     @staticmethod
-    def _findBase(snapcraft_data):
+    def _findBase(
+        snapcraft_data: t.Dict[str, t.Any]
+    ) -> t.Tuple[SnapBase, t.Optional[str]]:
         """Find a suitable base for a build."""
         base = snapcraft_data.get("base")
         build_base = snapcraft_data.get("build-base")
@@ -1006,7 +1009,9 @@ class Snap(Storm, WebhookTargetMixin):
                 )
             )
             architectures_to_build = determine_architectures_to_build(
-                snapcraft_data, list(supported_arches.keys())
+                snap_base.name if snap_base is not None else None,
+                snapcraft_data,
+                list(supported_arches.keys()),
             )
         except Exception as e:
             if not allow_failures:
