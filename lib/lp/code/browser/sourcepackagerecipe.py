@@ -16,10 +16,7 @@ __all__ = [
 import itertools
 
 import simplejson
-from breezy.plugins.builder.recipe import (
-    ForbiddenInstructionError,
-    RecipeParseError,
-)
+from brzbuildrecipe.recipe import ForbiddenInstructionError, RecipeParseError
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.interface import copy_field, use_template
