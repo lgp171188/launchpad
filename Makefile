@@ -154,15 +154,6 @@ doc:
 check_config: build
 	bin/test -m lp.services.config.tests -vvt test_config
 
-# Clean before running the test suite, since the build might fail depending
-# what source changes happened. (e.g. apidoc depends on interfaces)
-.PHONY: check
-check: clean build
-	# Run all tests. test_on_merge.py takes care of setting up the
-	# database.
-	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
-	bzr status --no-pending
-
 logs:
 	mkdir logs
 
