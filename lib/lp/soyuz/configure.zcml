@@ -714,7 +714,7 @@
             interface="lp.soyuz.interfaces.section.ISection"/>
     </class>
 
-    <!-- Section -->
+    <!-- SectionSelection -->
 
     <class
         class="lp.soyuz.model.section.SectionSelection">

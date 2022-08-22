@@ -256,7 +256,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         required=False,
         readonly=False,
     )
-    sectionID = Attribute("DB ID for the section")
+    section_id = Attribute("DB ID for the section")
     section = Int(
         title=_("The section being published into"),
         required=False,

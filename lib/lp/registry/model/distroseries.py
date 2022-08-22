@@ -74,7 +74,6 @@ from lp.services.database.sqlobject import (
     IntCol,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
 )
 from lp.services.database.stormexpr import IsTrue, WithMaterialized, fti_search
@@ -101,7 +100,7 @@ from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
 )
 from lp.soyuz.model.binarypackagename import BinaryPackageName
-from lp.soyuz.model.component import Component
+from lp.soyuz.model.component import Component, ComponentSelection
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
 )
@@ -241,11 +240,11 @@ class DistroSeries(
         "LanguagePack.distroseries_id",
         order_by=Desc("LanguagePack.date_exported"),
     )
-    sections = SQLRelatedJoin(
-        "Section",
-        joinColumn="distroseries",
-        otherColumn="section",
-        intermediateTable="SectionSelection",
+    sections = ReferenceSet(
+        "id",
+        "SectionSelection.distroseries_id",
+        "SectionSelection.section_id",
+        "Section.id",
     )
 
     def __init__(self, *args, **kwargs):
@@ -285,13 +284,10 @@ class DistroSeries(
     @property
     def upload_components(self):
         """See `IDistroSeries`."""
-        return Component.select(
-            """
-            ComponentSelection.distroseries = %s AND
-            Component.id = ComponentSelection.component
-            """
-            % self.id,
-            clauseTables=["ComponentSelection"],
+        return IStore(Component).find(
+            Component,
+            ComponentSelection.distroseries == self,
+            ComponentSelection.component == Component.id,
         )
 
     @cachedproperty
@@ -301,14 +297,11 @@ class DistroSeries(
         # This is filtering out the partner component for now, until
         # the second stage of the partner repo arrives in 1.1.8.
         return list(
-            Component.select(
-                """
-            ComponentSelection.distroseries = %s AND
-            Component.id = ComponentSelection.component AND
-            Component.name != 'partner'
-            """
-                % self.id,
-                clauseTables=["ComponentSelection"],
+            IStore(Component).find(
+                Component,
+                ComponentSelection.distroseries == self,
+                ComponentSelection.component == Component.id,
+                Component.name != "partner",
             )
         )
 
@@ -1266,7 +1259,7 @@ class DistroSeries(
 
     def getComponentByName(self, name):
         """See `IDistroSeries`."""
-        comp = Component.byName(name)
+        comp = IStore(Component).find(Component, name=name).one()
         if comp is None:
             raise NotFoundError(name)
         permitted = set(self.components)

@@ -32,7 +32,7 @@ Get the current counts of stuff in the database:
     >>> orig_build_count = BinaryPackageBuild.select().count()
     >>> orig_sbpph_count = SBPPH.select().count()
     >>> orig_sspph_main_count = SSPPH.selectBy(
-    ...     componentID=1, pocket=PackagePublishingPocket.RELEASE).count()
+    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE).count()
 
 Create a distribution release and an arch release for breezy:
 
@@ -367,7 +367,7 @@ successfully processed.
     21
 
     >>> new_count = SSPPH.selectBy(
-    ...     componentID=1,
+    ...     component_id=1,
     ...     pocket=PackagePublishingPocket.RELEASE).count()
     >>> print(new_count - orig_sspph_main_count)
     21

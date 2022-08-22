@@ -718,7 +718,8 @@ class Archive(SQLBase):
         if component_name is not None:
             clauses.extend(
                 [
-                    SourcePackagePublishingHistory.componentID == Component.id,
+                    SourcePackagePublishingHistory.component_id
+                    == Component.id,
                     Component.name == component_name,
                 ]
             )
@@ -776,7 +777,7 @@ class Archive(SQLBase):
             ids.discard(None)
             if ids:
                 list(store.find(DistroSeries, DistroSeries.id.is_in(ids)))
-            ids = set(map(attrgetter("sectionID"), rows))
+            ids = set(map(attrgetter("section_id"), rows))
             ids.discard(None)
             if ids:
                 list(store.find(Section, Section.id.is_in(ids)))
@@ -994,7 +995,8 @@ class Archive(SQLBase):
         if component_name is not None:
             clauses.extend(
                 [
-                    BinaryPackagePublishingHistory.componentID == Component.id,
+                    BinaryPackagePublishingHistory.component_id
+                    == Component.id,
                     Component.name == component_name,
                 ]
             )
@@ -1053,8 +1055,8 @@ class Archive(SQLBase):
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
             load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
-            load_related(Component, bpphs, ["componentID"])
-            load_related(Section, bpphs, ["sectionID"])
+            load_related(Component, bpphs, ["component_id"])
+            load_related(Section, bpphs, ["section_id"])
             dases = load_related(
                 DistroArchSeries, bpphs, ["distroarchseriesID"]
             )
@@ -1290,7 +1292,7 @@ class Archive(SQLBase):
                 == distro_arch_series,
                 BinaryPackagePublishingHistory.status
                 == PackagePublishingStatus.PUBLISHED,
-                BinaryPackagePublishingHistory.componentID == Component.id,
+                BinaryPackagePublishingHistory.component_id == Component.id,
                 archive_clause,
             )
             .order_by(Desc(BinaryPackagePublishingHistory.id))

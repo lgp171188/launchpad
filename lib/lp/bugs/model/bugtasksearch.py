@@ -657,7 +657,7 @@ def _build_query(params):
                         ),
                         SourcePackagePublishingHistory.distroseries
                         == distroseries,
-                        SourcePackagePublishingHistory.componentID.is_in(
+                        SourcePackagePublishingHistory.component_id.is_in(
                             c.id for c in components
                         ),
                         SourcePackagePublishingHistory.status
