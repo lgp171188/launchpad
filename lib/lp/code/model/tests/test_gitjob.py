@@ -23,9 +23,6 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.adapters.gitrepository import GitRepositoryDelta
 from lp.code.enums import GitGranteeType, GitObjectType
-from lp.code.interfaces.branchmergeproposal import (
-    BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
-)
 from lp.code.interfaces.gitjob import (
     IGitJob,
     IGitRefScanJob,
@@ -42,7 +39,6 @@ from lp.code.model.gitjob import (
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import canonical_url
@@ -291,9 +287,6 @@ class TestGitRefScanJob(TestCaseWithFactory):
             )
 
     def test_merge_detection_triggers_webhooks(self):
-        self.useFixture(
-            FeatureFixture({BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"})
-        )
         logger = self.useFixture(FakeLogger())
         repository = self.factory.makeGitRepository()
         target, source = self.factory.makeGitRefs(

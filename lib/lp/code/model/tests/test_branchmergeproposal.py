@@ -54,7 +54,6 @@ from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES as OBSOLETE_STATES,
 )
 from lp.code.interfaces.branchmergeproposal import (
-    BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
     IBranchMergeProposal,
     IBranchMergeProposalGetter,
     IBranchMergeProposalJobSource,
@@ -80,7 +79,6 @@ from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlobject import SQLObjectNotFound
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -1195,12 +1193,6 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
 class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(
-            FeatureFixture({BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"})
-        )
 
     def getWebhookTarget(self, branch):
         if self.git:
