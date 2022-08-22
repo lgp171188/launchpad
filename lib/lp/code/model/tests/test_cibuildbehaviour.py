@@ -333,12 +333,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "SOME_PATH": "/bin/zip",
                 }
             ),
-            apt_repositories=json.dumps(
-                [
-                    "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
-                    "deb https://public_ppa.example.net/repository focal main",
-                ]
-            ),
             package_repositories=json.dumps(
                 [
                     "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
@@ -365,7 +359,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         # make sure the distribution specific additional args are included
         # but have no values set
         self.assertEqual({}, args["environment_variables"])
-        self.assertEqual([], args["apt_repositories"])
         self.assertEqual([], args["package_repositories"])
         self.assertEqual({}, args["plugin_settings"])
         self.assertEqual({}, args["secrets"])
@@ -385,7 +378,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual({}, args["environment_variables"])
-        self.assertNotIn([], args["apt_repositories"])
         self.assertNotIn([], args["package_repositories"])
 
     @defer.inlineCallbacks
@@ -401,12 +393,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "PIP_INDEX_URL": "https://%(read_auth)s@canonical.example.com/artifactory/api/pypi/soss-python-stable/simple/",  # noqa: E501
                     "SOME_PATH": "/bin/zip",
                 }
-            ),
-            apt_repositories=json.dumps(
-                [
-                    "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
-                    "deb https://public_ppa.example.net/repository focal main",
-                ]
             ),
             package_repositories=json.dumps(
                 [
@@ -465,12 +451,6 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                             "PIP_INDEX_URL": "https://user:pass@canonical.example.com/artifactory/api/pypi/soss-python-stable/simple/",  # noqa: E501
                             "SOME_PATH": "/bin/zip",
                         }
-                    ),
-                    "apt_repositories": Equals(
-                        [
-                            "deb https://user:pass@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
-                            "deb https://public_ppa.example.net/repository focal main",  # noqa: E501
-                        ]
                     ),
                     "package_repositories": Equals(
                         [
