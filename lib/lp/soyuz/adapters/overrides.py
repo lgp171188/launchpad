@@ -270,8 +270,8 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
             store.find(
                 (
                     SourcePackagePublishingHistory.sourcepackagenameID,
-                    SourcePackagePublishingHistory.componentID,
-                    SourcePackagePublishingHistory.sectionID,
+                    SourcePackagePublishingHistory.component_id,
+                    SourcePackagePublishingHistory.section_id,
                     SourcePackagePublishingHistory.status,
                     SourcePackageRelease.version,
                 ),
@@ -360,8 +360,8 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                 (
                     BinaryPackagePublishingHistory.binarypackagenameID,
                     BinaryPackagePublishingHistory.distroarchseriesID,
-                    BinaryPackagePublishingHistory.componentID,
-                    BinaryPackagePublishingHistory.sectionID,
+                    BinaryPackagePublishingHistory.component_id,
+                    BinaryPackagePublishingHistory.section_id,
                     BinaryPackagePublishingHistory.priority,
                     BinaryPackagePublishingHistory.status,
                     BinaryPackageRelease.version,

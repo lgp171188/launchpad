@@ -3,11 +3,12 @@
 
 __all__ = ["Component", "ComponentSelection", "ComponentSet"]
 
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.component import (
     IComponent,
     IComponentSelection,
@@ -16,29 +17,42 @@ from lp.soyuz.interfaces.component import (
 
 
 @implementer(IComponent)
-class Component(SQLBase):
+class Component(StormBase):
     """See IComponent."""
 
-    _defaultOrder = ["id"]
+    __storm_table__ = "Component"
+    __storm_order__ = ["id"]
 
-    name = StringCol(notNull=True, alternateID=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
 
     def __repr__(self):
         return "<%s '%s'>" % (self.__class__.__name__, self.name)
 
 
 @implementer(IComponentSelection)
-class ComponentSelection(SQLBase):
+class ComponentSelection(StormBase):
     """See IComponentSelection."""
 
-    _defaultOrder = ["id"]
+    __storm_table__ = "ComponentSelection"
+    __storm_order__ = ["id"]
 
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", notNull=True
-    )
-    component = ForeignKey(
-        dbName="component", foreignKey="Component", notNull=True
-    )
+    id = Int(primary=True)
+
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    component_id = Int(name="component", allow_none=False)
+    component = Reference(component_id, "Component.id")
+
+    def __init__(self, distroseries, component):
+        super().__init__()
+        self.distroseries = distroseries
+        self.component = component
 
 
 @implementer(IComponentSet)
@@ -47,26 +61,28 @@ class ComponentSet:
 
     def __iter__(self):
         """See IComponentSet."""
-        return iter(Component.select())
+        return iter(IStore(Component).find(Component))
 
     def __getitem__(self, name):
         """See IComponentSet."""
-        component = Component.selectOneBy(name=name)
+        component = IStore(Component).find(Component, name=name).one()
         if component is not None:
             return component
         raise NotFoundError(name)
 
     def get(self, component_id):
         """See IComponentSet."""
-        return Component.get(component_id)
+        return IStore(Component).get(Component, component_id)
 
     def ensure(self, name):
         """See IComponentSet."""
-        component = Component.selectOneBy(name=name)
+        component = IStore(Component).find(Component, name=name).one()
         if component is not None:
             return component
         return self.new(name)
 
     def new(self, name):
         """See IComponentSet."""
-        return Component(name=name)
+        component = Component(name=name)
+        IStore(Component).add(component)
+        return component

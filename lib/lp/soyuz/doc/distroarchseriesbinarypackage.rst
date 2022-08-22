@@ -26,12 +26,13 @@ builds that are in sampledata!
     >>> from lp.soyuz.model.publishing import (
     ...        BinaryPackagePublishingHistory)
     >>> from lp.services.database.constants import UTC_NOW
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     >>> from lp.soyuz.model.component import Component
     >>> from lp.soyuz.model.section import Section
 
-    >>> main_component = Component.selectOneBy(name="main")
-    >>> misc_section = Section.selectOneBy(name="base")
+    >>> main_component = IStore(Component).find(Component, name="main").one()
+    >>> misc_section = IStore(Section).find(Section, name="base").one()
     >>> from lp.soyuz.enums import BinaryPackageFormat
     >>> binpackageformat = BinaryPackageFormat.DEB
     >>> from lp.soyuz.enums import (
@@ -242,7 +243,6 @@ Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
     >>> switch_dbuser('archivepublisher')
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (

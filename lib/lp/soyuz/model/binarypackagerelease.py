@@ -129,11 +129,11 @@ class BinaryPackageRelease(SQLBase):
         name="binpackageformat", allow_none=False, enum=BinaryPackageFormat
     )
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
-    component = ForeignKey(
-        dbName="component", foreignKey="Component", notNull=False
-    )
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
-    section = ForeignKey(dbName="section", foreignKey="Section", notNull=False)
+    section_id = Int(name="section", allow_none=True)
+    section = Reference(section_id, "Section.id")
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
     priority = DBEnum(
         name="priority", allow_none=True, enum=PackagePublishingPriority

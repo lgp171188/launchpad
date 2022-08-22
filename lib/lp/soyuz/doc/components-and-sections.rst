@@ -11,12 +11,13 @@ Zope auxiliary test toolchain:
 
 Importing Component content class and its interface:
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.interfaces.component import IComponent
     >>> from lp.soyuz.model.component import Component
 
 Get an Component instance from the current sampledata:
 
-    >>> main = Component.get(1)
+    >>> main = IStore(Component).get(Component, 1)
 
 Test some attributes:
 
@@ -82,7 +83,7 @@ Importing Section content class and its interface:
 
 Get a Section instance from the current sampledata:
 
-    >>> base = Section.get(1)
+    >>> base = IStore(Section).get(Section, 1)
 
 Test some attributes:
 

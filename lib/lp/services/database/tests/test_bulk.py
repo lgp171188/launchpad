@@ -198,6 +198,7 @@ class TestLoaders(TestCaseWithFactory):
             self.factory.makeComponent(),
             self.factory.makeComponent(),
         ]
+        IStore(db_objects[-1]).flush()
         db_object_ids = [db_object.id for db_object in db_objects]
         self.assertEqual(
             set(bulk.load(Component, db_object_ids)), set(db_objects)
