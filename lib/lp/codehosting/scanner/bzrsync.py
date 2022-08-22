@@ -29,7 +29,6 @@ from lp.code.model.branchrevision import BranchRevision
 from lp.code.model.revision import Revision
 from lp.codehosting.scanner import events
 from lp.services.config import config
-from lp.services.features import getFeatureFlag
 from lp.services.utils import iter_chunks
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.translations.interfaces.translationtemplatesbuild import (
@@ -368,7 +367,7 @@ def update_snaps(tip_changed):
 def trigger_webhooks(tip_changed):
     old_revid = tip_changed.old_tip_revision_id
     new_revid = tip_changed.new_tip_revision_id
-    if getFeatureFlag("code.bzr.webhooks.enabled") and old_revid != new_revid:
+    if old_revid != new_revid:
         payload = tip_changed.composeWebhookPayload(
             tip_changed.db_branch, old_revid, new_revid
         )
