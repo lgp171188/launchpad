@@ -5,6 +5,7 @@ from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import HasLength
 
 from lp.snappy.adapters.buildarch import (
+    DuplicateBuildOnError,
     SnapArchitecture,
     SnapBuildInstance,
     UnsupportedBuildOnError,
@@ -392,16 +393,60 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
                 ],
             },
         ),
+        (
+            "multiple build-for for the same build-on",
+            {
+                "architectures": [
+                    {"build-on": "amd64", "build-for": ["amd64"]},
+                    {"build-on": "amd64", "build-for": ["i386"]},
+                ],
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "multiple build-for for the same build-on: old base",
+            {
+                "snap_base": "core20",
+                "architectures": [
+                    {"build-on": "amd64", "build-for": ["amd64"]},
+                    {"build-on": "amd64", "build-for": ["i386"]},
+                ],
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": DuplicateBuildOnError,
+            },
+        ),
     ]
 
     def test_parser(self):
         snapcraft_data = {"architectures": self.architectures}
-        build_instances = determine_architectures_to_build(
-            snapcraft_data, self.supported_architectures
-        )
-        self.assertThat(build_instances, HasLength(len(self.expected)))
-        for instance in build_instances:
-            self.assertIn(instance.__dict__, self.expected)
+        snap_base = getattr(self, "snap_base", "core22")
+        if hasattr(self, "expected_exception"):
+            self.assertRaises(
+                self.expected_exception,
+                determine_architectures_to_build,
+                snap_base,
+                snapcraft_data,
+                self.supported_architectures,
+            )
+        else:
+            build_instances = determine_architectures_to_build(
+                snap_base, snapcraft_data, self.supported_architectures
+            )
+            self.assertThat(build_instances, HasLength(len(self.expected)))
+            for instance in build_instances:
+                self.assertIn(instance.__dict__, self.expected)
 
 
 load_tests = load_tests_apply_scenarios

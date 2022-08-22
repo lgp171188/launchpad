@@ -146,11 +146,13 @@ class SnapBuildInstance:
 
 
 def determine_architectures_to_build(
+    snap_base: Optional[str],
     snapcraft_data: Dict[str, Any],
     supported_arches: List[str],
 ) -> List[SnapBuildInstance]:
     """Return a list of architectures to build based on snapcraft.yaml.
 
+    :param snap_base: Name of the snap base.
     :param snapcraft_data: A parsed snapcraft.yaml.
     :param supported_arches: An ordered list of all architecture tags that
         we can create builds for.
@@ -182,16 +184,21 @@ def determine_architectures_to_build(
             SnapArchitecture(build_on=a) for a in supported_arches
         ]
 
-    # Ensure that multiple `build-on` items don't include the same
-    # architecture; this is ambiguous and forbidden by snapcraft.  Checking
-    # this here means that we don't get duplicate supported_arch results
-    # below.
-    build_ons = Counter()
-    for arch in architectures:
-        build_ons.update(arch.build_on)
-    duplicates = {arch for arch, count in build_ons.items() if count > 1}
-    if duplicates:
-        raise DuplicateBuildOnError(duplicates)
+    if snap_base not in {"core22"}:
+        # Ensure that multiple `build-on` items don't include the same
+        # architecture; this is ambiguous and forbidden by snapcraft prior
+        # to core22. Checking this here means that we don't get duplicate
+        # supported_arch results below.
+
+        # XXX andrey-fedoseev 2022-08-22: we should use the `SnapBase` model
+        # to store the specific features of each base rather than hard-coding
+        # the base names here
+        build_ons = Counter()
+        for arch in architectures:
+            build_ons.update(arch.build_on)
+        duplicates = {arch for arch, count in build_ons.items() if count > 1}
+        if duplicates:
+            raise DuplicateBuildOnError(duplicates)
 
     architectures_to_build = []
     for arch in architectures:

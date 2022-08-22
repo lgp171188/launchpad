@@ -7,7 +7,7 @@ import textwrap
 from datetime import datetime, timedelta
 
 import transaction
-from breezy.plugins.builder.recipe import ForbiddenInstructionError
+from brzbuildrecipe.recipe import ForbiddenInstructionError
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
 from storm.locals import Store

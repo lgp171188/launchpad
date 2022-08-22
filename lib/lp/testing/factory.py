@@ -34,8 +34,8 @@ from textwrap import dedent
 
 import pytz
 import six
-from breezy.plugins.builder.recipe import BaseRecipeBranch
 from breezy.revision import Revision as BzrRevision
+from brzbuildrecipe.recipe import BaseRecipeBranch
 from cryptography.utils import int_to_bytes
 from launchpadlib.launchpad import Launchpad
 from lazr.jobrunner.jobrunner import SuspendJobException
@@ -3861,7 +3861,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         If no branches are passed, return a recipe text that references an
         arbitrary branch.
         """
-        from breezy.plugins.builder.recipe import RecipeParser
+        from brzbuildrecipe.recipe import RecipeParser
 
         parser = RecipeParser(self.makeRecipeText(*branches))
         return parser.parse()
