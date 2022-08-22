@@ -181,8 +181,8 @@ inplace: build logs clean_logs codehosting-dir
 .PHONY: build
 build: compile apidoc jsbuild css_combine
 
-# Bootstrap download-cache and sourcecode.  Useful for CI jobs that want to
-# set these up from scratch.
+# Bootstrap download-cache.  Useful for CI jobs that want to set this up
+# from scratch.
 .PHONY: bootstrap
 bootstrap:
 	if [ -d download-cache/.git ]; then \
@@ -190,14 +190,13 @@ bootstrap:
 	else \
 		git clone --depth=1 $(DEPENDENCY_REPO) download-cache; \
 	fi
-	utilities/update-sourcecode
 
-# LP_SOURCEDEPS_PATH should point to the sourcecode directory, but we
-# want the parent directory where the download-cache and env directories
-# are. We re-use the variable that is using for the rocketfuel-get script.
+# LP_PROJECT_ROOT/LP_SOURCEDEPS_DIR points to the parent directory where the
+# download-cache and env directories are.  We reuse the variables that are
+# used for the rocketfuel-get script.
 download-cache:
-ifdef LP_SOURCEDEPS_PATH
-	utilities/link-external-sourcecode $(LP_SOURCEDEPS_PATH)/..
+ifneq (,$(LP_PROJECT_ROOT)$(LP_SOURCEDEPS_DIR))
+	utilities/link-external-sourcecode $(LP_PROJECT_ROOT)/$(LP_SOURCEDEPS_DIR)
 else
 	@echo "Missing ./download-cache."
 	@echo "Developers: please run utilities/link-external-sourcecode."

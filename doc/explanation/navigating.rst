@@ -58,10 +58,5 @@ of the ones that come up from time to time.
 ``brzplugins/``
     Breezy plugins used in running Launchpad.
 
-``sourcecode/``
-    A directory into which we symlink branches of some of Launchpad's
-    dependencies that haven't yet been turned into proper Python
-    dependencies.
-
 ``zcml/``
     Various configuration files for the Zope services.
