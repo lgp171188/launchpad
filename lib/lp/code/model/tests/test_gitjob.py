@@ -183,7 +183,6 @@ class TestGitRefScanJob(TestCaseWithFactory):
 
     def test_triggers_webhooks(self):
         # Jobs trigger any relevant webhooks when they're enabled.
-        self.useFixture(FeatureFixture({"code.git.webhooks.enabled": "on"}))
         logger = self.useFixture(FakeLogger())
         repository = self.factory.makeGitRepository()
         self.factory.makeGitRefs(
@@ -238,7 +237,6 @@ class TestGitRefScanJob(TestCaseWithFactory):
 
     def test_triggers_webhooks_with_oci_project_as_repository_target(self):
         # Jobs trigger any relevant webhooks when they're enabled.
-        self.useFixture(FeatureFixture({"code.git.webhooks.enabled": "on"}))
         logger = self.useFixture(FakeLogger())
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
