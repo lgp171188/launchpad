@@ -296,21 +296,15 @@ class UCTImporter:
         :param distribution: a `Distribution` affected by the vulnerability
         :return: a Vulnerability
         """
-        date_made_public = cve.date_made_public
-        if date_made_public.tzinfo is None:
-            date_made_public = date_made_public.replace(tzinfo=timezone.utc)
         vulnerability = getUtility(IVulnerabilitySet).new(
             distribution=distribution,
-            creator=bug.owner,
-            cve=lp_cve,
             status=cve.status,
-            description=cve.ubuntu_description,
-            notes=cve.notes,
-            mitigation=cve.mitigation,
             importance=cve.importance,
+            creator=bug.owner,
             information_type=InformationType.PUBLICSECURITY,
-            date_made_public=date_made_public,
+            cve=lp_cve,
         )  # type: Vulnerability
+        self._update_vulnerability(vulnerability, cve)
 
         vulnerability.linkBug(bug, bug.owner)
 
@@ -333,12 +327,28 @@ class UCTImporter:
         :param vulnerability: `Vulnerability` model to be updated
         :param cve: `CVE` with information from UCT
         """
+        date_made_public = cve.date_made_public
+        if date_made_public.tzinfo is None:
+            date_made_public = date_made_public.replace(tzinfo=timezone.utc)
+        date_notice_issued = cve.date_notice_issued
+        if date_notice_issued.tzinfo is None:
+            date_notice_issued = date_notice_issued.replace(
+                tzinfo=timezone.utc
+            )
+        date_coordinated_release = cve.date_coordinated_release
+        if date_coordinated_release.tzinfo is None:
+            date_coordinated_release = date_coordinated_release.replace(
+                tzinfo=timezone.utc
+            )
+
         vulnerability.status = cve.status
         vulnerability.description = cve.ubuntu_description
         vulnerability.notes = cve.notes
         vulnerability.mitigation = cve.mitigation
         vulnerability.importance = cve.importance
-        vulnerability.date_made_public = cve.date_made_public
+        vulnerability.date_made_public = date_made_public
+        vulnerability.date_notice_issued = date_notice_issued
+        vulnerability.date_coordinated_release = date_coordinated_release
 
     def _assign_bug_tasks(
         self, bug: BugModel, assignee: Optional[Person]

@@ -174,9 +174,9 @@ class UCTExporter:
 
         return CVE(
             sequence="CVE-{}".format(lp_cve.sequence),
-            crd=None,  # TODO: fix this
-            public_date=vulnerability.date_made_public,
-            public_date_at_USN=None,  # TODO: fix this
+            date_made_public=vulnerability.date_made_public,
+            date_notice_issued=vulnerability.date_notice_issued,
+            date_coordinated_release=vulnerability.date_coordinated_release,
             distro_packages=distro_packages,
             series_packages=series_packages,
             upstream_packages=upstream_packages,

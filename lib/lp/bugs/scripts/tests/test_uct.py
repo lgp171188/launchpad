@@ -162,7 +162,7 @@ class TestUCTRecord(TestCase):
         self.assertEqual(load_from.read_text(), saved_to_path.read_text())
 
 
-class TextCVE(TestCaseWithFactory):
+class TestCVE(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
     maxDiff = None
@@ -296,14 +296,14 @@ class TextCVE(TestCaseWithFactory):
 
         self.cve = CVE(
             sequence="CVE-2022-23222",
-            crd=datetime.datetime(
-                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_made_public=datetime.datetime(
+                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
             ),
-            public_date_at_USN=datetime.datetime(
+            date_notice_issued=datetime.datetime(
                 2021, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
             ),
-            public_date=datetime.datetime(
-                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_coordinated_release=datetime.datetime(
+                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
             ),
             distro_packages=[
                 CVE.DistroPackage(
@@ -485,9 +485,9 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         )
         self.cve = CVE(
             sequence="CVE-2022-23222",
-            crd=None,
-            public_date=self.now,
-            public_date_at_USN=None,
+            date_made_public=self.now,
+            date_notice_issued=self.now,
+            date_coordinated_release=self.now,
             distro_packages=[
                 CVE.DistroPackage(
                     package=self.ubuntu_package,
@@ -683,6 +683,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertEqual(
                 cve.date_made_public, vulnerability.date_made_public
             )
+            self.assertEqual(
+                cve.date_notice_issued, vulnerability.date_notice_issued
+            )
+            self.assertEqual(
+                cve.date_coordinated_release,
+                vulnerability.date_coordinated_release,
+            )
             self.assertEqual([bug], vulnerability.bugs)
 
     def checkLaunchpadCve(self, lp_cve: CveModel, cve: CVE):
@@ -693,10 +700,12 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
     def checkCVE(self, expected: CVE, actual: CVE):
         self.assertEqual(expected.sequence, actual.sequence)
-        self.assertEqual(expected.crd, actual.crd)
-        self.assertEqual(expected.public_date, actual.public_date)
+        self.assertEqual(expected.date_made_public, actual.date_made_public)
         self.assertEqual(
-            expected.public_date_at_USN, actual.public_date_at_USN
+            expected.date_notice_issued, actual.date_notice_issued
+        )
+        self.assertEqual(
+            expected.date_coordinated_release, actual.date_coordinated_release
         )
         self.assertListEqual(expected.distro_packages, actual.distro_packages)
         self.assertListEqual(expected.series_packages, actual.series_packages)
@@ -970,14 +979,27 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         importer.import_cve(self.cve)
         self.assertIsNone(importer._find_existing_bug(self.cve, self.lp_cve))
 
-    def test_naive_date_made_public(self):
+    def test_naive_dates(self):
         cve = self.cve
-        cve.public_date = cve.public_date.replace(tzinfo=None)
-        bug = self.importer.create_bug(cve, self.lp_cve)
-        self.assertEqual(
-            UTC,
-            bug.vulnerabilities[0].date_made_public.tzinfo,
+        cve.date_made_public = cve.date_made_public.replace(tzinfo=None)
+        cve.date_notice_issued = cve.date_notice_issued.replace(tzinfo=None)
+        cve.date_coordinated_release = cve.date_coordinated_release.replace(
+            tzinfo=None
         )
+        bug = self.importer.create_bug(cve, self.lp_cve)
+        for date in (
+            bug.vulnerabilities[0].date_made_public,
+            bug.vulnerabilities[0].date_notice_issued,
+            bug.vulnerabilities[0].date_coordinated_release,
+        ):
+            self.assertEqual(UTC, date.tzinfo)
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        for date in (
+            bug.vulnerabilities[0].date_made_public,
+            bug.vulnerabilities[0].date_notice_issued,
+            bug.vulnerabilities[0].date_coordinated_release,
+        ):
+            self.assertEqual(UTC, date.tzinfo)
 
     def test_make_cve_from_bug(self):
         self.importer.import_cve(self.cve)
