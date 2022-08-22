@@ -232,7 +232,9 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
             title=_("Current build"),
             required=False,
             readonly=True,
-            schema=Interface,  # Really IBuildFarmJob.
+            # Really IBuildFarmJob, patched in
+            # lp.buildmaster.interfaces.webservice.
+            schema=Interface,
             description=_("The job currently running on this builder."),
         ),
         as_of="devel",

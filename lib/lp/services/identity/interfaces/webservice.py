@@ -4,7 +4,7 @@
 """All the interfaces that are exposed through the webservice.
 
 There is a declaration in ZCML somewhere that looks like:
-  <webservice:register module="lp.patchwebservice" />
+  <webservice:register module="lp.services.identity.interfaces.webservice" />
 
 which tells `lazr.restful` that it should look for webservice exports here.
 """

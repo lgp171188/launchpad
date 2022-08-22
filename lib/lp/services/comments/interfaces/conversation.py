@@ -14,6 +14,7 @@ from zope.interface import Interface
 from zope.schema import Bool, Datetime, Int, Text, TextLine
 
 from lp import _
+from lp.registry.interfaces.person import IPerson
 
 
 class IComment(Interface):
@@ -59,10 +60,7 @@ class IComment(Interface):
     )
 
     comment_author = Reference(
-        # Really IPerson.
-        Interface,
-        title=_("The author of the comment."),
-        readonly=True,
+        IPerson, title=_("The author of the comment."), readonly=True
     )
 
     comment_date = Datetime(title=_("Comment date."), readonly=True)

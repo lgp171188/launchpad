@@ -41,7 +41,6 @@
 
     <include file="permissions.zcml" />
 
-    <webservice:register module="lp.patchwebservice" />
     <authorizations module="lp.security" />
 
     <!-- The default Zope 3 configuration of the SimpleComponentTraverser is

@@ -77,7 +77,12 @@ class IMessageCommon(Interface):
     )
     owner = exported(
         Reference(
-            title=_("Person"), schema=Interface, required=False, readonly=True
+            title=_("Person"),
+            # Really IPerson, patched in
+            # lp.services.messages.interfaces.webservice.
+            schema=Interface,
+            required=False,
+            readonly=True,
         )
     )
 
@@ -87,7 +92,8 @@ class IMessageCommon(Interface):
             description=_(
                 "Revision history of this message, sorted in ascending order."
             ),
-            # Really IMessageRevision, patched in _schema_circular_imports.
+            # Really IMessageRevision, patched in
+            # lp.services.messages.interfaces.webservice.
             value_type=Reference(schema=Interface),
             required=False,
             readonly=True,
@@ -241,10 +247,10 @@ class IIndexedMessage(Interface):
 
     inside = Reference(
         title=_("Inside"),
+        # Really IBugTask, patched in
+        # lp.services.messages.interfaces.webservice.
         schema=Interface,
-        description=_(
-            "The bug task which is " "the context for this message."
-        ),
+        description=_("The bug task which is the context for this message."),
         required=True,
         readonly=True,
     )
@@ -294,6 +300,8 @@ class IUserToUserEmail(Interface):
     """User to user direct email communications."""
 
     sender = Object(
+        # Really IPerson, patched in
+        # lp.services.messages.interfaces.webservice.
         schema=Interface,
         title=_("The message sender"),
         required=True,
@@ -301,6 +309,8 @@ class IUserToUserEmail(Interface):
     )
 
     recipient = Object(
+        # Really IPerson, patched in
+        # lp.services.messages.interfaces.webservice.
         schema=Interface,
         title=_("The message recipient"),
         required=True,

@@ -69,7 +69,7 @@ class IAccessToken(Interface):
     git_repository = Reference(
         title=_("Git repository"),
         description=_("The Git repository for which the token was issued."),
-        # Really IGitRepository, patched in _schema_circular_imports.py.
+        # Really IGitRepository, patched in lp.services.auth.webservice.
         schema=Interface,
         required=True,
         readonly=True,
