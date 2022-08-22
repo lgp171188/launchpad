@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 #
-# Copyright 2009-2017 Canonical Ltd. This software is licensed under the GNU
+# Copyright 2009-2023 Canonical Ltd. This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 import optparse
 import subprocess
-from os import curdir, listdir, makedirs, symlink, unlink
+from os import curdir, symlink, unlink
 from os.path import abspath, basename, exists, islink, join, realpath, relpath
 from sys import stderr, stdout
 
@@ -19,18 +19,6 @@ def get_main_worktree(branch_dir):
     if realpath(main_worktree) != realpath(branch_dir):
         return main_worktree
     return None
-
-
-def gen_missing_files(source, destination):
-    """Generate info on every file in source not in destination.
-
-    Yields `(source, destination)` tuples.
-    """
-    for name in listdir(source):
-        destination_file = join(destination, name)
-        if not exists(destination_file):
-            source_file = join(source, name)
-            yield source_file, destination_file,
 
 
 def link(source, destination):
@@ -55,8 +43,8 @@ if __name__ == "__main__":
     parser = optparse.OptionParser(
         usage="%prog [options] [parent]",
         description=(
-            "Add a symlink in <target>/sourcecode for each corresponding "
-            "file in <parent>/sourcecode."
+            "Add a symlink from <target>/download-cache to "
+            "<parent>/download-cache."
         ),
         epilog=(
             "Most of the time this does the right thing if run "
@@ -118,17 +106,6 @@ if __name__ == "__main__":
 
     if options.parent is None:
         parser.error("Parent tree not specified.")
-
-    if not exists(join(options.target, "sourcecode")):
-        makedirs(join(options.target, "sourcecode"))
-
-    missing_files = gen_missing_files(
-        abspath(join(options.parent, "sourcecode")),
-        abspath(join(options.target, "sourcecode")),
-    )
-
-    for source, destination in missing_files:
-        link(source, destination)
 
     for folder_name in ("download-cache",):
         source = abspath(join(options.parent, folder_name))

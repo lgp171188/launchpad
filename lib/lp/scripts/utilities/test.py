@@ -179,7 +179,7 @@ defaults = {
     # Find tests in the tests and ftests directories
     "tests_pattern": "^f?tests$",
     "test_path": [os.path.join(config.root, "lib")],
-    "package": ["canonical", "lp", "devscripts", "launchpad_loggerhead"],
+    "package": ["canonical", "lp", "launchpad_loggerhead"],
     "layer": ["!(YUIAppServerLayer)"],
     "require_unique_ids": True,
 }

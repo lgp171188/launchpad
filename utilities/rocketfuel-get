@@ -1,23 +1,12 @@
 #! /bin/bash
 #
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
-# Update your copy of master and the necessary source dependencies, and make
-# sure all source dependencies are properly linked in to all the branches you
-# are working on.
+# Update your copy of master and the necessary source dependencies.
 
 # Stop if there's an error, and treat unset variables as errors.
 set -eu
-
-# A rough measure of how much stuff we can do in parallel.
-CPU_COUNT="$(grep -Ec '^processor\b' /proc/cpuinfo)"
-
-# Helper function to run a child process, indenting stdout to aid
-# readability.
-run-child() {
-    "$@" | sed -e "s/^/        /"
-}
 
 # Load local settings.
 if [ -e "$HOME/.rocketfuel-env.sh" ]
@@ -39,7 +28,7 @@ git -C "$LP_TRUNK_PATH" pull
 FINAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
 
 # Make sure our directories are around.
-mkdir -p "$LP_SOURCEDEPS_PATH" "$YUI_PATH"
+mkdir -p "$(dirname "$LP_DOWNLOAD_CACHE_PATH")" "$YUI_PATH"
 
 # Get/update the download cache.
 if [ -d "$LP_DOWNLOAD_CACHE_PATH" ]
@@ -48,50 +37,6 @@ then
 else
     git clone --depth=1 lp:lp-source-dependencies "$LP_DOWNLOAD_CACHE_PATH"
 fi
-
-# Add or update sourcepackages.
-sourcedeps_conf="$(dirname "$0")/sourcedeps.conf"
-if [ ! -e "$sourcedeps_conf" ]
-then
-    # Use the global deps which are stable.
-    echo "Could not find $sourcedeps_conf" >&2
-    sourcedeps_conf="$LP_TRUNK_PATH/utilities/sourcedeps.conf"
-fi
-
-echo "Updating sourcecode dependencies in rocketfuel:"
-run-child \
-    "$LP_TRUNK_PATH/utilities/update-sourcecode" \
-    "$LP_SOURCEDEPS_PATH" "$sourcedeps_conf"
-
-# Update the current trees in the repo.
-echo "Updating sourcecode dependencies in current local branches:"
-
-# Find directories among local branches containing "sourcecode" directories.
-# Prints each as a null-terminated record (since Unix filenames may contain
-# newlines).
-find_branches_to_relink() {
-    find "$LP_PROJECT_ROOT" \
-        -mindepth 2 -maxdepth 2 -type d -name sourcecode -printf '%h\0'
-}
-
-# Some setups may have lp-sourcedeps mixed in with the local branches.  Echo
-# stdin to stdout, with these filenames filtered out.  Filenames must be
-# null-terminated on input, and remain null-terminated on output.
-filter_branches_to_relink() {
-    grep -vz '/lp-sourcedeps$'
-}
-
-# Re-link the sourcecode directories for local branches.  Takes the branch
-# paths from stdin, as null-terminated records.
-relink_branches() {
-    run-child xargs --no-run-if-empty \
-        --max-procs="${CPU_COUNT}" --max-args=1 --null \
-        "$LP_TRUNK_PATH/utilities/link-external-sourcecode" \
-            --parent "$LP_PROJECT_ROOT/$LP_SOURCEDEPS_DIR" --target
-}
-
-# Actually do it:
-find_branches_to_relink | filter_branches_to_relink | relink_branches
 
 
 # Build launchpad if there were changes.
