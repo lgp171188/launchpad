@@ -190,7 +190,6 @@ of the following steps:
 $ git clone lp:launchpad
 $ cd launchpad
 $ git clone --depth=1 lp:lp-source-dependencies download-cache
-$ utilities/update-sourcecode
 $ utilities/launchpad-database-setup
 $ make schema
 $ sudo make install
@@ -220,10 +219,6 @@ LP_TRUNK_NAME=\${LP_TRUNK_NAME:=launchpad}
 LP_TRUNK_PATH=\$LP_PROJECT_ROOT/\$LP_TRUNK_NAME
 
 LP_SOURCEDEPS_DIR=\${LP_SOURCEDEPS_DIR:=lp-sourcedeps}
-LP_SOURCEDEPS_PATH=\$LP_PROJECT_ROOT/\$LP_SOURCEDEPS_DIR/sourcecode
-
-# Force tilde expansion
-LP_SOURCEDEPS_PATH=\$(eval echo \${LP_SOURCEDEPS_PATH})
 " > "$HOME/.rocketfuel-env.sh"
 fi
 

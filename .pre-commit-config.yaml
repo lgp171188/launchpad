@@ -31,9 +31,7 @@ repos:
         exclude: |
           (?x)^(
             lib/contrib/.*
-            |lib/devscripts/.*
             |utilities/community-contributions\.py
-            |utilities/update-sourcecode
           )$
 -   repo: https://github.com/psf/black
     rev: 22.3.0
@@ -42,9 +40,7 @@ repos:
         exclude: |
           (?x)^(
             lib/contrib/.*
-            |lib/devscripts/.*
             |utilities/community-contributions\.py
-            |utilities/update-sourcecode
           )$
 -   repo: https://github.com/PyCQA/isort
     rev: 5.9.2

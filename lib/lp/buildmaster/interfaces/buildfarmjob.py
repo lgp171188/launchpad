@@ -184,8 +184,7 @@ class IBuildFarmJobView(Interface):
     )
 
     buildqueue_record = Reference(
-        # Really IBuildQueue, set in _schema_circular_imports to avoid
-        # circular import.
+        # Really IBuildQueue, patched in lp.buildmaster.interfaces.webservice.
         schema=Interface,
         required=True,
         title=_("Corresponding BuildQueue record"),
