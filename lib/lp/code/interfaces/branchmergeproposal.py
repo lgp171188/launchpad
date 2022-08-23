@@ -6,7 +6,6 @@
 __all__ = [
     "BRANCH_MERGE_PROPOSAL_FINAL_STATES",
     "BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES",
-    "BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG",
     "IBranchMergeProposal",
     "IBranchMergeProposalGetter",
     "IBranchMergeProposalJob",
@@ -84,11 +83,6 @@ BRANCH_MERGE_PROPOSAL_FINAL_STATES = (
 BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES = (
     BranchMergeProposalStatus.MERGE_FAILED,
     BranchMergeProposalStatus.QUEUED,
-)
-
-
-BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG = (
-    "code.merge_proposals.webhooks.enabled"
 )
 
 

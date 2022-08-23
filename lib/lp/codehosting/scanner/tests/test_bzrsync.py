@@ -869,7 +869,6 @@ class TestTriggerWebhooks(BzrSyncTestCase):
 
     def test_triggers_webhooks(self):
         # On tip change, any relevant webhooks are triggered.
-        self.useFixture(FeatureFixture({"code.bzr.webhooks.enabled": "on"}))
         logger = self.useFixture(FakeLogger())
         self.syncAndCount()
         old_revid = self.db_branch.last_scanned_id

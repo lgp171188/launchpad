@@ -42,7 +42,6 @@ from lp.services.database.locking import (
     try_advisory_lock,
 )
 from lp.services.database.stormbase import StormBase
-from lp.services.features import getFeatureFlag
 from lp.services.helpers import english_list
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -248,16 +247,15 @@ class GitRefScanJob(GitJobDerived):
                     ref.path: ref.commit_sha1 for ref in self.repository.refs
                 }
                 upserted_refs, removed_refs = self.repository.scan(log=log)
-                if getFeatureFlag("code.git.webhooks.enabled"):
-                    payload = self.composeWebhookPayload(
-                        self.repository,
-                        old_refs_commits,
-                        upserted_refs,
-                        removed_refs,
-                    )
-                    getUtility(IWebhookSet).trigger(
-                        self.repository, "git:push:0.1", payload
-                    )
+                payload = self.composeWebhookPayload(
+                    self.repository,
+                    old_refs_commits,
+                    upserted_refs,
+                    removed_refs,
+                )
+                getUtility(IWebhookSet).trigger(
+                    self.repository, "git:push:0.1", payload
+                )
         except LostObjectError:
             log.info(
                 "Skipping repository %s because it has been deleted."
