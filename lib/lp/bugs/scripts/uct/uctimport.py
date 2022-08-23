@@ -356,7 +356,7 @@ class UCTImporter:
             task = bug_task_by_target[dp.package]
             dp_importance = dp.importance or cve_importance
             package_importances[dp.package.sourcepackagename] = dp_importance
-            task.transitionToImportance(dp_importance, self.bug_importer)
+            task.transitionToImportance(dp_importance)
 
         for sp in series_packages:
             task = bug_task_by_target[sp.package]
@@ -364,8 +364,8 @@ class UCTImporter:
                 sp.package.sourcepackagename
             ]
             sp_importance = sp.importance or package_importance
-            task.transitionToImportance(sp_importance, self.bug_importer)
-            task.transitionToStatus(sp.status, self.bug_importer)
+            task.transitionToImportance(sp_importance)
+            task.transitionToStatus(sp.status)
             task.status_explanation = sp.status_explanation
 
     def _update_external_bug_urls(
