@@ -60,16 +60,13 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import (
-    Type,
-    TYPE_CHECKING,
-    )
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from fnmatch import fnmatchcase
 from functools import partial
 from select import select
+from typing import TYPE_CHECKING, Type
 
 import fixtures
 import lp_sitecustomize
@@ -157,7 +154,6 @@ from lp.testing.dbuser import switch_dbuser
 from lp.testing.fixture import CaptureOops, ZopeEventHandlerFixture
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
-
 
 if TYPE_CHECKING:
     from lp.testing.layers import BaseLayer

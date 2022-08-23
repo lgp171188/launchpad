@@ -22,10 +22,7 @@ __all__ = [
 ]
 
 from collections import namedtuple
-from typing import (
-    Optional,
-    Union,
-    )
+from typing import Optional, Union
 
 import six
 from storm.base import Storm
