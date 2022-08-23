@@ -147,7 +147,7 @@ class MilestoneData:
         from lp.blueprints.model.specification import Specification
 
         return Store.of(self).find(
-            Specification, Specification.milestoneID == self.id
+            Specification, Specification.milestone == self
         )
 
     def getSpecifications(self, user):
@@ -166,7 +166,9 @@ class MilestoneData:
         product_origin, clauses = get_specification_active_product_filter(self)
         origin.extend(product_origin)
         clauses.extend(get_specification_privacy_filter(user))
-        origin.append(LeftJoin(Person, Specification._assigneeID == Person.id))
+        origin.append(
+            LeftJoin(Person, Specification._assignee_id == Person.id)
+        )
         milestones = self._milestone_ids_expr(user)
 
         results = (
@@ -180,7 +182,7 @@ class MilestoneData:
                             Specification.id,
                             tables=[Specification],
                             where=(
-                                Specification.milestoneID.is_in(milestones)
+                                Specification.milestone_id.is_in(milestones)
                             ),
                         ),
                         Select(

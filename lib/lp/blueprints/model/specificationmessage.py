@@ -5,28 +5,38 @@ __all__ = ["SpecificationMessage", "SpecificationMessageSet"]
 
 from email.utils import make_msgid
 
+from storm.locals import Bool, Int, Reference
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.specificationmessage import (
     ISpecificationMessage,
     ISpecificationMessageSet,
 )
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import BoolCol, ForeignKey
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import Message, MessageChunk
 
 
 @implementer(ISpecificationMessage)
-class SpecificationMessage(SQLBase):
+class SpecificationMessage(StormBase):
     """A table linking specifications and messages."""
 
-    _table = "SpecificationMessage"
+    __storm_table__ = "SpecificationMessage"
 
-    specification = ForeignKey(
-        dbName="specification", foreignKey="Specification", notNull=True
-    )
-    message = ForeignKey(dbName="message", foreignKey="Message", notNull=True)
-    visible = BoolCol(notNull=True, default=True)
+    id = Int(primary=True)
+
+    specification_id = Int(name="specification", allow_none=False)
+    specification = Reference(specification_id, "Specification.id")
+
+    message_id = Int(name="message", allow_none=False)
+    message = Reference(message_id, "Message.id")
+
+    visible = Bool(allow_none=False, default=True)
+
+    def __init__(self, specification, message):
+        super().__init__()
+        self.specification = specification
+        self.message = message
 
 
 @implementer(ISpecificationMessageSet)
@@ -39,8 +49,12 @@ class SpecificationMessageSet:
             owner=owner, rfc822msgid=make_msgid("blueprint"), subject=subject
         )
         MessageChunk(message=msg, content=content, sequence=1)
-        return SpecificationMessage(specification=spec, message=msg)
+        specmessage = SpecificationMessage(specification=spec, message=msg)
+        IStore(SpecificationMessage).flush()
+        return specmessage
 
     def get(self, specmessageid):
         """See ISpecificationMessageSet."""
-        return SpecificationMessage.get(specmessageid)
+        return IStore(SpecificationMessage).get(
+            SpecificationMessage, specmessageid
+        )

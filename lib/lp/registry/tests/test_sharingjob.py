@@ -159,6 +159,7 @@ class SharingJobDerivedTestCase(TestCaseWithFactory):
     def test_repr_specifications(self):
         requestor = self.factory.makePerson()
         specification = self.factory.makeSpecification()
+        IStore(specification).flush()
         job = getUtility(IRemoveArtifactSubscriptionsJobSource).create(
             requestor, artifacts=[specification]
         )

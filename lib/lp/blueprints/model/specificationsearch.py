@@ -153,9 +153,9 @@ def search_specifications(
         for spec in rows:
             if need_people:
                 person_ids |= {
-                    spec._assigneeID,
-                    spec._approverID,
-                    spec._drafterID,
+                    spec._assignee_id,
+                    spec._approver_id,
+                    spec._drafter_id,
                 }
             if need_branches:
                 get_property_cache(spec).linked_branches = []
@@ -215,7 +215,7 @@ def get_specification_active_product_filter(context):
         return [], []
     from lp.registry.model.product import Product
 
-    tables = [LeftJoin(Product, Specification.productID == Product.id)]
+    tables = [LeftJoin(Product, Specification.product_id == Product.id)]
     active_products = Or(Specification.product == None, Product.active == True)
     return tables, [active_products]
 

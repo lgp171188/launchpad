@@ -435,9 +435,9 @@ class SharingService:
                 AccessPolicy,
                 And(
                     Or(
-                        Specification.distributionID
+                        Specification.distribution_id
                         == AccessPolicy.distribution_id,
-                        Specification.productID == AccessPolicy.product_id,
+                        Specification.product_id == AccessPolicy.product_id,
                     ),
                     AccessPolicy.type == Specification.information_type,
                 ),
