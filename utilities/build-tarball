@@ -30,10 +30,6 @@ mkdir -p "$output_dir"
     # Most of download-cache is unnecessary since we include a wheelhouse
     # instead, but JavaScript-enabled builds need yarn.
     find ./download-cache/dist/ -name yarn-\*.tar.gz
-    # The subdirectories of sourcecode may be symlinks.  Force tar to
-    # include the actual files instead.
-    find ./sourcecode/*/ \
-        \( -name .bzr -o -name __pycache__ \) -prune -o -type f -print
     echo ./version-info.py
     find ./wheels/ -name \*.whl -print
 ) | sort >"$output_dir/.files"
