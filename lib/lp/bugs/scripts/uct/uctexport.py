@@ -14,12 +14,11 @@ from lp.bugs.model.bug import Bug as BugModel
 from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.model.vulnerability import Vulnerability
+from lp.bugs.scripts.uct.models import CVE, CVSS
 from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackage,
 )
 from lp.registry.model.sourcepackage import SourcePackage
-
-from .models import CVE, CVSS
 
 __all__ = [
     "UCTExporter",
@@ -71,7 +70,7 @@ class UCTExporter:
         Create a `CVE` instances from a `Bug` model and the related
         Vulnerabilities and `Cve`.
 
-        `BugTasks` are converted to `CVE.DistroPackage` and `CVE.SEriesPackage`
+        `BugTasks` are converted to `CVE.DistroPackage` and `CVE.SeriesPackage`
         objects.
 
         Other `CVE` fields are populated from the information contained in the
@@ -175,7 +174,7 @@ class UCTExporter:
         Some `CVE` fields can't be mapped to Launchpad models.
         They are saved to bug description.
 
-        This method extract those fields from the bug description.
+        This method extracts those fields from the bug description.
 
         :param bug_description: bug description
         :return: parsed description

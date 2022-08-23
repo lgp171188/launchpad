@@ -36,11 +36,10 @@ from lp.bugs.model.bug import Bug as BugModel
 from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
 from lp.bugs.model.vulnerability import Vulnerability
+from lp.bugs.scripts.uct.models import CVE, UCTRecord
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.person import Person
 from lp.services.database.constants import UTC_NOW
-
-from .models import CVE, UCTRecord
 
 __all__ = [
     "UCTImporter",
