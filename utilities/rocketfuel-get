@@ -8,6 +8,12 @@
 # Stop if there's an error, and treat unset variables as errors.
 set -eu
 
+# Helper function to run a child process, indenting stdout to aid
+# readability.
+run-child() {
+    "$@" | sed -e "s/^/        /"
+}
+
 # Load local settings.
 if [ -e "$HOME/.rocketfuel-env.sh" ]
 then
@@ -37,6 +43,34 @@ then
 else
     git clone --depth=1 lp:lp-source-dependencies "$LP_DOWNLOAD_CACHE_PATH"
 fi
+
+echo "Linking download-cache into current local branches:"
+
+# Find directories among local branches containing "utilities" directories.
+# Prints each as a null-terminated record (since Unix filenames may contain
+# newlines).
+find_branches_to_relink() {
+    find "$LP_PROJECT_ROOT" \
+        -mindepth 2 -maxdepth 2 -type d -name utilities -printf '%h\0'
+}
+
+# Some setups may have lp-sourcedeps mixed in with the local branches.  Echo
+# stdin to stdout, with these filenames filtered out.  Filenames must be
+# null-terminated on input, and remain null-terminated on output.
+filter_branches_to_relink() {
+    grep -vz '/lp-sourcedeps$'
+}
+
+# Link download-cache into local branches.  Takes the branch paths from
+# stdin, as null-terminated records.
+relink_branches() {
+    run-child xargs --no-run-if-empty --max-args=1 --null \
+        "$LP_TRUNK_PATH/utilities/link-external-sourcecode" \
+            --parent "$LP_PROJECT_ROOT/$LP_SOURCEDEPS_DIR" --target
+}
+
+# Actually do it:
+find_branches_to_relink | filter_branches_to_relink | relink_branches
 
 
 # Build launchpad if there were changes.
