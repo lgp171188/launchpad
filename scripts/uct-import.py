@@ -7,12 +7,13 @@ import _pythonpath  # noqa: F401
 import logging
 from pathlib import Path
 
-from lp.bugs.scripts.uctimport import UCTImporter
+from lp.bugs.scripts.uct import UCTImporter
 from lp.services.scripts.base import LaunchpadScript
 
 
 class UCTImportScript(LaunchpadScript):
 
+    usage = "usage: %prog [options] CVE_FILE_PATH"
     description = (
         "Import bugs into Launchpad from CVE entries in ubuntu-cve-tracker."
     )

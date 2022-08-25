@@ -933,9 +933,9 @@ class BugTask(StormBase):
             # setter methods directly.
             setattr(self, synched_attr, PassthroughValue(replica_attr_value))
 
-    def transitionToMilestone(self, new_milestone, user):
+    def transitionToMilestone(self, new_milestone, user=None):
         """See `IBugTask`."""
-        if not self.userHasBugSupervisorPrivileges(user):
+        if user and not self.userHasBugSupervisorPrivileges(user):
             raise UserCannotEditBugTaskMilestone(
                 "User does not have sufficient permissions "
                 "to edit the bug task milestone."
@@ -945,9 +945,9 @@ class BugTask(StormBase):
         # notified.
         self.bug.clearBugNotificationRecipientsCache()
 
-    def transitionToImportance(self, new_importance, user):
+    def transitionToImportance(self, new_importance, user=None):
         """See `IBugTask`."""
-        if not self.userHasBugSupervisorPrivileges(user):
+        if user and not self.userHasBugSupervisorPrivileges(user):
             raise UserCannotEditBugTaskImportance(
                 "User does not have sufficient permissions "
                 "to edit the bug task importance."
@@ -1030,9 +1030,9 @@ class BugTask(StormBase):
         # Non-supervisors can transition to non-supervisor statuses.
         return new_status not in BUG_SUPERVISOR_BUGTASK_STATUSES
 
-    def transitionToStatus(self, new_status, user, when=None):
+    def transitionToStatus(self, new_status, user=None, when=None):
         """See `IBugTask`."""
-        if not new_status or user is None:
+        if not new_status:
             # This is mainly to facilitate tests which, unlike the
             # normal status form, don't always submit a status when
             # testing the edit form.
@@ -1040,7 +1040,7 @@ class BugTask(StormBase):
 
         new_status = normalize_bugtask_status(new_status)
 
-        if not self.canTransitionToStatus(new_status, user):
+        if user and not self.canTransitionToStatus(new_status, user):
             raise UserCannotEditBugTaskStatus(
                 "Only Bug Supervisors may change status to %s."
                 % (new_status.title,)

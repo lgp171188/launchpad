@@ -846,7 +846,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("beta")
-    def transitionToMilestone(new_milestone, user):
+    def transitionToMilestone(new_milestone, user=None):
         """Set the BugTask milestone.
 
         Set the bugtask milestone, making sure that the user is
@@ -859,7 +859,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("beta")
-    def transitionToImportance(new_importance, user):
+    def transitionToImportance(new_importance, user=None):
         """Set the BugTask importance.
 
         Set the bugtask importance, making sure that the user is
@@ -883,7 +883,7 @@ class IBugTask(IHasBug, IBugTaskDelete):
     @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("beta")
-    def transitionToStatus(new_status, user):
+    def transitionToStatus(new_status, user=None):
         """Perform a workflow transition to the new_status.
 
         :new_status: new status from `BugTaskStatus`
