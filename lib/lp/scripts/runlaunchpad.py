@@ -341,8 +341,6 @@ def start_launchpad(argv=list(sys.argv), setup=None):
     services, argv = split_out_runlaunchpad_arguments(argv[1:])
     argv = process_config_arguments(argv)
     services = get_services_to_run(services)
-    # Create the ZCML override file based on the instance.
-    config.generate_overrides()
     # Many things rely on a directory called 'logs' existing in the current
     # working directory.
     ensure_directory_exists("logs")
@@ -385,8 +383,6 @@ def start_launchpad(argv=list(sys.argv), setup=None):
 
 def start_librarian():
     """Start the Librarian in the background."""
-    # Create the ZCML override file based on the instance.
-    config.generate_overrides()
     # Create the Librarian storage directory if it doesn't already exist.
     prepare_for_librarian()
     pidfile = pidfile_path("librarian")
