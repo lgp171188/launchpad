@@ -16,7 +16,6 @@ import sys
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
 
-from lp.services.osutils import open_for_writing
 from lp.services.propertycache import cachedproperty, get_property_cache
 
 __all__ = [
@@ -231,27 +230,6 @@ class LaunchpadConfig:
             with open(path) as f:
                 text = f.read()
             self._config.push(path, text)
-
-    def generate_overrides(self):
-        """Ensure correct config.zcml overrides will be called.
-
-        Call this method before letting any ZCML processing occur.
-        """
-        loader_file = os.path.join(self.root, "zcml/+config-overrides.zcml")
-        loader = open_for_writing(loader_file, "w")
-
-        print(
-            """
-            <configure xmlns="http://namespaces.zope.org/zope">
-                <!-- This file automatically generated using
-                     lp.services.config.LaunchpadConfig.generate_overrides.
-                     DO NOT EDIT. -->
-                <include files="%s/*.zcml" />
-                </configure>"""
-            % self.config_dir,
-            file=loader,
-        )
-        loader.close()
 
     def appserver_root_url(self, facet="mainsite", ensureSlash=False):
         """Return the correct app server root url for the given facet."""

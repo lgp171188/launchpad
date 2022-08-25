@@ -12,7 +12,7 @@
     <includeOverrides files="override-includes/*-configure.zcml" />
     <includeOverrides files="override-includes/*-configure-testing.zcml" />
 
-    <!-- No +config-overrides here, as the mail config can cause celery
-         tests to fail. -->
+    <!-- No <includeLaunchpadOverrides /> here, as the mail config can cause
+         celery tests to fail. -->
 
 </configure>

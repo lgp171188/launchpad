@@ -71,7 +71,6 @@ def configure_environment():
 
     # Tell lp.services.config to use the testrunner config instance.
     config.setInstance("testrunner")
-    config.generate_overrides()
 
     # Remove this module's directory from path, so that zope.testbrowser
     # can import pystone from test:
