@@ -1,4 +1,5 @@
 *.charm
 bundle.yaml
 dist
+layer/*/codetree-collect-info.yaml
 tmp
