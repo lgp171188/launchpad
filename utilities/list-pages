@@ -53,7 +53,6 @@ from zope.interface import directlyProvides, implementer
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 import zcml
-from lp.services.config import config
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.publisher import canonical_url
@@ -64,8 +63,6 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 def load_zcml(zopeless=False):
     """Load ZCML the way we do in the web site."""
-    # We can't load ZCML without generating configuration.
-    config.generate_overrides()
     if zopeless:
         execute_zcml_for_scripts()
     else:
