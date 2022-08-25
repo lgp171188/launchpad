@@ -4,7 +4,6 @@
 """Tests for the scanner's email generation."""
 
 import email
-import os
 
 from breezy.uncommit import uncommit
 from zope.component import getUtility
@@ -29,6 +28,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.runner import JobRunner
 from lp.services.job.tests import block_on_job, pop_remote_notifications
 from lp.services.mail import stub
+from lp.services.osutils import override_environ
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import CeleryJobLayer, LaunchpadZopelessLayer
@@ -166,10 +166,6 @@ class TestViaCelery(TestCaseWithFactory):
         switch_dbuser("branchscanner")
         # Needed for feature flag teardown
         self.addCleanup(switch_dbuser, config.launchpad.dbuser)
-        # Set 'bzr whoami' for proper test isolation.  (See bug 981114).
-        # This setting is done in an isolated bzr environment so it does not
-        # affect the environment of the person running the tests.
-        os.system("bzr whoami 'Nobody Knows <nobody@example.com>'")
         return db_branch, tree
 
     def test_empty_branch(self):
@@ -182,7 +178,8 @@ class TestViaCelery(TestCaseWithFactory):
     def test_uncommit_branch(self):
         """RevisionMailJob for removed revisions runs via Celery."""
         db_branch, tree = self.prepare("RevisionMailJob")
-        tree.commit("message")
+        with override_environ(BRZ_EMAIL="nobody@example.com"):
+            tree.commit("message")
         bzr_sync = BzrSync(db_branch)
         with block_on_job():
             bzr_sync.syncBranchAndClose(tree.branch)
@@ -197,12 +194,14 @@ class TestViaCelery(TestCaseWithFactory):
         # Enable RevisionMailJob to let celery activate a new connection
         # before trying to flush sent emails calling pop_remote_notifications.
         db_branch, tree = self.prepare("RevisionMailJob RevisionsAddedJob")
-        tree.commit("message")
+        with override_environ(BRZ_EMAIL="nobody@example.com"):
+            tree.commit("message")
         bzr_sync = BzrSync(db_branch)
         with block_on_job():
             bzr_sync.syncBranchAndClose(tree.branch)
         pop_remote_notifications()
-        tree.commit("message2")
+        with override_environ(BRZ_EMAIL="nobody@example.com"):
+            tree.commit("message2")
         with block_on_job():
             bzr_sync.syncBranchAndClose(tree.branch)
         self.assertEqual(1, len(pop_remote_notifications()))
