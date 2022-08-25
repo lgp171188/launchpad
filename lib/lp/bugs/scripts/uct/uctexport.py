@@ -101,8 +101,18 @@ class UCTExporter:
         bug_tasks = list(bug.bugtasks)  # type: List[BugTask]
 
         cve_importance = vulnerability.importance
+
+        # When exporting, we shouldn't output the importance value if it
+        # hasn't been specified in the original UCT file.
+        # So, the following logic is used:
+        #  - DistroPackage: export importance only if it's different from
+        #  the CVE importance
+        #  - SeriesPackage: export importance only if it's different from the
+        #  DistroPackage importance
         package_importances = {}
 
+        # We need to process all distribution package tasks before processing
+        # the distro-series tasks to collect importance value for each package.
         distro_packages = []
         for bug_task in bug_tasks:
             target = removeSecurityProxy(bug_task.target)
