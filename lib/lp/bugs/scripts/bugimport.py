@@ -356,14 +356,10 @@ class BugImporter:
         # set up bug task
         bugtask.datecreated = datecreated
         bugtask.transitionToImportance(
-            get_enum_value(
-                BugTaskImportance, get_value(bugnode, "importance")
-            ),
-            self.bug_importer,
+            get_enum_value(BugTaskImportance, get_value(bugnode, "importance"))
         )
         bugtask.transitionToStatus(
-            get_enum_value(BugTaskStatus, get_value(bugnode, "status")),
-            self.bug_importer,
+            get_enum_value(BugTaskStatus, get_value(bugnode, "status"))
         )
         bugtask.transitionToAssignee(
             self.getPerson(get_element(bugnode, "assignee"))
