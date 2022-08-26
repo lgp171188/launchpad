@@ -286,16 +286,20 @@ def get_vcs_details():
     """
     global _vcs_details_cache
     if _vcs_details_cache is None:
-        branch_nick = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=SCHEMA_DIR,
-            universal_newlines=True,
-        ).rstrip("\n")
-        revision_id = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
-            cwd=SCHEMA_DIR,
-            universal_newlines=True,
-        ).rstrip("\n")
+        top = os.path.dirname(os.path.dirname(SCHEMA_DIR))
+        if os.path.exists(os.path.join(top, ".git")):
+            branch_nick = subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=SCHEMA_DIR,
+                universal_newlines=True,
+            ).rstrip("\n")
+            revision_id = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=SCHEMA_DIR,
+                universal_newlines=True,
+            ).rstrip("\n")
+        else:
+            branch_nick, revision_id = None, None
         _vcs_details_cache = (branch_nick, revision_id)
     return _vcs_details_cache
 
