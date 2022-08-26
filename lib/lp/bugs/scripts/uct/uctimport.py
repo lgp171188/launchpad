@@ -14,12 +14,21 @@ For each entry in UCT we:
 3. Create a Bug Task for each distribution/series package in the CVE entry
 4. Update the statuses of Bug Tasks based on the information in the CVE entry
 5. Update the information the related Launchpad's `Cve` model, if necessary
+
+Three types of bug tags are created:
+
+1. Bug tasks with a distribution package as a target - they represent
+   importance of the package
+2. Bug tasks with distribution series packages as a target - they represent
+   importance and status of the package in a particular series
+3. Bug tasks with a product as a target - they represent importance and
+   status of the package in upstream.
 """
 import logging
 from datetime import timezone
 from itertools import chain
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import transaction
 from zope.component import getUtility
@@ -156,10 +165,17 @@ class UCTImporter:
         self._update_external_bug_urls(bug, cve.bug_urls)
 
         self._create_bug_tasks(
-            bug, cve.distro_packages[1:], cve.series_packages
+            bug,
+            cve.distro_packages[1:],
+            cve.series_packages,
+            cve.upstream_packages,
         )
         self._update_statuses_and_importances(
-            bug, cve.importance, cve.distro_packages, cve.series_packages
+            bug,
+            cve.importance,
+            cve.distro_packages,
+            cve.series_packages,
+            cve.upstream_packages,
         )
         self._assign_bug_tasks(bug, cve.assignee)
 
@@ -188,9 +204,18 @@ class UCTImporter:
         """
         bug.description = self._make_bug_description(cve)
 
-        self._create_bug_tasks(bug, cve.distro_packages, cve.series_packages)
+        self._create_bug_tasks(
+            bug,
+            cve.distro_packages,
+            cve.series_packages,
+            cve.upstream_packages,
+        )
         self._update_statuses_and_importances(
-            bug, cve.importance, cve.distro_packages, cve.series_packages
+            bug,
+            cve.importance,
+            cve.distro_packages,
+            cve.series_packages,
+            cve.upstream_packages,
         )
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
@@ -228,6 +253,7 @@ class UCTImporter:
         bug: BugModel,
         distro_packages: List[CVE.DistroPackage],
         series_packages: List[CVE.SeriesPackage],
+        upstream_packages: List[CVE.UpstreamPackage],
     ) -> None:
         """
         Add bug tasks to the given `Bug` model based on the information
@@ -246,7 +272,8 @@ class UCTImporter:
         bug_task_by_target = {t.target: t for t in bug_tasks}
         bug_task_set = getUtility(IBugTaskSet)
         for target in (
-            p.package for p in chain(distro_packages, series_packages)
+            p.package
+            for p in chain(distro_packages, series_packages, upstream_packages)
         ):
             if target not in bug_task_by_target:
                 bug_task_set.createTask(bug, self.bug_importer, target)
@@ -331,6 +358,7 @@ class UCTImporter:
         cve_importance: BugTaskImportance,
         distro_packages: List[CVE.DistroPackage],
         series_packages: List[CVE.SeriesPackage],
+        upstream_packages: List[CVE.UpstreamPackage],
     ) -> None:
         """
         Update statuses and importances of bug tasks according to the
@@ -350,19 +378,25 @@ class UCTImporter:
         bug_tasks = bug.bugtasks  # type: List[BugTask]
         bug_task_by_target = {t.target: t for t in bug_tasks}
 
-        package_importances = {}
+        package_importances = {}  # type: Dict[str, BugTaskImportance]
 
         for dp in distro_packages:
             task = bug_task_by_target[dp.package]
             dp_importance = dp.importance or cve_importance
-            package_importances[dp.package.sourcepackagename] = dp_importance
+            package_importances[
+                dp.package.sourcepackagename.name
+            ] = dp_importance
             task.transitionToImportance(dp_importance)
 
-        for sp in series_packages:
+        for sp in chain(series_packages, upstream_packages):
             task = bug_task_by_target[sp.package]
-            package_importance = package_importances[
-                sp.package.sourcepackagename
-            ]
+            if isinstance(sp, CVE.SeriesPackage):
+                package_name = sp.package.sourcepackagename.name
+            elif isinstance(sp, CVE.UpstreamPackage):
+                package_name = sp.package.name
+            else:
+                raise AssertionError()
+            package_importance = package_importances[package_name]
             sp_importance = sp.importance or package_importance
             task.transitionToImportance(sp_importance)
             task.transitionToStatus(sp.status)

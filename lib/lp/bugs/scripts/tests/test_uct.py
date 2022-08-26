@@ -91,20 +91,20 @@ class TestUCTRecord(TestCase):
                     UCTRecord.Package(
                         name="linux",
                         statuses=[
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="upstream",
+                            UCTRecord.SeriesPackageStatus(
+                                series="upstream",
                                 status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.17~rc1",
                                 priority=None,
                             ),
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="impish",
+                            UCTRecord.SeriesPackageStatus(
+                                series="impish",
                                 status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.13.0-37.42",
                                 priority=UCTRecord.Priority.MEDIUM,
                             ),
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="devel",
+                            UCTRecord.SeriesPackageStatus(
+                                series="devel",
                                 status=UCTRecord.PackageStatus.NOT_AFFECTED,
                                 reason="5.15.0-25.25",
                                 priority=UCTRecord.Priority.MEDIUM,
@@ -126,20 +126,20 @@ class TestUCTRecord(TestCase):
                     UCTRecord.Package(
                         name="linux-hwe",
                         statuses=[
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="upstream",
+                            UCTRecord.SeriesPackageStatus(
+                                series="upstream",
                                 status=UCTRecord.PackageStatus.RELEASED,
                                 reason="5.17~rc1",
                                 priority=None,
                             ),
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="impish",
+                            UCTRecord.SeriesPackageStatus(
+                                series="impish",
                                 status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                                 reason="",
                                 priority=None,
                             ),
-                            UCTRecord.DistroSeriesPackageStatus(
-                                distroseries="devel",
+                            UCTRecord.SeriesPackageStatus(
+                                series="devel",
                                 status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                                 reason="",
                                 priority=None,
@@ -186,8 +186,14 @@ class TextCVE(TestCaseWithFactory):
             status=SeriesStatus.DEVELOPMENT,
             name="kinetic",
         )
-        dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
-        dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        product_1 = self.factory.makeProduct()
+        product_2 = self.factory.makeProduct()
+        dsp1 = self.factory.makeDistributionSourcePackage(
+            sourcepackagename=product_1.name, distribution=ubuntu
+        )
+        dsp2 = self.factory.makeDistributionSourcePackage(
+            sourcepackagename=product_2.name, distribution=ubuntu
+        )
         assignee = self.factory.makePerson()
 
         self.uct_record = UCTRecord(
@@ -224,22 +230,28 @@ class TextCVE(TestCaseWithFactory):
                 UCTRecord.Package(
                     name=dsp1.sourcepackagename.name,
                     statuses=[
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries=supported_series.name,
+                        UCTRecord.SeriesPackageStatus(
+                            series=supported_series.name,
                             status=UCTRecord.PackageStatus.NOT_AFFECTED,
                             reason="reason 1",
                             priority=UCTRecord.Priority.MEDIUM,
                         ),
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries=current_series.name,
+                        UCTRecord.SeriesPackageStatus(
+                            series=current_series.name,
                             status=UCTRecord.PackageStatus.RELEASED,
                             reason="reason 2",
                             priority=UCTRecord.Priority.MEDIUM,
                         ),
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries="devel",
+                        UCTRecord.SeriesPackageStatus(
+                            series="devel",
                             status=UCTRecord.PackageStatus.RELEASED,
                             reason="reason 3",
+                            priority=None,
+                        ),
+                        UCTRecord.SeriesPackageStatus(
+                            series="upstream",
+                            status=UCTRecord.PackageStatus.RELEASED,
+                            reason="reason 4",
                             priority=None,
                         ),
                     ],
@@ -250,20 +262,26 @@ class TextCVE(TestCaseWithFactory):
                 UCTRecord.Package(
                     name=dsp2.sourcepackagename.name,
                     statuses=[
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries=supported_series.name,
+                        UCTRecord.SeriesPackageStatus(
+                            series=supported_series.name,
                             status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                             reason="",
                             priority=None,
                         ),
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries=current_series.name,
+                        UCTRecord.SeriesPackageStatus(
+                            series=current_series.name,
                             status=UCTRecord.PackageStatus.DOES_NOT_EXIST,
                             reason="",
                             priority=None,
                         ),
-                        UCTRecord.DistroSeriesPackageStatus(
-                            distroseries="devel",
+                        UCTRecord.SeriesPackageStatus(
+                            series="devel",
+                            status=UCTRecord.PackageStatus.RELEASED,
+                            reason="",
+                            priority=None,
+                        ),
+                        UCTRecord.SeriesPackageStatus(
+                            series="upstream",
                             status=UCTRecord.PackageStatus.RELEASED,
                             reason="",
                             priority=None,
@@ -353,6 +371,20 @@ class TextCVE(TestCaseWithFactory):
                     status_explanation="",
                 ),
             ],
+            upstream_packages=[
+                CVE.UpstreamPackage(
+                    package=product_1,
+                    importance=None,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="reason 4",
+                ),
+                CVE.SeriesPackage(
+                    package=product_2,
+                    importance=None,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="",
+                ),
+            ],
             importance=BugTaskImportance.CRITICAL,
             status=VulnerabilityStatus.ACTIVE,
             assignee=assignee,
@@ -393,7 +425,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         super().setUp(*args, **kwargs)
         celebrities = getUtility(ILaunchpadCelebrities)
         self.ubuntu = celebrities.ubuntu
-        self.esm = self.factory.makeDistribution("esm")
+        self.esm = self.factory.makeDistribution("ubuntu-esm")
         self.bug_importer = celebrities.bug_importer
         self.ubuntu_supported_series = self.factory.makeDistroSeries(
             distribution=self.ubuntu,
@@ -418,11 +450,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             status=SeriesStatus.CURRENT,
             name="trusty",
         )
+        self.product_1 = self.factory.makeProduct()
+        self.product_2 = self.factory.makeProduct()
         self.ubuntu_package = self.factory.makeDistributionSourcePackage(
-            distribution=self.ubuntu
+            sourcepackagename=self.product_1.name, distribution=self.ubuntu
         )
         self.esm_package = self.factory.makeDistributionSourcePackage(
-            distribution=self.esm
+            sourcepackagename=self.product_2.name, distribution=self.esm
         )
         for series in (
             self.ubuntu_supported_series,
@@ -446,7 +480,9 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             )
 
         self.lp_cve = self.factory.makeCVE("2022-23222")
-        self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.now = datetime.datetime.now(datetime.timezone.utc).replace(
+            microsecond=0
+        )
         self.cve = CVE(
             sequence="CVE-2022-23222",
             crd=None,
@@ -509,6 +545,20 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     status_explanation="needs triage",
                 ),
             ],
+            upstream_packages=[
+                CVE.UpstreamPackage(
+                    package=self.product_1,
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="fix released",
+                ),
+                CVE.UpstreamPackage(
+                    package=self.product_2,
+                    importance=BugTaskImportance.LOW,
+                    status=BugTaskStatus.WONTFIX,
+                    status_explanation="ignored",
+                ),
+            ],
             importance=BugTaskImportance.MEDIUM,
             status=VulnerabilityStatus.ACTIVE,
             assignee=self.factory.makePerson(),
@@ -552,7 +602,10 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         bug_tasks = bug.bugtasks  # type: List[BugTask]
 
         self.assertEqual(
-            len(cve.distro_packages) + len(cve.series_packages), len(bug_tasks)
+            len(cve.distro_packages)
+            + len(cve.series_packages)
+            + len(cve.upstream_packages),
+            len(bug_tasks),
         )
         bug_tasks_by_target = {t.target: t for t in bug_tasks}
 
@@ -563,7 +616,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             t = bug_tasks_by_target[distro_package.package]
             package_importance = distro_package.importance or cve.importance
             package_importances[
-                distro_package.package.sourcepackagename
+                distro_package.package.sourcepackagename.name
             ] = package_importance
             conjoined_primary = t.conjoined_primary
             if conjoined_primary:
@@ -580,13 +633,26 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertIn(series_package.package, bug_tasks_by_target)
             t = bug_tasks_by_target[series_package.package]
             package_importance = package_importances[
-                series_package.package.sourcepackagename
+                series_package.package.sourcepackagename.name
             ]
             sp_importance = series_package.importance or package_importance
             self.assertEqual(sp_importance, t.importance)
             self.assertEqual(series_package.status, t.status)
             self.assertEqual(
                 series_package.status_explanation, t.status_explanation
+            )
+
+        for upstream_package in cve.upstream_packages:
+            self.assertIn(upstream_package.package, bug_tasks_by_target)
+            t = bug_tasks_by_target[upstream_package.package]
+            package_importance = package_importances[
+                upstream_package.package.name
+            ]
+            sp_importance = upstream_package.importance or package_importance
+            self.assertEqual(sp_importance, t.importance)
+            self.assertEqual(upstream_package.status, t.status)
+            self.assertEqual(
+                upstream_package.status_explanation, t.status_explanation
             )
 
         for t in bug_tasks:
@@ -624,6 +690,32 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             {cvss.authority: cvss.vector_string for cvss in cve.cvss},
             lp_cve.cvss,
         )
+
+    def checkCVE(self, expected: CVE, actual: CVE):
+        self.assertEqual(expected.sequence, actual.sequence)
+        self.assertEqual(expected.crd, actual.crd)
+        self.assertEqual(expected.public_date, actual.public_date)
+        self.assertEqual(
+            expected.public_date_at_USN, actual.public_date_at_USN
+        )
+        self.assertListEqual(expected.distro_packages, actual.distro_packages)
+        self.assertListEqual(expected.series_packages, actual.series_packages)
+        self.assertListEqual(
+            expected.upstream_packages, actual.upstream_packages
+        )
+        self.assertEqual(expected.importance, actual.importance)
+        self.assertEqual(expected.status, actual.status)
+        self.assertEqual(expected.assignee, actual.assignee)
+        self.assertEqual(expected.discovered_by, actual.discovered_by)
+        self.assertEqual(expected.description, actual.description)
+        self.assertEqual(
+            expected.ubuntu_description, actual.ubuntu_description
+        )
+        self.assertListEqual(expected.bug_urls, actual.bug_urls)
+        self.assertListEqual(expected.references, actual.references)
+        self.assertEqual(expected.notes, actual.notes)
+        self.assertEqual(expected.mitigation, actual.mitigation)
+        self.assertListEqual(expected.cvss, actual.cvss)
 
     def test_create_bug(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
@@ -891,20 +983,13 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.importer.import_cve(self.cve)
         bug = self.importer._find_existing_bug(self.cve, self.lp_cve)
         cve = self.exporter._make_cve_from_bug(bug)
-        self.assertEqual(self.cve.sequence, cve.sequence)
-        self.assertEqual(self.cve.crd, cve.crd)
-        self.assertEqual(self.cve.public_date, cve.public_date)
-        self.assertEqual(self.cve.public_date_at_USN, cve.public_date_at_USN)
-        self.assertListEqual(self.cve.distro_packages, cve.distro_packages)
-        self.assertListEqual(self.cve.series_packages, cve.series_packages)
-        self.assertEqual(self.cve.importance, cve.importance)
-        self.assertEqual(self.cve.status, cve.status)
-        self.assertEqual(self.cve.assignee, cve.assignee)
-        self.assertEqual(self.cve.discovered_by, cve.discovered_by)
-        self.assertEqual(self.cve.description, cve.description)
-        self.assertEqual(self.cve.ubuntu_description, cve.ubuntu_description)
-        self.assertListEqual(self.cve.bug_urls, cve.bug_urls)
-        self.assertListEqual(self.cve.references, cve.references)
-        self.assertEqual(self.cve.notes, cve.notes)
-        self.assertEqual(self.cve.mitigation, cve.mitigation)
-        self.assertListEqual(self.cve.cvss, cve.cvss)
+        self.checkCVE(self.cve, cve)
+
+    def test_export_bug_to_uct_file(self):
+        self.importer.import_cve(self.cve)
+        bug = self.importer._find_existing_bug(self.cve, self.lp_cve)
+        output_dir = Path(self.makeTemporaryDirectory())
+        cve_path = self.exporter.export_bug_to_uct_file(bug.id, output_dir)
+        uct_record = UCTRecord.load(cve_path)
+        cve = CVE.make_from_uct_record(uct_record)
+        self.checkCVE(self.cve, cve)
