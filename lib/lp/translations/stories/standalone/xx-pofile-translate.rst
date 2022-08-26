@@ -188,8 +188,9 @@ each translatable message with one radiobutton to select the existing
 translation (the default); a group (possibly empty) of suggested translations;
 and one for a custom translation entered into a text input field.
 
-Here we see an example where three suggestions are offered, making for five
-identically-named radio buttons and sundry other HTML tags.
+Here we see an example where one suggestion is offered
+(there are three external suggestions, two of them are rejected),
+making for three identically-named radio buttons and sundry other HTML tags.
 
     >>> browser.open(
     ...     'http://translations.launchpad.test/alsa-utils/trunk/'
@@ -200,8 +201,6 @@ identically-named radio buttons and sundry other HTML tags.
     msgset_198
     msgset_198_es_needsreview
     msgset_198_es_translation_0_new
-    msgset_198_es_translation_0_radiobutton
-    msgset_198_es_translation_0_radiobutton
     msgset_198_es_translation_0_radiobutton
     msgset_198_es_translation_0_radiobutton
     msgset_198_es_translation_0_radiobutton

@@ -1419,7 +1419,7 @@ class CurrentTranslationMessageView(LaunchpadView):
                 (
                     m
                     for m in translations[language].suggested
-                    if m.browser_pofile
+                    if m.browser_pofile and not m.isHidden(m.browser_pofile)
                 ),
                 key=operator.attrgetter("date_created"),
                 reverse=True,
