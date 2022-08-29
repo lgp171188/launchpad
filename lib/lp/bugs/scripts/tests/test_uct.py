@@ -480,14 +480,17 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             )
 
         self.lp_cve = self.factory.makeCVE("2022-23222")
-        self.now = datetime.datetime.now(datetime.timezone.utc).replace(
-            microsecond=0
-        )
         self.cve = CVE(
             sequence="CVE-2022-23222",
-            date_made_public=self.now,
-            date_notice_issued=self.now,
-            date_coordinated_release=self.now,
+            date_made_public=datetime.datetime(
+                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            date_notice_issued=datetime.datetime(
+                2021, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            date_coordinated_release=datetime.datetime(
+                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            ),
             distro_packages=[
                 CVE.DistroPackage(
                     package=self.ubuntu_package,
