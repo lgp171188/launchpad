@@ -8,7 +8,7 @@ __all__ = [
     "SpecificationDependenciesVocabulary",
 ]
 
-from storm.locals import SQL, And, Store
+from storm.locals import SQL, Store
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
@@ -28,12 +28,12 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
-    SQLObjectVocabularyBase,
+    StormVocabularyBase,
 )
 
 
 @implementer(IHugeVocabulary)
-class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
+class SpecificationDepCandidatesVocabulary(StormVocabularyBase):
     """Specifications that could be dependencies of this spec.
 
     This includes only those specs that are not blocked by this spec (directly
@@ -54,7 +54,7 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
     """
 
     _table = Specification
-    _orderBy = "name"
+    _order_by = "name"
     displayname = "Select a blueprint"
     step_title = "Search"
 
@@ -74,7 +74,7 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         user = getattr(getUtility(ILaunchBag), "user", None)
         return spec not in set(self.context.all_blocked(user=user))
 
-    def _order_by(self):
+    def _order_search_by(self):
         """Look at the context to provide grouping.
 
         If the blueprint is for a project, then matching results for that
@@ -187,7 +187,7 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
                 fti_search(Specification, query),
                 self._exclude_blocked_query(),
             )
-            .order_by(self._order_by())
+            .order_by(self._order_search_by())
         )
 
     def __iter__(self):
@@ -198,17 +198,17 @@ class SpecificationDepCandidatesVocabulary(SQLObjectVocabularyBase):
         return self._is_valid_candidate(obj)
 
 
-class SpecificationDependenciesVocabulary(SQLObjectVocabularyBase):
+class SpecificationDependenciesVocabulary(StormVocabularyBase):
     """List specifications on which the current specification depends."""
 
     _table = Specification
-    _orderBy = "title"
+    _order_by = "title"
 
     @property
-    def _filter(self):
+    def _clauses(self):
         user = getattr(getUtility(ILaunchBag), "user", None)
-        return And(
-            SpecificationDependency.specificationID == self.context.id,
-            SpecificationDependency.dependencyID == Specification.id,
+        return [
+            SpecificationDependency.specification == self.context,
+            SpecificationDependency.dependency_id == Specification.id,
             *get_specification_privacy_filter(user),
-        )
+        ]

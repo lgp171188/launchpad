@@ -974,7 +974,7 @@ class DistroSeries(
           - informationalness: if nothing is said, ANY
 
         """
-        base_clauses = [Specification.distroseriesID == self.id]
+        base_clauses = [Specification.distroseries == self]
         return search_specifications(
             self,
             base_clauses,

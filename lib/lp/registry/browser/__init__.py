@@ -244,7 +244,9 @@ class RegistryDeleteViewMixin:
                 Store.of(bugtask).remove(nb.conjoined_primary)
             else:
                 nb.milestone = None
-        removeSecurityProxy(milestone.all_specifications).set(milestoneID=None)
+        removeSecurityProxy(milestone.all_specifications).set(
+            milestone_id=None
+        )
         getUtility(ISpecificationWorkItemSet).unlinkMilestone(milestone)
         self._deleteRelease(milestone.product_release)
         milestone.destroySelf()

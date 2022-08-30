@@ -12,9 +12,23 @@ __all__ = [
 
 import operator
 
+import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
-from storm.locals import SQL, Count, Desc, Join, Or, ReferenceSet, Store
+from storm.locals import (
+    SQL,
+    Bool,
+    Count,
+    DateTime,
+    Desc,
+    Int,
+    Join,
+    Or,
+    Reference,
+    ReferenceSet,
+    Store,
+    Unicode,
+)
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -71,22 +85,13 @@ from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.model.milestone import Milestone
 from lp.services.database import bulk
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    SQLBase,
     convert_storm_clause_to_string,
     sqlvalues,
 )
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.interfaces import ILaunchBag
@@ -160,15 +165,17 @@ SPECIFICATION_POLICY_DEFAULT_TYPES = {
 
 
 @implementer(ISpecification, IBugLinkTarget, IInformationType)
-class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
+class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
     """See ISpecification."""
 
-    _defaultOrder = ["-priority", "definition_status", "name", "id"]
+    __storm_table__ = "Specification"
+    __storm_order__ = ("-priority", "definition_status", "name", "id")
 
     # db field names
-    name = StringCol(unique=True, notNull=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=True)
+    id = Int(primary=True)
+    name = Unicode(allow_none=False)
+    title = Unicode(allow_none=False)
+    summary = Unicode(allow_none=False)
     definition_status = DBEnum(
         enum=SpecificationDefinitionStatus,
         allow_none=False,
@@ -179,110 +186,94 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         allow_none=False,
         default=SpecificationPriority.UNDEFINED,
     )
-    _assignee = ForeignKey(
-        dbName="assignee",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    _assignee_id = Int(
+        name="assignee",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    _drafter = ForeignKey(
-        dbName="drafter",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    _assignee = Reference(_assignee_id, "Person.id")
+    _drafter_id = Int(
+        name="drafter",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    _approver = ForeignKey(
-        dbName="approver",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    _drafter = Reference(_drafter_id, "Person.id")
+    _approver_id = Int(
+        name="approver",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    _approver = Reference(_approver_id, "Person.id")
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    product = ForeignKey(
-        dbName="product", foreignKey="Product", notNull=False, default=None
-    )
-    productseries = ForeignKey(
-        dbName="productseries",
-        foreignKey="ProductSeries",
-        notNull=False,
-        default=None,
-    )
-    distribution = ForeignKey(
-        dbName="distribution",
-        foreignKey="Distribution",
-        notNull=False,
-        default=None,
-    )
-    distroseries = ForeignKey(
-        dbName="distroseries",
-        foreignKey="DistroSeries",
-        notNull=False,
-        default=None,
-    )
+    owner = Reference(owner_id, "Person.id")
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    product_id = Int(name="product", allow_none=True, default=None)
+    product = Reference(product_id, "Product.id")
+    productseries_id = Int(name="productseries", allow_none=True, default=None)
+    productseries = Reference(productseries_id, "ProductSeries.id")
+    distribution_id = Int(name="distribution", allow_none=True, default=None)
+    distribution = Reference(distribution_id, "Distribution.id")
+    distroseries_id = Int(name="distroseries", allow_none=True, default=None)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
     goalstatus = DBEnum(
         enum=SpecificationGoalStatus,
         allow_none=False,
         default=SpecificationGoalStatus.PROPOSED,
     )
-    goal_proposer = ForeignKey(
-        dbName="goal_proposer",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    goal_proposer_id = Int(
+        name="goal_proposer",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    date_goal_proposed = UtcDateTimeCol(notNull=False, default=None)
-    goal_decider = ForeignKey(
-        dbName="goal_decider",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    goal_proposer = Reference(goal_proposer_id, "Person.id")
+    date_goal_proposed = DateTime(
+        allow_none=True, default=None, tzinfo=pytz.UTC
+    )
+    goal_decider_id = Int(
+        name="goal_decider",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    date_goal_decided = UtcDateTimeCol(notNull=False, default=None)
-    milestone = ForeignKey(
-        dbName="milestone", foreignKey="Milestone", notNull=False, default=None
+    goal_decider = Reference(goal_decider_id, "Person.id")
+    date_goal_decided = DateTime(
+        allow_none=True, default=None, tzinfo=pytz.UTC
     )
-    specurl = StringCol(notNull=False, default=None)
-    whiteboard = StringCol(notNull=False, default=None)
-    direction_approved = BoolCol(notNull=True, default=False)
-    man_days = IntCol(notNull=False, default=None)
+    milestone_id = Int(name="milestone", allow_none=True, default=None)
+    milestone = Reference(milestone_id, "Milestone.id")
+    specurl = Unicode(allow_none=True, default=None)
+    whiteboard = Unicode(allow_none=True, default=None)
+    direction_approved = Bool(allow_none=False, default=False)
+    man_days = Int(allow_none=True, default=None)
     implementation_status = DBEnum(
         enum=SpecificationImplementationStatus,
         allow_none=False,
         default=SpecificationImplementationStatus.UNKNOWN,
     )
-    superseded_by = ForeignKey(
-        dbName="superseded_by",
-        foreignKey="Specification",
-        notNull=False,
+    superseded_by_id = Int(name="superseded_by", allow_none=True, default=None)
+    superseded_by = Reference(superseded_by_id, "Specification.id")
+    completer_id = Int(
+        name="completer",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    completer = ForeignKey(
-        dbName="completer",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    completer = Reference(completer_id, "Person.id")
+    date_completed = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    starter_id = Int(
+        name="starter",
+        allow_none=True,
+        validator=validate_public_person,
         default=None,
     )
-    date_completed = UtcDateTimeCol(notNull=False, default=None)
-    starter = ForeignKey(
-        dbName="starter",
-        notNull=False,
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
-    )
-    date_started = UtcDateTimeCol(notNull=False, default=None)
+    starter = Reference(starter_id, "Person.id")
+    date_started = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
 
     # useful joins
     _subscriptions = ReferenceSet(
@@ -298,31 +289,58 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         order_by=("Person.display_name", "Person.name"),
     )
     sprint_links = ReferenceSet(
-        "<primary key>",
+        "id",
         "SprintSpecification.specification_id",
         order_by="SprintSpecification.id",
     )
     sprints = ReferenceSet(
-        "<primary key>",
+        "id",
         "SprintSpecification.specification_id",
         "SprintSpecification.sprint_id",
         "Sprint.id",
         order_by="Sprint.name",
     )
-    spec_dependency_links = SQLMultipleJoin(
-        "SpecificationDependency", joinColumn="specification", orderBy="id"
+    spec_dependency_links = ReferenceSet(
+        "id",
+        "SpecificationDependency.specification_id",
+        order_by="SpecificationDependency.id",
     )
 
-    dependencies = SQLRelatedJoin(
-        "Specification",
-        joinColumn="specification",
-        otherColumn="dependency",
-        orderBy="title",
-        intermediateTable="SpecificationDependency",
+    dependencies = ReferenceSet(
+        "id",
+        "SpecificationDependency.specification_id",
+        "SpecificationDependency.dependency_id",
+        "Specification.id",
+        order_by="Specification.title",
     )
     information_type = DBEnum(
         enum=InformationType, allow_none=False, default=InformationType.PUBLIC
     )
+
+    def __init__(
+        self,
+        name,
+        title,
+        summary,
+        owner,
+        definition_status=DEFAULT,
+        assignee=None,
+        drafter=None,
+        approver=None,
+        specurl=None,
+        whiteboard=None,
+    ):
+        super().__init__()
+        self.name = name
+        self.title = title
+        self.summary = summary
+        self.owner = owner
+        self.definition_status = definition_status
+        self._assignee = assignee
+        self._drafter = drafter
+        self._approver = approver
+        self.specurl = specurl
+        self.whiteboard = whiteboard
 
     @cachedproperty
     def linked_branches(self):
@@ -355,44 +373,44 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     def getDependencies(self, user=None):
         return self._fetch_children_or_parents(
-            SpecificationDependency.specificationID,
-            SpecificationDependency.dependencyID,
+            SpecificationDependency.specification_id,
+            SpecificationDependency.dependency_id,
             user,
         )
 
     def getBlockedSpecs(self, user=None):
         return self._fetch_children_or_parents(
-            SpecificationDependency.dependencyID,
-            SpecificationDependency.specificationID,
+            SpecificationDependency.dependency_id,
+            SpecificationDependency.specification_id,
             user,
         )
 
-    def set_assignee(self, person):
+    @property
+    def assignee(self):
+        return self._assignee
+
+    @assignee.setter
+    def assignee(self, person):
         self.subscribeIfAccessGrantNeeded(person)
         self._assignee = person
 
-    def get_assignee(self):
-        return self._assignee
+    @property
+    def drafter(self):
+        return self._drafter
 
-    assignee = property(get_assignee, set_assignee)
-
-    def set_drafter(self, person):
+    @drafter.setter
+    def drafter(self, person):
         self.subscribeIfAccessGrantNeeded(person)
         self._drafter = person
 
-    def get_drafter(self):
-        return self._drafter
-
-    drafter = property(get_drafter, set_drafter)
-
-    def set_approver(self, person):
-        self.subscribeIfAccessGrantNeeded(person)
-        self._approver = person
-
-    def get_approver(self):
+    @property
+    def approver(self):
         return self._approver
 
-    approver = property(get_approver, set_approver)
+    @approver.setter
+    def approver(self, person):
+        self.subscribeIfAccessGrantNeeded(person)
+        self._approver = person
 
     def subscribeIfAccessGrantNeeded(self, person):
         """Subscribe person if this specification is not public and if
@@ -777,22 +795,22 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         """See ISpecification."""
         newstatus = None
         if self.is_started:
-            if self.starterID is None:
+            if self.starter_id is None:
                 newstatus = SpecificationLifecycleStatus.STARTED
                 self.date_started = UTC_NOW
                 self.starter = user
         else:
-            if self.starterID is not None:
+            if self.starter_id is not None:
                 newstatus = SpecificationLifecycleStatus.NOTSTARTED
                 self.date_started = None
                 self.starter = None
         if self.is_complete:
-            if self.completerID is None:
+            if self.completer_id is None:
                 newstatus = SpecificationLifecycleStatus.COMPLETE
                 self.date_completed = UTC_NOW
                 self.completer = user
         else:
-            if self.completerID is not None:
+            if self.completer_id is not None:
                 self.date_completed = None
                 self.completer = None
                 if self.is_started:
@@ -1025,8 +1043,8 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
         # see if a relevant dependency link exists, and if so, delete it
         for deplink in self.spec_dependency_links:
             if deplink.dependency.id == specification.id:
-                SpecificationDependency.delete(deplink.id)
-                return deplink
+                Store.of(deplink).remove(deplink)
+                return
 
     def all_deps(self, user=None):
         return list(
@@ -1253,7 +1271,7 @@ class SpecificationSet(HasSpecificationsMixin):
                 (Specification.implementation_status, Count()),
                 Or(
                     Specification.productseries == product_series,
-                    Specification.milestoneID.is_in(
+                    Specification.milestone_id.is_in(
                         list(
                             product_series.all_milestones.values(Milestone.id)
                         )
@@ -1291,15 +1309,15 @@ class SpecificationSet(HasSpecificationsMixin):
 
     def getByURL(self, url):
         """See ISpecificationSet."""
-        return Specification.selectOneBy(specurl=url)
+        return IStore(Specification).find(Specification, specurl=url).one()
 
     def getByName(self, pillar, name):
         """See ISpecificationSet."""
         clauses = [Specification.name == name]
         if IDistribution.providedBy(pillar):
-            clauses.append(Specification.distributionID == pillar.id)
+            clauses.append(Specification.distribution == pillar)
         elif IProduct.providedBy(pillar):
-            clauses.append(Specification.productID == pillar.id)
+            clauses.append(Specification.product == pillar)
         return IStore(Specification).find(Specification, *clauses).one()
 
     @property
@@ -1349,9 +1367,9 @@ class SpecificationSet(HasSpecificationsMixin):
             summary=summary,
             definition_status=definition_status,
             owner=owner,
-            _approver=approver,
-            _assignee=assignee,
-            _drafter=drafter,
+            approver=approver,
+            assignee=assignee,
+            drafter=drafter,
             whiteboard=whiteboard,
         )
         spec.setTarget(target)
@@ -1386,14 +1404,14 @@ class SpecificationSet(HasSpecificationsMixin):
         for spec_id, dep_id in results:
             if spec_id not in dependencies:
                 dependencies[spec_id] = []
-            dependency = Specification.get(dep_id)
+            dependency = IStore(Specification).get(Specification, dep_id)
             dependencies[spec_id].append(dependency)
 
         return dependencies
 
     def get(self, spec_id):
         """See lp.blueprints.interfaces.specification.ISpecificationSet."""
-        return Specification.get(spec_id)
+        return IStore(Specification).get(Specification, spec_id)
 
     def empty_list(self):
         """See `ISpecificationSet`."""
