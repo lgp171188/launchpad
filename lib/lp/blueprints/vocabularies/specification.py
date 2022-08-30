@@ -14,16 +14,16 @@ from zope.schema.vocabulary import SimpleTerm
 
 from lp.blueprints.model.specification import Specification
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
+from lp.services.webapp.vocabulary import StormVocabularyBase
 
 
-class SpecificationVocabulary(SQLObjectVocabularyBase):
+class SpecificationVocabulary(StormVocabularyBase):
     """List specifications for the current product or distribution in
     ILaunchBag, EXCEPT for the current spec in LaunchBag if one exists.
     """
 
     _table = Specification
-    _orderBy = "title"
+    _order_by = "title"
 
     def __iter__(self):
         launchbag = getUtility(ILaunchBag)

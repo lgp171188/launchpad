@@ -1418,7 +1418,7 @@ class Product(
         need_workitems=False,
     ):
         """See `IHasSpecifications`."""
-        base_clauses = [Specification.productID == self.id]
+        base_clauses = [Specification.product == self]
         return search_specifications(
             self,
             base_clauses,
@@ -1433,7 +1433,11 @@ class Product(
 
     def getSpecification(self, name):
         """See `ISpecificationTarget`."""
-        return Specification.selectOneBy(product=self, name=name)
+        return (
+            IStore(Specification)
+            .find(Specification, product=self, name=name)
+            .one()
+        )
 
     def getSeries(self, name):
         """See `IProduct`."""

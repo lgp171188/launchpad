@@ -76,7 +76,10 @@ will cause this spec to be reassigned.
 
     >>> from lp.blueprints.model.specification import Specification
     >>> from lp.registry.model.person import Person
-    >>> spec = Specification.selectFirst("assignee IS NULL", orderBy='id')
+    >>> from lp.services.database.interfaces import IStore
+    >>> spec = IStore(Specification).find(
+    ...     Specification, _assignee=None
+    ... ).order_by("id").first()
     >>> spec.assignee = foobar
 
     >>> for membership in foobar.team_memberships:

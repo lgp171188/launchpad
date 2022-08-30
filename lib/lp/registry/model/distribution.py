@@ -1404,7 +1404,7 @@ class Distribution(
           - informationalness: we will show ANY if nothing is said
 
         """
-        base_clauses = [Specification.distributionID == self.id]
+        base_clauses = [Specification.distribution == self]
         return search_specifications(
             self,
             base_clauses,
@@ -1419,7 +1419,11 @@ class Distribution(
 
     def getSpecification(self, name):
         """See `ISpecificationTarget`."""
-        return Specification.selectOneBy(distribution=self, name=name)
+        return (
+            IStore(Specification)
+            .find(Specification, distribution=self, name=name)
+            .one()
+        )
 
     def getAllowedSpecificationInformationTypes(self):
         """See `ISpecificationTarget`."""

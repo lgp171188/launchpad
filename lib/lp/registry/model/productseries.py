@@ -348,7 +348,7 @@ class ProductSeries(
           - informational, which defaults to showing BOTH if nothing is said
 
         """
-        base_clauses = [Specification.productseriesID == self.id]
+        base_clauses = [Specification.productseries == self]
         return search_specifications(
             self,
             base_clauses,
@@ -365,7 +365,7 @@ class ProductSeries(
     @property
     def all_specifications(self):
         return Store.of(self).find(
-            Specification, Specification.productseriesID == self.id
+            Specification, Specification.productseries == self
         )
 
     def _customizeSearchParams(self, search_params):

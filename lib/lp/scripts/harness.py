@@ -81,8 +81,8 @@ def _get_locals():
         proj = ProjectGroup.get(1)
         b2 = Bug.get(2)
         b1 = Bug.get(1)
-        s = Specification.get(1)
-        q = Question.get(1)
+        s = store.get(Specification, 1)
+        q = store.get(Question, 1)
         # Silence unused name warnings
         d, p, ds, prod, proj, b2, b1, s, q
 

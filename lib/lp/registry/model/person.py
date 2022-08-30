@@ -1630,7 +1630,7 @@ class Person(
                         SpecificationWorkItem.specification_id.is_in(
                             Select(
                                 Specification.id,
-                                where=Specification._assigneeID.is_in(
+                                where=Specification._assignee_id.is_in(
                                     self.participant_ids
                                 ),
                             )
@@ -1670,7 +1670,7 @@ class Person(
                     Milestone,
                     Coalesce(
                         SpecificationWorkItem.milestone_id,
-                        Specification.milestoneID,
+                        Specification.milestone_id,
                     )
                     == Milestone.id,
                 ),
@@ -1697,17 +1697,17 @@ class Person(
             specs = bulk.load_related(
                 Specification, workitems, ["specification_id"]
             )
-            bulk.load_related(Product, specs, ["productID"])
-            bulk.load_related(Distribution, specs, ["distributionID"])
+            bulk.load_related(Product, specs, ["product_id"])
+            bulk.load_related(Distribution, specs, ["distribution_id"])
             assignee_ids = set(
                 [workitem.assignee_id for workitem in workitems]
-                + [spec._assigneeID for spec in specs]
+                + [spec._assignee_id for spec in specs]
             )
             assignee_ids.discard(None)
             bulk.load(Person, assignee_ids, store)
             milestone_ids = set(
                 [workitem.milestone_id for workitem in workitems]
-                + [spec.milestoneID for spec in specs]
+                + [spec.milestone_id for spec in specs]
             )
             milestone_ids.discard(None)
             bulk.load(Milestone, milestone_ids, store)

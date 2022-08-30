@@ -1027,7 +1027,7 @@ class TestPersonStates(TestCaseWithFactory):
             )
 
     def test_Specification_person_validator(self):
-        specification = Specification.select(limit=1)[0]
+        specification = IStore(Specification).find(Specification).first()
         for attr_name in [
             "assignee",
             "drafter",

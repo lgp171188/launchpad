@@ -320,13 +320,13 @@ If there are dependencies between the specs, the method returns a
 mapping between them.
 
     >>> spec_a.createDependency(spec_b)
-    <SpecificationDependency at ...>
+    <...SpecificationDependency object at ...>
 
     >>> spec_a.createDependency(spec_c)
-    <SpecificationDependency at ...>
+    <...SpecificationDependency object at ...>
 
     >>> spec_c.createDependency(spec_d)
-    <SpecificationDependency at ...>
+    <...SpecificationDependency object at ...>
 
     >>> deps_dict = specset.getDependencyDict(
     ...     [spec_a, spec_b, spec_c, spec_d])

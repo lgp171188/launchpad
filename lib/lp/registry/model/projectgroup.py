@@ -287,7 +287,7 @@ class ProjectGroup(
     ):
         """See `IHasSpecifications`."""
         base_clauses = [
-            Specification.productID == Product.id,
+            Specification.product_id == Product.id,
             Product.projectgroupID == self.id,
         ]
         tables = [Specification]
@@ -296,7 +296,7 @@ class ProjectGroup(
             tables.append(
                 Join(
                     ProductSeries,
-                    Specification.productseriesID == ProductSeries.id,
+                    Specification.productseries_id == ProductSeries.id,
                 )
             )
         return search_specifications(

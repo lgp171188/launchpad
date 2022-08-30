@@ -201,25 +201,27 @@ is informational.
 We will create two specs for onezero and use them to demonstrate the
 filtering.
 
-    >>> from lp.services.database.constants import UTC_NOW
+    >>> from lp.blueprints.enums import SpecificationDefinitionStatus
+    >>> from lp.blueprints.interfaces.specification import ISpecificationSet
     >>> carlos = getUtility(IPersonSet).getByName('carlos')
-    >>> from lp.blueprints.model.specification import Specification
-    >>> a = Specification(name='a', title='A', summary='AA', owner=carlos,
-    ...                   product=firefox, productseries=onezero,
-    ...                   specurl='http://wbc.com/two', goal_proposer=carlos,
-    ...                   date_goal_proposed=UTC_NOW)
-    >>> b = Specification(name='b', title='b', summary='bb', owner=carlos,
-    ...                   product=firefox, productseries=onezero,
-    ...                   specurl='http://fds.com/adsf', goal_proposer=carlos,
-    ...                   date_goal_proposed=UTC_NOW)
+    >>> _ = login_person(carlos)
+    >>> a = getUtility(ISpecificationSet).new(
+    ...     name="a", title="A", specurl="http://wbc.com/two", summary="AA",
+    ...     definition_status=SpecificationDefinitionStatus.NEW, owner=carlos,
+    ...     target=firefox,
+    ... )
+    >>> a.proposeGoal(onezero, carlos)
+    >>> b = getUtility(ISpecificationSet).new(
+    ...     name="b", title="b", specurl="http://fds.com/adsf", summary="bb",
+    ...     definition_status=SpecificationDefinitionStatus.NEW, owner=carlos,
+    ...     target=firefox,
+    ... )
+    >>> b.proposeGoal(onezero, carlos)
 
 Now, we will make one of them accepted, the other declined, and both of
 them informational.
 
-    >>> from lp.blueprints.enums import (
-    ...     SpecificationDefinitionStatus,
-    ...     SpecificationImplementationStatus,
-    ...     )
+    >>> from lp.blueprints.enums import SpecificationImplementationStatus
     >>> a.definition_status = b.definition_status = (
     ...     SpecificationDefinitionStatus.APPROVED)
     >>> a.implementation_status = (

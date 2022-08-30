@@ -38,7 +38,6 @@ class ISpecificationSubscription(Interface):
     )
     personID = Attribute("db person value")
     specification = Int(title=_("Specification"), required=True, readonly=True)
-    specificationID = Attribute("db specification value")
     essential = Bool(
         title=_("Participation essential"),
         required=True,
