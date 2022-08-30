@@ -139,7 +139,7 @@ do_install() {
   }
 
 sudo apt update
-REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi"
+REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
 done
