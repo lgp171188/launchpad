@@ -18,6 +18,7 @@ from lp.bugs.scripts.uct.models import CVE, CVSS
 from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackage,
 )
+from lp.registry.model.product import Product
 from lp.registry.model.sourcepackage import SourcePackage
 
 __all__ = [
@@ -151,6 +152,26 @@ class UCTExporter:
                 )
             )
 
+        upstream_packages = []
+        for bug_task in bug_tasks:
+            target = removeSecurityProxy(bug_task.target)
+            if not isinstance(target, Product):
+                continue
+            up_importance = bug_task.importance
+            package_importance = package_importances.get(target.name)
+            upstream_packages.append(
+                CVE.UpstreamPackage(
+                    package=target,
+                    importance=(
+                        up_importance
+                        if up_importance != package_importance
+                        else None
+                    ),
+                    status=bug_task.status,
+                    status_explanation=bug_task.status_explanation,
+                )
+            )
+
         return CVE(
             sequence="CVE-{}".format(lp_cve.sequence),
             crd=None,  # TODO: fix this
@@ -158,6 +179,7 @@ class UCTExporter:
             public_date_at_USN=None,  # TODO: fix this
             distro_packages=distro_packages,
             series_packages=series_packages,
+            upstream_packages=upstream_packages,
             importance=cve_importance,
             status=vulnerability.status,
             assignee=bug_tasks[0].assignee,

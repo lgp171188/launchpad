@@ -444,12 +444,12 @@ is defined in by the RecipeMenu class and the view of recipe.
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: False
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: True
 
 
@@ -642,12 +642,12 @@ seeing. The matched URI comes from the view's request...
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: False
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: True
 
 ...or from the request_url keyword argument for iterlinks() that is
@@ -659,12 +659,12 @@ passed by the helper function.
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: True
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: False
 
 Note that query parameters are ignored when matching the URL.
@@ -775,12 +775,12 @@ identical to the one in the parent's menu.)
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: False
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: True
 
     >>> recipe_overview_menu = queryAdapter(
@@ -813,12 +813,12 @@ menu of the RecipeMenu will change the state of both menus.
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: True
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: False
 
     >>> summarise_links(
@@ -910,12 +910,12 @@ instancemethods object.
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: True
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: False
 
     # Restore the _last_obj_traversed to the view that matches the
@@ -973,12 +973,12 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: False
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: True
 
     >>> links_dict = test_tales(
@@ -1048,12 +1048,12 @@ returned.
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
         enabled: True
-        menu: <...IRecipeJournalMenuMarker...>
+        menu: builtins.IRecipeJournalMenuMarker
         linked: False
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
-        menu: <...IRecipeEditMenuMarker...>
+        menu: builtins.IRecipeEditMenuMarker
         linked: True
 
 

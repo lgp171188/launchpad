@@ -35,7 +35,7 @@ distribution.
     ...     evolution_sub = evolution.addBugSubscription(
     ...         subscriber=sampleperson, subscribed_by=foobar)
     >>> evolution_sub.target
-    <...DistributionSourcePackage object at ...>
+    <DistributionSourcePackage 'evolution in Ubuntu'>
 
     >>> sampleperson.structural_subscriptions.count()
     3
