@@ -12,10 +12,7 @@ __all__ = [
 
 
 from zope.interface import implementer
-from zope.publisher.interfaces.browser import (
-    IBrowserRequest,
-    IDefaultBrowserLayer,
-)
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from lp.services.webapp.interfaces import IFacet, ILaunchpadContainer
 from lp.services.webapp.publication import LaunchpadBrowserPublication
@@ -35,7 +32,7 @@ class BugsFacet:
     default_view = "+bugs"
 
 
-class BugsLayer(IBrowserRequest, IDefaultBrowserLayer):
+class BugsLayer(IDefaultBrowserLayer):
     """The Bugs layer."""
 
 

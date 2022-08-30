@@ -29,7 +29,7 @@ from storm.base import Storm
 from storm.expr import Expr
 from storm.store import EmptyResultSet
 from zope.interface import Attribute, Interface, implementer
-from zope.schema.interfaces import IVocabulary, IVocabularyTokenized
+from zope.schema.interfaces import IVocabularyTokenized
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import isinstance as zisinstance
 
@@ -73,7 +73,7 @@ class VocabularyFilter(
         return []
 
 
-class IHugeVocabulary(IVocabulary, IVocabularyTokenized):
+class IHugeVocabulary(IVocabularyTokenized):
     """Interface for huge vocabularies.
 
     Items in an IHugeVocabulary should have human readable tokens or the
@@ -265,7 +265,7 @@ class FilteredVocabularyBase:
         return []
 
 
-@implementer(IVocabulary, IVocabularyTokenized)
+@implementer(IVocabularyTokenized)
 class SQLObjectVocabularyBase(FilteredVocabularyBase):
     """A base class for widgets that are rendered to collect values
     for attributes that are SQLObjects, e.g. ForeignKey.
@@ -423,7 +423,7 @@ class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
         return self.emptySelectResults()
 
 
-@implementer(IVocabulary, IVocabularyTokenized)
+@implementer(IVocabularyTokenized)
 class StormVocabularyBase(FilteredVocabularyBase):
     """A base class for widgets that are rendered to collect values
     for attributes that are Storm references.

@@ -72,7 +72,6 @@ from lp import _
 from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.code.interfaces.gitref import IGitRef
@@ -775,7 +774,6 @@ class ICharmRecipe(
     ICharmRecipeEdit,
     ICharmRecipeEditableAttributes,
     ICharmRecipeAdminAttributes,
-    IPrivacy,
     IInformationType,
 ):
     """A buildable charm recipe."""

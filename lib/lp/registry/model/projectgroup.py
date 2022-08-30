@@ -22,7 +22,6 @@ from lp.answers.model.faq import FAQ, FAQSearch
 from lp.answers.model.question import QuestionTargetSearch
 from lp.app.enums import ServiceUsage
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import IHasIcon, IHasLogo, IHasMugshot
 from lp.blueprints.enums import SprintSpecificationStatus
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
@@ -86,9 +85,6 @@ from lp.translations.model.translationpolicy import TranslationPolicyMixin
     IBugSummaryDimension,
     IProjectGroup,
     IFAQCollection,
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
     ISearchableByQuestionOwner,
 )
 class ProjectGroup(

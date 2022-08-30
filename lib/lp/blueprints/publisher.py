@@ -12,10 +12,7 @@ __all__ = [
 
 
 from zope.interface import implementer
-from zope.publisher.interfaces.browser import (
-    IBrowserRequest,
-    IDefaultBrowserLayer,
-)
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from lp.services.webapp.interfaces import IFacet
 from lp.services.webapp.publication import LaunchpadBrowserPublication
@@ -34,7 +31,7 @@ class SpecificationsFacet:
     default_view = "+specs"
 
 
-class BlueprintsLayer(IBrowserRequest, IDefaultBrowserLayer):
+class BlueprintsLayer(IDefaultBrowserLayer):
     """The Blueprints layer."""
 
 

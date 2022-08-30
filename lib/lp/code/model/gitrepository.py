@@ -46,7 +46,7 @@ from lp.app.errors import (
     UserCannotUnsubscribePerson,
 )
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities, IPrivacy
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
@@ -254,7 +254,7 @@ def git_repository_modified(repository, event):
     send_git_repository_modified_notifications(repository, event)
 
 
-@implementer(IGitRepository, IHasOwner, IPrivacy, IInformationType)
+@implementer(IGitRepository, IHasOwner, IInformationType)
 class GitRepository(
     StormBase, WebhookTargetMixin, AccessTokenTargetMixin, GitIdentityMixin
 ):

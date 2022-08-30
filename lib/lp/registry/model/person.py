@@ -81,12 +81,7 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.interfaces.questionsperson import IQuestionsPerson
 from lp.answers.model.questionsperson import QuestionsPersonMixin
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
-from lp.app.interfaces.launchpad import (
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    ILaunchpadCelebrities,
-)
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators.email import valid_email
 from lp.app.validators.name import sanitize_name, valid_name
 from lp.blueprints.enums import SpecificationFilter
@@ -425,7 +420,7 @@ _readonly_person_settings = readonly_settings(
 )
 
 
-@implementer(IPerson, IHasIcon, IHasLogo, IHasMugshot)
+@implementer(IPerson)
 @delegate_to(IPersonSettings, context="_person_settings")
 class Person(
     SQLBase,
