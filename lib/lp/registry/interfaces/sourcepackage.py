@@ -224,32 +224,6 @@ class ISourcePackagePublic(
         sourcepackagename compare not equal.
         """
 
-    @operation_parameters(productseries=Reference(schema=IProductSeries))
-    @call_with(owner=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setPackaging(productseries, owner):
-        """Update the existing packaging record, or create a new packaging
-        record, that links the source package to the given productseries,
-        and record that it was done by the owner.
-        """
-
-    @operation_parameters(productseries=Reference(schema=IProductSeries))
-    @call_with(owner=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setPackagingReturnSharingDetailPermissions(productseries, owner):
-        """Like setPackaging(), but returns getSharingDetailPermissions().
-
-        This method is intended for AJAX usage on the +sharing-details
-        page.
-        """
-
-    @export_write_operation()
-    @operation_for_version("devel")
-    def deletePackaging():
-        """Delete the packaging for this sourcepackage."""
-
     def getSharingDetailPermissions():
         """Return a dictionary of user permissions for +sharing-details page.
 
@@ -363,6 +337,32 @@ class ISourcePackageEdit(Interface):
         :param registrant: The individual who created this link.
         :return: None
         """
+
+    @operation_parameters(productseries=Reference(schema=IProductSeries))
+    @call_with(owner=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setPackaging(productseries, owner):
+        """Update the existing packaging record, or create a new packaging
+        record, that links the source package to the given productseries,
+        and record that it was done by the owner.
+        """
+
+    @operation_parameters(productseries=Reference(schema=IProductSeries))
+    @call_with(owner=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setPackagingReturnSharingDetailPermissions(productseries, owner):
+        """Like setPackaging(), but returns getSharingDetailPermissions().
+
+        This method is intended for AJAX usage on the +sharing-details
+        page.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def deletePackaging():
+        """Delete the packaging for this sourcepackage."""
 
 
 @exported_as_webservice_entry(as_of="beta")

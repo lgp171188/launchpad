@@ -8,8 +8,9 @@ Edit packaging view
     >>> productseries = factory.makeProductSeries(
     ...     name="crazy", product=product
     ... )
+    >>> distro_owner = factory.makePerson()
     >>> distribution = factory.makeDistribution(
-    ...     name="youbuntu", displayname="Youbuntu"
+    ...     name="youbuntu", displayname="Youbuntu", owner=distro_owner
     ... )
     >>> distroseries = factory.makeDistroSeries(
     ...     name="busy", distribution=distribution
@@ -53,7 +54,7 @@ This is a multistep view. In the first step, the product is specified.
     >>> print(view.view.request.form)
     {'field.__visited_steps__': 'sourcepackage_change_upstream_step1'}
 
-    >>> ignored = login_person(product.owner)
+    >>> _ = login_person(distro_owner)
     >>> form = {
     ...     "field.product": "bonkers",
     ...     "field.actions.continue": "Continue",
@@ -63,7 +64,7 @@ This is a multistep view. In the first step, the product is specified.
     ...     package,
     ...     name="+edit-packaging",
     ...     form=form,
-    ...     principal=product.owner,
+    ...     principal=distro_owner,
     ... )
     >>> view.view.errors
     []
@@ -88,7 +89,7 @@ product can be chosen from a list of options.
     ...     package,
     ...     name="+edit-packaging",
     ...     form=form,
-    ...     principal=product.owner,
+    ...     principal=distro_owner,
     ... )
 
     >>> ignored = view.view.render()
@@ -124,7 +125,7 @@ then the current product series will be the selected option.
     ...     package,
     ...     name="+edit-packaging",
     ...     form=form,
-    ...     principal=product.owner,
+    ...     principal=distro_owner,
     ... )
     >>> print(view.view.widgets.get("productseries")._getFormValue().name)
     crazy
@@ -141,7 +142,7 @@ empty.
     ...     package,
     ...     name="+edit-packaging",
     ...     form=form,
-    ...     principal=product.owner,
+    ...     principal=distro_owner,
     ... )
     >>> for error in view.view.errors:
     ...     print(pretty(error.args))
@@ -161,7 +162,7 @@ but there is no notification message that the upstream link was updated.
     ...     package,
     ...     name="+edit-packaging",
     ...     form=form,
-    ...     principal=product.owner,
+    ...     principal=distro_owner,
     ... )
     >>> print(view.view)
     <...SourcePackageChangeUpstreamStepTwo object...>
@@ -382,11 +383,12 @@ to the project series.
     >>> print(view.cancel_url)
     http://launchpad.test/youbuntu/wonky/+source/stinkypackage
 
-    >>> user = package.packaging.owner
-    >>> ignored = login_person(user)
     >>> form = {"field.actions.unlink": "Unlink"}
     >>> view = create_initialized_view(
-    ...     package, name="+remove-packaging", form=form, principal=user
+    ...     package,
+    ...     name="+remove-packaging",
+    ...     form=form,
+    ...     principal=distro_owner,
     ... )
     >>> view.errors
     []
@@ -401,7 +403,10 @@ they get a message telling them that the link has already been
 deleted.
 
     >>> view = create_initialized_view(
-    ...     package, name="+remove-packaging", form=form, principal=user
+    ...     package,
+    ...     name="+remove-packaging",
+    ...     form=form,
+    ...     principal=distro_owner,
     ... )
     >>> view.errors
     []

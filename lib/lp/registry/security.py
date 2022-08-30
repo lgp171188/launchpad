@@ -219,8 +219,14 @@ class EditProduct(EditByOwnersOrAdmins):
         )
 
 
-class EditPackaging(EditByOwnersOrAdmins):
+class EditPackaging(AuthorizationBase):
     usedfor = IPackaging
+    permission = "launchpad.Edit"
+
+    def checkAuthenticated(self, user):
+        return self.forwardCheckAuthenticated(
+            user, self.obj.productseries
+        ) or self.forwardCheckAuthenticated(user, self.obj.sourcepackage)
 
 
 class DownloadFullSourcePackageTranslations(OnlyRosettaExpertsAndAdmins):

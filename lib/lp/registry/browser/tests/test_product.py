@@ -862,7 +862,9 @@ class TestProductEditView(BrowserTestCase):
         # It should be an error to make a Product private if it is packaged.
         product = self.factory.makeProduct()
         sourcepackage = self.factory.makeSourcePackage()
-        sourcepackage.setPackaging(product.development_focus, product.owner)
+        removeSecurityProxy(sourcepackage).setPackaging(
+            product.development_focus, product.owner
+        )
         browser = self.getViewBrowser(product, "+edit", user=product.owner)
         info_type = browser.getControl(name="field.information_type")
         info_type.value = ["PROPRIETARY"]

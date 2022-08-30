@@ -42,11 +42,13 @@ Evolution.
     >>> evo_owner.getLink(url="/ubuntu/hoary/+source/evolution") is not None
     True
 
-Any logged in users can still see the links to create a packaging link.
+Arbitrary users can't see the links to create a packaging link.
 
     >>> user_browser.open("http://launchpad.test/evolution/+packages")
-    >>> print(user_browser.getLink(url="/evolution/trunk/+ubuntupkg").url)
-    http://launchpad.test/evolution/trunk/+ubuntupkg
+    >>> user_browser.getLink(url="/evolution/trunk/+ubuntupkg")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open("http://launchpad.test/evolution/+packages")
     >>> anon_browser.getLink(url="/evolution/trunk/+ubuntupkg")

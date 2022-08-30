@@ -34,6 +34,7 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     getVocabularyRegistry,
 )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -61,9 +62,11 @@ from lp.services.webapp import (
     canonical_url,
     stepto,
 )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import IBreadcrumb
+from lp.services.webapp.menu import enabled_with_permission
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.worlddata.helpers import browser_languages
 from lp.services.worlddata.interfaces.country import ICountry
@@ -214,13 +217,9 @@ class SourcePackageOverviewMenu(ApplicationMenu):
     def copyright(self):
         return Link("+copyright", "View copyright", icon="info")
 
+    @enabled_with_permission("launchpad.Edit")
     def edit_packaging(self):
-        return Link(
-            "+edit-packaging",
-            "Change upstream link",
-            icon="edit",
-            enabled=self.userCanDeletePackaging(),
-        )
+        return Link("+edit-packaging", "Change upstream link", icon="edit")
 
     def remove_packaging(self):
         return Link(
@@ -230,13 +229,9 @@ class SourcePackageOverviewMenu(ApplicationMenu):
             enabled=self.userCanDeletePackaging(),
         )
 
+    @enabled_with_permission("launchpad.Edit")
     def set_upstream(self):
-        return Link(
-            "+edit-packaging",
-            "Set upstream link",
-            icon="add",
-            enabled=self.userCanDeletePackaging(),
-        )
+        return Link("+edit-packaging", "Set upstream link", icon="add")
 
     def builds(self):
         text = "Show builds"
@@ -245,8 +240,8 @@ class SourcePackageOverviewMenu(ApplicationMenu):
     def userCanDeletePackaging(self):
         packaging = self.context.direct_packaging
         if packaging is None:
-            return True
-        return packaging.userCanDelete()
+            return False
+        return check_permission("launchpad.Edit", packaging)
 
 
 class SourcePackageChangeUpstreamStepOne(ReturnToReferrerMixin, StepView):
@@ -425,10 +420,23 @@ class SourcePackageRemoveUpstreamView(
     label = "Unlink an upstream project"
     page_title = label
 
+    def initialize(self):
+        self.packaging = self.context.direct_packaging
+        if self.packaging is not None:
+            # We do permission check here rather than protecting the view
+            # in ZCML because product owners should also be allowed to unlink
+            # projects, even if they don't have edit permission on the source
+            # package.
+            if not check_permission("launchpad.Edit", self.packaging):
+                raise Unauthorized(
+                    "You are not allowed to unlink an upstream project"
+                )
+        super().initialize()
+
     @action("Unlink")
     def unlink(self, action, data):
         old_series = self.context.productseries
-        if self.context.direct_packaging is not None:
+        if self.packaging is not None:
             getUtility(IPackagingUtil).deletePackaging(
                 self.context.productseries,
                 self.context.sourcepackagename,

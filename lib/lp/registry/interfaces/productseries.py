@@ -102,6 +102,11 @@ class IProductSeriesEditRestricted(Interface):
     def newMilestone(name, dateexpected=None, summary=None, code_name=None):
         """Create a new milestone for this ProjectSeries."""
 
+    def setPackaging(distroseries, sourcepackagename, owner):
+        """Create or update a Packaging record for this product series,
+        connecting it to the given distroseries and source package name.
+        """
+
 
 class IProductSeriesPublic(Interface):
     """Public IProductSeries properties."""
@@ -342,11 +347,6 @@ class IProductSeriesView(
     def getUbuntuTranslationFocusPackage():
         """Return the SourcePackage that packages this project in Ubuntu's
         translation focus or current series or any series, in that order."""
-
-    def setPackaging(distroseries, sourcepackagename, owner):
-        """Create or update a Packaging record for this product series,
-        connecting it to the given distroseries and source package name.
-        """
 
     def getPackagingInDistribution(distribution):
         """Return all the Packaging entries for this product series for the

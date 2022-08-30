@@ -580,7 +580,7 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
 
     def linkPackage(self, name):
         product_series = self.factory.makeProductSeries()
-        product_series.setPackaging(
+        removeSecurityProxy(product_series).setPackaging(
             self.series, self.packages[name].sourcepackagename, self.user
         )
         return product_series

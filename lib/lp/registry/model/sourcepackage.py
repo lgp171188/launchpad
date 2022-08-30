@@ -33,14 +33,14 @@ from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
 )
 from lp.registry.interfaces.distribution import NoPartnerArchive
-from lp.registry.interfaces.packaging import PackagingType
+from lp.registry.interfaces.packaging import IPackagingUtil, PackagingType
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     ISourcePackageFactory,
 )
 from lp.registry.model.hasdrivers import HasDriversMixin
-from lp.registry.model.packaging import Packaging, PackagingUtil
+from lp.registry.model.packaging import Packaging
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
@@ -562,7 +562,7 @@ class SourcePackage(
             # Delete the current packaging and create a new one so
             # that the translation sharing jobs are started.
             self.direct_packaging.destroySelf()
-        PackagingUtil.createPackaging(
+        getUtility(IPackagingUtil).createPackaging(
             distroseries=self.distroseries,
             sourcepackagename=self.sourcepackagename,
             productseries=productseries,
@@ -595,8 +595,8 @@ class SourcePackage(
         else:
             permissions.update(
                 {
-                    "user_can_change_product_series": (
-                        self.direct_packaging.userCanDelete()
+                    "user_can_change_product_series": user.canAccess(
+                        self, "setPackaging"
                     ),
                     "user_can_change_branch": user.canWrite(
                         productseries, "branch"

@@ -278,7 +278,7 @@ class ProductSeriesOverviewMenu(
             summary = "Change the branch for this series"
         return Link("+setbranch", text, summary, icon=icon)
 
-    @enabled_with_permission("launchpad.AnyPerson")
+    @enabled_with_permission("launchpad.Edit")
     def ubuntupkg(self):
         """Return a link to link this series to an ubuntu sourcepackage."""
         text = "Link to Ubuntu package"
