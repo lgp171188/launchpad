@@ -403,7 +403,7 @@ class UCTImporter:
             if isinstance(sp, CVE.SeriesPackage):
                 package_name = sp.package.sourcepackagename.name
             elif isinstance(sp, CVE.UpstreamPackage):
-                package_name = sp.package.name
+                package_name = sp.package_name.name
             else:
                 raise AssertionError()
             package_importance = package_importances[package_name]

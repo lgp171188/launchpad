@@ -186,14 +186,17 @@ class TestCVE(TestCaseWithFactory):
             status=SeriesStatus.DEVELOPMENT,
             name="kinetic",
         )
-        product_1 = self.factory.makeProduct()
-        product_2 = self.factory.makeProduct()
-        dsp1 = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=product_1.name, distribution=ubuntu
-        )
-        dsp2 = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=product_2.name, distribution=ubuntu
-        )
+        dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        product_1 = self.factory.makePackagingLink(
+            sourcepackagename=dsp1.sourcepackagename,
+            distroseries=current_series,
+        ).productseries.product
+        product_2 = self.factory.makePackagingLink(
+            sourcepackagename=dsp2.sourcepackagename,
+            distroseries=current_series,
+        ).productseries.product
+
         assignee = self.factory.makePerson()
 
         self.uct_record = UCTRecord(
@@ -374,12 +377,14 @@ class TestCVE(TestCaseWithFactory):
             upstream_packages=[
                 CVE.UpstreamPackage(
                     package=product_1,
+                    package_name=dsp1.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="reason 4",
                 ),
-                CVE.SeriesPackage(
+                CVE.UpstreamPackage(
                     package=product_2,
+                    package_name=dsp2.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="",
@@ -450,14 +455,21 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             status=SeriesStatus.CURRENT,
             name="trusty",
         )
-        self.product_1 = self.factory.makeProduct()
-        self.product_2 = self.factory.makeProduct()
         self.ubuntu_package = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=self.product_1.name, distribution=self.ubuntu
+            distribution=self.ubuntu
         )
         self.esm_package = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=self.product_2.name, distribution=self.esm
+            distribution=self.esm
         )
+        self.product_1 = self.factory.makePackagingLink(
+            sourcepackagename=self.ubuntu_package.sourcepackagename,
+            distroseries=self.ubuntu_current_series,
+        ).productseries.product
+        self.product_2 = self.factory.makePackagingLink(
+            sourcepackagename=self.esm_package.sourcepackagename,
+            distroseries=self.esm_current_series,
+        ).productseries.product
+
         for series in (
             self.ubuntu_supported_series,
             self.ubuntu_current_series,
@@ -551,12 +563,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             upstream_packages=[
                 CVE.UpstreamPackage(
                     package=self.product_1,
+                    package_name=self.ubuntu_package.sourcepackagename,
                     importance=BugTaskImportance.HIGH,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="fix released",
                 ),
                 CVE.UpstreamPackage(
                     package=self.product_2,
+                    package_name=self.esm_package.sourcepackagename,
                     importance=BugTaskImportance.LOW,
                     status=BugTaskStatus.WONTFIX,
                     status_explanation="ignored",
@@ -649,7 +663,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertIn(upstream_package.package, bug_tasks_by_target)
             t = bug_tasks_by_target[upstream_package.package]
             package_importance = package_importances[
-                upstream_package.package.name
+                upstream_package.package_name.name
             ]
             sp_importance = upstream_package.importance or package_importance
             self.assertEqual(sp_importance, t.importance)

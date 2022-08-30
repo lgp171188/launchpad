@@ -18,7 +18,6 @@ from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.person import IPersonSet
-from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
@@ -440,6 +439,7 @@ class CVE:
         "UpstreamPackage",
         (
             ("package", Product),
+            ("package_name", SourcePackageName),
             ("importance", Optional[BugTaskImportance]),
             ("status", BugTaskStatus),
             ("status_explanation", str),
@@ -530,9 +530,12 @@ class CVE:
 
         distro_packages = []
         series_packages = []
-        upstream_packages = []
 
         spn_set = getUtility(ISourcePackageNameSet)
+
+        upstream_statuses = (
+            OrderedDict()
+        )  # type: Dict[SourcePackageName, UCTRecord.SeriesPackageStatus]
 
         for uct_package in uct_record.packages:
             source_package_name = spn_set.getOrCreateByName(uct_package.name)
@@ -558,19 +561,7 @@ class CVE:
                 )
 
                 if uct_package_status.series == "upstream":
-                    product = cls.get_product(uct_package.name)
-                    if product is None:
-                        continue
-                    upstream_packages.append(
-                        cls.UpstreamPackage(
-                            package=product,
-                            importance=series_package_importance,
-                            status=cls.BUG_TASK_STATUS_MAP[
-                                uct_package_status.status
-                            ],
-                            status_explanation=uct_package_status.reason,
-                        )
-                    )
+                    upstream_statuses[source_package_name] = uct_package_status
                     continue
 
                 distro_series = cls.get_distro_series(
@@ -602,6 +593,37 @@ class CVE:
                         status_explanation=uct_package_status.reason,
                     )
                 )
+
+        upstream_packages = []
+        for source_package_name, upstream_status in upstream_statuses.items():
+            for distro_package in distro_packages:
+                if (
+                    source_package_name
+                    != distro_package.package.sourcepackagename
+                ):
+                    continue
+                product = distro_package.package.upstream_product
+                if product is not None:
+                    break
+            else:
+                logger.warning(
+                    "Could not find the assignee: %s", uct_record.assigned_to
+                )
+                product = None
+
+            upstream_packages.append(
+                cls.UpstreamPackage(
+                    package=product,
+                    package_name=source_package_name,
+                    importance=(
+                        cls.PRIORITY_MAP[upstream_status.priority]
+                        if upstream_status.priority
+                        else None
+                    ),
+                    status=cls.BUG_TASK_STATUS_MAP[upstream_status.status],
+                    status_explanation=upstream_status.reason,
+                )
+            )
 
         if uct_record.assigned_to:
             assignee = getUtility(IPersonSet).getByName(uct_record.assigned_to)
@@ -708,7 +730,7 @@ class CVE:
                     else None
                 ),
             )
-            package_name = upstream_package.package.name
+            package_name = upstream_package.package_name.name
             if package_name in packages_by_name:
                 packages_by_name[package_name].statuses.append(status)
             else:
@@ -797,10 +819,3 @@ class CVE:
                 "Could not find the distro series: %s", distro_series_name
             )
         return distro_series
-
-    @classmethod
-    def get_product(cls, product_name: str) -> Optional[Product]:
-        product = getUtility(IProductSet).getByName(product_name)
-        if not product:
-            logger.warning("Could not find the product: %s", product_name)
-        return product
