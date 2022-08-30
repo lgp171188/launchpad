@@ -32,7 +32,7 @@ class InProcessAuthServer(xmlrpc.XMLRPC):
         if name.startswith("xmlrpc_"):
             return getattr(self.authserver, name[len("xmlrpc_") :])
         else:
-            raise AttributeError("%r has no attribute '%s'" % name)
+            raise AttributeError("%r has no attribute '%s'" % (self, name))
 
 
 class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
