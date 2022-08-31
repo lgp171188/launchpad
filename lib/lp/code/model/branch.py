@@ -39,7 +39,7 @@ from lp.app.errors import (
     UserCannotUnsubscribePerson,
 )
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities, IPrivacy
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.blueprints.model.specification import Specification
 from lp.blueprints.model.specificationbranch import SpecificationBranch
@@ -157,7 +157,7 @@ from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.interfaces.snap import ISnapSet
 
 
-@implementer(IBranch, IPrivacy, IInformationType)
+@implementer(IBranch, IInformationType)
 class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     """A sequence of ordered revisions in Bazaar."""
 

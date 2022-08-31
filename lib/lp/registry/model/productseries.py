@@ -20,7 +20,7 @@ from zope.interface import implementer
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities, IServiceUsage
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
@@ -93,9 +93,7 @@ def landmark_key(landmark):
     return date + landmark["name"]
 
 
-@implementer(
-    IBugSummaryDimension, IProductSeries, IServiceUsage, ISeriesBugTarget
-)
+@implementer(IBugSummaryDimension, IProductSeries, ISeriesBugTarget)
 @delegate_to(ISpecificationTarget, context="product")
 class ProductSeries(
     SQLBase,

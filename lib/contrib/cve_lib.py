@@ -1472,23 +1472,6 @@ def load_cve(cve, strict=False, srcmap=None):
     if "Priority" not in data:
         data.setdefault("Priority", "untriaged")
         srcmap.setdefault("Priority", (cve, 1))
-    # Perform override fields
-    if "PublicDateAtUSN" in data:
-        data["PublicDate"] = data["PublicDateAtUSN"]
-        srcmap["PublicDate"] = srcmap["PublicDateAtUSN"]
-    if (
-        "CRD" in data
-        and data["CRD"].strip() != ""
-        and data["PublicDate"] != data["CRD"]
-    ):
-        if cve.startswith("embargoed"):
-            print(
-                "%s: %d: adjusting PublicDate to use CRD: %s"
-                % (cve, linenum, data["CRD"]),
-                file=sys.stderr,
-            )
-        data["PublicDate"] = data["CRD"]
-        srcmap["PublicDate"] = srcmap["CRD"]
 
     # entries need an upstream entry if any entries are from the internal
     # list of subprojects
