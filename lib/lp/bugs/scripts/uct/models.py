@@ -483,9 +483,9 @@ class CVE:
     def __init__(
         self,
         sequence: str,
-        crd: Optional[datetime],
-        public_date: Optional[datetime],
-        public_date_at_USN: Optional[datetime],
+        date_made_public: Optional[datetime],
+        date_notice_issued: Optional[datetime],
+        date_coordinated_release: Optional[datetime],
         distro_packages: List[DistroPackage],
         series_packages: List[SeriesPackage],
         upstream_packages: List[UpstreamPackage],
@@ -502,9 +502,9 @@ class CVE:
         cvss: List[CVSS],
     ):
         self.sequence = sequence
-        self.crd = crd
-        self.public_date = public_date
-        self.public_date_at_USN = public_date_at_USN
+        self.date_made_public = date_made_public
+        self.date_notice_issued = date_notice_issued
+        self.date_coordinated_release = date_coordinated_release
         self.distro_packages = distro_packages
         self.series_packages = series_packages
         self.upstream_packages = upstream_packages
@@ -614,9 +614,9 @@ class CVE:
 
         return cls(
             sequence=uct_record.candidate,
-            crd=uct_record.crd,
-            public_date=uct_record.public_date,
-            public_date_at_USN=uct_record.public_date_at_USN,
+            date_made_public=uct_record.public_date,
+            date_notice_issued=uct_record.public_date_at_USN,
+            date_coordinated_release=uct_record.crd,
             distro_packages=distro_packages,
             series_packages=series_packages,
             upstream_packages=upstream_packages,
@@ -728,9 +728,9 @@ class CVE:
             bugs=self.bug_urls,
             cvss=self.cvss,
             candidate=self.sequence,
-            crd=self.crd,
-            public_date=self.public_date,
-            public_date_at_USN=self.public_date_at_USN,
+            crd=self.date_coordinated_release,
+            public_date=self.date_made_public,
+            public_date_at_USN=self.date_notice_issued,
             description=self.description,
             discovered_by=self.discovered_by,
             mitigation=self.mitigation,
@@ -740,10 +740,6 @@ class CVE:
             ubuntu_description=self.ubuntu_description,
             packages=list(packages_by_name.values()),
         )
-
-    @property
-    def date_made_public(self):
-        return self.crd or self.public_date_at_USN or self.public_date
 
     @cachedproperty
     def affected_distributions(self) -> Set[Distribution]:
