@@ -455,7 +455,7 @@ config section.  By default we connect as "launchpad"
     Traceback (most recent call last):
     ...
     storm.database.InsufficientPrivilege:
-    permission denied for relation sourcepackagename
+    permission denied for ... sourcepackagename
 
 This is not reset at the end of the transaction:
 
@@ -468,7 +468,7 @@ This is not reset at the end of the transaction:
     Traceback (most recent call last):
     ...
     storm.database.InsufficientPrivilege:
-    permission denied for relation sourcepackagename
+    permission denied for ... sourcepackagename
     >>> transaction.abort()
 
 So you need to explicitly set the user back to the default:
