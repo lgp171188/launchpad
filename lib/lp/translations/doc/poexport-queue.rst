@@ -144,7 +144,7 @@ inject a mock exception in that case so that the test can pass.
     >>> mock_failure = patcher.start()
     >>> mock_failure.__str__.side_effect = lambda: b'\xc3'.decode('UTF-8')
     >>> result.notify()
-    >>> patcher.stop()
+    >>> _ = patcher.stop()
 
     >>> test_emails = pop_notifications()
     >>> len(test_emails)
