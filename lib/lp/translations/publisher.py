@@ -11,10 +11,7 @@ __all__ = [
 
 
 from zope.interface import implementer
-from zope.publisher.interfaces.browser import (
-    IBrowserRequest,
-    IDefaultBrowserLayer,
-)
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from lp.services.webapp.interfaces import IFacet
 from lp.services.webapp.publication import LaunchpadBrowserPublication
@@ -33,7 +30,7 @@ class TranslationsFacet:
     default_view = "+translations"
 
 
-class TranslationsLayer(IBrowserRequest, IDefaultBrowserLayer):
+class TranslationsLayer(IDefaultBrowserLayer):
     """The Translations layer."""
 
 

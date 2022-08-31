@@ -21,7 +21,7 @@ __all__ = [
 from storm.expr import And, Or
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.schema.interfaces import IVocabulary, IVocabularyTokenized
+from zope.schema.interfaces import IVocabularyTokenized
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import removeSecurityProxy
 
@@ -206,7 +206,7 @@ class BugWatchVocabulary(SQLObjectVocabularyBase):
         return SimpleTerm(watch, watch.id, title)
 
 
-@implementer(IVocabulary, IVocabularyTokenized)
+@implementer(IVocabularyTokenized)
 class DistributionUsingMaloneVocabulary:
     """All the distributions that uses Malone officially."""
 
@@ -348,7 +348,7 @@ def milestone_matches_bugtask(milestone, bugtask):
     return False
 
 
-@implementer(IVocabulary, IVocabularyTokenized)
+@implementer(IVocabularyTokenized)
 class BugTaskMilestoneVocabulary:
     """Milestones for a set of bugtasks.
 

@@ -77,7 +77,6 @@ from lp import _
 from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.branch import IBranch
@@ -1215,7 +1214,6 @@ class ISnap(
     ISnapEdit,
     ISnapEditableAttributes,
     ISnapAdminAttributes,
-    IPrivacy,
     IInformationType,
 ):
     """A buildable snap package."""

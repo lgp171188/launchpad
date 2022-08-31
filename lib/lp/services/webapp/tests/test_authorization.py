@@ -822,7 +822,6 @@ class TestIterAuthorization(TestCase):
         self.assertEqual(cache_expected, cache)
 
 
-@implementer(Interface)
 class AvailableWithPermissionObject:
     """An object used to test available_with_permission."""
 

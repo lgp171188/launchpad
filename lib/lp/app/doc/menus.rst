@@ -1064,11 +1064,7 @@ If we try a navigation menu lookup on an object without a canonical url
 or a navigation menu adapter, then no menu will be returned, and no
 error will be raised by the template.
 
-``@implementer(Interface)`` is needed so the ``IPathAdapter`` can be applied
-to this view.
-
-    >>> @implementer(Interface)
-    ... class MenulessView(LaunchpadView):
+    >>> class MenulessView(LaunchpadView):
     ...     __launchpad_facetname__ = 'cookery'
 
     >>> menuless_view = MenulessView(comment, request)

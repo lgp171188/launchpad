@@ -84,12 +84,11 @@ The base badge implementation class, `HasBadgeBase`, provides an
 implementation of IHasBadges. HasBadgeBase is also a default adapter
 for Interface, which just provides the privacy badge.
 
-    >>> from zope.interface import Interface, Attribute, implementer
+    >>> from zope.interface import Attribute
     >>> from lp.app.browser.interfaces import IHasBadges
     >>> from lp.app.browser.badge import HasBadgeBase
     >>> from lp.testing import verifyObject
-    >>> @implementer(Interface)
-    ... class PrivateClass:
+    >>> class PrivateClass:
     ...     private = True
     >>> private_object = PrivateClass()
     >>> has_badge_base = HasBadgeBase(private_object)
@@ -165,11 +164,12 @@ accessing or counting of the content object's attributes.  The listing
 views then use a delegating object in order to override the badge
 determination methods to use the results of an alternative query.
 
+    >>> from zope.interface import Interface, implementer
+
     >>> class IFoo(Interface):
     ...     bugs = Attribute('Some linked bugs')
     ...     blueprints = Attribute('Some linked blueprints')
 
-    >>> from zope.interface import implementer
     >>> @implementer(IFoo)
     ... class Foo:
     ...     @property

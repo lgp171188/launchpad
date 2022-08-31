@@ -14,7 +14,6 @@ from zope.interface import (
     directlyProvides,
 )
 from zope.publisher.interfaces.browser import (
-    IBrowserRequest,
     IBrowserSkinType,
     IDefaultBrowserLayer,
 )
@@ -28,7 +27,7 @@ def setFirstLayer(request, layer):
     directlyProvides(request, layer, directlyProvidedBy(request))
 
 
-class LaunchpadLayer(IBrowserRequest, IDefaultBrowserLayer):
+class LaunchpadLayer(IDefaultBrowserLayer):
     """The `LaunchpadLayer` layer."""
 
 

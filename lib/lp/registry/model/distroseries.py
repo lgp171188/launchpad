@@ -24,7 +24,6 @@ from zope.interface import implementer
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import IServiceUsage
 from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
@@ -90,7 +89,6 @@ from lp.soyuz.enums import (
 )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
-from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distributionjob import (
     IInitializeDistroSeriesJobSource,
 )
@@ -158,9 +156,7 @@ DEFAULT_INDEX_COMPRESSORS = [
 @implementer(
     IBugSummaryDimension,
     IDistroSeries,
-    IHasBuildRecords,
     IHasQueueItems,
-    IServiceUsage,
     ISeriesBugTarget,
 )
 @delegate_to(ISpecificationTarget, context="distribution")
