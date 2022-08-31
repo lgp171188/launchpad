@@ -28,7 +28,9 @@ lib/canonical/launchpad/apidoc/wadl-development-*.xml
 lib/canonical/launchpad/apidoc/wadl-test-playground.xml
 lib/canonical/launchpad/icing/build/*
 lib/canonical/launchpad/icing/base.css
+lib/canonical/launchpad/icing/base.css.map
 lib/canonical/launchpad/icing/combo.css
+lib/canonical/launchpad/icing/combo.css.map
 bin
 .installed.cfg
 parts
