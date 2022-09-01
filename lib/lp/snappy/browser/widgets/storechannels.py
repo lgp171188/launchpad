@@ -15,12 +15,7 @@ from zope.formlib.widget import (
     InputWidget,
 )
 from zope.interface import implementer
-from zope.schema import (
-    Bool,
-    Choice,
-    List,
-    TextLine,
-    )
+from zope.schema import Bool, Choice, List, TextLine
 
 from lp import _
 from lp.app.errors import UnexpectedFormData
@@ -78,12 +73,16 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 description=_(
                     "Branches provide users with an easy way to test bug "
                     "fixes.  They are temporary and created on demand.  If "
-                    "not specified, no branch is used.")),
+                    "not specified, no branch is used."
+                ),
+            ),
             Bool(
-                __name__="delete", title="Delete",
-                readonly=False, default=False),
-            ]
-
+                __name__="delete",
+                title="Delete",
+                readonly=False,
+                default=False,
+            ),
+        ]
 
         self.risks_widget = CustomWidgetFactory(LabeledMultiCheckBoxWidget)
         for field in fields:

@@ -21,10 +21,7 @@ __all__ = [
     "RootAnnouncementsFeedLink",
 ]
 
-from typing import (
-    Tuple,
-    Type,
-    )
+from typing import Tuple, Type
 
 from zope.component import getUtility
 from zope.interface import implementer
