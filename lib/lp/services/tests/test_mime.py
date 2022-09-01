@@ -9,7 +9,7 @@ from lp.testing import TestCase
 
 
 class TestBzip(TestCase):
-    """Tests for iter_split."""
+    """Tests for lp.services.mime.customizeMimetypes."""
 
     def test_bzip2(self):
         # Test for '.tar.bzip2' support.
