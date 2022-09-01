@@ -292,7 +292,7 @@ class TestGitHostingClient(TestCase):
     def test_getCommits_filter_paths_bad_encoding(self):
         commit_json = {
             "sha1": "0",
-            "blobs": {".launchpad.yaml": {"data": "x", "size": 1}},
+            "blobs": {".launchpad.yaml": {"data": "xy", "size": 2}},
         }
         with self.mockRequests("POST", json=[commit_json]):
             self.assertRaisesWithContent(
@@ -565,7 +565,7 @@ class TestGitHostingClient(TestCase):
             )
 
     def test_getBlob_bad_encoding(self):
-        with self.mockRequests("GET", json={"data": "x", "size": 1}):
+        with self.mockRequests("GET", json={"data": "xy", "size": 2}):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get file from Git repository: Incorrect padding",
