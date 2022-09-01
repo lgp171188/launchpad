@@ -25,6 +25,7 @@ class POFilesByPOTemplates:
     def __init__(self, templates_collection, language):
         self.templates_collection = templates_collection
         self.language = language
+        self._count_templates = None
 
     def _getPlaceholderOrPOFile(self, potemplate, pofile):
         if pofile is None:
@@ -66,8 +67,14 @@ class POFilesByPOTemplates:
         resultset = self._getPOTemplatesAndPOFilesResultSet()
         yield from self._getPOFilesForResultSet(resultset)
 
+    # Cached because `list()` calls `__len__` twice on Python 3.8-3.10.  See
+    # https://github.com/python/cpython/issues/84010.
     def __len__(self):
-        return self.templates_collection.select(POTemplate).count()
+        if self._count_templates is None:
+            self._count_templates = self.templates_collection.select(
+                POTemplate
+            ).count()
+        return self._count_templates
 
     def __bool__(self):
         return bool(self.templates_collection.select(POTemplate).any())
