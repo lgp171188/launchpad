@@ -523,6 +523,9 @@ class ByHashHasContents(Matcher):
             ]
         )
 
+    def __str__(self):
+        return "ByHashHasContents({})".format(self.contents)
+
     def match(self, by_hash_path):
         mismatch = DirContains(self.expected_hashes.keys()).match(by_hash_path)
         if mismatch is not None:
@@ -559,6 +562,9 @@ class ByHashesHaveContents(Matcher):
 
     def __init__(self, path_contents):
         self.path_contents = path_contents
+
+    def __str__(self):
+        return "ByHashesHaveContents({})".format(self.path_contents)
 
     def match(self, root):
         children = set()
