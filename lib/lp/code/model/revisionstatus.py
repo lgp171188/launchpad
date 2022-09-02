@@ -25,7 +25,7 @@ from lp.code.interfaces.revisionstatus import (
     IRevisionStatusReport,
     IRevisionStatusReportSet,
 )
-from lp.services.database.constants import UTC_NOW
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
@@ -303,12 +303,14 @@ class RevisionStatusArtifact(StormBase):
         name="date_created", tzinfo=pytz.UTC, allow_none=True
     )
 
-    def __init__(self, library_file, report, artifact_type):
+    def __init__(
+        self, library_file, report, artifact_type, date_created=DEFAULT
+    ):
         super().__init__()
         self.library_file = library_file
         self.report = report
         self.artifact_type = artifact_type
-        self.date_created = UTC_NOW
+        self.date_created = date_created
 
     @property
     def download_url(self):
@@ -336,10 +338,12 @@ class RevisionStatusArtifact(StormBase):
 
 @implementer(IRevisionStatusArtifactSet)
 class RevisionStatusArtifactSet:
-    def new(self, lfa, report, artifact_type):
+    def new(self, lfa, report, artifact_type, date_created=DEFAULT):
         """See `IRevisionStatusArtifactSet`."""
         store = IStore(RevisionStatusArtifact)
-        artifact = RevisionStatusArtifact(lfa, report, artifact_type)
+        artifact = RevisionStatusArtifact(
+            lfa, report, artifact_type, date_created=date_created
+        )
         store.add(artifact)
         return artifact
 
