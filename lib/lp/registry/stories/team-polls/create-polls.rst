@@ -115,6 +115,8 @@ Create a new poll that starts tomorrow and will last for ten years.
 
 We're redirected to the newly created poll
 
+    >>> from urllib.parse import unquote
+
     >>> team_admin_browser.url
     'http://launchpad.test/~ubuntu-team/+poll/dpl-2080'
     >>> print(team_admin_browser.title)
@@ -129,8 +131,8 @@ We're redirected to the newly created poll
     * Translations - http://translations.launchpad.test/~ubuntu-team
     * Answers - http://answers.launchpad.test/~ubuntu-team
     Main heading: Debian Project Leader Election 2080
-    >>> team_admin_browser.getLink('add an option').url
-    'http://launchpad.test/%7Eubuntu-team/+poll/dpl-2080/+newoption'
+    >>> unquote(team_admin_browser.getLink('add an option').url)
+    'http://launchpad.test/~ubuntu-team/+poll/dpl-2080/+newoption'
 
 Now lets try to insert a poll with the name of a existing one.
 

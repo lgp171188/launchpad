@@ -180,9 +180,11 @@ This is the last page, so the next and last links are inactive.
 
 The 'First' and 'Previous' links, however, are now active.
 
-    >>> anon_browser.getLink('First').url
-    'http://launchpad.test/%7Ecprov/+archive/ubuntu/ppa/+index?batch=1'
+    >>> from urllib.parse import unquote
 
-    >>> anon_browser.getLink('Previous').url  # noqa
-    'http://launchpad.test/%7Ecprov/+archive/ubuntu/ppa/+index?batch=1&direction=backwards&memo=2&start=1'
+    >>> unquote(anon_browser.getLink('First').url)
+    'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+index?batch=1'
+
+    >>> unquote(anon_browser.getLink('Previous').url)  # noqa
+    'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+index?batch=1&direction=backwards&memo=2&start=1'
 
