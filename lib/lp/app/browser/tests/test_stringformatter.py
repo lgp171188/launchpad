@@ -821,6 +821,9 @@ class MarksDownAs(Matcher):
     def __init__(self, expected_html):
         self.expected_html = expected_html
 
+    def __str__(self):
+        return "MarksDownAs({!r})".format(self.expected_html)
+
     def match(self, input_string):
         return Equals(self.expected_html).match(
             FormattersAPI(input_string).markdown()

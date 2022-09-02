@@ -23,6 +23,11 @@ class LogsOneScheduledWebhook(Matcher):
         self.event_type = event_type
         self.payload_matcher = payload_matcher
 
+    def __str__(self):
+        return "LogsOneScheduledWebhook({!r}, {!r}, {})".format(
+            self.webhook, self.event_type, self.payload_matcher
+        )
+
     def match(self, line):
         prefix = (
             "Scheduled <WebhookDeliveryJob for webhook %d on %r> (%s): "

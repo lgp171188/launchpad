@@ -67,6 +67,9 @@ class SignedMatches(Matcher):
     def __init__(self, expected):
         self.expected = expected
 
+    def __str__(self):
+        return "SignedMatches({})".format(self.expected)
+
     def match(self, base):
         content = []
         for root, dirs, files in os.walk(base):
