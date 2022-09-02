@@ -82,7 +82,7 @@ lazr.restful==2.0.1
 lazr.restfulclient==0.14.4
 lazr.sshserver==0.1.13
 lazr.uri==1.0.6
-loggerhead==2.0.0
+loggerhead==2.0.1
 lpjsmin==0.6
 m2r==0.1.13
 Markdown==3.2.2
