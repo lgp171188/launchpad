@@ -1795,7 +1795,9 @@ class SnapSet:
         else:
             raise BadSnapSearchContext(context)
         if order_by_date:
-            snaps.order_by(Desc(Snap.date_last_modified))
+            snaps.order_by(
+                Desc(Snap.date_last_modified), Desc(Snap.date_created)
+            )
         return snaps
 
     def findByURL(self, url, owner=None, visible_by_user=None):
