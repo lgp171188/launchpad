@@ -365,15 +365,15 @@ class BranchHostingFault(Exception):
 class BranchFileNotFound(BranchHostingFault):
     """Raised when a file does not exist in a branch."""
 
-    def __init__(self, branch_id, filename=None, file_id=None, rev=None):
+    def __init__(self, branch_id, filename=None, path=None, rev=None):
         super().__init__()
-        if (filename is None) == (file_id is None):
+        if (filename is None) == (path is None):
             raise AssertionError(
-                "Exactly one of filename and file_id must be given."
+                "Exactly one of filename and path must be given."
             )
         self.branch_id = branch_id
         self.filename = filename
-        self.file_id = file_id
+        self.path = path
         self.rev = rev
 
     def __str__(self):
@@ -381,7 +381,7 @@ class BranchFileNotFound(BranchHostingFault):
         if self.filename is not None:
             message += self.filename
         else:
-            message += "with ID %s" % self.file_id
+            message += "with path %s" % self.path
         if self.rev is not None:
             message += " at revision %s" % self.rev
         return message

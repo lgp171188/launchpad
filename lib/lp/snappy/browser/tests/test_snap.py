@@ -771,7 +771,6 @@ class TestSnapAddView(BaseTestSnapView):
     def test_initial_name_extraction_bzr_success(self):
         self.useFixture(
             BranchHostingFixture(
-                file_list={"snapcraft.yaml": "file-id"},
                 blob=b"name: test-snap",
             )
         )
@@ -782,7 +781,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual("test-snap", initial_values["store_name"])
 
     def test_initial_name_extraction_bzr_error(self):
-        self.useFixture(BranchHostingFixture()).getInventory = FakeMethod(
+        self.useFixture(BranchHostingFixture()).getBlob = FakeMethod(
             failure=BranchHostingFault
         )
         branch = self.factory.makeBranch()
@@ -792,11 +791,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertIsNone(initial_values["store_name"])
 
     def test_initial_name_extraction_bzr_no_name(self):
-        self.useFixture(
-            BranchHostingFixture(
-                file_list={"snapcraft.yaml": "file-id"}, blob=b"some: nonsense"
-            )
-        )
+        self.useFixture(BranchHostingFixture(blob=b"some: nonsense"))
         branch = self.factory.makeBranch()
         view = create_initialized_view(branch, "+new-snap")
         initial_values = view.initial_values

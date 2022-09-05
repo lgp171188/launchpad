@@ -2754,22 +2754,15 @@ class TestSnapSet(TestCaseWithFactory):
         )
 
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
-        def getInventory(unique_name, dirname, *args, **kwargs):
-            if dirname == "snap":
-                return {
-                    "filelist": [
-                        {
-                            "filename": "snapcraft.yaml",
-                            "file_id": "some-file-id",
-                        }
-                    ]
-                }
+        def getBlob(path, filename, *args, **kwargs):
+            if filename == "snapcraft.yaml":
+                return b"name: test-snap"
             else:
-                raise BranchFileNotFound("dummy", dirname)
+                raise BranchFileNotFound("dummy", filename)
 
         self.useFixture(
             BranchHostingFixture(blob=b"name: test-snap")
-        ).getInventory = getInventory
+        ).getBlob = getBlob
         branch = self.factory.makeBranch()
         self.assertEqual(
             {"name": "test-snap"},
@@ -2777,22 +2770,15 @@ class TestSnapSet(TestCaseWithFactory):
         )
 
     def test_getSnapcraftYaml_bzr_build_aux_snap_snapcraft_yaml(self):
-        def getInventory(unique_name, dirname, *args, **kwargs):
-            if dirname == "build-aux/snap":
-                return {
-                    "filelist": [
-                        {
-                            "filename": "snapcraft.yaml",
-                            "file_id": "some-file-id",
-                        }
-                    ]
-                }
+        def getBlob(path, filename, *args, **kwargs):
+            if filename == "build-aux/snap/snapcraft.yaml":
+                return b"name: test-snap"
             else:
-                raise BranchFileNotFound("dummy", dirname)
+                raise BranchFileNotFound("dummy", filename)
 
         self.useFixture(
             BranchHostingFixture(blob=b"name: test-snap")
-        ).getInventory = getInventory
+        ).getBlob = getBlob
         branch = self.factory.makeBranch()
         self.assertEqual(
             {"name": "test-snap"},
@@ -2800,22 +2786,15 @@ class TestSnapSet(TestCaseWithFactory):
         )
 
     def test_getSnapcraftYaml_bzr_plain_snapcraft_yaml(self):
-        def getInventory(unique_name, dirname, *args, **kwargs):
-            if dirname == "":
-                return {
-                    "filelist": [
-                        {
-                            "filename": "snapcraft.yaml",
-                            "file_id": "some-file-id",
-                        }
-                    ]
-                }
+        def getBlob(path, filename, *args, **kwargs):
+            if filename == "snapcraft.yaml":
+                return b"name: test-snap"
             else:
-                raise BranchFileNotFound("dummy", dirname)
+                raise BranchFileNotFound("dummy", filename)
 
         self.useFixture(
             BranchHostingFixture(blob=b"name: test-snap")
-        ).getInventory = getInventory
+        ).getBlob = getBlob
         branch = self.factory.makeBranch()
         self.assertEqual(
             {"name": "test-snap"},
@@ -2823,22 +2802,15 @@ class TestSnapSet(TestCaseWithFactory):
         )
 
     def test_getSnapcraftYaml_bzr_dot_snapcraft_yaml(self):
-        def getInventory(unique_name, dirname, *args, **kwargs):
-            if dirname == "":
-                return {
-                    "filelist": [
-                        {
-                            "filename": ".snapcraft.yaml",
-                            "file_id": "some-file-id",
-                        }
-                    ]
-                }
+        def getBlob(path, filename, *args, **kwargs):
+            if filename == ".snapcraft.yaml":
+                return b"name: test-snap"
             else:
-                raise BranchFileNotFound("dummy", dirname)
+                raise BranchFileNotFound("dummy", filename)
 
         self.useFixture(
             BranchHostingFixture(blob=b"name: test-snap")
-        ).getInventory = getInventory
+        ).getBlob = getBlob
         branch = self.factory.makeBranch()
         self.assertEqual(
             {"name": "test-snap"},
@@ -2846,7 +2818,7 @@ class TestSnapSet(TestCaseWithFactory):
         )
 
     def test_getSnapcraftYaml_bzr_error(self):
-        self.useFixture(BranchHostingFixture()).getInventory = FakeMethod(
+        self.useFixture(BranchHostingFixture()).getBlob = FakeMethod(
             failure=BranchHostingFault
         )
         branch = self.factory.makeBranch()
@@ -2926,7 +2898,6 @@ class TestSnapSet(TestCaseWithFactory):
     def test_getSnapcraftYaml_snap_bzr(self):
         self.useFixture(
             BranchHostingFixture(
-                file_list={"snapcraft.yaml": "some-file-id"},
                 blob=b"name: test-snap",
             )
         )
