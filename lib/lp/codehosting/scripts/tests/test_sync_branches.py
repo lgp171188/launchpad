@@ -20,6 +20,9 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class BranchDirectoryCreated(Matcher):
+    def __str__(self):
+        return "BranchDirectoryCreated()"
+
     def match(self, branch):
         return DirExists().match(
             os.path.join(

@@ -24,6 +24,11 @@ class MatchesSourcePackageNameTerms(Matcher):
         self.names = names
         self.ordered = ordered
 
+    def __str__(self):
+        return "MatchesSourcePackageNameTerms({}, ordered={})".format(
+            self.names, self.ordered
+        )
+
     def match(self, terms):
         matchers = [
             MatchesStructure.byEquality(

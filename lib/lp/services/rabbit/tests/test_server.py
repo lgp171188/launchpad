@@ -25,7 +25,7 @@ class TestRabbitServer(TestCase):
 
         # The default timeout is 15 seconds, but increase this a bit to
         # allow some more leeway for slow test environments.
-        fixture = self.useFixture(RabbitServer(ctltimeout=60))
+        fixture = self.useFixture(RabbitServer(ctltimeout=120))
         # RabbitServer pokes some .ini configuration into its config.
         service_config = ConfigParser()
         service_config.read_file(io.StringIO(fixture.config.service_config))

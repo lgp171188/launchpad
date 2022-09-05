@@ -62,6 +62,9 @@ class MacaroonsVerify(Matcher):
     def __init__(self, key):
         self.key = key
 
+    def __str__(self):
+        return "MacaroonsVerify({!r})".format(self.key)
+
     def match(self, macaroons):
         mismatch = Contains("root").match(macaroons)
         if mismatch is not None:
@@ -193,6 +196,18 @@ class RequestMatches(Matcher):
         self.json_data = json_data
         self.form_data = form_data
         self.kwargs = kwargs
+
+    def __str__(self):
+        return (
+            "RequestMatches({!r}, auth={}, json_data={}, form_data={}, "
+            "**{})".format(
+                self.url,
+                self.auth,
+                self.json_data,
+                self.form_data,
+                self.kwargs,
+            )
+        )
 
     def match(self, request):
         mismatch = MatchesStructure(url=self.url, **self.kwargs).match(request)

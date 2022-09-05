@@ -313,7 +313,7 @@ class IRevisionStatusReportSet(Interface):
 class IRevisionStatusArtifactSet(Interface):
     """The set of all revision status artifacts."""
 
-    def new(lfa, report, artifact_type):
+    def new(lfa, report, artifact_type, date_created=None):
         """Return a new revision status artifact.
 
         :param lfa: An `ILibraryFileAlias`.

@@ -35,6 +35,11 @@ class MacaroonVerifies(Matcher):
         self.matcher = matcher
         self.verify_kwargs = verify_kwargs
 
+    def __str__(self):
+        return "MacaroonVerifies({!r}, {!r}, matcher={}, **{})".format(
+            self.issuer_name, self.context, self.matcher, self.verify_kwargs
+        )
+
     def match(self, macaroon_raw):
         issuer = getUtility(IMacaroonIssuer, self.issuer_name)
         macaroon = Macaroon.deserialize(macaroon_raw)

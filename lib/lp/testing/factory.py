@@ -2219,6 +2219,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         report=None,
         artifact_type=None,
         restricted=False,
+        date_created=DEFAULT,
     ):
         """Create a new RevisionStatusArtifact."""
         if lfa is None:
@@ -2230,7 +2231,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if artifact_type is None:
             artifact_type = RevisionStatusArtifactType.LOG
         return getUtility(IRevisionStatusArtifactSet).new(
-            lfa, report, artifact_type
+            lfa, report, artifact_type, date_created=date_created
         )
 
     def makeBug(
