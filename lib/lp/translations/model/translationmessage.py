@@ -33,6 +33,7 @@ from lp.services.database.sqlobject import (
     StringCol,
 )
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.translations.interfaces.currenttranslations import ICurrentTranslations
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.interfaces.side import TranslationSide
 from lp.translations.interfaces.translationmessage import (
@@ -367,6 +368,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
             pofile.potemplate,
             self.language,
             pofile.potemplate.translation_side,
+            use_cache=True,
         )
         # If there is no current translation, none of the
         # suggestions have been reviewed, so they are all shown.
@@ -604,6 +606,7 @@ class TranslationMessageSet:
         need_potranslation=False,
         need_potmsgset=False,
         need_people=False,
+        need_potmsgset_current_message=False,
     ):
         """See `ITranslationMessageSet`."""
         from lp.translations.model.potemplate import POTemplate
@@ -645,6 +648,23 @@ class TranslationMessageSet:
                     + [tm.reviewerID for tm in tms]
                 )
             )
+        if need_potmsgset_current_message:
+            messages = [m for m in tms if m.browser_pofile]
+            if messages:
+                msgsets, potemplates, languages, sides = zip(
+                    *(
+                        (
+                            m.potmsgset,
+                            m.browser_pofile.potemplate,
+                            m.language,
+                            m.browser_pofile.potemplate.translation_side,
+                        )
+                        for m in messages
+                    )
+                )
+                getUtility(ICurrentTranslations).cacheCurrentTranslations(
+                    msgsets, potemplates, languages, sides
+                )
 
     def preloadPOFilesAndSequences(self, messages, pofile=None):
         """See `ITranslationMessageSet`."""

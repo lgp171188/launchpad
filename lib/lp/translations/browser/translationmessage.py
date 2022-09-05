@@ -1403,6 +1403,7 @@ class CurrentTranslationMessageView(LaunchpadView):
                     need_potranslation=True,
                     need_potmsgset=True,
                     need_people=True,
+                    need_potmsgset_current_message=True,
                 )
 
             alt_external = translations[self.sec_lang].used

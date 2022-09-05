@@ -43,6 +43,7 @@ from lp.services.database.stormexpr import (
 )
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
+from lp.translations.interfaces.currenttranslations import ICurrentTranslations
 from lp.translations.interfaces.potmsgset import (
     IPOTMsgSet,
     POTMsgSetInIncompatibleTemplatesError,
@@ -305,37 +306,16 @@ class POTMsgSet(SQLBase):
         """See `IPOTMsgSet`."""
         return self.getCurrentTranslation(None, language, side)
 
-    def getCurrentTranslation(self, potemplate, language, side):
+    def getCurrentTranslation(
+        self, potemplate, language, side, use_cache=False
+    ):
         """See `IPOTMsgSet`."""
-        traits = getUtility(ITranslationSideTraitsSet).getTraits(side)
-        flag = removeSecurityProxy(traits.getFlag(TranslationMessage))
-
-        clauses = [
-            flag == True,
-            TranslationMessage.potmsgsetID == self.id,
-            TranslationMessage.languageID == language.id,
-        ]
-
-        if potemplate is None:
-            # Look only for a shared translation.
-            clauses.append(TranslationMessage.potemplate == None)
-        else:
-            clauses.append(
-                Or(
-                    TranslationMessage.potemplate == None,
-                    TranslationMessage.potemplateID == potemplate.id,
-                )
-            )
-
-        # Return a diverged translation if it exists, and fall back
-        # to the shared one otherwise.
-        result = (
-            Store.of(self)
-            .find(TranslationMessage, *clauses)
-            .order_by(Desc(Coalesce(TranslationMessage.potemplateID, -1)))
-            .first()
+        current_translation = getUtility(
+            ICurrentTranslations
+        ).getCurrentTranslation(
+            self, potemplate, language, side, use_cache=use_cache
         )
-        return result
+        return removeSecurityProxy(current_translation)
 
     def getLocalTranslationMessages(
         self,
@@ -1127,8 +1107,10 @@ class POTMsgSet(SQLBase):
         )
 
         # The current message on this translation side, if any.
-        incumbent_message = traits.getCurrentMessage(
-            self, pofile.potemplate, pofile.language
+        incumbent_message = self.getCurrentTranslation(
+            pofile.potemplate,
+            pofile.language,
+            pofile.potemplate.translation_side,
         )
 
         self._checkForConflict(

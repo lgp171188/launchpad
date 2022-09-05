@@ -428,6 +428,7 @@ class ITranslationMessageSet(Interface):
         need_potranslation=False,
         need_potmsgset=False,
         need_people=False,
+        need_potmsgset_current_message=False,
     ):
         """Preload lots of details for `TranslationMessage`s.
 
