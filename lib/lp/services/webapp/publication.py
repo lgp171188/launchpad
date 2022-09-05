@@ -10,7 +10,6 @@ import re
 import sys
 import threading
 import time
-import traceback
 from urllib.parse import quote
 
 import transaction
@@ -53,7 +52,6 @@ from lp.services.database.interfaces import (
 from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
-from lp.services.osutils import open_for_writing
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.interfaces import (
     FinishReadOnlyRequestEvent,
@@ -239,20 +237,6 @@ class LaunchpadBrowserPublication(
         notify(StartRequestEvent(request))
         request._traversal_start = time.time()
         request._traversal_thread_start = _get_thread_time()
-        threadid = threading.current_thread().ident
-        threadrequestfile = open_for_writing(
-            "logs/thread-%s.request" % threadid, "wb"
-        )
-        try:
-            request_txt = str(request)
-        except Exception:
-            request_txt = "Exception converting request to string\n\n"
-            try:
-                request_txt += traceback.format_exc()
-            except Exception:
-                request_txt += "Unable to render traceback!"
-        threadrequestfile.write(request_txt.encode("UTF-8"))
-        threadrequestfile.close()
         self.initializeLoggingContext(request)
 
         # Tell our custom database adapter that the request has started.
