@@ -8,4 +8,9 @@ __all__ = [
     "IAccessTokenTarget",
 ]
 
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.auth.interfaces import IAccessToken, IAccessTokenTarget
+from lp.services.webservice.apihelpers import patch_reference_property
+
+# IAccessToken
+patch_reference_property(IAccessToken, "git_repository", IGitRepository)

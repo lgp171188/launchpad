@@ -77,7 +77,6 @@ from lp import _
 from lp.app.enums import InformationType
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.branch import IBranch
@@ -1215,7 +1214,6 @@ class ISnap(
     ISnapEdit,
     ISnapEditableAttributes,
     ISnapAdminAttributes,
-    IPrivacy,
     IInformationType,
 ):
     """A buildable snap package."""
@@ -1361,7 +1359,7 @@ class ISnapSet(Interface):
         :param visible_by_user: If not None, only return packages visible by
             this user; otherwise, only return publicly-visible packages.
         :param order_by_date: If True, order packages by descending
-            modification date.
+            modification date, then by descending creation date.
         :raises BadSnapSearchContext: if the context is not understood.
         """
 

@@ -17,15 +17,14 @@ class TestSpecificationAccessPolicyTriggers(TestCaseWithFactory):
 
     def fetchPolicies(self, specification):
         # We may be dealing with private specs, so just ignore security.
-        return (
-            IStore(Specification)
-            .execute(
-                "SELECT access_policy, access_grants FROM specification WHERE "
-                "id = ?",
-                (removeSecurityProxy(specification).id,),
-            )
-            .get_one()
-        )
+        store = IStore(Specification)
+        # Ensure that the specification's ID is available.
+        store.flush()
+        return store.execute(
+            "SELECT access_policy, access_grants FROM specification WHERE "
+            "id = ?",
+            (removeSecurityProxy(specification).id,),
+        ).get_one()
 
     def assertAccess(self, specification, expected_policy, expected_grants):
         policy, grants = self.fetchPolicies(specification)

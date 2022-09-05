@@ -22,7 +22,6 @@ from lp.answers.model.faq import FAQ, FAQSearch
 from lp.answers.model.question import QuestionTargetSearch
 from lp.app.enums import ServiceUsage
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import IHasIcon, IHasLogo, IHasMugshot
 from lp.blueprints.enums import SprintSpecificationStatus
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
@@ -86,9 +85,6 @@ from lp.translations.model.translationpolicy import TranslationPolicyMixin
     IBugSummaryDimension,
     IProjectGroup,
     IFAQCollection,
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
     ISearchableByQuestionOwner,
 )
 class ProjectGroup(
@@ -287,7 +283,7 @@ class ProjectGroup(
     ):
         """See `IHasSpecifications`."""
         base_clauses = [
-            Specification.productID == Product.id,
+            Specification.product_id == Product.id,
             Product.projectgroupID == self.id,
         ]
         tables = [Specification]
@@ -296,7 +292,7 @@ class ProjectGroup(
             tables.append(
                 Join(
                     ProductSeries,
-                    Specification.productseriesID == ProductSeries.id,
+                    Specification.productseries_id == ProductSeries.id,
                 )
             )
         return search_specifications(

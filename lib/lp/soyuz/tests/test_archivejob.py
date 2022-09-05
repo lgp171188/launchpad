@@ -44,6 +44,7 @@ from lp.soyuz.model.archivejob import (
     ArchiveJobDerived,
     CIBuildUploadJob,
     PackageUploadNotificationJob,
+    ScanException,
 )
 from lp.soyuz.tests import datadir
 from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
@@ -1485,8 +1486,14 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             "Running %r (ID %d) in status Waiting" % (job, job.job_id),
             "Failed to scan _invalid.whl as a Python wheel: Invalid wheel "
             "filename: '_invalid.whl'",
-            '%r (ID %d) failed with user error ScanException("Could not find '
-            "any usable files in ['_invalid.whl']\",)." % (job, job.job_id),
+            "%r (ID %d) failed with user error %r."
+            % (
+                job,
+                job.job_id,
+                ScanException(
+                    "Could not find any usable files in ['_invalid.whl']"
+                ),
+            ),
         ]
         self.assertEqual(expected_logs, logger.output.splitlines())
         [notification] = self.assertEmailQueueLength(1)

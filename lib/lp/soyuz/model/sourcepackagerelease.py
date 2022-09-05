@@ -63,7 +63,8 @@ class SourcePackageRelease(SQLBase):
     _table = "SourcePackageRelease"
 
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    section = ForeignKey(foreignKey="Section", dbName="section")
+    section_id = Int(name="section", allow_none=True)
+    section = Reference(section_id, "Section.id")
     creator = ForeignKey(
         dbName="creator",
         foreignKey="Person",
@@ -71,7 +72,8 @@ class SourcePackageRelease(SQLBase):
         notNull=True,
     )
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    component = ForeignKey(foreignKey="Component", dbName="component")
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
     sourcepackagename = ForeignKey(
         foreignKey="SourcePackageName",
         dbName="sourcepackagename",

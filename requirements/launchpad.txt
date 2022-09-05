@@ -22,6 +22,7 @@ billiard==3.6.4.0
 bleach==3.3.1
 bleach-allowlist==1.0.3
 breezy==3.2.0
+brz-builder==0.7.4
 bson==0.5.9
 boto3==1.16.63
 botocore==1.19.63
@@ -81,6 +82,7 @@ lazr.restful==2.0.1
 lazr.restfulclient==0.14.4
 lazr.sshserver==0.1.13
 lazr.uri==1.0.6
+loggerhead==2.0.1
 lpjsmin==0.6
 m2r==0.1.13
 Markdown==3.2.2
@@ -108,7 +110,7 @@ oslo.i18n==3.25.1
 oslo.serialization==2.29.3
 oslo.utils==3.42.1
 paramiko==2.4.1
-Paste==3.3.0
+Paste==3.5.2
 PasteDeploy==2.1.0
 pathlib2==2.3.2
 patiencediff==0.2.2
@@ -142,7 +144,7 @@ python-keystoneclient==3.21.0
 python-openid2==3.2+lp1
 python-swiftclient==3.8.1
 PyYAML==5.3.1
-rabbitfixture==0.5.1
+rabbitfixture==0.5.2
 requests-file==1.4.3
 requests-toolbelt==0.9.1
 responses==0.9.0
@@ -155,7 +157,6 @@ setproctitle==1.1.7
 setuptools-git==1.2
 setuptools-scm==3.4.3
 simplejson==3.8.2
-SimpleTAL==5.2
 soupmatchers==0.4
 soupsieve==1.9
 statsd==3.3.0

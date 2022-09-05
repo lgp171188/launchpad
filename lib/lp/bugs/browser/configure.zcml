@@ -896,6 +896,15 @@
         path_expression="string:+vulnerability/${id}"
         attribute_to_parent="distribution"
         rootsite="bugs"/>
+    <browser:defaultView
+        for="lp.bugs.interfaces.vulnerability.IVulnerability"
+        name="+index" />
+    <browser:page
+        name="+index"
+        for="lp.bugs.interfaces.vulnerability.IVulnerability"
+        class="lp.bugs.browser.vulnerability.VulnerabilityIndexView"
+        permission="zope.Public"
+        template="../templates/vulnerability-index.pt" />
     <browser:url
         for="lp.bugs.interfaces.bugsubscription.IBugSubscription"
         path_expression="string:+subscription/${person/name}"

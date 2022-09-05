@@ -19,7 +19,6 @@ def main():
     # Tell lp.services.config to use the testrunner config instance, so that
     # we don't kill the real services.
     config.setInstance("testrunner")
-    config.generate_overrides()
     print("Killing Memcached....", end="")
     kill_by_pidfile(MemcachedLayer.getPidFile())
     print("done.")

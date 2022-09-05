@@ -51,14 +51,7 @@ from lp.app.enums import (
     ServiceUsage,
 )
 from lp.app.errors import NotFoundError, ServiceUsageForbidden
-from lp.app.interfaces.launchpad import (
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    ILaunchpadCelebrities,
-    ILaunchpadUsage,
-    IServiceUsage,
-)
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
 from lp.app.validators.name import sanitize_name, valid_name
@@ -73,7 +66,6 @@ from lp.blueprints.model.specification import (
 from lp.blueprints.model.specificationsearch import search_specifications
 from lp.blueprints.model.sprint import HasSprintsMixin
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
-from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     BUG_POLICY_ALLOWED_TYPES,
     BUG_POLICY_DEFAULT_TYPES,
@@ -121,7 +113,6 @@ from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
     IOCIProjectSet,
 )
-from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     validate_person,
     validate_person_or_closed_team,
@@ -188,7 +179,6 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES, IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
-from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivefile import ArchiveFile
@@ -227,18 +217,7 @@ specification_policy_default = {
 }
 
 
-@implementer(
-    IBugSummaryDimension,
-    IDistribution,
-    IHasBugSupervisor,
-    IHasBuildRecords,
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    IHasOOPSReferences,
-    ILaunchpadUsage,
-    IServiceUsage,
-)
+@implementer(IBugSummaryDimension, IDistribution)
 class Distribution(
     SQLBase,
     BugTargetBase,
@@ -1404,7 +1383,7 @@ class Distribution(
           - informationalness: we will show ANY if nothing is said
 
         """
-        base_clauses = [Specification.distributionID == self.id]
+        base_clauses = [Specification.distribution == self]
         return search_specifications(
             self,
             base_clauses,
@@ -1419,7 +1398,11 @@ class Distribution(
 
     def getSpecification(self, name):
         """See `ISpecificationTarget`."""
-        return Specification.selectOneBy(distribution=self, name=name)
+        return (
+            IStore(Specification)
+            .find(Specification, distribution=self, name=name)
+            .one()
+        )
 
     def getAllowedSpecificationInformationTypes(self):
         """See `ISpecificationTarget`."""

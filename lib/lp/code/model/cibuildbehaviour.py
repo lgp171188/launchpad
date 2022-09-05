@@ -55,11 +55,11 @@ def build_environment_variables(distribution_name: str) -> dict:
     return rv
 
 
-def build_apt_repositories(distribution_name: str) -> list:
-    # - load apt repository configuration lines from JSON Array
+def build_package_repositories(distribution_name: str) -> list:
+    # - load package repository configuration lines from JSON Array
     # - replace authentication placeholder
     try:
-        lines = config["cibuild." + distribution_name]["apt_repositories"]
+        lines = config["cibuild." + distribution_name]["package_repositories"]
     except NoSectionError:
         return []
     if lines is None:
@@ -108,7 +108,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
     builder_type = "ci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
-    ALLOWED_STATUS_NOTIFICATIONS = []
+    ALLOWED_STATUS_NOTIFICATIONS = ["PACKAGEFAIL"]
 
     def redactXmlrpcArguments(self, args):
         # we do not want to have secrets in logs
@@ -190,7 +190,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             args["environment_variables"] = build_environment_variables(
                 distribution_name
             )
-            args["apt_repositories"] = build_apt_repositories(
+            args["package_repositories"] = build_package_repositories(
                 distribution_name
             )
             args["plugin_settings"] = build_plugin_settings(distribution_name)

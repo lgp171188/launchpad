@@ -296,6 +296,7 @@ class TestSnapListing(BrowserTestCase):
             owner=private_owner,
             registrant=private_owner,
             branch=branch,
+            date_created=ONE_DAY_AGO,
         )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
@@ -343,6 +344,7 @@ class TestSnapListing(BrowserTestCase):
             owner=private_owner,
             registrant=private_owner,
             git_ref=ref,
+            date_created=ONE_DAY_AGO,
         )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)
@@ -393,6 +395,7 @@ class TestSnapListing(BrowserTestCase):
             owner=private_owner,
             registrant=private_owner,
             git_ref=ref,
+            date_created=ONE_DAY_AGO,
         )
         with person_logged_in(private_owner):
             private_snap.subscribe(user_with_permission, private_owner)

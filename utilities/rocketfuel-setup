@@ -139,7 +139,7 @@ do_install() {
   }
 
 sudo apt update
-REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi"
+REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi-py3"
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
 done
@@ -190,7 +190,6 @@ of the following steps:
 $ git clone lp:launchpad
 $ cd launchpad
 $ git clone --depth=1 lp:lp-source-dependencies download-cache
-$ utilities/update-sourcecode
 $ utilities/launchpad-database-setup
 $ make schema
 $ sudo make install
@@ -220,10 +219,6 @@ LP_TRUNK_NAME=\${LP_TRUNK_NAME:=launchpad}
 LP_TRUNK_PATH=\$LP_PROJECT_ROOT/\$LP_TRUNK_NAME
 
 LP_SOURCEDEPS_DIR=\${LP_SOURCEDEPS_DIR:=lp-sourcedeps}
-LP_SOURCEDEPS_PATH=\$LP_PROJECT_ROOT/\$LP_SOURCEDEPS_DIR/sourcecode
-
-# Force tilde expansion
-LP_SOURCEDEPS_PATH=\$(eval echo \${LP_SOURCEDEPS_PATH})
 " > "$HOME/.rocketfuel-env.sh"
 fi
 
@@ -238,22 +233,10 @@ fi
 mkdir -p "$LP_PROJECT_ROOT"
 cd "$LP_PROJECT_ROOT" || exit 1
 
-echo "Logging bzr into Launchpad (it's okay if this errors)..."
-if ! bzr launchpad-login "$lpusername"; then
-  echo ""
-  echo "You can ignore any error above about not registering an SSH key"
-  echo "with Launchpad.  Registering an SSH key is only important if you"
-  echo "are writing data to Launchpad, or trying to access private data."
-  echo ""
-fi
-
-# Make sure "git clone lp:..." works.  Yes, it's pretty odd to use bzr to
-# help configure git, but it knows how to check whether the user has SSH
-# keys.  If we eventually want to drop our dependency on bzr then we can
-# write this out longhand in Python.
+# Make sure "git clone lp:..." works.
 echo "Configuring git..."
 if [ "$(git ls-remote --get-url lp:launchpad)" = lp:launchpad ]; then
-  if bzr launchpad-login --verbose 2>/dev/null | grep -q 'has SSH keys'; then
+  if [ "$(curl --fail --silent "https://launchpad.net/~$lpusername/+sshkeys")" ]; then
     git config --global url.git+ssh://git.launchpad.net/.insteadof lp:
   else
     git config --global url.https://git.launchpad.net/.insteadof lp:

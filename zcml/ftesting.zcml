@@ -4,7 +4,8 @@
 
 <!-- Used by the FunctionalLayer in lp.testing.layers. -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:lp="http://namespaces.canonical.com/lp">
 
     <include file="common.zcml" />
 
@@ -13,7 +14,9 @@
 
     <includeOverrides files="override-includes/*-configure.zcml" />
     <includeOverrides files="override-includes/*-configure-testing.zcml" />
-    <includeOverrides file="+config-overrides.zcml" />
+
+    <include package="lp.services.config" file="meta.zcml" />
+    <lp:includeLaunchpadOverrides />
 
     <include file="summarizerequests.zcml" />
 

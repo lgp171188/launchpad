@@ -239,9 +239,11 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     )
     distroseries = ForeignKey(foreignKey="DistroSeries", dbName="distroseries")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    component = ForeignKey(foreignKey="Component", dbName="component")
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    section = ForeignKey(foreignKey="Section", dbName="section")
+    section_id = Int(name="section", allow_none=True)
+    section = Reference(section_id, "Section.id")
     status = DBEnum(enum=PackagePublishingStatus)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
     datepublished = UtcDateTimeCol(default=None)
@@ -747,11 +749,11 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         foreignKey="DistroArchSeries", dbName="distroarchseries"
     )
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
-    component = ForeignKey(
-        foreignKey="Component", dbName="component", notNull=False
-    )
+    component_id = Int(name="component", allow_none=True)
+    component = Reference(component_id, "Component.id")
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
-    section = ForeignKey(foreignKey="Section", dbName="section", notNull=False)
+    section_id = Int(name="section", allow_none=True)
+    section = Reference(section_id, "Section.id")
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
     priority = DBEnum(
         name="priority", enum=PackagePublishingPriority, allow_none=True
@@ -1962,7 +1964,7 @@ class PublishingSet:
         def eager_load(spphs):
             # Preload everything which will be used by archivepublisher's
             # build_source_stanza_fields.
-            bulk.load_related(Section, spphs, ["sectionID"])
+            bulk.load_related(Section, spphs, ["section_id"])
             sprs = bulk.load_related(
                 SourcePackageRelease, spphs, ["sourcepackagereleaseID"]
             )
@@ -2021,7 +2023,7 @@ class PublishingSet:
         def eager_load(bpphs):
             # Preload everything which will be used by archivepublisher's
             # build_binary_stanza_fields.
-            bulk.load_related(Section, bpphs, ["sectionID"])
+            bulk.load_related(Section, bpphs, ["section_id"])
             bprs = bulk.load_related(
                 BinaryPackageRelease, bpphs, ["binarypackagereleaseID"]
             )
@@ -2272,8 +2274,8 @@ class PublishingSet:
                 deb_bpph.archiveID == debug_bpph.archiveID,
                 deb_bpph.distroarchseriesID == debug_bpph.distroarchseriesID,
                 deb_bpph.pocket == debug_bpph.pocket,
-                deb_bpph.componentID == debug_bpph.componentID,
-                deb_bpph.sectionID == debug_bpph.sectionID,
+                deb_bpph.component_id == debug_bpph.component_id,
+                deb_bpph.section_id == debug_bpph.section_id,
                 deb_bpph.priority == debug_bpph.priority,
                 Not(
                     IsDistinctFrom(

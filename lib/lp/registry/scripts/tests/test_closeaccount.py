@@ -965,11 +965,10 @@ class TestCloseAccount(TestCaseWithFactory):
         )
         self.assertNotRemoved(account_id, person_id)
 
-    def test_fails_on_deleted_ppa_with_builds(self):
-        # XXX cjwatson 2019-08-09: A PPA that has ever had builds can't
-        # currently be purged.  It's not clear what to do about this case.
+    def test_ignores_deleted_ppa_with_builds(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(owner=person)
+        ppa_id = ppa.id
         self.factory.makeBinaryPackageBuild(archive=ppa)
         ppa.delete(person)
         Publisher(
@@ -979,15 +978,11 @@ class TestCloseAccount(TestCaseWithFactory):
         account_id = person.account.id
         script = self.makeScript([person.name])
         with dbuser("launchpad"):
-            self.assertRaisesWithContent(
-                LaunchpadScriptFailure,
-                "Can't delete non-trivial PPAs for user %s" % person.name,
-                self.runScript,
-                script,
-            )
-        self.assertNotRemoved(account_id, person_id)
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertEqual(ppa, Store.of(ppa).get(Archive, ppa_id))
 
-    def test_handles_empty_deleted_ppa(self):
+    def test_purges_empty_deleted_ppa(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(owner=person)
         ppa_id = ppa.id

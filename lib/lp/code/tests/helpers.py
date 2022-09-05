@@ -25,7 +25,7 @@ from itertools import count
 
 import fixtures
 import transaction
-from breezy.plugins.builder.recipe import RecipeParser
+from brzbuildrecipe.recipe import RecipeParser
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

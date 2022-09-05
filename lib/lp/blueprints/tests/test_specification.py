@@ -586,7 +586,7 @@ class SpecificationTests(TestCaseWithFactory):
     def _fetch_specs_visible_for_user(self, user):
         return Store.of(self.product).find(
             Specification,
-            Specification.productID == self.product.id,
+            Specification.product == self.product,
             *get_specification_privacy_filter(user),
         )
 

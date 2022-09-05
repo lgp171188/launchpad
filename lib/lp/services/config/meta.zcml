@@ -1,0 +1,14 @@
+<!-- Copyright 2009 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure xmlns="http://namespaces.zope.org/meta">
+
+  <directive
+      namespace="http://namespaces.canonical.com/lp"
+      name="includeLaunchpadOverrides"
+      schema="zope.interface.Interface"
+      handler="lp.services.config.zcml.include_launchpad_overrides"
+      />
+
+</configure>

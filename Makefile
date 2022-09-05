@@ -1,13 +1,6 @@
 # This file modified from Zope3/Makefile
 # Licensed under the ZPL, (c) Zope Corporation and contributors.
 
-# Macro to lazily evaluate a shell command and cache the output.  This
-# allows us to set variables to the output of shell commands without having
-# to invoke those commands on every make invocation.
-# Use like this: FOO = $(call lazy_eval,FOO,command and arguments)
-# Borrowed from dpkg.
-lazy_eval ?= $(or $(value CACHE_$(1)),$(eval CACHE_$(1) := $(shell $(2)))$(value CACHE_$(1)))
-
 PYTHON?=python3
 
 WD:=$(shell pwd)
@@ -54,11 +47,6 @@ YARN_BUILD := $(JS_BUILD_DIR)/yarn
 YARN := utilities/yarn
 YUI_SYMLINK := $(JS_BUILD_DIR)/yui
 LP_JS_BUILD := $(JS_BUILD_DIR)/lp
-NODE_ARCH = $(call lazy_eval,NODE_ARCH,nodejs -p process.arch)
-NODE_ABI = $(call lazy_eval,NODE_ABI,nodejs -p process.versions.modules)
-NODE_SASS_VERSION = 4.14.1
-NODE_SASS_BINDING = linux-$(NODE_ARCH)-$(NODE_ABI)
-NODE_SASS_BINARY = $(WD)/download-cache/yarn/node-sass-$(NODE_SASS_VERSION)-$(NODE_SASS_BINDING)_binding.node
 
 MINS_TO_SHUTDOWN=15
 
@@ -154,15 +142,6 @@ doc:
 check_config: build
 	bin/test -m lp.services.config.tests -vvt test_config
 
-# Clean before running the test suite, since the build might fail depending
-# what source changes happened. (e.g. apidoc depends on interfaces)
-.PHONY: check
-check: clean build
-	# Run all tests. test_on_merge.py takes care of setting up the
-	# database.
-	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
-	bzr status --no-pending
-
 logs:
 	mkdir logs
 
@@ -190,8 +169,8 @@ inplace: build logs clean_logs codehosting-dir
 .PHONY: build
 build: compile apidoc jsbuild css_combine
 
-# Bootstrap download-cache and sourcecode.  Useful for CI jobs that want to
-# set these up from scratch.
+# Bootstrap download-cache.  Useful for CI jobs that want to set this up
+# from scratch.
 .PHONY: bootstrap
 bootstrap:
 	if [ -d download-cache/.git ]; then \
@@ -199,14 +178,13 @@ bootstrap:
 	else \
 		git clone --depth=1 $(DEPENDENCY_REPO) download-cache; \
 	fi
-	utilities/update-sourcecode
 
-# LP_SOURCEDEPS_PATH should point to the sourcecode directory, but we
-# want the parent directory where the download-cache and env directories
-# are. We re-use the variable that is using for the rocketfuel-get script.
+# LP_PROJECT_ROOT/LP_SOURCEDEPS_DIR points to the parent directory where the
+# download-cache and env directories are.  We reuse the variables that are
+# used for the rocketfuel-get script.
 download-cache:
-ifdef LP_SOURCEDEPS_PATH
-	utilities/link-external-sourcecode $(LP_SOURCEDEPS_PATH)/..
+ifneq (,$(LP_PROJECT_ROOT)$(LP_SOURCEDEPS_DIR))
+	utilities/link-external-sourcecode $(LP_PROJECT_ROOT)/$(LP_SOURCEDEPS_DIR)
 else
 	@echo "Missing ./download-cache."
 	@echo "Developers: please run utilities/link-external-sourcecode."
@@ -219,17 +197,17 @@ css_combine: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
 	# Compile the base.css file separately for tests
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING)/ $(WD)/$(ICING)/css/base.scss
+	$(YARN) run sass --load-path $(WD)/$(ICING) $(WD)/$(ICING)/css/base.scss $(WD)/$(ICING)/base.css
 	# Compile the combo.css for the main site
-	# XXX 2020-06-12 twom This should have `--output-style compressed`. Removed for debugging purposes
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss
+	# XXX 2020-06-12 twom This should have `--style=compressed`. Removed for debugging purposes
+	$(YARN) run sass --load-path $(WD)/$(ICING) $(WD)/$(ICING)/combo.scss $(WD)/$(ICING)/combo.css
 
 .PHONY: css_watch
 css_watch: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
 	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) run node-sass --include-path $(WD)/$(ICING) --follow --output $(WD)/$(ICING) $(WD)/$(ICING)/ --watch --recursive
+	$(YARN) run sass --load-path $(WD)/$(ICING) $(WD)/$(ICING)/:$(WD)/$(ICING)/ --watch
 
 .PHONY: jsbuild_widget_css
 jsbuild_widget_css: bin/jsbuild
@@ -251,7 +229,7 @@ $(YARN_BUILD): | $(JS_BUILD_DIR)
 	$(RM) -r $@/tmp
 
 $(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
-	SASS_BINARY_PATH=$(NODE_SASS_BINARY) $(YARN) install --offline --frozen-lockfile --production
+	$(YARN) install --offline --frozen-lockfile --production
 	# We don't use YUI's Flash components and they have a bad security
 	# record. Kill them.
 	find yarn/node_modules/yui -name '*.swf' -delete

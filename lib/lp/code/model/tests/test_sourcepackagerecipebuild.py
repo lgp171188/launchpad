@@ -27,6 +27,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.services.webapp.authorization import check_permission
+from lp.soyuz.interfaces.archive import ArchiveDisabled, CannotUploadToPPA
 from lp.testing import (
     ANONYMOUS,
     TestCaseWithFactory,
@@ -335,8 +336,8 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
         self.assertEqual([], daily_builds)
         self.assertEqual(
             "DEBUG Recipe eric/funky-recipe is stale\n"
-            "DEBUG  - daily build failed for Warty (4.10): "
-            + "ArchiveDisabled(%r,)\n" % "PPA for Eric is disabled.",
+            "DEBUG  - daily build failed for Warty (4.10): %r\n"
+            % ArchiveDisabled("PPA for Eric"),
             logger.getLogBuffer(),
         )
 
@@ -355,9 +356,8 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
         self.assertEqual([], daily_builds)
         self.assertEqual(
             "DEBUG Recipe eric/funky-recipe is stale\n"
-            "DEBUG  - daily build failed for Warty (4.10): "
-            "CannotUploadToPPA('Signer has no upload rights "
-            "to this PPA.',)\n",
+            "DEBUG  - daily build failed for Warty (4.10): %r\n"
+            % CannotUploadToPPA(),
             logger.getLogBuffer(),
         )
 

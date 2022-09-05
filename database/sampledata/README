@@ -68,7 +68,7 @@ To update the sample data:
     6.  Ensure the tests still pass:
 
             cd ../..
-            make check  # Yeah, yeah, we all know our machines can stand that.
+            bin/test -vvc  # Yeah, we all know our machines can stand that.
 
     7.  Commit your changes and submit for review:
 

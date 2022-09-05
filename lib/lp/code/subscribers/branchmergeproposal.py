@@ -9,7 +9,6 @@ from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import BranchMergeProposalStatus
 from lp.code.interfaces.branchmergeproposal import (
-    BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
     IBranchMergeProposal,
     IMergeProposalNeedsReviewEmailJobSource,
     IMergeProposalUpdatedEmailJobSource,
@@ -17,7 +16,6 @@ from lp.code.interfaces.branchmergeproposal import (
     IUpdatePreviewDiffJobSource,
 )
 from lp.registry.interfaces.person import IPerson
-from lp.services.features import getFeatureFlag
 from lp.services.utils import text_delta
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
@@ -67,12 +65,11 @@ def merge_proposal_created(merge_proposal, event):
     Create a job to update the diff for the merge proposal; trigger webhooks.
     """
     getUtility(IUpdatePreviewDiffJobSource).create(merge_proposal)
-    if getFeatureFlag(BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG):
-        payload = {
-            "action": "created",
-            "new": _compose_merge_proposal_webhook_payload(merge_proposal),
-        }
-        _trigger_webhook(merge_proposal, payload)
+    payload = {
+        "action": "created",
+        "new": _compose_merge_proposal_webhook_payload(merge_proposal),
+    }
+    _trigger_webhook(merge_proposal, payload)
 
 
 def merge_proposal_needs_review(merge_proposal, event):
@@ -121,20 +118,19 @@ def merge_proposal_modified(merge_proposal, event):
             getUtility(IMergeProposalUpdatedEmailJobSource).create(
                 merge_proposal, changes, from_person
             )
-    if getFeatureFlag(BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG):
-        payload = {
-            "action": "modified",
-            "old": _compose_merge_proposal_webhook_payload(
-                event.object_before_modification
-            ),
-            "new": _compose_merge_proposal_webhook_payload(merge_proposal),
-        }
-        # Some fields may not be in the before-modification snapshot; take
-        # values for these from the new object instead.
-        for field in payload["old"]:
-            if not hasattr(event.object_before_modification, field):
-                payload["old"][field] = payload["new"][field]
-        _trigger_webhook(merge_proposal, payload)
+    payload = {
+        "action": "modified",
+        "old": _compose_merge_proposal_webhook_payload(
+            event.object_before_modification
+        ),
+        "new": _compose_merge_proposal_webhook_payload(merge_proposal),
+    }
+    # Some fields may not be in the before-modification snapshot; take
+    # values for these from the new object instead.
+    for field in payload["old"]:
+        if not hasattr(event.object_before_modification, field):
+            payload["old"][field] = payload["new"][field]
+    _trigger_webhook(merge_proposal, payload)
 
 
 def review_requested(vote_reference, event):
@@ -147,12 +143,11 @@ def review_requested(vote_reference, event):
 
 def merge_proposal_deleted(merge_proposal, event):
     """A merge proposal has been deleted."""
-    if getFeatureFlag(BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG):
-        # The merge proposal link will be invalid by the time the webhook is
-        # delivered, but this may still be useful for endpoints that might
-        # e.g. want to cancel CI jobs in flight.
-        payload = {
-            "action": "deleted",
-            "old": _compose_merge_proposal_webhook_payload(merge_proposal),
-        }
-        _trigger_webhook(merge_proposal, payload)
+    # The merge proposal link will be invalid by the time the webhook is
+    # delivered, but this may still be useful for endpoints that might e.g.
+    # want to cancel CI jobs in flight.
+    payload = {
+        "action": "deleted",
+        "old": _compose_merge_proposal_webhook_payload(merge_proposal),
+    }
+    _trigger_webhook(merge_proposal, payload)

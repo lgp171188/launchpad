@@ -45,12 +45,13 @@ build-launchpad: ## build the launchpad charm
 build-launchpad: dist/$(call charm_file,launchpad)
 
 dist/%_ubuntu-$(CHARM_SERIES)-$(ARCH).charm: $(CHARM_DEPS) | $(BUILDDIR)
-	@echo "Building $*..."
-	@rm -rf $*/tmp
-	@cp -a tmp $*/tmp
-	@cd $* && charmcraft pack
-	@cp -a $*/$(call charm_file,$*) dist/
-	@rm -rf $*/tmp
+	echo "Building $*..."
+	rm -rf $*/tmp
+	cp -a tmp $*/tmp
+	cp -a layer/launchpad-base $*/tmp/deps/ols-layers/layer/
+	cd $* && charmcraft pack
+	cp -a $*/$(call charm_file,$*) dist/
+	rm -rf $*/tmp
 
 clean: ## clean the build environment
 clean: $(foreach charm,$(CHARMS),clean-$(charm))

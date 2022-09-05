@@ -6,10 +6,12 @@
 import hashlib
 import io
 import os
+from datetime import timedelta
 from hashlib import sha1
 
 import requests
 from fixtures import FakeLogger, TempDir
+from storm.expr import Cast
 from storm.store import Store
 from testtools.matchers import (
     AnyMatch,
@@ -29,6 +31,7 @@ from lp.code.interfaces.revisionstatus import (
     IRevisionStatusReportSet,
 )
 from lp.services.auth.enums import AccessTokenScope
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.osutils import write_file
 from lp.services.webapp.authorization import check_permission
 from lp.testing import (
@@ -45,11 +48,16 @@ from lp.testing.pages import webservice_for_person
 class TestRevisionStatusReport(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def makeRevisionStatusArtifact(self, report, artifact_type=None):
+    def makeRevisionStatusArtifact(
+        self, report, artifact_type=None, date_created=DEFAULT
+    ):
         # We don't need to upload files to the librarian in this test suite.
         lfa = self.factory.makeLibraryFileAlias(db_only=True)
         return self.factory.makeRevisionStatusArtifact(
-            lfa=lfa, report=report, artifact_type=artifact_type
+            lfa=lfa,
+            report=report,
+            artifact_type=artifact_type,
+            date_created=date_created,
         )
 
     def test_owner_public(self):
@@ -165,11 +173,16 @@ class TestRevisionStatusReport(TestCaseWithFactory):
 
     def test_latest_log(self):
         report = self.factory.makeRevisionStatusReport()
-        self.makeRevisionStatusArtifact(report=report)
-        self.makeRevisionStatusArtifact(report=report)
-        artifact3 = self.makeRevisionStatusArtifact(report=report)
+        artifacts = [
+            self.makeRevisionStatusArtifact(
+                report=report,
+                date_created=UTC_NOW
+                - Cast(timedelta(seconds=age), "interval"),
+            )
+            for age in (2, 1, 0)
+        ]
         with person_logged_in(report.git_repository.owner):
-            self.assertEqual(artifact3, report.latest_log)
+            self.assertEqual(artifacts[-1], report.latest_log)
 
 
 class TestRevisionStatusReportWebservice(TestCaseWithFactory):

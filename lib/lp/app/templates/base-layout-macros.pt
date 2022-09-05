@@ -309,7 +309,7 @@
         >System status</a>
       <span id="lp-version">
       &nbsp;&bull;&nbsp;
-        r<tal:display_revision replace="display_revision" />
+        <tal:display_revision replace="display_revision" />
         <tal:devmode condition="devmode">devmode</tal:devmode>
         <tal:demo condition="is_demo">demo site</tal:demo>
         (<a href="https://dev.launchpad.net/"

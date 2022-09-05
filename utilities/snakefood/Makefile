@@ -5,7 +5,7 @@ default: lp-clustered.svg
 # Generate import dependency graph
 lp.sfood:
 	sfood -i -u -I $(LIB_DIR)/sqlobject -I $(LIB_DIR)/schoolbell \
-	-I $(LIB_DIR)/devscripts -I $(LIB_DIR)/contrib \
+	-I $(LIB_DIR)/contrib \
 	-I $(LIB_DIR)/canonical/not-used $(LIB_DIR)/canonical \
 	$(LIB_DIR)/lp 2>/dev/null | grep -v contrib/ \
 	| grep -v sqlobject | egrep -v 'BeautifulSoup|bs4' | grep -v psycopg \

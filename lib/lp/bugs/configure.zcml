@@ -618,6 +618,12 @@
               linkBug
               unlinkBug"/>
     </class>
+    <adapter
+        provides="lp.services.webapp.interfaces.IBreadcrumb"
+        for="lp.bugs.interfaces.vulnerability.IVulnerability"
+        factory="lp.bugs.browser.vulnerability.VulnerabilityBreadcrumb"
+        permission="zope.Public"/>
+
     <class class="lp.bugs.model.vulnerability.VulnerabilitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
     </class>

@@ -82,7 +82,6 @@ from lp.soyuz.interfaces.sourcepackageformat import (
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
-from lp.soyuz.model.component import Component
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
@@ -1454,7 +1453,7 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         """Test the overriding of the contrib component on uploads."""
         # The component contrib does not exist in the sample data, so
         # add it here.
-        Component(name="contrib")
+        getUtility(IComponentSet).new("contrib")
         self.checkComponentOverride(
             "bar_1.0-1_contrib_component", "multiverse"
         )
@@ -1463,7 +1462,7 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         """Test the overriding of the non-free component on uploads."""
         # The component non-free does not exist in the sample data, so
         # add it here.
-        Component(name="non-free")
+        getUtility(IComponentSet).new("non-free")
         self.checkComponentOverride(
             "bar_1.0-1_nonfree_component", "multiverse"
         )

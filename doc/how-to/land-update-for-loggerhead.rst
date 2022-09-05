@@ -14,11 +14,8 @@ Landing changes for Loggerhead itself
 Landing changes in Launchpad itself
 -----------------------------------
 
-- update the revision number in ``utilities/sourcedeps.conf``
-- run ``utilities/update-sourcecode``
-- make sure ``utilities/sourcedeps.cache`` was updated
-- propose changes as merge proposal
-- mark merge proposal as **Approved**
+- ask somebody with PyPI access to make a loggerhead release
+- see :ref:`Upgrade a Package <upgrade-package>`
 
 Performing QA
 -------------

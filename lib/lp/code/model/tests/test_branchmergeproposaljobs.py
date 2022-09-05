@@ -26,7 +26,6 @@ from zope.security.proxy import removeSecurityProxy
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import BranchMergeProposalStatus
 from lp.code.interfaces.branchmergeproposal import (
-    BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG,
     IBranchMergeProposalJob,
     IBranchMergeProposalJobSource,
     ICodeReviewCommentEmailJob,
@@ -404,9 +403,6 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         )
 
     def test_triggers_webhooks_bzr(self):
-        self.useFixture(
-            FeatureFixture({BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"})
-        )
         logger = self.useFixture(FakeLogger())
         bmp = self.createExampleBzrMerge()[0]
         hook = self.factory.makeWebhook(
@@ -422,9 +418,6 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         )
 
     def test_triggers_webhooks_git(self):
-        self.useFixture(
-            FeatureFixture({BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"})
-        )
         logger = self.useFixture(FakeLogger())
         bmp = self.createExampleGitMerge()[0]
         hook = self.factory.makeWebhook(

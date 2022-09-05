@@ -11,6 +11,7 @@ import math
 import os
 import re
 import sys
+from collections import OrderedDict
 
 import yaml
 
@@ -1195,17 +1196,17 @@ def load_cve(cve, strict=False, srcmap=None):
     ]
     extra_fields = ["CRD", "PublicDateAtUSN", "Mitigation"]
 
-    data = dict()
+    data = OrderedDict()
     # maps entries in data to their source line - if didn't supply one
     # create a local one to simplify the code
     if srcmap is None:
-        srcmap = dict()
-    srcmap.setdefault("pkgs", dict())
-    srcmap.setdefault("tags", dict())
-    data.setdefault("tags", dict())
-    srcmap.setdefault("patches", dict())
-    data.setdefault("patches", dict())
-    affected = dict()
+        srcmap = OrderedDict()
+    srcmap.setdefault("pkgs", OrderedDict())
+    srcmap.setdefault("tags", OrderedDict())
+    data.setdefault("tags", OrderedDict())
+    srcmap.setdefault("patches", OrderedDict())
+    data.setdefault("patches", OrderedDict())
+    affected = OrderedDict()
     lastfield = ""
     fields_seen = []
     if not os.path.exists(cve):
@@ -1254,7 +1255,7 @@ def load_cve(cve, strict=False, srcmap=None):
                         code = EXIT_FAIL
                 elif lastfield == "CVSS":
                     try:
-                        cvss = dict()
+                        cvss = OrderedDict()
                         result = re.search(
                             r" (.+)\: (\S+)( \[(.*) (.*)\])?", line
                         )
@@ -1277,7 +1278,7 @@ def load_cve(cve, strict=False, srcmap=None):
                         # line where the CVSS block starts - so convert it
                         # to a dict first if needed
                         if type(srcmap["CVSS"]) is tuple:
-                            srcmap["CVSS"] = dict()
+                            srcmap["CVSS"] = OrderedDict()
                         srcmap["CVSS"].setdefault(
                             cvss["source"], (cve, linenum)
                         )
@@ -1419,7 +1420,7 @@ def load_cve(cve, strict=False, srcmap=None):
                 msg += "%s: %d: unknown entry '%s'\n" % (cve, linenum, rel)
                 code = EXIT_FAIL
                 continue
-            affected.setdefault(pkg, dict())
+            affected.setdefault(pkg, OrderedDict())
             if rel in affected[pkg]:
                 msg += (
                     "%s: %d: duplicate entry for '%s': original at line %d\n"
@@ -1433,7 +1434,7 @@ def load_cve(cve, strict=False, srcmap=None):
                 code = EXIT_FAIL
                 continue
             affected[pkg].setdefault(rel, [state, details])
-            srcmap["pkgs"].setdefault(pkg, dict())
+            srcmap["pkgs"].setdefault(pkg, OrderedDict())
             srcmap["pkgs"][pkg].setdefault(rel, (cve, linenum))
         elif field not in required_fields + extra_fields:
             msg += "%s: %d: unknown field '%s'\n" % (cve, linenum, field)
@@ -1471,23 +1472,6 @@ def load_cve(cve, strict=False, srcmap=None):
     if "Priority" not in data:
         data.setdefault("Priority", "untriaged")
         srcmap.setdefault("Priority", (cve, 1))
-    # Perform override fields
-    if "PublicDateAtUSN" in data:
-        data["PublicDate"] = data["PublicDateAtUSN"]
-        srcmap["PublicDate"] = srcmap["PublicDateAtUSN"]
-    if (
-        "CRD" in data
-        and data["CRD"].strip() != ""
-        and data["PublicDate"] != data["CRD"]
-    ):
-        if cve.startswith("embargoed"):
-            print(
-                "%s: %d: adjusting PublicDate to use CRD: %s"
-                % (cve, linenum, data["CRD"]),
-                file=sys.stderr,
-            )
-        data["PublicDate"] = data["CRD"]
-        srcmap["PublicDate"] = srcmap["CRD"]
 
     # entries need an upstream entry if any entries are from the internal
     # list of subprojects
@@ -1539,9 +1523,9 @@ def amend_external_subproject_pkg(cve, data, srcmap, amendments, code, msg):
             if not success:
                 return code, msg
 
-            data.setdefault("pkgs", dict())
-            data["pkgs"].setdefault(pkg, dict())
-            srcmap["pkgs"].setdefault(pkg, dict())
+            data.setdefault("pkgs", OrderedDict())
+            data["pkgs"].setdefault(pkg, OrderedDict())
+            srcmap["pkgs"].setdefault(pkg, OrderedDict())
             # override existing release info if it exists
             data["pkgs"][pkg][release] = [state, details]
             srcmap["pkgs"][pkg][release] = (cve, linenum)

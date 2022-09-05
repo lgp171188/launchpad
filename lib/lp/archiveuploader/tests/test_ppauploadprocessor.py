@@ -28,11 +28,11 @@ from lp.soyuz.enums import (
     SourcePackageFormat,
 )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.queue import NonBuildableSourceUploadError
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
 )
-from lp.soyuz.model.component import Component
 from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 from lp.soyuz.tests.fakepackager import FakePackager
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
@@ -758,7 +758,7 @@ class TestPPAUploadProcessor(TestPPAUploadProcessorBase):
         """
         # The component contrib does not exist in the sample data, so
         # add it here.
-        Component(name="contrib")
+        getUtility(IComponentSet).new("contrib")
 
         # Upload a source package first.
         upload_dir = self.queueUpload(

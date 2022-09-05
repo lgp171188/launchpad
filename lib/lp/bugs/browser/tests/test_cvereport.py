@@ -25,7 +25,7 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCVEReportView(TestCaseWithFactory):
-    """Tests for CveSet."""
+    """Tests for CveReportView."""
 
     layer = DatabaseFunctionalLayer
 

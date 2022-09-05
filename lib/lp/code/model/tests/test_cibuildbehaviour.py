@@ -333,7 +333,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "SOME_PATH": "/bin/zip",
                 }
             ),
-            apt_repositories=json.dumps(
+            package_repositories=json.dumps(
                 [
                     "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
                     "deb https://public_ppa.example.net/repository focal main",
@@ -359,7 +359,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         # make sure the distribution specific additional args are included
         # but have no values set
         self.assertEqual({}, args["environment_variables"])
-        self.assertEqual([], args["apt_repositories"])
+        self.assertEqual([], args["package_repositories"])
         self.assertEqual({}, args["plugin_settings"])
         self.assertEqual({}, args["secrets"])
 
@@ -378,7 +378,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertEqual({}, args["environment_variables"])
-        self.assertNotIn([], args["apt_repositories"])
+        self.assertNotIn([], args["package_repositories"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git_include_artifactory_configuration(self):
@@ -394,7 +394,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "SOME_PATH": "/bin/zip",
                 }
             ),
-            apt_repositories=json.dumps(
+            package_repositories=json.dumps(
                 [
                     "deb https://%(read_auth)s@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
                     "deb https://public_ppa.example.net/repository focal main",
@@ -452,7 +452,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                             "SOME_PATH": "/bin/zip",
                         }
                     ),
-                    "apt_repositories": Equals(
+                    "package_repositories": Equals(
                         [
                             "deb https://user:pass@canonical.example.com/artifactory/soss-deb-stable focal main universe",  # noqa: E501
                             "deb https://public_ppa.example.net/repository focal main",  # noqa: E501

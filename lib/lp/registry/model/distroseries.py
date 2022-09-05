@@ -24,7 +24,6 @@ from zope.interface import implementer
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import IServiceUsage
 from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
@@ -74,7 +73,6 @@ from lp.services.database.sqlobject import (
     IntCol,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
 )
 from lp.services.database.stormexpr import IsTrue, WithMaterialized, fti_search
@@ -91,7 +89,6 @@ from lp.soyuz.enums import (
 )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
-from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distributionjob import (
     IInitializeDistroSeriesJobSource,
 )
@@ -101,7 +98,7 @@ from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
 )
 from lp.soyuz.model.binarypackagename import BinaryPackageName
-from lp.soyuz.model.component import Component
+from lp.soyuz.model.component import Component, ComponentSelection
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
 )
@@ -159,9 +156,7 @@ DEFAULT_INDEX_COMPRESSORS = [
 @implementer(
     IBugSummaryDimension,
     IDistroSeries,
-    IHasBuildRecords,
     IHasQueueItems,
-    IServiceUsage,
     ISeriesBugTarget,
 )
 @delegate_to(ISpecificationTarget, context="distribution")
@@ -241,11 +236,11 @@ class DistroSeries(
         "LanguagePack.distroseries_id",
         order_by=Desc("LanguagePack.date_exported"),
     )
-    sections = SQLRelatedJoin(
-        "Section",
-        joinColumn="distroseries",
-        otherColumn="section",
-        intermediateTable="SectionSelection",
+    sections = ReferenceSet(
+        "id",
+        "SectionSelection.distroseries_id",
+        "SectionSelection.section_id",
+        "Section.id",
     )
 
     def __init__(self, *args, **kwargs):
@@ -285,13 +280,10 @@ class DistroSeries(
     @property
     def upload_components(self):
         """See `IDistroSeries`."""
-        return Component.select(
-            """
-            ComponentSelection.distroseries = %s AND
-            Component.id = ComponentSelection.component
-            """
-            % self.id,
-            clauseTables=["ComponentSelection"],
+        return IStore(Component).find(
+            Component,
+            ComponentSelection.distroseries == self,
+            ComponentSelection.component == Component.id,
         )
 
     @cachedproperty
@@ -301,14 +293,11 @@ class DistroSeries(
         # This is filtering out the partner component for now, until
         # the second stage of the partner repo arrives in 1.1.8.
         return list(
-            Component.select(
-                """
-            ComponentSelection.distroseries = %s AND
-            Component.id = ComponentSelection.component AND
-            Component.name != 'partner'
-            """
-                % self.id,
-                clauseTables=["ComponentSelection"],
+            IStore(Component).find(
+                Component,
+                ComponentSelection.distroseries == self,
+                ComponentSelection.component == Component.id,
+                Component.name != "partner",
             )
         )
 
@@ -981,7 +970,7 @@ class DistroSeries(
           - informationalness: if nothing is said, ANY
 
         """
-        base_clauses = [Specification.distroseriesID == self.id]
+        base_clauses = [Specification.distroseries == self]
         return search_specifications(
             self,
             base_clauses,
@@ -1266,7 +1255,7 @@ class DistroSeries(
 
     def getComponentByName(self, name):
         """See `IDistroSeries`."""
-        comp = Component.byName(name)
+        comp = IStore(Component).find(Component, name=name).one()
         if comp is None:
             raise NotFoundError(name)
         permitted = set(self.components)

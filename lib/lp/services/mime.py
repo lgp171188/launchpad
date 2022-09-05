@@ -9,15 +9,11 @@ __all__ = [
 
 import mimetypes
 
+_original_mimetypes_init = mimetypes.init
 
-def customizeMimetypes():
-    """Initialize and extend the standard mimetypes library for our needs.
 
-    This method is to be called before any requests are processed to ensure
-    any call site that imports the standard mimetypes module will take
-    advantage of these customizations.
-    """
-    mimetypes.init()
+def _patched_mimetypes_init(*args, **kwargs):
+    _original_mimetypes_init(*args, **kwargs)
 
     # Add support for .bzip2 as well as .bz2.  Up to Python 3.2 (at least),
     # only .bz2 is present.
@@ -33,3 +29,14 @@ def customizeMimetypes():
 
     # Add support for Launchpad's OWL decription of its RDF metadata.
     mimetypes.add_type("application/rdf+xml", ".owl")
+
+
+def customizeMimetypes():
+    """Initialize and extend the standard mimetypes library for our needs.
+
+    This method is to be called before any requests are processed to ensure
+    any call site that imports the standard mimetypes module will take
+    advantage of these customizations.
+    """
+    mimetypes.init = _patched_mimetypes_init
+    mimetypes.init()

@@ -1888,12 +1888,13 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             paths=["refs/heads/v1.0-20.04"],
             information_type=InformationType.PRIVATESECURITY,
         )
-        recipe = self.makeOCIRecipe(
-            oci_project=oci_project,
-            git_ref=ref,
-            build_file="Dockerfile",
-            information_type=InformationType.PRIVATESECURITY,
-        )
+        with person_logged_in(self.person):
+            recipe = self.makeOCIRecipe(
+                oci_project=oci_project,
+                git_ref=ref,
+                build_file="Dockerfile",
+                information_type=InformationType.PRIVATESECURITY,
+            )
         with admin_logged_in():
             build_path = recipe.build_path
             self.makeBuild(

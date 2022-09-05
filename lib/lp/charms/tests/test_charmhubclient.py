@@ -58,6 +58,9 @@ class MacaroonVerifies(Matcher):
     def __init__(self, key):
         self.key = key
 
+    def __str__(self):
+        return "MacaroonVerifies({!r})".format(self.key)
+
     def match(self, macaroon_raw):
         macaroon = Macaroon.deserialize(macaroon_raw)
         try:

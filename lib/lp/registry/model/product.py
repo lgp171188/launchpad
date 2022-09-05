@@ -54,14 +54,7 @@ from lp.app.enums import (
     service_uses_launchpad,
 )
 from lp.app.errors import NotFoundError, ServiceUsageForbidden
-from lp.app.interfaces.launchpad import (
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    ILaunchpadCelebrities,
-    ILaunchpadUsage,
-    IServiceUsage,
-)
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
 from lp.blueprints.enums import SpecificationFilter
@@ -74,7 +67,6 @@ from lp.blueprints.model.specification import (
 from lp.blueprints.model.specificationsearch import search_specifications
 from lp.blueprints.model.sprint import HasSprintsMixin
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
-from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     BUG_POLICY_ALLOWED_TYPES,
     BUG_POLICY_DEFAULT_TYPES,
@@ -114,7 +106,6 @@ from lp.registry.errors import (
     ProprietaryPillar,
 )
 from lp.registry.interfaces.ociproject import IOCIProjectSet
-from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     IPersonSet,
     validate_person,
@@ -252,18 +243,7 @@ specification_policy_default = {
 }
 
 
-@implementer(
-    IBugSummaryDimension,
-    IHasBugSupervisor,
-    IHasCustomLanguageCodes,
-    IHasIcon,
-    IHasLogo,
-    IHasMugshot,
-    IHasOOPSReferences,
-    ILaunchpadUsage,
-    IProduct,
-    IServiceUsage,
-)
+@implementer(IBugSummaryDimension, IHasCustomLanguageCodes, IProduct)
 class Product(
     SQLBase,
     BugTargetBase,
@@ -1418,7 +1398,7 @@ class Product(
         need_workitems=False,
     ):
         """See `IHasSpecifications`."""
-        base_clauses = [Specification.productID == self.id]
+        base_clauses = [Specification.product == self]
         return search_specifications(
             self,
             base_clauses,
@@ -1433,7 +1413,11 @@ class Product(
 
     def getSpecification(self, name):
         """See `ISpecificationTarget`."""
-        return Specification.selectOneBy(product=self, name=name)
+        return (
+            IStore(Specification)
+            .find(Specification, product=self, name=name)
+            .one()
+        )
 
     def getSeries(self, name):
         """See `IProduct`."""

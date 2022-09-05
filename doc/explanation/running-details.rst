@@ -52,6 +52,5 @@ Get the code:
 
     $ git clone https://git.launchpad.net/launchpad
     $ cd launchpad
-    $ utilities/update-sourcecode
     $ git clone --depth=1 https://git.launchpad.net/lp-source-dependencies download-cache
     $ make

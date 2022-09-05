@@ -3,11 +3,12 @@
 
 __all__ = ["Section", "SectionSelection", "SectionSet"]
 
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.section import (
     ISection,
     ISectionSelection,
@@ -16,24 +17,39 @@ from lp.soyuz.interfaces.section import (
 
 
 @implementer(ISection)
-class Section(SQLBase):
+class Section(StormBase):
     """See ISection"""
 
-    _defaultOrder = ["id"]
+    __storm_table__ = "Section"
+    __storm_order__ = ["id"]
 
-    name = StringCol(notNull=True, alternateID=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
 
 
 @implementer(ISectionSelection)
-class SectionSelection(SQLBase):
+class SectionSelection(StormBase):
     """See ISectionSelection."""
 
-    _defaultOrder = ["id"]
+    __storm_table__ = "SectionSelection"
+    __storm_order__ = ["id"]
 
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", notNull=True
-    )
-    section = ForeignKey(dbName="section", foreignKey="Section", notNull=True)
+    id = Int(primary=True)
+
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    section_id = Int(name="section", allow_none=False)
+    section = Reference(section_id, "Section.id")
+
+    def __init__(self, distroseries, section):
+        super().__init__()
+        self.distroseries = distroseries
+        self.section = section
 
 
 @implementer(ISectionSet)
@@ -42,26 +58,28 @@ class SectionSet:
 
     def __iter__(self):
         """See ISectionSet."""
-        return iter(Section.select())
+        return iter(IStore(Section).find(Section))
 
     def __getitem__(self, name):
         """See ISectionSet."""
-        section = Section.selectOneBy(name=name)
+        section = IStore(Section).find(Section, name=name).one()
         if section is not None:
             return section
         raise NotFoundError(name)
 
     def get(self, section_id):
         """See ISectionSet."""
-        return Section.get(section_id)
+        return IStore(Section).get(Section, section_id)
 
     def ensure(self, name):
         """See ISectionSet."""
-        section = Section.selectOneBy(name=name)
+        section = IStore(Section).find(Section, name=name).one()
         if section is not None:
             return section
         return self.new(name)
 
     def new(self, name):
         """See ISectionSet."""
-        return Section(name=name)
+        section = Section(name=name)
+        IStore(Section).add(section)
+        return section

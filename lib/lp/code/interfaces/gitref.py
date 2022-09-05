@@ -31,7 +31,6 @@ from zope.schema import Bool, Choice, Datetime, List, Text, TextLine
 
 from lp import _
 from lp.app.interfaces.informationtype import IInformationType
-from lp.app.interfaces.launchpad import IPrivacy
 from lp.code.enums import BranchMergeProposalStatus, GitObjectType
 from lp.code.interfaces.hasbranches import IHasMergeProposals
 from lp.code.interfaces.hasrecipes import IHasRecipes
@@ -40,7 +39,7 @@ from lp.services.fields import InlineObject
 from lp.services.webapp.interfaces import ITableBatchNavigator
 
 
-class IGitRefView(IHasMergeProposals, IHasRecipes, IPrivacy, IInformationType):
+class IGitRefView(IHasMergeProposals, IHasRecipes, IInformationType):
     """IGitRef attributes that require launchpad.View permission."""
 
     repository = exported(

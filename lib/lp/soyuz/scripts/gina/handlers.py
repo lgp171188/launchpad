@@ -27,6 +27,7 @@ from storm.exceptions import NotOneError
 from storm.expr import Cast, Desc
 from zope.component import getUtility
 
+from lp.app.errors import NotFoundError
 from lp.archivepublisher.diskpool import poolify
 from lp.archiveuploader.changesfile import ChangesFile
 from lp.archiveuploader.tagfiles import parse_tagfile
@@ -54,21 +55,21 @@ from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReferenceSet,
     UnparsableBuiltUsing,
 )
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.publishing import (
     IPublishingSet,
     active_publishing_status,
 )
+from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
-from lp.soyuz.model.component import Component
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.files import BinaryPackageFile
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
 )
-from lp.soyuz.model.section import Section
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.soyuz.scripts.gina.library import getLibraryAlias
 from lp.soyuz.scripts.gina.packages import (
@@ -443,9 +444,9 @@ class DistroHandler:
         if component in self.compcache:
             return self.compcache[component]
 
-        ret = Component.selectOneBy(name=component)
-
-        if not ret:
+        try:
+            ret = getUtility(IComponentSet)[component]
+        except NotFoundError:
             raise ValueError("Component %s not found" % component)
 
         self.compcache[component] = ret
@@ -458,10 +459,7 @@ class DistroHandler:
         if section in self.sectcache:
             return self.sectcache[section]
 
-        ret = Section.selectOneBy(name=section)
-        if not ret:
-            ret = Section(name=section)
-
+        ret = getUtility(ISectionSet).ensure(section)
         self.sectcache[section] = ret
         return ret
 

@@ -1883,8 +1883,8 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     sprs = source_sprs + binary_sprs
 
     load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
-    load_related(Section, sprs + bprs, ["sectionID"])
-    load_related(Component, sprs, ["componentID"])
+    load_related(Section, sprs + bprs, ["section_id"])
+    load_related(Component, sprs, ["component_id"])
     load_related(LibraryFileAlias, uploads, ["changes_file_id"])
     publications = load_referencing(
         SourcePackagePublishingHistory, sprs, ["sourcepackagereleaseID"]

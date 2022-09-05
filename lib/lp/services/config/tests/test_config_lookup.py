@@ -121,30 +121,3 @@ class TestInstanceConfigDirLookup(ConfigTestCase):
         config_file.close()
 
         self.assertEqual(2323, cfg.launchpad.default_batch_size)
-
-
-class TestGenerateOverrides(ConfigTestCase):
-    """Test the generate_overrides method of LaunchpadConfig."""
-
-    def test_generate_overrides(self):
-        instance_dir = self.setUpInstanceConfig("zcmltest")
-        cfg = config.LaunchpadConfig("zcmltest")
-        # The ZCML override file is generated in the root of the tree.
-        # Set that root to the temporary directory.
-        cfg.root = self.temp_config_root_dir
-        cfg.generate_overrides()
-        override_file = os.path.join(cfg.root, "zcml/+config-overrides.zcml")
-        self.assertTrue(
-            os.path.isfile(override_file), "Overrides file wasn't created."
-        )
-
-        fh = open(override_file)
-        overrides = fh.read()
-        fh.close()
-
-        magic_line = '<include files="%s/*.zcml" />' % instance_dir
-        self.assertTrue(
-            magic_line in overrides,
-            "Overrides doesn't contain the magic include line (%s):\n%s"
-            % (magic_line, overrides),
-        )
