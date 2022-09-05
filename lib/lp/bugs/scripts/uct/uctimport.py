@@ -156,7 +156,7 @@ class UCTImporter:
                 title=cve.sequence,
                 information_type=InformationType.PUBLICSECURITY,
                 owner=self.bug_importer,
-                target=distro_package.package,
+                target=distro_package.target,
                 importance=distro_package.importance,
                 cve=lp_cve,
             )
@@ -271,12 +271,11 @@ class UCTImporter:
         bug_tasks = bug.bugtasks  # type: List[BugTask]
         bug_task_by_target = {t.target: t for t in bug_tasks}
         bug_task_set = getUtility(IBugTaskSet)
-        for target in (
-            p.package
-            for p in chain(distro_packages, series_packages, upstream_packages)
+        for package in chain(
+            distro_packages, series_packages, upstream_packages
         ):
-            if target not in bug_task_by_target:
-                bug_task_set.createTask(bug, self.bug_importer, target)
+            if package.target not in bug_task_by_target:
+                bug_task_set.createTask(bug, self.bug_importer, package.target)
 
     def _create_vulnerability(
         self,
@@ -391,21 +390,14 @@ class UCTImporter:
         package_importances = {}  # type: Dict[str, BugTaskImportance]
 
         for dp in distro_packages:
-            task = bug_task_by_target[dp.package]
+            task = bug_task_by_target[dp.target]
             dp_importance = dp.importance or cve_importance
-            package_importances[
-                dp.package.sourcepackagename.name
-            ] = dp_importance
+            package_importances[dp.package_name.name] = dp_importance
             task.transitionToImportance(dp_importance)
 
         for sp in chain(series_packages, upstream_packages):
-            task = bug_task_by_target[sp.package]
-            if isinstance(sp, CVE.SeriesPackage):
-                package_name = sp.package.sourcepackagename.name
-            elif isinstance(sp, CVE.UpstreamPackage):
-                package_name = sp.package_name.name
-            else:
-                raise AssertionError()
+            task = bug_task_by_target[sp.target]
+            package_name = sp.package_name.name
             package_importance = package_importances[package_name]
             sp_importance = sp.importance or package_importance
             task.transitionToImportance(sp_importance)

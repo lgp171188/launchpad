@@ -420,7 +420,8 @@ class CVE:
     DistroPackage = NamedTuple(
         "DistroPackage",
         (
-            ("package", DistributionSourcePackage),
+            ("target", DistributionSourcePackage),
+            ("package_name", SourcePackageName),
             ("importance", Optional[BugTaskImportance]),
         ),
     )
@@ -428,7 +429,8 @@ class CVE:
     SeriesPackage = NamedTuple(
         "SeriesPackage",
         (
-            ("package", SourcePackage),
+            ("target", SourcePackage),
+            ("package_name", SourcePackageName),
             ("importance", Optional[BugTaskImportance]),
             ("status", BugTaskStatus),
             ("status_explanation", str),
@@ -438,7 +440,7 @@ class CVE:
     UpstreamPackage = NamedTuple(
         "UpstreamPackage",
         (
-            ("package", Product),
+            ("target", Product),
             ("package_name", SourcePackageName),
             ("importance", Optional[BugTaskImportance]),
             ("status", BugTaskStatus),
@@ -571,10 +573,11 @@ class CVE:
                     continue
 
                 distro_package = cls.DistroPackage(
-                    package=DistributionSourcePackage(
+                    target=DistributionSourcePackage(
                         distribution=distro_series.distribution,
                         sourcepackagename=source_package_name,
                     ),
+                    package_name=source_package_name,
                     importance=package_importance,
                 )
                 if distro_package not in distro_packages:
@@ -582,10 +585,11 @@ class CVE:
 
                 series_packages.append(
                     cls.SeriesPackage(
-                        package=SourcePackage(
+                        target=SourcePackage(
                             sourcepackagename=source_package_name,
                             distroseries=distro_series,
                         ),
+                        package_name=source_package_name,
                         importance=series_package_importance,
                         status=cls.BUG_TASK_STATUS_MAP[
                             uct_package_status.status
@@ -597,12 +601,9 @@ class CVE:
         upstream_packages = []
         for source_package_name, upstream_status in upstream_statuses.items():
             for distro_package in distro_packages:
-                if (
-                    source_package_name
-                    != distro_package.package.sourcepackagename
-                ):
+                if source_package_name != distro_package.package_name:
                     continue
-                product = distro_package.package.upstream_product
+                product = distro_package.target.upstream_product
                 if product is not None:
                     break
             else:
@@ -613,7 +614,7 @@ class CVE:
 
             upstream_packages.append(
                 cls.UpstreamPackage(
-                    package=product,
+                    target=product,
                     package_name=source_package_name,
                     importance=(
                         cls.PRIORITY_MAP[upstream_status.priority]
@@ -665,25 +666,25 @@ class CVE:
             list
         )  # type: Dict[SourcePackageName, List[CVE.SeriesPackage]]
         for series_package in self.series_packages:
-            series_packages_by_name[
-                series_package.package.sourcepackagename
-            ].append(series_package)
+            series_packages_by_name[series_package.package_name].append(
+                series_package
+            )
 
         packages_by_name = OrderedDict()  # type: Dict[str, UCTRecord.Package]
         processed_packages = set()  # type: Set[SourcePackageName]
         for distro_package in self.distro_packages:
-            spn = distro_package.package.sourcepackagename
+            spn = distro_package.package_name
             if spn in processed_packages:
                 continue
             processed_packages.add(spn)
             statuses = []  # type: List[UCTRecord.SeriesPackageStatus]
             for series_package in series_packages_by_name[spn]:
-                series = series_package.package.distroseries
+                series = series_package.target.distroseries
                 if series.status == SeriesStatus.DEVELOPMENT:
                     series_name = "devel"
                 else:
                     series_name = series.name
-                distro_name = distro_package.package.distribution.name
+                distro_name = distro_package.target.distribution.name
                 if distro_name != "ubuntu":
                     if distro_name == "ubuntu-esm":
                         distro_name = "esm"
@@ -765,11 +766,11 @@ class CVE:
 
     @cachedproperty
     def affected_distributions(self) -> Set[Distribution]:
-        return {p.package.distribution for p in self.distro_packages}
+        return {p.target.distribution for p in self.distro_packages}
 
     @cachedproperty
     def affected_distro_series(self) -> Set[DistroSeries]:
-        return {p.package.distroseries for p in self.series_packages}
+        return {p.target.distroseries for p in self.series_packages}
 
     @classmethod
     def infer_vulnerability_status(

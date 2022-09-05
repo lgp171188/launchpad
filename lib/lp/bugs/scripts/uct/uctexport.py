@@ -128,7 +128,8 @@ class UCTExporter:
             package_importances[target.sourcepackagename] = dp_importance
             distro_packages.append(
                 CVE.DistroPackage(
-                    package=target,
+                    target=target,
+                    package_name=target.sourcepackagename,
                     importance=(
                         dp_importance
                         if dp_importance != cve_importance
@@ -146,7 +147,8 @@ class UCTExporter:
             package_importance = package_importances[target.sourcepackagename]
             series_packages.append(
                 CVE.SeriesPackage(
-                    package=target,
+                    target=target,
+                    package_name=target.sourcepackagename,
                     importance=(
                         sp_importance
                         if sp_importance != package_importance
@@ -173,7 +175,7 @@ class UCTExporter:
             package_importance = package_importances.get(target.name)
             upstream_packages.append(
                 CVE.UpstreamPackage(
-                    package=target,
+                    target=target,
                     package_name=package_name,
                     importance=(
                         up_importance
