@@ -603,6 +603,11 @@ class CVE:
             for distro_package in distro_packages:
                 if source_package_name != distro_package.package_name:
                     continue
+                # This is the `Product` corresponding to the package of this
+                # name with the highest version across any of this
+                # distribution's series that has a packaging link
+                # (it can make a difference if a package name switches to a
+                # different upstream project between series)
                 product = distro_package.target.upstream_product
                 if product is not None:
                     break

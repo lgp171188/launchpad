@@ -121,6 +121,11 @@ class UCTExporter:
             target = removeSecurityProxy(bug_task.target)
             if not isinstance(target, DistributionSourcePackage):
                 continue
+            # This is the `Product` corresponding to the package of this
+            # name with the highest version across any of this
+            # distribution's series that has a packaging link
+            # (it can make a difference if a package name switches to a
+            # different upstream project between series)
             product = target.upstream_product
             if product:
                 package_name_by_product[product] = target.sourcepackagename
