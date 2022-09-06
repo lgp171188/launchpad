@@ -32,7 +32,7 @@ class IBranchHostingClient(Interface):
         """Get a blob by file name from a branch.
 
         :param branch_id: The ID of the branch.
-        :param path: The realtive path of the file.
+        :param path: The relative path of the file.
         :param rev: An optional revno or revision ID.  Defaults to 'head:'.
         :param logger: An optional logger.
         :raises ValueError: if `rev` is ill-formed.

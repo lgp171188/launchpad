@@ -139,7 +139,7 @@ class BranchHostingClient:
             return self._get(
                 branch_id,
                 "download/%s/%s"
-                % (quote(rev or "head:", safe=""), quote(path, safe="")),
+                % (quote(rev or "head:", safe=""), quote(path, safe="/")),
                 as_json=False,
             )
         except requests.RequestException as e:
@@ -147,7 +147,7 @@ class BranchHostingClient:
                 e.response is not None
                 and e.response.status_code == requests.codes.NOT_FOUND
             ):
-                raise BranchFileNotFound(branch_id, path=path, rev=rev)
+                raise BranchFileNotFound(branch_id, filename=path, rev=rev)
             else:
                 raise BranchHostingFault(
                     "Failed to get file from Bazaar branch: %s" % e

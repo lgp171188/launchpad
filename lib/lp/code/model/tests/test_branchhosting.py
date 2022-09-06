@@ -126,7 +126,7 @@ class TestBranchHostingClient(TestCase):
         with self.mockRequests("GET", status=404):
             self.assertRaisesWithContent(
                 BranchFileNotFound,
-                "Branch ID 123 has no file with path src/file",
+                "Branch ID 123 has no file src/file",
                 self.client.getBlob,
                 123,
                 "src/file",
@@ -136,7 +136,7 @@ class TestBranchHostingClient(TestCase):
         with self.mockRequests("GET", status=404):
             self.assertRaisesWithContent(
                 BranchFileNotFound,
-                "Branch ID 123 has no file with path src/file at revision a",
+                "Branch ID 123 has no file src/file at revision a",
                 self.client.getBlob,
                 123,
                 "src/file",
@@ -164,7 +164,15 @@ class TestBranchHostingClient(TestCase):
         with self.mockRequests("GET", body=blob):
             self.client.getBlob(123, "+file/ id?", rev="+rev id?")
         self.assertRequest(
-            "+branch-id/123/download/%2Brev%20id%3F/%2Bfile%2F%20id%3F"
+            "+branch-id/123/download/%2Brev%20id%3F/%2Bfile/%20id%3F"
+        )
+
+    def test_getBlob_url_quoting_forward_slash(self):
+        blob = b"".join(bytes((i,)) for i in range(256))
+        with self.mockRequests("GET", body=blob):
+            self.client.getBlob(123, "+snap/snapcraft.yaml?", rev="+rev id?")
+        self.assertRequest(
+            "+branch-id/123/download/%2Brev%20id%3F/%2Bsnap/snapcraft.yaml%3F"
         )
 
     def test_works_in_job(self):

@@ -2755,7 +2755,7 @@ class TestSnapSet(TestCaseWithFactory):
 
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
         def getBlob(path, filename, *args, **kwargs):
-            if filename == "snapcraft.yaml":
+            if filename == "snap/snapcraft.yaml":
                 return b"name: test-snap"
             else:
                 raise BranchFileNotFound("dummy", filename)
