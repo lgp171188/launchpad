@@ -120,19 +120,10 @@ preamble.
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
-Apparently GPGME is able to import an incomplete public key:
+We also get an error if we try to import an incomplete public key
+(which probably happened in bug #2547):
 
     >>> key = gpghandler.importPublicKey(pubkey[:-300])
-    >>> assert key is not None
-    >>> verifyObject(IPymeKey, key)
-    True
-    >>> print(key.fingerprint)
-    A419AE861E88BC9E04B9C26FBA2B9389DFD20543
-
-But we get an error if the damage is big:
-(what probably happened in bug #2547)
-
-    >>> key = gpghandler.importPublicKey(pubkey[:-500])
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...

@@ -25,7 +25,6 @@ __all__ = [
 ]
 
 import http.client
-import os.path
 import re
 
 from lazr.enum import DBEnumeratedType, DBItem
@@ -57,15 +56,8 @@ def valid_keyid(keyid):
 
 
 def get_gpg_path():
-    """Return the path to the GPG executable we prefer.
-
-    We stick to GnuPG 1 until we've worked out how to get things working
-    with GnuPG 2.
-    """
-    if os.path.exists("/usr/bin/gpg1"):
-        return "/usr/bin/gpg1"
-    else:
-        return "/usr/bin/gpg"
+    """Return the path to the GPG executable we prefer."""
+    return "/usr/bin/gpg2"
 
 
 def get_gpgme_context():
@@ -443,7 +435,7 @@ class IPymeKey(Interface):
 
         Both public and secret keys are supported, although secret keys are
         exported by calling `gpg` process while public ones use the native
-        gpgme API.
+        gpgme API. Only secret keys with empty passphrases may be exported.
 
         :return: a string containing the exported key.
         """
