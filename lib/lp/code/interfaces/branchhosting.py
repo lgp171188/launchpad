@@ -28,27 +28,11 @@ class IBranchHostingClient(Interface):
         :return: The diff between `old` and `new` as a byte string.
         """
 
-    def getInventory(branch_id, dirname, rev=None, logger=None):
-        """Get information on files in a directory.
-
-        :param branch_id: The ID of the branch.
-        :param dirname: The name of the directory, relative to the root of
-            the branch.
-        :param rev: An optional revno or revision ID.  Defaults to 'head:'.
-        :param logger: An optional logger.
-        :raises ValueError: if `rev` is ill-formed.
-        :raises BranchFileNotFound: if the directory does not exist.
-        :raises BranchHostingFault: if the API returned some other error.
-        :return: The directory inventory as a dict: see
-            `loggerhead.controllers.inventory_ui` for details.
-        """
-
-    def getBlob(branch_id, file_id, rev=None, logger=None):
+    def getBlob(branch_id, path, rev=None, logger=None):
         """Get a blob by file name from a branch.
 
         :param branch_id: The ID of the branch.
-        :param file_id: The file ID of the file.  (`getInventory` may be
-            useful to retrieve this.)
+        :param path: The relative path of the file.
         :param rev: An optional revno or revision ID.  Defaults to 'head:'.
         :param logger: An optional logger.
         :raises ValueError: if `rev` is ill-formed.

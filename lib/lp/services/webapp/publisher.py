@@ -29,12 +29,7 @@ import http.client
 import json
 import re
 from cgi import FieldStorage
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    Type,
-)
+from typing import Any, Dict, Optional, Type
 from urllib.parse import urlparse
 from wsgiref.headers import Headers
 

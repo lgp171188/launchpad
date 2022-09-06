@@ -3,7 +3,6 @@
 
 """Tests for Branches."""
 
-import json
 from datetime import datetime, timedelta
 
 import transaction
@@ -117,7 +116,6 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.job.tests import block_on_job, monitor_celery
-from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.osutils import override_environ
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.authorization import check_permission
@@ -3686,157 +3684,39 @@ class TestBranchGetBlob(TestCaseWithFactory):
 
     def test_default_rev_unscanned(self):
         branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(
-            BranchHostingFixture(
-                file_list={"README.txt": "some-file-id"}, blob=b"Some text"
-            )
-        )
+        self.useFixture(BranchHostingFixture(blob=b"Some text"))
         blob = branch.getBlob("src/README.txt")
         self.assertEqual(b"Some text", blob)
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": None})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual(
-            [((branch.id, "some-file-id"), {"rev": None})],
-            hosting_fixture.getBlob.calls,
-        )
-        self.assertEqual({}, getUtility(IMemcacheClient)._cache)
 
     def test_default_rev_scanned(self):
         branch = self.factory.makeBranch()
         removeSecurityProxy(branch).last_scanned_id = "scanned-id"
-        hosting_fixture = self.useFixture(
-            BranchHostingFixture(
-                file_list={"README.txt": "some-file-id"}, blob=b"Some text"
-            )
-        )
+        self.useFixture(BranchHostingFixture(blob=b"Some text"))
         blob = branch.getBlob("src/README.txt")
         self.assertEqual(b"Some text", blob)
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": "scanned-id"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual(
-            [((branch.id, "some-file-id"), {"rev": "scanned-id"})],
-            hosting_fixture.getBlob.calls,
-        )
-        key = (
-            "bazaar.launchpad.test:bzr-file-list:%s:scanned-id:src" % branch.id
-        )
-        self.assertEqual(
-            json.dumps({"README.txt": "some-file-id"}),
-            getUtility(IMemcacheClient).get(key.encode("UTF-8")),
-        )
 
     def test_with_rev(self):
         branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(
-            BranchHostingFixture(
-                file_list={"README.txt": "some-file-id"}, blob=b"Some text"
-            )
-        )
+        self.useFixture(BranchHostingFixture(blob=b"Some text"))
         blob = branch.getBlob("src/README.txt", revision_id="some-rev")
         self.assertEqual(b"Some text", blob)
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": "some-rev"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual(
-            [((branch.id, "some-file-id"), {"rev": "some-rev"})],
-            hosting_fixture.getBlob.calls,
-        )
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        self.assertEqual(
-            json.dumps({"README.txt": "some-file-id"}),
-            getUtility(IMemcacheClient).get(key.encode("UTF-8")),
-        )
-
-    def test_cached_inventory(self):
-        branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(
-            BranchHostingFixture(blob=b"Some text")
-        )
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        getUtility(IMemcacheClient).set(
-            key.encode("UTF-8"), json.dumps({"README.txt": "some-file-id"})
-        )
-        blob = branch.getBlob("src/README.txt", revision_id="some-rev")
-        self.assertEqual(b"Some text", blob)
-        self.assertEqual([], hosting_fixture.getInventory.calls)
-        self.assertEqual(
-            [((branch.id, "some-file-id"), {"rev": "some-rev"})],
-            hosting_fixture.getBlob.calls,
-        )
-
-    def test_disable_memcache(self):
-        self.useFixture(
-            FeatureFixture({"code.bzr.blob.disable_memcache": "on"})
-        )
-        branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(
-            BranchHostingFixture(
-                file_list={"README.txt": "some-file-id"}, blob=b"Some text"
-            )
-        )
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        getUtility(IMemcacheClient).set(key.encode("UTF-8"), "{}")
-        blob = branch.getBlob("src/README.txt", revision_id="some-rev")
-        self.assertEqual(b"Some text", blob)
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": "some-rev"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual(
-            "{}", getUtility(IMemcacheClient).get(key.encode("UTF-8"))
-        )
 
     def test_file_at_root_of_branch(self):
         branch = self.factory.makeBranch()
         hosting_fixture = self.useFixture(
-            BranchHostingFixture(
-                file_list={"README.txt": "some-file-id"}, blob=b"Some text"
-            )
+            BranchHostingFixture(blob=b"Some text")
         )
         blob = branch.getBlob("README.txt", revision_id="some-rev")
         self.assertEqual(b"Some text", blob)
         self.assertEqual(
-            [((branch.id, ""), {"rev": "some-rev"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual(
-            [((branch.id, "some-file-id"), {"rev": "some-rev"})],
+            [((branch.id, "README.txt"), {"rev": "some-rev"})],
             hosting_fixture.getBlob.calls,
-        )
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:" % branch.id
-        self.assertEqual(
-            json.dumps({"README.txt": "some-file-id"}),
-            getUtility(IMemcacheClient).get(key.encode("UTF-8")),
-        )
-
-    def test_file_not_in_directory(self):
-        branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(BranchHostingFixture(file_list={}))
-        self.assertRaises(
-            BranchFileNotFound,
-            branch.getBlob,
-            "src/README.txt",
-            revision_id="some-rev",
-        )
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": "some-rev"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual([], hosting_fixture.getBlob.calls)
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        self.assertEqual(
-            "{}", getUtility(IMemcacheClient).get(key.encode("UTF-8"))
         )
 
     def test_missing_directory(self):
         branch = self.factory.makeBranch()
         hosting_fixture = self.useFixture(BranchHostingFixture())
-        hosting_fixture.getInventory = FakeMethod(
+        hosting_fixture.getBlob = FakeMethod(
             failure=BranchFileNotFound(
                 branch.unique_name, filename="src", rev="some-rev"
             )
@@ -3847,29 +3727,6 @@ class TestBranchGetBlob(TestCaseWithFactory):
             "src/README.txt",
             revision_id="some-rev",
         )
-        self.assertEqual(
-            [((branch.id, "src"), {"rev": "some-rev"})],
-            hosting_fixture.getInventory.calls,
-        )
-        self.assertEqual([], hosting_fixture.getBlob.calls)
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        self.assertEqual(
-            "null", getUtility(IMemcacheClient).get(key.encode("UTF-8"))
-        )
-
-    def test_cached_missing_directory(self):
-        branch = self.factory.makeBranch()
-        hosting_fixture = self.useFixture(BranchHostingFixture())
-        key = "bazaar.launchpad.test:bzr-file-list:%s:some-rev:src" % branch.id
-        getUtility(IMemcacheClient).set(key.encode("UTF-8"), "null")
-        self.assertRaises(
-            BranchFileNotFound,
-            branch.getBlob,
-            "src/README.txt",
-            revision_id="some-rev",
-        )
-        self.assertEqual([], hosting_fixture.getInventory.calls)
-        self.assertEqual([], hosting_fixture.getBlob.calls)
 
 
 class TestBranchUnscan(TestCaseWithFactory):
