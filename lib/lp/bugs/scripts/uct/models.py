@@ -608,9 +608,10 @@ class CVE:
                     break
             else:
                 logger.warning(
-                    "Could not find the assignee: %s", uct_record.assigned_to
+                    "Could not find the product for: %s",
+                    source_package_name.name,
                 )
-                product = None
+                continue
 
             upstream_packages.append(
                 cls.UpstreamPackage(
