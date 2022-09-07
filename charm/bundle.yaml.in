@@ -1,8 +1,8 @@
 series: bionic
 description: "Launchpad development bundle"
 applications:
-  launchpad:
-    charm: ./dist/launchpad_ubuntu-18.04-amd64.charm
+  launchpad-appserver:
+    charm: ./dist/launchpad-appserver_ubuntu-18.04-amd64.charm
     num_units: 1
     options:
       build_label: "%BUILD_LABEL%"
