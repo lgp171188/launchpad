@@ -186,7 +186,7 @@ def reset_logging():
     Currently, defaults means 'the way the Z3 testrunner sets it up'
     plus customizations made in lp_sitecustomize
     """
-    # Remove all handlers from non-root loggers, and remove the loggers too.
+    # Remove all handlers from non-root loggers.
     loggerDict = logging.Logger.manager.loggerDict
     for name, logger in list(loggerDict.items()):
         if name == "pagetests-access":
@@ -195,7 +195,6 @@ def reset_logging():
         if not isinstance(logger, logging.PlaceHolder):
             for handler in list(logger.handlers):
                 logger.removeHandler(handler)
-        del loggerDict[name]
 
     # Remove all handlers from the root logger
     root = logging.getLogger("")
