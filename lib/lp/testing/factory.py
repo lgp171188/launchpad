@@ -5471,7 +5471,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             # done by secondary process.
             naked_package = removeSecurityProxy(package)
             if naked_package._get(distribution, sourcepackagename) is None:
-                naked_package._new(distribution, sourcepackagename, False)
+                naked_package._new(distribution, sourcepackagename)
         return package
 
     def makeDSPCache(
