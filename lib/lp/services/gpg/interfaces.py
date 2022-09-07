@@ -430,13 +430,14 @@ class IPymeKey(Interface):
         "Whether the key can be used for authentication"
     )
 
-    def export():
+    def export(secret_passphrase=""):
         """Export the context key in ASCII-armored mode.
 
         Both public and secret keys are supported, although secret keys are
         exported by calling `gpg` process while public ones use the native
-        gpgme API. Only secret keys with empty passphrases may be exported.
+        gpgme API.
 
+        :param secret_passphrase: The passphrase, if exporting a secret key.
         :return: a string containing the exported key.
         """
 

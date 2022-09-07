@@ -711,25 +711,25 @@ class PymeKey:
             self.fingerprint,
         )
 
-    def export(self):
+    def export(self, secret_passphrase=""):
         """See `IPymeKey`."""
         if self.secret:
             # XXX cprov 20081014: gpgme_op_export() only supports public keys.
             # See http://www.fifi.org/cgi-bin/info2www?(gpgme)Exporting+Keys
-            p = subprocess.Popen(
+            return subprocess.run(
                 [
                     get_gpg_path(),
                     "--export-secret-keys",
                     "-a",
-                    # This only works for keys with empty passphrase.
-                    "--passphrase",
-                    "",
+                    "--passphrase-fd",
+                    "0",
                     self.fingerprint,
                 ],
+                input=secret_passphrase.encode(),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-            )
-            return p.stdout.read()
+                check=True,
+            ).stdout
 
         context = get_gpgme_context()
         keydata = BytesIO()

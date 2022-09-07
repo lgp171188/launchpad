@@ -164,7 +164,7 @@ supporting only ASCII-armored secret keys.
 
 Secret keys can be exported in ASCII-armored format.
 
-    >>> print(six.ensure_text(key.export()))
+    >>> print(six.ensure_text(key.export(secret_passphrase="test")))
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     ...
     -----END PGP PRIVATE KEY BLOCK-----
