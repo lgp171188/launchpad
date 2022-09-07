@@ -311,25 +311,11 @@ class BranchHostingFixture(fixtures.Fixture):
     def __init__(
         self,
         diff=None,
-        inventory=None,
-        file_list=None,
         blob=None,
         disable_memcache=True,
     ):
         self.create = FakeMethod()
         self.getDiff = FakeMethod(result=diff or {})
-        if inventory is None:
-            if file_list is not None:
-                # Simple common case.
-                inventory = {
-                    "filelist": [
-                        {"filename": filename, "file_id": file_id}
-                        for filename, file_id in file_list.items()
-                    ],
-                }
-            else:
-                inventory = {"filelist": []}
-        self.getInventory = FakeMethod(result=inventory)
         self.getBlob = FakeMethod(result=blob)
         self.disable_memcache = disable_memcache
 

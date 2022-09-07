@@ -128,43 +128,18 @@ class BranchHostingClient:
                 "Failed to get diff from Bazaar branch: %s" % e
             )
 
-    def getInventory(self, branch_id, dirname, rev=None, logger=None):
+    def getBlob(self, branch_id, path, rev=None, logger=None):
         """See `IBranchHostingClient`."""
         self._checkRevision(rev)
         try:
             if logger is not None:
                 logger.info(
-                    "Requesting inventory at %s from branch %s"
-                    % (dirname, branch_id)
-                )
-            quoted_tail = "files/%s/%s" % (
-                quote(rev or "head:", safe=""),
-                quote(dirname.lstrip("/")),
-            )
-            return self._get(branch_id, quoted_tail, as_json=True)
-        except requests.RequestException as e:
-            if (
-                e.response is not None
-                and e.response.status_code == requests.codes.NOT_FOUND
-            ):
-                raise BranchFileNotFound(branch_id, filename=dirname, rev=rev)
-            else:
-                raise BranchHostingFault(
-                    "Failed to get inventory from Bazaar branch: %s" % e
-                )
-
-    def getBlob(self, branch_id, file_id, rev=None, logger=None):
-        """See `IBranchHostingClient`."""
-        self._checkRevision(rev)
-        try:
-            if logger is not None:
-                logger.info(
-                    "Fetching file ID %s from branch %s" % (file_id, branch_id)
+                    "Fetching file ID %s from branch %s" % (path, branch_id)
                 )
             return self._get(
                 branch_id,
                 "download/%s/%s"
-                % (quote(rev or "head:", safe=""), quote(file_id, safe="")),
+                % (quote(rev or "head:", safe=""), quote(path, safe="/")),
                 as_json=False,
             )
         except requests.RequestException as e:
@@ -172,7 +147,7 @@ class BranchHostingClient:
                 e.response is not None
                 and e.response.status_code == requests.codes.NOT_FOUND
             ):
-                raise BranchFileNotFound(branch_id, file_id=file_id, rev=rev)
+                raise BranchFileNotFound(branch_id, filename=path, rev=rev)
             else:
                 raise BranchHostingFault(
                     "Failed to get file from Bazaar branch: %s" % e
