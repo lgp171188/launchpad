@@ -63,6 +63,7 @@ def silence_amqp_logger():
     """Install the NullHandler on the amqp logger to silence logs."""
     amqp_logger = logging.getLogger("amqp")
     amqp_logger.addHandler(logging.NullHandler())
+    # See also lp.testing.reset_logging.
     amqp_logger.propagate = False
 
 
@@ -71,6 +72,7 @@ def silence_bzr_loggers():
     for logger_name in ("bzr", "brz"):
         logger = logging.getLogger(logger_name)
         logger.addHandler(logging.NullHandler())
+        # See also lp.testing.reset_logging.
         logger.propagate = False
 
 
