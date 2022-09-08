@@ -215,6 +215,13 @@ class CannotSetLockReason(Exception):
 
 
 @error_status(http.client.BAD_REQUEST)
+class CannotDisableNotifications(Exception):
+    """Raised when someone tries to disable notifications for adding comments
+    on a bug and the person calling the API is not the bugsupervisor.
+    """
+
+
+@error_status(http.client.BAD_REQUEST)
 class CannotLockBug(Exception):
     """
     Raised when someone tries to lock a bug already locked
@@ -1495,6 +1502,21 @@ class Bug(SQLBase, InformationTypeMixin):
         )
         if not bugmsg:
             return
+
+        # If the user posting the new message is the bug supervisor for any of
+        # the affected pillars they should be able
+        # to disable email notifications
+        can_disable = False
+        roles = IPersonRoles(owner)
+        if send_notifications is False:
+            for pillar in self.affected_pillars:
+                if roles.isBugSupervisor(pillar):
+                    can_disable = True
+            if not can_disable:
+                raise CannotDisableNotifications(
+                    "Email notifications for this bug can only "
+                    "be disabled by the bug supervisor."
+                )
 
         if send_notifications:
             notify(ObjectCreatedEvent(bugmsg, user=owner))
