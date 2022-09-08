@@ -41,9 +41,6 @@ $(CHARM_DEPS): $(CURDIR)/dependencies.txt | $(TMPDIR)
 build: ## build all the charms
 build: $(foreach charm,$(CHARMS),build-$(charm))
 
-build-launchpad: ## build the launchpad charm
-build-launchpad: dist/$(call charm_file,launchpad)
-
 build-launchpad-appserver: ## build the launchpad-appserver charm
 build-launchpad-appserver: dist/$(call charm_file,launchpad-appserver)
 
