@@ -2288,10 +2288,6 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """For no autokey archives, signing process should sign only for the
         available keys, and skip signing the other files.
         """
-        # Pre-generate KMOD and OPAL keys
-        self.getArchiveSigningKey(SigningKeyType.KMOD)
-        self.getArchiveSigningKey(SigningKeyType.OPAL)
-
         filenames = ["1.0/empty.ko", "1.0/empty.opal"]
 
         self.openArchive("test", "1.0", "amd64")
