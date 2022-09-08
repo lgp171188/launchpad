@@ -77,10 +77,14 @@ class GPGKeyAlgorithm(DBEnumeratedType):
     """
     GPG Compliant Key Algorithms Types:
 
-    1 : "R", # RSA
-    16: "g", # ElGamal
-    17: "D", # DSA
-    20: "G", # ElGamal, compromised
+    1  : "R", # RSA
+    16 : "g", # ElGamal
+    17 : "D", # DSA
+    20 : "G", # ElGamal, compromised
+    301: "E", # ECDSA
+    302: "e", # ECDH
+
+    See `pubkey_letter` in GnuPG for the single-letter codes used here.
 
     FIXME
     Rewrite it according to the experimental API returning also a name
@@ -118,6 +122,22 @@ class GPGKeyAlgorithm(DBEnumeratedType):
         G
 
         ElGamal, compromised""",
+    )
+
+    ECDSA = DBItem(
+        301,
+        """
+        E
+
+        ECDSA""",
+    )
+
+    ECDH = DBItem(
+        302,
+        """
+        e
+
+        ECDH""",
     )
 
 
