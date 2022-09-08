@@ -1,0 +1,10 @@
+template(name="talisker" type="list") {
+    property(name="msg" position.from="2")
+    constant(value="\n")
+}
+
+if $programname == "launchpad" then {
+    action(type="omfile" file="{{ logs_dir }}/launchpad.log" template="talisker" fileOwner="syslog" fileGroup="adm")
+    stop
+}
+

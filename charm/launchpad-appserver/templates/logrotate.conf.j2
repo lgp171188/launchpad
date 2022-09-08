@@ -1,0 +1,16 @@
+{{ logs_dir }}/launchpad.log
+{
+    rotate 21
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 syslog adm
+    sharedscripts
+    postrotate
+        invoke-rc.d rsyslog rotate >/dev/null
+    endscript
+}
+

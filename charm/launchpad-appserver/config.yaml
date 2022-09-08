@@ -1,0 +1,35 @@
+options:
+  dbuser:
+    type: string
+    description: The database user used with the main database.
+    default: ""
+  dbuser_session:
+    type: string
+    description: The database user used with the session database.
+    default: ""
+  devmode:
+    type: boolean
+    description: Is this server running in dev mode?
+    default: true
+  min_legitimate_account_age:
+    type: int
+    description: Minimum account age in days that indicates a legitimate user.
+    default: 0
+  min_legitimate_karma:
+    type: int
+    description: Minimum karma value that indicates a legitimate user.
+    default: 0
+  port_main:
+    type: int
+    description: Port for the main application server.
+    default: 8085
+  port_xmlrpc:
+    type: int
+    description: Port for the XML-RPC application server.
+    default: 8087
+  wsgi_workers:
+    type: int
+    default: 0
+    description: >
+      The number of worker processes for handling requests.
+      The default is 0, indicating twice the number of CPUs plus one.
