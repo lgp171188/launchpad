@@ -38,16 +38,19 @@ be escaped.
 
 For a 3-0 page:
 
-    >>> browser.open('http://launchpad.test/ubuntu')
+    >>> browser.open("http://launchpad.test/ubuntu")
     >>> print(browser.contents)
     <...
     <style...url(/@@/demo)...</style>
     ...
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'lp-version')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "lp-version")))
     • ... devmode demo site (Get the code!)
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     browser.contents, 'sitemessage')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(browser.contents, "sitemessage")[0]
+    ...     )
+    ... )
     This is a demo site mmk. File a bug.
     >>> print(browser.getLink(url="http://example.com").text)
     File a bug
@@ -60,8 +63,8 @@ When you are not on a demo site, the text no longer appears.
 
 First for a 3-0 page:
 
-    >>> browser.open('http://launchpad.test/ubuntu')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'lp-version')))
+    >>> browser.open("http://launchpad.test/ubuntu")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "lp-version")))
     • ... devmode (Get the code!)
-    >>> len(find_tags_by_class(browser.contents, 'sitemessage'))
+    >>> len(find_tags_by_class(browser.contents, "sitemessage"))
     0

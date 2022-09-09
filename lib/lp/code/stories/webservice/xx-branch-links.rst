@@ -6,17 +6,17 @@ Branch links
 
 Set up a branch and a bug to link to.
 
-    >>> login('admin@canonical.com')
-    >>> cybertron = factory.makeProduct(name='cybertron')
-    >>> prime = factory.makePerson(name='prime',
-    ...     displayname='Optimus Prime')
-    >>> _robots = factory.makeProductBranch(product=cybertron, owner=prime,
-    ...     name='robots')
-    >>> robots_url = '/' + _robots.unique_name
+    >>> login("admin@canonical.com")
+    >>> cybertron = factory.makeProduct(name="cybertron")
+    >>> prime = factory.makePerson(name="prime", displayname="Optimus Prime")
+    >>> _robots = factory.makeProductBranch(
+    ...     product=cybertron, owner=prime, name="robots"
+    ... )
+    >>> robots_url = "/" + _robots.unique_name
     >>> _bug = factory.makeBug(target=cybertron)
-    >>> bug_url = '/bugs/' + str(_bug.id)
+    >>> bug_url = "/bugs/" + str(_bug.id)
     >>> _spec = factory.makeSpecification()
-    >>> spec_url = '/' + '/'.join([_spec.product.name, '+spec', _spec.name])
+    >>> spec_url = "/" + "/".join([_spec.product.name, "+spec", _spec.name])
     >>> logout()
 
 
@@ -28,11 +28,13 @@ A bug can be linked to a branch through the API.
     >>> robots = webservice.get(robots_url).jsonBody()
     >>> bug = webservice.get(bug_url).jsonBody()
     >>> _unused = webservice.named_post(
-    ...     robots['self_link'], 'linkBug', bug=bug['self_link'])
+    ...     robots["self_link"], "linkBug", bug=bug["self_link"]
+    ... )
     >>> bugs = webservice.get(
-    ...     robots['linked_bugs_collection_link']).jsonBody()
-    >>> linked_bug = bugs['entries'][0]
-    >>> bug['self_link'] == linked_bug['self_link']
+    ...     robots["linked_bugs_collection_link"]
+    ... ).jsonBody()
+    >>> linked_bug = bugs["entries"][0]
+    >>> bug["self_link"] == linked_bug["self_link"]
     True
 
 
@@ -40,10 +42,12 @@ If it turns out that the branch has no connection with the bug, it can be
 unlinked from the bug as well.
 
     >>> _unused = webservice.named_post(
-    ...     robots['self_link'], 'unlinkBug', bug=bug['self_link'])
+    ...     robots["self_link"], "unlinkBug", bug=bug["self_link"]
+    ... )
     >>> bugs = webservice.get(
-    ...     robots['linked_bugs_collection_link']).jsonBody()
-    >>> print(len(bugs['entries']))
+    ...     robots["linked_bugs_collection_link"]
+    ... ).jsonBody()
+    >>> print(len(bugs["entries"]))
     0
 
 
@@ -54,10 +58,12 @@ A spec can be linked to a branch through the API.
 
     >>> spec = webservice.get(spec_url).jsonBody()
     >>> _unused = webservice.named_post(
-    ...     robots['self_link'], 'linkSpecification', spec=spec['self_link'])
+    ...     robots["self_link"], "linkSpecification", spec=spec["self_link"]
+    ... )
     >>> spec_links = webservice.get(
-    ...     robots['spec_links_collection_link']).jsonBody()
-    >>> spec_link = spec_links['entries'][0]
+    ...     robots["spec_links_collection_link"]
+    ... ).jsonBody()
+    >>> spec_link = spec_links["entries"][0]
     >>> pprint_entry(spec_link)
     branch_link: 'http://.../~prime/cybertron/robots'
     registrant_link: 'http://.../~salgado'
@@ -71,9 +77,10 @@ If it turns out that the branch has no connection with the spec, it can be
 unlinked from the spec as well.
 
     >>> _unused = webservice.named_post(
-    ...     robots['self_link'], 'unlinkSpecification',
-    ...     spec=spec['self_link'])
+    ...     robots["self_link"], "unlinkSpecification", spec=spec["self_link"]
+    ... )
     >>> spec_links = webservice.get(
-    ...     robots['spec_links_collection_link']).jsonBody()
-    >>> print(len(spec_links['entries']))
+    ...     robots["spec_links_collection_link"]
+    ... ).jsonBody()
+    >>> print(len(spec_links["entries"]))
     0

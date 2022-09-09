@@ -8,8 +8,8 @@ Admin Language
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
 
     >>> language_set = getUtility(ILanguageSet)
-    >>> portuguese = language_set.getLanguageByCode('pt_BR')
-    >>> language_admin_view = create_view(portuguese, '+admin')
+    >>> portuguese = language_set.getLanguageByCode("pt_BR")
+    >>> language_admin_view = create_view(portuguese, "+admin")
     >>> language_admin_view.initialize()
 
 The language +admin view provides a label and a page_title for the page.
@@ -36,19 +36,21 @@ Validation
 
 Plural information entered on the admin page is checked for validity.
 
-    >>> language_admin_view.validate({
-    ...     'code': 'pt_BR',
-    ...     'pluralforms': 2,
-    ...     'pluralexpression': '1/n',
-    ...     })
-    >>> print(language_admin_view.getFieldError('pluralexpression'))
+    >>> language_admin_view.validate(
+    ...     {
+    ...         "code": "pt_BR",
+    ...         "pluralforms": 2,
+    ...         "pluralexpression": "1/n",
+    ...     }
+    ... )
+    >>> print(language_admin_view.getFieldError("pluralexpression"))
     Division by zero in plural expression for n = 0.
 
 
 Add Language
 ------------
 
-    >>> language_add_view = create_view(language_set, '+add')
+    >>> language_add_view = create_view(language_set, "+add")
 
     >>> print(language_add_view.label)
     Register a language in Launchpad
@@ -67,18 +69,19 @@ The view provides also a cancel_url and a next_url:
 
     >>> login("admin@canonical.com")
     >>> form = {
-    ...     'field.code': 'lp_US',
-    ...     'field.englishname': 'Launchpad English',
-    ...     'field.nativename': '',
-    ...     'field.pluralforms': '',
-    ...     'field.pluralexpression': '',
-    ...     'field.visible': True,
-    ...     'field.direction': 'LTR',
-    ...     'field.actions.add': 'Add',
-    ...     }
+    ...     "field.code": "lp_US",
+    ...     "field.englishname": "Launchpad English",
+    ...     "field.nativename": "",
+    ...     "field.pluralforms": "",
+    ...     "field.pluralexpression": "",
+    ...     "field.visible": True,
+    ...     "field.direction": "LTR",
+    ...     "field.actions.add": "Add",
+    ... }
 
     >>> language_add_view = create_initialized_view(
-    ...     language_set, '+add', form=form)
+    ...     language_set, "+add", form=form
+    ... )
     >>> language_add_view.errors
     []
 
@@ -100,8 +103,8 @@ implementation later.
     >>> from lp.services.worlddata.model.language import Language
     >>> translators_method = Language.translators
     >>> del Language.translators
-    >>> serbian = language_set.getLanguageByCode('sr')
-    >>> language_view = create_initialized_view(serbian, '+index')
+    >>> serbian = language_set.getLanguageByCode("sr")
+    >>> language_view = create_initialized_view(serbian, "+index")
 
 The 'friendly_plural_forms' function shows us a list of plural forms and
 a set of examples for each one, so one won't need to understand the plural
@@ -110,7 +113,8 @@ formula expression to see how it works.
     >>> friendly_plural_forms = language_view.friendly_plural_forms
 
     >>> for form_dict in friendly_plural_forms:
-    ...     print(form_dict['form'], ':', form_dict['examples'])
+    ...     print(form_dict["form"], ":", form_dict["examples"])
+    ...
     0 : 1, 21, 31, 41, 51, 61...
     1 : 2, 3, 4, 22, 23, 24...
     2 : 0, 5, 6, 7, 8, 9...
@@ -123,47 +127,59 @@ Create some translators and a merged account.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> translators = []
     >>> translator_main = factory.makePerson(
-    ...     name='translator-main',
-    ...     displayname='Translator Main')
+    ...     name="translator-main", displayname="Translator Main"
+    ... )
     >>> translators.append(translator_main)
-    >>> translator_merged = removeSecurityProxy(factory.makePerson(
-    ...     name='translator-merged',
-    ...     displayname='Translator Merged'))
+    >>> translator_merged = removeSecurityProxy(
+    ...     factory.makePerson(
+    ...         name="translator-merged", displayname="Translator Merged"
+    ...     )
+    ... )
     >>> translators.append(translator_merged)
     >>> translator_merged.merged = translator_main
     >>> for translator_nr in range(22):
-    ...     translators.append(factory.makePerson(
-    ...         name='translator-' + str(translator_nr),
-    ...         displayname='Translator No.' + str(translator_nr)))
+    ...     translators.append(
+    ...         factory.makePerson(
+    ...             name="translator-" + str(translator_nr),
+    ...             displayname="Translator No." + str(translator_nr),
+    ...         )
+    ...     )
+    ...
 
 Create a product, a template with one msgset and a pofile
 
     >>> from lp.app.enums import ServiceUsage
 
     >>> product = factory.makeProduct(
-    ...     translations_usage=ServiceUsage.LAUNCHPAD)
+    ...     translations_usage=ServiceUsage.LAUNCHPAD
+    ... )
     >>> template = factory.makePOTemplate(
-    ...     productseries=product.getSeries('trunk'))
+    ...     productseries=product.getSeries("trunk")
+    ... )
     >>> potmsgset = factory.makePOTMsgSet(template)
-    >>> pofile = factory.makePOFile('sr', potemplate=template)
+    >>> pofile = factory.makePOFile("sr", potemplate=template)
 
 Add a translation for each translator and one more for main and merged
 accounts.
 
     >>> for translator in translators:
     ...     translation = factory.makeCurrentTranslationMessage(
-    ...         pofile=pofile, translator=translator, potmsgset=potmsgset)
+    ...         pofile=pofile, translator=translator, potmsgset=potmsgset
+    ...     )
+    ...
     >>> translation = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, translator=translator_merged, potmsgset=potmsgset)
+    ...     pofile=pofile, translator=translator_merged, potmsgset=potmsgset
+    ... )
     >>> translation = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, translator=translator_main, potmsgset=potmsgset)
+    ...     pofile=pofile, translator=translator_main, potmsgset=potmsgset
+    ... )
 
 Langauge.translators is Monkey-patched to avoid fetching KarmaCache.
 Language.translator is a list containing all contributors decreasingly sorted
 according to their karma value.
 
     >>> serbian.translators = translators
-    >>> language_view = create_initialized_view(serbian, '+index')
+    >>> language_view = create_initialized_view(serbian, "+index")
     >>> top_contributors = language_view.top_contributors
     >>> translator_main in top_contributors
     True
@@ -171,6 +187,7 @@ according to their karma value.
     False
     >>> for translator in top_contributors:
     ...     print(translator.name)
+    ...
     translator-main
     translator-0
     translator-1
@@ -184,8 +201,8 @@ In the end, the changes done to Language class are reverted.
 View LanguageSet
 ------------------
 
-    >>> login('carlos@canonical.com')
-    >>> languageset_view = create_initialized_view(language_set, '+index')
+    >>> login("carlos@canonical.com")
+    >>> languageset_view = create_initialized_view(language_set, "+index")
 
 The user_languages property contains a list of the current user's preferred
 languages formated as links.
@@ -201,6 +218,6 @@ For a user without any preferred languages, English will be returned.
     >>> print(person.languages)
     []
     >>> ignored = login_person(person)
-    >>> languageset_view = create_initialized_view(language_set, '+index')
+    >>> languageset_view = create_initialized_view(language_set, "+index")
     >>> print(languageset_view.user_languages)
     <a href=".../en" ...>English</a>

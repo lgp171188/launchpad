@@ -25,13 +25,13 @@ The pagetests profiler is created by the layer during its setUp.
     >>> import os
     >>> import tempfile
 
-    >>> old_profile_environ = os.environ.get(
-    ...     'PROFILE_PAGETESTS_REQUESTS', '')
+    >>> old_profile_environ = os.environ.get("PROFILE_PAGETESTS_REQUESTS", "")
 
-    >>> pagetests_profile_dir = tempfile.mkdtemp(prefix='pagetests_profile')
+    >>> pagetests_profile_dir = tempfile.mkdtemp(prefix="pagetests_profile")
     >>> pagetests_profile = os.path.join(
-    ...     pagetests_profile_dir, 'pagetests.prof')
-    >>> os.environ['PROFILE_PAGETESTS_REQUESTS'] = pagetests_profile
+    ...     pagetests_profile_dir, "pagetests.prof"
+    ... )
+    >>> os.environ["PROFILE_PAGETESTS_REQUESTS"] = pagetests_profile
 
     >>> PageTestLayer.setUp()
     >>> PageTestLayer.profiler
@@ -47,7 +47,7 @@ other things).
     # We need to close the default interaction.
     >>> logout()
 
-    >>> response = http('GET / HTTP/1.0')
+    >>> response = http("GET / HTTP/1.0")
     >>> profile_count = len(PageTestLayer.profiler.getstats())
     >>> profile_count > 0
     True
@@ -56,7 +56,7 @@ Requests made with a testbrowser will also be profiled.
 
     >>> from zope.testbrowser.wsgi import Browser
     >>> browser = Browser()
-    >>> browser.open('http://launchpad.test/')
+    >>> browser.open("http://launchpad.test/")
     >>> len(PageTestLayer.profiler.getstats()) > profile_count
     True
 
@@ -69,7 +69,7 @@ Once the layer finishes, it saves the profile data in the requested file.
 
 When the environment isn't set, no profile is created.
 
-    >>> del os.environ['PROFILE_PAGETESTS_REQUESTS']
+    >>> del os.environ["PROFILE_PAGETESTS_REQUESTS"]
 
     >>> PageTestLayer.setUp()
     >>> print(PageTestLayer.profiler)
@@ -122,8 +122,8 @@ The feature has two modes.
     lp/services/profile is hooked up properly.  This is intended to be a
     smoke test.  The unit tests verify further functionality.
 
-    >>> response = http('GET /++profile++ HTTP/1.0')
-    >>> b'<h1>Profiling Information</h1>' in response.getBody()
+    >>> response = http("GET /++profile++ HTTP/1.0")
+    >>> b"<h1>Profiling Information</h1>" in response.getBody()
     True
 
 -   It can be configured to profile all requests, indiscriminately.  To turn
@@ -187,18 +187,32 @@ log file.
     the way to turn on memory profiling.  It is intended to be a smoke test.
     The real tests are in the lp/services/profile package.
 
-    >>> profile_dir = tempfile.mkdtemp(prefix='profile')
-    >>> memory_profile_log = os.path.join(profile_dir, 'memory.log')
+    >>> profile_dir = tempfile.mkdtemp(prefix="profile")
+    >>> memory_profile_log = os.path.join(profile_dir, "memory.log")
     >>> from textwrap import dedent
-    >>> config.push('memory_profile', dedent("""
+    >>> config.push(
+    ...     "memory_profile",
+    ...     dedent(
+    ...         """
     ...     [profiling]
     ...     profile_request: False
-    ...     memory_profile_log: %s""" % memory_profile_log))
-    >>> response = http('GET / HTTP/1.0')
+    ...     memory_profile_log: %s"""
+    ...         % memory_profile_log
+    ...     ),
+    ... )
+    >>> response = http("GET / HTTP/1.0")
     >>> with open(memory_profile_log) as memory_profile_fh:
-    ...     (timestamp, page_id, oops_id, duration,
-    ...      start_vss, start_rss, end_vss, end_rss) = (
-    ...         memory_profile_fh.readline().split())
+    ...     (
+    ...         timestamp,
+    ...         page_id,
+    ...         oops_id,
+    ...         duration,
+    ...         start_vss,
+    ...         start_rss,
+    ...         end_vss,
+    ...         end_rss,
+    ...     ) = memory_profile_fh.readline().split()
+    ...
     >>> print(timestamp)
     20...
     >>> print(oops_id)
@@ -209,7 +223,7 @@ log file.
 ..  ReST comment: this is clean up for the work done above.
 
     >>> import shutil
-    >>> os.environ['PROFILE_PAGETESTS_REQUESTS'] = old_profile_environ
+    >>> os.environ["PROFILE_PAGETESTS_REQUESTS"] = old_profile_environ
     >>> shutil.rmtree(pagetests_profile_dir)
     >>> shutil.rmtree(profile_dir)
-    >>> old_config = config.pop('memory_profile')
+    >>> old_config = config.pop("memory_profile")

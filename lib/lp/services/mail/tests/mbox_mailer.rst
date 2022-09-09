@@ -8,15 +8,17 @@ the temporary file mbox_filename for us.
 
     >>> from lp.services.mail.mbox import MboxMailer
     >>> mailer = MboxMailer(mbox_filename, overwrite=True, mailer=None)
-    >>> msg_id = mailer.send('geddy@example.com',
-    ...             ['jaco@example.com', 'victor@example.com'],
-    ...             """\
+    >>> msg_id = mailer.send(
+    ...     "geddy@example.com",
+    ...     ["jaco@example.com", "victor@example.com"],
+    ...     """\
     ... From: geddy@example.com
     ... To: jaco@example.com
     ... Cc: victor@example.com
     ... Subject: a bug
     ...
-    ... There is a bug we should be concerned with.""")
+    ... There is a bug we should be concerned with.""",
+    ... )
     >>> msg_id
     '<...>'
 
@@ -26,19 +28,19 @@ no other messages.
     >>> import mailbox
     >>> mbox = mailbox.mbox(mbox_filename)
     >>> [msg] = mbox
-    >>> msg['from']
+    >>> msg["from"]
     'geddy@example.com'
-    >>> msg['to']
+    >>> msg["to"]
     'jaco@example.com'
-    >>> msg['cc']
+    >>> msg["cc"]
     'victor@example.com'
-    >>> msg['subject']
+    >>> msg["subject"]
     'a bug'
-    >>> msg['return-path']
+    >>> msg["return-path"]
     'geddy@example.com'
-    >>> msg['x-envelope-to']
+    >>> msg["x-envelope-to"]
     'jaco@example.com, victor@example.com'
-    >>> msg['message-id'] == msg_id
+    >>> msg["message-id"] == msg_id
     True
     >>> mbox.close()
 
@@ -46,20 +48,22 @@ Create another mailer, again that overwrites.  Make sure it actually does
 overwrite.
 
     >>> mailer = MboxMailer(mbox_filename, overwrite=True, mailer=None)
-    >>> mailer.send('mick@example.com',
-    ...             ['chris@example.com', 'paul@example.com'],
-    ...             """\
+    >>> mailer.send(
+    ...     "mick@example.com",
+    ...     ["chris@example.com", "paul@example.com"],
+    ...     """\
     ... From: mick@example.com
     ... To: chris@example.com
     ... Cc: paul@example.com
     ... Subject: a bug
     ...
-    ... There is a bug we should be concerned with.""")
+    ... There is a bug we should be concerned with.""",
+    ... )
     '<...>'
 
     >>> mbox = mailbox.mbox(mbox_filename)
     >>> [msg] = mbox
-    >>> msg['from']
+    >>> msg["from"]
     'mick@example.com'
     >>> mbox.close()
 
@@ -69,21 +73,23 @@ mbox file.
 
     >>> from lp.services.mail.mbox import MboxMailer
     >>> mailer = MboxMailer(mbox_filename, overwrite=False, mailer=None)
-    >>> mailer.send('carol@example.com',
-    ...             ['melissa@example.com'],
-    ...             """\
+    >>> mailer.send(
+    ...     "carol@example.com",
+    ...     ["melissa@example.com"],
+    ...     """\
     ... From: carol@example.com
     ... To: melissa@example.com
     ... Subject: a bug
     ...
-    ... There is a bug we should be concerned with.""")
+    ... There is a bug we should be concerned with.""",
+    ... )
     '<...>'
 
     >>> mbox = mailbox.mbox(mbox_filename)
     >>> [msg1, msg2] = mbox
-    >>> msg1['from']
+    >>> msg1["from"]
     'mick@example.com'
-    >>> msg2['from']
+    >>> msg2["from"]
     'carol@example.com'
     >>> mbox.close()
 
@@ -96,28 +102,31 @@ harness.
     >>> chained = MboxMailer(chained_filename, overwrite=True, mailer=None)
     >>> from zope.component import provideUtility
     >>> from zope.sendmail.interfaces import IMailer
-    >>> provideUtility(chained, IMailer, name='mbox-mailer-test-mailer')
+    >>> provideUtility(chained, IMailer, name="mbox-mailer-test-mailer")
 
-    >>> mailer  = MboxMailer(mbox_filename, overwrite=True,
-    ...                      mailer='mbox-mailer-test-mailer')
-    >>> mailer.send('sting@example.com',
-    ...             ['oteil@example.com'],
-    ...             """\
+    >>> mailer = MboxMailer(
+    ...     mbox_filename, overwrite=True, mailer="mbox-mailer-test-mailer"
+    ... )
+    >>> mailer.send(
+    ...     "sting@example.com",
+    ...     ["oteil@example.com"],
+    ...     """\
     ... From: sting@example.com
     ... To: oteil@example.com
     ... Subject: a bug
     ...
-    ... There is a bug we should be concerned with.""")
+    ... There is a bug we should be concerned with.""",
+    ... )
     '<...>'
 
     >>> mbox = mailbox.mbox(mbox_filename)
     >>> [msg] = mbox
-    >>> msg['from']
+    >>> msg["from"]
     'sting@example.com'
     >>> mbox.close()
 
     >>> mbox = mailbox.mbox(chained_filename)
     >>> [msg] = mbox
-    >>> msg['from']
+    >>> msg["from"]
     'sting@example.com'
     >>> mbox.close()

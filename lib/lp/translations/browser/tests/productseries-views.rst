@@ -7,8 +7,9 @@ let's put this check in a convenient function.
     >>> from zope.component import getUtility
     >>> from lp.code.interfaces.branchjob import IRosettaUploadJobSource
     >>> job_counter = 0
-    >>> def isUploadJobCreatedForBranch(productseries,
-    ...                                 force_translations_upload=None):
+    >>> def isUploadJobCreatedForBranch(
+    ...     productseries, force_translations_upload=None
+    ... ):
     ...     global job_counter
     ...     ready_jobs = list(getUtility(IRosettaUploadJobSource).iterReady())
     ...     if len(ready_jobs) <= job_counter:
@@ -17,8 +18,10 @@ let's put this check in a convenient function.
     ...     job_counter += 1
     ...     if force_translations_upload is None:
     ...         return productseries.branch == job.branch
-    ...     return (productseries.branch == job.branch and
-    ...            force_translations_upload == job.force_translations_upload)
+    ...     return (
+    ...         productseries.branch == job.branch
+    ...         and force_translations_upload == job.force_translations_upload
+    ...     )
 
 Also, we need to set-up a branch for the product of this productseries. The
 last_mirrored_id and the last_scanned_id is set to the same value to pretend
@@ -29,10 +32,11 @@ that the branch has been mirrored and scanned.
     ...     branch.last_mirrored_id = "some_rev_id"
     ...     branch.last_scanned_id = "some_rev_id"
     ...     return branch
+    ...
 
 For these tasks we need to log in.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
 
 ProductSeriesTranslationsSettingsView
@@ -48,15 +52,15 @@ code.
     >>> productseries.branch = makeScannedProductBranch(productseries)
 
     >>> from lp.translations.browser.productseries import (
-    ...     ProductSeriesTranslationsSettingsView)
+    ...     ProductSeriesTranslationsSettingsView,
+    ... )
 
 The only setting currently available is for the import of translation
 templates from bazaar branches hosted on Launchpad.
 
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> request = LaunchpadTestRequest()
-    >>> view = ProductSeriesTranslationsSettingsView(
-    ...     productseries, request)
+    >>> view = ProductSeriesTranslationsSettingsView(productseries, request)
     >>> view.setUpFields()
     >>> [field.__name__ for field in view.form_fields]
     ['translations_autoimport_mode']
@@ -65,18 +69,20 @@ This setting is represented by a SettingsRadioWidget which is derived
 from LaunchpadRadioWidgetWithDescription.
 
     >>> view.setUpWidgets()
-    >>> view.widgets['translations_autoimport_mode']
+    >>> view.widgets["translations_autoimport_mode"]
     <...SettingsRadioWidget object at...>
 
 Submitting the form via "Change settings" will update the corresponding
 attribute of the ProductSeries.
 
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.translations_autoimport_mode': 'IMPORT_TEMPLATES',
-    ...           'field.actions.save_settings': 'Save Settings'})
-    >>> view = ProductSeriesTranslationsSettingsView(
-    ...     productseries, request)
+    ...     method="POST",
+    ...     form={
+    ...         "field.translations_autoimport_mode": "IMPORT_TEMPLATES",
+    ...         "field.actions.save_settings": "Save Settings",
+    ...     },
+    ... )
+    >>> view = ProductSeriesTranslationsSettingsView(productseries, request)
     >>> print(productseries.translations_autoimport_mode.title)
     None
     >>> view.initialize()
@@ -99,13 +105,13 @@ is created that has force_translations_upload set to true.
     >>> productseries = factory.makeProductSeries()
     >>> productseries.branch = makeScannedProductBranch(productseries)
     >>> from lp.translations.browser.productseries import (
-    ...     ProductSeriesTranslationsBzrImportView)
+    ...     ProductSeriesTranslationsBzrImportView,
+    ... )
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.actions.request_import':
-    ...               'Request one-time import'})
-    >>> view = ProductSeriesTranslationsBzrImportView(
-    ...     productseries, request)
+    ...     method="POST",
+    ...     form={"field.actions.request_import": "Request one-time import"},
+    ... )
+    >>> view = ProductSeriesTranslationsBzrImportView(productseries, request)
     >>> view.initialize()
     >>> print(isUploadJobCreatedForBranch(productseries, True))
     True

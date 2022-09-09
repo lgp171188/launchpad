@@ -4,28 +4,34 @@ zope.interfaces.NotFound. This means they generate a System Error page
 instead of a correct 404 page. So we test them to ensure the correct
 HTTP status is returned.
 
-    >>> def check_not_found(url, host='launchpad.test'):
+    >>> def check_not_found(url, host="launchpad.test"):
     ...     output = http("GET %s HTTP/1.1\nHost: %s" % (url, host))
     ...     status = output.getStatus()
     ...     if status != 404:
     ...         raise Exception(
-    ...             "%s returned status %s instead of 404\n\n%s" % (
-    ...                 url, status, str(output)))
+    ...             "%s returned status %s instead of 404\n\n%s"
+    ...             % (url, status, str(output))
+    ...         )
+    ...
 
-    >>> def check_redirect(url, auth=False, host='launchpad.test',
-    ...                    status=303):
+    >>> def check_redirect(
+    ...     url, auth=False, host="launchpad.test", status=303
+    ... ):
     ...     get_cmd = """
     ... GET %s HTTP/1.1
     ... Host: %s
     ... """
     ...     if auth:
-    ...         get_cmd += ("Authorization: "
-    ...                     "Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=\n")
+    ...         get_cmd += (
+    ...             "Authorization: "
+    ...             "Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=\n"
+    ...         )
     ...     response = http(get_cmd % (url, host))
     ...     rc = response.getStatus()
     ...     if rc != status:
     ...         raise Exception(
-    ...             "%s returned status %s instead of %d" % (url, rc, status))
+    ...             "%s returned status %s instead of %d" % (url, rc, status)
+    ...         )
     ...     print(response.getHeader("Location"))
 
     >>> check_redirect("/legal", status=301)
@@ -37,9 +43,9 @@ HTTP status is returned.
     >>> check_redirect("/support/", status=301)
     http://answers.launchpad.test/launchpad
 
-    >>> check_redirect("/", host='feeds.launchpad.test', status=301)
+    >>> check_redirect("/", host="feeds.launchpad.test", status=301)
     https://help.launchpad.net/Feeds
-    >>> check_redirect("/+index", host='feeds.launchpad.test', status=301)
+    >>> check_redirect("/+index", host="feeds.launchpad.test", status=301)
     https://help.launchpad.net/Feeds
 
 The +translate page in the main host is obsolete so it's now a redirect
@@ -72,7 +78,7 @@ one.)
 Bug attachments in the context of a bugtask are all redirected to be at
 +attachment/<id>. The old attachments/<id> form is deprecated.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> attachment = factory.makeBugAttachment(1)
     >>> atid = attachment.id
     >>> logout()
@@ -81,16 +87,21 @@ Bug attachments in the context of a bugtask are all redirected to be at
     http://bugs.launchpad.test/firefox/+bug/1/+attachment/1
     >>> check_redirect(
     ...     "/devel/firefox/+bug/1/attachments/%d" % atid,
-    ...     host="api.launchpad.test", status=301)
+    ...     host="api.launchpad.test",
+    ...     status=301,
+    ... )
     http://api.launchpad.test/devel/firefox/+bug/1/+attachment/1
     >>> check_redirect(
-    ...     "/firefox/+bug/1/attachments/%d/+edit" % atid, status=301)
+    ...     "/firefox/+bug/1/attachments/%d/+edit" % atid, status=301
+    ... )
     http://bugs.launchpad.test/firefox/+bug/1/+attachment/1/+edit
     >>> check_redirect("/bugs/1/attachments/%d" % atid, status=301)
     http://bugs.launchpad.test/bugs/1/+attachment/1
     >>> check_redirect(
     ...     "/devel/bugs/1/attachments/%d" % atid,
-    ...     host="api.launchpad.test", status=301)
+    ...     host="api.launchpad.test",
+    ...     status=301,
+    ... )
     http://api.launchpad.test/devel/bugs/1/+attachment/1
     >>> check_redirect("/bugs/1/attachments/%d/+edit" % atid, status=301)
     http://bugs.launchpad.test/bugs/1/+attachment/1/+edit
@@ -110,7 +121,8 @@ distrosourcepackage filebug page.
     >>> check_redirect("/ubuntu/warty/+filebug", auth=True)
     http://launchpad.test/ubuntu/+filebug
     >>> check_redirect(
-    ...     "/ubuntu/warty/+source/mozilla-firefox/+filebug", auth=True)
+    ...     "/ubuntu/warty/+source/mozilla-firefox/+filebug", auth=True
+    ... )
     http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 
 The old +filebug-advanced form now redirects to the +filebug form.
@@ -120,8 +132,10 @@ The old +filebug-advanced form now redirects to the +filebug form.
     >>> check_redirect("/ubuntu/+filebug-advanced", auth=True, status=301)
     http://bugs.launchpad.test/ubuntu/+filebug
     >>> check_redirect(
-    ...     "/ubuntu/+source/mozilla-firefox/+filebug-advanced", auth=True,
-    ...     status=301)
+    ...     "/ubuntu/+source/mozilla-firefox/+filebug-advanced",
+    ...     auth=True,
+    ...     status=301,
+    ... )
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 
 And this is for a person:
@@ -130,7 +144,9 @@ And this is for a person:
     http://code.launchpad.test/~name12/gnome-terminal/pushed
     >>> check_redirect(
     ...     "/~name12/+branch/gnome-terminal/pushed/+edit",
-    ...     auth=True, status=301)
+    ...     auth=True,
+    ...     status=301,
+    ... )
     http://code.launchpad.test/~name12/gnome-terminal/pushed/+edit
     >>> check_redirect("/~name16/+packages", status=301)
     http://launchpad.test/~name16/+related-packages

@@ -26,26 +26,31 @@ points that would otherwise be in the output.
 
     >>> from lp.services.database.sqlbase import quote
     >>> from lp.translations.scripts.gettext_check_messages import (
-    ...     GettextCheckMessages)
+    ...     GettextCheckMessages,
+    ... )
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.testing.faketransaction import FakeTransaction
 
     >>> class InstrumentedGettextCheckMessages(GettextCheckMessages):
     ...     _commit_interval = 3
+    ...
     ...     def _get_time(self):
     ...         return self._check_count
+    ...
 
     >>> def run_checker(options, commit_interval=None):
     ...     """Create and run an instrumented `GettextCheckMessages`."""
     ...     checker = InstrumentedGettextCheckMessages(
-    ...         'gettext-check-messages-test', test_args=options)
+    ...         "gettext-check-messages-test", test_args=options
+    ...     )
     ...     checker.logger = FakeLogger()
     ...     checker.txn = FakeTransaction(log_calls=True)
     ...     if commit_interval is not None:
     ...         checker._commit_interval = commit_interval
     ...     checker.main()
+    ...
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> pofile = factory.makePOFile()
     >>> template = pofile.potemplate
@@ -56,23 +61,33 @@ So gettext will check those in the translations for compatibility with
 those in the original message.
 
     >>> potmsgset = factory.makePOTMsgSet(
-    ...     potemplate=template, singular=u'%d n', sequence=1)
-    >>> removeSecurityProxy(potmsgset).flagscomment = 'c-format'
+    ...     potemplate=template, singular="%d n", sequence=1
+    ... )
+    >>> removeSecurityProxy(potmsgset).flagscomment = "c-format"
     >>> for flag in potmsgset.flags:
     ...     print(flag)
+    ...
     c-format
 
 The sample message has an upstream translation, and an Ubuntu
 in Launchpad that differs from the upstream one.
 
     >>> ubuntu_message = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset, translator=template.owner,
-    ...     reviewer=template.owner, translations=[u'%d c'])
+    ...     pofile=pofile,
+    ...     potmsgset=potmsgset,
+    ...     translator=template.owner,
+    ...     reviewer=template.owner,
+    ...     translations=["%d c"],
+    ... )
     >>> ubuntu_message = removeSecurityProxy(ubuntu_message)
 
     >>> upstream_message = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset, translator=template.owner,
-    ...     reviewer=template.owner, translations=[u'%d i'])
+    ...     pofile=pofile,
+    ...     potmsgset=potmsgset,
+    ...     translator=template.owner,
+    ...     reviewer=template.owner,
+    ...     translations=["%d i"],
+    ... )
     >>> upstream_message = removeSecurityProxy(upstream_message)
 
     >>> upstream_message.is_current_ubuntu = False
@@ -88,7 +103,7 @@ The gettext_check_message script goes through a given set of messages
 and re-does the gettext check.  Which messages it checks is specified as
 a plain SQL WHERE clause.
 
-    >>> run_checker(['-vv', "-w id=%s" % quote(ubuntu_message.id)])
+    >>> run_checker(["-vv", "-w id=%s" % quote(ubuntu_message.id)])
     DEBUG Checking messages matching:  id=...
     DEBUG Checking message ...
     DEBUG Commit point.
@@ -110,7 +125,7 @@ detects the problem when it checks that message.
     True
 
     >>> from lp.services.propertycache import get_property_cache
-    >>> get_property_cache(ubuntu_message).translations = [u'%s c']
+    >>> get_property_cache(ubuntu_message).translations = ["%s c"]
 
     >>> run_checker(["-w id=%s" % quote(ubuntu_message.id)])
     DEBUG Checking messages matching:  id=...
@@ -139,12 +154,12 @@ Besides Ubuntu messages, the script's output also distinguishes
 upstream ones, and ones that are completely unused. The upstream message
 happens to produce validation errors.
 
-    >>> get_property_cache(upstream_message).translations = [u'%s %s i']
+    >>> get_property_cache(upstream_message).translations = ["%s %s i"]
 
 In this example we'd like to see a nicely predictable ordering, so we
 add a sort order using the -o option.
 
-    >>> run_checker(['-w', 'potmsgset=%s' % quote(potmsgset), '-o',  'id'])
+    >>> run_checker(["-w", "potmsgset=%s" % quote(potmsgset), "-o", "id"])
     DEBUG Checking messages matching:  potmsgset=...
     DEBUG Checking message ...
     INFO ... (unused): format specifications ... are not the same
@@ -176,7 +191,7 @@ The --dry-run option makes the script abort all its database changes.
 
     >>> ubuntu_message.is_current_ubuntu = True
 
-    >>> run_checker(["-w id=%s" % quote(ubuntu_message.id), '--dry-run'])
+    >>> run_checker(["-w id=%s" % quote(ubuntu_message.id), "--dry-run"])
     INFO Dry run.  Not making any changes.
     DEBUG Checking messages matching:  id=...
     DEBUG Checking message ...

@@ -7,12 +7,12 @@ This is the base-class we should use for all View classes in Launchpad.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
     >>> class MyView(LaunchpadView):
-    ...
     ...     def initialize(self):
     ...         print("Initializing...")
     ...
     ...     def render(self):
     ...         return "rendered content"
+    ...
 
     >>> context = object()
     >>> request = LaunchpadTestRequest()
@@ -37,7 +37,7 @@ Anonymous logged in, so view.account and view.user are None.
 Now, we log in a user and see what happens to the 'user' attribute.  The
 existing view should have the same user, 'None', because it was cached.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> print(view.user)
     None
 
@@ -62,7 +62,7 @@ an IStructuredString implementation.
     >>> print(view.info_message)
     None
 
-    >>> view.error_message = 'A simple string.'
+    >>> view.error_message = "A simple string."
     Traceback (most recent call last):
     ...
     ValueError: <... 'str'> is not a valid value for error_message,
@@ -70,7 +70,7 @@ an IStructuredString implementation.
     >>> print(view.error_message)
     None
 
-    >>> view.info_message = 'A simple string.'
+    >>> view.info_message = "A simple string."
     Traceback (most recent call last):
     ...
     ValueError: <... 'str'> is not a valid value for info_message,
@@ -80,9 +80,10 @@ an IStructuredString implementation.
 
     >>> from lp.services.webapp.escaping import structured
     >>> view.error_message = structured(
-    ...    'A structure is just "%s".', 'smoke & mirrors')
+    ...     'A structure is just "%s".', "smoke & mirrors"
+    ... )
     >>> print(view.error_message.escapedtext)
     A structure is just "smoke &amp; mirrors".
-    >>> view.error_message = structured('Information overload.')
+    >>> view.error_message = structured("Information overload.")
     >>> print(view.error_message.escapedtext)
     Information overload.

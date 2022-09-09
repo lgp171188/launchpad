@@ -9,13 +9,13 @@ specific Storm tools to cope with our master and standby store arrangement.
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     EmailAddressStatus,
     ...     IEmailAddressSet,
-    ...     )
+    ... )
     >>> from lp.services.database.interfaces import (
     ...     IMasterObject,
     ...     IMasterStore,
     ...     IStandbyStore,
     ...     IStore,
-    ...     )
+    ... )
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from zope.security.proxy import ProxyFactory
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -54,7 +54,7 @@ Otherwise, it gives you the master. See IStoreSelector for details.
 You can also adapt database object instances to Stores, although
 this is less generally useful.
 
-    >>> janitor = IStandbyStore(Person).find(Person, name='janitor').one()
+    >>> janitor = IStandbyStore(Person).find(Person, name="janitor").one()
     >>> IStandbyStore(janitor) is IStandbyStore(Person)
     True
     >>> IMasterStore(janitor) is IMasterStore(Person)
@@ -70,8 +70,8 @@ from a store other than the correct Master.
 
     >>> main_standby = IStandbyStore(Person)
     >>> t = transaction.begin()
-    >>> person = main_standby.find(Person, name='mark').one()
-    >>> person.display_name = 'Cannot change'
+    >>> person = main_standby.find(Person, name="mark").one()
+    >>> person.display_name = "Cannot change"
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
@@ -79,8 +79,8 @@ from a store other than the correct Master.
 
     >>> transaction.abort()
     >>> t = transaction.begin()
-    >>> person = main_standby.find(Person, name='mark').one()
-    >>> IMasterObject(person).display_name = 'Can change'
+    >>> person = main_standby.find(Person, name="mark").one()
+    >>> IMasterObject(person).display_name = "Can change"
     >>> transaction.commit()
 
 
@@ -88,12 +88,12 @@ If the adapted object was security proxied, the master copy is
 similarly wrapped.
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> person = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
+    >>> person = getUtility(IPersonSet).getByEmail("no-priv@canonical.com")
     >>> removeSecurityProxy(person) is person
     False
     >>> print(person.displayname)
     No Privileges Person
-    >>> person.name = 'foo'
+    >>> person.name = "foo"
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -103,7 +103,7 @@ similarly wrapped.
     False
     >>> print(person.displayname)
     No Privileges Person
-    >>> person.name = 'foo'
+    >>> person.name = "foo"
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -113,17 +113,29 @@ similarly wrapped.
     True
     >>> print(person.displayname)
     No Privileges Person
-    >>> person.name = 'foo'
+    >>> person.name = "foo"
 
 Our objects may compare equal even if they have come from different
 stores.
 
-    >>> master_email = IMasterStore(EmailAddress).find(
-    ...     EmailAddress, Person.name == 'janitor',
-    ...     EmailAddress.person==Person.id).one()
-    >>> standby_email = IStandbyStore(EmailAddress).find(
-    ...     EmailAddress, Person.name == 'janitor',
-    ...     EmailAddress.person==Person.id).one()
+    >>> master_email = (
+    ...     IMasterStore(EmailAddress)
+    ...     .find(
+    ...         EmailAddress,
+    ...         Person.name == "janitor",
+    ...         EmailAddress.person == Person.id,
+    ...     )
+    ...     .one()
+    ... )
+    >>> standby_email = (
+    ...     IStandbyStore(EmailAddress)
+    ...     .find(
+    ...         EmailAddress,
+    ...         Person.name == "janitor",
+    ...         EmailAddress.person == Person.id,
+    ...     )
+    ...     .one()
+    ... )
     >>> master_email is standby_email
     False
     >>> master_email == standby_email
@@ -134,7 +146,8 @@ stores.
 Comparison works for security wrapped objects too.
 
     >>> wrapped_email = getUtility(IEmailAddressSet).getByEmail(
-    ...     master_email.email)
+    ...     master_email.email
+    ... )
     >>> removeSecurityProxy(wrapped_email) is master_email
     True
     >>> wrapped_email is master_email
@@ -147,8 +160,10 @@ Comparison works for security wrapped objects too.
 Objects not yet flushed to the database also compare equal.
 
     >>> unflushed = EmailAddress(
-    ...     email='notflushed@example.com', status=EmailAddressStatus.NEW,
-    ...     personID=1)
+    ...     email="notflushed@example.com",
+    ...     status=EmailAddressStatus.NEW,
+    ...     personID=1,
+    ... )
     >>> unflushed == unflushed
     True
     >>> unflushed != unflushed

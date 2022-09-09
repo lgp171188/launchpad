@@ -183,7 +183,7 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
     >>> from optparse import OptionParser
     >>> parser = OptionParser()
     >>> logger_options(parser)
-    >>> options, args = parser.parse_args(['-v', '-v', '-q', '-qqqqqqq'])
+    >>> options, args = parser.parse_args(["-v", "-v", "-q", "-qqqqqqq"])
     >>> options.loglevel > logging.CRITICAL
     True
     >>> options.verbose
@@ -200,7 +200,7 @@ def logger_options(parser, default=logging.INFO, milliseconds=False):
     >>> from optparse import OptionParser
     >>> parser = OptionParser()
     >>> logger_options(parser, logging.WARNING)
-    >>> options, args = parser.parse_args(['-v'])
+    >>> options, args = parser.parse_args(["-v"])
     >>> options.loglevel == logging.INFO
     True
     >>> options.verbose
@@ -334,9 +334,9 @@ def logger(options=None, name=None):
     >>> from optparse import OptionParser
     >>> parser = OptionParser()
     >>> logger_options(parser)
-    >>> options, args = parser.parse_args(['-v', '-v', '-q', '-q', '-q'])
+    >>> options, args = parser.parse_args(["-v", "-v", "-q", "-q", "-q"])
     >>> log = logger(options)
-    >>> log.debug('Not shown - too quiet')
+    >>> log.debug("Not shown - too quiet")
 
     Cleanup:
 

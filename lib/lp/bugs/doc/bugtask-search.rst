@@ -20,7 +20,8 @@ method accepts a single parameter; an BugTaskSearchParams instance.
     >>> all_public_bugtasks = store.find(
     ...     BugTask,
     ...     BugTask.bug_id == Bug.id,
-    ...     Bug.information_type.is_in(info_types))
+    ...     Bug.information_type.is_in(info_types),
+    ... )
     >>> found_bugtasks.count() == all_public_bugtasks.count()
     True
 
@@ -37,8 +38,8 @@ expensive search on other related information.
 For example, there are no bugs with the word 'Fnord' in Firefox.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> text_search = BugTaskSearchParams(user=None, searchtext=u'Fnord')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> text_search = BugTaskSearchParams(user=None, searchtext="Fnord")
     >>> found_bugtasks = firefox.searchTasks(text_search)
     >>> found_bugtasks.count()
     0
@@ -46,15 +47,17 @@ For example, there are no bugs with the word 'Fnord' in Firefox.
 But if we put that word in the bug #4 description, it will be found.
 
     >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug_four = getUtility(IBugSet).get(4)
     >>> bug_four.description += (
-    ...     '\nThat happens pretty often with the Fnord Highlighter '
-    ...     'extension installed.')
+    ...     "\nThat happens pretty often with the Fnord Highlighter "
+    ...     "extension installed."
+    ... )
 
     >>> found_bugtasks = firefox.searchTasks(text_search)
     >>> for bugtask in found_bugtasks:
     ...     print("#%s" % bugtask.bug.id)
+    ...
     #4
 
 BugTaskSearchParams' parameters searchtext and fast_searchtext
@@ -68,44 +71,48 @@ A simple phrase can be passed as searchtext, but not as fast_searchtext,
 see below.
 
     >>> good_search = BugTaskSearchParams(
-    ...     user=None, searchtext=u'happens pretty often')
+    ...     user=None, searchtext="happens pretty often"
+    ... )
     >>> found_bugtasks = firefox.searchTasks(good_search)
     >>> for bugtask in found_bugtasks:
     ...     print("#%s" % bugtask.bug.id)
+    ...
     #4
 
 The unstemmed word "happens" does not yield any results when used
 as fast_textsearch.
 
-    >>> bad_search = BugTaskSearchParams(
-    ...     user=None, fast_searchtext=u'happens')
+    >>> bad_search = BugTaskSearchParams(user=None, fast_searchtext="happens")
     >>> found_bugtasks = firefox.searchTasks(bad_search)
     >>> print(found_bugtasks.count())
     0
 
 If the stem of "happens" is used, we get results.
 
-    >>> good_search = BugTaskSearchParams(
-    ...     user=None, fast_searchtext=u'happen')
+    >>> good_search = BugTaskSearchParams(user=None, fast_searchtext="happen")
     >>> found_bugtasks = firefox.searchTasks(good_search)
     >>> for bugtask in found_bugtasks:
     ...     print("#%s" % bugtask.bug.id)
+    ...
     #4
     #6
 
 Stemmed words may be combined into a valid tsquery expression.
 
     >>> good_search = BugTaskSearchParams(
-    ...     user=None, fast_searchtext=u'happen&pretti&often')
+    ...     user=None, fast_searchtext="happen&pretti&often"
+    ... )
     >>> found_bugtasks = firefox.searchTasks(good_search)
     >>> for bugtask in found_bugtasks:
     ...     print("#%s" % bugtask.bug.id)
+    ...
     #4
 
 Passing invalid tsquery expressions as fast_searchtext raises an exception.
 
     >>> bad_search = BugTaskSearchParams(
-    ...     user=None, fast_searchtext=u'happens pretty often')
+    ...     user=None, fast_searchtext="happens pretty often"
+    ... )
     >>> list(firefox.searchTasks(bad_search))
     Traceback (most recent call last):
     ...
@@ -128,8 +135,8 @@ a partner package:
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> proxied_cdrkit = ubuntu.getSourcePackage("cdrkit")
     >>> cdrkit = removeSecurityProxy(proxied_cdrkit)
-    >>> cdrkit.component = getUtility(IComponentSet)['partner']
-    >>> cdrkit.archive = ubuntu.getArchiveByComponent('partner')
+    >>> cdrkit.component = getUtility(IComponentSet)["partner"]
+    >>> cdrkit.archive = ubuntu.getArchiveByComponent("partner")
     >>> transaction.commit()
 
 It starts off with no bugs:
@@ -142,10 +149,14 @@ We can file a bug against it and see that show up in a search:
 
     >>> from lp.bugs.interfaces.bug import CreateBugParams
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> bug = cdrkit.createBug(
-    ...     CreateBugParams(owner=no_priv, title='Bug to be fixed in trunk',
-    ...                     comment='Something'))
+    ...     CreateBugParams(
+    ...         owner=no_priv,
+    ...         title="Bug to be fixed in trunk",
+    ...         comment="Something",
+    ...     )
+    ... )
     >>> cdrkit_bugs = cdrkit.searchTasks(all_public)
     >>> cdrkit_bugs.count()
     1
@@ -165,13 +176,16 @@ It is possible to sort the results by the number of duplicates each bag has.
 Here is the list of bugs for Ubuntu.
 
     >>> def bugTaskInfo(bugtask):
-    ...     return '%s %s' % (bugtask.bugtargetdisplayname, bugtask.bug.title)
+    ...     return "%s %s" % (bugtask.bugtargetdisplayname, bugtask.bug.title)
+    ...
 
     >>> params = BugTaskSearchParams(
-    ...     orderby='-number_of_duplicates', user=None)
+    ...     orderby="-number_of_duplicates", user=None
+    ... )
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     print(bugTaskInfo(bugtask))
+    ...
     mozilla-firefox (Ubuntu) Firefox does not support SVG
     thunderbird (Ubuntu) Thunderbird crashes
     linux-source-2.6.15 (Ubuntu) another test bug
@@ -180,8 +194,11 @@ Here is the list of bugs for Ubuntu.
 
 None of these bugs have any duplicates.
 
-    >>> [bugtask.bug.id for bugtask in ubuntu_tasks
-    ...  if bugtask.bug.duplicateof is not None]
+    >>> [
+    ...     bugtask.bug.id
+    ...     for bugtask in ubuntu_tasks
+    ...     if bugtask.bug.duplicateof is not None
+    ... ]
     []
 
     >>> from lp.services.database.sqlbase import flush_database_updates
@@ -199,6 +216,7 @@ a duplicate.
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     print(bugTaskInfo(bugtask))
+    ...
     thunderbird (Ubuntu) Thunderbird crashes
     mozilla-firefox (Ubuntu) Firefox does not support SVG
     linux-source-2.6.15 (Ubuntu) another test bug
@@ -213,12 +231,12 @@ It is also possible to sort the results by the number of comments on a bug.
 
 Here is the list of bugs for Ubuntu, sorted by their number of comments.
 
-    >>> params = BugTaskSearchParams(
-    ...     orderby='-message_count', user=None)
+    >>> params = BugTaskSearchParams(orderby="-message_count", user=None)
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     bug = bugtask.bug
-    ...     print('%s [%s comments]' % (bug.title, bug.message_count))
+    ...     print("%s [%s comments]" % (bug.title, bug.message_count))
+    ...
     Blackhole Trash folder [3 comments]
     Firefox does not support SVG [2 comments]
     another test bug [2 comments]
@@ -231,18 +249,19 @@ Ordering by bug heat
 
 Another way of sorting searches is by bug heat.
 
-    >>> params = BugTaskSearchParams(
-    ...     orderby='id', user=None)
+    >>> params = BugTaskSearchParams(orderby="id", user=None)
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for task in ubuntu_tasks:
     ...     removeSecurityProxy(task.bug).heat = task.bug.id
+    ...
     >>> removeSecurityProxy(bug).heat = 16
     >>> transaction.commit()
-    >>> params = BugTaskSearchParams(orderby='-heat', user=None)
+    >>> params = BugTaskSearchParams(orderby="-heat", user=None)
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     bug = bugtask.bug
-    ...     print('%s [heat: %s]' % (bug.title, bug.heat))
+    ...     print("%s [heat: %s]" % (bug.title, bug.heat))
+    ...
     Bug to be fixed in trunk [heat: 16]
     another test bug [heat: 10]
     Thunderbird crashes [heat: 9]
@@ -261,10 +280,12 @@ the default sort order, by bug task ID (which is implicitly added as
 a "second level" sort order to ensure reliable sorting).
 
     >>> params = BugTaskSearchParams(
-    ...     orderby='latest_patch_uploaded', user=None)
+    ...     orderby="latest_patch_uploaded", user=None
+    ... )
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     print(bugTaskInfo(bugtask))
+    ...
     cdrkit (Ubuntu) Bug to be fixed in trunk
     Ubuntu Blackhole Trash folder
     linux-source-2.6.15 (Ubuntu) another test bug
@@ -275,15 +296,19 @@ If we add a patch attachment to bug 2 and bug 10, they are listed first.
 
     >>> bug_two = getUtility(IBugSet).get(2)
     >>> patch_attachment_bug_2 = factory.makeBugAttachment(
-    ...     bug=bug_two, is_patch=True)
+    ...     bug=bug_two, is_patch=True
+    ... )
     >>> transaction.commit()
     >>> patch_attachment_bug_10 = factory.makeBugAttachment(
-    ...     bug=bug_ten, is_patch=True)
+    ...     bug=bug_ten, is_patch=True
+    ... )
     >>> params = BugTaskSearchParams(
-    ...     orderby='latest_patch_uploaded', user=None)
+    ...     orderby="latest_patch_uploaded", user=None
+    ... )
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> for bugtask in ubuntu_tasks:
     ...     print(bugTaskInfo(bugtask))
+    ...
     Ubuntu Blackhole Trash folder
     linux-source-2.6.15 (Ubuntu) another test bug
     cdrkit (Ubuntu) Bug to be fixed in trunk

@@ -28,14 +28,16 @@ dateexpected=None) method of a ProductSeries or DistroSeries:
     >>> from lp.registry.interfaces.product import IProductSet
     >>> productset = getUtility(IProductSet)
     >>> upstream_firefox = productset.get(4)
-    >>> ff_onedotzero = upstream_firefox.getSeries('1.0')
+    >>> ff_onedotzero = upstream_firefox.getSeries("1.0")
 
     # Only owners, experts, or admins can create a milestone.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> firefox_ms = ff_onedotzero.newMilestone(
-    ...     name="1.0rc1", code_name="Candidate One",
-    ...     summary="A beta version that is feature complete.")
+    ...     name="1.0rc1",
+    ...     code_name="Candidate One",
+    ...     summary="A beta version that is feature complete.",
+    ... )
     >>> print(firefox_ms.name)
     1.0rc1
 
@@ -79,27 +81,27 @@ To retrieve a specific Milestone, use IMilestoneSet.get:
 Of course, you can also get them off a Product or Distribution using the
 getMilestone() method:
 
-    >>> ms = upstream_firefox.getMilestone('1.0rc1')
+    >>> ms = upstream_firefox.getMilestone("1.0rc1")
     >>> print(ms.name)
     1.0rc1
 
 Trying to retrieve a milestone that does not exist from a product will
 return None:
 
-    >>> non_ms = upstream_firefox.getMilestone('0.99x1')
+    >>> non_ms = upstream_firefox.getMilestone("0.99x1")
     >>> print(non_ms)
     None
 
 Now, lets test all of that for DistroSeriess too!
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> kubuntu = getUtility(IDistributionSet).getByName('kubuntu')
-    >>> krunch = kubuntu.getSeries('krunch')
+    >>> kubuntu = getUtility(IDistributionSet).getByName("kubuntu")
+    >>> krunch = kubuntu.getSeries("krunch")
 
     # Only owners, experts, or admins can create a milestone.
 
-    >>> login('mark@example.com')
-    >>> new_ms = krunch.newMilestone('1.3rc2')
+    >>> login("mark@example.com")
+    >>> new_ms = krunch.newMilestone("1.3rc2")
     >>> print(new_ms.name)
     1.3rc2
 
@@ -118,10 +120,10 @@ Now, lets test all of that for DistroSeriess too!
     >>> print(new_ms.series_target.name)
     krunch
 
-    >>> print(kubuntu.getMilestone('foo2.3'))
+    >>> print(kubuntu.getMilestone("foo2.3"))
     None
 
-    >>> print(kubuntu.getMilestone('1.3rc2').dateexpected)
+    >>> print(kubuntu.getMilestone("1.3rc2").dateexpected)
     None
 
 Trying to retrieve a milestone that doesn't exist will raise a
@@ -150,12 +152,21 @@ product belonging to the Gnome project has any milestones, hence Gnome
 itself has neither any milestones.
 
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
-    >>> gnome = getUtility(IProjectGroupSet)['gnome']
+    >>> gnome = getUtility(IProjectGroupSet)["gnome"]
     >>> for product in gnome.products:
-    ...     print('%s %s' % (
-    ...         product.name,
-    ...         pretty([milestone.title
-    ...                 for milestone in product.all_milestones])))
+    ...     print(
+    ...         "%s %s"
+    ...         % (
+    ...             product.name,
+    ...             pretty(
+    ...                 [
+    ...                     milestone.title
+    ...                     for milestone in product.all_milestones
+    ...                 ]
+    ...             ),
+    ...         )
+    ...     )
+    ...
     evolution ['Evolution 2.1.6']
     gnome-terminal []
     applets []
@@ -164,6 +175,7 @@ itself has neither any milestones.
 
     >>> for milestone in gnome.all_milestones:
     ...     print(milestone.title)
+    ...
     GNOME 2.1.6
     GNOME 1.0
 
@@ -171,18 +183,22 @@ When a milestone for a product is defined, this milestone is "inherited"
 by the project.
 
     >>> from lp.registry.tests.test_project_milestone import (
-    ...     ProjectMilestoneTest)
+    ...     ProjectMilestoneTest,
+    ... )
     >>> test_helper = ProjectMilestoneTest(helper_only=True)
     >>> evolution_1_1 = test_helper.createProductMilestone(
-    ...     '1.1', 'evolution', date_expected=None)
-    >>> evolution = productset['evolution']
+    ...     "1.1", "evolution", date_expected=None
+    ... )
+    >>> evolution = productset["evolution"]
     >>> for milestone in evolution.all_milestones:
     ...     print(milestone.name)
+    ...
     2.1.6
     1.1
 
     >>> for milestone in gnome.all_milestones:
     ...     print(milestone.name)
+    ...
     2.1.6
     1.1
     1.0
@@ -191,14 +207,17 @@ Adding a milestone with the same name to another Gnome product does not
 increase the number of Gnome milestones.
 
     >>> applets_1_1 = test_helper.createProductMilestone(
-    ...     '1.1', 'applets', date_expected=None)
-    >>> applets = productset['applets']
+    ...     "1.1", "applets", date_expected=None
+    ... )
+    >>> applets = productset["applets"]
     >>> for milestone in applets.all_milestones:
     ...     print(milestone.name)
+    ...
     1.1
 
     >>> for milestone in gnome.all_milestones:
     ...     print(milestone.name)
+    ...
     2.1.6
     1.1
     1.0
@@ -208,15 +227,18 @@ milestones, milestone names with typos like '1.1.' instead of '1.1' will
 appear as separate project milestones.
 
     >>> netapplet_1_1 = test_helper.createProductMilestone(
-    ...     '1.1.', 'netapplet', date_expected=None)
-    >>> netapplet = productset['netapplet']
+    ...     "1.1.", "netapplet", date_expected=None
+    ... )
+    >>> netapplet = productset["netapplet"]
     >>> for milestone in netapplet.all_milestones:
     ...     print(milestone.name)
+    ...
     1.1.
     1.0
 
     >>> for milestone in gnome.all_milestones:
     ...     print(milestone.name)
+    ...
     2.1.6
     1.1.
     1.1
@@ -251,15 +273,15 @@ the same name is active.
     >>> print(applets_1_1.active, evolution_1_1.active)
     True True
 
-    >>> print(gnome.getMilestone('1.1').active)
+    >>> print(gnome.getMilestone("1.1").active)
     True
 
     >>> applets_1_1.active = False
-    >>> print(gnome.getMilestone('1.1').active)
+    >>> print(gnome.getMilestone("1.1").active)
     True
 
     >>> evolution_1_1.active = False
-    >>> print(gnome.getMilestone('1.1').active)
+    >>> print(gnome.getMilestone("1.1").active)
     False
 
 A project milestone is not shown for active milestones from inactive
@@ -267,6 +289,7 @@ products.
 
     >>> for milestone in gnome.milestones:
     ...     print(milestone.name)
+    ...
     1.1.
 
     # Unlink the source packages so the project can be deactivated.
@@ -287,16 +310,16 @@ values of the product milestones.
     >>> print(applets_1_1.dateexpected, evolution_1_1.dateexpected)
     None None
 
-    >>> print(gnome.getMilestone('1.1').dateexpected)
+    >>> print(gnome.getMilestone("1.1").dateexpected)
     None
 
     >>> from datetime import datetime
     >>> applets_1_1.dateexpected = datetime(2007, 4, 2)
-    >>> print(gnome.getMilestone('1.1').dateexpected)
+    >>> print(gnome.getMilestone("1.1").dateexpected)
     2007-04-02 00:00:00
 
     >>> evolution_1_1.dateexpected = datetime(2007, 4, 1)
-    >>> print(gnome.getMilestone('1.1').dateexpected)
+    >>> print(gnome.getMilestone("1.1").dateexpected)
     2007-04-01 00:00:00
 
 All bugtasks that are associated with a product milestone are also
@@ -309,26 +332,29 @@ the Gnome project has yet any specifications.
 
     >>> for product in gnome.products:
     ...     print(product.name, list(product.visible_specifications))
+    ...
     evolution []
     gnome-terminal []
     applets []
     netapplet []
     gnomebaker []
 
-    >>> print(list(gnome.getMilestone('1.1').getSpecifications(None)))
+    >>> print(list(gnome.getMilestone("1.1").getSpecifications(None)))
     []
 
 When a specification for a product is created and assigned to a product
 milestone, it is "inheritied" by the project milestone.
 
-    >>> spec = test_helper.createSpecification('1.1', 'applets')
+    >>> spec = test_helper.createSpecification("1.1", "applets")
     >>> for spec in applets.visible_specifications:
     ...     print(spec.name)
+    ...
     applets-specification
 
-    >>> specs = gnome.getMilestone('1.1').getSpecifications(None)
+    >>> specs = gnome.getMilestone("1.1").getSpecifications(None)
     >>> for spec in specs:
     ...     print(spec.name)
+    ...
     applets-specification
 
 
@@ -343,12 +369,14 @@ milestone and the new one are notified.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.services.webapp.snapshot import notify_modified
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> firefox_trunk = firefox.getSeries('trunk')
-    >>> [milestone_one] = [milestone
-    ...                    for milestone in firefox_trunk.milestones
-    ...                    if milestone.name == '1.0']
-    >>> milestone_two = firefox_trunk.newMilestone('2.0')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> firefox_trunk = firefox.getSeries("trunk")
+    >>> [milestone_one] = [
+    ...     milestone
+    ...     for milestone in firefox_trunk.milestones
+    ...     if milestone.name == "1.0"
+    ... ]
+    >>> milestone_two = firefox_trunk.newMilestone("2.0")
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_task = bug_one.bugtasks[0]
     >>> bug_task.milestone = milestone_one
@@ -356,8 +384,8 @@ milestone and the new one are notified.
 The first task of bug #1 is targeted to milestone 1.0. Celso is
 subscribed to milestone 1.0, and David is subscribed to milestone 2.0.
 
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
-    >>> ddaa = getUtility(IPersonSet).getByName('ddaa')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
+    >>> ddaa = getUtility(IPersonSet).getByName("ddaa")
     >>> milestone_one.addBugSubscription(cprov, cprov)
     <...StructuralSubscription object at ...>
 
@@ -367,21 +395,27 @@ subscribed to milestone 1.0, and David is subscribed to milestone 2.0.
 We change the milestone for the task from 1.0 to 2.0, and fire the
 change event.
 
-    >>> with notify_modified(bug_task, ['milestone']):
+    >>> with notify_modified(bug_task, ["milestone"]):
     ...     bug_task.milestone = milestone_two
+    ...
 
 A new bug notification is created, and both Celso and David are in the
 list of recipients.
 
     >>> from lp.services.database.interfaces import IStore
-    >>> notification = IStore(BugNotification).find(
-    ...     BugNotification, date_emailed=None).order_by('id').last()
+    >>> notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification, date_emailed=None)
+    ...     .order_by("id")
+    ...     .last()
+    ... )
     >>> print(notification.message.chunks[0].content)
     ** Changed in: firefox
         Milestone: 1.0 => 2.0
 
     >>> for recipient in notification.recipients:
     ...     print(recipient.person.name, recipient.reason_header)
+    ...
     cprov Subscriber (Mozilla Firefox 1.0)
     ddaa Subscriber (Mozilla Firefox 2.0)
     ...
@@ -396,23 +430,23 @@ admins. The name, dateexpected, summary, and active, attributes are
 editable.
 
     >>> ignored = login_person(upstream_firefox.owner)
-    >>> fizzy_milestone = ff_onedotzero.newMilestone('fuzzy')
+    >>> fizzy_milestone = ff_onedotzero.newMilestone("fuzzy")
 
     >>> print(fizzy_milestone.name)
     fuzzy
 
-    >>> fizzy_milestone.name = 'fizzy'
+    >>> fizzy_milestone.name = "fizzy"
     >>> print(fizzy_milestone.name)
     fizzy
 
     >>> print(fizzy_milestone.code_name)
     None
 
-    >>> fizzy_milestone.code_name = 'dizzy'
+    >>> fizzy_milestone.code_name = "dizzy"
     >>> print(fizzy_milestone.code_name)
     dizzy
 
-    >>> fizzy_milestone.summary = 'fizzy love'
+    >>> fizzy_milestone.summary = "fizzy love"
     >>> print(fizzy_milestone.summary)
     fizzy love
 
@@ -435,7 +469,8 @@ product.
     1.0
 
     >>> two_series = upstream_firefox.newSeries(
-    ...     upstream_firefox.owner, '2.0', 'Two dot n')
+    ...     upstream_firefox.owner, "2.0", "Two dot n"
+    ... )
     >>> fizzy_milestone.productseries = two_series
     >>> print(fizzy_milestone.productseries.name)
     2.0
@@ -444,18 +479,18 @@ The driver of a milestone's target or series can make changes.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> driver = factory.makePerson(name='driver')
+    >>> driver = factory.makePerson(name="driver")
     >>> fizzy_milestone.target.driver = driver
 
-    >>> release_manager = factory.makePerson(name='release-manager')
+    >>> release_manager = factory.makePerson(name="release-manager")
     >>> fizzy_milestone.series_target.driver = release_manager
 
     >>> ignored = login_person(driver)
-    >>> check_permission('launchpad.Edit', fizzy_milestone)
+    >>> check_permission("launchpad.Edit", fizzy_milestone)
     True
 
     >>> ignored = login_person(release_manager)
-    >>> check_permission('launchpad.Edit', fizzy_milestone)
+    >>> check_permission("launchpad.Edit", fizzy_milestone)
     True
 
 
@@ -466,14 +501,14 @@ A milestone can be deleted using its destroySelf() method, as long as it
 doesn't have an IProductRelease associated with it, nor any bugtasks or
 specifications targeted to it.
 
-    >>> owner = getUtility(IPersonSet).getByName('name12')
+    >>> owner = getUtility(IPersonSet).getByName("name12")
     >>> ignored = login_person(owner)
-    >>> milestone = ff_onedotzero.newMilestone('1.0.10')
+    >>> milestone = ff_onedotzero.newMilestone("1.0.10")
     >>> print(milestone.product_release)
     None
 
     >>> milestone.destroySelf()
-    >>> print(upstream_firefox.getMilestone('1.0.10'))
+    >>> print(upstream_firefox.getMilestone("1.0.10"))
     None
 
 If a milestone has a product release associated with it though, it can
@@ -482,9 +517,8 @@ not be deleted.
     >>> from datetime import datetime
     >>> from pytz import UTC
 
-    >>> milestone = ff_onedotzero.newMilestone('1.0.11')
-    >>> release = milestone.createProductRelease(
-    ...     owner, datetime.now(UTC))
+    >>> milestone = ff_onedotzero.newMilestone("1.0.11")
+    >>> release = milestone.createProductRelease(owner, datetime.now(UTC))
     >>> milestone.destroySelf()
     Traceback (most recent call last):
     ...
@@ -493,7 +527,7 @@ not be deleted.
 
 If bugtasks are targeted to the milestone, it cannot be deleted.
 
-    >>> milestone = ff_onedotzero.newMilestone('1.0.12')
+    >>> milestone = ff_onedotzero.newMilestone("1.0.12")
     >>> bug = factory.makeBug(target=upstream_firefox)
     >>> bugtask = bug.bugtasks[0]
     >>> bugtask.milestone = milestone
@@ -505,7 +539,7 @@ If bugtasks are targeted to the milestone, it cannot be deleted.
 
 If specifications are targeted to the milestone, it cannot be deleted.
 
-    >>> milestone = ff_onedotzero.newMilestone('1.0.13')
+    >>> milestone = ff_onedotzero.newMilestone("1.0.13")
     >>> specification = factory.makeSpecification(product=upstream_firefox)
     >>> specification.milestone = milestone
     >>> milestone.destroySelf()
@@ -516,7 +550,7 @@ If specifications are targeted to the milestone, it cannot be deleted.
 
 If a milestone has a structural subscription, it cannot be deleted.
 
-    >>> milestone = ff_onedotzero.newMilestone('1.0.14')
+    >>> milestone = ff_onedotzero.newMilestone("1.0.14")
     >>> subscription = milestone.addSubscription(owner, owner)
     >>> milestone.destroySelf()
     Traceback (most recent call last):
@@ -537,11 +571,16 @@ event is signaled for each changed bug task.
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
 
     >>> def print_event(object, event):
-    ...     print("Received %s on %s" % (
-    ...         event.__class__.__name__.split('.')[-1],
-    ...         object.__class__.__name__.split('.')[-1]))
+    ...     print(
+    ...         "Received %s on %s"
+    ...         % (
+    ...             event.__class__.__name__.split(".")[-1],
+    ...             object.__class__.__name__.split(".")[-1],
+    ...         )
+    ...     )
+    ...
 
-    >>> milestone = ff_onedotzero.newMilestone('kia')
+    >>> milestone = ff_onedotzero.newMilestone("kia")
     >>> fixed_bugtask = factory.makeBugTask(target=upstream_firefox)
     >>> fixed_bugtask.transitionToMilestone(milestone, owner)
     >>> fixed_bugtask.transitionToStatus(BugTaskStatus.FIXCOMMITTED, owner)
@@ -550,7 +589,8 @@ event is signaled for each changed bug task.
     >>> triaged_bugtask.transitionToStatus(BugTaskStatus.TRIAGED, owner)
     >>> release = milestone.createProductRelease(owner, datetime.now(UTC))
     >>> bugtask_event_listener = ZopeEventHandlerFixture(
-    ...     print_event, (IBugTask, IObjectModifiedEvent))
+    ...     print_event, (IBugTask, IObjectModifiedEvent)
+    ... )
     >>> bugtask_event_listener.setUp()
 
     >>> milestone.closeBugsAndBlueprints(owner)

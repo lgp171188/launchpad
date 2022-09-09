@@ -1,7 +1,7 @@
 First we check all polls of 'ubuntu-team'.
 
     >>> anon_browser.open("http://launchpad.test/~ubuntu-team")
-    >>> anon_browser.getLink('Show polls').click()
+    >>> anon_browser.getLink("Show polls").click()
     >>> print(find_main_content(anon_browser.contents))
     <...
     ...Current polls...
@@ -16,7 +16,8 @@ First we check all polls of 'ubuntu-team'.
   Check the results of a closed simple-style poll.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~ubuntu-team/+poll/leader-2004")
+    ...     "http://launchpad.test/~ubuntu-team/+poll/leader-2004"
+    ... )
     >>> print(find_main_content(anon_browser.contents))
     <...
     ...Who's going to be the next leader?...
@@ -45,7 +46,8 @@ First we check all polls of 'ubuntu-team'.
   Check the results of a closed condorcet-style poll.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~ubuntu-team/+poll/director-2004")
+    ...     "http://launchpad.test/~ubuntu-team/+poll/director-2004"
+    ... )
     >>> print(find_main_content(anon_browser.contents))
     <...
     ...Who's going to be the next director?...

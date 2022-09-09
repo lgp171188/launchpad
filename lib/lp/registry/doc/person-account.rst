@@ -15,11 +15,11 @@ process. Matsubara's account was created during a code import.
     >>> from lp.blueprints.enums import SpecificationFilter
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     IEmailAddressSet,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> emailset = getUtility(IEmailAddressSet)
-    >>> emailaddress = emailset.getByEmail('matsubara@async.com.br')
+    >>> emailaddress = emailset.getByEmail("matsubara@async.com.br")
     >>> matsubara = emailaddress.person
     >>> matsubara.is_valid_person
     False
@@ -31,7 +31,7 @@ process. Matsubara's account was created during a code import.
 The account can only be activated by the user who is claiming
 the profile. Sample Person cannot claim it.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> matsubara.account.reactivate(comment="test")
     Traceback (most recent call last):
     ...
@@ -40,7 +40,7 @@ the profile. Sample Person cannot claim it.
 Matsubara can.
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> login('matsubara@async.com.br')
+    >>> login("matsubara@async.com.br")
     >>> matsubara.account.reactivate(comment="test")
     >>> matsubara.setPreferredEmail(emailaddress)
     >>> import transaction
@@ -69,7 +69,7 @@ will cause this spec to be reassigned.
 
 
     >>> personset = getUtility(IPersonSet)
-    >>> foobar_preferredemail = emailset.getByEmail('foo.bar@canonical.com')
+    >>> foobar_preferredemail = emailset.getByEmail("foo.bar@canonical.com")
     >>> foobar = personset.get(foobar_preferredemail.personID)
     >>> foobar.specifications(None).is_empty()
     False
@@ -77,13 +77,17 @@ will cause this spec to be reassigned.
     >>> from lp.blueprints.model.specification import Specification
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import IStore
-    >>> spec = IStore(Specification).find(
-    ...     Specification, _assignee=None
-    ... ).order_by("id").first()
+    >>> spec = (
+    ...     IStore(Specification)
+    ...     .find(Specification, _assignee=None)
+    ...     .order_by("id")
+    ...     .first()
+    ... )
     >>> spec.assignee = foobar
 
     >>> for membership in foobar.team_memberships:
     ...     print(membership.team.name)
+    ...
     canonical-partner-dev
     guadamen
     hwdb-team
@@ -97,6 +101,7 @@ will cause this spec to be reassigned.
 
     >>> for email in foobar.validatedemails:
     ...     print(email.email)
+    ...
     admin@canonical.com
 
     >>> print(foobar.name)
@@ -114,7 +119,8 @@ will cause this spec to be reassigned.
     False
 
     >>> foobar.specifications(
-    ...     foobar, filter=[SpecificationFilter.ASSIGNEE]).is_empty()
+    ...     foobar, filter=[SpecificationFilter.ASSIGNEE]
+    ... ).is_empty()
     False
 
     >>> foobar_pillars = []
@@ -122,6 +128,7 @@ will cause this spec to be reassigned.
     ...     pillar = pillar_name.pillar
     ...     if pillar.owner == foobar or pillar.driver == foobar:
     ...         foobar_pillars.append(pillar_name)
+    ...
     >>> len(foobar_pillars) > 0
     True
 
@@ -132,19 +139,21 @@ will cause this spec to be reassigned.
     >>> foobar.is_valid_person
     True
 
-    >>> comment = ("I'm a person who doesn't want to be listed "
-    ...            "as a Launchpad user.")
+    >>> comment = (
+    ...     "I'm a person who doesn't want to be listed "
+    ...     "as a Launchpad user."
+    ... )
 
 The deactivate method is restricted to the user themselves --not
 even launchpad admins can use it.
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> foobar.deactivate(comment=comment)
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...'launchpad.Special')
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> foobar.deactivate(comment=comment)
     >>> transaction.commit()
 
@@ -173,7 +182,7 @@ adds a '-deactivatedaccount' suffix to the person's name...
     >>> [email.email for email in foobar.validatedemails]
     []
 
-    >>> print(getattr(foobar.preferredemail, 'email', None))
+    >>> print(getattr(foobar.preferredemail, "email", None))
     None
 
 ...no signed codes of conduct...
@@ -189,7 +198,8 @@ adds a '-deactivatedaccount' suffix to the person's name...
 ...no assigned specs...
 
     >>> foobar.specifications(
-    ...     foobar, filter=[SpecificationFilter.ASSIGNEE]).is_empty()
+    ...     foobar, filter=[SpecificationFilter.ASSIGNEE]
+    ... ).is_empty()
     True
 
 ...no owned teams...
@@ -229,8 +239,9 @@ Reactivating user accounts
 Accounts can be reactivated.
 
     >>> foobar.reactivate(
-    ...     'User reactivated the account using reset password.',
-    ...     preferred_email=foobar_preferredemail)
+    ...     "User reactivated the account using reset password.",
+    ...     preferred_email=foobar_preferredemail,
+    ... )
     >>> transaction.commit()  # To see the changes on other stores.
     >>> foobar.account.status
     <DBItem AccountStatus.ACTIVE...

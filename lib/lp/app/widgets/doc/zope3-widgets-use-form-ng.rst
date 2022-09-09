@@ -12,7 +12,8 @@ the form value.
 The monkey patch is installed by default:
 
     >>> from lp.services.webapp.servers import (
-    ...     Zope3WidgetsUseIBrowserFormNGMonkeyPatch)
+    ...     Zope3WidgetsUseIBrowserFormNGMonkeyPatch,
+    ... )
     >>> Zope3WidgetsUseIBrowserFormNGMonkeyPatch.installed
     True
 
@@ -25,9 +26,8 @@ exception:
 
     >>> Zope3WidgetsUseIBrowserFormNGMonkeyPatch.uninstall()
 
-    >>> int_field = schema.Int(__name__='int')
-    >>> request = LaunchpadTestRequest(
-    ...     form={'field.int': [1, 2]})
+    >>> int_field = schema.Int(__name__="int")
+    >>> request = LaunchpadTestRequest(form={"field.int": [1, 2]})
     >>> int_widget = IntWidget(int_field, request)
     >>> int_widget.getInputValue()
     Traceback (most recent call last):
@@ -45,9 +45,10 @@ contains more than one argument.
       ...
     lp.app.errors.UnexpectedFormData: ...
 
-    >>> text_field = schema.TextLine(__name__='text')
+    >>> text_field = schema.TextLine(__name__="text")
     >>> request = LaunchpadTestRequest(
-    ...     form={'field.text': ['two', 'strings']})
+    ...     form={"field.text": ["two", "strings"]}
+    ... )
     >>> text_widget = TextWidget(text_field, request)
     >>> text_widget.getInputValue()
     Traceback (most recent call last):
@@ -71,13 +72,15 @@ with this monkey patch:
     >>> from zope.schema import Choice, List
     >>> from zope.formlib.widgets import MultiSelectWidget
 
-    >>> request = LaunchpadTestRequest(form={'field.list': ['1', '2']})
+    >>> request = LaunchpadTestRequest(form={"field.list": ["1", "2"]})
     >>> list_field = List(
-    ...     __name__='list', value_type=Choice(values=[1, 2, 3]))
+    ...     __name__="list", value_type=Choice(values=[1, 2, 3])
+    ... )
 
     # MultiSelectWidget needs a bounded field.
     >>> list_field = list_field.bind(object())
     >>> list_widget = MultiSelectWidget(
-    ...     list_field, list_field.value_type.vocabulary, request)
+    ...     list_field, list_field.value_type.vocabulary, request
+    ... )
     >>> list_widget.getInputValue()
     [1, 2]

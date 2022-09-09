@@ -6,9 +6,9 @@ We export FOAF RDF metadata from the /~Person.name/+index document.
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
-    ...     )
+    ... )
     >>> anon_browser.open("http://launchpad.test/~name16")
-    >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
+    >>> strainer = SoupStrainer(["link"], {"type": ["application/rdf+xml"]})
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> print(soup.decode_contents())
     <link href="+rdf" rel="meta" title="FOAF" type="application/rdf+xml"/>
@@ -69,10 +69,10 @@ member of the team. Let's add a logo to Mark's user so we can see the
 output:
 
     >>> from lp.testing.branding import set_branding
-    >>> mark_browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> mark_browser.open('http://launchpad.test/~mark/+branding')
+    >>> mark_browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> mark_browser.open("http://launchpad.test/~mark/+branding")
     >>> set_branding(mark_browser, icon=False)
-    >>> mark_browser.getControl('Change Branding').click()
+    >>> mark_browser.getControl("Change Branding").click()
 
 Now, generate the RDF itself:
 
@@ -101,17 +101,18 @@ Corner Cases
 Note how ascii and non-ascii names are rendered properly:
 
     >>> anon_browser.open("http://launchpad.test/~carlos/+rdf")
-    >>> strainer = SoupStrainer(['foaf:name'])
+    >>> strainer = SoupStrainer(["foaf:name"])
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> for tag in soup:
     ...     print(tag.decode_contents())
+    ...
     Carlos Perelló Marín
 
 If the team has no active members no <foaf:member> elements will be
 present:
 
     >>> anon_browser.open("http://launchpad.test/~name21/+rdf")
-    >>> strainer = SoupStrainer(['foaf:member'])
+    >>> strainer = SoupStrainer(["foaf:member"])
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> len(soup)
     0

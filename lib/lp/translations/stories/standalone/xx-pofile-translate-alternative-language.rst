@@ -22,28 +22,33 @@ in the form's main language.
     ...     an alternative.  We translate from English, but never to English
     ...     (except in variants like 'en_AU').
     ...     """
-    ...     if not browser.url.endswith('/+translate'):
+    ...     if not browser.url.endswith("/+translate"):
     ...         raise AssertionError("Not a +translate page: " + browser.url)
     ...     alternative_language = browser.getControl(
-    ...         name='field.alternative_language')
+    ...         name="field.alternative_language"
+    ...     )
     ...     try:
     ...         alternative_language.getControl(
-    ...             browser.toStr('English (en)')).selected
+    ...             browser.toStr("English (en)")
+    ...         ).selected
     ...         raise AssertionError(
     ...             "Looking up English among alternative languages "
-    ...             "should have failed, but didn't.")
+    ...             "should have failed, but didn't."
+    ...         )
     ...     except LookupError:
     ...         pass
     ...
     ...     return alternative_language
+    ...
 
 An anonymous user is offered all available languages except English for
 alternative suggestions.  We do not offer suggestions from standard English
 since that is the one language we always translate from, never to.
 
     >>> translate_page = (
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ... )
     >>> anon_browser.open(translate_page)
     >>> get_alternative_languages_widget(anon_browser).displayOptions[:4]
     ['(nothing selected)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
@@ -51,7 +56,8 @@ since that is the one language we always translate from, never to.
 The same goes for a user who has no preferred languages set.
 
     >>> user_browser = setupBrowser(
-    ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
+    ...     auth="Basic jeff.waugh@ubuntulinux.com:test"
+    ... )
     >>> user_browser.open(translate_page)
     >>> get_alternative_languages_widget(user_browser).displayOptions[:4]
     ['(nothing selected)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
@@ -59,7 +65,7 @@ The same goes for a user who has no preferred languages set.
 Carlos, however, has configured his preferred languages.  Besides English he
  speaks Spanish and Catalan.
 
-    >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
+    >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
 
 When Carlos looks at the same translation page, only Spanish and Catalan are
 offered.  No alternative language is selected initially.
@@ -80,17 +86,21 @@ Carlos also visits the Catalan equivalent of the same translation page, using
 Spanish as an alternative language.
 
     >>> import re
-    >>> browser.open(re.sub('/es/', '/ca/', translate_page))
+    >>> browser.open(re.sub("/es/", "/ca/", translate_page))
     >>> get_alternative_languages_widget(browser).getControl(
-    ...     'Spanish (es)').selected = True
-    >>> browser.getControl('Change').click()
+    ...     "Spanish (es)"
+    ... ).selected = True
+    >>> browser.getControl("Change").click()
 
 The Spanish translations now show up as suggestions.  For example, where
 "cards" might translate to Catalan as "targetas," the Spanish equivalent is
 "tarjetas."
 
-    >>> print(backslashreplace(extract_text(find_main_content(
-    ...     browser.contents))))
+    >>> print(
+    ...     backslashreplace(
+    ...         extract_text(find_main_content(browser.contents))
+    ...     )
+    ... )
     Translating into Catalan...
     ...
     English: cards
@@ -108,10 +118,11 @@ a link produced by someone else, or generate or edit his URLs, or simply be
 coming from a cached page or outdated bookmark.  In this case the language is
 Japanese (ja).
 
-    >>> browser.open(translate_page +
-    ...     "?field.alternative_language=ja"
+    >>> browser.open(
+    ...     translate_page + "?field.alternative_language=ja"
     ...     "&field.alternative_language-empty-marker=1"
-    ...     "&select_alternate_language=Change")
+    ...     "&select_alternate_language=Change"
+    ... )
 
 This leads to a subtle technical problem as the alternative-language dropdown
 would have to be initialized to a language that wasn't in its list of items.
@@ -133,13 +144,17 @@ This distinction between alternative languages from the user's preferred set
 and other alternative languages does not exist, of course, if no preferred
 languages are defined.  Suggestions just work for anonymous users.
 
-    >>> anon_browser.open(re.sub('/es/', '/ca/', translate_page))
+    >>> anon_browser.open(re.sub("/es/", "/ca/", translate_page))
     >>> get_alternative_languages_widget(anon_browser).getControl(
-    ...     anon_browser.toStr('Spanish (es)')).selected = True
-    >>> anon_browser.getControl('Change').click()
+    ...     anon_browser.toStr("Spanish (es)")
+    ... ).selected = True
+    >>> anon_browser.getControl("Change").click()
 
-    >>> print(backslashreplace(extract_text(find_main_content(
-    ...     anon_browser.contents))))
+    >>> print(
+    ...     backslashreplace(
+    ...         extract_text(find_main_content(anon_browser.contents))
+    ...     )
+    ... )
     Browsing Catalan translation
     ...
     English: cards
@@ -158,7 +173,7 @@ Filtering & Navigation
 The translate page also allows the user to filter the translatable strings to
 show only the strings they are interested in.
 
-    >>> browser.getControl(name='show', index=1).displayOptions
+    >>> browser.getControl(name="show", index=1).displayOptions
     ['all items', 'untranslated items', 'translated items',
      'items with new suggestions', 'items changed in Ubuntu']
 
@@ -166,28 +181,31 @@ Carlos sets the filter to display only the untranslated strings.
 
     >>> browser.open(translate_page)
     >>> get_alternative_languages_widget(browser).getControl(
-    ...     'Catalan (ca)').selected = True
-    >>> browser.getControl('Translating').getControl(
-    ...     'untranslated').selected = True
-    >>> browser.getControl('Change').click()
-    >>> print(extract_url_parameter(
-    ...     browser.url, 'field.alternative_language'))
+    ...     "Catalan (ca)"
+    ... ).selected = True
+    >>> browser.getControl("Translating").getControl(
+    ...     "untranslated"
+    ... ).selected = True
+    >>> browser.getControl("Change").click()
+    >>> print(
+    ...     extract_url_parameter(browser.url, "field.alternative_language")
+    ... )
     field.alternative_language=ca
-    >>> print(extract_url_parameter(browser.url, 'show'))
+    >>> print(extract_url_parameter(browser.url, "show"))
     show=untranslated
 
 Carlos can see that he is viewing the first page of results in the
 navigation bar between the translation controls and the messages.
 
-    >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
+    >>> navigation = find_tags_by_class(browser.contents, "results")[0].td
     >>> print(extract_text(navigation))
     1 ... 10  of 15 results ...
 
 Carlos uses the 'Save & Continue' button to see the next page of
 messages.
 
-    >>> browser.getControl('Save & Continue').click()
-    >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
+    >>> browser.getControl("Save & Continue").click()
+    >>> navigation = find_tags_by_class(browser.contents, "results")[0].td
     >>> print(extract_text(navigation))
     11 ... 15  of 15 results ...
 
@@ -206,14 +224,16 @@ alsa-utils in Austrian German, and the 'Make suggestions from' is preset to
 German.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
-    ...     '+pots/alsa-utils/de_AT/+translate')
+    ...     "http://translations.launchpad.test/alsa-utils/trunk/"
+    ...     "+pots/alsa-utils/de_AT/+translate"
+    ... )
     >>> content = find_main_content(user_browser.contents)
     >>> content.h1
     <h1>...Translating into German (Austria)...</h1>
 
     >>> user_browser.getControl(
-    ...     name='field.alternative_language', index=0).displayValue
+    ...     name="field.alternative_language", index=0
+    ... ).displayValue
     ['German (de)']
 
 The same user chooses to start a new en_GB translation of alsa-utils. The
@@ -221,14 +241,16 @@ form is displayed for them to edit, but the 'Make suggestions from' control
 is unset.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
-    ...     '+pots/alsa-utils/en_GB/+translate')
+    ...     "http://translations.launchpad.test/alsa-utils/trunk/"
+    ...     "+pots/alsa-utils/en_GB/+translate"
+    ... )
     >>> content = find_main_content(user_browser.contents)
     >>> content.h1
     <h1>...Translating into English (United Kingdom)...</h1>
 
     >>> user_browser.getControl(
-    ...     name='field.alternative_language').displayValue
+    ...     name="field.alternative_language"
+    ... ).displayValue
     ['(nothing selected)']
 
 
@@ -239,9 +261,10 @@ If a user specifies more than one alternative language in the URL, they
 get an UnexpectedFormData exception:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate'
-    ...     '?field.alternative_language=ja&field.alternative_language=aj')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ...     "?field.alternative_language=ja&field.alternative_language=aj"
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: You specified...
@@ -258,25 +281,25 @@ alternative language is ignored and the 'Make suggestions from'
 control is unset.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
-    ...     '+pots/alsa-utils/en_GB/+translate'
-    ...     '?field.alternative_language=en')
+    ...     "http://translations.launchpad.test/alsa-utils/trunk/"
+    ...     "+pots/alsa-utils/en_GB/+translate"
+    ...     "?field.alternative_language=en"
+    ... )
     >>> content = find_main_content(browser.contents)
     >>> content.h1
     <h1>...Translating into English (United Kingdom)...</h1>
 
-    >>> browser.getControl(
-    ...     name='field.alternative_language').displayValue
+    >>> browser.getControl(name="field.alternative_language").displayValue
     ['(nothing selected)']
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
-    ...     '+pots/alsa-utils/za/+translate'
-    ...     '?field.alternative_language=zh')
+    ...     "http://translations.launchpad.test/alsa-utils/trunk/"
+    ...     "+pots/alsa-utils/za/+translate"
+    ...     "?field.alternative_language=zh"
+    ... )
     >>> content = find_main_content(browser.contents)
     >>> content.h1
     <h1>Translating into Chuang; Zhuang</h1>
 
-    >>> browser.getControl(
-    ...     name='field.alternative_language').displayValue
+    >>> browser.getControl(name="field.alternative_language").displayValue
     ['(nothing selected)']

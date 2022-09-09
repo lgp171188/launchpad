@@ -5,7 +5,7 @@ Just to show that we're actually talking to the appserver, first check to see
 if a specific user exists...
 
     >>> browser = Browser()
-    >>> browser.addHeader('Authorization', 'Basic foo.bar@canonical.com:test')
+    >>> browser.addHeader("Authorization", "Basic foo.bar@canonical.com:test")
     >>> from lp.testing.layers import BaseLayer
     >>> root_url = BaseLayer.appserver_root_url()
     >>> browser.open(root_url)
@@ -14,17 +14,17 @@ if a specific user exists...
     >>> browser.urlpath
     '/'
 
-    >>> browser.open('%s/~stimpy' % root_url)
+    >>> browser.open("%s/~stimpy" % root_url)
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 404: Not Found
 
 ...and when they don't, create them.
 
-    >>> browser.open('%s/people/+newteam' % root_url)
-    >>> browser.getControl(name='field.name').value = 'stimpy'
-    >>> browser.getControl('Display Name').value = 'Stimpson J. Cat'
-    >>> browser.getControl('Create').click()
+    >>> browser.open("%s/people/+newteam" % root_url)
+    >>> browser.getControl(name="field.name").value = "stimpy"
+    >>> browser.getControl("Display Name").value = "Stimpson J. Cat"
+    >>> browser.getControl("Create").click()
     >>> print(browser.vhost)
     http://launchpad.test
     >>> browser.urlpath

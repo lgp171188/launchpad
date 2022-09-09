@@ -45,9 +45,10 @@ def test_requestapi():
     ...
 
     >>> class FakeApplicationRequest:
-    ...    principal = FakePrincipal()
-    ...    def getURL(self):
-    ...        return 'http://launchpad.test/'
+    ...     principal = FakePrincipal()
+    ...
+    ...     def getURL(self):
+    ...         return "http://launchpad.test/"
     ...
 
     Let's make a fake request, where request.principal is a FakePrincipal
@@ -78,20 +79,22 @@ def test_cookie_scope():
         ...     class FakeRequest:
         ...         def getURL(self):
         ...             return url
+        ...
         ...     return RequestAPI(FakeRequest()).cookie_scope
+        ...
 
     The cookie scope will use the secure attribute if the request was
     secure:
 
-        >>> print(cookie_scope('http://launchpad.net/'))
+        >>> print(cookie_scope("http://launchpad.net/"))
         ; Path=/; Domain=.launchpad.net
-        >>> print(cookie_scope('https://launchpad.net/'))
+        >>> print(cookie_scope("https://launchpad.net/"))
         ; Path=/; Secure; Domain=.launchpad.net
 
     The domain parameter is omitted for domains that appear to be
     separate from a Launchpad instance:
 
-        >>> print(cookie_scope('https://example.com/'))
+        >>> print(cookie_scope("https://example.com/"))
         ; Path=/; Secure
     """
 
@@ -103,20 +106,22 @@ def test_dbschemaapi():
 
     The syntax to get the title is: number/lp:DBSchemaClass
 
-    >>> (str(DBSchemaAPI(1).traverse('BranchType', []))
-    ...  == BranchType.HOSTED.title)
+    >>> (
+    ...     str(DBSchemaAPI(1).traverse("BranchType", []))
+    ...     == BranchType.HOSTED.title
+    ... )
     True
 
     Using an inappropriate number should give a KeyError.
 
-    >>> DBSchemaAPI(99).traverse('BranchType', [])
+    >>> DBSchemaAPI(99).traverse("BranchType", [])
     Traceback (most recent call last):
     ...
     KeyError: 99
 
     Using a dbschema name that doesn't exist should give a LocationError
 
-    >>> DBSchemaAPI(99).traverse('NotADBSchema', [])
+    >>> DBSchemaAPI(99).traverse("NotADBSchema", [])
     Traceback (most recent call last):
     ...
     LocationError: 'NotADBSchema'

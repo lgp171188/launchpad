@@ -19,9 +19,9 @@ SourcePackageReleaseFile or BinaryPackageFile are available via the
     >>> from lp.soyuz.interfaces.files import (
     ...     IBinaryPackageFile,
     ...     ISourcePackageReleaseFile,
-    ...     )
+    ... )
 
-    >>> warty = getUtility(IDistributionSet)['ubuntu']['warty']
+    >>> warty = getUtility(IDistributionSet)["ubuntu"]["warty"]
 
 
 Source Files
@@ -36,7 +36,8 @@ package for that release:
    * A '.dsc' package description file.
 
     >>> warty_firefox_srcpkg = warty.getSourcePackage(
-    ...     'mozilla-firefox').currentrelease
+    ...     "mozilla-firefox"
+    ... ).currentrelease
 
     >>> srcfile = warty_firefox_srcpkg.files[0]
 
@@ -61,8 +62,9 @@ instalable debian-format file:
 
    * An '.deb'
 
-    >>> warty_i386_pmount_binpkg = warty['i386'].getBinaryPackage(
-    ...    'pmount')['2:1.9-1']
+    >>> warty_i386_pmount_binpkg = warty["i386"].getBinaryPackage("pmount")[
+    ...     "2:1.9-1"
+    ... ]
 
     >>> print(warty_i386_pmount_binpkg.name)
     pmount

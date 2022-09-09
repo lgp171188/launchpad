@@ -31,14 +31,16 @@ Copying is only permitted for valid users, so Anonymous user can't
 access 'Copy package' page from any PPA.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> anon_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> anon_browser.getLink("Copy packages").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+copy-packages')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+copy-packages"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ... 'launchpad.AnyPerson')
@@ -49,14 +51,17 @@ the form is not rendered, instead he is advised to activate his own
 PPA in order to be able to copy packages.
 
     >>> jblack_browser = setupBrowser(
-    ...     auth="Basic james.blackwell@ubuntulinux.com:test")
+    ...     auth="Basic james.blackwell@ubuntulinux.com:test"
+    ... )
 
     >>> jblack_extra_browser = setupBrowser(
-    ...     auth="Basic james.blackwell@ubuntulinux.com:test")
+    ...     auth="Basic james.blackwell@ubuntulinux.com:test"
+    ... )
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
     >>> print(extract_text(find_main_content(jblack_browser.contents)))
     Copy packages from PPA for Celso Providelo
@@ -68,15 +73,17 @@ PPA in order to be able to copy packages.
 James will follow the advice and activate his PPA by clicking in the
 provided link.
 
-    >>> jblack_browser.getLink('Create a new PPA').click()
+    >>> jblack_browser.getLink("Create a new PPA").click()
     >>> print(jblack_browser.title)
     Activate PPA : James Blackwell
 
     >>> jblack_browser.getControl(
-    ...     name="field.displayname").value = 'PPA for James Blackwell'
+    ...     name="field.displayname"
+    ... ).value = "PPA for James Blackwell"
     >>> jblack_browser.getControl(name="field.accepted").value = True
     >>> jblack_browser.getControl(
-    ...     name="field.description").value = 'There we go ...'
+    ...     name="field.description"
+    ... ).value = "There we go ..."
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -86,8 +93,9 @@ Now, that James has his own PPA, he navigates back to Celso's PPA
 copy package interface can see packages to be copied.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
     Source            Published   Status     Series           Section  Build
@@ -109,26 +117,27 @@ for packages. This is certainly not part of the doctest story.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.buildmaster.interfaces.processor import IProcessorSet
 
     >>> fake_chroot = getUtility(ILibraryFileAliasSet)[1]
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> hoary = ubuntu.getSeries("hoary")
     >>> trash = hoary["i386"].addOrUpdateChroot(fake_chroot)
 
-    >>> warty = ubuntu.getSeries('warty')
+    >>> warty = ubuntu.getSeries("warty")
     >>> trash = warty["i386"].addOrUpdateChroot(fake_chroot)
 
     >>> person_set = getUtility(IPersonSet)
-    >>> cprov = person_set.getByName('cprov')
-    >>> grumpy = ubuntu.getSeries('grumpy')
+    >>> cprov = person_set.getByName("cprov")
+    >>> grumpy = ubuntu.getSeries("grumpy")
     >>> grumpy_i386 = grumpy.newArch(
-    ...     'i386', getUtility(IProcessorSet).getByName('386'), False, cprov)
+    ...     "i386", getUtility(IProcessorSet).getByName("386"), False, cprov
+    ... )
     >>> grumpy.nominatedarchindep = grumpy_i386
     >>> trash = grumpy_i386.addOrUpdateChroot(fake_chroot)
 
@@ -142,10 +151,10 @@ Copying packages will create jobs.  Define a simple doctest-friendly runner.
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.soyuz.interfaces.packagecopyjob import (
     ...     IPlainPackageCopyJobSource,
-    ...     )
+    ... )
 
     >>> def run_copy_jobs():
-    ...     login('foo.bar@canonical.com')
+    ...     login("foo.bar@canonical.com")
     ...     source = getUtility(IPlainPackageCopyJobSource)
     ...     for job in removeSecurityProxy(source).iterReady():
     ...         job.logger = FakeLogger()
@@ -157,13 +166,14 @@ Copying packages will create jobs.  Define a simple doctest-friendly runner.
     ...         else:
     ...             job.complete(manage_transaction=True)
     ...     logout()
+    ...
 
 Let's say James wants to rebuild the Celso's 'pmount' source in his PPA.
 
 He is a little confused by the number of packages presented by
 default and wants to refine the options.
 
-    >>> jblack_browser.getControl(name='field.name_filter').value = 'pmount'
+    >>> jblack_browser.getControl(name="field.name_filter").value = "pmount"
     >>> jblack_browser.getControl("Filter").click()
 
 There we go, James can be certain about which package to select, only
@@ -183,19 +193,22 @@ in a PPA page, we have to retrieve the source publication ID. This
 helper function will do this job in this test.
 
     >>> def getPPAPubIDsFor(owner_name, source_name=None, status=None):
-    ...     login('foo.bar@canonical.com')
+    ...     login("foo.bar@canonical.com")
     ...     owner = person_set.getByName(owner_name)
     ...     pubs = owner.archive.getPublishedSources(
-    ...          name=source_name, status=status)
+    ...         name=source_name, status=status
+    ...     )
     ...     pub_ids = [str(pub.id) for pub in pubs]
     ...     logout()
     ...     return pub_ids
+    ...
 
 The page section id is built using "pub$ID" notation.
 
-    >>> pmount_pub_id = getPPAPubIDsFor('cprov', u'pmount')[0]
+    >>> pmount_pub_id = getPPAPubIDsFor("cprov", "pmount")[0]
     >>> expander_url = jblack_browser.getLink(
-    ...     id='pub%s-expander' % pmount_pub_id).url
+    ...     id="pub%s-expander" % pmount_pub_id
+    ... ).url
     >>> jblack_extra_browser.open(expander_url)
     >>> print(extract_text(jblack_extra_browser.contents))
     Publishing details
@@ -217,34 +230,35 @@ The page section id is built using "pub$ID" notation.
 
 James is absolutely sure that's the package he wants, he selects it.
 
-    >>> jblack_browser.getControl(
-    ...    name='field.selected_sources').value = [pmount_pub_id]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
 
 Currently, James only has access to his just created PPA, which is the
 default form value for 'Destination PPA'.
 
-    >>> print(jblack_browser.getControl('Destination PPA').displayOptions)
+    >>> print(jblack_browser.getControl("Destination PPA").displayOptions)
     ['PPA for James Blackwell [~jblack/ubuntu/ppa]']
 
-    >>> print(jblack_browser.getControl('Destination PPA').value)
+    >>> print(jblack_browser.getControl("Destination PPA").value)
     ['~jblack/ubuntu/ppa']
 
 James notice that Celso's 'pmount' was uploaded and built in Warty,
 but he is using Hoary. No problem, because he can select a destination
 series while copying.
 
-    >>> print(jblack_browser.getControl('Destination series').displayOptions)
+    >>> print(jblack_browser.getControl("Destination series").displayOptions)
     ['The same series', 'Breezy Badger Autotest', 'Grumpy', 'Hoary', 'Warty']
 
-    >>> print(jblack_browser.getControl('Destination series').value)
+    >>> print(jblack_browser.getControl("Destination series").value)
     ['']
 
-    >>> jblack_browser.getControl('Destination series').value = ['hoary']
+    >>> jblack_browser.getControl("Destination series").value = ["hoary"]
 
 James may want to copy binaries over, or to do a full rebuild from
 source, which is the default option.
 
-    >>> print_radio_button_field(jblack_browser.contents, 'include_binaries')
+    >>> print_radio_button_field(jblack_browser.contents, "include_binaries")
     (*) Rebuild the copied sources
     ( ) Copy existing binaries
 
@@ -267,7 +281,7 @@ PPA, his own. There he can see the just copied package as PENDING and
 also marked as pending build for i386. Note, he is also informed that
 there is actually a newer version already available in hoary.
 
-    >>> jblack_browser.getLink('PPA for James Blackwell').click()
+    >>> jblack_browser.getLink("PPA for James Blackwell").click()
     >>> print(jblack_browser.title)
     Packages in “PPA for James Blackwell”...
 
@@ -281,9 +295,10 @@ indeed the same by checking the changelog, also that the binaries
 were not copied and instead a build was already created in his PPA
 context.
 
-    >>> pmount_pub_id = getPPAPubIDsFor('jblack', u'pmount')[0]
+    >>> pmount_pub_id = getPPAPubIDsFor("jblack", "pmount")[0]
     >>> expander_url = jblack_browser.getLink(
-    ...     id='pub%s-expander' % pmount_pub_id).url
+    ...     id="pub%s-expander" % pmount_pub_id
+    ... ).url
     >>> jblack_extra_browser.open(expander_url)
     >>> print(extract_text(jblack_extra_browser.contents))
     Publishing details
@@ -313,7 +328,7 @@ Hence the archive's title does not link back to the source archive
 James quickly goes to the build page and confirms for himself that the
 build created during the copy is ready to be dispatched.
 
-    >>> jblack_browser.getLink('i386').click()
+    >>> jblack_browser.getLink("i386").click()
     >>> print(jblack_browser.title)
     i386 build of pmount 0.1-1 : PPA for James Blackwell : James Blackwell
 
@@ -352,12 +367,12 @@ James, thinks for a minute and realises that he could copy the
 
 James goes straight to the copy interface of his PPA.
 
-    >>> jblack_browser.getLink('PPA for James Blackwell').click()
-    >>> jblack_browser.getLink('View package details').click()
+    >>> jblack_browser.getLink("PPA for James Blackwell").click()
+    >>> jblack_browser.getLink("View package details").click()
     >>> print(jblack_browser.title)
     Packages in “PPA for James Blackwell”...
 
-    >>> jblack_browser.getLink('Copy packages').click()
+    >>> jblack_browser.getLink("Copy packages").click()
     >>> print(jblack_browser.title)
     Copy packages from PPA for James Blackwell...
 
@@ -368,22 +383,23 @@ James goes straight to the copy interface of his PPA.
 
 Then selects pmount in hoary.
 
-    >>> jblack_browser.getControl(
-    ...    name='field.selected_sources').value = [pmount_pub_id]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
 
 Leave the Destination PPA alone, because it defaults to 'This PPA'.
 
-    >>> print(jblack_browser.getControl('Destination PPA').displayValue)
+    >>> print(jblack_browser.getControl("Destination PPA").displayValue)
     ['This PPA']
 
 The destination series always default to 'The same series'.
 
-    >>> jblack_browser.getControl('Destination series').displayValue
+    >>> jblack_browser.getControl("Destination series").displayValue
     ['The same series']
 
 He uses the default option of rebuilding copied source along the way.
 
-    >>> print_radio_button_field(jblack_browser.contents, 'include_binaries')
+    >>> print_radio_button_field(jblack_browser.contents, "include_binaries")
     (*) Rebuild the copied sources
     ( ) Copy existing binaries
 
@@ -406,11 +422,13 @@ contents). So, this copy is not allowed.
 Now, knowing that pmount can only be copied within the same PPA if the
 binaries go together, James executes the copy including the binaries.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
 But this is also not allowed. Since pmount is still building in hoary,
@@ -427,13 +445,14 @@ We will mark the pmount build completed, to emulate the situation
 described in bug #236407 when binaries were built but have to
 wait until the next publishing cycle to be published in the archive.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> test_publisher = SoyuzTestPublisher()
-    >>> jblack = person_set.getByName('jblack')
+    >>> jblack = person_set.getByName("jblack")
     >>> pmount_build = jblack.archive.getBuildRecords()[0]
     >>> pmount_binary = test_publisher.uploadBinaryForBuild(
-    ...     pmount_build, 'pmount-bin')
+    ...     pmount_build, "pmount-bin"
+    ... )
     >>> flush_database_updates()
     >>> logout()
 
@@ -444,11 +463,13 @@ the same source version published in hoary in the same archive.
 The new builds would stick in failed-to-upload state because the
 binaries could not be published in the PPA.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['REBUILD_SOURCES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "REBUILD_SOURCES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
     >>> print_feedback_messages(jblack_browser.contents)
@@ -463,11 +484,13 @@ binaries could not be published in the PPA.
 Including binaries doesn't help either, since the copied source itself
 has unpublished binaries.
 
-    >>> jblack_browser.getControl(
-    ...    name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
     >>> print_feedback_messages(jblack_browser.contents)
@@ -481,16 +504,19 @@ We will build and publish the architecture independent binary for
 pmount ('pmount-bin') and publish it in hoary/i386 and hoary/hppa.
 
     >>> from lp.soyuz.enums import PackagePublishingStatus
-    >>> login('foo.bar@canonical.com')
-    >>> jblack = person_set.getByName('jblack')
+    >>> login("foo.bar@canonical.com")
+    >>> jblack = person_set.getByName("jblack")
     >>> pmount_build = jblack.archive.getBuildRecords()[0]
     >>> pmount_binaries = test_publisher.publishBinaryInArchive(
-    ...     pmount_binary, jblack.archive,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     pmount_binary,
+    ...     jblack.archive,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> flush_database_updates()
 
     >>> for binary in pmount_binaries:
     ...     print(binary.displayname)
+    ...
     pmount-bin 0.1-1 in hoary hppa
     pmount-bin 0.1-1 in hoary i386
 
@@ -498,11 +524,13 @@ The binaries have now been published, so James requests the copy
 including binaries.
 
     >>> logout()
-    >>> jblack_browser.getControl(
-    ...    name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
 The page not only renders the copy summary, but also shows the
@@ -529,9 +557,10 @@ hppa support.
 After the binary package go from PENDING->PUBLISHED, the page reflects the
 changes:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> for binary in pmount_binaries:
     ...     binary.setPublished()
+    ...
     >>> flush_database_updates()
     >>> logout()
     >>> jblack_browser.reload()
@@ -544,11 +573,13 @@ changes:
 If James performs exactly the same copy procedure again, no more packages
 will be copied.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
     >>> print_feedback_messages(jblack_browser.contents)
@@ -563,20 +594,22 @@ broken package.
 James uses the 'delete-packages' interface in his PPA to delete the
 'pmount' source in hoary.
 
-    >>> jblack_browser.getLink('Cancel').click()
-    >>> jblack_browser.getLink('Delete packages').click()
+    >>> jblack_browser.getLink("Cancel").click()
+    >>> jblack_browser.getLink("Delete packages").click()
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
     >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl(
-    ...     "Deletion comment").value = "Deleted packages can be copied."
+    ...     "Deletion comment"
+    ... ).value = "Deleted packages can be copied."
     >>> jblack_browser.getControl("Request Deletion").click()
 
 James return to his PPA packages page and checks that the package is
 really deleted.
 
-    >>> jblack_browser.getLink('Cancel').click()
-    >>> jblack_browser.getControl(name='field.status_filter').value = ['']
-    >>> jblack_browser.getControl('Filter', index=0).click()
+    >>> jblack_browser.getLink("Cancel").click()
+    >>> jblack_browser.getControl(name="field.status_filter").value = [""]
+    >>> jblack_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(jblack_browser.contents)
     Source          Published   Status     Series           Section  Build
         Status
@@ -591,8 +624,8 @@ still able to copy the deleted source to the warty series.
 
 By default the copy view presents only PUBLISHED or PENDING packages.
 
-    >>> jblack_browser.getLink('Copy packages').click()
-    >>> print(jblack_browser.getControl(name='field.status_filter').value)
+    >>> jblack_browser.getLink("Copy packages").click()
+    >>> print(jblack_browser.getControl(name="field.status_filter").value)
     ['published']
 
     >>> print_ppa_packages(jblack_browser.contents)
@@ -603,7 +636,7 @@ By default the copy view presents only PUBLISHED or PENDING packages.
 Packages in other status can be browsed by adjusting the status
 filter dropdown box.
 
-    >>> jblack_browser.getControl(name='field.status_filter').value = ['']
+    >>> jblack_browser.getControl(name="field.status_filter").value = [""]
     >>> jblack_browser.getControl("Filter").click()
     >>> print_ppa_packages(jblack_browser.contents)
     Source          Published   Status     Series           Section  Build
@@ -617,9 +650,10 @@ The copy is not allowed, because as mentioned above, if built, the
 binaries produced by the copy will conflict with the ones already
 published in the archive.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['warty']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["warty"]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.
@@ -634,11 +668,13 @@ copy the binaries too. The copied binaries will be checked against
 the ones already published in the archive and the copy will only be
 allowed if they are the same.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [pmount_pub_id]
-    >>> jblack_browser.getControl('Destination series').value = ['warty']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["warty"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
 
     >>> print_feedback_messages(jblack_browser.contents)
@@ -668,23 +704,25 @@ The Copy-UI excitement is endless for James, he informed his friends
 and decided to open a team PPA where he and his friends could work
 together.
 
-    >>> jblack_browser.open('http://launchpad.test/people')
-    >>> jblack_browser.getLink('Register a team').click()
+    >>> jblack_browser.open("http://launchpad.test/people")
+    >>> jblack_browser.getLink("Register a team").click()
 
-    >>> jblack_browser.getControl(name="field.name").value = 'jblack-friends'
+    >>> jblack_browser.getControl(name="field.name").value = "jblack-friends"
 
     >>> jblack_browser.getControl(
-    ...     'Display Name').value = 'James Blackwell Friends'
+    ...     "Display Name"
+    ... ).value = "James Blackwell Friends"
 
     >>> jblack_browser.getControl("Create").click()
 
-    >>> jblack_browser.getLink('Create a new PPA').click()
+    >>> jblack_browser.getLink("Create a new PPA").click()
     >>> jblack_browser.getControl(
-    ...     name="field.displayname").value = (
-    ...     'PPA for James Blackwell Friends')
+    ...     name="field.displayname"
+    ... ).value = "PPA for James Blackwell Friends"
     >>> jblack_browser.getControl(name="field.accepted").value = True
     >>> jblack_browser.getControl(
-    ...     name="field.description").value = 'Come friends ...'
+    ...     name="field.description"
+    ... ).value = "Come friends ..."
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -694,40 +732,45 @@ PPA created, now James want to populate it with the finest packages he
 have ever seen. He goes to Celso's PPA copy interface.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
 James would like to re-distribute Celso's 'pmount' and 'iceweasel'
 packages, thus he selects both.
 
-    >>> pmount_pub_id = getPPAPubIDsFor('cprov', u'pmount')[0]
-    >>> iceweasel_pub_id = getPPAPubIDsFor('cprov', u'iceweasel')[0]
+    >>> pmount_pub_id = getPPAPubIDsFor("cprov", "pmount")[0]
+    >>> iceweasel_pub_id = getPPAPubIDsFor("cprov", "iceweasel")[0]
 
-    >>> jblack_browser.getControl(name='field.selected_sources').value = (
-    ...     [iceweasel_pub_id, pmount_pub_id])
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     iceweasel_pub_id,
+    ...     pmount_pub_id,
+    ... ]
 
 Now that James have access to more than one PPA, the copy-packages form
 allows him to select one of them.
 
-    >>> print(jblack_browser.getControl('Destination PPA').displayOptions)
+    >>> print(jblack_browser.getControl("Destination PPA").displayOptions)
     ['PPA for James Blackwell Friends [~jblack-friends/ubuntu/ppa]',
      'PPA for James Blackwell [~jblack/ubuntu/ppa]']
 
 James wants to populate the PPA for James Blackwell Friends, he
 selects that.
 
-    >>> jblack_browser.getControl(
-    ...     'Destination PPA').value = ['~jblack-friends/ubuntu/ppa']
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack-friends/ubuntu/ppa"
+    ... ]
 
 James decides that 'hoary' is where the action will be for his friends.
 
-    >>> jblack_browser.getControl('Destination series').value = ['hoary']
+    >>> jblack_browser.getControl("Destination series").value = ["hoary"]
 
 Also, in order to make James Friends' PPA ready to use, this time
 James will also copy Celso's binaries for the selected sources.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
 
 Button-pushing time for James again.
 
@@ -751,7 +794,7 @@ package copied in the available sources.
 So happy-hacking for James Friends, Celso's 'iceweasel' and 'pmount'
 sources and binaries are copied to their PPA.
 
-    >>> jblack_browser.getLink('PPA for James Blackwell Friends').click()
+    >>> jblack_browser.getLink("PPA for James Blackwell Friends").click()
     >>> print(jblack_browser.title)
     Packages in “PPA for James Blackwell Friends”...
 
@@ -764,9 +807,10 @@ sources and binaries are copied to their PPA.
 James just gives a quick look to the details section of each copied
 sources to ensure the binaries are really there.
 
-    >>> pmount_pub_id = getPPAPubIDsFor('jblack-friends', u'pmount')[0]
+    >>> pmount_pub_id = getPPAPubIDsFor("jblack-friends", "pmount")[0]
     >>> expander_url = jblack_browser.getLink(
-    ...     id='pub%s-expander' % pmount_pub_id).url
+    ...     id="pub%s-expander" % pmount_pub_id
+    ... ).url
     >>> jblack_extra_browser.open(expander_url)
     >>> print(extract_text(jblack_extra_browser.contents))
     Publishing details
@@ -775,9 +819,10 @@ sources to ensure the binaries are really there.
       pmount
     ...
 
-    >>> iceweasel_pub_id = getPPAPubIDsFor('jblack-friends', u'iceweasel')[0]
+    >>> iceweasel_pub_id = getPPAPubIDsFor("jblack-friends", "iceweasel")[0]
     >>> expander_url = jblack_browser.getLink(
-    ...     id='pub%s-expander' % iceweasel_pub_id).url
+    ...     id="pub%s-expander" % iceweasel_pub_id
+    ... ).url
     >>> jblack_extra_browser.open(expander_url)
     >>> print(extract_text(jblack_extra_browser.contents))
     Publishing details
@@ -792,13 +837,14 @@ same location within James Blackwell Friends' PPAs, pretty much as if
 he was trying to break Launchpad. Poor James, this time he gets
 completely ignored.
 
-    >>> jblack_browser.getLink('Copy packages').click()
+    >>> jblack_browser.getLink("Copy packages").click()
 
-    >>> jblack_browser.getControl(
-    ...    name='field.selected_sources').value = [
-    ...    pmount_pub_id, iceweasel_pub_id]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     pmount_pub_id,
+    ...     iceweasel_pub_id,
+    ... ]
 
-    >>> jblack_browser.getControl('Destination series').value = ['hoary']
+    >>> jblack_browser.getControl("Destination series").value = ["hoary"]
 
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
@@ -813,22 +859,25 @@ completely ignored.
 James goes wild and decided to create a new team PPA for his sandbox
 tests.
 
-    >>> jblack_browser.open('http://launchpad.test/people')
-    >>> jblack_browser.getLink('Register a team').click()
+    >>> jblack_browser.open("http://launchpad.test/people")
+    >>> jblack_browser.getLink("Register a team").click()
 
-    >>> jblack_browser.getControl(name="field.name").value = 'jblack-sandbox'
+    >>> jblack_browser.getControl(name="field.name").value = "jblack-sandbox"
 
     >>> jblack_browser.getControl(
-    ...     'Display Name').value = 'James Blackwell Sandbox'
+    ...     "Display Name"
+    ... ).value = "James Blackwell Sandbox"
 
     >>> jblack_browser.getControl("Create").click()
 
-    >>> jblack_browser.getLink('Create a new PPA').click()
-    >>> jblack_browser.getControl(name="field.displayname").value = (
-    ...     'PPA for James Blackwell Sandbox')
+    >>> jblack_browser.getLink("Create a new PPA").click()
+    >>> jblack_browser.getControl(
+    ...     name="field.displayname"
+    ... ).value = "PPA for James Blackwell Sandbox"
     >>> jblack_browser.getControl(name="field.accepted").value = True
     >>> jblack_browser.getControl(
-    ...     name="field.description").value = 'Come friends ...'
+    ...     name="field.description"
+    ... ).value = "Come friends ..."
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -839,9 +888,10 @@ for a mass rebuild, including the deleted source. James is going
 insane because PPA-copy-ui is so cool.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~jblack/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
-    >>> jblack_browser.getControl(name='field.status_filter').value = ['']
+    ...     "http://launchpad.test/~jblack/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
+    >>> jblack_browser.getControl(name="field.status_filter").value = [""]
     >>> jblack_browser.getControl("Filter").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
@@ -851,18 +901,21 @@ insane because PPA-copy-ui is so cool.
     pmount - 0.1-1              Pending    Grumpy           Editors
     pmount - 0.1-1 (Newer...)   Deleted    Hoary            Editors
 
-    >>> jblack_pub_ids = getPPAPubIDsFor('jblack')
-
-    >>> jblack_browser.getControl(name='field.selected_sources').value = (
-    ...     jblack_pub_ids)
+    >>> jblack_pub_ids = getPPAPubIDsFor("jblack")
 
     >>> jblack_browser.getControl(
-    ...     'Destination PPA').value = ['~jblack-sandbox/ubuntu/ppa']
+    ...     name="field.selected_sources"
+    ... ).value = jblack_pub_ids
 
-    >>> jblack_browser.getControl('Destination series').value = ['']
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack-sandbox/ubuntu/ppa"
+    ... ]
 
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['REBUILD_SOURCES']
+    >>> jblack_browser.getControl("Destination series").value = [""]
+
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "REBUILD_SOURCES"
+    ... ]
 
     >>> jblack_browser.getControl("Copy Packages").click()
 
@@ -886,7 +939,7 @@ conflicts and cannot be allowed.
 Due to the copy error, nothing was copied to the destination PPA, not
 even the 'warty' source, which was not denied.
 
-    >>> jblack_browser.open('http://launchpad.test/~jblack-sandbox/+archive')
+    >>> jblack_browser.open("http://launchpad.test/~jblack-sandbox/+archive")
     >>> print(jblack_browser.title)
     PPA for James Blackwell Sandbox : “James Blackwell Sandbox” team
 
@@ -896,28 +949,32 @@ Not yet happy, James goes back to his PPA to check if the copy-packages
 interface can be used to resurrect deleted packages.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~jblack/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
-    >>> jblack_browser.getControl(name='field.status_filter').value = ['']
+    ...     "http://launchpad.test/~jblack/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
+    >>> jblack_browser.getControl(name="field.status_filter").value = [""]
     >>> jblack_browser.getControl("Filter").click()
 
     >>> deleted_pub_id = getPPAPubIDsFor(
-    ...     'jblack', status=PackagePublishingStatus.DELETED)[0]
+    ...     "jblack", status=PackagePublishingStatus.DELETED
+    ... )[0]
 
 James select the deleted pmount_1.0-1 publication in Hoary and target
 it to 'This PPA', 'The same series'.
 
-    >>> jblack_browser.getControl(name='field.selected_sources').value = (
-    ...     [deleted_pub_id])
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     deleted_pub_id
+    ... ]
 
-    >>> print(jblack_browser.getControl('Destination PPA').displayValue)
+    >>> print(jblack_browser.getControl("Destination PPA").displayValue)
     ['This PPA']
 
-    >>> print(jblack_browser.getControl('Destination series').displayValue)
+    >>> print(jblack_browser.getControl("Destination series").displayValue)
     ['The same series']
 
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
 
 When he submits the form, he can a pending publication of his selected
 source in the wanted destination. So, done, in the next cycle the
@@ -946,42 +1003,59 @@ James is not yet satisfied and to create some fun we will publish
 different version of foo_1.0 in Mark's and Celso's PPAs and a foo_2.0
 in No Privileges' PPA.
 
-    >>> login('foo.bar@canonical.com')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> login("foo.bar@canonical.com")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
-    >>> name16 = person_set.getByName('name16')
+    >>> name16 = person_set.getByName("name16")
     >>> test_publisher.person = name16
 
-    >>> mark = person_set.getByName('mark')
+    >>> mark = person_set.getByName("mark")
     >>> mark_foo_src = test_publisher.getPubSource(
-    ...     version="1.1", distroseries=hoary, archive=mark.archive,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     version="1.1",
+    ...     distroseries=hoary,
+    ...     archive=mark.archive,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> unused = test_publisher.getPubBinaries(
-    ...     distroseries=hoary, pub_source=mark_foo_src,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     distroseries=hoary,
+    ...     pub_source=mark_foo_src,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
-    >>> cprov = person_set.getByName('cprov')
+    >>> cprov = person_set.getByName("cprov")
     >>> cprov_foo_src = test_publisher.getPubSource(
-    ...     version="1.1", distroseries=hoary, archive=cprov.archive,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     version="1.1",
+    ...     distroseries=hoary,
+    ...     archive=cprov.archive,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> unused = test_publisher.getPubBinaries(
-    ...     distroseries=hoary, pub_source=cprov_foo_src,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     distroseries=hoary,
+    ...     pub_source=cprov_foo_src,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
-    >>> no_priv = person_set.getByName('no-priv')
+    >>> no_priv = person_set.getByName("no-priv")
     >>> nopriv_foo_src = test_publisher.getPubSource(
-    ...     version="2.0", distroseries=hoary, archive=no_priv.archive,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     version="2.0",
+    ...     distroseries=hoary,
+    ...     archive=no_priv.archive,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> unused = test_publisher.getPubBinaries(
-    ...     distroseries=hoary, pub_source=nopriv_foo_src,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     distroseries=hoary,
+    ...     pub_source=nopriv_foo_src,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
-    >>> jblack_friends = person_set.getByName('jblack-friends')
+    >>> jblack_friends = person_set.getByName("jblack-friends")
     >>> jblack_friends_foo_src = test_publisher.getPubSource(
-    ...     version="9.9", distroseries=hoary,
+    ...     version="9.9",
+    ...     distroseries=hoary,
     ...     archive=jblack_friends.archive,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> [build] = jblack_friends_foo_src.createMissingBuilds()
     >>> from lp.buildmaster.enums import BuildStatus
     >>> build.updateStatus(BuildStatus.FAILEDTOBUILD)
@@ -993,21 +1067,25 @@ Good, now James goes straight to No Privileges' PPA and copies the
 foo_2.0 version to his PPA.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
     Source          Published   Status     Series           Section  Build
         Status
     foo - 2.0 (changes file) ... Published  Hoary            Base
 
-    >>> foo_pub_id = getPPAPubIDsFor('no-priv', u'foo')[0]
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [foo_pub_id]
-    >>> jblack_browser.getControl('Destination PPA').value = [
-    ...     '~jblack/ubuntu/ppa']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> foo_pub_id = getPPAPubIDsFor("no-priv", "foo")[0]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     foo_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack/ubuntu/ppa"
+    ... ]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.
@@ -1023,8 +1101,9 @@ the ones in his own PPA. He is not allowed to copy these older
 packages since they would not be published in the destination anyway.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
     Source            Published   Status     Series           Section  Build
@@ -1034,13 +1113,16 @@ packages since they would not be published in the destination anyway.
     iceweasel...(...) 2007-07-09  Published  Warty            Editors  i386
     pmount - 0.1-1    2007-07-09  Published  Warty            Editors
 
-    >>> foo_pub_id = getPPAPubIDsFor('cprov', u'foo')[0]
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [foo_pub_id]
-    >>> jblack_browser.getControl('Destination PPA').value = [
-    ...     '~jblack/ubuntu/ppa']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> foo_pub_id = getPPAPubIDsFor("cprov", "foo")[0]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     foo_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack/ubuntu/ppa"
+    ... ]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.
@@ -1052,13 +1134,16 @@ packages since they would not be published in the destination anyway.
 However if he copies it to another suite is just works (tm) since PPAs
 do not enforce coherent version ordering across suites.
 
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [foo_pub_id]
-    >>> jblack_browser.getControl('Destination PPA').value = [
-    ...     '~jblack/ubuntu/ppa']
-    >>> jblack_browser.getControl('Destination series').value = ['warty']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     foo_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack/ubuntu/ppa"
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["warty"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.
@@ -1070,7 +1155,8 @@ do not enforce coherent version ordering across suites.
     DEBUG foo-bin 1.1 in warty i386
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~jblack/+archive/ppa/+packages')
+    ...     "http://launchpad.test/~jblack/+archive/ppa/+packages"
+    ... )
     >>> print_ppa_packages(jblack_browser.contents)
     Source          Published   Status     Series           Section  Build
         Status
@@ -1085,8 +1171,9 @@ since he discovered that PPA allows copying old versions, he decides
 to copy the *same* version with different contents to grumpy in his PPA.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~mark/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~mark/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
     Source            Published   Status     Series           Section  Build
@@ -1094,14 +1181,17 @@ to copy the *same* version with different contents to grumpy in his PPA.
     foo - 1.1 (changes file) ...   Published  Hoary            Base
     iceweasel...(...) 2007-07-09  Published  Breezy-autotest  Editors
 
-    >>> foo_pub_id = getPPAPubIDsFor('mark', u'foo')[0]
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [foo_pub_id]
-    >>> jblack_browser.getControl('Destination PPA').value = [
-    ...     '~jblack/ubuntu/ppa']
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> foo_pub_id = getPPAPubIDsFor("mark", "foo")[0]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     foo_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack/ubuntu/ppa"
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.
@@ -1115,10 +1205,11 @@ James thinks that his last chance will be copying the just-uploaded
 foo-9.9 source from 'James-Friend's PPA.
 
     >>> jblack_browser.open(
-    ...     'http://launchpad.test/~jblack-friends/+archive/ppa/+packages')
-    >>> jblack_browser.getLink('Copy packages').click()
+    ...     "http://launchpad.test/~jblack-friends/+archive/ppa/+packages"
+    ... )
+    >>> jblack_browser.getLink("Copy packages").click()
 
-    >>> jblack_browser.getControl(name='field.name_filter').value = 'foo'
+    >>> jblack_browser.getControl(name="field.name_filter").value = "foo"
     >>> jblack_browser.getControl("Filter").click()
 
     >>> print_ppa_packages(jblack_browser.contents)
@@ -1129,14 +1220,17 @@ But James doesn't think straight, he sees that foo-9.9 failed to build
 in i386, but even though, he tries to copy it including binaries. He
 is told that the sources cannot be copied.
 
-    >>> foo_pub_id = getPPAPubIDsFor('jblack-friends', u'foo')[0]
-    >>> jblack_browser.getControl(
-    ...     name='field.selected_sources').value = [foo_pub_id]
-    >>> jblack_browser.getControl('Destination PPA').value = [
-    ...     '~jblack/ubuntu/ppa']
-    >>> jblack_browser.getControl('Destination series').value = ['grumpy']
-    >>> jblack_browser.getControl(
-    ...     name='field.include_binaries').value = ['COPY_BINARIES']
+    >>> foo_pub_id = getPPAPubIDsFor("jblack-friends", "foo")[0]
+    >>> jblack_browser.getControl(name="field.selected_sources").value = [
+    ...     foo_pub_id
+    ... ]
+    >>> jblack_browser.getControl("Destination PPA").value = [
+    ...     "~jblack/ubuntu/ppa"
+    ... ]
+    >>> jblack_browser.getControl("Destination series").value = ["grumpy"]
+    >>> jblack_browser.getControl(name="field.include_binaries").value = [
+    ...     "COPY_BINARIES"
+    ... ]
     >>> jblack_browser.getControl("Copy Packages").click()
     >>> print_feedback_messages(jblack_browser.contents)
     Requested sync of 1 package to PPA for James Blackwell.

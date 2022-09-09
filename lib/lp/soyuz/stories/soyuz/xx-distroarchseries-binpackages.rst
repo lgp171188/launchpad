@@ -19,12 +19,13 @@ system, so it's impossible to get there except by typing the entire
 URL:
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox')
+    ...     "http://launchpad.test/ubuntu/warty/i386/mozilla-firefox"
+    ... )
 
 This page provides the publishing history of this BinaryPackage within
 this architecture:
 
-    >>> table = find_tag_by_id(browser.contents, 'publishing-summary')
+    >>> table = find_tag_by_id(browser.contents, "publishing-summary")
     >>> print(extract_text(table))  # noqa
     Date                  Status    Target     Pocket  Component Section  Priority  Phased updates  Version
     2006-04-11 13:00:01 UTC Published...Warty i386 release main     base Important                      1.0
@@ -43,7 +44,8 @@ It also provides a link to the currently published version:
 As well as a link to the related distribution source package:
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox')
+    ...     "http://launchpad.test/ubuntu/warty/i386/mozilla-firefox"
+    ... )
     >>> browser.getLink(id="source_package").click()
     >>> print(browser.title)
     iceweasel package : Ubuntu
@@ -51,8 +53,7 @@ As well as a link to the related distribution source package:
 If the binary distribution does not have a current release, then the
 link to the source package will not be present:
 
-    >>> browser.open(
-    ...     'http://launchpad.test/debian/woody/i386/pmount')
+    >>> browser.open("http://launchpad.test/debian/woody/i386/pmount")
     >>> print(browser.getLink(id="source_package"))
     Traceback (most recent call last):
     ...
@@ -67,15 +68,15 @@ $LP/ubuntu/$DISTRORELEASE/$ARCHTAG/$BINARYNAME/$VERSION
 
 It's also reachable in a more natural way, starting from distribution page:
 
-    >>> browser.open('http://launchpad.test/ubuntu')
+    >>> browser.open("http://launchpad.test/ubuntu")
 
 Then we get to the DistroSeries page:
 
-    >>> browser.getLink(url='/ubuntu/warty').click()
+    >>> browser.getLink(url="/ubuntu/warty").click()
 
 Then the DistroArchSeries page:
 
-    >>> browser.getLink(url='/ubuntu/warty/i386').click()
+    >>> browser.getLink(url="/ubuntu/warty/i386").click()
 
 Now we are able to use the search box in this page:
 
@@ -92,25 +93,26 @@ This page represents an IDistroArchSeriesBinaryPackageRelease and is
 able to point the user to the IDistributionSourcePackageRelease which
 originated itself:
 
-    >>> source_element = find_tag_by_id(browser.contents, 'source')
+    >>> source_element = find_tag_by_id(browser.contents, "source")
     >>> print(extract_text(source_element))
     mozilla-firefox 0.9 source package in Ubuntu
 
-    >>> print(source_element.find(name='a')['href'])
+    >>> print(source_element.find(name="a")["href"])
     /ubuntu/+source/mozilla-firefox/0.9
 
 Also provide a section with the contained files, including the build,
 the respective librarian URL and size:
 
-    >>> files_element = find_tag_by_id(browser.contents, 'files')
+    >>> files_element = find_tag_by_id(browser.contents, "files")
     >>> print(extract_text(files_element))
     i386 build of mozilla-firefox 0.9 in ubuntu warty RELEASE
     produced these files:
     mozilla-firefox_0.9_i386.deb (3 bytes)
 
     >>> dfiles_element = find_tag_by_id(
-    ...     browser.contents, 'downloadable-files')
-    >>> print(dfiles_element.find(name='a')['href'])
+    ...     browser.contents, "downloadable-files"
+    ... )
+    >>> print(dfiles_element.find(name="a")["href"])
     http://.../40/mozilla-firefox_0.9_i386.deb
 
 If the binary package did produce files, but those files have been
@@ -118,12 +120,13 @@ subsequently deleted, this will also be indicated and the file will
 not be linked.
 
     First we need to get a handle on the right binary file.
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> warty = getUtility(IDistributionSet)['ubuntu']['warty']
+    >>> warty = getUtility(IDistributionSet)["ubuntu"]["warty"]
     >>> firefox_build = warty.getBuildRecords(
-    ...     name=u'mozilla-firefox', arch_tag='i386')[0]
+    ...     name="mozilla-firefox", arch_tag="i386"
+    ... )[0]
     >>> firefox_deb = firefox_build.binarypackages[0].files[0]
     >>> print(firefox_deb.libraryfile.filename)
     mozilla-firefox_0.9_i386.deb
@@ -142,23 +145,23 @@ not be linked.
 Now reload the page to see the deleted file without the link.
 
     >>> browser.reload()
-    >>> files_element = find_tag_by_id(browser.contents, 'files')
+    >>> files_element = find_tag_by_id(browser.contents, "files")
     >>> print(extract_text(files_element))
     i386 build of mozilla-firefox 0.9 in ubuntu warty RELEASE
     produced these files:
     mozilla-firefox_0.9_i386.deb (deleted)
 
     >>> dfiles_element = find_tag_by_id(
-    ...     browser.contents, 'downloadable-files')
-    >>> print(dfiles_element.find(name='a'))
+    ...     browser.contents, "downloadable-files"
+    ... )
+    >>> print(dfiles_element.find(name="a"))
     None
 
 Binary Packages with no files to present results in a clear statement
 intead of a empty section.
 
-    >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'files')))
+    >>> browser.open("http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "files")))
     i386 build of pmount 0.1-1 in ubuntu hoary RELEASE
     produced no files for this binary package.
 
@@ -175,14 +178,18 @@ Their page functionality is identical to regular packages, which is described
 in the previous section of this page.
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/breezy-autotest/i386/'
-    ...     'commercialpackage')
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/i386/"
+    ...     "commercialpackage"
+    ... )
 
 This page provides the publishing history of this BinaryPackage within
 this architecture:
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'publishing-summary')))  # noqa
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(browser.contents, "publishing-summary")
+    ...     )
+    ... )  # noqa
     Date                  Status    Target     Pocket  Component Section Priority  Phased updates  Version
     2007-08-09 21:56:39 UTC Published...B...t i386 release partner devel Optional                  1.0-1
     Published on 2007-08-09
@@ -202,16 +209,16 @@ $LP/ubuntu/$DISTRORELEASE/$ARCHTAG/$BINARYNAME/$VERSION
 
 It's also reachable in a more natural way, starting from distribution page:
 
-    >>> browser.open('http://launchpad.test/ubuntu')
+    >>> browser.open("http://launchpad.test/ubuntu")
 
 Then we get to the DistroSeries page:
 
-    >>> browser.getLink('All series').click()
-    >>> browser.getLink('Breezy Badger Autotest').click()
+    >>> browser.getLink("All series").click()
+    >>> browser.getLink("Breezy Badger Autotest").click()
 
 Then the DistroArchSeries page:
 
-    >>> browser.getLink('i386').click()
+    >>> browser.getLink("i386").click()
 
 Now we are able to use the search box in this page:
 
@@ -228,13 +235,13 @@ This page represents an IDistroArchSeriesBinaryPackageRelease and is
 able to point the user to the IDistributionSourcePackageRelease which
 originated itself:
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'source')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "source")))
     commercialpackage 1.0-1 source package in Ubuntu
 
 Also provide a section with the contained files, including respective
 librarian URL and size:
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'files')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "files")))
     i386 build of commercialpackage 1.0-1 in ubuntu breezy-autotest RELEASE
     produced these files:
     commercialpackage_1.0-1_i386.deb (652 bytes)
@@ -251,11 +258,13 @@ trace copied binaries
 If the publishing is a copy, the original location, distribution,
 distroseries and archive are shown.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/warty/i386/pmount')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/warty/i386/pmount")
 
-    >>> print(extract_text(
-    ...    find_tag_by_id(anon_browser.contents, 'publishing-summary')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "publishing-summary")
+    ...     )
+    ... )
     ... # noqa
     Date           Status      Target     Pocket  Component Section  Priority  Phased updates  Version
     2007-09-13 ... Superseded...Warty i386 release universe editors Important                    0.1-1

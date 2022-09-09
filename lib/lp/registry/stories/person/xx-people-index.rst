@@ -1,9 +1,13 @@
 
   Test /people.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /people HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     Content-Length: ...
     Content-Type: text/html;charset=utf-8

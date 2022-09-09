@@ -9,7 +9,8 @@ how that code works.
     >>> from zope.component import provideUtility
     >>> from lazr.restful.interfaces import IWebServiceConfiguration
     >>> from lp.services.webservice.configuration import (
-    ...     LaunchpadWebServiceConfiguration)
+    ...     LaunchpadWebServiceConfiguration,
+    ... )
     >>> webservice_config = LaunchpadWebServiceConfiguration()
 
     >>> provideUtility(webservice_config, IWebServiceConfiguration)
@@ -53,9 +54,14 @@ the web service configuration's 'show_tracebacks' value will always be
 True.
 
     >>> the_launchbag.developer = False
-    >>> config.push('traceback_on', dedent('''
+    >>> config.push(
+    ...     "traceback_on",
+    ...     dedent(
+    ...         """
     ...     [canonical]
-    ...     show_tracebacks: True'''))
+    ...     show_tracebacks: True"""
+    ...     ),
+    ... )
     >>> webservice_config.show_tracebacks
     True
 
@@ -63,16 +69,21 @@ True.
     >>> webservice_config.show_tracebacks
     True
 
-    >>> ignored = config.pop('traceback_on')
+    >>> ignored = config.pop("traceback_on")
 
 When the Launchpad configuration variable 'show_tracebacks' is False,
 the web service configuration's 'show_tracebacks' is only True if the
 current user is a developer.
 
     >>> the_launchbag.developer = False
-    >>> config.push('traceback_off', dedent('''
+    >>> config.push(
+    ...     "traceback_off",
+    ...     dedent(
+    ...         """
     ...     [canonical]
-    ...     show_tracebacks: False'''))
+    ...     show_tracebacks: False"""
+    ...     ),
+    ... )
     >>> webservice_config.show_tracebacks
     False
 
@@ -80,4 +91,4 @@ current user is a developer.
     >>> webservice_config.show_tracebacks
     True
 
-    >>> ignored = config.pop('traceback_off')
+    >>> ignored = config.pop("traceback_off")

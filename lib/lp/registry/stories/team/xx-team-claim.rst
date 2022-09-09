@@ -14,17 +14,18 @@ link to turn it into a team.
 For instance, we have an auto-created profile for Matsubara, which
 definitely doesn't seem to be a team.
 
-    >>> browser.open('http://launchpad.test/~matsubara')
-    >>> browser.getLink(url='+requestmerge')
+    >>> browser.open("http://launchpad.test/~matsubara")
+    >>> browser.getLink(url="+requestmerge")
     <Link text='Are you Diogo Matsubara?'...
 
 If a profile does look like a team and there is a logged in user, the link
 is different...
 
     >>> from lp.registry.model.person import PersonSet
-    >>> doc_team = PersonSet().getByName('doc')
+    >>> doc_team = PersonSet().getByName("doc")
     >>> for email in doc_team.guessedemails:
     ...     print(email.email)
+    ...
     doc@lists.ubuntu.com
 
 While logged-in users get a link to claim that profile and turn it into a
@@ -32,8 +33,8 @@ team. This works even if the profile's email addresses would normally be
 hidden.
 
     >>> doc_team.hide_email_addresses = True
-    >>> user_browser.open('http://launchpad.test/~doc')
-    >>> user_browser.getLink('Is this a team you run?').click()
+    >>> user_browser.open("http://launchpad.test/~doc")
+    >>> user_browser.getLink("Is this a team you run?").click()
     >>> user_browser.title
     'Claim team...
 
@@ -41,8 +42,9 @@ Now we enter the doc team's email address to continue the process of
 turning that profile into a team.
 
     >>> user_browser.getControl(
-    ...     'Email address').value = 'doc@lists.ubuntu.com'
-    >>> user_browser.getControl('Continue').click()
+    ...     "Email address"
+    ... ).value = "doc@lists.ubuntu.com"
+    >>> user_browser.getControl("Continue").click()
     >>> user_browser.title
     'Ubuntu Doc Team does not use Launchpad'
 
@@ -59,7 +61,8 @@ claiming process.
 
     >>> from lp.services.mail import stub
     >>> from lp.services.verification.tests.logintoken import (
-    ...     get_token_url_from_email)
+    ...     get_token_url_from_email,
+    ... )
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
     ['doc@lists.ubuntu.com']
@@ -77,19 +80,24 @@ claim process the team's owner.
 
     # The 'Team Owner' widget is rendered as read-only in this page, so we
     # can't use browser.getControl() to see its value.
-    >>> user_browser.getControl('Team Owner')
+    >>> user_browser.getControl("Team Owner")
     Traceback (most recent call last):
     ...
     LookupError:...
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(user_browser.contents)
-    >>> print(extract_text(
-    ...     soup.find(attrs={'for': 'field.teamowner'}).find_previous('tr')))
+    >>> print(
+    ...     extract_text(
+    ...         soup.find(attrs={"for": "field.teamowner"}).find_previous(
+    ...             "tr"
+    ...         )
+    ...     )
+    ... )
     Team Owner: No Privileges Person...
 
-    >>> user_browser.getControl('Display Name').value = 'Ubuntu Doc Team'
-    >>> user_browser.getControl('Description').value = 'The doc team'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.getControl("Display Name").value = "Ubuntu Doc Team"
+    >>> user_browser.getControl("Description").value = "The doc team"
+    >>> user_browser.getControl("Continue").click()
 
 Once the conversion is finished the user is redirected to the team's home
 page.
@@ -99,7 +107,8 @@ page.
     >>> print_feedback_messages(user_browser.contents)
     Team claimed successfully
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'team-owner')))
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "team-owner"))
+    ... )
     Owner:
     No Privileges Person

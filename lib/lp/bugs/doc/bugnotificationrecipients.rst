@@ -29,11 +29,12 @@ This instance contains email addresses and rationales. Let's define a
 helper function so we can format this output:
 
     >>> def print_rationales(rationale):
-    ...   for address in rationale.getEmails():
-    ...     text, header = rationale.getReason(address)
-    ...     print(address)
-    ...     print("    %s" % header)
-    ...     print("    %s" % text)
+    ...     for address in rationale.getEmails():
+    ...         text, header = rationale.getReason(address)
+    ...         print(address)
+    ...         print("    %s" % header)
+    ...         print("    %s" % text)
+    ...
 
 And print them out. The first line is the email address; second is the
 text appropriate to be used in an X- header, and the last is the text
@@ -65,7 +66,8 @@ Let's up some data for our test:
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.bugs.mail.bugnotificationrecipients import (
-    ...     BugNotificationRecipients)
+    ...     BugNotificationRecipients,
+    ... )
     >>> debian = Distribution.selectOneBy(name="debian")
     >>> pmount = debian.getSourcePackage("pmount")
     >>> alsa_utils = Product.selectOneBy(name="alsa-utils")

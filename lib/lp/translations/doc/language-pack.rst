@@ -15,30 +15,33 @@ were updated since the export date for the associate FULL export.
     >>> from lp.translations.enums import LanguagePackType
     >>> from lp.translations.interfaces.languagepack import (
     ...     ILanguagePack,
-    ...     ILanguagePackSet)
+    ...     ILanguagePackSet,
+    ... )
     >>> from lp.testing import verifyObject
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
 
 Let's upload a dummy file to librarian.
 
     >>> uploader = getUtility(ILibrarianClient)
-    >>> content = b'foo'
+    >>> content = b"foo"
     >>> file_alias = uploader.addFile(
-    ...     name='foo.tar.gz',
+    ...     name="foo.tar.gz",
     ...     size=len(content),
     ...     file=io.BytesIO(content),
-    ...     contentType='application/x-gtar')
+    ...     contentType="application/x-gtar",
+    ... )
 
 We need too a distribution series to link the language pack with it.
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu.getSeries("hoary")
 
 We add the language pack.
 
     >>> language_pack_set = getUtility(ILanguagePackSet)
     >>> language_pack = language_pack_set.addLanguagePack(
-    ...     hoary, file_alias, LanguagePackType.FULL)
+    ...     hoary, file_alias, LanguagePackType.FULL
+    ... )
 
 And it implements and follow the ILanguagePack interface.
 

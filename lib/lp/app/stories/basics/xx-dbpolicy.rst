@@ -12,17 +12,19 @@ request is querying the master or standby database.
 
     >>> from lp.services.config import config
     >>> from textwrap import dedent
-    >>> config_overlay = dedent("""
+    >>> config_overlay = dedent(
+    ...     """
     ...     [database]
     ...     rw_main_standby: dbname=launchpad_empty
-    ...     """)
-    >>> config.push('empty_standby', config_overlay)
+    ...     """
+    ... )
+    >>> config.push("empty_standby", config_overlay)
 
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import (
     ...     IMasterStore,
     ...     IStandbyStore,
-    ...     )
+    ... )
     >>> from lp.testing.layers import DatabaseLayer
     >>> master = IMasterStore(Person)
     >>> dbname = DatabaseLayer._db_fixture.dbname
@@ -45,25 +47,26 @@ This helper parses the output of the +whichdb view (which unfortunately
 needs to be created externally to this pagetest).
 
     >>> def whichdb(browser):
-    ...     dbname = extract_text(find_tag_by_id(browser.contents, 'dbname'))
+    ...     dbname = extract_text(find_tag_by_id(browser.contents, "dbname"))
     ...     if dbname == DatabaseLayer._db_fixture.dbname:
-    ...         return 'MASTER'
-    ...     elif dbname == 'launchpad_empty':
-    ...         return 'STANDBY'
+    ...         return "MASTER"
+    ...     elif dbname == "launchpad_empty":
+    ...         return "STANDBY"
     ...     else:
-    ...         return 'UNKNOWN'
+    ...         return "UNKNOWN"
+    ...
 
 Read only requests such as GET and HEAD will use the MAIN STANDBY
 Store by default.
 
-    >>> browser.open('http://launchpad.test/+whichdb')
+    >>> browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(browser))
     STANDBY
 
 POST requests might make updates, so they use the MAIN MASTER
 Store by default.
 
-    >>> browser.getControl('Do Post').click()
+    >>> browser.getControl("Do Post").click()
     >>> print(whichdb(browser))
     MASTER
 
@@ -71,7 +74,7 @@ This is an unauthenticated browser.  These typically have no session, unless
 special dispensation has been made. Without a session, subsequent requests
 will then immediately return to using the STANDBY.
 
-    >>> browser.open('http://launchpad.test/+whichdb')
+    >>> browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(browser))
     STANDBY
 
@@ -82,21 +85,21 @@ continue to use the MAIN MASTER Store by default for 5 minutes. This ensures
 that a user will see any changes they have made immediately, even though the
 standby databases may lag some time behind the master database.
 
-    >>> browser.addHeader('Authorization', 'Basic mark@example.com:test')
-    >>> browser.getControl('Do Post').click() # POST request
+    >>> browser.addHeader("Authorization", "Basic mark@example.com:test")
+    >>> browser.getControl("Do Post").click()  # POST request
     >>> print(whichdb(browser))
     MASTER
-    >>> browser.open('http://launchpad.test/+whichdb') # GET request
+    >>> browser.open("http://launchpad.test/+whichdb")  # GET request
     >>> print(whichdb(browser))
     MASTER
 
 GET and HEAD requests from other clients are unaffected though
 and use the MAIN STANDBY Store by default.
 
-    >>> anon_browser.open('http://launchpad.test/+whichdb')
+    >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
     STANDBY
-    >>> admin_browser.open('http://launchpad.test/+whichdb')
+    >>> admin_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(admin_browser))
     STANDBY
 
@@ -112,31 +115,32 @@ To test this, first we need to wind forward the database policy's clock.
     >>> _original_now = dbpolicy._now
     >>> def _future_now():
     ...     return _original_now() + timedelta(minutes=10)
+    ...
 
 
-    >>> browser.open('http://launchpad.test/+whichdb')
+    >>> browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(browser))
     MASTER
 
-    >>> dbpolicy._now = _future_now # Install the time machine.
+    >>> dbpolicy._now = _future_now  # Install the time machine.
 
-    >>> browser.open('http://launchpad.test/+whichdb')
+    >>> browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(browser))
     STANDBY
 
-    >>> dbpolicy._now = _original_now # Reset the time machine.
+    >>> dbpolicy._now = _original_now  # Reset the time machine.
 
 
 When lag gets too bad, we stop using standby databases. This stops
 replication oddities from becoming too bad, as well as lightening the load
 on the standbys allowing them to catch up.
 
-    >>> anon_browser.open('http://launchpad.test/+whichdb')
+    >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
     STANDBY
 
     >>> dbpolicy._test_lag = timedelta(minutes=10)
-    >>> anon_browser.open('http://launchpad.test/+whichdb')
+    >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
     MASTER
     >>> dbpolicy._test_lag = None
@@ -152,27 +156,27 @@ returning a 404 error to the user.
     >>> anon_browser.raiseHttpErrors = False
 
     # Confirm requests are going to the STANDBY
-    >>> anon_browser.open('http://launchpad.test/+whichdb')
+    >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
     STANDBY
 
     # The standby database contains no data, but we don't get
     # a 404 page - the request is retried against the MASTER.
-    >>> anon_browser.open('http://launchpad.test/~stub')
-    >>> anon_browser.headers['Status']
+    >>> anon_browser.open("http://launchpad.test/~stub")
+    >>> anon_browser.headers["Status"]
     '200 Ok'
 
     # 404s are still returned though if the data doesn't exist in the
     # MASTER database either.
-    >>> anon_browser.open('http://launchpad.test/~does-not-exist')
-    >>> anon_browser.headers['Status']
+    >>> anon_browser.open("http://launchpad.test/~does-not-exist")
+    >>> anon_browser.headers["Status"]
     '404 Not Found'
 
     # This session is still using the STANDBY though by default.
-    >>> anon_browser.open('http://launchpad.test/+whichdb')
+    >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
     STANDBY
 
 Reset our config to avoid affecting other tests.
 
-    >>> ignored = config.pop('empty_standby')
+    >>> ignored = config.pop("empty_standby")

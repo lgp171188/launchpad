@@ -788,9 +788,9 @@ def canonical_name(name):
     This helps us to deal with common mistypings of URLs.
     Currently only accounts for uppercase letters.
 
-    >>> canonical_name('ubuntu')
+    >>> canonical_name("ubuntu")
     'ubuntu'
-    >>> canonical_name('UbUntU')
+    >>> canonical_name("UbUntU")
     'ubuntu'
 
     """

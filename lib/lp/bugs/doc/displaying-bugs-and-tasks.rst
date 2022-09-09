@@ -21,7 +21,7 @@ Let's use a few examples to demonstrate:
     >>> from lp.testing import (
     ...     login,
     ...     test_tales,
-    ...     )
+    ... )
 
     >>> login("foo.bar@canonical.com")
     >>> bugtaskset = getUtility(IBugTaskSet)
@@ -29,37 +29,44 @@ Let's use a few examples to demonstrate:
     >>> ORIGINAL_IMPORTANCE = test_task.importance
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.CRITICAL, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.CRITICAL, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-critical'
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.HIGH, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.HIGH, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-high'
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.MEDIUM, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.MEDIUM, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-medium'
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.LOW, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.LOW, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-low'
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.WISHLIST, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.WISHLIST, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-wishlist'
 
     >>> test_task.transitionToImportance(
-    ...   BugTaskImportance.UNDECIDED, getUtility(ILaunchBag).user)
+    ...     BugTaskImportance.UNDECIDED, getUtility(ILaunchBag).user
+    ... )
     >>> test_tales("bugtask/image:sprite_css", bugtask=test_task)
     'sprite bug-undecided'
 
     >>> test_task.transitionToImportance(
-    ...   ORIGINAL_IMPORTANCE, getUtility(ILaunchBag).user)
+    ...     ORIGINAL_IMPORTANCE, getUtility(ILaunchBag).user
+    ... )
 
 
 Displaying Logos for Bug Tasks
@@ -109,9 +116,11 @@ We define a helper that uses the BugTaskListingView class (obtained via
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
 
     >>> def render_bugtask_status(task):
-    ...   view = getMultiAdapter(
-    ...       (task, LaunchpadTestRequest()), name="+listing-view")
-    ...   return view.status
+    ...     view = getMultiAdapter(
+    ...         (task, LaunchpadTestRequest()), name="+listing-view"
+    ...     )
+    ...     return view.status
+    ...
 
 Let's see some examples of how this works:
 
@@ -127,17 +136,20 @@ Let's see some examples of how this works:
 
     >>> test_task.transitionToAssignee(foobar)
     >>> test_task.transitionToStatus(
-    ...   BugTaskStatus.NEW, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user
+    ... )
     >>> print(render_bugtask_status(test_task))
     New, assigned to ...Foo Bar...
 
     >>> test_task.transitionToStatus(
-    ...   BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
     >>> print(render_bugtask_status(test_task))
     Confirmed, assigned to ...Foo Bar...
 
     >>> test_task.transitionToStatus(
-    ...   BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user
+    ... )
     >>> print(render_bugtask_status(test_task))
     Invalid by ...Foo Bar...
 
@@ -146,7 +158,8 @@ Let's see some examples of how this works:
     'Invalid (unassigned)'
 
     >>> test_task.transitionToStatus(
-    ...   BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ... )
     >>> render_bugtask_status(test_task)
     'Fix released (unassigned)'
 
@@ -157,7 +170,8 @@ Let's see some examples of how this works:
 Lastly, some cleanup:
 
     >>> test_task.transitionToStatus(
-    ...   ORIGINAL_STATUS, test_task.distribution.owner)
+    ...     ORIGINAL_STATUS, test_task.distribution.owner
+    ... )
     >>> test_task.transitionToAssignee(ORIGINAL_ASSIGNEE)
 
 
@@ -169,9 +183,11 @@ other contexts. Again, the listing-view holds a method which provides us
 with this information; let's define a helper for it:
 
     >>> def render_bugtask_status_elsewhere(task):
-    ...   view = getMultiAdapter(
-    ...       (task, LaunchpadTestRequest()), name="+listing-view")
-    ...   return view.status_elsewhere
+    ...     view = getMultiAdapter(
+    ...         (task, LaunchpadTestRequest()), name="+listing-view"
+    ...     )
+    ...     return view.status_elsewhere
+    ...
 
 The main questions of interest, in order, are:
 
@@ -193,10 +209,12 @@ statuselsewhere value is affected:
     >>> related_task = bugtaskset.get(2).related_tasks[0]
     >>> ORIGINAL_STATUS = related_task.status
     >>> related_task.transitionToStatus(
-    ...   BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ... )
 
     >>> render_bugtask_status_elsewhere(bugtaskset.get(2))
     'fixed in 1 of 3 places'
 
     >>> related_task.transitionToStatus(
-    ...   ORIGINAL_STATUS, getUtility(ILaunchBag).user)
+    ...     ORIGINAL_STATUS, getUtility(ILaunchBag).user
+    ... )

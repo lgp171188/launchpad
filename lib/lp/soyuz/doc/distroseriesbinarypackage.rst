@@ -8,17 +8,17 @@ releases and/or architectures for a given binary package name within a
 specific distribution series.
 
     >>> from zope.component import getUtility
-    >>> from lp.soyuz.model.binarypackagename import (
-    ...     BinaryPackageName)
+    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.interfaces.distribution import IDistributionSet
 
 A DistroSeriesBinaryPackage is normally accessed via a Distro
 Series:
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> firefox_bin_name =  BinaryPackageName.selectOneBy(
-    ...     name="mozilla-firefox")
-    >>> firefox_dsbp = ubuntu['warty'].getBinaryPackage(firefox_bin_name)
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> firefox_bin_name = BinaryPackageName.selectOneBy(
+    ...     name="mozilla-firefox"
+    ... )
+    >>> firefox_dsbp = ubuntu["warty"].getBinaryPackage(firefox_bin_name)
 
 It has a name, summary, description and title:
 
@@ -41,10 +41,15 @@ It provides the current publishings for the binary package in the
 distro series (ordered by architecture then datecreated):
 
     >>> for published in firefox_dsbp.current_publishings:
-    ...     print("%s %s in %s" % (
-    ...         published.distroarchseriesbinarypackagerelease.name,
-    ...         published.distroarchseriesbinarypackagerelease.version,
-    ...         published.distroarchseries.architecturetag))
+    ...     print(
+    ...         "%s %s in %s"
+    ...         % (
+    ...             published.distroarchseriesbinarypackagerelease.name,
+    ...             published.distroarchseriesbinarypackagerelease.version,
+    ...             published.distroarchseries.architecturetag,
+    ...         )
+    ...     )
+    ...
     mozilla-firefox 0.9 in hppa
     mozilla-firefox 0.9 in i386
     mozilla-firefox 1.0 in i386
@@ -63,8 +68,9 @@ It also provides access to the last DistributionSourcePackageRelease:
 If a DistroSeriesBinaryPackage doesn't have a DistroSeriesPackageCache,
 then the summary and description fields reflect the situation:
 
-    >>> firefox_hoary_dsbp = ubuntu['hoary'].getBinaryPackage(
-    ...     firefox_bin_name)
+    >>> firefox_hoary_dsbp = ubuntu["hoary"].getBinaryPackage(
+    ...     firefox_bin_name
+    ... )
     >>> print(firefox_hoary_dsbp.summary)
     No summary available for mozilla-firefox in ubuntu hoary.
     >>> print(firefox_hoary_dsbp.description)

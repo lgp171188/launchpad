@@ -8,36 +8,38 @@ methods.
 
     >>> from zope.interface import implementer
     >>> from lp.bugs.interfaces.externalbugtracker import ISupportsBugImport
-    >>> from lp.bugs.externalbugtracker import (
-    ...     ExternalBugTracker)
+    >>> from lp.bugs.externalbugtracker import ExternalBugTracker
     >>> @implementer(ISupportsBugImport)
     ... class BugImportingExternalBugTracker(ExternalBugTracker):
     ...
     ...     _bugs = {}
     ...
     ...     def getBugReporter(self, remote_bug):
-    ...         display_name, email = self._bugs[remote_bug]['reporter']
+    ...         display_name, email = self._bugs[remote_bug]["reporter"]
     ...         return display_name, email
+    ...
     ...     def getBugSummaryAndDescription(self, remote_bug):
     ...         return (
     ...             "Sample summary %s" % remote_bug,
-    ...             "Sample description %s." % remote_bug)
+    ...             "Sample description %s." % remote_bug,
+    ...         )
+    ...
     ...     def getBugTargetName(self, remote_bug):
-    ...         return self._bugs[remote_bug]['package']
+    ...         return self._bugs[remote_bug]["package"]
 
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> bugtracker = new_bugtracker(BugTrackerType.BUGZILLA)
     >>> external_bugtracker = BugImportingExternalBugTracker(
-    ...     'http://example.com/')
+    ...     "http://example.com/"
+    ... )
 
 When importing bugs, the reporter is automatically created in Launchpad,
 if they don't exist.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> print(getUtility(IPersonSet).getByEmail('joe.bloggs@example.com'))
+    >>> print(getUtility(IPersonSet).getByEmail("joe.bloggs@example.com"))
     None
 
 The method that imports a bug is importBug(). In addition to the
@@ -52,22 +54,27 @@ distributions are supported as the bug target.
     >>> from lp.testing.layers import LaunchpadZopelessLayer
 
     >>> with lp_dbuser():
-    ...     debian = getUtility(IDistributionSet).getByName('debian')
-    ...     evolution_dsp = debian.getSourcePackage('evolution')
+    ...     debian = getUtility(IDistributionSet).getByName("debian")
+    ...     evolution_dsp = debian.getSourcePackage("evolution")
     ...     ignore = factory.makeSourcePackagePublishingHistory(
     ...         distroseries=debian.currentseries,
-    ...         sourcepackagename=evolution_dsp.sourcepackagename)
+    ...         sourcepackagename=evolution_dsp.sourcepackagename,
+    ...     )
+    ...
 
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
-    >>> external_bugtracker._bugs['3'] =  {
-    ...     'package': 'evolution',
-    ...     'reporter': ("Joe Bloggs", "joe.bloggs@example.com")}
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
+    >>> external_bugtracker._bugs["3"] = {
+    ...     "package": "evolution",
+    ...     "reporter": ("Joe Bloggs", "joe.bloggs@example.com"),
+    ... }
     >>> transaction.commit()
     >>> bug_watch_updater = CheckwatchesMaster(
-    ...     LaunchpadZopelessLayer.txn, logger=FakeLogger())
+    ...     LaunchpadZopelessLayer.txn, logger=FakeLogger()
+    ... )
     >>> bug = bug_watch_updater.importBug(
-    ...     external_bugtracker, bugtracker, debian, '3')
+    ...     external_bugtracker, bugtracker, debian, "3"
+    ... )
 
 The summary and descriptions of the imported bugs are what was returned
 by getBugSummaryAndDescription().
@@ -80,7 +87,8 @@ by getBugSummaryAndDescription().
 The bug reporter, as returned by getBugReporter(), got automatically created.
 
     >>> getUtility(IPersonSet).getByEmail(
-    ...     'joe.bloggs@example.com', filter_status=False) is not None
+    ...     "joe.bloggs@example.com", filter_status=False
+    ... ) is not None
     True
     >>> print(bug.owner.displayname)
     Joe Bloggs
@@ -90,11 +98,14 @@ preferred email address, and the one that is associated with their
 account is marked as NEW, since we don't know whether it's valid.
 
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     IEmailAddressSet)
+    ...     IEmailAddressSet,
+    ... )
     >>> reporter_email_addresses = getUtility(IEmailAddressSet).getByPerson(
-    ...     bug.owner)
+    ...     bug.owner
+    ... )
     >>> for email_address in reporter_email_addresses:
     ...     print("%s: %s" % (email_address.email, email_address.status.name))
+    ...
     joe.bloggs@example.com: NEW
     >>> print(bug.owner.preferredemail)
     None
@@ -133,13 +144,15 @@ always included in the description of Debian bugs, so that information
 isn't normally lost. A warning is also logged, so that the one running
 the script gets notified about it.
 
-    >>> external_bugtracker._bugs['5'] = {
-    ...     'package': 'no-such-package',
-    ...     'reporter': ("Joe Bloggs", "joe.bloggs@example.com")}
-    >>> print(debian.getSourcePackage('no-such-package'))
+    >>> external_bugtracker._bugs["5"] = {
+    ...     "package": "no-such-package",
+    ...     "reporter": ("Joe Bloggs", "joe.bloggs@example.com"),
+    ... }
+    >>> print(debian.getSourcePackage("no-such-package"))
     None
     >>> bug = bug_watch_updater.importBug(
-    ...     external_bugtracker, bugtracker, debian, '5')
+    ...     external_bugtracker, bugtracker, debian, "5"
+    ... )
     WARNING Unknown debian package (#5 at http://...): no-such-package
     (OOPS-...)
 
@@ -170,14 +183,16 @@ Reporter already registered in Launchpad
 Even if the reporter of the bug has an account in Launchpad (and thus a
 valid email address), they still won't be subscribed to the imported bug.
 
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> no_priv.preferredemail is not None
     True
-    >>> external_bugtracker._bugs['7'] = {
-    ...     'package': 'evolution',
-    ...     'reporter': ('Not Used', no_priv.preferredemail.email)}
+    >>> external_bugtracker._bugs["7"] = {
+    ...     "package": "evolution",
+    ...     "reporter": ("Not Used", no_priv.preferredemail.email),
+    ... }
     >>> bug = bug_watch_updater.importBug(
-    ...     external_bugtracker, bugtracker, debian, '7')
+    ...     external_bugtracker, bugtracker, debian, "7"
+    ... )
 
     >>> print(bug.owner.name)
     no-priv

@@ -33,12 +33,15 @@ class LaunchpadValidationError(ValidationError):
     may contain XHTML markup suitable for inclusion in an inline tag
     such as <span>.
 
-    >>> print(LaunchpadValidationError('<br/>oops').snippet())
+    >>> print(LaunchpadValidationError("<br/>oops").snippet())
     &lt;br/&gt;oops
 
     >>> from lp.services.webapp.escaping import structured
-    >>> print(LaunchpadValidationError(
-    ...     structured('<a title="%s">Ok</a>', '<evil/>')).snippet())
+    >>> print(
+    ...     LaunchpadValidationError(
+    ...         structured('<a title="%s">Ok</a>', "<evil/>")
+    ...     ).snippet()
+    ... )
     <a title="&lt;evil/&gt;">Ok</a>
     """
 
@@ -92,6 +95,7 @@ class WidgetInputErrorView(Z3WidgetInputErrorView):
         >>> class TooSmallError:
         ...     def doc(self):
         ...         return "Foo input < 1"
+        ...
         >>> err = WidgetInputError("foo", "Foo", TooSmallError())
         >>> view = WidgetInputErrorView(err, None)
         >>> print(view.snippet())

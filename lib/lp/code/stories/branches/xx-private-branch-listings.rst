@@ -12,8 +12,7 @@ created and imported branches), on the bug details page for bug-branch
 links, and on the blueprint pages when branches are associated with the
 blueprint.
 
-    >>> from lp.code.tests.branch_helper import (
-    ...     reset_all_branch_last_modified)
+    >>> from lp.code.tests.branch_helper import reset_all_branch_last_modified
     >>> reset_all_branch_last_modified()
 
 Additional sample data
@@ -28,12 +27,15 @@ Adding a private branch that is only visible by No Privileges Person
     >>> from lp.app.enums import InformationType
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> login('no-priv@canonical.com')
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> landscape = getUtility(IProductSet).getByName('landscape')
+    >>> login("no-priv@canonical.com")
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> landscape = getUtility(IProductSet).getByName("landscape")
     >>> branch = factory.makePersonalBranch(
-    ...     branch_type=BranchType.HOSTED, name='testing-branch',
-    ...     owner=no_priv, information_type=InformationType.USERDATA)
+    ...     branch_type=BranchType.HOSTED,
+    ...     name="testing-branch",
+    ...     owner=no_priv,
+    ...     information_type=InformationType.USERDATA,
+    ... )
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(branch).product = landscape
     >>> flush_database_updates()
@@ -47,10 +49,11 @@ The code home page shows lists of recently imported, changed, and
 registered branches.
 
     >>> def print_recently_registered_branches(browser):
-    ...     browser.open('http://code.launchpad.test')
-    ...     branches = find_tag_by_id(browser.contents, 'recently-registered')
-    ...     for list_item in branches.ul.find_all('li'):
+    ...     browser.open("http://code.launchpad.test")
+    ...     branches = find_tag_by_id(browser.contents, "recently-registered")
+    ...     for list_item in branches.ul.find_all("li"):
     ...         print("%r" % list_item.decode_contents())
+    ...
 
 When there is no logged in user, only public branches should be visible.
 
@@ -66,7 +69,8 @@ Logged in users should only be able to see public branches, and private
 branches that they are subscribed to or are the owner of.
 
     >>> no_priv_browser = setupBrowser(
-    ...     auth='Basic no-priv@canonical.com:test')
+    ...     auth="Basic no-priv@canonical.com:test"
+    ... )
     >>> print_recently_registered_branches(no_priv_browser)
     <BLANKLINE>
     ...~no-priv/landscape/testing-branch...<span...class="sprite private"...
@@ -80,7 +84,8 @@ subscribed to by Landscape developers.  Sample Person is a Landscape
 developer.
 
     >>> landscape_dev_browser = setupBrowser(
-    ...     auth='Basic test@canonical.com:test')
+    ...     auth="Basic test@canonical.com:test"
+    ... )
     >>> print_recently_registered_branches(landscape_dev_browser)  # noqa
     <BLANKLINE>
     ...~name12/landscape/feature-x...<span...class="sprite private"...
@@ -108,17 +113,22 @@ listing tab.
 
     >>> def print_landscape_code_listing(browser):
     ...     browser.open(
-    ...         'http://code.launchpad.test/landscape/+branches'
-    ...         '?field.sort_by=by+status')
-    ...     table = find_tag_by_id(browser.contents, 'branchtable')
+    ...         "http://code.launchpad.test/landscape/+branches"
+    ...         "?field.sort_by=by+status"
+    ...     )
+    ...     table = find_tag_by_id(browser.contents, "branchtable")
     ...     # If there are no branches, the table is not shown.
     ...     # So print the text shown in the application summary.
     ...     if table is None:
-    ...         print(extract_text(find_tag_by_id(
-    ...             browser.contents, 'branch-summary')))
+    ...         print(
+    ...             extract_text(
+    ...                 find_tag_by_id(browser.contents, "branch-summary")
+    ...             )
+    ...         )
     ...     else:
-    ...         for row in table.tbody.find_all('tr'):
+    ...         for row in table.tbody.find_all("tr"):
     ...             print(extract_text(row))
+    ...
 
     >>> print_landscape_code_listing(anon_browser)
     Launchpad does not know where The Landscape Project hosts its code...
@@ -147,54 +157,57 @@ viewable branches.
 
     >>> from urllib.parse import urlencode
     >>> def print_person_code_listing(browser, category=None):
-    ...     params = {'batch': '15'}
+    ...     params = {"batch": "15"}
     ...     if category is not None:
-    ...         params['field.category'] = category
+    ...         params["field.category"] = category
     ...     # The batch argument is given to override the default batch
     ...     # size of five.
-    ...     full_url = 'http://code.launchpad.test/~name12?%s' % (
-    ...         urlencode(params),)
+    ...     full_url = "http://code.launchpad.test/~name12?%s" % (
+    ...         urlencode(params),
+    ...     )
     ...     browser.open(full_url)
-    ...     table = find_tag_by_id(browser.contents, 'branchtable')
+    ...     table = find_tag_by_id(browser.contents, "branchtable")
     ...     branches = []
-    ...     for row in table.tbody.find_all('tr'):
+    ...     for row in table.tbody.find_all("tr"):
     ...         branches.append(extract_text(row))
-    ...     landscape_branches = [branch for branch in branches
-    ...                           if 'landscape' in branch]
+    ...     landscape_branches = [
+    ...         branch for branch in branches if "landscape" in branch
+    ...     ]
     ...     print("Total of %d branches listed" % len(branches))
     ...     if landscape_branches:
     ...         for branch in landscape_branches:
     ...             print(branch)
     ...     else:
     ...         print("No landscape branches")
+    ...
 
     >>> print_person_code_listing(anon_browser)
     Total of 9 branches listed
     No landscape branches
-    >>> print_person_code_listing(anon_browser, 'owned')
+    >>> print_person_code_listing(anon_browser, "owned")
     Total of 9 branches listed
     No landscape branches
-    >>> print_person_code_listing(anon_browser, 'registered')
+    >>> print_person_code_listing(anon_browser, "registered")
     Total of 9 branches listed
     No landscape branches
 
     >>> print_person_code_listing(no_priv_browser)
     Total of 9 branches listed
     No landscape branches
-    >>> print_person_code_listing(no_priv_browser, 'owned')
+    >>> print_person_code_listing(no_priv_browser, "owned")
     Total of 9 branches listed
     No landscape branches
-    >>> print_person_code_listing(no_priv_browser, 'registered')
+    >>> print_person_code_listing(no_priv_browser, "registered")
     Total of 9 branches listed
     No landscape branches
 
     >>> print_person_code_listing(landscape_dev_browser)
     Total of 10 branches listed
     lp://dev/~name12/landscape/feature-x            Development   ...
-    >>> print_person_code_listing(landscape_dev_browser, 'owned')
+    >>> print_person_code_listing(landscape_dev_browser, "owned")
     Total of 10 branches listed
     lp://dev/~name12/landscape/feature-x            Development   ...
-    >>> print_person_code_listing(landscape_dev_browser, 'registered')
+    >>> print_person_code_listing(landscape_dev_browser, "registered")
     Total of 11 branches listed
     lp://dev/~landscape-developers/landscape/trunk  Development   ...
     lp://dev/~name12/landscape/feature-x            Development   ...
@@ -202,10 +215,10 @@ viewable branches.
     >>> print_person_code_listing(admin_browser)
     Total of 10 branches listed
     lp://dev/~name12/landscape/feature-x            Development   ...
-    >>> print_person_code_listing(admin_browser, 'owned')
+    >>> print_person_code_listing(admin_browser, "owned")
     Total of 10 branches listed
     lp://dev/~name12/landscape/feature-x            Development   ...
-    >>> print_person_code_listing(admin_browser, 'registered')
+    >>> print_person_code_listing(admin_browser, "registered")
     Total of 11 branches listed
     lp://dev/~landscape-developers/landscape/trunk  Development   ...
     lp://dev/~name12/landscape/feature-x            Development   ...
@@ -217,34 +230,36 @@ Bug branch links
 When a private branch is linked to a bug, the bug branch link is only
 visible to those that would be able to see the branch.
 
-    >>> landscape_dev_browser.open('http://launchpad.test/bugs/10')
+    >>> landscape_dev_browser.open("http://launchpad.test/bugs/10")
 
 There are no branches linked to this bug.
 
     >>> def printBugBranchLinks(browser):
-    ...     tags = find_tags_by_class(browser.contents, 'buglink-summary')
+    ...     tags = find_tags_by_class(browser.contents, "buglink-summary")
     ...     if len(tags) == 0:
-    ...         print('No bug branch links')
+    ...         print("No bug branch links")
     ...     else:
     ...         for tag in tags:
     ...             print(extract_text(tag))
+    ...
 
     >>> printBugBranchLinks(landscape_dev_browser)
     No bug branch links
 
 Now link to a private branch.
 
-    >>> landscape_dev_browser.getLink('Link a related branch').click()
-    >>> landscape_dev_browser.getControl('Branch').value = (
-    ...     '~landscape-developers/landscape/trunk')
-    >>> landscape_dev_browser.getControl('Continue').click()
+    >>> landscape_dev_browser.getLink("Link a related branch").click()
+    >>> landscape_dev_browser.getControl(
+    ...     "Branch"
+    ... ).value = "~landscape-developers/landscape/trunk"
+    >>> landscape_dev_browser.getControl("Continue").click()
     >>> printBugBranchLinks(landscape_dev_browser)
     lp://dev/~landscape-developers/landscape/trunk
 
 Since the link is to a private branch, the entire section is not
 visible to a user that isn't able to see the branch itself.
 
-    >>> anon_browser.open('http://launchpad.test/bugs/10')
+    >>> anon_browser.open("http://launchpad.test/bugs/10")
     >>> printBugBranchLinks(anon_browser)
     No bug branch links
 
@@ -256,30 +271,42 @@ When a branch is set as the user branch for product series, the details
 must be visible to those that are entitled to see it, but hidden from
 those who shouldn't be able to see it.
 
-    >>> admin_browser.open('http://launchpad.test/landscape/trunk')
-    >>> admin_browser.getLink('Change details').click()
-    >>> admin_browser.getControl('Branch').value = (
-    ...     '~landscape-developers/landscape/trunk')
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.open("http://launchpad.test/landscape/trunk")
+    >>> admin_browser.getLink("Change details").click()
+    >>> admin_browser.getControl(
+    ...     "Branch"
+    ... ).value = "~landscape-developers/landscape/trunk"
+    >>> admin_browser.getControl("Change").click()
 
 Since the admin user is able to see all private branches the branch details
 are shown.
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'branch-details')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "branch-details")
+    ...     )
+    ... )
     lp://dev/... - Landscape Developers ...
 
 Landscape developers can see it.
 
-    >>> landscape_dev_browser.open('http://launchpad.test/landscape/trunk')
-    >>> print(extract_text(find_tag_by_id(
-    ...     landscape_dev_browser.contents, 'branch-details')))
+    >>> landscape_dev_browser.open("http://launchpad.test/landscape/trunk")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             landscape_dev_browser.contents, "branch-details"
+    ...         )
+    ...     )
+    ... )
     lp://dev/... - Landscape Developers ...
 
 But normal people can't.
 
-    >>> anon_browser.open('http://launchpad.test/landscape/trunk')
-    >>> print(extract_text(find_tag_by_id(
-    ...     anon_browser.contents, 'branch-details')))
+    >>> anon_browser.open("http://launchpad.test/landscape/trunk")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "branch-details")
+    ...     )
+    ... )
     No revision control details recorded for
     The Landscape Project trunk series.

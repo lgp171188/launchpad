@@ -16,11 +16,12 @@ country.
 
     >>> country_and_mirrors = ubuntu_cdmirrors.getMirrorsGroupedByCountry()
     >>> for country_and_mirror in country_and_mirrors:
-    ...     country = country_and_mirror['country']
-    ...     mirrors = country_and_mirror['mirrors']
+    ...     country = country_and_mirror["country"]
+    ...     mirrors = country_and_mirror["mirrors"]
     ...     for mirror in mirrors:
     ...         assert mirror.country.name == country
     ...     print("%s: %d mirror(s)" % (country, len(mirrors)))
+    ...
     France: 2 mirror(s)
     Germany: 1 mirror(s)
     United Kingdom: 1 mirror(s)
@@ -30,13 +31,15 @@ Lists of archive mirrors
 
     >>> ubuntu_archivemirrors = create_view(ubuntu, name="+archivemirrors")
     >>> country_and_mirrors = (
-    ...     ubuntu_archivemirrors.getMirrorsGroupedByCountry())
+    ...     ubuntu_archivemirrors.getMirrorsGroupedByCountry()
+    ... )
     >>> for country_and_mirror in country_and_mirrors:
-    ...     country = country_and_mirror['country']
-    ...     mirrors = country_and_mirror['mirrors']
+    ...     country = country_and_mirror["country"]
+    ...     mirrors = country_and_mirror["mirrors"]
     ...     for mirror in mirrors:
     ...         assert mirror.country.name == country
     ...     print("%s: %d mirror(s)" % (country, len(mirrors)))
+    ...
     Antarctica: 2 mirror(s)
     France: 2 mirror(s)
     United Kingdom: 1 mirror(s)
@@ -51,7 +54,7 @@ Registering a distribution
 
 The +add view of the DistributionSet allows admins to register distributions.
 
-    >>> view = create_view(distributionset, '+add')
+    >>> view = create_view(distributionset, "+add")
     >>> print(view.label)
     Register a new distribution
 
@@ -72,17 +75,17 @@ The view accepts the basic fields to register a distribution.
 
     >>> login("admin@canonical.com")
     >>> form = {
-    ...     'field.name': 'youbuntu',
-    ...     'field.display_name': 'YoUbuntu',
-    ...     'field.summary': 'summary',
-    ...     'field.description': 'description',
-    ...     'field.domainname': 'youbuntu.me',
-    ...     'field.members': 'landscape-developers',
-    ...     'field.require_virtualized': 'on',
-    ...     'field.processors': [],
-    ...     'field.actions.save': 'Save',
-    ...     }
-    >>> view = create_initialized_view(distributionset, '+add', form=form)
+    ...     "field.name": "youbuntu",
+    ...     "field.display_name": "YoUbuntu",
+    ...     "field.summary": "summary",
+    ...     "field.description": "description",
+    ...     "field.domainname": "youbuntu.me",
+    ...     "field.members": "landscape-developers",
+    ...     "field.require_virtualized": "on",
+    ...     "field.processors": [],
+    ...     "field.actions.save": "Save",
+    ... }
+    >>> view = create_initialized_view(distributionset, "+add", form=form)
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -96,11 +99,11 @@ Only admins and owners can access the view.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> check_permission('launchpad.Admin', view)
+    >>> check_permission("launchpad.Admin", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Admin', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Admin", view)
     False
 
 
@@ -111,7 +114,7 @@ The +edit view allows an owner or admin to change a distribution. It provides
 a label, page_title, and cancel_url.
 
     >>> login("admin@canonical.com")
-    >>> view = create_view(distribution, '+edit')
+    >>> view = create_view(distribution, "+edit")
     >>> print(view.label)
     Change YoUbuntu details
 
@@ -136,12 +139,12 @@ The view accepts most of the distribution fields.
      'default_traversal_policy', 'redirect_default_traversal',
      'oci_registry_credentials']
 
-    >>> del form['field.name']
-    >>> del form['field.actions.save']
-    >>> form['field.bug_reporting_guidelines'] = 'guidelines'
-    >>> form['field.official_malone'] = 'on'
-    >>> form['field.actions.change'] = 'Change'
-    >>> view = create_initialized_view(distribution, '+edit', form=form)
+    >>> del form["field.name"]
+    >>> del form["field.actions.save"]
+    >>> form["field.bug_reporting_guidelines"] = "guidelines"
+    >>> form["field.official_malone"] = "on"
+    >>> form["field.actions.change"] = "Change"
+    >>> view = create_initialized_view(distribution, "+edit", form=form)
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -155,11 +158,11 @@ The view accepts most of the distribution fields.
 
 Only admins and owners can access the view.
 
-    >>> check_permission('launchpad.Edit', view)
+    >>> check_permission("launchpad.Edit", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Edit', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -170,7 +173,7 @@ the +selectmirroradmins allows the owner or admin to change the mirror
 administrator.
 
     >>> login("admin@canonical.com")
-    >>> view = create_view(distribution, '+selectmirroradmins')
+    >>> view = create_view(distribution, "+selectmirroradmins")
     >>> print(view.label)
     Change the YoUbuntu mirror administrator
 
@@ -189,11 +192,12 @@ The view accepts the mirror_admin field.
     ['mirror_admin']
 
     >>> form = {
-    ...     'field.mirror_admin': 'no-priv',
-    ...     'field.actions.change': 'Change',
-    ...     }
+    ...     "field.mirror_admin": "no-priv",
+    ...     "field.actions.change": "Change",
+    ... }
     >>> view = create_initialized_view(
-    ...     distribution, '+selectmirroradmins', form=form)
+    ...     distribution, "+selectmirroradmins", form=form
+    ... )
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -204,11 +208,11 @@ The view accepts the mirror_admin field.
 
 Only admins and owners can access the view.
 
-    >>> check_permission('launchpad.Edit', view)
+    >>> check_permission("launchpad.Edit", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Edit', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -219,7 +223,7 @@ The +select-oci-project-admins view allows the owner or admin to change the
 OCI project administrator.
 
     >>> login("admin@canonical.com")
-    >>> view = create_view(distribution, '+select-oci-project-admins')
+    >>> view = create_view(distribution, "+select-oci-project-admins")
     >>> print(view.label)
     Change the YoUbuntu OCI project administrator
 
@@ -238,11 +242,12 @@ The view accepts the oci_project_admin field.
     ['oci_project_admin']
 
     >>> form = {
-    ...     'field.oci_project_admin': 'no-priv',
-    ...     'field.actions.change': 'Change',
-    ...     }
+    ...     "field.oci_project_admin": "no-priv",
+    ...     "field.actions.change": "Change",
+    ... }
     >>> view = create_initialized_view(
-    ...     distribution, '+select-oci-project-admins', form=form)
+    ...     distribution, "+select-oci-project-admins", form=form
+    ... )
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -253,11 +258,11 @@ The view accepts the oci_project_admin field.
 
 Only admins and owners can access the view.
 
-    >>> check_permission('launchpad.Edit', view)
+    >>> check_permission("launchpad.Edit", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Edit', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -268,7 +273,7 @@ The +select-security-admins view allows the owner or admin to change the
 security administrator.
 
     >>> login("admin@canonical.com")
-    >>> view = create_view(distribution, '+select-security-admins')
+    >>> view = create_view(distribution, "+select-security-admins")
     >>> print(view.label)
     Change the YoUbuntu security administrator
 
@@ -287,11 +292,12 @@ The view accepts the security_admin field.
     ['security_admin']
 
     >>> form = {
-    ...     'field.security_admin': 'no-priv',
-    ...     'field.actions.change': 'Change',
-    ...     }
+    ...     "field.security_admin": "no-priv",
+    ...     "field.actions.change": "Change",
+    ... }
     >>> view = create_initialized_view(
-    ...     distribution, '+select-security-admins', form=form)
+    ...     distribution, "+select-security-admins", form=form
+    ... )
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -302,11 +308,11 @@ The view accepts the security_admin field.
 
 Only admins and owners can access the view.
 
-    >>> check_permission('launchpad.Edit', view)
+    >>> check_permission("launchpad.Edit", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Edit', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -316,7 +322,7 @@ Changing a distribution members team
 the +selectmirroradmins allows the owner or admin to change the members team.
 
     >>> login("admin@canonical.com")
-    >>> view = create_view(distribution, '+selectmemberteam')
+    >>> view = create_view(distribution, "+selectmemberteam")
     >>> print(view.label)
     Change the YoUbuntu members team
 
@@ -335,11 +341,12 @@ The view accepts the members field.
     ['members']
 
     >>> form = {
-    ...     'field.members': 'ubuntu-team',
-    ...     'field.actions.change': 'Change',
-    ...     }
+    ...     "field.members": "ubuntu-team",
+    ...     "field.actions.change": "Change",
+    ... }
     >>> view = create_initialized_view(
-    ...     distribution, '+selectmemberteam', form=form)
+    ...     distribution, "+selectmemberteam", form=form
+    ... )
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -350,11 +357,11 @@ The view accepts the members field.
 
 Only admins and owners can access the view.
 
-    >>> check_permission('launchpad.Edit', view)
+    >>> check_permission("launchpad.Edit", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Edit', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -378,15 +385,15 @@ not appear.
     >>> bugtask = factory.makeBugTask(target=distribution)
     >>> blueprint = factory.makeSpecification(distribution=distribution)
 
-    >>> view = create_view(distribution, name='+index', principal=owner)
-    >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print(find_tag_by_id(content, 'portlet-latest-faqs'))
+    >>> view = create_view(distribution, name="+index", principal=owner)
+    >>> content = find_tag_by_id(view.render(), "maincontent")
+    >>> print(find_tag_by_id(content, "portlet-latest-faqs"))
     None
-    >>> print(find_tag_by_id(content, 'portlet-latest-questions'))
+    >>> print(find_tag_by_id(content, "portlet-latest-questions"))
     None
-    >>> print(find_tag_by_id(content, 'portlet-latest-bugs'))
+    >>> print(find_tag_by_id(content, "portlet-latest-bugs"))
     None
-    >>> print(find_tag_by_id(content, 'portlet-blueprints'))
+    >>> print(find_tag_by_id(content, "portlet-blueprints"))
     None
 
 If the distribution officially uses the application, its portlet does appear.
@@ -397,15 +404,15 @@ If the distribution officially uses the application, its portlet does appear.
     >>> distribution.blueprints_usage = ServiceUsage.LAUNCHPAD
     >>> distribution.official_malone = True
 
-    >>> view = create_view(distribution, name='+index', principal=owner)
-    >>> content = find_tag_by_id(view.render(), 'maincontent')
-    >>> print(find_tag_by_id(content, 'portlet-latest-faqs')['id'])
+    >>> view = create_view(distribution, name="+index", principal=owner)
+    >>> content = find_tag_by_id(view.render(), "maincontent")
+    >>> print(find_tag_by_id(content, "portlet-latest-faqs")["id"])
     portlet-latest-faqs
-    >>> print(find_tag_by_id(content, 'portlet-latest-questions')['id'])
+    >>> print(find_tag_by_id(content, "portlet-latest-questions")["id"])
     portlet-latest-questions
-    >>> print(find_tag_by_id(content, 'portlet-latest-bugs')['id'])
+    >>> print(find_tag_by_id(content, "portlet-latest-bugs")["id"])
     portlet-latest-bugs
-    >>> print(find_tag_by_id(content, 'portlet-blueprints')['id'])
+    >>> print(find_tag_by_id(content, "portlet-blueprints")["id"])
     portlet-blueprints
 
 
@@ -422,35 +429,35 @@ For distribution owners the property is true.
 
     >>> commercial_distro = factory.makeDistribution()
     >>> _ = login_person(removeSecurityProxy(commercial_distro).owner)
-    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> view = create_initialized_view(commercial_distro, name="+index")
     >>> print(view.show_commercial_subscription_info)
     True
 
 For Launchpad admins the property is true.
 
-    >>> login('foo.bar@canonical.com')
-    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> login("foo.bar@canonical.com")
+    >>> view = create_initialized_view(commercial_distro, name="+index")
     >>> print(view.show_commercial_subscription_info)
     True
 
 For Launchpad commercial members the property is true.
 
-    >>> login('commercial-member@canonical.com')
-    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> login("commercial-member@canonical.com")
+    >>> view = create_initialized_view(commercial_distro, name="+index")
     >>> print(view.show_commercial_subscription_info)
     True
 
 But for a no-privileges user the property is false.
 
-    >>> login('no-priv@canonical.com')
-    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> login("no-priv@canonical.com")
+    >>> view = create_initialized_view(commercial_distro, name="+index")
     >>> print(view.show_commercial_subscription_info)
     False
 
 And for an anonymous user it is false.
 
     >>> login(ANONYMOUS)
-    >>> view = create_initialized_view(commercial_distro, name='+index')
+    >>> view = create_initialized_view(commercial_distro, name="+index")
     >>> print(view.show_commercial_subscription_info)
     False
 
@@ -461,12 +468,13 @@ Distribution +series
 The +series view provides a page title and list of dicts that represent
 the series and the CSS class to present them with.
 
-    >>> view = create_view(ubuntu, name='+series')
+    >>> view = create_view(ubuntu, name="+series")
     >>> print(view.label)
     Timeline
 
     >>> for styled_series in view.styled_series:
-    ...     print(styled_series['series'].name, styled_series['css_class'])
+    ...     print(styled_series["series"].name, styled_series["css_class"])
+    ...
     breezy-autotest
     grumpy
     hoary highlight
@@ -479,12 +487,13 @@ Distribution +derivatives
 The +derivatives view provides a page title and list of dicts that represent
 the derivatives and the CSS class to present them with.
 
-    >>> view = create_view(ubuntu, name='+derivatives')
+    >>> view = create_view(ubuntu, name="+derivatives")
     >>> print(view.label)
     Derivatives
 
     >>> for styled_series in view.styled_series:
-    ...     print(styled_series['series'].name, styled_series['css_class'])
+    ...     print(styled_series["series"].name, styled_series["css_class"])
+    ...
     hoary-test
     krunch
     breezy-autotest
@@ -497,7 +506,7 @@ Distribution +ppas
 The +ppas view provides a page title and label, some statistics helpers
 and search results.
 
-    >>> view = create_view(ubuntu, name='+ppas')
+    >>> view = create_view(ubuntu, name="+ppas")
     >>> print(view.label)
     Personal Package Archives for Ubuntu
 

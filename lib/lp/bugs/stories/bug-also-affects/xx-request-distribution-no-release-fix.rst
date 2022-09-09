@@ -10,17 +10,18 @@ A distribution using Launchpad
 
 Gentoo is currently using Launchpad.
 
-    >>> admin_browser.open('http://launchpad.test/gentoo/+edit')
+    >>> admin_browser.open("http://launchpad.test/gentoo/+edit")
     >>> admin_browser.getControl(
-    ...     'Bugs in this project are tracked in Launchpad').selected
+    ...     "Bugs in this project are tracked in Launchpad"
+    ... ).selected
     True
 
 Any user can request a fix for it.
 
-    >>> user_browser.open('http://launchpad.test/bugs/4')
-    >>> user_browser.getLink('Also affects distribution/package').click()
-    >>> user_browser.getControl('Distribution').value = ['gentoo']
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/4")
+    >>> user_browser.getLink("Also affects distribution/package").click()
+    >>> user_browser.getControl("Distribution").value = ["gentoo"]
+    >>> user_browser.getControl("Continue").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/gentoo/+bug/4'
 
@@ -31,19 +32,22 @@ If we change Gentoo not to use Launchpad, any user can still add a task and
 link to a external bug for it.
 
     >>> admin_browser.getControl(
-    ...     'Bugs in this project are tracked in Launchpad').selected = False
-    >>> admin_browser.getControl('Change', index=3).click()
-    >>> admin_browser.open('http://launchpad.test/gentoo/+edit')
+    ...     "Bugs in this project are tracked in Launchpad"
+    ... ).selected = False
+    >>> admin_browser.getControl("Change", index=3).click()
+    >>> admin_browser.open("http://launchpad.test/gentoo/+edit")
     >>> admin_browser.getControl(
-    ...     'Bugs in this project are tracked in Launchpad').selected
+    ...     "Bugs in this project are tracked in Launchpad"
+    ... ).selected
     False
 
-    >>> user_browser.open('http://launchpad.test/bugs/7')
-    >>> user_browser.getLink('Also affects distribution/package').click()
-    >>> user_browser.getControl('Distribution').value = ['gentoo']
-    >>> user_browser.getControl('Source Package').value = ''
-    >>> user_browser.getControl('URL').value = (
-    ...     'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1234')
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/7")
+    >>> user_browser.getLink("Also affects distribution/package").click()
+    >>> user_browser.getControl("Distribution").value = ["gentoo"]
+    >>> user_browser.getControl("Source Package").value = ""
+    >>> user_browser.getControl(
+    ...     "URL"
+    ... ).value = "http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1234"
+    >>> user_browser.getControl("Continue").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/gentoo/+bug/7'

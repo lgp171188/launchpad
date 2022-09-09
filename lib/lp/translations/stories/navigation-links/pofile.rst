@@ -7,8 +7,9 @@ structural object.
 Taking an IPOFile for IProductSeries context:
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
-    ...     'evolution-2.2/es')
+    ...     "http://translations.launchpad.test/evolution/trunk/+pots/"
+    ...     "evolution-2.2/es"
+    ... )
     >>> print(admin_browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/es
 
@@ -25,8 +26,9 @@ The Application tabs should point to IProduct URLs.
 Taking an IPOFile for ISourcePackage context:
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es"
+    ... )
     >>> print(admin_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es
 

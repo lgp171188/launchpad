@@ -11,13 +11,15 @@ browsing to it.
     >>> def make_source_package(distro, series, name):
     ...     distro = factory.makeDistribution(name=distro, displayname=distro)
     ...     distroseries = factory.makeDistroSeries(
-    ...         name=series, distribution=distro)
+    ...         name=series, distribution=distro
+    ...     )
     ...     sourcepackagename = factory.makeSourcePackageName(name=name)
     ...     return SourcePackage(sourcepackagename, distroseries)
+    ...
 
     >>> login(ANONYMOUS)
-    >>> source_package = make_source_package('distro', 'series', 'foo')
-    >>> source_package_url = canonical_url(source_package, rootsite='code')
+    >>> source_package = make_source_package("distro", "series", "foo")
+    >>> source_package_url = canonical_url(source_package, rootsite="code")
     >>> logout()
 
 This takes us to the branch listing for that source package
@@ -26,10 +28,10 @@ This takes us to the branch listing for that source package
 
 Since there are no branches, there is no branch listing table:
 
-    >>> print(find_tag_by_id(browser.contents, 'branchtable'))
+    >>> print(find_tag_by_id(browser.contents, "branchtable"))
     None
 
-    >>> print_tag_with_id(browser.contents, 'branch-summary')
+    >>> print_tag_with_id(browser.contents, "branch-summary")
     There are no branches of foo in distro Series in Launchpad.
 
 Listings of distribution source packages also just show a message.
@@ -38,15 +40,16 @@ Listings of distribution source packages also just show a message.
 
 Since there are no branches, there is no branch listing table:
 
-    >>> print(find_tag_by_id(browser.contents, 'branchtable'))
+    >>> print(find_tag_by_id(browser.contents, "branchtable"))
     None
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'branch-summary')))
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "branch-summary"))
+    ... )
     There are no branches for the foo package in distro
     in Launchpad.
 
-    >>> print_tag_with_id(browser.contents, 'distro-branch-warning')
+    >>> print_tag_with_id(browser.contents, "distro-branch-warning")
     This page is for a packaging branch for a program in
     distro. Changes
     should be made here to

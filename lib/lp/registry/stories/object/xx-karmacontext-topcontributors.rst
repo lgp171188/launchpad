@@ -13,12 +13,13 @@ Top contributors of a distribution
 
 The top contributors page can be reached from the top contributors portlet.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/")
     >>> find_tag_by_id(
-    ...     anon_browser.contents, 'portlet-top-contributors') is not None
+    ...     anon_browser.contents, "portlet-top-contributors"
+    ... ) is not None
     True
 
-    >>> anon_browser.getLink('More contributors').click()
+    >>> anon_browser.getLink("More contributors").click()
     >>> print(anon_browser.title)
     Top Ubuntu Contributors...
 
@@ -28,12 +29,13 @@ Top contributors of a product
 
 The top contributors page can be reached from the top contributors portlet.
 
-    >>> anon_browser.open('http://launchpad.test/firefox')
+    >>> anon_browser.open("http://launchpad.test/firefox")
     >>> find_tag_by_id(
-    ...     anon_browser.contents, 'portlet-top-contributors') is not None
+    ...     anon_browser.contents, "portlet-top-contributors"
+    ... ) is not None
     True
 
-    >>> anon_browser.getLink('More contributors').click()
+    >>> anon_browser.getLink("More contributors").click()
     >>> print(anon_browser.title)
     Top Mozilla Firefox Contributors...
 
@@ -43,11 +45,12 @@ Top contributors of a project group
 
 The top contributors page can be reached from the top contributors portlet.
 
-    >>> anon_browser.open('http://launchpad.test/mozilla')
+    >>> anon_browser.open("http://launchpad.test/mozilla")
     >>> find_tag_by_id(
-    ...     anon_browser.contents, 'portlet-top-contributors') is not None
+    ...     anon_browser.contents, "portlet-top-contributors"
+    ... ) is not None
     True
 
-    >>> anon_browser.getLink('More contributors').click()
+    >>> anon_browser.getLink("More contributors").click()
     >>> print(anon_browser.title)
     Top The Mozilla Project Contributors...

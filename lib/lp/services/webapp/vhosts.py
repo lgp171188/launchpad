@@ -36,15 +36,15 @@ class VirtualHostConfig:
         about what is accepted.  See the examples in the following doctest.
 
         >>> thismethod = VirtualHostConfig._hostnameStrToList
-        >>> thismethod('foo')
+        >>> thismethod("foo")
         ['foo']
-        >>> thismethod('foo,bar, baz')
+        >>> thismethod("foo,bar, baz")
         ['foo', 'bar', 'baz']
-        >>> thismethod('foo,,bar, ,baz ,')
+        >>> thismethod("foo,,bar, ,baz ,")
         ['foo', 'bar', 'baz']
-        >>> thismethod('')
+        >>> thismethod("")
         []
-        >>> thismethod(' ')
+        >>> thismethod(" ")
         []
 
         """

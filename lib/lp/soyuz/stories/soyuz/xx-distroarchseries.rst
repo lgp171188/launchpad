@@ -13,9 +13,9 @@ distroseries chain. We encode the DistroArchSeries details in the list
 presented in the DistroSeries page. See further details of this
 feature in 'DistroArchSeries Actions'.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/')
-    >>> anon_browser.getLink('4.10').click()
-    >>> anon_browser.getLink('i386').click()
+    >>> anon_browser.open("http://launchpad.test/ubuntu/")
+    >>> anon_browser.getLink("4.10").click()
+    >>> anon_browser.getLink("i386").click()
 
     >>> print(anon_browser.title)
     i386 : Warty (4.10) : Ubuntu
@@ -54,9 +54,12 @@ result is displayed as the binary package name followed by the binary
 package summary.
 
 More details are available by clicking on the binary package name.
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'search-results'),
-    ...     formatter='html'))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "search-results"),
+    ...         formatter="html",
+    ...     )
+    ... )
     1 &rarr; 3 of 3 results
     First &bull; Previous &bull; Next &bull; Last
     mozilla-firefox: Mozilla Firefox Web Browser
@@ -69,9 +72,12 @@ A search may yield no result. In this case, we describe the search
 that was done, and explain that no matches were found.
 
     >>> anon_browser.getControl(name="text").value = "biscoito"
-    >>> anon_browser.getControl('Search', index=0).click()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'search-results')))
+    >>> anon_browser.getControl("Search", index=0).click()
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "search-results")
+    ...     )
+    ... )
     No packages matching 'biscoito' are published in Ubuntu Warty i386.
 
 
@@ -81,16 +87,22 @@ DistroArchseries Actions
 All users can browse to the builds page from the DistroArchSeries
 page. The builds page is described in xx-builds-pages.rst.
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'global-actions')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "global-actions")
+    ...     )
+    ... )
     Show builds
 
 Only administrators can edit ('administer', in fact) the
 distroarchseries details.
 
     >>> admin_browser.open("http://launchpad.test/ubuntu/warty/i386/")
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'global-actions')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "global-actions")
+    ...     )
+    ... )
     Administer
     Show builds
 
@@ -104,7 +116,7 @@ error.
 
 Accessing the DistroArchSeries administration interface.
 
-    >>> admin_browser.getLink('Administer').click()
+    >>> admin_browser.getLink("Administer").click()
 
     >>> admin_browser.getControl("Architecture Tag").value
     'i386'
@@ -147,7 +159,8 @@ have huge impacts in the distribution management, thus should be
 planned and done carefully.
 
     >>> for warning in find_tags_by_class(
-    ...     admin_browser.contents, 'exception'):
+    ...     admin_browser.contents, "exception"
+    ... ):
     ...     print(extract_text(warning))
     Changing the architecture tag will use large amounts of archive
     disk space, and may affect many people. Please be very careful.
@@ -156,11 +169,18 @@ This change also affects the way distroarchseries are listed in the
 distroseries page. We will use a small helper function to extract the
 current distroseries architecture list.
 
-    >>> def check_arch_list(distroseries='warty'):
+    >>> def check_arch_list(distroseries="warty"):
     ...     anon_browser.open(
-    ...         "http://launchpad.test/ubuntu/%s" % distroseries)
-    ...     print(extract_text(find_tag_by_id(
-    ...         anon_browser.contents, 'portlet-architectures-list')))
+    ...         "http://launchpad.test/ubuntu/%s" % distroseries
+    ...     )
+    ...     print(
+    ...         extract_text(
+    ...             find_tag_by_id(
+    ...                 anon_browser.contents, "portlet-architectures-list"
+    ...             )
+    ...         )
+    ...     )
+    ...
 
     >>> check_arch_list()
     hppa (unofficial)
@@ -188,13 +208,13 @@ architectures in this DistroSeries.
 Ubuntu hoary already has i386 & hppa distroarchseries and should not
 allow duplications.
 
-    >>> check_arch_list(distroseries='hoary')
+    >>> check_arch_list(distroseries="hoary")
     i386
     hppa
     (unofficial)
 
-    >>> admin_browser.getControl("Architecture Tag").value = 'i386'
-    >>> admin_browser.getControl("Processor:").value = ['386']
+    >>> admin_browser.getControl("Architecture Tag").value = "i386"
+    >>> admin_browser.getControl("Processor:").value = ["386"]
     >>> admin_browser.getControl("Official Support").selected = True
 
 XXX cprov 20071213: we should return a proper error page on attempts
@@ -224,8 +244,8 @@ An administrator can open new distinct architecture, for instance,
     >>> admin_browser.open("http://launchpad.test/ubuntu/hoary")
     >>> admin_browser.getLink("Add architecture").click()
 
-    >>> admin_browser.getControl("Architecture Tag").value = 'amd64'
-    >>> admin_browser.getControl("Processor:").value = ['amd64']
+    >>> admin_browser.getControl("Architecture Tag").value = "amd64"
+    >>> admin_browser.getControl("Processor:").value = ["amd64"]
     >>> admin_browser.getControl("Official Support").selected = True
     >>> admin_browser.getControl("Continue").click()
 
@@ -238,7 +258,7 @@ administrator.
 And other users can see the just-created architecture listed in the
 distroseries page.
 
-    >>> check_arch_list(distroseries='hoary')
+    >>> check_arch_list(distroseries="hoary")
     amd64
     i386
     hppa

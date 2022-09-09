@@ -24,11 +24,12 @@ what users are the top contributors for a given product/distribution.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> thunderbird = getUtility(ISourcePackageNameSet)['thunderbird']
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> thunderbird = getUtility(ISourcePackageNameSet)["thunderbird"]
 
 The assignKarma() method is the one to be used when assigning karma to a
 person. It must trigger a KarmaAssignedEvent, notifying that karma was
@@ -38,7 +39,7 @@ assigned to a given person.
     >>> karma_helper = KarmaAssignedEventListener()
     >>> karma_helper.register_listener()
 
-    >>> dummy = salgado.assignKarma('specreviewed', product=firefox)
+    >>> dummy = salgado.assignKarma("specreviewed", product=firefox)
     Karma added: action=specreviewed, product=firefox
 
     >>> karma_helper.unregister_listener()
@@ -47,16 +48,20 @@ Salgado wrote the karma framework. Let's give him some karma points.
 
   - First, some karma by fixing a bug in firefox
     >>> salgado_firefox_karma = salgado.assignKarma(
-    ...     'bugfixed', product=firefox)
+    ...     "bugfixed", product=firefox
+    ... )
 
   - Then some karma by adding a new spec for Ubuntu
     >>> salgado_ubuntu_karma = salgado.assignKarma(
-    ...     'addspec', distribution=ubuntu)
+    ...     "addspec", distribution=ubuntu
+    ... )
 
   - And finally some karma by marking a Ubuntu thunderbird bug as a duplicate
     >>> salgado_thunderbird_karma = salgado.assignKarma(
-    ...     'bugmarkedasduplicate', distribution=ubuntu,
-    ...     sourcepackagename=thunderbird)
+    ...     "bugmarkedasduplicate",
+    ...     distribution=ubuntu,
+    ...     sourcepackagename=thunderbird,
+    ... )
 
 assignKarma() must return an object implementing IKarma.
 
@@ -77,11 +82,11 @@ karma.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> janitor = getUtility(ILaunchpadCelebrities).janitor
-    >>> dummy = janitor.assignKarma('specreviewed', product=firefox)
+    >>> dummy = janitor.assignKarma("specreviewed", product=firefox)
     <BLANKLINE>
 
-    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
-    >>> dummy = janitor.assignKarma('specreviewed', product=firefox)
+    >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
+    >>> dummy = janitor.assignKarma("specreviewed", product=firefox)
     <BLANKLINE>
 
 
@@ -92,10 +97,11 @@ Using our karma records we can also tell in which projects a person is most
 active on, including the type of work the person does on each project. We only
 show the 5 most active projects.
 
-    >>> foobar = getUtility(IPersonSet).getByName('name16')
+    >>> foobar = getUtility(IPersonSet).getByName("name16")
     >>> for contrib in foobar.getProjectsAndCategoriesContributedTo(None):
-    ...     categories = sorted(cat.name for cat in contrib['categories'])
-    ...     print(contrib['project'].title, pretty(categories))
+    ...     categories = sorted(cat.name for cat in contrib["categories"])
+    ...     print(contrib["project"].title, pretty(categories))
+    ...
     Evolution ['bugs', 'translations']
     Ubuntu ['bugs']
     gnomebaker ['bugs']
@@ -119,9 +125,13 @@ is updated by the foaf-update-karma-cache.py cronscript.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     'cronscripts/foaf-update-karma-cache.py', shell=True,
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     "cronscripts/foaf-update-karma-cache.py",
+    ...     shell=True,
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(err)
     INFO    Creating lockfile: /var/lock/launchpad-karma-update.lock
@@ -165,6 +175,7 @@ was the maximum specified in config.karmacacheupdater.max_scaling.
 
     >>> for karma in salgado.latestKarma():
     ...     print(karma.action.title, karma.action.points)
+    ...
     Specification Review     10
     Bug Marked as Fixed      10
     Registered Specification 30
@@ -172,6 +183,7 @@ was the maximum specified in config.karmacacheupdater.max_scaling.
 
     >>> for cache in salgado.karma_category_caches:
     ...     print("%s: %d" % (cache.category.title, cache.karmavalue))
+    ...
     Bug Management: 30
     Specification Tracking: 40
 

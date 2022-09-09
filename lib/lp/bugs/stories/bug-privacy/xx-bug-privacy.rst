@@ -3,7 +3,8 @@ Foo Bar, an LP admin, is about to make bug #2 private.
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     >>> browser.open(
     ...     "http://bugs.launchpad.test/debian/+source/mozilla-firefox/"
-    ...     "+bug/2/+secrecy")
+    ...     "+bug/2/+secrecy"
+    ... )
 
 Foo Bar is not Cc'd on this bug, but is able to set the bug private
 anyway, because they are an admin.
@@ -17,7 +18,8 @@ When we go back to the secrecy form, the previously set value is pre-selected.
 
     >>> browser.open(
     ...     "http://bugs.launchpad.test/debian/+source/mozilla-firefox/"
-    ...     "+bug/2/+secrecy")
+    ...     "+bug/2/+secrecy"
+    ... )
     >>> browser.getControl("Private", index=1).selected
     True
 
@@ -29,9 +31,10 @@ bug page.
 
 The Ubuntu maintainer, Ubuntu Team, will be subscribed.
 
-    >>> browser.getControl(name="field.title", index=0).value = (
-    ...     "a private bug")
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl(
+    ...     name="field.title", index=0
+    ... ).value = "a private bug"
+    >>> browser.getControl("Continue").click()
 
     >>> browser.getControl(name="packagename_option").value = ["choose"]
     >>> browser.getControl(name="field.packagename").value = "evolution"
@@ -68,7 +71,8 @@ Foo Bar is subscribed to the bug.
     >>> bug = getUtility(IBugSet).get(bug_id)
 
     >>> for subscriber in sorted(
-    ...         bug.getDirectSubscribers(), key=attrgetter('name')):
+    ...     bug.getDirectSubscribers(), key=attrgetter("name")
+    ... ):
     ...     print(subscriber.name)
     name16
 
@@ -115,14 +119,15 @@ Ubuntu evolution is, so we can avoid hardcoding its ID here:
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet,
-    ...     )
+    ... )
     >>> from lp.testing import login, logout
 
     >>> login("foo.bar@canonical.com")
     >>> launchbag = getUtility(ILaunchBag)
     >>> evo = getUtility(ISourcePackageNameSet).queryByName("evolution")
-    >>> params = BugTaskSearchParams(user=launchbag.user,
-    ...     sourcepackagename=evo, orderby="-id")
+    >>> params = BugTaskSearchParams(
+    ...     user=launchbag.user, sourcepackagename=evo, orderby="-id"
+    ... )
 
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> latest_evo_task = ubuntu.searchTasks(params)[0]
@@ -136,7 +141,8 @@ Foo Bar, an admin, subscribe Sample Person to a private bug.
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     >>> add_subscriber_url = (
     ...     "http://launchpad.test/ubuntu/+source/evolution/+bug/%s"
-    ...     "/+addsubscriber" % latest_evo_bug)
+    ...     "/+addsubscriber" % latest_evo_bug
+    ... )
     >>> browser.open(add_subscriber_url)
     >>> browser.getControl("Person").value = "name12"
     >>> browser.getControl("Subscribe user").click()

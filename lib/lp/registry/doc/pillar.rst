@@ -12,30 +12,30 @@ share their name namespace are Product, ProjectGroup and Distribution.
     >>> from lp.registry.interfaces.projectgroup import IProjectGroup
     >>> pillar_set = getUtility(IPillarNameSet)
 
-    >>> 'ubuntu' in pillar_set
+    >>> "ubuntu" in pillar_set
     True
-    >>> print(pillar_set['ubuntu'].name)
+    >>> print(pillar_set["ubuntu"].name)
     ubuntu
-    >>> IDistribution.providedBy(pillar_set['ubuntu'])
+    >>> IDistribution.providedBy(pillar_set["ubuntu"])
     True
 
-    >>> 'tomcat' in pillar_set
+    >>> "tomcat" in pillar_set
     True
-    >>> print(pillar_set['tomcat'].name)
+    >>> print(pillar_set["tomcat"].name)
     tomcat
-    >>> IProduct.providedBy(pillar_set['tomcat'])
+    >>> IProduct.providedBy(pillar_set["tomcat"])
     True
 
-    >>> 'apache' in pillar_set
+    >>> "apache" in pillar_set
     True
-    >>> print(pillar_set['apache'].name)
+    >>> print(pillar_set["apache"].name)
     apache
-    >>> IProjectGroup.providedBy(pillar_set['apache'])
+    >>> IProjectGroup.providedBy(pillar_set["apache"])
     True
 
-    >>> 'fnord' in pillar_set
+    >>> "fnord" in pillar_set
     False
-    >>> pillar_set['fnord']
+    >>> pillar_set["fnord"]
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'fnord'
@@ -44,35 +44,35 @@ Inactive projects/project groups are not available through PillarNameSet
 unless we use the special getByName() method which returns active/inactive
 pillars.
 
-    >>> 'gimp' in pillar_set
+    >>> "gimp" in pillar_set
     True
-    >>> IProjectGroup.providedBy(pillar_set['gimp'])
+    >>> IProjectGroup.providedBy(pillar_set["gimp"])
     True
-    >>> login('mark@example.com')
-    >>> pillar_set['gimp'].active = False
-    >>> 'gimp' in pillar_set
+    >>> login("mark@example.com")
+    >>> pillar_set["gimp"].active = False
+    >>> "gimp" in pillar_set
     False
-    >>> pillar_set['gimp']
+    >>> pillar_set["gimp"]
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'gimp'
-    >>> IProjectGroup.providedBy(pillar_set.getByName('gimp'))
+    >>> IProjectGroup.providedBy(pillar_set.getByName("gimp"))
     True
 
 It also works if you use Unicode strings.
 
-    >>> u'launchpad' in pillar_set
+    >>> "launchpad" in pillar_set
     True
-    >>> IProduct.providedBy(pillar_set[u'launchpad'])
+    >>> IProduct.providedBy(pillar_set["launchpad"])
     True
-    >>> pillar_set[u'launchpad'].active = False
-    >>> u'launchpad' in pillar_set
+    >>> pillar_set["launchpad"].active = False
+    >>> "launchpad" in pillar_set
     False
-    >>> pillar_set[u'launchpad']
+    >>> pillar_set["launchpad"]
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'launchpad'
-    >>> IProduct.providedBy(pillar_set.getByName(u'launchpad'))
+    >>> IProduct.providedBy(pillar_set.getByName("launchpad"))
     True
 
 
@@ -82,13 +82,14 @@ Pillar aliases
 A pillar can have an arbitrary number of aliases, so that it can be found
 under different names.
 
-    >>> firefox = pillar_set['firefox']
+    >>> firefox = pillar_set["firefox"]
     >>> firefox.aliases
     []
 
-    >>> firefox.setAliases(['iceweasel', 'snowchicken'])
+    >>> firefox.setAliases(["iceweasel", "snowchicken"])
     >>> for alias in firefox.aliases:
     ...     print(alias)
+    ...
     iceweasel
     snowchicken
 
@@ -96,26 +97,27 @@ Every time setAliases() is called it should be given the full set of aliases
 for that pillar. If one of the pillar's existing aliases is not in the list
 given to setAliases(), it is removed.
 
-    >>> firefox.setAliases(['iceweasel'])
+    >>> firefox.setAliases(["iceweasel"])
     >>> for alias in firefox.aliases:
     ...     print(alias)
+    ...
     iceweasel
 
 Just like names, aliases are unique.
 
-    >>> pillar_set['ubuntu'].setAliases(['iceweasel'])
+    >>> pillar_set["ubuntu"].setAliases(["iceweasel"])
     Traceback (most recent call last):
     ...
     AssertionError: This alias is already in use...
 
 You can look up a given pillar through any of its aliases.
 
-    >>> pillar_set['iceweasel'] == pillar_set['firefox']
+    >>> pillar_set["iceweasel"] == pillar_set["firefox"]
     True
 
 And our set of pillars will contain the aliases as well.
 
-    >>> 'iceweasel' in pillar_set
+    >>> "iceweasel" in pillar_set
     True
 
 But only if the pillar which they point to is active.
@@ -124,17 +126,17 @@ But only if the pillar which they point to is active.
     >>> from lp.testing import unlink_source_packages
     >>> unlink_source_packages(firefox)
     >>> firefox.active = False
-    >>> 'iceweasel' in pillar_set
+    >>> "iceweasel" in pillar_set
     False
 
 Also, if the pillar is inactive, it can't be retrieved through any of its
 aliases, in the same way that it can't be retrieved through its name.
 
-    >>> pillar_set['iceweasel']
+    >>> pillar_set["iceweasel"]
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
-    >>> pillar_set['firefox']
+    >>> pillar_set["firefox"]
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...
@@ -148,38 +150,38 @@ rights on the pillar.
 Sample Person has edit rights on firefox, but they'd need admin rights
 to be able to set its aliases.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> from lp.services.webapp.authorization import check_permission
-    >>> check_permission('launchpad.Edit', firefox)
+    >>> check_permission("launchpad.Edit", firefox)
     True
-    >>> firefox.setAliases(['iceweasel'])
+    >>> firefox.setAliases(["iceweasel"])
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
 Ditto for the Mozilla project.
 
-    >>> mozilla = pillar_set['mozilla']
-    >>> check_permission('launchpad.Edit', mozilla)
+    >>> mozilla = pillar_set["mozilla"]
+    >>> check_permission("launchpad.Edit", mozilla)
     True
-    >>> mozilla.setAliases(['moz'])
+    >>> mozilla.setAliases(["moz"])
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
 And the same is true for Colin Watson on the Guadalinex distribution.
 
-    >>> login('colin.watson@ubuntulinux.com')
-    >>> guadalinex = pillar_set['guadalinex']
-    >>> check_permission('launchpad.Edit', guadalinex)
+    >>> login("colin.watson@ubuntulinux.com")
+    >>> guadalinex = pillar_set["guadalinex"]
+    >>> check_permission("launchpad.Edit", guadalinex)
     True
-    >>> guadalinex.setAliases(['guada'])
+    >>> guadalinex.setAliases(["guada"])
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
     # Login as Mark again, to not upset remaining tests.
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
 
 
 Searching for Pillars
@@ -190,22 +192,26 @@ Right now this search is done across Products, ProjectGroups and
 Distributions.
 
     >>> for row in pillar_set.search(
-    ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print("%s: %s (%s)"
-    ...           % (row.__class__.__name__, row.title, row.name))
+    ...     getUtility(ILaunchBag).user, "mozilla", limit=3
+    ... ):
+    ...     print(
+    ...         "%s: %s (%s)" % (row.__class__.__name__, row.title, row.name)
+    ...     )
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Firefox (firefox)
     Product: Mozilla Thunderbird (thunderbird)
 
     >>> from lp.app.enums import InformationType
     >>> factory.makeProduct(
-    ...     name='ubuntu-sekrit',
-    ...     information_type=InformationType.PROPRIETARY)
+    ...     name="ubuntu-sekrit", information_type=InformationType.PROPRIETARY
+    ... )
     <Product ...>
     >>> for row in pillar_set.search(
-    ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print("%s: %s (%s)"
-    ...           % (row.__class__.__name__, row.title, row.name))
+    ...     getUtility(ILaunchBag).user, "ubuntu", limit=6
+    ... ):
+    ...     print(
+    ...         "%s: %s (%s)" % (row.__class__.__name__, row.title, row.name)
+    ...     )
     Distribution: Ubuntu (ubuntu)
     Product: Ubuntu-sekrit (ubuntu-sekrit)
     Distribution: ubuntutest (ubuntutest)
@@ -216,36 +222,42 @@ Distributions.
 We can search by any of the pillar's aliases too.
 
     >>> for row in pillar_set.search(
-    ...         getUtility(ILaunchBag).user, 'iceweasel', limit=5):
-    ...     print("%s: %s (%s)"
-    ...           % (row.__class__.__name__, row.title, row.name))
+    ...     getUtility(ILaunchBag).user, "iceweasel", limit=5
+    ... ):
+    ...     print(
+    ...         "%s: %s (%s)" % (row.__class__.__name__, row.title, row.name)
+    ...     )
     Product: Mozilla Firefox (firefox)
 
 Note that inaccessible private or inactive products and projects won't
 be included in the results.
 
-    >>> pillar_set['firefox'].active = False
-    >>> pillar_set['applets'].active = False
-    >>> login('test@canonical.com')
+    >>> pillar_set["firefox"].active = False
+    >>> pillar_set["applets"].active = False
+    >>> login("test@canonical.com")
 
     >>> for row in pillar_set.search(
-    ...         getUtility(ILaunchBag).user, 'mozilla', limit=3):
-    ...     print("%s: %s (%s)"
-    ...           % (row.__class__.__name__, row.title, row.name))
+    ...     getUtility(ILaunchBag).user, "mozilla", limit=3
+    ... ):
+    ...     print(
+    ...         "%s: %s (%s)" % (row.__class__.__name__, row.title, row.name)
+    ...     )
     ProjectGroup: The Mozilla Project (mozilla)
     Product: Mozilla Thunderbird (thunderbird)
 
     >>> for row in pillar_set.search(
-    ...         getUtility(ILaunchBag).user, 'ubuntu', limit=6):
-    ...     print("%s: %s (%s)"
-    ...           % (row.__class__.__name__, row.title, row.name))
+    ...     getUtility(ILaunchBag).user, "ubuntu", limit=6
+    ... ):
+    ...     print(
+    ...         "%s: %s (%s)" % (row.__class__.__name__, row.title, row.name)
+    ...     )
     Distribution: Ubuntu (ubuntu)
     Distribution: ubuntutest (ubuntutest)
     Product: Evolution (evolution)
     Product: Tomcat (tomcat)
     Distribution: GuadaLinex (guadalinex)
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
 
 
 PillarName objects
@@ -258,12 +270,12 @@ by that pillar name
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> from lp.registry.model.pillar import PillarName
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> gnome = getUtility(IProjectGroupSet).getByName('gnome')
-    >>> ubuntu_pillarname = PillarName.selectOneBy(name='ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> gnome = getUtility(IProjectGroupSet).getByName("gnome")
+    >>> ubuntu_pillarname = PillarName.selectOneBy(name="ubuntu")
     >>> ubuntu_pillarname.pillar == ubuntu
     True
-    >>> gnome_pillarname = PillarName.selectOneBy(name='gnome')
+    >>> gnome_pillarname = PillarName.selectOneBy(name="gnome")
     >>> gnome_pillarname.pillar == gnome
     True
 

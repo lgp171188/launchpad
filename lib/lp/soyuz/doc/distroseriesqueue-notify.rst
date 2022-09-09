@@ -16,24 +16,24 @@ changes file which are all needed for successful operation of notify().
 Set up some library files for the netapplet source package.  These are
 not already present in the sample data.
 
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> from lp.archiveuploader.tests import datadir
     >>> import os
     >>> netapplet_spr = netapplet_upload.sources[0].sourcepackagerelease
     >>> librarian = getUtility(ILibraryFileAliasSet)
     >>> files = [
-    ...     'netapplet_1.0-1.dsc',
-    ...     'netapplet_1.0.orig.tar.gz',
-    ...     'netapplet_1.0-1.diff.gz',
-    ...     ]
+    ...     "netapplet_1.0-1.dsc",
+    ...     "netapplet_1.0.orig.tar.gz",
+    ...     "netapplet_1.0-1.diff.gz",
+    ... ]
     >>> for file in files:
-    ...     filepath = datadir('suite/netapplet_1.0-1/%s' % file)
-    ...     fileobj = open(filepath, 'rb')
+    ...     filepath = datadir("suite/netapplet_1.0-1/%s" % file)
+    ...     fileobj = open(filepath, "rb")
     ...     filesize = os.stat(filepath).st_size
-    ...     lfa = librarian.create(file, filesize, fileobj, 'dummytype')
+    ...     lfa = librarian.create(file, filesize, fileobj, "dummytype")
     ...     sprf = netapplet_spr.addFile(lfa)
     ...     fileobj.close()
+    ...
 
 The notify() method generates one email here on this unsigned package.
 It requires an announcement list email address, a "changes_file_object"
@@ -42,11 +42,13 @@ special logger object that will extract tracebacks for the purposes of
 this doctest.
 
     >>> changes_file_path = datadir(
-    ...     'suite/netapplet_1.0-1/netapplet_1.0-1_source.changes')
-    >>> changes_file = open(changes_file_path, 'rb')
+    ...     "suite/netapplet_1.0-1/netapplet_1.0-1_source.changes"
+    ... )
+    >>> changes_file = open(changes_file_path, "rb")
     >>> from lp.services.log.logger import FakeLogger
     >>> netapplet_upload.notify(
-    ...     changes_file_object=changes_file, logger=FakeLogger())
+    ...     changes_file_object=changes_file, logger=FakeLogger()
+    ... )
     DEBUG Building recipients list.
     DEBUG Changes file is unsigned; adding changer as recipient.
     ...
@@ -73,19 +75,22 @@ subject contains "Accepted", the package name, its version and whether
 it's source or binary.  The Bcc field also always contains the
 uploader's email address.
 
-    >>> notification['To']
+    >>> notification["To"]
     'Daniel Silverstone <daniel.silverstone@canonical.com>'
 
-    >>> notification['Bcc']
+    >>> notification["Bcc"]
     'Root <root@localhost>'
 
-    >>> notification['Subject']
+    >>> notification["Subject"]
     '[ubuntu/breezy-autotest] netapplet 0.99.6-1 (New)'
 
 The mail body contains a list of files that were accepted:
 
-    >>> print(notification.get_payload(0).get_payload(
-    ...     decode=True).decode('UTF-8'))  # noqa
+    >>> print(
+    ...     notification.get_payload(0)
+    ...     .get_payload(decode=True)
+    ...     .decode("UTF-8")
+    ... )  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
@@ -109,19 +114,23 @@ to the changer.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.gpg import IGPGKeySet
     >>> gpgkey = getUtility(IGPGKeySet).getByFingerprint(
-    ...     'ABCDEF0123456789ABCDDCBA0000111112345678')
+    ...     "ABCDEF0123456789ABCDDCBA0000111112345678"
+    ... )
     >>> removeSecurityProxy(netapplet_upload).signing_key_owner = gpgkey.owner
-    >>> removeSecurityProxy(netapplet_upload).signing_key_fingerprint = (
-    ...     gpgkey.fingerprint)
+    >>> removeSecurityProxy(
+    ...     netapplet_upload
+    ... ).signing_key_fingerprint = gpgkey.fingerprint
 
 Now request the email:
 
     >>> changes_file_path = datadir(
-    ...     'suite/netapplet_1.0-1-signed/netapplet_1.0-1_source.changes')
-    >>> changes_file = open(changes_file_path, 'rb')
+    ...     "suite/netapplet_1.0-1-signed/netapplet_1.0-1_source.changes"
+    ... )
+    >>> changes_file = open(changes_file_path, "rb")
     >>> netapplet_upload.setAccepted()
     >>> netapplet_upload.notify(
-    ...     changes_file_object=changes_file, logger=FakeLogger())
+    ...     changes_file_object=changes_file, logger=FakeLogger()
+    ... )
     DEBUG Building recipients list.
     ...
     DEBUG Sent a mail:
@@ -148,15 +157,19 @@ The announcement email contains the series's changeslist.
     >>> def to_lower(address):
     ...     """Return lower-case version of email address."""
     ...     return address.lower()
+    ...
 
     >>> def extract_addresses(header_field):
     ...     """Extract and sort addresses from an email header field."""
     ...     return sorted(
-    ...         [addr.strip() for addr in header_field.split(',')],
-    ...         key=to_lower)
+    ...         [addr.strip() for addr in header_field.split(",")],
+    ...         key=to_lower,
+    ...     )
+    ...
 
     >>> for msg in msgs:
-    ...     print(msg['To'])
+    ...     print(msg["To"])
+    ...
     Daniel Silverstone <daniel.silverstone@canonical.com>
     Foo Bar <foo.bar@canonical.com>
     autotest_changes@ubuntu.com
@@ -165,7 +178,8 @@ The mail 'Bcc:' address is the uploader.  The announcement has the
 uploader and the Debian derivatives address for the package uploaded.
 
     >>> for msg in msgs:
-    ...     print(pretty(extract_addresses(msg['Bcc'])))
+    ...     print(pretty(extract_addresses(msg["Bcc"])))
+    ...
     ['Root <root@localhost>']
     ['Root <root@localhost>']
     ['netapplet_derivatives@packages.qa.debian.org', 'Root <root@localhost>']
@@ -174,17 +188,18 @@ The mail 'From:' addresses are the uploader (for acknowledgements sent to
 the uploader and the changer) and the changer.
 
     >>> for msg in msgs:
-    ...     print(msg['From'])
+    ...     print(msg["From"])
+    ...
     Root <root@localhost>
     Root <root@localhost>
     Daniel Silverstone <daniel.silverstone@canonical.com>
 
-    >>> print(msgs[0]['Subject'])
+    >>> print(msgs[0]["Subject"])
     [ubuntu/breezy-autotest] netapplet 0.99.6-1 (Accepted)
 
 The mail body contains the same list of files again:
 
-    >>> print(msgs[0].get_payload(0).get_payload(decode=True).decode('UTF-8'))
+    >>> print(msgs[0].get_payload(0).get_payload(decode=True).decode("UTF-8"))
     ... # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     netapplet (1.0-1) ...
@@ -203,13 +218,13 @@ The mail body contains the same list of files again:
 All the emails have the PGP signature stripped from the .changes file to
 avoid replay attacks.
 
-    >>> print(msgs[0].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    >>> print(msgs[0].get_payload(1).get_payload(decode=True).decode("UTF-8"))
     Format: 1.7
     ...
-    >>> print(msgs[1].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    >>> print(msgs[1].get_payload(1).get_payload(decode=True).decode("UTF-8"))
     Format: 1.7
     ...
-    >>> print(msgs[2].get_payload(1).get_payload(decode=True).decode('UTF-8'))
+    >>> print(msgs[2].get_payload(1).get_payload(decode=True).decode("UTF-8"))
     Format: 1.7
     ...
 
@@ -220,14 +235,15 @@ demonstrates this usage:
 
     >>> from lp.services.librarianserver.testing.server import (
     ...     fillLibrarianFile,
-    ...     )
+    ... )
     >>> changes_file = open(changes_file_path, "rb")
     >>> fillLibrarianFile(1, content=changes_file.read())
     >>> changes_file.close()
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
     >>> removeSecurityProxy(netapplet_upload).status = PassthroughStatusValue(
-    ...     PackageUploadStatus.NEW)
+    ...     PackageUploadStatus.NEW
+    ... )
     >>> netapplet_upload.notify(logger=FakeLogger())
     DEBUG Building recipients list.
     ...
@@ -253,25 +269,28 @@ Two emails are generated, one to the changer and one to the signer:
 
 The mail headers are the same as before:
 
-    >>> print(changer_notification['To'])
+    >>> print(changer_notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
-    >>> print(signer_notification['To'])
+    >>> print(signer_notification["To"])
     Foo Bar <foo.bar@canonical.com>
 
-    >>> print(changer_notification['Bcc'])
+    >>> print(changer_notification["Bcc"])
     Root <root@localhost>
-    >>> print(signer_notification['Bcc'])
+    >>> print(signer_notification["Bcc"])
     Root <root@localhost>
 
-    >>> print(changer_notification['Subject'])
+    >>> print(changer_notification["Subject"])
     [ubuntu/breezy-autotest] netapplet 0.99.6-1 (New)
-    >>> print(signer_notification['Subject'])
+    >>> print(signer_notification["Subject"])
     [ubuntu/breezy-autotest] netapplet 0.99.6-1 (New)
 
 The mail body contains the same list of files again:
 
-    >>> print(changer_notification.get_payload(0).get_payload(
-    ...     decode=True).decode('UTF-8'))  # noqa
+    >>> print(
+    ...     changer_notification.get_payload(0)
+    ...     .get_payload(decode=True)
+    ...     .decode("UTF-8")
+    ... )  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
@@ -285,8 +304,11 @@ The mail body contains the same list of files again:
     You are receiving this email because you are the most recent person
     listed in this package's changelog.
     <BLANKLINE>
-    >>> print(signer_notification.get_payload(0).get_payload(
-    ...     decode=True).decode('UTF-8'))  # noqa
+    >>> print(
+    ...     signer_notification.get_payload(0)
+    ...     .get_payload(decode=True)
+    ...     .decode("UTF-8")
+    ... )  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     NEW: netapplet_1.0-1.dsc
     NEW: netapplet_1.0.orig.tar.gz
@@ -307,7 +329,8 @@ anything.
 
     >>> netapplet_upload.setRejected()
     >>> netapplet_upload.notify(
-    ...     summary_text="Testing rejection message", logger=FakeLogger())
+    ...     summary_text="Testing rejection message", logger=FakeLogger()
+    ... )
     DEBUG Building recipients list.
     ...
     DEBUG Sent a mail:

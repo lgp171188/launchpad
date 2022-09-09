@@ -10,11 +10,11 @@ First, lets get hold of some people, a product, a sprint and a spec.
 
     >>> from lp.registry.model.person import PersonSet
     >>> from lp.registry.model.product import ProductSet
-    >>> upstream_firefox = ProductSet()['firefox']
-    >>> canvas = upstream_firefox.getSpecification('canvas')
-    >>> guacamole = factory.makeSprint(name='uds-guacamole')
-    >>> danner = PersonSet().getByName('danner')
-    >>> jblack = PersonSet().getByName('jblack')
+    >>> upstream_firefox = ProductSet()["firefox"]
+    >>> canvas = upstream_firefox.getSpecification("canvas")
+    >>> guacamole = factory.makeSprint(name="uds-guacamole")
+    >>> danner = PersonSet().getByName("danner")
+    >>> jblack = PersonSet().getByName("jblack")
 
 Now, we should be able to see the list of sprints for the spec:
 
@@ -24,7 +24,9 @@ Now, we should be able to see the list of sprints for the spec:
 And we should be able to propose the spec for the agenda:
 
     >>> sl = canvas.linkSprint(guacamole, jblack)
-    >>> for sprint in canvas.sprints: print(sprint.name)
+    >>> for sprint in canvas.sprints:
+    ...     print(sprint.name)
+    ...
     uds-guacamole
     >>> print(sl.registrant.name, sl.status.title)
     jblack Proposed

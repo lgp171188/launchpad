@@ -3,8 +3,8 @@ Launchpad tour
 
 From Launchpad's front page, you can access the tour.
 
-    >>> browser.open('http://launchpad.test/')
-    >>> tour_link = browser.getLink('Take the tour')
+    >>> browser.open("http://launchpad.test/")
+    >>> tour_link = browser.getLink("Take the tour")
     >>> print(tour_link.url)
     http://launchpad.test/+tour
     >>> tour_link.click()
@@ -17,12 +17,13 @@ The tour is circular. Clicking the Next button repeatedly will bring you
 back to the tour start.
 
     >>> def take_the_tour(steps_taken=0):
-    ...     browser.getLink(id='btnNext').click()
+    ...     browser.getLink(id="btnNext").click()
     ...     print(browser.url)
-    ...     if browser.url != 'http://launchpad.test/+tour/index':
+    ...     if browser.url != "http://launchpad.test/+tour/index":
     ...         if steps_taken >= 20:
-    ...             raise RuntimeError('Never ending tour!')
-    ...         take_the_tour(steps_taken=steps_taken+1)
+    ...             raise RuntimeError("Never ending tour!")
+    ...         take_the_tour(steps_taken=steps_taken + 1)
+    ...
     >>> take_the_tour()
     http://launchpad.test/+tour/bugs
     http://launchpad.test/+tour/branch-hosting-tracking
@@ -38,13 +39,14 @@ back to the tour start.
 
 The images from the tour are retrieved relative to +tour.
 
-    >>> browser.open('http://launchpad.test/+tour/images/home/main-image.jpg')
-    >>> browser.open('http://launchpad.test/+tour/images/btn-next.png')
+    >>> browser.open("http://launchpad.test/+tour/images/home/main-image.jpg")
+    >>> browser.open("http://launchpad.test/+tour/images/btn-next.png")
 
 But the source directory isn't available:
 
     >>> browser.open(
-    ...     'http://launchpad.test/+tour/source/code-hosting_SVG.svg')
+    ...     "http://launchpad.test/+tour/source/code-hosting_SVG.svg"
+    ... )
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
@@ -56,27 +58,27 @@ But the source directory isn't available:
 Each application used to have an introduction living at +about, this is
 now redirected to the relevant tour page.
 
-    >>> browser.open('http://launchpad.test/+about')
+    >>> browser.open("http://launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/index
 
-    >>> browser.open('http://code.launchpad.test/+about')
+    >>> browser.open("http://code.launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/branch-hosting-tracking
 
-    >>> browser.open('http://bugs.launchpad.test/+about')
+    >>> browser.open("http://bugs.launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/bugs
 
-    >>> browser.open('http://blueprints.launchpad.test/+about')
+    >>> browser.open("http://blueprints.launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/feature-tracking
 
-    >>> browser.open('http://translations.launchpad.test/+about')
+    >>> browser.open("http://translations.launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/translation
 
-    >>> browser.open('http://answers.launchpad.test/+about')
+    >>> browser.open("http://answers.launchpad.test/+about")
     >>> print(browser.url)
     http://launchpad.test/+tour/community-support
 
@@ -87,27 +89,27 @@ now redirected to the relevant tour page.
 Similarly, each application has their +tour redirecting to their proper
 tour page.
 
-    >>> browser.open('http://launchpad.test/+tour')
+    >>> browser.open("http://launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/index
 
-    >>> browser.open('http://code.launchpad.test/+tour')
+    >>> browser.open("http://code.launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/branch-hosting-tracking
 
-    >>> browser.open('http://bugs.launchpad.test/+tour')
+    >>> browser.open("http://bugs.launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/bugs
 
-    >>> browser.open('http://blueprints.launchpad.test/+tour')
+    >>> browser.open("http://blueprints.launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/feature-tracking
 
-    >>> browser.open('http://translations.launchpad.test/+tour')
+    >>> browser.open("http://translations.launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/translation
 
-    >>> browser.open('http://answers.launchpad.test/+tour')
+    >>> browser.open("http://answers.launchpad.test/+tour")
     >>> print(browser.url)
     http://launchpad.test/+tour/community-support
 
@@ -118,23 +120,23 @@ tour page.
 Each application also had a +faq link, that link is also redirected to
 the appropriate tour page.
 
-    >>> browser.open('http://code.launchpad.test/+faq')
+    >>> browser.open("http://code.launchpad.test/+faq")
     >>> print(browser.url)
     http://launchpad.test/+tour/branch-hosting-tracking
 
-    >>> browser.open('http://bugs.launchpad.test/+faq')
+    >>> browser.open("http://bugs.launchpad.test/+faq")
     >>> print(browser.url)
     http://launchpad.test/+tour/bugs
 
-    >>> browser.open('http://blueprints.launchpad.test/+faq')
+    >>> browser.open("http://blueprints.launchpad.test/+faq")
     >>> print(browser.url)
     http://launchpad.test/+tour/feature-tracking
 
-    >>> browser.open('http://translations.launchpad.test/+faq')
+    >>> browser.open("http://translations.launchpad.test/+faq")
     >>> print(browser.url)
     http://launchpad.test/+tour/translation
 
-    >>> browser.open('http://answers.launchpad.test/+faq')
+    >>> browser.open("http://answers.launchpad.test/+faq")
     >>> print(browser.url)
     http://launchpad.test/+tour/community-support
 
@@ -149,8 +151,8 @@ the user to the appropriate tour page.
 Code
 ....
 
-    >>> browser.open('http://code.launchpad.test')
-    >>> tour_link = browser.getLink('Take a tour')
+    >>> browser.open("http://code.launchpad.test")
+    >>> tour_link = browser.getLink("Take a tour")
     >>> print(tour_link.url)
     http://launchpad.test/+tour/branch-hosting-tracking
     >>> tour_link.click()
@@ -159,8 +161,8 @@ Code
 Bugs
 ....
 
-    >>> browser.open('http://bugs.launchpad.test')
-    >>> tour_link = browser.getLink('take a tour')
+    >>> browser.open("http://bugs.launchpad.test")
+    >>> tour_link = browser.getLink("take a tour")
     >>> print(tour_link.url)
     http://bugs.launchpad.test/+tour
     >>> tour_link.click()
@@ -169,8 +171,8 @@ Bugs
 Blueprints
 ..........
 
-    >>> browser.open('http://blueprints.launchpad.test')
-    >>> tour_link = browser.getLink('Take a tour')
+    >>> browser.open("http://blueprints.launchpad.test")
+    >>> tour_link = browser.getLink("Take a tour")
     >>> print(tour_link.url)
     http://launchpad.test/+tour/feature-tracking
     >>> tour_link.click()
@@ -179,8 +181,8 @@ Blueprints
 Translations
 ............
 
-    >>> browser.open('http://translations.launchpad.test')
-    >>> tour_link = browser.getLink('Take a tour')
+    >>> browser.open("http://translations.launchpad.test")
+    >>> tour_link = browser.getLink("Take a tour")
     >>> print(tour_link.url)
     http://launchpad.test/+tour/translation
     >>> tour_link.click()
@@ -189,8 +191,8 @@ Translations
 Answers
 .......
 
-    >>> browser.open('http://answers.launchpad.test')
-    >>> tour_link = browser.getLink('Take a tour')
+    >>> browser.open("http://answers.launchpad.test")
+    >>> tour_link = browser.getLink("Take a tour")
     >>> print(tour_link.url)
     http://launchpad.test/+tour/community-support
     >>> tour_link.click()

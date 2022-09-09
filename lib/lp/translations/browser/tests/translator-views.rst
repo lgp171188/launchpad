@@ -5,17 +5,20 @@ Translator views provide ways to administrate, edit and remove
 per-language translation teams in a `TranslationGroup`.
 
     >>> group = factory.makeTranslationGroup(
-    ...     name='test-translators', title=u'Test translators')
-    >>> team = factory.makeTeam(name='bad-translators',
-    ...                         displayname='Bad translators')
+    ...     name="test-translators", title="Test translators"
+    ... )
+    >>> team = factory.makeTeam(
+    ...     name="bad-translators", displayname="Bad translators"
+    ... )
 
 Serbian translators in 'Test translators' group is the `team`.
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> from lp.translations.interfaces.translator import ITranslatorSet
-    >>> serbian = getUtility(ILanguageSet).getLanguageByCode('sr')
+    >>> serbian = getUtility(ILanguageSet).getLanguageByCode("sr")
     >>> translator = getUtility(ITranslatorSet).new(
-    ...     group, serbian, team, None)
+    ...     group, serbian, team, None
+    ... )
 
 
 TranslatorAdminView
@@ -23,7 +26,7 @@ TranslatorAdminView
 
 Translator +admin view provides a nice page title and a form label.
 
-    >>> view = create_initialized_view(translator, '+admin')
+    >>> view = create_initialized_view(translator, "+admin")
     >>> print(view.label)
     Edit Serbian translation team in Test translators
 
@@ -43,7 +46,7 @@ Translator +edit view allows one to only set translation guidelines
 for a language in a TranslationGroup, and page title and form label
 describe that appropriately.
 
-    >>> view = create_initialized_view(translator, '+edit')
+    >>> view = create_initialized_view(translator, "+edit")
     >>> print(view.label)
     Set Serbian guidelines for Test translators
 
@@ -62,7 +65,7 @@ TranslatorRemoveView
 Translator +edit view allows one to only set translation guidelines
 for a language in a TranslationGroup.
 
-    >>> view = create_initialized_view(translator, '+remove')
+    >>> view = create_initialized_view(translator, "+remove")
     >>> print(view.label)
     Unset 'Bad translators' as the Serbian translator in Test translators
 

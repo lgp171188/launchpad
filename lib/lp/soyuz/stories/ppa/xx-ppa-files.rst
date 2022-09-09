@@ -14,19 +14,18 @@ PPA.
 
     >>> from zope.component import getUtility
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...      SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> from lp.registry.interfaces.person import IPersonSet
 
 Create a private PPA for no-priv.
 
-    >>> login('foo.bar@canonical.com')
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> login("foo.bar@canonical.com")
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> no_priv_private_ppa = factory.makeArchive(
-    ...     owner=no_priv, private=True, name='p3a',
-    ...     distribution=ubuntu)
+    ...     owner=no_priv, private=True, name="p3a", distribution=ubuntu
+    ... )
 
 Initialize SoyuzTestPublisher.
 
@@ -37,20 +36,22 @@ Initialize SoyuzTestPublisher.
 Publish a source.
 
     >>> test_source = test_publisher.getPubSource(
-    ...     archive=no_priv_private_ppa, sourcename='test-pkg',
-    ...     version='1.0')
+    ...     archive=no_priv_private_ppa, sourcename="test-pkg", version="1.0"
+    ... )
     >>> dsc_file = test_source.sourcepackagerelease.files[0].libraryfile
 
 Include a source tarball.
 
     >>> tar_gz = test_publisher.addMockFile(
-    ...     'test-pkg_1.0.tar.gz', filecontent=b'TAR', restricted=True)
+    ...     "test-pkg_1.0.tar.gz", filecontent=b"TAR", restricted=True
+    ... )
     >>> unused = test_source.sourcepackagerelease.addFile(tar_gz)
 
 Create a corresponding binary publication and its changesfile.
 
     >>> binary_pubs = test_publisher.getPubBinaries(
-    ...     binaryname='test-bin', pub_source=test_source)
+    ...     binaryname="test-bin", pub_source=test_source
+    ... )
     >>> deb_file = binary_pubs[0].binarypackagerelease.files[0].libraryfile
 
     >>> [build] = test_source.getBuilds()
@@ -58,24 +59,30 @@ Create a corresponding binary publication and its changesfile.
 Create a buildlog and a binary upload_log.
 
     >>> buildlog = test_publisher.addMockFile(
-    ...     'log.txt', filecontent=b'bogus buildlog', restricted=True)
-    >>> build.storeUploadLog('bogus build upload_log')
+    ...     "log.txt", filecontent=b"bogus buildlog", restricted=True
+    ... )
+    >>> build.storeUploadLog("bogus build upload_log")
 
 Create a subsequent source publication so a package diff can be provided.
 
     >>> another_test_source = test_publisher.getPubSource(
-    ...     archive=no_priv_private_ppa, sourcename='test-pkg',
-    ...     version='1.1')
-    >>> another_dsc_file = (
-    ...     another_test_source.sourcepackagerelease.files[0].libraryfile)
+    ...     archive=no_priv_private_ppa, sourcename="test-pkg", version="1.1"
+    ... )
+    >>> another_dsc_file = another_test_source.sourcepackagerelease.files[
+    ...     0
+    ... ].libraryfile
     >>> other_binary_pubs = test_publisher.getPubBinaries(
-    ...     binaryname='test-bin', pub_source=another_test_source)
+    ...     binaryname="test-bin", pub_source=another_test_source
+    ... )
 
-    >>> package_diff  = test_source.sourcepackagerelease.requestDiffTo(
-    ...     no_priv, another_test_source.sourcepackagerelease)
+    >>> package_diff = test_source.sourcepackagerelease.requestDiffTo(
+    ...     no_priv, another_test_source.sourcepackagerelease
+    ... )
     >>> package_diff.diff_content = test_publisher.addMockFile(
-    ...     'test-pkg_1.0_1.1.diff.gz', filecontent=b'bogus diff',
-    ...     restricted=True)
+    ...     "test-pkg_1.0_1.1.diff.gz",
+    ...     filecontent=b"bogus diff",
+    ...     restricted=True,
+    ... )
     >>> package_diff.date_fulfilled = package_diff.date_requested
 
 Commit everything.
@@ -89,36 +96,43 @@ PPA file links
 Links to files accessible via +files/ proxy in the PPA page.
 
     >>> ppa_links = [
-    ...     ('(changes file)',
+    ...     (
+    ...         "(changes file)",
     ...         another_test_source.sourcepackagerelease.upload_changesfile,
-    ...         None, None),
-    ...     ]
+    ...         None,
+    ...         None,
+    ...     ),
+    ... ]
 
     >>> ppa_1_0_links = [
-    ...     ('test-pkg_1.0.dsc', dsc_file, 'test-pkg', '1.0'),
-    ...     ('test-pkg_1.0.tar.gz', tar_gz, 'test-pkg', '1.0'),
-    ...     ('test-bin_1.0_all.deb', deb_file, None, None),
-    ...     ]
+    ...     ("test-pkg_1.0.dsc", dsc_file, "test-pkg", "1.0"),
+    ...     ("test-pkg_1.0.tar.gz", tar_gz, "test-pkg", "1.0"),
+    ...     ("test-bin_1.0_all.deb", deb_file, None, None),
+    ... ]
 
     >>> ppa_1_1_links = [
-    ...     ('test-pkg_1.1.dsc', another_dsc_file, 'test-pkg', '1.1'),
-    ...     ('1.0 to 1.1', package_diff.diff_content, None, None),
-    ...     ]
+    ...     ("test-pkg_1.1.dsc", another_dsc_file, "test-pkg", "1.1"),
+    ...     ("1.0 to 1.1", package_diff.diff_content, None, None),
+    ... ]
 
 Links to files accessible via +files/ proxy in the Build page.
 
     >>> build_id = build.id
 
     >>> builds_links = [
-    ...     ('see the log', build.log, None, None),
-    ...     ]
+    ...     ("see the log", build.log, None, None),
+    ... ]
 
     >>> build_links = [
-    ...     ('test-bin_1.0_i386.changes', build.upload_changesfile,
-    ...      None, None),
-    ...     ('buildlog', build.log, None, None),
-    ...     ('uploadlog', build.upload_log, None, None),
-    ...     ]
+    ...     (
+    ...         "test-bin_1.0_i386.changes",
+    ...         build.upload_changesfile,
+    ...         None,
+    ...         None,
+    ...     ),
+    ...     ("buildlog", build.log, None, None),
+    ...     ("uploadlog", build.upload_log, None, None),
+    ... ]
 
     >>> logout()
 
@@ -130,76 +144,105 @@ Create a function to check the expected links.
     ...         try:
     ...             found_url = browser.getLink(link).url
     ...         except LinkNotFoundError:
-    ...             print('%s: NOT FOUND' % libraryfile.filename)
+    ...             print("%s: NOT FOUND" % libraryfile.filename)
     ...             continue
-    ...         found_url = found_url.replace('%7E', '~')
+    ...         found_url = found_url.replace("%7E", "~")
     ...         if source_name is not None:
-    ...             expected_url = '/'.join(
-    ...                 (base_url, '+sourcefiles', source_name,
-    ...                  source_version, libraryfile.filename))
+    ...             expected_url = "/".join(
+    ...                 (
+    ...                     base_url,
+    ...                     "+sourcefiles",
+    ...                     source_name,
+    ...                     source_version,
+    ...                     libraryfile.filename,
+    ...                 )
+    ...             )
     ...         else:
-    ...             expected_url = '/'.join(
-    ...                 (base_url, '+files', libraryfile.filename))
+    ...             expected_url = "/".join(
+    ...                 (base_url, "+files", libraryfile.filename)
+    ...             )
     ...         if found_url == expected_url:
-    ...             print('%s: OK' % libraryfile.filename)
+    ...             print("%s: OK" % libraryfile.filename)
     ...         else:
-    ...             print('%s: NOT OK (%s != %s)' % (
-    ...                 libraryfile.filename, found_url, expected_url))
+    ...             print(
+    ...                 "%s: NOT OK (%s != %s)"
+    ...                 % (libraryfile.filename, found_url, expected_url)
+    ...             )
+    ...
 
 No Privileges user can access the files related with their PPA and its
 builds.
 
     >>> no_priv_browser = setupBrowser(
-    ...     auth='Basic no-priv@canonical.com:test')
+    ...     auth="Basic no-priv@canonical.com:test"
+    ... )
     >>> no_priv_browser.open(
-    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages")
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages"
+    ... )
 
     >>> print(no_priv_browser.title)
     Packages in “PPA named p3a for No Privileges Person”...
 
 Source changesfiles are served on the PPA '+files' traversal.
 
-    >>> check_urls(no_priv_browser, ppa_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/p3a')
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a",
+    ... )
     test-pkg_1.1_source.changes: OK
 
-    >>> no_priv_browser.getLink('Copy packages').click()
-    >>> check_urls(no_priv_browser, ppa_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/p3a')
+    >>> no_priv_browser.getLink("Copy packages").click()
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a",
+    ... )
     test-pkg_1.1_source.changes: OK
 
-    >>> no_priv_browser.getLink('Cancel').click()
-    >>> no_priv_browser.getLink('Delete packages').click()
-    >>> check_urls(no_priv_browser, ppa_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/p3a')
+    >>> no_priv_browser.getLink("Cancel").click()
+    >>> no_priv_browser.getLink("Delete packages").click()
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a",
+    ... )
     test-pkg_1.1_source.changes: OK
 
 Buildlogs are served on the Build '+files' traversal, when the PPA
 builds list is presented.
 
-    >>> no_priv_browser.getLink('Cancel').click()
-    >>> no_priv_browser.getLink('View all builds').click()
-    >>> no_priv_browser.getControl(name="build_state").value = ['built']
+    >>> no_priv_browser.getLink("Cancel").click()
+    >>> no_priv_browser.getLink("View all builds").click()
+    >>> no_priv_browser.getControl(name="build_state").value = ["built"]
     >>> no_priv_browser.getControl("Filter").click()
 
-    >>> check_urls(no_priv_browser, builds_links,
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+build/%d'
-    ...     % build_id)
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     builds_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+build/%d"
+    ...     % build_id,
+    ... )
     buildlog_ubuntutest-breezy-autotest-i386.test-pkg_1.0_FULLYBUILT.txt.gz:
     OK
 
     >>> no_priv_browser.open(
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages')
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages"
+    ... )
 
 Source and binary files, in the expandable-row area, are served via
 the PPA '+sourcefiles' and '+files' traversals.
 
     >>> expander_id = find_tags_by_class(
-    ...     no_priv_browser.contents, 'expander')[1]['id']
+    ...     no_priv_browser.contents, "expander"
+    ... )[1]["id"]
     >>> no_priv_browser.getLink(id=expander_id).click()
 
-    >>> check_urls(no_priv_browser, ppa_1_0_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/p3a')
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_1_0_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a",
+    ... )
     test-pkg_1.0.dsc:     OK
     test-pkg_1.0.tar.gz:  OK
     test-bin_1.0_all.deb: OK
@@ -207,14 +250,17 @@ the PPA '+sourcefiles' and '+files' traversals.
 Buildlog, upload_log and binary changesfile are served via the Build
 '+files' traversal when the Build page is presented.
 
-    >>> no_priv_browser.getLink('i386').click()
+    >>> no_priv_browser.getLink("i386").click()
     >>> print(no_priv_browser.title)
     i386 build of test-pkg 1.0 : PPA named p3a for No Privileges Person :
     No Privileges Person
 
-    >>> check_urls(no_priv_browser, build_links,
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+build/%d'
-    ...     % build_id)
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     build_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+build/%d"
+    ...     % build_id,
+    ... )
     test-bin_1.0_i386.changes:    OK
     buildlog_...txt.gz:           OK
     upload_..._log.txt:           OK
@@ -223,23 +269,29 @@ Package-diff files, in the expandable-row area, are served via the PPA
 '+files' traversal.
 
     >>> no_priv_browser.open(
-    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages")
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+packages"
+    ... )
 
     >>> expander_id = find_tags_by_class(
-    ...     no_priv_browser.contents, 'expander')[0]['id']
+    ...     no_priv_browser.contents, "expander"
+    ... )[0]["id"]
     >>> no_priv_browser.getLink(id=expander_id).click()
 
-    >>> check_urls(no_priv_browser, ppa_1_1_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/p3a')
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_1_1_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a",
+    ... )
     test-pkg_1.1.dsc:         OK
     test-pkg_1.0_1.1.diff.gz: OK
 
 Retrieve file information for using the direct HTTP browsing API.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> dsc_file_lp_url = (
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+sourcefiles/'
-    ...     'test-pkg/1.0/%s' % dsc_file.filename)
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+sourcefiles/"
+    ...     "test-pkg/1.0/%s" % dsc_file.filename
+    ... )
     >>> logout()
 
 Sample Person can't access the file.
@@ -251,10 +303,17 @@ Sample Person can't access the file.
 
 The 'No Privileges' user, the PPA owner, can download the DSC file.
 
-    >>> print(http(six.ensure_binary(r"""
+    >>> print(
+    ...     http(
+    ...         six.ensure_binary(
+    ...             r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
-    ... """ % (dsc_file_lp_url.replace('http://launchpad.test', '')))))
+    ... """
+    ...             % (dsc_file_lp_url.replace("http://launchpad.test", ""))
+    ...         )
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: https://...restricted.../test-pkg_1.0.dsc?token=...
@@ -262,19 +321,27 @@ The 'No Privileges' user, the PPA owner, can download the DSC file.
 
 Binary files are served via '+files' rather than '+sourcefiles'.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> deb_file_lp_url = (
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+files/%s' %
-    ...     deb_file.filename)
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/p3a/+files/%s"
+    ...     % deb_file.filename
+    ... )
     >>> logout()
     >>> browser.open(deb_file_lp_url)
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized
-    >>> print(http(six.ensure_binary(r"""
+    >>> print(
+    ...     http(
+    ...         six.ensure_binary(
+    ...             r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
-    ... """ % (deb_file_lp_url.replace('http://launchpad.test', '')))))
+    ... """
+    ...             % (deb_file_lp_url.replace("http://launchpad.test", ""))
+    ...         )
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: https://...restricted.../test-bin_1.0_all.deb?token=...
@@ -288,24 +355,32 @@ binaries across to no-priv's public ppa.
     >>> from lp.soyuz.interfaces.publishing import (
     ...     ISourcePackagePublishingHistory,
     ...     PackagePublishingPocket,
-    ...     )
+    ... )
     >>> from lp.soyuz.scripts.packagecopier import do_copy
     >>> copies = do_copy(
-    ...     no_priv_private_ppa.getPublishedSources(name=u'test-pkg'),
-    ...     no_priv.archive, series=ubuntu['warty'],
+    ...     no_priv_private_ppa.getPublishedSources(name="test-pkg"),
+    ...     no_priv.archive,
+    ...     series=ubuntu["warty"],
     ...     pocket=PackagePublishingPocket.RELEASE,
-    ...     include_binaries=True, person=no_priv, unembargo=True)
-    >>> source_copy = [copy for copy in copies
-    ...                if ISourcePackagePublishingHistory.providedBy(copy)
-    ...                   and copy.source_package_version == "1.0"][0]
+    ...     include_binaries=True,
+    ...     person=no_priv,
+    ...     unembargo=True,
+    ... )
+    >>> source_copy = [
+    ...     copy
+    ...     for copy in copies
+    ...     if ISourcePackagePublishingHistory.providedBy(copy)
+    ...     and copy.source_package_version == "1.0"
+    ... ][0]
     >>> dsc_file = source_copy.sourcepackagerelease.files[0].libraryfile
 
     >>> dsc_file.restricted
     False
     >>> file_librarian_url = dsc_file.http_url
     >>> file_lp_url = str(
-    ...     'http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/'
-    ...     'test-pkg/1.0/%s' % dsc_file.filename)
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/"
+    ...     "test-pkg/1.0/%s" % dsc_file.filename
+    ... )
 
     >>> transaction.commit()
     >>> logout()
@@ -313,9 +388,16 @@ binaries across to no-priv's public ppa.
     >>> print(file_librarian_url)
     http://.../test-pkg_1.0.dsc
 
-    >>> print(http(six.ensure_binary(r"""
+    >>> print(
+    ...     http(
+    ...         six.ensure_binary(
+    ...             r"""
     ... GET %s HTTP/1.1
-    ... """ % file_lp_url.replace('http://launchpad.test', ''))))
+    ... """
+    ...             % file_lp_url.replace("http://launchpad.test", "")
+    ...         )
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: http://.../test-pkg_1.0.dsc
@@ -323,7 +405,7 @@ binaries across to no-priv's public ppa.
 
 The filename must be at the end of the URL. No further segments are permitted.
 
-    >>> browser.open(file_lp_url + '/foo')
+    >>> browser.open(file_lp_url + "/foo")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -337,12 +419,21 @@ sure that '+files' isn't understood as the PPA name, but instead
 redirect to the files for the default named PPA.
 
     >>> file_lp_url_without_ppa_name = (
-    ...     'http://launchpad.test/~no-priv/+archive/+files/test-pkg_1.0.dsc')
+    ...     "http://launchpad.test/~no-priv/+archive/+files/test-pkg_1.0.dsc"
+    ... )
 
-    >>> print(http(six.ensure_binary(r"""
+    >>> print(
+    ...     http(
+    ...         six.ensure_binary(
+    ...             r"""
     ... GET %s HTTP/1.1
-    ... """ % file_lp_url_without_ppa_name.replace(
-    ...     'http://launchpad.test', ''))))  # noqa
+    ... """
+    ...             % file_lp_url_without_ppa_name.replace(
+    ...                 "http://launchpad.test", ""
+    ...             )
+    ...         )
+    ...     )
+    ... )  # noqa
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://localhost/~no-priv/+archive/ubuntu/ppa/+files/test-pkg_1.0.dsc
@@ -351,11 +442,20 @@ redirect to the files for the default named PPA.
 The same redirection happens for +archive/+build/blah urls:
 
     >>> buildlog_lp_url_without_ppa_name = (
-    ...     'http://launchpad.test/~no-priv/+archive/+build/1/+files/foo')
-    >>> print(http(six.ensure_binary(r"""
+    ...     "http://launchpad.test/~no-priv/+archive/+build/1/+files/foo"
+    ... )
+    >>> print(
+    ...     http(
+    ...         six.ensure_binary(
+    ...             r"""
     ... GET %s HTTP/1.1
-    ... """ % buildlog_lp_url_without_ppa_name.replace(
-    ...     'http://launchpad.test', ''))))
+    ... """
+    ...             % buildlog_lp_url_without_ppa_name.replace(
+    ...                 "http://launchpad.test", ""
+    ...             )
+    ...         )
+    ...     )
+    ... )
     HTTP/1.1 301 Moved Permanently
     ...
     Location: http://.../~no-priv/+archive/ubuntu/ppa/+build/1/+files/...
@@ -373,7 +473,7 @@ immediately deleted in case of reported ToS violation.
     # LibraryFileContent.
     >>> from lp.soyuz.model.archive import Archive
     >>> from lp.services.database.interfaces import IMasterStore
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> IMasterStore(Archive).commit()
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(dsc_file).content = None
@@ -391,14 +491,19 @@ In this circumstance, when a file is deleted, the file reference
 remains in the PPA page, but it's not a link anymore.
 
     >>> no_priv_browser.open(
-    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+packages")
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+packages"
+    ... )
 
     >>> expander_id = find_tags_by_class(
-    ...     no_priv_browser.contents, 'expander')[1]['id']
+    ...     no_priv_browser.contents, "expander"
+    ... )[1]["id"]
     >>> no_priv_browser.getLink(id=expander_id).click()
 
-    >>> check_urls(no_priv_browser, ppa_1_0_links,
-    ...            'http://launchpad.test/~no-priv/+archive/ubuntu/ppa')
+    >>> check_urls(
+    ...     no_priv_browser,
+    ...     ppa_1_0_links,
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa",
+    ... )
     test-pkg_1.0.dsc:     NOT FOUND
     test-pkg_1.0.tar.gz:  OK
     test-bin_1.0_all.deb: OK
@@ -409,9 +514,14 @@ LP proxy URL a proper NotFound error is raised.
     >>> print(file_lp_url)  # noqa
     http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/test-pkg/1.0/test-pkg_1.0.dsc
 
-    >>> not_found_file = http(six.ensure_binary(r"""
+    >>> not_found_file = http(
+    ...     six.ensure_binary(
+    ...         r"""
     ... GET %s HTTP/1.1
-    ... """ % file_lp_url.replace('http://launchpad.test', '')))
+    ... """
+    ...         % file_lp_url.replace("http://launchpad.test", "")
+    ...     )
+    ... )
 
 It results in a 404 response.
 

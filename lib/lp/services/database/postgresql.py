@@ -32,8 +32,9 @@ def listReferences(cur, table, column, indirect=True, _state=None):
     Entries are returned in order traversed, so with care this can be used
     to change keys.
 
-    >>> for r in listReferences(cur, 'a', 'aid'):
+    >>> for r in listReferences(cur, "a", "aid"):
     ...     print(repr(r))
+    ...
     ('a', 'selfref', 'a', 'aid', 'a', 'a')
     ('b', 'aid', 'a', 'aid', 'c', 'c')
     ('c', 'aid', 'b', 'aid', 'a', 'a')
@@ -41,7 +42,7 @@ def listReferences(cur, table, column, indirect=True, _state=None):
 
     Of course, there might not be any references
 
-    >>> listReferences(cur, 'a', 'selfref')
+    >>> listReferences(cur, "a", "selfref")
     []
 
     """
@@ -105,37 +106,37 @@ def listIndexes(cur, table, column, only_unique=False):
 
     Simple indexes
 
-    >>> listIndexes(cur, 'b', 'aid')
+    >>> listIndexes(cur, "b", "aid")
     [('aid',)]
-    >>> listIndexes(cur, 'a', 'name')
+    >>> listIndexes(cur, "a", "name")
     [('name',)]
 
     Primary keys are indexes too
 
-    >>> listIndexes(cur, 'a', 'aid')
+    >>> listIndexes(cur, "a", "aid")
     [('aid',)]
 
     Compound indexes
 
-    >>> listIndexes(cur, 'c', 'aid')
+    >>> listIndexes(cur, "c", "aid")
     [('aid', 'bid')]
-    >>> listIndexes(cur, 'c', 'bid')
+    >>> listIndexes(cur, "c", "bid")
     [('aid', 'bid')]
-    >>> listIndexes(cur, 'c', 'name')
+    >>> listIndexes(cur, "c", "name")
     [('name', 'description')]
-    >>> listIndexes(cur, 'c', 'description')
+    >>> listIndexes(cur, "c", "description")
     [('name', 'description')]
 
     And any combination
 
-    >>> l = listIndexes(cur, 'd', 'aid')
+    >>> l = listIndexes(cur, "d", "aid")
     >>> l.sort()
     >>> l
     [('aid',), ('aid', 'bid')]
 
     If there are no indexes using the secified column
 
-    >>> listIndexes(cur, 'a', 'selfref')
+    >>> listIndexes(cur, "a", "selfref")
     []
 
     """
@@ -191,37 +192,37 @@ def listUniques(cur, table, column):
 
     Simple UNIQUE index
 
-    >>> listUniques(cur, 'b', 'aid')
+    >>> listUniques(cur, "b", "aid")
     [('aid',)]
 
     Primary keys are UNIQUE indexes too
 
-    >>> listUniques(cur, 'a', 'aid')
+    >>> listUniques(cur, "a", "aid")
     [('aid',)]
 
     Compound indexes
 
-    >>> listUniques(cur, 'c', 'aid')
+    >>> listUniques(cur, "c", "aid")
     [('aid', 'bid')]
-    >>> listUniques(cur, 'c', 'bid')
+    >>> listUniques(cur, "c", "bid")
     [('aid', 'bid')]
 
     And any combination
 
-    >>> l = listUniques(cur, 'd', 'aid')
+    >>> l = listUniques(cur, "d", "aid")
     >>> l.sort()
     >>> l
     [('aid',), ('aid', 'bid')]
 
     If there are no UNIQUE indexes using the secified column
 
-    >>> listUniques(cur, 'a', 'selfref')
+    >>> listUniques(cur, "a", "selfref")
     []
-    >>> listUniques(cur, 'a', 'name')
+    >>> listUniques(cur, "a", "name")
     []
-    >>> listUniques(cur, 'c', 'name')
+    >>> listUniques(cur, "c", "name")
     []
-    >>> listUniques(cur, 'c', 'description')
+    >>> listUniques(cur, "c", "description")
     []
 
     """
@@ -237,6 +238,7 @@ def listSequences(cur):
 
     >>> for r in listSequences(cur):
     ...     print(repr(r))
+    ...
     ('public', 'a_aid_seq', 'a', 'aid')
     ('public', 'standalone', None, None)
 
@@ -367,8 +369,8 @@ def estimateRowCount(cur, query):
     1
     >>> cur.executemany(
     ...     "INSERT INTO A (selfref) VALUES (NULL)",
-    ...     [(i,) for i in range(100)]
-    ...     )
+    ...     [(i,) for i in range(100)],
+    ... )
     >>> cur.execute("ANALYZE A")
     >>> estimateRowCount(cur, "SELECT * FROM A")
     101
@@ -386,13 +388,13 @@ def have_table(cur, table):
 
     Returns boolean answer.
 
-    >>> have_table(cur, 'thistabledoesnotexist_i_hope')
+    >>> have_table(cur, "thistabledoesnotexist_i_hope")
     False
     >>> cur.execute("CREATE TEMP TABLE atesttable (x integer)")
-    >>> have_table(cur, 'atesttable')
+    >>> have_table(cur, "atesttable")
     True
-    >>> drop_tables(cur, 'atesttable')
-    >>> have_table(cur, 'atesttable')
+    >>> drop_tables(cur, "atesttable")
+    >>> have_table(cur, "atesttable")
     False
     """
     cur.execute(
@@ -412,14 +414,14 @@ def table_has_column(cur, table, column):
     Returns boolean answer.
 
     >>> cur.execute("CREATE TEMP TABLE atesttable (x integer)")
-    >>> table_has_column(cur, 'atesttable', 'x')
+    >>> table_has_column(cur, "atesttable", "x")
     True
-    >>> table_has_column(cur, 'atesttable', 'z')
+    >>> table_has_column(cur, "atesttable", "z")
     False
-    >>> table_has_column(cur, 'thistabledoesnotexist_i_hope', 'pphwt')
+    >>> table_has_column(cur, "thistabledoesnotexist_i_hope", "pphwt")
     False
-    >>> drop_tables(cur, 'atesttable')
-    >>> table_has_column(cur, 'atesttable', 'x')
+    >>> drop_tables(cur, "atesttable")
+    >>> table_has_column(cur, "atesttable", "x")
     False
     """
     cur.execute(
@@ -439,21 +441,21 @@ def drop_tables(cur, tables):
     """Drop given tables (a list, one name, or None), if they exist.
 
     >>> cur.execute("CREATE TEMP TABLE foo (a integer)")
-    >>> have_table(cur, 'foo')
+    >>> have_table(cur, "foo")
     True
-    >>> table_has_column(cur, 'foo', 'a')
+    >>> table_has_column(cur, "foo", "a")
     True
     >>> cur.execute("CREATE TEMP TABLE bar (b varchar)")
-    >>> have_table(cur, 'bar')
+    >>> have_table(cur, "bar")
     True
     >>> cur.execute("INSERT INTO foo values (1)")
     >>> cur.execute("INSERT INTO bar values ('hi mom')")
-    >>> drop_tables(cur, ['thistabledoesnotexist_i_hope', 'foo', 'bar'])
-    >>> have_table(cur, 'foo')
+    >>> drop_tables(cur, ["thistabledoesnotexist_i_hope", "foo", "bar"])
+    >>> have_table(cur, "foo")
     False
-    >>> have_table(cur, 'bar')
+    >>> have_table(cur, "bar")
     False
-    >>> drop_tables(cur, [])    # No explosion
+    >>> drop_tables(cur, [])  # No explosion
     >>> drop_tables(cur, None)  # No wailing sirens
     """
     if tables is None or len(tables) == 0:
@@ -548,9 +550,9 @@ def fqn(namespace, name):
 
     Quoting is done for the non trivial cases.
 
-    >>> print(fqn('public', 'foo'))
+    >>> print(fqn("public", "foo"))
     public.foo
-    >>> print(fqn(' foo ', '$bar'))
+    >>> print(fqn(" foo ", "$bar"))
     " foo "."$bar"
     """
     if re.search(r"[^a-z_]", namespace) is not None:
@@ -569,7 +571,7 @@ class ConnectionString:
 
     Quoted or escaped values are not supported.
 
-    >>> cs = ConnectionString('user=foo dbname=launchpad_dev')
+    >>> cs = ConnectionString("user=foo dbname=launchpad_dev")
     >>> cs.dbname
     'launchpad_dev'
     >>> cs.user
@@ -636,11 +638,11 @@ class ConnectionString:
         """Return a string suitable for the PostgreSQL standard tools
         command line arguments.
 
-        >>> cs = ConnectionString('host=localhost user=slony dbname=test')
+        >>> cs = ConnectionString("host=localhost user=slony dbname=test")
         >>> cs.asPGCommandLineArgs()
         '--host=localhost --username=slony test'
 
-        >>> cs = ConnectionString('port=5433 dbname=test')
+        >>> cs = ConnectionString("port=5433 dbname=test")
         >>> cs.asPGCommandLineArgs()
         '--port=5433 test'
         """
@@ -659,7 +661,7 @@ class ConnectionString:
         """Return a string suitable for use by the LP tools using
         db_options() to parse the command line.
 
-        >>> cs = ConnectionString('host=localhost user=slony dbname=test')
+        >>> cs = ConnectionString("host=localhost user=slony dbname=test")
         >>> cs.asLPCommandLineArgs()
         '--host=localhost --user=slony --dbname=test'
         """

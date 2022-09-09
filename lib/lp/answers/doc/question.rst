@@ -8,7 +8,7 @@ Questions are created and accessed using the IQuestionTarget interface.  This
 interface is available on Products, Distributions and
 DistributionSourcePackages.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
     >>> from lp.testing import verifyObject
     >>> from lp.answers.interfaces.questiontarget import IQuestionTarget
@@ -16,14 +16,14 @@ DistributionSourcePackages.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> firefox = getUtility(IProductSet)['firefox']
+    >>> firefox = getUtility(IProductSet)["firefox"]
     >>> verifyObject(IQuestionTarget, firefox)
     True
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> verifyObject(IQuestionTarget, ubuntu)
     True
 
-    >>> evolution_in_ubuntu = ubuntu.getSourcePackage('evolution')
+    >>> evolution_in_ubuntu = ubuntu.getSourcePackage("evolution")
     >>> verifyObject(IQuestionTarget, evolution_in_ubuntu)
     True
 
@@ -31,7 +31,7 @@ Although distribution series do not implement the IQuestionTarget interface,
 it is possible to adapt one to it.  The adapter is actually the distroseries's
 distribution.
 
-    >>> ubuntu_warty = ubuntu.getSeries('warty')
+    >>> ubuntu_warty = ubuntu.getSeries("warty")
     >>> IQuestionTarget.providedBy(ubuntu_warty)
     False
     >>> questiontarget = IQuestionTarget(ubuntu_warty)
@@ -41,7 +41,8 @@ distribution.
 SourcePackages are can be adapted to QuestionTargets.
 
     >>> evolution_in_hoary = ubuntu.currentseries.getSourcePackage(
-    ...     'evolution')
+    ...     "evolution"
+    ... )
     >>> questiontarget = IQuestionTarget(evolution_in_hoary)
     >>> verifyObject(IQuestionTarget, questiontarget)
     True
@@ -50,9 +51,11 @@ You create a new question by calling the newQuestion() method of an
 IQuestionTarget attribute.
 
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
     >>> firefox_question = firefox.newQuestion(
-    ...     sample_person, "Firefox question", "Unable to use Firefox")
+    ...     sample_person, "Firefox question", "Unable to use Firefox"
+    ... )
 
 The complete IQuestionTarget interface is documented in questiontarget.rst.
 
@@ -93,10 +96,12 @@ subscribers.
 
     >>> from operator import attrgetter
     >>> def print_subscribers(question):
-    ...     people = [subscription.person
-    ...               for subscription in question.subscriptions]
-    ...     for person in sorted(people, key=attrgetter('name')):
+    ...     people = [
+    ...         subscription.person for subscription in question.subscriptions
+    ...     ]
+    ...     for person in sorted(people, key=attrgetter("name")):
     ...         print(person.displayname)
+    ...
     >>> print_subscribers(firefox_question)
     Sample Person
 
@@ -126,7 +131,7 @@ It is also possible to adapt a question to its IQuestionTarget.
 
 The question can be assigned to a new IQuestionTarget.
 
-    >>> thunderbird = getUtility(IProductSet)['thunderbird']
+    >>> thunderbird = getUtility(IProductSet)["thunderbird"]
     >>> firefox_question.target = thunderbird
     >>> print(firefox_question.target.displayname)
     Mozilla Thunderbird
@@ -172,7 +177,7 @@ Whenever a question is created or changed, email notifications will be
 sent.  To receive such notification, one can subscribe to the bug using
 the subscribe() method.
 
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> subscription = firefox_question.subscribe(no_priv)
 
 The subscribers include the owner and the newly subscribed person.
@@ -187,6 +192,7 @@ direct_recipients method.
 
     >>> for person in firefox_question.getDirectSubscribers():
     ...     print(person.displayname)
+    ...
     No Privileges Person
     Sample Person
 
@@ -215,6 +221,7 @@ subscribers along with the rationale for contacting them.
     ...         reason, header = subscribers.getReason(person)
     ...         text = removeSecurityProxy(reason).getReason()
     ...         print(header, person.displayname, text)
+    ...
     >>> print_reason(subscribers)
     Asker Sample Person
     You received this question notification because you asked the question.
@@ -229,8 +236,8 @@ part of the indirect subscribers list.
     []
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> english = getUtility(ILanguageSet)['en']
-    >>> login('no-priv@canonical.com')
+    >>> english = getUtility(ILanguageSet)["en"]
+    >>> login("no-priv@canonical.com")
     >>> no_priv.addLanguage(english)
     >>> firefox.addAnswerContact(no_priv, no_priv)
     True
@@ -255,7 +262,7 @@ are part of the indirect subscribers list.
     []
     >>> list(evolution_in_ubuntu.answer_contacts)
     []
-    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
     >>> login(ubuntu_team.teamowner.preferredemail.email)
     >>> ubuntu_team.addLanguage(english)
     >>> ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
@@ -263,8 +270,10 @@ are part of the indirect subscribers list.
     >>> evolution_in_ubuntu.addAnswerContact(no_priv, no_priv)
     True
     >>> package_question = evolution_in_ubuntu.newQuestion(
-    ...     sample_person, 'Upgrading to Evolution 1.4 breaks plug-ins',
-    ...     "The FnordsHighlighter plug-in doesn't work after upgrade.")
+    ...     sample_person,
+    ...     "Upgrading to Evolution 1.4 breaks plug-ins",
+    ...     "The FnordsHighlighter plug-in doesn't work after upgrade.",
+    ... )
 
     >>> print_subscribers(package_question)
     Sample Person
@@ -273,6 +282,7 @@ are part of the indirect subscribers list.
     >>> indirect_subscribers = package_question.indirect_recipients
     >>> for person in indirect_subscribers:
     ...     print(person.displayname)
+    ...
     No Privileges Person
     Ubuntu Team
 
@@ -284,18 +294,20 @@ are part of the indirect subscribers list.
 
 The question's assignee is also part of the indirect subscription list:
 
-    >>> login('admin@canonical.com')
-    >>> package_question.assignee = getUtility(IPersonSet).getByName('name16')
+    >>> login("admin@canonical.com")
+    >>> package_question.assignee = getUtility(IPersonSet).getByName("name16")
     >>> del get_property_cache(package_question).indirect_recipients
     >>> indirect_subscribers = package_question.indirect_recipients
     >>> for person in indirect_subscribers:
     ...     print(person.displayname)
+    ...
     Foo Bar
     No Privileges Person
     Ubuntu Team
 
     >>> reason, header = indirect_subscribers.getReason(
-    ...     package_question.assignee)
+    ...     package_question.assignee
+    ... )
     >>> print(header, removeSecurityProxy(reason).getReason())
     Assignee
     You received this question notification because you are assigned to this
@@ -308,6 +320,7 @@ It too contains the question assignee.
     >>> indirect_subscribers = package_question.getIndirectSubscribers()
     >>> for person in indirect_subscribers:
     ...     print(person.displayname)
+    ...
     Foo Bar
     No Privileges Person
     Ubuntu Team
@@ -316,12 +329,13 @@ Notifications are sent to the list of direct and indirect subscribers.  The
 notification recipients list can be obtained by using the getRecipients()
 method.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> subscribers = firefox_question.getRecipients()
     >>> verifyObject(INotificationRecipientSet, subscribers)
     True
     >>> for person in subscribers:
     ...     print(person.displayname)
+    ...
     No Privileges Person
     Sample Person
 
@@ -349,20 +363,24 @@ that are not supported.
 
     >>> unsupported_questions = firefox.searchQuestions(unsupported=True)
     >>> for question in sorted(
-    ...         unsupported_questions, key=attrgetter('title')):
+    ...     unsupported_questions, key=attrgetter("title")
+    ... ):
     ...     print(question.title)
     Problemas de Impressão no Firefox
 
     >>> unsupported_questions = evolution_in_ubuntu.searchQuestions(
-    ...     unsupported=True)
+    ...     unsupported=True
+    ... )
     >>> sorted(question.title for question in unsupported_questions)
     []
 
     >>> warty_question_target = IQuestionTarget(ubuntu_warty)
     >>> unsupported_questions = warty_question_target.searchQuestions(
-    ...     unsupported=True)
+    ...     unsupported=True
+    ... )
     >>> for question in sorted(
-    ...         unsupported_questions, key=attrgetter('title')):
+    ...     unsupported_questions, key=attrgetter("title")
+    ... ):
     ...     print(question.title)
     Problema al recompilar kernel con soporte smp (doble-núcleo)
     عكس التغييرات غير المحفوظة للمستن؟

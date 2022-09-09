@@ -42,12 +42,11 @@ been uploaded over FTP.
     >>> from lp.archiveuploader.tagfiles import (
     ...     parse_tagfile,
     ...     TagFileParseError,
-    ...     )
+    ... )
     >>> import glob
-    >>> test_files_dir = os.path.join(config.root,
-    ...                               "lib/lp/soyuz/scripts/"
-    ...                               "tests/upload_test_files/")
-    ...
+    >>> test_files_dir = os.path.join(
+    ...     config.root, "lib/lp/soyuz/scripts/" "tests/upload_test_files/"
+    ... )
     >>> changes = sorted(glob.glob(test_files_dir + "*.changes"))
     >>> sent_filenames = []
     >>> uploads = []
@@ -66,24 +65,31 @@ been uploaded over FTP.
     ...     send_filepaths = [changes_filepath]
     ...     if "Files" in tf:
     ...         send_filepaths.extend(
-    ...             [os.path.join(test_files_dir, line.split()[-1])
-    ...              for line in six.ensure_text(tf["Files"]).splitlines()
-    ...              if line])
+    ...             [
+    ...                 os.path.join(test_files_dir, line.split()[-1])
+    ...                 for line in six.ensure_text(tf["Files"]).splitlines()
+    ...                 if line
+    ...             ]
+    ...         )
     ...
     ...     sent_filenames.extend(
-    ...         os.path.basename(filepath) for filepath in send_filepaths)
+    ...         os.path.basename(filepath) for filepath in send_filepaths
+    ...     )
     ...
     ...     upload_dir = os.path.join(
-    ...         incoming_dir, 'upload-%06d' % seq, 'ubuntutest')
+    ...         incoming_dir, "upload-%06d" % seq, "ubuntutest"
+    ...     )
     ...     os.makedirs(upload_dir)
     ...
     ...     for filepath in send_filepaths:
     ...         _ = shutil.copyfile(
     ...             filepath,
-    ...             os.path.join(upload_dir, os.path.basename(filepath)))
+    ...             os.path.join(upload_dir, os.path.basename(filepath)),
+    ...         )
     ...
     ...     uploads.append(send_filepaths)
     ...     seq += 1
+    ...
 
 Check that what we've just uploaded (everything in test_files_dir) is
 what we were expecting to have uploaded.
@@ -98,8 +104,9 @@ files match the uploaded ones.
 
     >>> import hashlib
     >>> def get_md5(filename):
-    ...     with open(filename, 'rb') as f:
+    ...     with open(filename, "rb") as f:
     ...         return hashlib.md5(f.read()).digest()
+    ...
 
     >>> def get_upload_dir(num, dir=incoming_dir):
     ...     """Return the path to the upload, if found in the dir."""
@@ -107,34 +114,43 @@ files match the uploaded ones.
     ...         if upload_entry.name.endswith("%06d" % num):
     ...             return upload_entry.path
     ...     return None
+    ...
 
     >>> def find_upload_dir(num):
     ...     """Return a tuple (result, path) for the numbered upload."""
-    ...     for name, dir in (("incoming", incoming_dir),
-    ...         ("accepted", accepted_dir), ("rejected", rejected_dir),
-    ...         ("failed", failed_dir)):
+    ...     for name, dir in (
+    ...         ("incoming", incoming_dir),
+    ...         ("accepted", accepted_dir),
+    ...         ("rejected", rejected_dir),
+    ...         ("failed", failed_dir),
+    ...     ):
     ...         result = get_upload_dir(num, dir)
     ...         if result is not None:
     ...             return (name, result)
     ...     return (None, None)
+    ...
 
     >>> def find_upload_dir_result(num):
     ...     """Return the result for the numbered upload."""
     ...     return find_upload_dir(num)[0]
+    ...
 
     >>> def find_upload_dir_path(num):
     ...     """Return the path of the numbered upload."""
     ...     return find_upload_dir(num)[1]
+    ...
 
     >>> for i, sent_filenames in enumerate(uploads):
     ...     upload_dir = get_upload_dir(i + 1)
-    ...     distro_upload_dir = os.path.join(upload_dir, 'ubuntutest')
+    ...     distro_upload_dir = os.path.join(upload_dir, "ubuntutest")
     ...     assert len(os.listdir(distro_upload_dir)) == len(sent_filenames)
     ...     for filename in sent_filenames:
-    ...         upload_filename = os.path.join(distro_upload_dir,
-    ...                                        os.path.basename(filename))
+    ...         upload_filename = os.path.join(
+    ...             distro_upload_dir, os.path.basename(filename)
+    ...         )
     ...         assert os.path.isfile(upload_filename)
     ...         assert get_md5(filename) == get_md5(upload_filename)
+    ...
 
 Finally, we'll just create an entirely empty upload folder. We rely for
 our tests on a txpkgupload-like naming system, ie. that the upload folder
@@ -167,9 +183,10 @@ So, load the GPG key:
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> from lp.testing.gpgkeys import gpgkeysdir
     >>> gpg_handler = getUtility(IGPGHandler)
-    >>> key_path = os.path.join(gpgkeysdir, 'ftpmaster@canonical.com.pub')
-    >>> with open(key_path, 'rb') as key_file:
+    >>> key_path = os.path.join(gpgkeysdir, "ftpmaster@canonical.com.pub")
+    >>> with open(key_path, "rb") as key_file:
     ...     key_data = key_file.read()
+    ...
     >>> key = gpg_handler.importPublicKey(key_data)
     >>> assert key is not None
     >>> print(key.fingerprint)
@@ -180,15 +197,17 @@ Create the katie user and register it in a team that is allowed to
 do uploads:
 
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     IEmailAddressSet)
+    ...     IEmailAddressSet,
+    ... )
     >>> from lp.registry.interfaces.gpg import IGPGKeySet
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet,
     ...     PersonCreationRationale,
-    ...     )
+    ... )
     >>> name, address = "Katie", "katie@rockhopper.ubuntu.com"
     >>> user = getUtility(IPersonSet).ensurePerson(
-    ...     address, name, PersonCreationRationale.OWNER_CREATED_LAUNCHPAD)
+    ...     address, name, PersonCreationRationale.OWNER_CREATED_LAUNCHPAD
+    ... )
     >>> assert user is not None
     >>> email = getUtility(IEmailAddressSet).getByEmail(address)
     >>> user.validateAndEnsurePreferredEmail(email)
@@ -198,7 +217,8 @@ do uploads:
 
     >>> login("foo.bar@canonical.com")
     >>> unused = uploader_team.addMember(
-    ...     user, reviewer=uploader_team.teamowner)
+    ...     user, reviewer=uploader_team.teamowner
+    ... )
     >>> login("test@canonical.com")
 
 
@@ -206,9 +226,14 @@ Assign the loaded GPG key to the katie user.
 
     >>> key_set = getUtility(IGPGKeySet)
     >>> user_key = key_set.new(
-    ...     ownerID=user.id, keyid=key.keyid, fingerprint=key.fingerprint,
+    ...     ownerID=user.id,
+    ...     keyid=key.keyid,
+    ...     fingerprint=key.fingerprint,
     ...     algorithm=key.algorithm,
-    ...     keysize=key.keysize, can_encrypt=key.can_encrypt, active=True)
+    ...     keysize=key.keysize,
+    ...     can_encrypt=key.can_encrypt,
+    ...     active=True,
+    ... )
 
 
 Now we want to turn on the test key server to provide the key we
@@ -242,13 +267,21 @@ just upload number 1.
 
     >>> upload_dir_1_path = get_upload_dir(1)
     >>> upload_dir_1_name = os.path.basename(upload_dir_1_path)
-    >>> process = subprocess.Popen([
-    ...     script, "--no-mails", "-vv",
-    ...     "-C", "sync", "-J", upload_dir_1_name, temp_dir,
+    >>> process = subprocess.Popen(
+    ...     [
+    ...         script,
+    ...         "--no-mails",
+    ...         "-vv",
+    ...         "-C",
+    ...         "sync",
+    ...         "-J",
+    ...         upload_dir_1_name,
+    ...         temp_dir,
     ...     ],
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -258,6 +291,7 @@ the other three still in incoming.
 
     >>> for i in range(4):
     ...     print(find_upload_dir_result(i + 1))
+    ...
     rejected
     incoming
     incoming
@@ -266,18 +300,25 @@ the other three still in incoming.
 
 Now continue with the real upload.
 
-    >>> process = subprocess.Popen([
-    ...     script, "--no-mails", "-vv",
-    ...     "-C", "sync", temp_dir,
+    >>> process = subprocess.Popen(
+    ...     [
+    ...         script,
+    ...         "--no-mails",
+    ...         "-vv",
+    ...         "-C",
+    ...         "sync",
+    ...         temp_dir,
     ...     ],
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     universal_newlines=True,
+    ... )
 
     >>> stdout, stderr = process.communicate()
     >>> if process.returncode != 0:
     ...     print(stdout)
     ...     print(stderr)
+    ...
 
 
 Let's check if packages were uploaded correctly.
@@ -301,8 +342,9 @@ Let's check if packages were uploaded correctly.
     comm
     >>> print(spr.maintainer.displayname)
     Matthias Klose
-    >>> for sprf in sorted(spr.files, key=attrgetter('libraryfile.filename')):
+    >>> for sprf in sorted(spr.files, key=attrgetter("libraryfile.filename")):
     ...     print(sprf.libraryfile.filename)
+    ...
     drdsl_1.2.0-0ubuntu1.diff.gz
     drdsl_1.2.0-0ubuntu1.dsc
     drdsl_1.2.0.orig.tar.gz
@@ -332,8 +374,9 @@ Same thing for etherwake:
     net
     >>> print(spr.maintainer.displayname)
     Alain Schroeder
-    >>> for sprf in sorted(spr.files, key=attrgetter('libraryfile.filename')):
+    >>> for sprf in sorted(spr.files, key=attrgetter("libraryfile.filename")):
     ...     print(sprf.libraryfile.filename)
+    ...
     etherwake_1.08-1.diff.gz
     etherwake_1.08-1.dsc
     etherwake_1.08.orig.tar.gz
@@ -349,6 +392,7 @@ Check the four uploads all ended up where we expected.
 
     >>> for i in range(0, 4):
     ...     print(find_upload_dir_result(i + 1))
+    ...
     rejected
     None
     None
@@ -363,13 +407,15 @@ Also check the upload folders contain all the files we uploaded.
     ...     upload_dir = find_upload_dir_path(i + 1)
     ...     if upload_dir is None:
     ...         continue
-    ...     distro_upload_dir = os.path.join(upload_dir, 'ubuntutest')
+    ...     distro_upload_dir = os.path.join(upload_dir, "ubuntutest")
     ...     assert len(os.listdir(distro_upload_dir)) == len(sent_filenames)
     ...     for filename in sent_filenames:
-    ...         upload_filename = os.path.join(distro_upload_dir,
-    ...                                        os.path.basename(filename))
+    ...         upload_filename = os.path.join(
+    ...             distro_upload_dir, os.path.basename(filename)
+    ...         )
     ...         assert os.path.isfile(upload_filename)
     ...         assert get_md5(filename) == get_md5(upload_filename)
+    ...
 
 
 Now let's see if all of the valid uploads are in the Upload queue marked
@@ -381,10 +427,14 @@ as NEW and RELEASE.
     ...     print(name)
     ...     spn = SourcePackageName.selectOneBy(name=name)
     ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
-    ...     us = IStore(PackageUploadSource).find(
-    ...         PackageUploadSource, sourcepackagerelease=spr).one()
-    ...     assert us.packageupload.status.name == 'NEW'
-    ...     assert us.packageupload.pocket.name == 'RELEASE'
+    ...     us = (
+    ...         IStore(PackageUploadSource)
+    ...         .find(PackageUploadSource, sourcepackagerelease=spr)
+    ...         .one()
+    ...     )
+    ...     assert us.packageupload.status.name == "NEW"
+    ...     assert us.packageupload.pocket.name == "RELEASE"
+    ...
     drdsl
     etherwake
 
@@ -398,8 +448,7 @@ as NEW
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.enums import PackageUploadStatus
-    >>> from lp.soyuz.interfaces.queue import (
-    ...     QueueInconsistentStateError)
+    >>> from lp.soyuz.interfaces.queue import QueueInconsistentStateError
 
 Since we landed correct security adapters for Upload,
 we need to perform further actions logged in as an admins, which have
@@ -408,21 +457,24 @@ launchpad.Edit on the records:
     >>> from lp.testing import login
     >>> login("foo.bar@canonical.com")
 
-    >>> distro = getUtility(IDistributionSet).getByName('ubuntutest')
-    >>> series = distro['breezy-autotest']
+    >>> distro = getUtility(IDistributionSet).getByName("ubuntutest")
+    >>> series = distro["breezy-autotest"]
 
 We use getPackageUploads to inspect the current NEW queue and accept items.
 
     >>> queue_items = series.getPackageUploads(status=PackageUploadStatus.NEW)
     >>> L = []
     >>> for queue_item in queue_items:
-    ...      try:
-    ...          queue_item.setAccepted()
-    ...      except QueueInconsistentStateError as e:
-    ...          L.append("%s %s" % (queue_item.sourcepackagerelease.name, e))
-    ...      else:
-    ...          L.append("%s %s" % (queue_item.sourcepackagerelease.name,
-    ...                              'ACCEPTED'))
+    ...     try:
+    ...         queue_item.setAccepted()
+    ...     except QueueInconsistentStateError as e:
+    ...         L.append("%s %s" % (queue_item.sourcepackagerelease.name, e))
+    ...     else:
+    ...         L.append(
+    ...             "%s %s"
+    ...             % (queue_item.sourcepackagerelease.name, "ACCEPTED")
+    ...         )
+    ...
     >>> L.sort()
     >>> print("\n".join(L))
     drdsl ACCEPTED
@@ -439,7 +491,8 @@ Now we process the accepted queue items, one more time.
 These packages must now be in the publishing history. Let's check it.
 
     >>> from lp.soyuz.model.publishing import (
-    ...    SourcePackagePublishingHistory as SSPPH)
+    ...     SourcePackagePublishingHistory as SSPPH,
+    ... )
     >>> package_names.sort()
     >>> for name in package_names:
     ...     spn = SourcePackageName.selectOneBy(name=name)
@@ -448,7 +501,8 @@ These packages must now be in the publishing history. Let's check it.
     ...     if sspph:
     ...         print(name, sspph.status.title)
     ...     else:
-    ...         print(name, 'not Published')
+    ...         print(name, "not Published")
+    ...
     drdsl Pending
     etherwake Pending
 
@@ -456,10 +510,12 @@ These packages must now be in the publishing history. Let's check it.
 Invoke Publisher script against the 'ubuntutest' distribution:
 
     >>> script = os.path.join(config.root, "scripts", "publish-distro.py")
-    >>> process = subprocess.Popen([script, "-vvCq", "-d", "ubuntutest"],
-    ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE,
-    ...                            universal_newlines=True)
+    >>> process = subprocess.Popen(
+    ...     [script, "-vvCq", "-d", "ubuntutest"],
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> print(stdout)
     <BLANKLINE>
@@ -470,8 +526,11 @@ Check if the 'etherwake' source package was correctly published and is
 in the filesystem archive, we are looking for the DSC, the gzipped
 original source and the gzipped package diff:
 
-    >>> len(os.listdir(
-    ...     "/var/tmp/archive/ubuntutest/pool/universe/e/etherwake"))
+    >>> len(
+    ...     os.listdir(
+    ...         "/var/tmp/archive/ubuntutest/pool/universe/e/etherwake"
+    ...     )
+    ... )
     3
 
 Define a helper for pretty-printing Deb822 objects, based on Deb822.dump but
@@ -480,11 +539,12 @@ with sorted output.
     >>> def pprint_deb822(deb822):
     ...     for key in sorted(deb822):
     ...         value = deb822.get_as_string(key)
-    ...         if not value or value[0] == '\n':
-    ...             print('%s:%s' % (key, value))
+    ...         if not value or value[0] == "\n":
+    ...             print("%s:%s" % (key, value))
     ...         else:
-    ...             print('%s: %s' % (key, value))
+    ...             print("%s: %s" % (key, value))
     ...     print()
+    ...
 
 Check the generation of a correct Sources tag file for the main
 component of ubuntutest/breezy-autotest, containing the only the
@@ -494,11 +554,12 @@ required entry for 'etherwake':
     >>> from debian.deb822 import Sources
 
     >>> with gzip.open(
-    ...        "/var/tmp/archive/ubuntutest/dists/breezy-autotest/universe/"
-    ...        "source/Sources.gz") as sources_file:
+    ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest/universe/"
+    ...     "source/Sources.gz"
+    ... ) as sources_file:
     ...     for source in Sources.iter_paragraphs(sources_file):
     ...         pprint_deb822(source)
-    ...     print('END')
+    ...     print("END")
     ... # noqa
     Architecture: any
     Binary: etherwake
@@ -532,19 +593,21 @@ required entry for 'etherwake':
 Now we invoke changeOverride on just published etherwake, moving it to
 component 'multiverse'.
 
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
-    >>> breezy_autotest = ubuntutest['breezy-autotest']
-    >>> etherwake = breezy_autotest.getSourcePackage('etherwake')
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+    >>> breezy_autotest = ubuntutest["breezy-autotest"]
+    >>> etherwake = breezy_autotest.getSourcePackage("etherwake")
     >>> etherwake_drspr = etherwake.currentrelease
     >>> override = etherwake_drspr.publishing_history.first().changeOverride(
-    ...     new_component=getUtility(IComponentSet)['multiverse'])
+    ...     new_component=getUtility(IComponentSet)["multiverse"]
+    ... )
 
 Check if we have new pending publishing record as expected
 
     >>> for pub in SSPPH.selectBy(
-    ...    sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
-    ...    orderBy=['id']):
-    ...    print(pub.status.name, pub.component.name, pub.pocket.name)
+    ...     sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
+    ...     orderBy=["id"],
+    ... ):
+    ...     print(pub.status.name, pub.component.name, pub.pocket.name)
     PUBLISHED universe RELEASE
     PENDING multiverse RELEASE
 
@@ -555,10 +618,12 @@ Force database changes, so they can be used by the external script properly.
 Invoke Publisher script again to land our changes in the archive
 
     >>> script = os.path.join(config.root, "scripts", "publish-distro.py")
-    >>> process = subprocess.Popen([script, "-vvCq", "-d", "ubuntutest"],
-    ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE,
-    ...                            universal_newlines=True)
+    >>> process = subprocess.Popen(
+    ...     [script, "-vvCq", "-d", "ubuntutest"],
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -571,27 +636,30 @@ already on disk, verify the contents are as expected.
 Check the publishing history again
 
     >>> for pub in SSPPH.selectBy(
-    ...    sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
-    ...    orderBy=['id']):
-    ...    print(pub.status.name, pub.component.name, pub.pocket.name)
+    ...     sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
+    ...     orderBy=["id"],
+    ... ):
+    ...     print(pub.status.name, pub.component.name, pub.pocket.name)
     SUPERSEDED universe RELEASE
     PUBLISHED multiverse RELEASE
 
 Check if the package was moved properly to the component 'multiverse':
 
     >>> with gzip.open(
-    ...         "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...         "/main/source/Sources.gz") as f:
+    ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
+    ...     "/main/source/Sources.gz"
+    ... ) as f:
     ...     main_sources = six.ensure_text(f.read())
-    >>> print(main_sources + '\nEND')
+    >>> print(main_sources + "\nEND")
     <BLANKLINE>
     END
 
     >>> with gzip.open(
-    ...         "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...         "/multiverse/source/Sources.gz") as f:
+    ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
+    ...     "/multiverse/source/Sources.gz"
+    ... ) as f:
     ...     multiverse_sources = six.ensure_text(f.read())
-    >>> print(multiverse_sources + '\nEND')
+    >>> print(multiverse_sources + "\nEND")
     Package: drdsl
     ...
     Package: etherwake
@@ -609,10 +677,11 @@ and SHA256) for each index published.
 # caused by the absence of published binaries in this suite. It should
 # no happen in real conditions.
 
-    >>> with open("/var/tmp/archive/ubuntutest/dists/"
-    ...           "breezy-autotest/Release") as f:
+    >>> with open(
+    ...     "/var/tmp/archive/ubuntutest/dists/" "breezy-autotest/Release"
+    ... ) as f:
     ...     releasefile_contents = f.read()
-    >>> print(releasefile_contents + '\nEND')
+    >>> print(releasefile_contents + "\nEND")
     ... # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Origin: ubuntutest

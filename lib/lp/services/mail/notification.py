@@ -87,10 +87,13 @@ def get_unified_diff(old_text, new_text, text_width):
     Before the diff is produced, the texts are wrapped to the given text
     width.
 
-        >>> print(get_unified_diff(
-        ...     'Some text\nAnother line\n',
-        ...     'Some more text\nAnother line\n',
-        ...     text_width=72))
+        >>> print(
+        ...     get_unified_diff(
+        ...         "Some text\nAnother line\n",
+        ...         "Some more text\nAnother line\n",
+        ...         text_width=72,
+        ...     )
+        ... )
         - Some text
         + Some more text
           Another line

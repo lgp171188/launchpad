@@ -66,19 +66,19 @@ MAX_EMAIL_SIZE = 10 * 1024 * 1024
 def canonicalise_line_endings(buf):
     r"""Canonicalise the line endings to '\r\n'.
 
-    >>> b = canonicalise_line_endings(b'\n\nfoo\nbar\rbaz\r\n')
+    >>> b = canonicalise_line_endings(b"\n\nfoo\nbar\rbaz\r\n")
     >>> isinstance(b, bytes)
     True
     >>> six.ensure_str(b)
     '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
-    >>> b = canonicalise_line_endings(b'\r\rfoo\r\nbar\rbaz\n')
+    >>> b = canonicalise_line_endings(b"\r\rfoo\r\nbar\rbaz\n")
     >>> isinstance(b, bytes)
     True
     >>> six.ensure_str(b)
     '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
-    >>> b = canonicalise_line_endings(b'\r\nfoo\r\nbar\nbaz\r')
+    >>> b = canonicalise_line_endings(b"\r\nfoo\r\nbar\nbaz\r")
     >>> isinstance(b, bytes)
     True
     >>> six.ensure_str(b)

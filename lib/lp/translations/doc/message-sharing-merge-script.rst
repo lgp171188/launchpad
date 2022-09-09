@@ -9,8 +9,9 @@ show that the script can run and perform its work.
 
     >>> from lp.services.scripts.tests import run_script
     >>> retcode, stdout, stderr = run_script(
-    ...     'scripts/rosetta/message-sharing-merge.py', [
-    ...         '-q', '-P', '-T', '-d', 'ubuntu', '-s', 'evolution'])
+    ...     "scripts/rosetta/message-sharing-merge.py",
+    ...     ["-q", "-P", "-T", "-d", "ubuntu", "-s", "evolution"],
+    ... )
 
 The migration succeeds.
 

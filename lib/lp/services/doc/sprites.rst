@@ -50,18 +50,21 @@ in the file can be changed with the margin parameter.
     >>> import os, tempfile
     >>> from PIL import Image
     >>> from lp.services.spriteutils import SpriteUtil
-    >>> root = os.path.abspath(os.path.join(__file__, '../../../../..'))
-    >>> icing = os.path.join(root, 'lib/canonical/launchpad/icing')
+    >>> root = os.path.abspath(os.path.join(__file__, "../../../../.."))
+    >>> icing = os.path.join(root, "lib/canonical/launchpad/icing")
     >>> new_png_file = tempfile.NamedTemporaryFile()
     >>> new_positioning_file = tempfile.NamedTemporaryFile()
     >>> new_css_file = tempfile.NamedTemporaryFile()
     >>> def get_sprite_util(margin=0):
     ...     return SpriteUtil(
     ...         os.path.join(
-    ...             root, 'lib/lp/services/tests/testfiles/template.css'),
-    ...         'group1',
-    ...         url_prefix_substitutions={'/@@/': '../images/'},
-    ...         margin=margin)
+    ...             root, "lib/lp/services/tests/testfiles/template.css"
+    ...         ),
+    ...         "group1",
+    ...         url_prefix_substitutions={"/@@/": "../images/"},
+    ...         margin=margin,
+    ...     )
+    ...
     >>> sprite_util = get_sprite_util()
 
 
@@ -137,7 +140,7 @@ referenced /@@/add.png, which was only added once to the combined file.
 .bar and .info do not have a background-position and the background-image
 is not group1.png, since its sprite-ref is "group2".
 
-    >>> sprite_util.saveConvertedCSS(new_css_file.name, 'group1.png')
+    >>> sprite_util.saveConvertedCSS(new_css_file.name, "group1.png")
     >>> print(six.ensure_text(new_css_file.read()))
     /*...
     .add {

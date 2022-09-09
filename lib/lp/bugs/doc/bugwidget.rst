@@ -6,8 +6,8 @@ The BugWidget converts string bug ids to the corresponding bug object.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.bugs.browser.widgets.bug import BugWidget
     >>> from lp.services.fields import BugField
-    >>> bug_field = BugField(__name__='bug', title=u'Bug')
-    >>> request = LaunchpadTestRequest(form={'field.bug': '1'})
+    >>> bug_field = BugField(__name__="bug", title="Bug")
+    >>> request = LaunchpadTestRequest(form={"field.bug": "1"})
     >>> bug_widget = BugWidget(bug_field, request)
     >>> bug_one = bug_widget.getInputValue()
 
@@ -19,7 +19,7 @@ The BugWidget converts string bug ids to the corresponding bug object.
 
 If non-existent bug number is entered, an error is raised.
 
-    >>> request = LaunchpadTestRequest(form={'field.bug': '1234567'})
+    >>> request = LaunchpadTestRequest(form={"field.bug": "1234567"})
     >>> bug_widget = BugWidget(bug_field, request)
     >>> bug_widget.getInputValue()
     Traceback (most recent call last):
@@ -30,7 +30,7 @@ If non-existent bug number is entered, an error is raised.
 It's quite common that bug ids are prefixed by '#', so such inputs are
 accepted as well.
 
-    >>> request = LaunchpadTestRequest(form={'field.bug': '#2'})
+    >>> request = LaunchpadTestRequest(form={"field.bug": "#2"})
     >>> bug_widget = BugWidget(bug_field, request)
     >>> bug_two = bug_widget.getInputValue()
 
@@ -41,7 +41,7 @@ accepted as well.
 
 Leading and trailing whitespace is also stripped from the input.
 
-    >>> request = LaunchpadTestRequest(form={'field.bug': '  #3  '})
+    >>> request = LaunchpadTestRequest(form={"field.bug": "  #3  "})
     >>> bug_widget = BugWidget(bug_field, request)
     >>> bug_three = bug_widget.getInputValue()
 

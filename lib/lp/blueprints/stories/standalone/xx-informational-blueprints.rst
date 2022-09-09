@@ -17,27 +17,30 @@ implementation.
 We register a new blueprint.
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/jokosher/+addspec')
-    >>> user_browser.getControl('Name').value = 'informational-blueprint'
-    >>> user_browser.getControl('Title').value = 'Informational blueprint'
-    >>> user_browser.getControl('Summary').value = \
-    ...     "A blueprint requiring no implementation."
-    >>> user_browser.getControl('Register Blueprint').click()
+    ...     "http://blueprints.launchpad.test/jokosher/+addspec"
+    ... )
+    >>> user_browser.getControl("Name").value = "informational-blueprint"
+    >>> user_browser.getControl("Title").value = "Informational blueprint"
+    >>> user_browser.getControl(
+    ...     "Summary"
+    ... ).value = "A blueprint requiring no implementation."
+    >>> user_browser.getControl("Register Blueprint").click()
     >>> user_browser.url
     'http://blueprints.launchpad.test/jokosher/+spec/informational-blueprint'
 
 We then set the blueprint's implementation status to ''informational''.
 
-    >>> user_browser.getLink(url='+status').click()
+    >>> user_browser.getLink(url="+status").click()
     >>> user_browser.url  # noqa
     'http://blueprints.launchpad.test/jokosher/+spec/informational-blueprint/+status'
-    >>> user_browser.getControl('Implementation Status').value = (
-    ...     ['INFORMATIONAL'])
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Implementation Status").value = [
+    ...     "INFORMATIONAL"
+    ... ]
+    >>> user_browser.getControl("Change").click()
 
 The blueprint is displayed with the ''informational'' icon.
 
-    >>> find_tag_by_id(user_browser.contents, 'informational-icon')
+    >>> find_tag_by_id(user_browser.contents, "informational-icon")
     <...Informational blueprint, no implementation necessary...>
 
 
@@ -47,14 +50,19 @@ Documentation
 An informational blueprint that has been approved, displays on the its
 project's documentation page.
 
-    >>> user_browser.getLink(url='+status').click()
-    >>> user_browser.getControl('Definition Status').value = ['APPROVED']
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getLink(url="+status").click()
+    >>> user_browser.getControl("Definition Status").value = ["APPROVED"]
+    >>> user_browser.getControl("Change").click()
     >>> browser.open(
-    ...     'http://blueprints.launchpad.test/jokosher/+documentation')
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'documentation-listing-table')))
-    ...
+    ...     "http://blueprints.launchpad.test/jokosher/+documentation"
+    ... )
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             browser.contents, "documentation-listing-table"
+    ...         )
+    ...     )
+    ... )
     Informational blueprint
     for Jokosher
     A blueprint requiring no implementation.

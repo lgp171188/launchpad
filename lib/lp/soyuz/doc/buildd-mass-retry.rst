@@ -9,7 +9,8 @@ Buildd-mass-retry behaviour
 build records in a distroseries and/or architecture.
 
     >>> script = os.path.join(
-    ...     config.root, "scripts", "ftpmaster-tools", "buildd-mass-retry.py")
+    ...     config.root, "scripts", "ftpmaster-tools", "buildd-mass-retry.py"
+    ... )
 
 The user can specify a distribution, a suite name (-s) and/or and
 architecture (-a) as a build record provider, it will restrict the
@@ -31,8 +32,10 @@ Passing only suite, request retry on all failed states:
 
     >>> process = subprocess.Popen(
     ...     [script, "-v", "-NFDC", "-s", "hoary"],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -54,7 +57,8 @@ and set it to SUPERSEDED.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
-    ...     IBinaryPackageBuildSet)
+    ...     IBinaryPackageBuildSet,
+    ... )
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> build = getUtility(IBinaryPackageBuildSet).getByID(12)
     >>> pub = removeSecurityProxy(build.current_source_publication)
@@ -70,8 +74,10 @@ A new run doesn't pick it up.
 
     >>> process = subprocess.Popen(
     ...     [script, "-v", "-NFDC", "-s", "hoary"],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -97,8 +103,10 @@ nothing is done:
 
     >>> process = subprocess.Popen(
     ...     [script, "-v", "-NFDC", "-s", "hoary", "-a", "hppa"],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -119,8 +127,10 @@ Selecting only a specific failed state:
 
     >>> process = subprocess.Popen(
     ...     [script, "-v", "-NF", "-s", "hoary"],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    ...     universal_newlines=True)
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0

@@ -7,23 +7,23 @@ Distro Arch Series
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.interfaces.distroarchseriesbinarypackage import (
     ...     IDistroArchSeriesBinaryPackage,
-    ...     )
+    ... )
     >>> from lp.soyuz.interfaces.publishing import (
-    ...     IBinaryPackagePublishingHistory
-    ...     )
+    ...     IBinaryPackagePublishingHistory,
+    ... )
     >>> from lp.soyuz.interfaces.section import ISectionSet
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
 DistroArchSeries are retrieved via __getitem__:
 
-    >>> hoary_i386 = hoary['i386']
+    >>> hoary_i386 = hoary["i386"]
 
 or getDistroArchSeries():
 
-    >>> hoary_hppa = hoary.getDistroArchSeries('hppa')
+    >>> hoary_hppa = hoary.getDistroArchSeries("hppa")
 
 # XXX: daniels 2005-10-17 bug=3257:
 #      This needs many more tests to be effective.
@@ -44,8 +44,9 @@ architectures with that flag set.
     >>> hoary_i386 in hoary.enabled_architectures
     True
     >>> from lp.testing import celebrity_logged_in
-    >>> with celebrity_logged_in('admin'):
+    >>> with celebrity_logged_in("admin"):
     ...     hoary_i386.enabled = False
+    ...
     >>> hoary_i386 in hoary.enabled_architectures
     False
 
@@ -56,7 +57,7 @@ DistroArchSeries can tell you about their published releases
 Check the behaviour of the provided search method, which returns a
 list of IDARBPR instances containing the matching packages.
 
-    >>> results = hoary_i386.searchBinaryPackages(text=u'pmount')
+    >>> results = hoary_i386.searchBinaryPackages(text="pmount")
     >>> results.count()
     1
     >>> pmount = results[0]
@@ -64,14 +65,15 @@ list of IDARBPR instances containing the matching packages.
 The method works even when we are searching for packages whose names are
 not fti-matchable, such as "linux-2.6.12", and substrings:
 
-    >>> warty = ubuntu.getSeries('warty')
-    >>> warty_i386 = warty['i386']
-    >>> results = warty_i386.searchBinaryPackages(text=u'linux-2.6.12')
+    >>> warty = ubuntu.getSeries("warty")
+    >>> warty_i386 = warty["i386"]
+    >>> results = warty_i386.searchBinaryPackages(text="linux-2.6.12")
     >>> results.count()
     1
-    >>> results = warty_i386.searchBinaryPackages(text=u'a')
+    >>> results = warty_i386.searchBinaryPackages(text="a")
     >>> for dasbp in results:
     ...     print("%s: %s" % (dasbp.__class__.__name__, dasbp.name))
+    ...
     DistroArchSeriesBinaryPackageRelease: at
     DistroArchSeriesBinaryPackageRelease: mozilla-firefox
     DistroArchSeriesBinaryPackageRelease: mozilla-firefox
@@ -83,7 +85,7 @@ not fti-matchable, such as "linux-2.6.12", and substrings:
 
 Check IDARBP provider
 
-    >>> pmount_hoary_i386 = hoary_i386.getBinaryPackage('pmount')
+    >>> pmount_hoary_i386 = hoary_i386.getBinaryPackage("pmount")
 
     >>> verifyObject(IDistroArchSeriesBinaryPackage, pmount_hoary_i386)
     True
@@ -114,15 +116,15 @@ Most recent published history row:
 
 Perform `post publication` override:
 
-    >>> new_section = getUtility(ISectionSet)['base']
+    >>> new_section = getUtility(ISectionSet)["base"]
     >>> version = bpph.binarypackagerelease.version
     >>> pmount_hoary_i386_released = pmount_hoary_i386[version]
 
     >>> from lp.testing import person_logged_in
     >>> pmount_i386_pub = pmount_hoary_i386_released.current_publishing_record
     >>> with person_logged_in(ubuntu.main_archive.owner):
-    ...     override = pmount_i386_pub.changeOverride(
-    ...         new_section=new_section)
+    ...     override = pmount_i386_pub.changeOverride(new_section=new_section)
+    ...
     >>> override.section == new_section
     True
     >>> override.status.name
@@ -155,24 +157,25 @@ DistroArchSeries Lookup
 The architectures related to a specific distroseries can be retrieved
 via the 'architectures' property.
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> warty = ubuntu['warty']
-    >>> hoary = ubuntu['hoary']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> warty = ubuntu["warty"]
+    >>> hoary = ubuntu["hoary"]
 
     >>> def print_architectures(architectures):
     ...     for arch in architectures:
     ...         result = arch.title
     ...         if arch.official or arch.supports_virtualized:
-    ...             result += ' ('
+    ...             result += " ("
     ...         if arch.official:
-    ...             result += 'official'
+    ...             result += "official"
     ...             if arch.supports_virtualized:
-    ...                 result += ', '
+    ...                 result += ", "
     ...         if arch.supports_virtualized:
-    ...             result += 'ppa'
+    ...             result += "ppa"
     ...         if arch.official or arch.supports_virtualized:
-    ...             result += ')'
+    ...             result += ")"
     ...         print(result)
+    ...
 
     >>> print_architectures(warty.architectures)
     The Warty Warthog Release for hppa (hppa)
@@ -186,8 +189,11 @@ manually-calculated set of warty architectures for which we support
 PPA  and the actual value returned from the 'ppa_architecture'
 property.
 
-    >>> expected_ppa_archs = [arch for arch in warty.architectures
-    ...                       if arch.supports_virtualized is True]
+    >>> expected_ppa_archs = [
+    ...     arch
+    ...     for arch in warty.architectures
+    ...     if arch.supports_virtualized is True
+    ... ]
     >>> print_architectures(expected_ppa_archs)
     The Warty Warthog Release for i386 (386) (official, ppa)
 
@@ -201,9 +207,9 @@ Let's activate ppa support for hoary/hppa and check if
     The Hoary Hedgehog Release for i386 (386) (official, ppa)
 
     >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> hoary['hppa'].processor.supports_virtualized = True
+    >>> hoary["hppa"].processor.supports_virtualized = True
     >>> flush_database_updates()
 
     >>> print_architectures(hoary.virtualized_architectures)
@@ -223,13 +229,14 @@ returned.
 
     # Create a chroot tarball for hoary/hppa.
     >>> chroot = factory.makeLibraryFileAlias()
-    >>> unused = hoary.getDistroArchSeries('hppa').addOrUpdateChroot(chroot)
+    >>> unused = hoary.getDistroArchSeries("hppa").addOrUpdateChroot(chroot)
 
     # Create a chroot tarball for hoary-updates/hppa too, to make sure that
     # this doesn't result in duplicate architectures.
     >>> updates_chroot = factory.makeLibraryFileAlias()
-    >>> unused = hoary.getDistroArchSeries('hppa').addOrUpdateChroot(
-    ...     updates_chroot, pocket=PackagePublishingPocket.UPDATES)
+    >>> unused = hoary.getDistroArchSeries("hppa").addOrUpdateChroot(
+    ...     updates_chroot, pocket=PackagePublishingPocket.UPDATES
+    ... )
 
     >>> print_architectures(hoary.buildable_architectures)
     The Hoary Hedgehog Release for hppa (hppa) (ppa)
@@ -237,22 +244,21 @@ returned.
 The architecture also has a 'chroot_url' attribute directly referencing
 the file.
 
-    >>> print(hoary.getDistroArchSeries('hppa').chroot_url)
+    >>> print(hoary.getDistroArchSeries("hppa").chroot_url)
     http://.../filename...
-    >>> hoary.getDistroArchSeries('hppa').chroot_url == \
-    ...     chroot.http_url
+    >>> hoary.getDistroArchSeries("hppa").chroot_url == chroot.http_url
     True
 
 If there is no chroot, chroot_url will be None.
 
-    >>> print(hoary.getDistroArchSeries('i386').chroot_url)
+    >>> print(hoary.getDistroArchSeries("i386").chroot_url)
     None
 
 `DistroSeries.buildable_architectures` results are ordered
 alphabetically by 'architecturetag'.
 
     # Create a chroot tarball for hoary/i386.
-    >>> unused = hoary.getDistroArchSeries('i386').addOrUpdateChroot(chroot)
+    >>> unused = hoary.getDistroArchSeries("i386").addOrUpdateChroot(chroot)
 
     >>> print_architectures(hoary.buildable_architectures)
     The Hoary Hedgehog Release for hppa (hppa) (ppa)
@@ -265,29 +271,33 @@ querying inclusion by `SourcePackageName`.
     >>> from lp.soyuz.enums import DistroArchSeriesFilterSense
 
     >>> spns = [factory.makeSourcePackageName() for _ in range(3)]
-    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[0])
+    >>> hoary.getDistroArchSeries("i386").isSourceIncluded(spns[0])
     True
 
     >>> packageset_include = factory.makePackageset(distroseries=hoary)
     >>> packageset_include.add(spns[:2])
-    >>> hoary.getDistroArchSeries('i386').setSourceFilter(
-    ...     packageset_include, DistroArchSeriesFilterSense.INCLUDE,
-    ...     factory.makePerson())
+    >>> hoary.getDistroArchSeries("i386").setSourceFilter(
+    ...     packageset_include,
+    ...     DistroArchSeriesFilterSense.INCLUDE,
+    ...     factory.makePerson(),
+    ... )
     >>> packageset_exclude = factory.makePackageset(distroseries=hoary)
     >>> packageset_exclude.add(spns[1:])
-    >>> hoary.getDistroArchSeries('hppa').setSourceFilter(
-    ...     packageset_exclude, DistroArchSeriesFilterSense.EXCLUDE,
-    ...     factory.makePerson())
+    >>> hoary.getDistroArchSeries("hppa").setSourceFilter(
+    ...     packageset_exclude,
+    ...     DistroArchSeriesFilterSense.EXCLUDE,
+    ...     factory.makePerson(),
+    ... )
 
-    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[0])
+    >>> hoary.getDistroArchSeries("i386").isSourceIncluded(spns[0])
     True
-    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[1])
+    >>> hoary.getDistroArchSeries("i386").isSourceIncluded(spns[1])
     True
-    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[2])
+    >>> hoary.getDistroArchSeries("i386").isSourceIncluded(spns[2])
     False
-    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[0])
+    >>> hoary.getDistroArchSeries("hppa").isSourceIncluded(spns[0])
     True
-    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[1])
+    >>> hoary.getDistroArchSeries("hppa").isSourceIncluded(spns[1])
     False
-    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[2])
+    >>> hoary.getDistroArchSeries("hppa").isSourceIncluded(spns[2])
     False

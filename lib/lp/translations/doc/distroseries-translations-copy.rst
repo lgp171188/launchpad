@@ -8,22 +8,28 @@ copy_active_translations is called from a script once after the release
 series is created.
 
     >>> login("foo.bar@canonical.com")
-    >>> foobuntu = factory.makeDistribution('foobuntu', 'Foobuntu')
-    >>> barty = factory.makeDistroSeries(foobuntu, '99.0', name='barty')
-    >>> carty = factory.makeDistroSeries(foobuntu, '99.1', name='carty')
+    >>> foobuntu = factory.makeDistribution("foobuntu", "Foobuntu")
+    >>> barty = factory.makeDistroSeries(foobuntu, "99.0", name="barty")
+    >>> carty = factory.makeDistroSeries(foobuntu, "99.1", name="carty")
 
 Functions to create source packages, templates and and translations.
 
     >>> def makeSourcePackage(name):
-    ...     packagename =  factory.getOrMakeSourcePackageName(name)
-    ...     return factory.makeDistributionSourcePackage(packagename,
-    ...                                                  foobuntu)
+    ...     packagename = factory.getOrMakeSourcePackageName(name)
+    ...     return factory.makeDistributionSourcePackage(
+    ...         packagename, foobuntu
+    ...     )
+    ...
 
     >>> def makePOTemplateAndPOFiles(distroseries, package, name, languages):
-    ...     return factory.makePOTemplateAndPOFiles(languages,
+    ...     return factory.makePOTemplateAndPOFiles(
+    ...         languages,
     ...         distroseries=distroseries,
     ...         sourcepackagename=package.sourcepackagename,
-    ...         name=name, translation_domain=name+'-domain')
+    ...         name=name,
+    ...         translation_domain=name + "-domain",
+    ...     )
+    ...
 
     >>> def makeTranslation(template, msgid, translations, sequence=None):
     ...     if sequence is None:
@@ -32,31 +38,39 @@ Functions to create source packages, templates and and translations.
     ...     for language, translation in translations.items():
     ...         pofile = template.getPOFileByLang(language)
     ...         factory.makeCurrentTranslationMessage(
-    ...             pofile, msgset, translations=[translation],
-    ...             current_other=True)
+    ...             pofile,
+    ...             msgset,
+    ...             translations=[translation],
+    ...             current_other=True,
+    ...         )
     ...     return msgset
+    ...
 
-    >>> package1 = makeSourcePackage('package1')
-    >>> package2 = makeSourcePackage('package2')
+    >>> package1 = makeSourcePackage("package1")
+    >>> package2 = makeSourcePackage("package2")
 
-    >>> template1 = makePOTemplateAndPOFiles(barty, package1,
-    ...                                          'template1', ['eo'])
-    >>> template2 = makePOTemplateAndPOFiles(barty, package2,
-    ...                                          'template2', ['eo', 'de'])
-    >>> template3 = makePOTemplateAndPOFiles(barty, package1,
-    ...                                          'template3', ['eo'])
+    >>> template1 = makePOTemplateAndPOFiles(
+    ...     barty, package1, "template1", ["eo"]
+    ... )
+    >>> template2 = makePOTemplateAndPOFiles(
+    ...     barty, package2, "template2", ["eo", "de"]
+    ... )
+    >>> template3 = makePOTemplateAndPOFiles(
+    ...     barty, package1, "template3", ["eo"]
+    ... )
 
-    >>> msgset11 = makeTranslation(template1, 'msgid11',
-    ...                           {'eo': 'eo11'})
-    >>> msgset21 = makeTranslation(template2, 'msgid21',
-    ...                            {'eo': 'eo21', 'de': 'de21'})
-    >>> msgset22 = makeTranslation(template2, 'msgid22',
-    ...                            {'eo': 'eo22', 'de': 'de22'})
-    >>> msgset31 = makeTranslation(template3, 'msgid31', {'eo': 'eo31'})
+    >>> msgset11 = makeTranslation(template1, "msgid11", {"eo": "eo11"})
+    >>> msgset21 = makeTranslation(
+    ...     template2, "msgid21", {"eo": "eo21", "de": "de21"}
+    ... )
+    >>> msgset22 = makeTranslation(
+    ...     template2, "msgid22", {"eo": "eo22", "de": "de22"}
+    ... )
+    >>> msgset31 = makeTranslation(template3, "msgid31", {"eo": "eo31"})
 
 The parent series may have obsolete POTMsgSets which will not be copied.
 
-    >>> msgset12 = makeTranslation(template1, 'msgid12', {'eo': 'eo12'}, 0)
+    >>> msgset12 = makeTranslation(template1, "msgid12", {"eo": "eo12"}, 0)
 
 Also, template3 happens to be deactivated.
 
@@ -77,7 +91,8 @@ POTMsgSet and TranslationMessage object, are shared between the two series.
 
     >>> from lp.services.log.logger import DevNullLogger
     >>> from lp.translations.model.distroseries_translations_copy import (
-    ...     copy_active_translations)
+    ...     copy_active_translations,
+    ... )
     >>> logger = DevNullLogger()
     >>> copy_active_translations(barty, carty, txn, logger)
 
@@ -86,16 +101,18 @@ template template3 was not copied.
 
     >>> from operator import attrgetter
     >>> from lp.translations.interfaces.potemplate import IPOTemplateSet
-    >>> carty_templates = getUtility(
-    ...     IPOTemplateSet).getSubset(distroseries=carty)
+    >>> carty_templates = getUtility(IPOTemplateSet).getSubset(
+    ...     distroseries=carty
+    ... )
     >>> len(carty_templates)
     2
-    >>> for template in sorted(carty_templates, key=attrgetter('name')):
+    >>> for template in sorted(carty_templates, key=attrgetter("name")):
     ...     print(template.name)
+    ...
     template1
     template2
-    >>> carty_template1 = carty_templates.getPOTemplateByName('template1')
-    >>> carty_template2 = carty_templates.getPOTemplateByName('template2')
+    >>> carty_template1 = carty_templates.getPOTemplateByName("template1")
+    >>> carty_template2 = carty_templates.getPOTemplateByName("template2")
     >>> carty_template1 == template1
     False
     >>> carty_template2 == template2
@@ -104,9 +121,11 @@ template template3 was not copied.
 All POFiles for the copied POTemplates have also been copied.
 
     >>> all_pofiles = sum(
-    ...     [list(template.pofiles) for template in carty_templates], [])
-    >>> for pofile in sorted(all_pofiles, key=attrgetter('path')):
+    ...     [list(template.pofiles) for template in carty_templates], []
+    ... )
+    >>> for pofile in sorted(all_pofiles, key=attrgetter("path")):
     ...     print(pofile.path)
+    ...
     template1-domain-eo.po
     template2-domain-de.po
     template2-domain-eo.po
@@ -149,7 +168,8 @@ receive those translations. For testing purposes this series has
 translation imports enabled.
 
     >>> darty = factory.makeDistroSeries(
-    ...     foobuntu, '99.2', name='darty', previous_series=barty)
+    ...     foobuntu, "99.2", name="darty", previous_series=barty
+    ... )
     >>> darty_id = darty.id
     >>> darty.defer_translation_imports = False
 
@@ -164,8 +184,9 @@ set.
 
     >>> from lp.testing.script import run_script
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=foobuntu', '--series=darty'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     ["--distribution=foobuntu", "--series=darty"],
+    ... )
     >>> returnvalue
     1
     >>> print(error_output)
@@ -192,8 +213,9 @@ sets the defer_translation_imports flag itself before copying.
     >>> transaction.abort()
     >>> darty = DistroSeries.get(darty_id)
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=foobuntu', '--series=darty', '--force'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     ["--distribution=foobuntu", "--series=darty", "--force"],
+    ... )
     >>> returnvalue
     0
     >>> print(error_output)
@@ -233,8 +255,9 @@ templates of the parent series.
     >>> dartempls = getUtility(IPOTemplateSet).getSubset(distroseries=darty)
     >>> len(dartempls)
     2
-    >>> for template in sorted(dartempls, key=attrgetter('name')):
+    >>> for template in sorted(dartempls, key=attrgetter("name")):
     ...     print(template.name)
+    ...
     template1
     template2
 
@@ -243,13 +266,15 @@ but that can be overridden.
 
     >>> grumpy = factory.makeDistroSeries(
     ...     distribution=factory.makeDistribution(name="notbuntu"),
-    ...     name='grumpy')
+    ...     name="grumpy",
+    ... )
     >>> grumpy_id = grumpy.id
     >>> transaction.commit()
 
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=notbuntu', '--series=grumpy'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     ["--distribution=notbuntu", "--series=grumpy"],
+    ... )
     >>> returnvalue
     2
     >>> print(error_output)
@@ -261,9 +286,14 @@ but that can be overridden.
     <BLANKLINE>
 
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=notbuntu', '--series=grumpy',
-    ...      '--from-distribution=foobuntu' , '--from-series=darty'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     [
+    ...         "--distribution=notbuntu",
+    ...         "--series=grumpy",
+    ...         "--from-distribution=foobuntu",
+    ...         "--from-series=darty",
+    ...     ],
+    ... )
     >>> returnvalue
     0
     >>> print(error_output)
@@ -284,14 +314,20 @@ for package2, and template3 is inactive, so they're both skipped.
 
     >>> lumpy = factory.makeDistroSeries(
     ...     distribution=factory.makeDistribution(name="wartbuntu"),
-    ...     name='lumpy', previous_series=carty)
+    ...     name="lumpy",
+    ...     previous_series=carty,
+    ... )
     >>> lumpy_id = lumpy.id
     >>> transaction.commit()
 
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=wartbuntu', '--series=lumpy',
-    ...      '--published-sources-only'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     [
+    ...         "--distribution=wartbuntu",
+    ...         "--series=lumpy",
+    ...         "--published-sources-only",
+    ...     ],
+    ... )
     >>> returnvalue
     0
     >>> transaction.abort()
@@ -300,19 +336,26 @@ for package2, and template3 is inactive, so they're both skipped.
     0
 
     >>> factory.makeSourcePackagePublishingHistory(
-    ...     archive=lumpy.main_archive, distroseries=lumpy,
-    ...     sourcepackagename='package1')
+    ...     archive=lumpy.main_archive,
+    ...     distroseries=lumpy,
+    ...     sourcepackagename="package1",
+    ... )
     <SourcePackagePublishingHistory ...>
     >>> transaction.commit()
 
     >>> returnvalue, output, error_output = run_script(
-    ...     'scripts/copy-distroseries-translations.py',
-    ...     ['--distribution=wartbuntu', '--series=lumpy',
-    ...      '--published-sources-only'])
+    ...     "scripts/copy-distroseries-translations.py",
+    ...     [
+    ...         "--distribution=wartbuntu",
+    ...         "--series=lumpy",
+    ...         "--published-sources-only",
+    ...     ],
+    ... )
     >>> returnvalue
     0
     >>> transaction.abort()
     >>> lumpy = DistroSeries.get(lumpy_id)
     >>> for pot in getUtility(IPOTemplateSet).getSubset(distroseries=lumpy):
     ...     print(pot.name)
+    ...
     template1

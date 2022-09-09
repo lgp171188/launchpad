@@ -16,7 +16,7 @@ which runs daily. The script does that by using the IKarmaCacheManager API.
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.services.database.interfaces import IStore
 
-    >>> switch_dbuser('karma')
+    >>> switch_dbuser("karma")
     >>> karmacachemanager = getUtility(IKarmaCacheManager)
 
 Creating new KarmaCache entries
@@ -25,7 +25,7 @@ Creating new KarmaCache entries
 This is done using the new() method:
 
     >>> value = 199
-    >>> person = getUtility(IPersonSet).getByName('salgado')
+    >>> person = getUtility(IPersonSet).getByName("salgado")
     >>> bugs = IStore(KarmaCategory).find(KarmaCategory, name="bugs").one()
 
     # The 'karma' dbuser doesn't have access to the Product table, so we'll
@@ -33,7 +33,8 @@ This is done using the new() method:
     # the database.
     >>> firefox_id = 4
     >>> cache_entry = karmacachemanager.new(
-    ...     value, person.id, bugs.id, product_id=firefox_id)
+    ...     value, person.id, bugs.id, product_id=firefox_id
+    ... )
 
 
 Updating existing entries
@@ -46,7 +47,8 @@ and update it.
 
     >>> new_value = 19
     >>> karmacachemanager.updateKarmaValue(
-    ...     new_value, person.id, bugs.id, product_id=firefox_id)
+    ...     new_value, person.id, bugs.id, product_id=firefox_id
+    ... )
     >>> cache_entry.karmavalue
     19
 
@@ -55,7 +57,8 @@ If we try to update an unexistent KarmaCache entry, we'll get a
 NotFoundError.
 
     >>> karmacachemanager.updateKarmaValue(
-    ...     new_value, person.id, bugs.id, product_id=9999)
+    ...     new_value, person.id, bugs.id, product_id=9999
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...

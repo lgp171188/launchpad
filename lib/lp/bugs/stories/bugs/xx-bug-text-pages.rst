@@ -15,19 +15,34 @@ We'll start by adding some attachments to the bug:
     >>> from lp.registry.model.person import Person
     >>> login("foo.bar@canonical.com")
     >>> mark = Person.selectOneBy(name="mark")
-    >>> mark.display_name = u"M\xe1rk Sh\xfattlew\xf2rth"
+    >>> mark.display_name = "M\xe1rk Sh\xfattlew\xf2rth"
     >>> bug = Bug.get(1)
     >>> content = BytesIO(b"<html><body>bogus</body></html>")
-    >>> a1 = bug.addAttachment(mark, content, "comment for file a",
-    ...     "file_a.txt", content_type="text/html")
+    >>> a1 = bug.addAttachment(
+    ...     mark,
+    ...     content,
+    ...     "comment for file a",
+    ...     "file_a.txt",
+    ...     content_type="text/html",
+    ... )
     >>> content = BytesIO(b"do we need to")
-    >>> a2 = bug.addAttachment(mark, content, "comment for file with space",
+    >>> a2 = bug.addAttachment(
+    ...     mark,
+    ...     content,
+    ...     "comment for file with space",
     ...     "file with space.txt",
-    ...     content_type='text/plain;\n  name="file with space.txt"')
+    ...     content_type='text/plain;\n  name="file with space.txt"',
+    ... )
     >>> content = BytesIO(b"Yes we can!")
-    >>> a3 = bug.addAttachment(mark, content, "comment for patch",
-    ...      "bug-patch.diff", is_patch=True, content_type='text/plain',
-    ...      description="a patch")
+    >>> a3 = bug.addAttachment(
+    ...     mark,
+    ...     content,
+    ...     "comment for patch",
+    ...     "bug-patch.diff",
+    ...     is_patch=True,
+    ...     content_type="text/plain",
+    ...     description="a patch",
+    ... )
 
 Next, we'll cycle through all statuses so the dates are present (to
 toggle away from Fix Released we must be the target owner):
@@ -54,10 +69,10 @@ according to the following URL pattern:
 
 For example, users can view a textual description of bug 1:
 
-    >>> anon_browser.open('http://launchpad.test/bugs/1/+text')
+    >>> anon_browser.open("http://launchpad.test/bugs/1/+text")
     >>> anon_browser.url
     'http://launchpad.test/bugs/1/+text'
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
 The textual description contains basic information about that bug, along with
@@ -125,8 +140,8 @@ all tasks related to that bug, presented in an easy-to-digest format:
 The multiple white spaces in the mime type of the second attachment
 are replaced by a single space.
 
-    >>> attachments_text = text_bug[text_bug.find('attachments:'):]
-    >>> attachment_2 = attachments_text.split('\n')[2]
+    >>> attachments_text = text_bug[text_bug.find("attachments:") :]
+    >>> attachment_2 = attachments_text.split("\n")[2]
     >>> attachment_2
     ' http://bugs.launchpad.test/.../file%20with%20space.txt text/plain;
     name="file with space.txt"'
@@ -136,15 +151,16 @@ The comments are represented as a MIME message.
     >>> import email
     >>> from email.header import decode_header
     >>> comments = email.message_from_string(
-    ...     text_bug[text_bug.find('Content-Type:'):]).get_payload()
+    ...     text_bug[text_bug.find("Content-Type:") :]
+    ... ).get_payload()
 
-    >>> print(comments[0]['Content-Type'])
+    >>> print(comments[0]["Content-Type"])
     text/plain; charset="utf-8"
-    >>> 'Author' in comments[0]
+    >>> "Author" in comments[0]
     False
-    >>> 'Date' in comments[0]
+    >>> "Date" in comments[0]
     False
-    >>> 'Message-Id' in comments[0]
+    >>> "Message-Id" in comments[0]
     False
     >>> print(comments[0].get_payload())
     Firefox needs to support embedded SVG images, now that the standard has
@@ -156,15 +172,16 @@ The comments are represented as a MIME message.
     for the manipulation of SVG objects from JavaScript to enable interactive
     and dynamic SVG drawings.
 
-    >>> print(comments[3]['Content-Type'])
+    >>> print(comments[3]["Content-Type"])
     text/plain; charset="utf-8"
     >>> [(author_bytes, author_charset)] = decode_header(
-    ...     comments[3]['Author'])
+    ...     comments[3]["Author"]
+    ... )
     >>> print(author_bytes.decode(author_charset))
     Márk Shúttlewòrth (mark)
-    >>> 'Date' in comments[3]
+    >>> "Date" in comments[3]
     True
-    >>> 'Message-Id' in comments[3]
+    >>> "Message-Id" in comments[3]
     True
     >>> print(comments[3].get_payload())
     comment for file with space
@@ -181,11 +198,11 @@ relating to that bug, according to the following URL pattern:
 For example, since bug 1 affects Mozilla Firefox, users can view the textual
 description of bug 1 directly from the Mozilla Firefox-specific text page:
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+bug/1/+text')
+    >>> anon_browser.open("http://launchpad.test/firefox/+bug/1/+text")
     >>> anon_browser.url
     'http://launchpad.test/firefox/+bug/1/+text'
 
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
 The textual report contains the same information as the report provided by the
@@ -209,7 +226,8 @@ random separator string for each report:
 
     >>> import re
     >>> separator_regex = re.compile(
-    ...     'Content-Type: multipart/mixed; boundary\\="([^"]+)"')
+    ...     'Content-Type: multipart/mixed; boundary\\="([^"]+)"'
+    ... )
 
     >>> separator_bug = separator_regex.findall(text_bug)[0]
     >>> separator_bug_task = separator_regex.findall(text_bug_task)[0]
@@ -224,14 +242,15 @@ The only differences are the download URLs of bug attachments:
 
     >>> for chunk_no in range(len(text_bug_task_chunks)):
     ...     if text_bug_task_chunks[chunk_no] != text_bug_chunks[chunk_no]:
-    ...         bug_task_lines = text_bug_task_chunks[chunk_no].split('\n')
-    ...         bug_lines = text_bug_chunks[chunk_no].split('\n')
-    ...         assert(len(bug_task_lines) == len(bug_lines))
+    ...         bug_task_lines = text_bug_task_chunks[chunk_no].split("\n")
+    ...         bug_lines = text_bug_chunks[chunk_no].split("\n")
+    ...         assert len(bug_task_lines) == len(bug_lines)
     ...         for line_no in range(len(bug_task_lines)):
     ...             if bug_lines[line_no] != bug_task_lines[line_no]:
     ...                 print(bug_lines[line_no])
     ...                 print(bug_task_lines[line_no])
     ... # noqa
+    ...
     http://bugs.launchpad.test/bugs/1/+attachment/.../+files/file_a.txt text/html
     http://bugs.launchpad.test/firefox/+bug/.../+files/file_a.txt text/html
     http://bugs.launchpad.test/bugs/1/.../+files/file%20with%20space.txt...
@@ -245,10 +264,10 @@ Duplicate Bugs
 When one bug duplicates another bug, the textual description includes the
 duplicated bug's ID:
 
-    >>> anon_browser.open('http://launchpad.test/bugs/6/+text')
+    >>> anon_browser.open("http://launchpad.test/bugs/6/+text")
     >>> anon_browser.url
     'http://launchpad.test/bugs/6/+text'
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
@@ -260,10 +279,10 @@ duplicated bug's ID:
 When a bug has duplicate bugs, the textual description includes a list of the
 duplicate bug IDs:
 
-    >>> anon_browser.open('http://launchpad.test/bugs/5/+text')
+    >>> anon_browser.open("http://launchpad.test/bugs/5/+text")
     >>> anon_browser.url
     'http://launchpad.test/bugs/5/+text'
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
@@ -284,10 +303,10 @@ product's bugs text page, according to the following URL pattern:
 
 For example, users can see the IDs of open bugs on Mozilla Firefox:
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+bugs-text')
+    >>> anon_browser.open("http://launchpad.test/firefox/+bugs-text")
     >>> anon_browser.url
     'http://launchpad.test/firefox/+bugs-text'
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
@@ -298,11 +317,11 @@ The textual bugs page supports advanced searches in the same way as the
 graphical bugs page. To perform an advanced search, users can append any
 of the standard set of search parameters to a textual bugs page URL:
 
-    >>> base_url = 'http://launchpad.test/firefox/+bugs-text'
-    >>> search_parameters = 'field.status:list=FIXRELEASED'
-    >>> url = base_url + '?' + search_parameters
+    >>> base_url = "http://launchpad.test/firefox/+bugs-text"
+    >>> search_parameters = "field.status:list=FIXRELEASED"
+    >>> url = base_url + "?" + search_parameters
     >>> anon_browser.open(url)
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
@@ -310,11 +329,11 @@ of the standard set of search parameters to a textual bugs page URL:
 
 Searching for bugs in a component of a distribution works too.
 
-    >>> base_url = 'http://launchpad.test/ubuntu/+bugs-text'
-    >>> search_parameters = 'field.component=1'
-    >>> url = base_url + '?' + search_parameters
+    >>> base_url = "http://launchpad.test/ubuntu/+bugs-text"
+    >>> search_parameters = "field.component=1"
+    >>> url = base_url + "?" + search_parameters
     >>> anon_browser.open(url)
-    >>> print(anon_browser.headers['content-type'])
+    >>> print(anon_browser.headers["content-type"])
     text/plain;charset=utf-8
 
     >>> print(anon_browser.contents)
@@ -322,7 +341,7 @@ Searching for bugs in a component of a distribution works too.
 
 This page is also available for project groups.
 
-    >>> anon_browser.open('http://launchpad.test/mozilla/+bugs-text')
+    >>> anon_browser.open("http://launchpad.test/mozilla/+bugs-text")
     >>> print(anon_browser.contents)
     15
     5
@@ -334,7 +353,7 @@ Private bugs
 
 When a bug is private, the textual description reflects this:
 
-    >>> admin_browser.open('http://launchpad.test/bugs/14/+text')
+    >>> admin_browser.open("http://launchpad.test/bugs/14/+text")
     >>> print(admin_browser.contents)
     bug: 14
     title: jokosher exposes personal details in its actions portlet

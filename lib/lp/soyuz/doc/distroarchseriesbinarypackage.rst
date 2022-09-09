@@ -5,14 +5,17 @@ Distro Arch Series Binary Package
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
-    ...        DistroArchSeriesBinaryPackage)
+    ...     DistroArchSeriesBinaryPackage,
+    ... )
     >>> hoary_i386 = DistroArchSeries.get(6)
     >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
     >>> firefox_name = BinaryPackageName.selectOneBy(name="mozilla-firefox")
     >>> pmount_hoary_i386 = DistroArchSeriesBinaryPackage(
-    ...     hoary_i386, pmount_name)
+    ...     hoary_i386, pmount_name
+    ... )
     >>> firefox_hoary_i386 = DistroArchSeriesBinaryPackage(
-    ...     hoary_i386, firefox_name)
+    ...     hoary_i386, firefox_name
+    ... )
 
 `DistroArchSeriesBinaryPackage`s have a title property:
 
@@ -23,8 +26,7 @@ First, we create a new version of pmount, and a version of mozilla-
 firefox that coincides with pmount's. We're hitch-hiking on two existing
 builds that are in sampledata!
 
-    >>> from lp.soyuz.model.publishing import (
-    ...        BinaryPackagePublishingHistory)
+    >>> from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
     >>> from lp.services.database.constants import UTC_NOW
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
@@ -36,7 +38,9 @@ builds that are in sampledata!
     >>> from lp.soyuz.enums import BinaryPackageFormat
     >>> binpackageformat = BinaryPackageFormat.DEB
     >>> from lp.soyuz.enums import (
-    ...        PackagePublishingPriority, PackagePublishingStatus)
+    ...     PackagePublishingPriority,
+    ...     PackagePublishingStatus,
+    ... )
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> priority = PackagePublishingPriority.STANDARD
@@ -45,93 +49,97 @@ XXX: noodles 2008-11-05 bug=294585: The dependency on a database id
 needs to be removed.
 
     >>> bpr = BinaryPackageBuild.get(8).createBinaryPackageRelease(
-    ...      binarypackagename=firefox_name.id,
-    ...      version="120.6-0",
-    ...      summary="Firefox loves lollies",
-    ...      description="Lolly-pop loving application",
-    ...      binpackageformat=binpackageformat,
-    ...      component=main_component.id,
-    ...      section=misc_section.id,
-    ...      priority=priority,
-    ...      shlibdeps=None,
-    ...      depends=None,
-    ...      recommends=None,
-    ...      suggests=None,
-    ...      conflicts=None,
-    ...      replaces=None,
-    ...      provides=None,
-    ...      pre_depends=None,
-    ...      enhances=None,
-    ...      breaks=None,
-    ...      built_using=None,
-    ...      essential=False,
-    ...      installedsize=0,
-    ...      architecturespecific=False,
-    ...      debug_package=None)
+    ...     binarypackagename=firefox_name.id,
+    ...     version="120.6-0",
+    ...     summary="Firefox loves lollies",
+    ...     description="Lolly-pop loving application",
+    ...     binpackageformat=binpackageformat,
+    ...     component=main_component.id,
+    ...     section=misc_section.id,
+    ...     priority=priority,
+    ...     shlibdeps=None,
+    ...     depends=None,
+    ...     recommends=None,
+    ...     suggests=None,
+    ...     conflicts=None,
+    ...     replaces=None,
+    ...     provides=None,
+    ...     pre_depends=None,
+    ...     enhances=None,
+    ...     breaks=None,
+    ...     built_using=None,
+    ...     essential=False,
+    ...     installedsize=0,
+    ...     architecturespecific=False,
+    ...     debug_package=None,
+    ... )
 
     >>> pe = BinaryPackagePublishingHistory(
-    ...      binarypackagerelease=bpr.id,
-    ...      binarypackagename=bpr.binarypackagename,
-    ...      _binarypackageformat=bpr.binpackageformat,
-    ...      component=main_component.id,
-    ...      section=misc_section.id,
-    ...      priority=priority,
-    ...      distroarchseries=hoary_i386.id,
-    ...      status=PackagePublishingStatus.PUBLISHED,
-    ...      datecreated=UTC_NOW,
-    ...      datepublished=UTC_NOW,
-    ...      pocket=PackagePublishingPocket.RELEASE,
-    ...      datesuperseded=None,
-    ...      supersededby=None,
-    ...      datemadepending=None,
-    ...      dateremoved=None,
-    ...      archive=hoary_i386.main_archive)
+    ...     binarypackagerelease=bpr.id,
+    ...     binarypackagename=bpr.binarypackagename,
+    ...     _binarypackageformat=bpr.binpackageformat,
+    ...     component=main_component.id,
+    ...     section=misc_section.id,
+    ...     priority=priority,
+    ...     distroarchseries=hoary_i386.id,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ...     datecreated=UTC_NOW,
+    ...     datepublished=UTC_NOW,
+    ...     pocket=PackagePublishingPocket.RELEASE,
+    ...     datesuperseded=None,
+    ...     supersededby=None,
+    ...     datemadepending=None,
+    ...     dateremoved=None,
+    ...     archive=hoary_i386.main_archive,
+    ... )
 
 XXX: noodles 2008-11-06 bug=294585: The dependency on a database id
 needs to be removed.
 
     >>> bpr = BinaryPackageBuild.get(9).createBinaryPackageRelease(
-    ...      binarypackagename=pmount_name.id,
-    ...      version="cr98.34",
-    ...      summary="Pmount bakes cakes",
-    ...      description="Phat cake-baker application",
-    ...      binpackageformat=binpackageformat,
-    ...      component=main_component.id,
-    ...      section=misc_section.id,
-    ...      priority=priority,
-    ...      shlibdeps=None,
-    ...      depends=None,
-    ...      recommends=None,
-    ...      suggests=None,
-    ...      conflicts=None,
-    ...      replaces=None,
-    ...      provides=None,
-    ...      pre_depends=None,
-    ...      enhances=None,
-    ...      breaks=None,
-    ...      built_using=None,
-    ...      essential=False,
-    ...      installedsize=0,
-    ...      architecturespecific=False,
-    ...      debug_package=None)
+    ...     binarypackagename=pmount_name.id,
+    ...     version="cr98.34",
+    ...     summary="Pmount bakes cakes",
+    ...     description="Phat cake-baker application",
+    ...     binpackageformat=binpackageformat,
+    ...     component=main_component.id,
+    ...     section=misc_section.id,
+    ...     priority=priority,
+    ...     shlibdeps=None,
+    ...     depends=None,
+    ...     recommends=None,
+    ...     suggests=None,
+    ...     conflicts=None,
+    ...     replaces=None,
+    ...     provides=None,
+    ...     pre_depends=None,
+    ...     enhances=None,
+    ...     breaks=None,
+    ...     built_using=None,
+    ...     essential=False,
+    ...     installedsize=0,
+    ...     architecturespecific=False,
+    ...     debug_package=None,
+    ... )
 
     >>> pe = BinaryPackagePublishingHistory(
-    ...      binarypackagerelease=bpr.id,
-    ...      binarypackagename=bpr.binarypackagename,
-    ...      _binarypackageformat=bpr.binpackageformat,
-    ...      component=main_component.id,
-    ...      section=misc_section.id,
-    ...      priority=priority,
-    ...      distroarchseries=hoary_i386.id,
-    ...      status=PackagePublishingStatus.PUBLISHED,
-    ...      datecreated=UTC_NOW,
-    ...      datepublished=UTC_NOW,
-    ...      pocket=PackagePublishingPocket.RELEASE,
-    ...      datesuperseded=None,
-    ...      supersededby=None,
-    ...      datemadepending=None,
-    ...      dateremoved=None,
-    ...      archive=hoary_i386.main_archive)
+    ...     binarypackagerelease=bpr.id,
+    ...     binarypackagename=bpr.binarypackagename,
+    ...     _binarypackageformat=bpr.binpackageformat,
+    ...     component=main_component.id,
+    ...     section=misc_section.id,
+    ...     priority=priority,
+    ...     distroarchseries=hoary_i386.id,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ...     datecreated=UTC_NOW,
+    ...     datepublished=UTC_NOW,
+    ...     pocket=PackagePublishingPocket.RELEASE,
+    ...     datesuperseded=None,
+    ...     supersededby=None,
+    ...     datemadepending=None,
+    ...     dateremoved=None,
+    ...     archive=hoary_i386.main_archive,
+    ... )
 
 Then, we ensure that grabbing the current release of pmount and the old
 release both are sane.
@@ -143,7 +151,7 @@ release both are sane.
     >>> print(current_release.name)
     pmount
 
-    >>> old_release = pmount_hoary_i386['0.1-1']
+    >>> old_release = pmount_hoary_i386["0.1-1"]
     >>> print(old_release.version)
     0.1-1
 
@@ -162,9 +170,11 @@ distro_source_package attribute should return None.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> deb_wdy_i386 = removeSecurityProxy(
-    ...        getUtility(IDistributionSet)['debian']['woody']['i386'])
+    ...     getUtility(IDistributionSet)["debian"]["woody"]["i386"]
+    ... )
     >>> pmount_woody_i386 = DistroArchSeriesBinaryPackage(
-    ...        deb_wdy_i386, pmount_name)
+    ...     deb_wdy_i386, pmount_name
+    ... )
     >>> print(pmount_woody_i386.distro_source_package)
     None
 
@@ -207,9 +217,9 @@ DistroArchSeriesBinaryPackage.summary should be simplified.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
-    >>> warty = ubuntu['warty']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
+    >>> warty = ubuntu["warty"]
 
 First, update the cache tables for Celso's PPA:
 
@@ -220,18 +230,26 @@ First, update the cache tables for Celso's PPA:
 
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.soyuz.model.distributionsourcepackagecache import (
-    ...        DistributionSourcePackageCache)
+    ...     DistributionSourcePackageCache,
+    ... )
     >>> DistributionSourcePackageCache.updateAll(
-    ...       ubuntu, archive=cprov.archive, ztm=LaunchpadZopelessLayer.txn,
-    ...       log=FakeLogger())
+    ...     ubuntu,
+    ...     archive=cprov.archive,
+    ...     ztm=LaunchpadZopelessLayer.txn,
+    ...     log=FakeLogger(),
+    ... )
     DEBUG Considering sources cdrkit, iceweasel, pmount
     ...
 
     >>> from lp.soyuz.model.distroseriespackagecache import (
-    ...        DistroSeriesPackageCache)
+    ...     DistroSeriesPackageCache,
+    ... )
     >>> DistroSeriesPackageCache.updateAll(
-    ...       warty, archive=cprov.archive, ztm=LaunchpadZopelessLayer.txn,
-    ...       log=FakeLogger())
+    ...     warty,
+    ...     archive=cprov.archive,
+    ...     ztm=LaunchpadZopelessLayer.txn,
+    ...     log=FakeLogger(),
+    ... )
     DEBUG Considering binaries mozilla-firefox, pmount
     ...
 
@@ -242,24 +260,28 @@ First, update the cache tables for Celso's PPA:
 Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
-    >>> switch_dbuser('archivepublisher')
+    >>> switch_dbuser("archivepublisher")
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
-    ...        DistroArchSeriesBinaryPackage)
+    ...     DistroArchSeriesBinaryPackage,
+    ... )
     >>> from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
     >>> warty_i386 = DistroArchSeries.get(1)
     >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
-    >>> pmount_warty_i386 = DistroArchSeriesBinaryPackage(warty_i386,
-    ...                                                      pmount_name)
+    >>> pmount_warty_i386 = DistroArchSeriesBinaryPackage(
+    ...     warty_i386, pmount_name
+    ... )
     >>> pubs = IStore(BinaryPackagePublishingHistory).find(
     ...     BinaryPackagePublishingHistory,
     ...     archive=1,
     ...     distroarchseries=warty_i386,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> for p in pubs:
-    ...      if p.binarypackagerelease.binarypackagename == pmount_name:
-    ...          s = p.supersede()
+    ...     if p.binarypackagerelease.binarypackagename == pmount_name:
+    ...         s = p.supersede()
+    ...
     >>> transaction.commit()
     >>> flush_database_updates()
     >>> switch_dbuser(config.statistician.dbuser)

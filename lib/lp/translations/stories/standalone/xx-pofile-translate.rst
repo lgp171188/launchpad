@@ -31,27 +31,31 @@ Anonymous users are able to browse translations, but not to change them
 through the translation form.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ... )
 
 The page is rendered in read-only mode, without any textareas for input.
 
     >>> main_content = find_tag_by_id(
-    ...     browser.contents, 'messages_to_translate')
-    >>> for textarea in main_content.find_all('textarea'):
-    ...     print('Found textarea:\n%s' % textarea)
+    ...     browser.contents, "messages_to_translate"
+    ... )
+    >>> for textarea in main_content.find_all("textarea"):
+    ...     print("Found textarea:\n%s" % textarea)
+    ...
 
 In fact, no input widgets at all are displayed.
 
-    >>> for input in main_content.find_all('input'):
-    ...     print('Found input:\n%s' % input)
+    >>> for input in main_content.find_all("input"):
+    ...     print("Found input:\n%s" % input)
+    ...
 
 As an anynoymous user you will have access to the download and details
 pages for the pofile this message belongs to. The link to upload page
 should not be in that list and so does the link for switching between
 translator and reviewer working mode.
 
-    >>> nav = find_tag_by_id(browser.contents, 'nav-pofile-subpages')
+    >>> nav = find_tag_by_id(browser.contents, "nav-pofile-subpages")
     >>> print(extract_text(nav))
     Download translation Translation details
 
@@ -75,15 +79,16 @@ Translation Admin Access
 Let's log in.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ... )
 
 As a translation admin you will have access to the download, upload
 and details pages for the pofile this message belongs to. In the same time
 you have access to the link for switching between translator and reviewer
 working mode
 
-    >>> nav = find_tag_by_id(admin_browser.contents, 'nav-pofile-subpages')
+    >>> nav = find_tag_by_id(admin_browser.contents, "nav-pofile-subpages")
     >>> print(extract_text(nav))
     Download translation Upload translation Translation details
     Reviewer mode (What's this?)
@@ -113,8 +118,9 @@ links from off-site; Launchpad did make links for English translations
 in the past.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/en/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/en/+translate"
+    ... )
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: Object: ... name: 'en'
@@ -135,26 +141,32 @@ they must adhere religiously to an agreed-to format.
     >>> def get_tags(browser, attribute, prefix):
     ...     """Extract tag "attributes" in page that begin with "prefix"."""
     ...     import re
+    ...
     ...     content = find_main_content(browser.contents)
     ...     ids = [
     ...         tag.get(attribute)
     ...         for tag in content.find_all()
-    ...         if re.match(prefix, tag.get(attribute,''))]
+    ...         if re.match(prefix, tag.get(attribute, ""))
+    ...     ]
     ...     return sorted(ids)
+    ...
 
-    >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
-    >>> browser.open("http://translations.launchpad.test/"
-    ...              "ubuntu/hoary/+source/evolution/+pots/evolution-2.2"
-    ...              "/en_AU/+translate?field.alternative_language=es")
+    >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
+    >>> browser.open(
+    ...     "http://translations.launchpad.test/"
+    ...     "ubuntu/hoary/+source/evolution/+pots/evolution-2.2"
+    ...     "/en_AU/+translate?field.alternative_language=es"
+    ... )
 
 Elements related 1:1 to a translatable message on this form have names and
 identifiers constructed as "msgset_<id>," where <id> is the unpadded decimal
 id of their POTMsgSet. The singular form, which plays a special role, has a
 suffix 'singular' appended. We'll see other suffixes later.
 
-    >>> msgset_130 = get_tags(browser, 'id', 'msgset_130')
+    >>> msgset_130 = get_tags(browser, "id", "msgset_130")
     >>> for id in msgset_130:
     ...     print(id)
+    ...
     msgset_130
     ...
     msgset_130_singular...
@@ -171,6 +183,7 @@ constructed as an underscore-separated sequence of:
 
     >>> for id in msgset_130:
     ...     print(id)
+    ...
     msgset_130
     msgset_130_en_AU_translation_0
     msgset_130_en_AU_translation_0_new
@@ -193,11 +206,13 @@ Here we see an example where one suggestion is offered
 making for three identically-named radio buttons and sundry other HTML tags.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
-    ...     '+pots/alsa-utils/es/+translate')
-    >>> msgset_198 = get_tags(browser, 'name', 'msgset_198')
+    ...     "http://translations.launchpad.test/alsa-utils/trunk/"
+    ...     "+pots/alsa-utils/es/+translate"
+    ... )
+    >>> msgset_198 = get_tags(browser, "name", "msgset_198")
     >>> for name in msgset_198:
     ...     print(name)
+    ...
     msgset_198
     msgset_198_es_needsreview
     msgset_198_es_translation_0_new
@@ -209,10 +224,16 @@ There are many variants of this id structure, generated in several places and
 for several objects, all generated by the same methods.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/5/+translate')
-    >>> print(extract_text(find_tag_by_id(
-    ...     browser.contents, 'msgset_134_es_suggestion_694_0')))
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/5/+translate"
+    ... )
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             browser.contents, "msgset_134_es_suggestion_694_0"
+    ...         )
+    ...     )
+    ... )
     tarjetas
 
 
@@ -226,12 +247,16 @@ the plural form informations.
 This notice is display when doing batch translations or translating a
 single message.
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
-    ...     '+source/evolution/+pots/evolution-2.2/ab/+translate')
+    >>> browser.open(
+    ...     "http://translations.launchpad.test/ubuntu/hoary/"
+    ...     "+source/evolution/+pots/evolution-2.2/ab/+translate"
+    ... )
     >>> print_feedback_messages(browser.contents)
     Launchpad can’t handle the plural items ...
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary/'
-    ...     '+source/evolution/+pots/evolution-2.2/ab/5/+translate')
+    >>> browser.open(
+    ...     "http://translations.launchpad.test/ubuntu/hoary/"
+    ...     "+source/evolution/+pots/evolution-2.2/ab/5/+translate"
+    ... )
     >>> print_feedback_messages(browser.contents)
     Launchpad can’t handle the plural items ...

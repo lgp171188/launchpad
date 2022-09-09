@@ -30,7 +30,7 @@ keyserver is a trusted data source, so we have to do that.
     >>> from lp.services.gpg.interfaces import (
     ...     IGPGHandler,
     ...     IPymeKey,
-    ...     )
+    ... )
     >>> gpghandler = getUtility(IGPGHandler)
 
 -------------------------------------------------------------------------
@@ -40,14 +40,14 @@ unit tests somewhere else at some point. -- Guilherme Salgado, 2006-08-23
 
 A GPGKeyNotFoundError is raised if we try to import an empty content.
 
-    >>> key = gpghandler.importPublicKey(b'')
+    >>> key = gpghandler.importPublicKey(b"")
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
 
 The same happens for bogus content.
 
-    >>> key = gpghandler.importPublicKey(b'XXXXXXXXX')
+    >>> key = gpghandler.importPublicKey(b"XXXXXXXXX")
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyNotFoundError: ...
@@ -56,9 +56,10 @@ Let's recover some coherent data and verify if it works as expected:
 
     >>> import os
     >>> from lp.testing.gpgkeys import gpgkeysdir
-    >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.pub')
-    >>> with open(filepath, 'rb') as f:
+    >>> filepath = os.path.join(gpgkeysdir, "test@canonical.com.pub")
+    >>> with open(filepath, "rb") as f:
     ...     pubkey = f.read()
+    ...
     >>> key = gpghandler.importPublicKey(pubkey)
 
     >>> verifyObject(IPymeKey, key)
@@ -93,9 +94,10 @@ Public keys can be exported in ASCII-armored format.
 Now, try to import a secret key, which will cause a
 SecretGPGKeyImportDetected exception to be raised.
 
-    >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> with open(filepath, 'rb') as f:
+    >>> filepath = os.path.join(gpgkeysdir, "test@canonical.com.sec")
+    >>> with open(filepath, "rb") as f:
     ...     seckey = f.read()
+    ...
     >>> key = gpghandler.importPublicKey(seckey)
     Traceback (most recent call last):
     ...
@@ -104,10 +106,11 @@ SecretGPGKeyImportDetected exception to be raised.
 Now, try to import two public keys, causing a MoreThanOneGPGKeyFound
 exception to be raised.
 
-    >>> filepath = os.path.join(gpgkeysdir, 'foo.bar@canonical.com.pub')
-    >>> with open(filepath, 'rb') as f:
+    >>> filepath = os.path.join(gpgkeysdir, "foo.bar@canonical.com.pub")
+    >>> with open(filepath, "rb") as f:
     ...     pubkey2 = f.read()
-    >>> key = gpghandler.importPublicKey(b'\n'.join([pubkey, pubkey2]))
+    ...
+    >>> key = gpghandler.importPublicKey(b"\n".join([pubkey, pubkey2]))
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.MoreThanOneGPGKeyFound: ...
@@ -136,9 +139,10 @@ Secret keys can be imported using IGPGHandler.importSecretKey() which
 does exactly the same job performed by importPublicKey() but
 supporting only ASCII-armored secret keys.
 
-    >>> filepath = os.path.join(gpgkeysdir, 'test@canonical.com.sec')
-    >>> with open(filepath, 'rb') as f:
+    >>> filepath = os.path.join(gpgkeysdir, "test@canonical.com.sec")
+    >>> with open(filepath, "rb") as f:
     ...     seckey = f.read()
+    ...
     >>> key = gpghandler.importSecretKey(seckey)
 
     >>> verifyObject(IPymeKey, key)
@@ -185,9 +189,10 @@ We will set up and use the test-keyserver.
 
 Import a test key.
 
-    >>> filepath = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-    >>> with open(filepath, 'rb') as f:
+    >>> filepath = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
+    >>> with open(filepath, "rb") as f:
     ...     seckey = f.read()
+    ...
     >>> new_key = gpghandler.importSecretKey(seckey)
 
 Upload the just-generated key to the keyserver so that we can reset
@@ -208,7 +213,7 @@ hit the keyserver and import it automatically.
 
 An attempt to upload an unknown key will fail.
 
-    >>> gpghandler.uploadPublicKey('F' * 40)
+    >>> gpghandler.uploadPublicKey("F" * 40)
     Traceback (most recent call last):
     ...
     lp.services.gpg.interfaces.GPGKeyDoesNotExistOnServer: GPG key
@@ -239,28 +244,31 @@ fingerprints:
     >>> print(gpghandler.sanitizeFingerprint("XXXXX"))
     None
 
-    >>> fingerprint = 'C858 2652 1A6E F6A6 037B  B3F7 9FF2 583E 681B 6469'
+    >>> fingerprint = "C858 2652 1A6E F6A6 037B  B3F7 9FF2 583E 681B 6469"
     >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
-    >>> fingerprint = 'c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469'
+    >>> fingerprint = "c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469"
     >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
-    >>> print(gpghandler.sanitizeFingerprint('681B 6469'))
+    >>> print(gpghandler.sanitizeFingerprint("681B 6469"))
     None
 
-    >>> print(gpghandler.sanitizeFingerprint('abnckjdiue'))
+    >>> print(gpghandler.sanitizeFingerprint("abnckjdiue"))
     None
 
-    >>> non_ascii_chars = u'\xe9\xe1\xed'
-    >>> fingerprint = ('c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s'
-    ...                % non_ascii_chars)
+    >>> non_ascii_chars = "\xe9\xe1\xed"
+    >>> fingerprint = (
+    ...     "c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s"
+    ...     % non_ascii_chars
+    ... )
     >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     C85826521A6EF6A6037BB3F79FF2583E681B6469
 
     >>> fingerprint = (
-    ...     '%s c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s'
-    ...     % (non_ascii_chars, non_ascii_chars))
+    ...     "%s c858 2652 1a6e f6a6 037b  b3f7 9ff2 583e 681b 6469 %s"
+    ...     % (non_ascii_chars, non_ascii_chars)
+    ... )
     >>> print(gpghandler.sanitizeFingerprint(fingerprint))
     None

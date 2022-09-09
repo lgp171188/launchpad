@@ -10,6 +10,7 @@ makes writing page test easy.
     >>> class MockTest:
     ...     def __init__(self):
     ...         self.globs = {}
+    ...
 
     >>> test = MockTest()
     >>> setUpGlobs(test)
@@ -27,9 +28,10 @@ one should be use for all anonymous browsing tests.
   # Shortcut to fetch the Authorization header from the testbrowser
 
     >>> def getAuthorizationHeader(browser):
-    ...   return browser._req_headers.get('Authorization', '')
+    ...     return browser._req_headers.get("Authorization", "")
+    ...
 
-    >>> anon_browser = test.globs['anon_browser']
+    >>> anon_browser = test.globs["anon_browser"]
     >>> print(getAuthorizationHeader(anon_browser))
     <BLANKLINE>
 
@@ -37,7 +39,7 @@ A browser with a logged in user without any privileges is available
 under 'user_browser'. This one should be use all workflows involving
 logged in users, when it shouldn't require any special privileges.
 
-    >>> user_browser = test.globs['user_browser']
+    >>> user_browser = test.globs["user_browser"]
     >>> print(getAuthorizationHeader(user_browser))
     Basic no-priv@canonical.com:test
 
@@ -45,7 +47,7 @@ A browser with a logged in user with administrative privileges is
 available under 'admin_browser'. This one should be used for testing
 administrative workflows.
 
-    >>> admin_browser = test.globs['admin_browser']
+    >>> admin_browser = test.globs["admin_browser"]
     >>> print(getAuthorizationHeader(admin_browser))
     Basic foo.bar@canonical.com:test
 
@@ -53,7 +55,7 @@ Finally, here is a 'browser' instance that simply contain a pre-
 initialized Browser instance. It doesn't have any authentication
 configured. It can be used when you need to configure another user.
 
-    >>> browser = test.globs['browser']
+    >>> browser = test.globs["browser"]
     >>> print(getAuthorizationHeader(browser))
     <BLANKLINE>
 
@@ -72,7 +74,7 @@ Altough testbrowser is very convenient, sometimes more control over the
 request is needed. For these cases, there is a function available under
 'http' that can be used to send raw HTTP request.
 
-    >>> test.globs['http']
+    >>> test.globs["http"]
     <function http ...>
 
 
@@ -100,7 +102,7 @@ find_tag_by_id()
 
 This routine will return the tag with the given id:
 
-    >>> find_tag_by_id = test.globs['find_tag_by_id']
+    >>> find_tag_by_id = test.globs["find_tag_by_id"]
     >>> content = '''
     ... <html id="root">
     ...   <head><title>Foo</title></head>
@@ -111,15 +113,15 @@ This routine will return the tag with the given id:
     ... </html>
     ... '''
 
-    >>> print(find_tag_by_id(content, 'para-1'))
+    >>> print(find_tag_by_id(content, "para-1"))
     <p id="para-1">Paragraph 1</p>
 
-    >>> print(find_tag_by_id(content, 'para-2'))
+    >>> print(find_tag_by_id(content, "para-2"))
     <p id="para-2">Paragraph <b>2</b></p>
 
 If an unknown ID is used, None is returned:
 
-    >>> print(find_tag_by_id(content, 'para-3'))
+    >>> print(find_tag_by_id(content, "para-3"))
     None
 
 If more than one element has the requested id, raise a DuplicateIdError
@@ -131,7 +133,7 @@ exception.
     ...   <p id="duplicate">dolor sit amet</p>
     ... </body>
     ... '''
-    >>> find_tag_by_id(duplicate_id_content, 'duplicate')
+    >>> find_tag_by_id(duplicate_id_content, "duplicate")
     Traceback (most recent call last):
     ...
     lp.testing.pages.DuplicateIdError: Found 2 elements with id 'duplicate'
@@ -139,11 +141,11 @@ exception.
 A BeautifulSoup PageElement can be passed instead of a string so that
 content can be retrieved without reparsing the entire page.
 
-    >>> parsed_content = find_tag_by_id(content, 'root')
+    >>> parsed_content = find_tag_by_id(content, "root")
     >>> print(parsed_content.name)
     html
 
-    >>> print(find_tag_by_id(parsed_content, 'para-1'))
+    >>> print(find_tag_by_id(parsed_content, "para-1"))
     <p id="para-1">Paragraph 1</p>
 
 
@@ -154,7 +156,7 @@ Sometimes it we want to find tags that match a particular class.  The
 find_tags_by_class() returns a list of Tag objects matching the given
 class:
 
-    >>> find_tags_by_class = test.globs['find_tags_by_class']
+    >>> find_tags_by_class = test.globs["find_tags_by_class"]
     >>> content = '''
     ... <html>
     ...   <head><title>Foo</title</head>
@@ -171,19 +173,22 @@ class:
     ... </html>
     ... '''
 
-    >>> for tag in find_tags_by_class(content, 'message'):
+    >>> for tag in find_tags_by_class(content, "message"):
     ...     print(tag)
+    ...
     <p class="message">Message</p>
     <p class="error message">Error message</p>
     <p class="warning message">Warning message</p>
 
-    >>> for tag in find_tags_by_class(content, 'error'):
+    >>> for tag in find_tags_by_class(content, "error"):
     ...     print(tag)
+    ...
     <p class="error message">Error message</p>
     <p class="error">Error</p>
 
-    >>> for tag in find_tags_by_class(content, 'warning'):
+    >>> for tag in find_tags_by_class(content, "warning"):
     ...     print(tag)
+    ...
     <p class="warning message">Warning message</p>
     <p class="warning">
       Warning (outer)
@@ -193,7 +198,7 @@ class:
 
 If no tags have the given class, then an empty list is returned:
 
-    >>> find_tags_by_class(content, 'no-such-class')
+    >>> find_tags_by_class(content, "no-such-class")
     []
 
 
@@ -205,7 +210,7 @@ given class. The first_tag_by_class() behaves like the
 find_tags_by_class() function, except that it returns only the first
 matching Tag object, if one exists:
 
-    >>> first_tag_by_class = test.globs['first_tag_by_class']
+    >>> first_tag_by_class = test.globs["first_tag_by_class"]
     >>> content = '''
     ... <html>
     ...   <head><title>Foo</title</head>
@@ -218,7 +223,7 @@ matching Tag object, if one exists:
     ... </html>
     ... '''
 
-    >>> print(first_tag_by_class(content, 'light'))
+    >>> print(first_tag_by_class(content, "light"))
     <p class="light">Error message</p>
 
 If no tags have the given class, then "None" is returned.
@@ -235,7 +240,7 @@ If no tags have the given class, then "None" is returned.
     ... </html>
     ... '''
 
-    >>> print(first_tag_by_class(content, 'light'))
+    >>> print(first_tag_by_class(content, "light"))
     None
 
 
@@ -246,7 +251,7 @@ Many pages on Launchpad make use of portlets, so it is useful to be able
 to examine the contents of a portlet.  The find_portlet() function can
 find a portlet by its title and return it:
 
-    >>> find_portlet = test.globs['find_portlet']
+    >>> find_portlet = test.globs["find_portlet"]
     >>> content = '''
     ... <html>
     ...   <head><title>Foo</title</head>
@@ -276,11 +281,11 @@ find a portlet by its title and return it:
     ... </html>
     ... '''
 
-    >>> print(find_portlet(content, 'Portlet 1'))
+    >>> print(find_portlet(content, "Portlet 1"))
     <div...
     ...Contents of portlet 1...
 
-    >>> print(find_portlet(content, 'Portlet 2'))
+    >>> print(find_portlet(content, "Portlet 2"))
     <div class="portlet">
       <h2>Portlet 2</h2>
       Contents of portlet 2
@@ -290,14 +295,17 @@ When looking for a portlet to match, any two sequences of whitespace are
 considered equivalent. Whitespace at the beginning or end of the title
 is also ignored.
 
-    >>> print(find_portlet(
-    ...     content, 'Portlet with  title broken on multiple lines  '))
+    >>> print(
+    ...     find_portlet(
+    ...         content, "Portlet with  title broken on multiple lines  "
+    ...     )
+    ... )
       <div class="portlet">
         <h2> Portlet with title...
 
 If the portlet doesn't exist, then None is returned:
 
-    >>> print(find_portlet(content, 'No such portlet'))
+    >>> print(find_portlet(content, "No such portlet"))
     None
 
 
@@ -308,7 +316,7 @@ Sometimes we want to check that a particular piece of content appears in
 the main content of the page.  The find_main_content() method can be
 used to do this:
 
-    >>> find_main_content = test.globs['find_main_content']
+    >>> find_main_content = test.globs["find_main_content"]
     >>> print(find_main_content(content))
     <...
     Main content area
@@ -322,17 +330,23 @@ Sometimes we are just interested in a portion of text that is displayed
 to the end user, and we don't want necessarily to check how the text is
 displayed (ie. bold, italics, coloured et al).
 
-    >>> extract_text = test.globs['extract_text']
-    >>> print(extract_text(
-    ...     '<p>A paragraph with <b>inline</b> <i>style</i>.</p>'))
+    >>> extract_text = test.globs["extract_text"]
+    >>> print(
+    ...     extract_text(
+    ...         "<p>A paragraph with <b>inline</b> <i>style</i>.</p>"
+    ...     )
+    ... )
     A paragraph with inline style.
 
 The function also takes care of inserting proper white space for block
 level and other elements introducing a visual separation:
 
-    >>> print(extract_text( # doctest: -NORMALIZE_WHITESPACE
-    ...     '<p>Para 1</p><p>Para 2<br>Line 2</p><ul><li>Item 1</li>'
-    ...     '<li>Item 2</li></ul><div>Div 1</div><h1>A heading</h1>'))
+    >>> print(
+    ...     extract_text(  # doctest: -NORMALIZE_WHITESPACE
+    ...         "<p>Para 1</p><p>Para 2<br>Line 2</p><ul><li>Item 1</li>"
+    ...         "<li>Item 2</li></ul><div>Div 1</div><h1>A heading</h1>"
+    ...     )
+    ... )
     Para 1
     Para 2
     Line 2
@@ -344,9 +358,12 @@ level and other elements introducing a visual separation:
 Of course, the function ignores processing instructions, declaration,
 comments and render CDATA section has plain text.
 
-    >>> print(extract_text(
-    ...     '<?php echo("Hello world!")?><!-- A comment -->'
-    ...     '<?A declaration.><![CDATA[Some << characters >>]]>'))
+    >>> print(
+    ...     extract_text(
+    ...         '<?php echo("Hello world!")?><!-- A comment -->'
+    ...         "<?A declaration.><![CDATA[Some << characters >>]]>"
+    ...     )
+    ... )
     Some << characters >>
 
 The function also does some white space normalization, since formatted
@@ -358,10 +375,13 @@ single space. Runs of newlines is replaced by one newline. (Note also
 that non-breaking space entities are also transformed into regular
 space.)
 
-    >>> print(extract_text( # doctest: -NORMALIZE_WHITESPACE
-    ...     '   <p>Some  \t  white space    <br /></p>   '
-    ...     '<p>Another&nbsp; &#160;  paragraph.</p><p><p>'
-    ...     '<p>A final one</p>   '))
+    >>> print(
+    ...     extract_text(  # doctest: -NORMALIZE_WHITESPACE
+    ...         "   <p>Some  \t  white space    <br /></p>   "
+    ...         "<p>Another&nbsp; &#160;  paragraph.</p><p><p>"
+    ...         "<p>A final one</p>   "
+    ...     )
+    ... )
     Some white space
     Another paragraph.
     A final one
@@ -369,10 +389,13 @@ space.)
 The function also knows about the sortkey class used in many tables. The
 sortkey is not displayed but is used for the javascript table sorting.
 
-    >>> print(extract_text(
-    ...    '<table><tr><td><span class="sortkey">1</span>First</td></tr>'
-    ...    '<tr><td><span class="sortkey">2</span>Second</td></tr>'
-    ...    '<tr><td><span class="sortkey">3</span>Third</td></tr></table>'))
+    >>> print(
+    ...     extract_text(
+    ...         '<table><tr><td><span class="sortkey">1</span>First</td></tr>'
+    ...         '<tr><td><span class="sortkey">2</span>Second</td></tr>'
+    ...         '<tr><td><span class="sortkey">3</span>Third</td></tr></table>'
+    ...     )
+    ... )
     First Second Third
 
 The extract_text method is often used in conjunction with the other
@@ -380,7 +403,7 @@ find_xxx helper methods to identify the text to display.  Because of
 this the function also accepts BeautifulSoup instance as a parameter
 rather than a plain string.
 
-    >>> print(extract_text(find_portlet(content, 'Portlet 2')))
+    >>> print(extract_text(find_portlet(content, "Portlet 2")))
     Portlet 2
     Contents of portlet 2
 
@@ -395,7 +418,7 @@ also created.
 This method is able to parse a rendered relationship_section and print a
 list of isolated attributes for each mentioned item.
 
-    >>> parse_relationship_section = test.globs['parse_relationship_section']
+    >>> parse_relationship_section = test.globs["parse_relationship_section"]
     >>> content = '''
     ... <html>
     ...   <ul>
@@ -431,9 +454,10 @@ When testing an error condition or a notification we often are only
 interested in the feedback messages.  This helper will get informational
 messages and error messages, based on the CSS class.
 
-    >>> print_feedback_messages = test.globs['print_feedback_messages']
+    >>> print_feedback_messages = test.globs["print_feedback_messages"]
     >>> class FakeBrowser:
     ...     pass
+    ...
     >>> browser = FakeBrowser()
     >>> browser.contents = '''
     ... <html>
@@ -470,7 +494,7 @@ print_radio_button_field
 Prints out the radio buttons in an easy to understand way. The checked
 radio button is indicated with (*), and unchecked with ( ).
 
-    >>> print_radio_button_field = test.globs['print_radio_button_field']
+    >>> print_radio_button_field = test.globs["print_radio_button_field"]
     >>> contents = '''
     ... <label>
     ...   <input type="radio" name="field.foo" id="field.foo.1" value="ONE">
@@ -486,7 +510,7 @@ radio button is indicated with (*), and unchecked with ( ).
     ...   Three
     ... </label>
     ... '''
-    >>> print_radio_button_field(contents, 'foo')
+    >>> print_radio_button_field(contents, "foo")
     ( ) One
     (*) Two
     ( ) Three
@@ -524,7 +548,7 @@ Sometimes the label isn't directly above the radio button.
     ...   </tr>
     ... </table>
     ... '''
-    >>> print_radio_button_field(contents, 'branch_type')
+    >>> print_radio_button_field(contents, "branch_type")
     ( ) Hosted
     (*) Mirrored
     ( ) Remote

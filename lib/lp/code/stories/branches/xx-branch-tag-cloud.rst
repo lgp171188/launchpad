@@ -9,10 +9,13 @@ available bazaar branches is shown to the user.
     >>> from datetime import datetime, timedelta
     >>> import pytz
     >>> now = datetime.now(pytz.UTC)
-    >>> make_project_cloud_data(factory, [
-    ...     ('wibble', 35, 2, now - timedelta(days=2)),
-    ...     ('linux', 110, 1, now - timedelta(days=8)),
-    ...     ])
+    >>> make_project_cloud_data(
+    ...     factory,
+    ...     [
+    ...         ("wibble", 35, 2, now - timedelta(days=2)),
+    ...         ("linux", 110, 1, now - timedelta(days=8)),
+    ...     ],
+    ... )
     >>> logout()
 
     >>> anon_browser.open("http://code.launchpad.test/projects")
@@ -23,8 +26,9 @@ The `Projects with active branches` page shows a link for each project that
 has branches associated with it.  The HTML class attribute is used to
 control how the link is shown.
 
-    >>> tags = find_tag_by_id(anon_browser.contents, 'project-tags')
-    >>> for anchor in tags.find_all('a'):
-    ...     print(anchor.decode_contents(), ' '.join(anchor['class']))
+    >>> tags = find_tag_by_id(anon_browser.contents, "project-tags")
+    >>> for anchor in tags.find_all("a"):
+    ...     print(anchor.decode_contents(), " ".join(anchor["class"]))
+    ...
     linux cloud-size-largest cloud-medium
     wibble cloud-size-smallest cloud-dark

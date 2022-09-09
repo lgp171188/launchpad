@@ -13,14 +13,16 @@ To create a specification message, use
 ISpecificationMessageSet.createMessage:
 
     >>> from lp.blueprints.interfaces.specificationmessage import (
-    ...     ISpecificationMessageSet)
+    ...     ISpecificationMessageSet,
+    ... )
     >>> specmessageset = getUtility(ISpecificationMessageSet)
 
     >>> test_message = specmessageset.createMessage(
     ...     subject="test message subject",
     ...     content="text message content",
     ...     owner=factory.makePerson(),
-    ...     spec=factory.makeSpecification())
+    ...     spec=factory.makeSpecification(),
+    ... )
     >>> print(test_message.message.subject)
     test message subject
 
@@ -34,6 +36,7 @@ ISpecificationMessageSet.get:
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> specmessage_one = specmessageset.get(
-    ...     removeSecurityProxy(test_message).id)
+    ...     removeSecurityProxy(test_message).id
+    ... )
     >>> print(specmessage_one.message.subject)
     test message subject

@@ -11,31 +11,35 @@ We start our story with an empty export queue.
     >>> from zope.component import getUtility
     >>> from lp.services.database.interfaces import IMasterStore
     >>> from lp.translations.interfaces.poexportrequest import (
-    ...     IPOExportRequestSet)
+    ...     IPOExportRequestSet,
+    ... )
     >>> from lp.translations.interfaces.pofile import IPOFile
     >>> from lp.translations.model.poexportrequest import POExportRequest
     >>> query = IMasterStore(POExportRequest).execute(
-    ...     "DELETE FROM POExportRequest")
+    ...     "DELETE FROM POExportRequest"
+    ... )
 
     >>> queue = getUtility(IPOExportRequestSet)
 
 We have somebody making an export request.
 
     >>> requester = factory.makePerson(
-    ...     email='punter@example.com', name='punter')
+    ...     email="punter@example.com", name="punter"
+    ... )
 
     >>> template1 = factory.makePOTemplate()
-    >>> pofile1_be = factory.makePOFile('be', potemplate=template1)
-    >>> pofile1_ja = factory.makePOFile('ja', potemplate=template1)
+    >>> pofile1_be = factory.makePOFile("be", potemplate=template1)
+    >>> pofile1_ja = factory.makePOFile("ja", potemplate=template1)
     >>> queue.addRequest(requester, template1, [pofile1_be, pofile1_ja])
     >>> query = IMasterStore(POExportRequest).execute(
-    ...     "UPDATE POExportRequest SET date_created = '2010-01-10'::date")
+    ...     "UPDATE POExportRequest SET date_created = '2010-01-10'::date"
+    ... )
 
 Later, a different and separate request follows.
 
     >>> template2 = factory.makePOTemplate()
-    >>> pofile2_se = factory.makePOFile('se', potemplate=template2)
-    >>> pofile2_ga = factory.makePOFile('ga', potemplate=template2)
+    >>> pofile2_se = factory.makePOFile("se", potemplate=template2)
+    >>> pofile2_ga = factory.makePOFile("ga", potemplate=template2)
     >>> queue.addRequest(requester, template2, [pofile2_se, pofile2_ga])
 
 The database is replicated in this state.
@@ -52,9 +56,10 @@ getRequest at this point returns the oldest request.
     ...         if IPOFile.providedBy(source):
     ...             summary.append(source.language.code)
     ...         else:
-    ...             summary.append('(template)')
+    ...             summary.append("(template)")
     ...     for entry in sorted(summary):
     ...         print(entry)
+    ...
 
     >>> summarize_request(queue.getRequest())
     (template)

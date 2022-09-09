@@ -35,8 +35,8 @@ the target archive reference, and Ubuntu PPA notifications have an
 We need to be logged into the security model in order to get any further
 
     >>> from lp.testing.dbuser import switch_dbuser
-    >>> switch_dbuser('launchpad')
-    >>> login('foo.bar@canonical.com')
+    >>> switch_dbuser("launchpad")
+    >>> login("foo.bar@canonical.com")
 
 A helper function to examine emails that were sent:
 
@@ -44,8 +44,9 @@ A helper function to examine emails that were sent:
     >>> from lp.testing.mail_helpers import pop_notifications
 
     >>> def print_addrlist(field):
-    ...    for entry in sorted([addr.strip() for addr in field.split(',')]):
-    ...        print(entry)
+    ...     for entry in sorted([addr.strip() for addr in field.split(",")]):
+    ...         print(entry)
+    ...
 
 Import the test keys to use 'insecure' policy.
 
@@ -58,15 +59,15 @@ address and allow uploads to universe:
 
     >>> from lp.services.librarian.interfaces import (
     ...     ILibraryFileAliasSet,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.series import SeriesStatus
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
     >>> hoary.status = SeriesStatus.DEVELOPMENT
     >>> hoary.changeslist = "hoary-announce@lists.ubuntu.com"
     >>> fake_chroot = getUtility(ILibraryFileAliasSet)[1]
-    >>> trash = hoary['hppa'].addOrUpdateChroot(fake_chroot)
+    >>> trash = hoary["hppa"].addOrUpdateChroot(fake_chroot)
 
 NEW source upload to RELEASE pocket via 'sync' policy (it presents
 the same behaviour than using insecure policy, apart from allowing
@@ -76,12 +77,15 @@ unsigned changes):
     >>> from lp.archiveuploader.tests import datadir, getPolicy
 
     >>> sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> from lp.services.log.logger import DevNullLogger
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> from lp.services.log.logger import FakeLogger
@@ -105,13 +109,13 @@ There is only one email generated:
 
     >>> [notification] = pop_notifications()
 
-    >>> notification['X-Katie']
+    >>> notification["X-Katie"]
     'Launchpad actually'
 
-    >>> notification['Subject']
+    >>> notification["Subject"]
     '[ubuntu/hoary] bar 1.0-1 (New)'
 
-    >>> print_addrlist(notification['To'])
+    >>> print_addrlist(notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
 
 Let's ACCEPT bar sources in order to make the next uploads of this
@@ -129,8 +133,10 @@ Make the uploaded orig file available to librarian lookups
 Uploading the same package again will result in a rejection email:
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -150,37 +156,37 @@ Uploading the same package again will result in a rejection email:
 
     >>> [notification] = pop_notifications()
 
-    >>> notification['X-Katie']
+    >>> notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(notification['To'])
+    >>> print_addrlist(notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
 
 Upload notifications from primary archive do not contain the
 'X-Launchpad-PPA' header, since it doesn't apply to this context.
 
-    >>> notification['X-Launchpad-Archive']
+    >>> notification["X-Launchpad-Archive"]
     'ubuntu'
-    >>> 'X-Launchpad-PPA' in notification.keys()
+    >>> "X-Launchpad-PPA" in notification.keys()
     False
 
 Notifications for source uploads will contain the 'X-Launchpad-Component'
 header however.
 
-    >>> 'X-Launchpad-Component' in notification.keys()
+    >>> "X-Launchpad-Component" in notification.keys()
     True
 
-    >>> notification['X-Launchpad-Component']
+    >>> notification["X-Launchpad-Component"]
     'component=universe, section=devel'
 
 This is the body of the rejection email.
 
     >>> body = notification.get_payload()[0]
-    >>> print(body.get('Content-Disposition'))
+    >>> print(body.get("Content-Disposition"))
     None
-    >>> print(body.get('Content-Type'))
+    >>> print(body.get("Content-Type"))
     text/plain; charset="utf-8"
-    >>> print(body.get_payload(decode=True).decode('UTF-8'))  # noqa
+    >>> print(body.get_payload(decode=True).decode("UTF-8"))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Rejected:
     The source bar - 1.0-1 is already accepted in ubuntu/hoary and you cannot upload the same version within the same distribution. You have to modify the source version and re-upload.
@@ -208,11 +214,11 @@ In order to facilitate automated processing of announcement emails, the
 changes file is enclosed as an attachment.
 
     >>> attachment = notification.get_payload()[1]
-    >>> print(attachment.get('Content-Disposition'))
+    >>> print(attachment.get("Content-Disposition"))
     attachment; filename="changesfile"
-    >>> print(attachment.get('Content-Type'))
+    >>> print(attachment.get("Content-Type"))
     text/plain; charset="utf-8"
-    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))  # noqa
+    >>> print(attachment.get_payload(decode=True).decode("UTF-8"))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 16 Feb 2006 15:34:09 +0000
@@ -242,35 +248,38 @@ A PPA upload will contain the X-Launchpad-PPA header.
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> name16_ppa = getUtility(IArchiveSet).new(
-    ...     owner=name16, distribution=ubuntu, purpose=ArchivePurpose.PPA)
+    ...     owner=name16, distribution=ubuntu, purpose=ArchivePurpose.PPA
+    ... )
 
-    >>> ppa_policy = getPolicy(name='insecure', distro='ubuntu')
+    >>> ppa_policy = getPolicy(name="insecure", distro="ubuntu")
     >>> ppa_policy.archive = name16_ppa
-    >>> ppa_policy.setDistroSeriesAndPocket('hoary')
+    >>> ppa_policy.setDistroSeriesAndPocket("hoary")
 
     >>> ppa_bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     ppa_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     ppa_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> ppa_bar_src.process()
     >>> result = ppa_bar_src.do_accept()
 
     >>> [notification] = pop_notifications()
 
-    >>> notification['X-Katie']
+    >>> notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(notification['To'])
+    >>> print_addrlist(notification["To"])
     Foo Bar <foo.bar@canonical.com>
 
 On PPA upload notifications the 'X-Launchpad-PPA' is present and
 contains the target PPA owner account name.
 
-    >>> notification['X-Launchpad-Archive']
+    >>> notification["X-Launchpad-Archive"]
     '~name16/ubuntu/ppa'
-    >>> notification['X-Launchpad-PPA']
+    >>> notification["X-Launchpad-PPA"]
     'name16'
 
 However, PPA upload notifications do not contain an attachment with the
@@ -287,12 +296,15 @@ override sync policy to allow binary uploads):
 
     >>> from lp.archiveuploader.uploadpolicy import ArchiveUploadType
     >>> modified_sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
     >>> modified_sync_policy.accepted_type = ArchiveUploadType.BINARY_ONLY
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1_binary/bar_1.0-1_i386.changes'),
-    ...     modified_sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1_binary/bar_1.0-1_i386.changes"),
+    ...     modified_sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -316,11 +328,14 @@ this series *known* in hoary:
 NEW source uploads for 'translations' section via sync policy:
 
     >>> modified_sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> lang_pack = NascentUpload.from_changesfile_path(
-    ...     datadir('language-packs/language-pack-pt_1.0-1_source.changes'),
-    ...     modified_sync_policy, DevNullLogger())
+    ...     datadir("language-packs/language-pack-pt_1.0-1_source.changes"),
+    ...     modified_sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> lang_pack.process()
 
     >>> lang_pack.logger = FakeLogger()
@@ -347,11 +362,14 @@ Accept and publish this series:
 AUTO_APPROVED source uploads for 'translations' section:
 
     >>> modified_sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> lang_pack = NascentUpload.from_changesfile_path(
-    ...     datadir('language-packs/language-pack-pt_1.0-2_source.changes'),
-    ...     modified_sync_policy, DevNullLogger())
+    ...     datadir("language-packs/language-pack-pt_1.0-2_source.changes"),
+    ...     modified_sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> lang_pack.process()
 
     >>> lang_pack.logger = FakeLogger()
@@ -376,12 +394,14 @@ Release hoary, enable uploads to post-release pockets:
 
 UNAPPROVED source uploads for 'translations' section via insecure:
 
-    >>> insecure_policy = getPolicy(name='insecure', distro='ubuntu')
-    >>> insecure_policy.setDistroSeriesAndPocket('hoary-updates')
+    >>> insecure_policy = getPolicy(name="insecure", distro="ubuntu")
+    >>> insecure_policy.setDistroSeriesAndPocket("hoary-updates")
 
     >>> lang_pack = NascentUpload.from_changesfile_path(
-    ...     datadir('language-packs/language-pack-pt_1.0-3_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("language-packs/language-pack-pt_1.0-3_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> lang_pack.process()
     >>> lang_pack.logger = FakeLogger()
     >>> result = lang_pack.do_accept()
@@ -405,8 +425,10 @@ to the signer and one to the changer) saying that the upload is waiting for
 approval:
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-2/bar_1.0-2_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-2/bar_1.0-2_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -416,37 +438,41 @@ approval:
 
     >>> changer_notification, signer_notification = pop_notifications()
 
-    >>> changer_notification['X-Katie']
+    >>> changer_notification["X-Katie"]
     'Launchpad actually'
-    >>> signer_notification['X-Katie']
+    >>> signer_notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(changer_notification['To'])
+    >>> print_addrlist(changer_notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
-    >>> print_addrlist(signer_notification['To'])
+    >>> print_addrlist(signer_notification["To"])
     Foo Bar <foo.bar@canonical.com>
 
-    >>> changer_notification['Subject']
+    >>> changer_notification["Subject"]
     '[ubuntu/hoary-updates] bar 1.0-2 (Waiting for approval)'
-    >>> signer_notification['Subject']
+    >>> signer_notification["Subject"]
     '[ubuntu/hoary-updates] bar 1.0-2 (Waiting for approval)'
 
 And clean up.
 
     >>> import os
-    >>> upload_data = datadir('suite/bar_1.0-2')
-    >>> os.remove(os.path.join(upload_data, 'bar_1.0.orig.tar.gz'))
+    >>> upload_data = datadir("suite/bar_1.0-2")
+    >>> os.remove(os.path.join(upload_data, "bar_1.0.orig.tar.gz"))
 
 UNAPPROVED upload to BACKPORTS via insecure policy will send notifications
 saying they are waiting for approval:
 
     >>> unapproved_backports_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries=None)
+    ...     name="insecure", distro="ubuntu", distroseries=None
+    ... )
     >>> unapproved_backports_policy.setDistroSeriesAndPocket(
-    ...     'hoary-backports')
+    ...     "hoary-backports"
+    ... )
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-3_valid/bar_1.0-3_source.changes'),
-    ...     unapproved_backports_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-3_valid/bar_1.0-3_source.changes"),
+    ...     unapproved_backports_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
     >>> bar_src.logger = FakeLogger()
     >>> result = bar_src.do_accept()
@@ -457,29 +483,31 @@ saying they are waiting for approval:
 
     >>> changer_notification, signer_notification = pop_notifications()
 
-    >>> changer_notification['X-Katie']
+    >>> changer_notification["X-Katie"]
     'Launchpad actually'
-    >>> signer_notification['X-Katie']
+    >>> signer_notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(changer_notification['To'])
+    >>> print_addrlist(changer_notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
-    >>> print_addrlist(signer_notification['To'])
+    >>> print_addrlist(signer_notification["To"])
     Foo Bar <foo.bar@canonical.com>
 
-    >>> changer_notification['Subject']
+    >>> changer_notification["Subject"]
     '[ubuntu/hoary-backports] bar 1.0-3 (Waiting for approval)'
-    >>> signer_notification['Subject']
+    >>> signer_notification["Subject"]
     '[ubuntu/hoary-backports] bar 1.0-3 (Waiting for approval)'
 
 AUTO-APPROVED upload to BACKPORTS pocket via 'sync' policy:
 
-    >>> modified_sync_policy = getPolicy(name='sync', distro='ubuntu')
-    >>> modified_sync_policy.setDistroSeriesAndPocket('hoary-backports')
+    >>> modified_sync_policy = getPolicy(name="sync", distro="ubuntu")
+    >>> modified_sync_policy.setDistroSeriesAndPocket("hoary-backports")
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-4/bar_1.0-4_source.changes'),
-    ...     modified_sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-4/bar_1.0-4_source.changes"),
+    ...     modified_sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -520,20 +548,20 @@ There is one email generated:
 
     >>> [notification] = pop_notifications()
 
-    >>> notification['X-Katie']
+    >>> notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(notification['To'])
+    >>> print_addrlist(notification["To"])
     Celso Providelo <celso.providelo@canonical.com>
 
-    >>> notification['Subject']
+    >>> notification["Subject"]
     '[ubuntu/hoary-backports] bar 1.0-4 (Accepted)'
 
 Remove orig.tar.gz pumped from librarian to disk during the upload
 checks:
 
-    >>> upload_data = datadir('suite/bar_1.0-4')
-    >>> os.remove(os.path.join(upload_data, 'bar_1.0.orig.tar.gz'))
+    >>> upload_data = datadir("suite/bar_1.0-4")
+    >>> os.remove(os.path.join(upload_data, "bar_1.0.orig.tar.gz"))
 
 DEBIAN SYNC upload of a source via the 'sync' policy.
 These uploads do not generate any announcement emails for auto-accepted
@@ -546,8 +574,11 @@ distroseries.
 
     >>> bar_src = NascentUpload.from_changesfile_path(
     ...     datadir(
-    ...          'suite/bar_1.0-5_debian_auto_sync/bar_1.0-5_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...         "suite/bar_1.0-5_debian_auto_sync/bar_1.0-5_source.changes"
+    ...     ),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -558,16 +589,17 @@ distroseries.
 One email generated:
 
     >>> [notification] = pop_notifications()
-    >>> notification['Subject']
+    >>> notification["Subject"]
     '[ubuntu/hoary] bar 1.0-5 (Accepted)'
 
 
 In contrast, manual sync uploads do generate the announcement:
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir(
-    ...          'suite/bar_1.0-6/bar_1.0-6_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-6/bar_1.0-6_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -578,35 +610,43 @@ In contrast, manual sync uploads do generate the announcement:
 Two emails generated:
 
     >>> import operator
-    >>> msgs = pop_notifications(sort_key=operator.itemgetter('To'))
+    >>> msgs = pop_notifications(sort_key=operator.itemgetter("To"))
     >>> len(msgs)
     2
 
-    >>> [message['To'] for message in msgs]
+    >>> [message["To"] for message in msgs]
     ['Celso Providelo <celso.providelo@canonical.com>',
         'hoary-announce@lists.ubuntu.com']
 
-    >>> [message['Subject'] for message in msgs]
+    >>> [message["Subject"] for message in msgs]
     ['[ubuntu/hoary] bar 1.0-6 (Accepted)',
      '[ubuntu/hoary] bar 1.0-6 (Accepted)']
 
 Reset hoary back to released and remove disk files created during processing:
 
     >>> hoary.status = SeriesStatus.CURRENT
-    >>> os.remove(os.path.join(datadir('suite/bar_1.0-5_debian_auto_sync'),
-    ...     'bar_1.0.orig.tar.gz'))
-    >>> os.remove(os.path.join(datadir('suite/bar_1.0-6'),
-    ...     'bar_1.0.orig.tar.gz'))
+    >>> os.remove(
+    ...     os.path.join(
+    ...         datadir("suite/bar_1.0-5_debian_auto_sync"),
+    ...         "bar_1.0.orig.tar.gz",
+    ...     )
+    ... )
+    >>> os.remove(
+    ...     os.path.join(datadir("suite/bar_1.0-6"), "bar_1.0.orig.tar.gz")
+    ... )
 
 Dry run uploads should not generate any emails.  Call do_accept with
 notify=False:
 
     >>> sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_src.process()
 
     >>> bar_src.logger = FakeLogger()
@@ -630,12 +670,16 @@ permitted, but RFC2047-encoded.  UTF-8 in the mail content is preserved.
 
     >>> hoary.status = SeriesStatus.DEVELOPMENT
     >>> anything_policy = getPolicy(
-    ...     name='anything', distro='ubuntu', distroseries='hoary')
+    ...     name="anything", distro="ubuntu", distroseries="hoary"
+    ... )
     >>> bar_upload = NascentUpload.from_changesfile_path(
     ...     datadir(
-    ...         'suite/bar_1.0-10_utf8_changesfile/'
-    ...         'bar_1.0-10_source.changes'),
-    ...     anything_policy, DevNullLogger())
+    ...         "suite/bar_1.0-10_utf8_changesfile/"
+    ...         "bar_1.0-10_source.changes"
+    ...     ),
+    ...     anything_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_upload.process()
 
     >>> bar_upload.logger = FakeLogger()
@@ -643,12 +687,13 @@ permitted, but RFC2047-encoded.  UTF-8 in the mail content is preserved.
     DEBUG Creating queue entry
     ...
 
-    >>> msgs = pop_notifications(sort_key=operator.itemgetter('To'))
+    >>> msgs = pop_notifications(sort_key=operator.itemgetter("To"))
     >>> len(msgs)
     3
 
     >>> for message in msgs:
-    ...     print(message['From'].replace('\n ', ' '))
+    ...     print(message["From"].replace("\n ", " "))
+    ...
     Root <root@localhost>
     Root <root@localhost>
     =?utf-8?q?Non-ascii_changed-by_=C4=8Ciha=C5=99?=
@@ -663,11 +708,11 @@ changes file is mentioned toward the end of the email.
     True
 
     >>> body = announcement_email.get_payload()[0]
-    >>> print(body.get('Content-Disposition'))
+    >>> print(body.get("Content-Disposition"))
     None
-    >>> print(body.get('Content-Type'))
+    >>> print(body.get("Content-Type"))
     text/plain; charset="utf-8"
-    >>> print(body.get_payload(decode=True).decode('UTF-8'))  # noqa
+    >>> print(body.get_payload(decode=True).decode("UTF-8"))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     bar (1.0-10) breezy; urgency=low
     <BLANKLINE>
@@ -705,16 +750,16 @@ file is enclosed as an attachment.
 
 Here's the attachment metadata.
 
-    >>> attachment['Content-Disposition']
+    >>> attachment["Content-Disposition"]
     'attachment; filename="changesfile"'
 
 And what follows is the content of the attachment.
 
-    >>> print(attachment.get('Content-Disposition'))
+    >>> print(attachment.get("Content-Disposition"))
     attachment; filename="changesfile"
-    >>> print(attachment.get('Content-Type'))
+    >>> print(attachment.get("Content-Type"))
     text/plain; charset="utf-8"
-    >>> print(attachment.get_payload(decode=True).decode('UTF-8'))  # noqa
+    >>> print(attachment.get_payload(decode=True).decode("UTF-8"))  # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
     Format: 1.7
     Date: Thu, 30 Mar 2006 01:36:14 +0100
@@ -746,14 +791,15 @@ result in a rejection email.
 We first create a misnamed copy of the changes file.
 
     >>> import shutil
-    >>> originalp = datadir('suite/bar_1.0-1/bar_1.0-1_source.changes')
-    >>> copyp = datadir('suite/bar_1.0-1/z-z_0.4.12-2~ppa2.changes')
+    >>> originalp = datadir("suite/bar_1.0-1/bar_1.0-1_source.changes")
+    >>> copyp = datadir("suite/bar_1.0-1/z-z_0.4.12-2~ppa2.changes")
     >>> _ = shutil.copyfile(originalp, copyp)
 
 And then try to upload using the changes file with the malformed name.
 
     >>> bar_src = NascentUpload.from_changesfile_path(
-    ...     copyp, sync_policy, DevNullLogger())
+    ...     copyp, sync_policy, DevNullLogger()
+    ... )
     >>> bar_src.process()
     Traceback (most recent call last):
     ...
@@ -780,10 +826,10 @@ And then try to upload using the changes file with the malformed name.
 
     >>> [notification] = pop_notifications()
 
-    >>> notification['X-Katie']
+    >>> notification["X-Katie"]
     'Launchpad actually'
 
-    >>> print_addrlist(notification['To'])
+    >>> print_addrlist(notification["To"])
     Daniel Silverstone <daniel.silverstone@canonical.com>
 
 Remove the misnamed changes file copy used for testing.

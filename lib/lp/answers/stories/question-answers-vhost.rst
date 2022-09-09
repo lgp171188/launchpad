@@ -9,7 +9,7 @@ selected facet is the Answers facet.
 Product
 -------
 
-    >>> anon_browser.open('http://answers.launchpad.test/firefox')
+    >>> anon_browser.open("http://answers.launchpad.test/firefox")
     >>> print(anon_browser.title)
     Questions : Mozilla Firefox
 
@@ -17,7 +17,7 @@ Product
 Distribution
 ------------
 
-    >>> anon_browser.open('http://answers.launchpad.test/ubuntu')
+    >>> anon_browser.open("http://answers.launchpad.test/ubuntu")
     >>> print(anon_browser.title)
     Questions : Ubuntu
 
@@ -26,7 +26,8 @@ Distribution Source Package
 ---------------------------
 
     >>> anon_browser.open(
-    ...     'http://answers.launchpad.test/ubuntu/+source/mozilla-firefox')
+    ...     "http://answers.launchpad.test/ubuntu/+source/mozilla-firefox"
+    ... )
     >>> print(anon_browser.title)
     Questions : mozilla-firefox package : Ubuntu
 
@@ -34,8 +35,7 @@ Distribution Source Package
 ProjectGroup
 ------------
 
-    >>> anon_browser.open(
-    ...     'http://answers.launchpad.test/mozilla')
+    >>> anon_browser.open("http://answers.launchpad.test/mozilla")
     >>> print(anon_browser.title)
     Questions : The Mozilla Project
 
@@ -43,6 +43,6 @@ ProjectGroup
 Person
 ------
 
-    >>> anon_browser.open('http://answers.launchpad.test/~name16')
+    >>> anon_browser.open("http://answers.launchpad.test/~name16")
     >>> print(anon_browser.title)
     Questions : Foo Bar

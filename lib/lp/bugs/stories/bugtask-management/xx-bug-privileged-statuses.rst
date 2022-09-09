@@ -7,22 +7,24 @@ Supervisor team may change a bug to that status.
     >>> from lp.bugs.tests.bug import print_bug_affects_table
     >>> def print_highlighted_bugtask(browser):
     ...     print_bug_affects_table(browser.contents, highlighted_only=True)
+    ...
 
 Unprivileged users
 ------------------
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/'
-    ...     'mozilla-firefox/+bug/1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/"
+    ...     "mozilla-firefox/+bug/1/+editstatus"
+    ... )
 
-    >>> status_control = user_browser.getControl('Status')
+    >>> status_control = user_browser.getControl("Status")
     >>> print(status_control.displayValue)
     ['New']
 
 An unprivileged user can confirm the bug:
 
-    >>> status_control.displayValue = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> status_control.displayValue = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> print(user_browser.url)
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1
@@ -33,10 +35,11 @@ But they cannot change the status to Won't Fix or to Triaged, and so
 those statuses are not shown in the UI:
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/'
-    ...     'mozilla-firefox/+bug/1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/"
+    ...     "mozilla-firefox/+bug/1/+editstatus"
+    ... )
 
-    >>> status_control = user_browser.getControl('Status')
+    >>> status_control = user_browser.getControl("Status")
     >>> print(status_control.displayValue)
     ['Confirmed']
 
@@ -60,31 +63,37 @@ Bug Supervisor
 
 Ubuntu needs a Bug Supervisor first of all:
 
-    >>> admin_browser.open('http://bugs.launchpad.test/ubuntu/+bugsupervisor')
-    >>> admin_browser.getControl('Bug Supervisor').value = (
-    ...     'test@canonical.com')
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.open("http://bugs.launchpad.test/ubuntu/+bugsupervisor")
+    >>> admin_browser.getControl(
+    ...     "Bug Supervisor"
+    ... ).value = "test@canonical.com"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'bug-supervisor')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "bug-supervisor")
+    ...     )
+    ... )
     Bug supervisor:
     Sample Person
 
 The new Bug Supervisor for Ubuntu can change the status to Won't Fix:
 
     >>> bug_supervisor_browser = setupBrowser(
-    ...     auth='Basic test@canonical.com:test')
+    ...     auth="Basic test@canonical.com:test"
+    ... )
 
     >>> bug_supervisor_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/'
-    ...     'mozilla-firefox/+bug/1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/"
+    ...     "mozilla-firefox/+bug/1/+editstatus"
+    ... )
 
-    >>> status_control = bug_supervisor_browser.getControl('Status')
+    >>> status_control = bug_supervisor_browser.getControl("Status")
     >>> print(status_control.displayValue)
     ['Confirmed']
 
     >>> status_control.displayValue = ["Won't Fix"]
-    >>> bug_supervisor_browser.getControl('Save Changes').click()
+    >>> bug_supervisor_browser.getControl("Save Changes").click()
 
     >>> print(bug_supervisor_browser.url)
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1
@@ -95,22 +104,24 @@ Now the bug has been changed, a regular user can see the Won't Fix
 status. Earlier it was not even displayed as an option.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/'
-    ...     'mozilla-firefox/+bug/1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/"
+    ...     "mozilla-firefox/+bug/1/+editstatus"
+    ... )
 
-    >>> status_control = user_browser.getControl('Status')
+    >>> status_control = user_browser.getControl("Status")
     >>> print(status_control.displayValue)
     ["Won't Fix"]
 
 And a regular user can change other aspects of the bug:
 
     >>> package_control = user_browser.getControl(
-    ...     name='ubuntu_mozilla-firefox.target.package')
+    ...     name="ubuntu_mozilla-firefox.target.package"
+    ... )
     >>> print(package_control.value)
     mozilla-firefox
 
-    >>> package_control.value = 'iceweasel'
-    >>> user_browser.getControl('Save Changes').click()
+    >>> package_control.value = "iceweasel"
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> print(bug_supervisor_browser.url)
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1
@@ -120,15 +131,16 @@ And a regular user can change other aspects of the bug:
 The Bug Supervisor for Ubuntu can also change the status to Triaged:
 
     >>> bug_supervisor_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/'
-    ...     'iceweasel/+bug/1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/"
+    ...     "iceweasel/+bug/1/+editstatus"
+    ... )
 
-    >>> status_control = bug_supervisor_browser.getControl('Status')
+    >>> status_control = bug_supervisor_browser.getControl("Status")
     >>> print(status_control.displayValue)
     ["Won't Fix"]
 
     >>> status_control.displayValue = ["Triaged"]
-    >>> bug_supervisor_browser.getControl('Save Changes').click()
+    >>> bug_supervisor_browser.getControl("Save Changes").click()
 
     >>> print(bug_supervisor_browser.url)
     http://bugs.launchpad.test/ubuntu/+source/iceweasel/+bug/1

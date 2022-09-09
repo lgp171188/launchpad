@@ -11,25 +11,26 @@ Get evolution template for Ubuntu Hoary
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.translations.interfaces.pofile import IPOFile
     >>> from lp.translations.interfaces.potemplate import IPOTemplateSet
     >>> sourcepackagenameset = getUtility(ISourcePackageNameSet)
-    >>> sourcepackagename = sourcepackagenameset['evolution']
+    >>> sourcepackagename = sourcepackagenameset["evolution"]
     >>> distributionset = getUtility(IDistributionSet)
-    >>> distribution = distributionset['ubuntu']
-    >>> series = distribution['hoary']
+    >>> distribution = distributionset["ubuntu"]
+    >>> series = distribution["hoary"]
     >>> potemplateset = getUtility(IPOTemplateSet)
     >>> potemplatesubset = potemplateset.getSubset(
-    ...     distroseries=series, sourcepackagename=sourcepackagename)
-    >>> potemplate = potemplatesubset['evolution-2.2']
-    >>> UTC = pytz.timezone('UTC')
+    ...     distroseries=series, sourcepackagename=sourcepackagename
+    ... )
+    >>> potemplate = potemplatesubset["evolution-2.2"]
+    >>> UTC = pytz.timezone("UTC")
 
 Get Xhosa translation
 
-    >>> pofile = potemplate.getPOFileByLang('xh')
-    >>> language_pt_BR = getUtility(
-    ...     ILanguageSet).getLanguageByCode('pt_BR')
+    >>> pofile = potemplate.getPOFileByLang("xh")
+    >>> language_pt_BR = getUtility(ILanguageSet).getLanguageByCode("pt_BR")
     >>> placeholder_pofile = potemplate.getPlaceholderPOFile(language_pt_BR)
 
 Both implement the IPOFile interface:
@@ -63,7 +64,7 @@ Get the set of POTMsgSets that are untranslated.
 
 Get Spanish translation
 
-    >>> pofile = potemplate.getPOFileByLang('es')
+    >>> pofile = potemplate.getPOFileByLang("es")
 
 Get the set of POTMsgSets that are untranslated.
 
@@ -80,22 +81,31 @@ We need a helper method to better display test results.
     ...         if potmsgset.singular_text:
     ...             singular = potmsgset.singular_text
     ...             if len(singular) > 20:
-    ...                singular = singular[:17] + "..."
+    ...                 singular = singular[:17] + "..."
     ...         if potmsgset.plural_text:
     ...             plural = potmsgset.plural_text
     ...             if len(plural) > 20:
-    ...                plural = plural[:17] + "..."
+    ...                 plural = plural[:17] + "..."
     ...         if pofile is not None:
     ...             message = potmsgset.getCurrentTranslation(
-    ...                 pofile.potemplate, pofile.language,
-    ...                 pofile.potemplate.translation_side)
+    ...                 pofile.potemplate,
+    ...                 pofile.language,
+    ...                 pofile.potemplate.translation_side,
+    ...             )
     ...             if message is not None:
-    ...                translation = message.translations[0]
+    ...                 translation = message.translations[0]
     ...             if len(translation) > 20:
     ...                 translation = translation[:17] + "..."
-    ...         print("%2d. %-20s   %-20s   %-20s" % (
-    ...             potmsgset.getSequence(pofile.potemplate),
-    ...             singular, plural, translation))
+    ...         print(
+    ...             "%2d. %-20s   %-20s   %-20s"
+    ...             % (
+    ...                 potmsgset.getSequence(pofile.potemplate),
+    ...                 singular,
+    ...                 plural,
+    ...                 translation,
+    ...             )
+    ...         )
+    ...
 
 
 getFullLanguageCode
@@ -103,10 +113,10 @@ getFullLanguageCode
 
 Returns the complete code for this POFile's language.
 
-    >>> print(potemplate.getPOFileByLang('es').getFullLanguageCode())
+    >>> print(potemplate.getPOFileByLang("es").getFullLanguageCode())
     es
 
-    >>> sr_latin = factory.makeLanguage('sr@latin', 'Serbian Latin')
+    >>> sr_latin = factory.makeLanguage("sr@latin", "Serbian Latin")
     >>> print(potemplate.getPlaceholderPOFile(sr_latin).getFullLanguageCode())
     sr@latin
 
@@ -116,7 +126,7 @@ getFullLanguageName
 
 Returns the complete English name for this POFile's language.
 
-    >>> print(potemplate.getPOFileByLang('es').getFullLanguageName())
+    >>> print(potemplate.getPOFileByLang("es").getFullLanguageName())
     Spanish
 
     >>> print(potemplate.getPlaceholderPOFile(sr_latin).getFullLanguageName())
@@ -129,8 +139,9 @@ findPOTMsgSetsContaining
 It is common to want to find those POTMsgSets which contain a certain
 substring in their original English string.
 
-    >>> found_potmsgsets = (
-    ...     placeholder_pofile.findPOTMsgSetsContaining("contact"))
+    >>> found_potmsgsets = placeholder_pofile.findPOTMsgSetsContaining(
+    ...     "contact"
+    ... )
     >>> found_potmsgsets.count()
     4
 
@@ -142,8 +153,9 @@ substring in their original English string.
 
 Search is case-insensitive.
 
-    >>> found_potmsgsets = (
-    ...     placeholder_pofile.findPOTMsgSetsContaining("CONTact"))
+    >>> found_potmsgsets = placeholder_pofile.findPOTMsgSetsContaining(
+    ...     "CONTact"
+    ... )
     >>> found_potmsgsets.count()
     4
 
@@ -155,8 +167,9 @@ Search is case-insensitive.
 
 Search will look through plural msgids as well.
 
-    >>> found_potmsgsets = (
-    ...     placeholder_pofile.findPOTMsgSetsContaining("contacts"))
+    >>> found_potmsgsets = placeholder_pofile.findPOTMsgSetsContaining(
+    ...     "contacts"
+    ... )
     >>> found_potmsgsets.count()
     2
 
@@ -166,24 +179,22 @@ Search will look through plural msgids as well.
 
 Looking for a non-existing string returns an empty SelectResults.
 
-    >>> found_potmsgsets = (
-    ...     placeholder_pofile.findPOTMsgSetsContaining(
-    ...         "non-existing-string"))
+    >>> found_potmsgsets = placeholder_pofile.findPOTMsgSetsContaining(
+    ...     "non-existing-string"
+    ... )
     >>> found_potmsgsets.count()
     0
 
 Trying to find a string shorter than two characters doesn't work.
 
-    >>> found_potmsgsets = (
-    ...     placeholder_pofile.findPOTMsgSetsContaining("a"))
+    >>> found_potmsgsets = placeholder_pofile.findPOTMsgSetsContaining("a")
     Traceback (most recent call last):
     ...
     AssertionError: You can not search for strings shorter than 2 characters.
 
 In a Spanish translation, you will also get matching translations.
 
-    >>> found_potmsgsets = (
-    ...     pofile.findPOTMsgSetsContaining(u"ventana"))
+    >>> found_potmsgsets = pofile.findPOTMsgSetsContaining("ventana")
     >>> found_potmsgsets.count()
     1
 
@@ -192,8 +203,7 @@ In a Spanish translation, you will also get matching translations.
 
 Searching for translations is case insensitive.
 
-    >>> found_potmsgsets = (
-    ...     pofile.findPOTMsgSetsContaining(u"VENTANA"))
+    >>> found_potmsgsets = pofile.findPOTMsgSetsContaining("VENTANA")
     >>> found_potmsgsets.count()
     1
 
@@ -202,8 +212,7 @@ Searching for translations is case insensitive.
 
 Searching for plural forms other than the first one also works.
 
-    >>> found_potmsgsets = (
-    ...     pofile.findPOTMsgSetsContaining(u"estos"))
+    >>> found_potmsgsets = pofile.findPOTMsgSetsContaining("estos")
     >>> found_potmsgsets.count()
     1
 
@@ -213,8 +222,7 @@ Searching for plural forms other than the first one also works.
 One can find a message by looking for a suggestion (non-current
 translation).
 
-    >>> found_potmsgsets = (
-    ...     pofile.findPOTMsgSetsContaining(u"tarjetas"))
+    >>> found_potmsgsets = pofile.findPOTMsgSetsContaining("tarjetas")
     >>> found_potmsgsets.count()
     1
 
@@ -229,13 +237,13 @@ A PO file has a storage path that determines where the file is to be
 stored in a filesystem tree (such as an export tarball).  The path ends
 with the actual file name and should include a language code.
 
-    >>> pofile_xh = potemplate.getPOFileByLang('xh')
+    >>> pofile_xh = potemplate.getPOFileByLang("xh")
     >>> print(pofile_xh.path)
     xh.po
 
 To change this path, use setPathIfUnique().
 
-    >>> pofile_xh.setPathIfUnique('xh2.po')
+    >>> pofile_xh.setPathIfUnique("xh2.po")
     >>> print(pofile_xh.path)
     xh2.po
 
@@ -277,12 +285,14 @@ This is the new header we are going to apply.
 We can get an ITranslationHeaderData from the file format importer.
 
     >>> from lp.translations.interfaces.translationimporter import (
-    ...     ITranslationImporter)
+    ...     ITranslationImporter,
+    ... )
     >>> translation_importer = getUtility(ITranslationImporter)
     >>> format_importer = translation_importer.getTranslationFormatImporter(
-    ...     pofile.potemplate.source_file_format)
+    ...     pofile.potemplate.source_file_format
+    ... )
     >>> new_header = format_importer.getHeaderFromString(new_header_string)
-    >>> new_header.comment = ' This is the top comment.'
+    >>> new_header.comment = " This is the top comment."
 
 Before doing any change, we can see what's right now in the database:
 
@@ -345,7 +355,8 @@ First, with the same date, we don't consider it older.
 Now, we can see how we detect that it's older with an older date.
 
     >>> header.translation_revision_date = datetime.datetime(
-    ...     2005, 8, 18, 13, 21, tzinfo=UTC)
+    ...     2005, 8, 18, 13, 21, tzinfo=UTC
+    ... )
     >>> pofile.isTranslationRevisionDateOlder(header)
     True
 
@@ -353,35 +364,38 @@ If the revision date of the stored translation file is missing, the new
 one is considered an update.
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from lp.translations.utilities.gettext_po_parser import (
-    ...     POHeader)
+    >>> from lp.translations.utilities.gettext_po_parser import POHeader
 
-    >>> old_pofile = removeSecurityProxy(potemplate.newPOFile('tl'))
+    >>> old_pofile = removeSecurityProxy(potemplate.newPOFile("tl"))
     >>> old_pofile.header = """
     ...     Project-Id-Version: foo
     ...     MIME-Version: 1.0
     ...     Content-Type: text/plain; charset=UTF-8
     ...     Content-Transfer-Encoding: 8bit
     ...     """
-    >>> new_header = POHeader("""
+    >>> new_header = POHeader(
+    ...     """
     ...     Project-Id-Version: foo
     ...     PO-Revision-Date: 2007-05-03 14:00+0200
     ...     MIME-Version: 1.0
     ...     Content-Type: text/plain; charset=UTF-8
     ...     Content-Transfer-Encoding: 8bit
-    ...     """)
+    ...     """
+    ... )
 
     >>> old_pofile.isTranslationRevisionDateOlder(new_header)
     False
 
 This even goes if the new file also omits the revision date.
 
-    >>> new_header = POHeader("""
+    >>> new_header = POHeader(
+    ...     """
     ...     Project-Id-Version: foo
     ...     MIME-Version: 1.0
     ...     Content-Type: text/plain; charset=UTF-8
     ...     Content-Transfer-Encoding: 8bit
-    ...     """)
+    ...     """
+    ... )
     >>> old_pofile.isTranslationRevisionDateOlder(new_header)
     False
 
@@ -400,10 +414,10 @@ When the language has number of plural forms defined, that value is
 used.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
-    >>> evolution_trunk = evolution.getSeries('trunk')
-    >>> evolution_pot = evolution_trunk.getPOTemplate('evolution-2.2')
-    >>> serbian = getUtility(ILanguageSet)['sr']
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
+    >>> evolution_trunk = evolution.getSeries("trunk")
+    >>> evolution_pot = evolution_trunk.getPOTemplate("evolution-2.2")
+    >>> serbian = getUtility(ILanguageSet)["sr"]
     >>> serbian.pluralforms
     3
 
@@ -414,7 +428,7 @@ used.
 And when a language has no plural forms defined, a POFile defaults to 2,
 the most common number of plural forms:
 
-    >>> divehi = getUtility(ILanguageSet)['dv']
+    >>> divehi = getUtility(ILanguageSet)["dv"]
     >>> print(divehi.pluralforms)
     None
 
@@ -448,15 +462,19 @@ The header is not changed.
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
     ...         print(stream_list[i].decode("ASCII"))
+    ...
     "Content-Type: text/plain; charset=EUC-JP\n"
 
 And checking one of the translations, we can see that it's using the
 EUC-JP encoding.
 
     >>> for i in range(len(stream_list)):
-    ...     if (stream_list[i].startswith(b'msgstr') and
-    ...         b'prefs.js' in stream_list[i]):
+    ...     if (
+    ...         stream_list[i].startswith(b"msgstr")
+    ...         and b"prefs.js" in stream_list[i]
+    ...     ):
     ...         break
+    ...
     >>> print(stream_list[i].decode("EUC-JP"))
     msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
@@ -470,14 +488,18 @@ We can see that the header has been updated to have UTF-8
     >>> for i in range(len(stream_list)):
     ...     if stream_list[i].startswith(b'"Content-Type:'):
     ...         print(stream_list[i].decode("ASCII"))
+    ...
     "Content-Type: text/plain; charset=UTF-8\n"
 
 And the encoding used is also using UTF-8 chars.
 
     >>> for i in range(len(stream_list)):
-    ...     if (stream_list[i].startswith(b'msgstr') and
-    ...         b'prefs.js' in stream_list[i]):
+    ...     if (
+    ...         stream_list[i].startswith(b"msgstr")
+    ...         and b"prefs.js" in stream_list[i]
+    ...     ):
     ...         break
+    ...
     >>> print(stream_list[i].decode("UTF-8"))
     msgstr "設定のカ...ズに /etc/mozilla/prefs.js が利用できます。"
 
@@ -486,8 +508,8 @@ singular remains unchanged.
 
 So for a concrete export, we have a message like:
 
-    >>> pofile_es = potemplate.getPOFileByLang('es')
-    >>> print(pofile_es.export(force_utf8=True).decode('utf8'))
+    >>> pofile_es = potemplate.getPOFileByLang("es")
+    >>> print(pofile_es.export(force_utf8=True).decode("utf8"))
     # ...
     ...
     #: addressbook/gui/widgets/foo.c:345
@@ -499,8 +521,7 @@ So for a concrete export, we have a message like:
 
 When it changes...
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d foo', u'%d bars')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("%d foo", "%d bars")
 
     # It has plural forms.
 
@@ -509,7 +530,7 @@ When it changes...
 
     # We change the plural form.
 
-    >>> potmsgset.updatePluralForm(u'something else')
+    >>> potmsgset.updatePluralForm("something else")
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> flush_database_updates()
     >>> print(potmsgset.plural_text)
@@ -517,7 +538,7 @@ When it changes...
 
 ...the export reflects that change.
 
-    >>> print(pofile_es.export(force_utf8=True).decode('utf8'))
+    >>> print(pofile_es.export(force_utf8=True).decode("utf8"))
     # ...
     ...
     #: addressbook/gui/widgets/foo.c:345
@@ -535,33 +556,42 @@ This method returns a new IPOMsgSet for the associated text.
 
 Let's get the IPOFile we are going to use for this test.
 
-    >>> pofile_sr = potemplate.newPOFile('sr')
+    >>> pofile_sr = potemplate.newPOFile("sr")
 
 And the msgid we are looking for.
 
-    >>> msgid = u'Found %i invalid file.'
-    >>> msgid_plural = u'Found %i invalid files.'
+    >>> msgid = "Found %i invalid file."
+    >>> msgid_plural = "Found %i invalid files."
 
 Now, just to be sure that this entry doesn't exist yet:
 
     >>> potmsgset = pofile_sr.potemplate.getOrCreateSharedPOTMsgSet(
-    ...     singular_text=msgid, plural_text=msgid_plural)
-    >>> print(potmsgset.getCurrentTranslation(
-    ...     pofile_sr.potemplate, pofile_sr.language,
-    ...     pofile_sr.potemplate.translation_side))
+    ...     singular_text=msgid, plural_text=msgid_plural
+    ... )
+    >>> print(
+    ...     potmsgset.getCurrentTranslation(
+    ...         pofile_sr.potemplate,
+    ...         pofile_sr.language,
+    ...         pofile_sr.potemplate.translation_side,
+    ...     )
+    ... )
     None
 
 Is time to create it.  We need some extra privileges here.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
-    >>> translations = {0: u''}
+    >>> translations = {0: ""}
     >>> is_current_upstream = False
     >>> lock_timestamp = datetime.datetime.now(UTC)
     >>> translation_message = factory.makeCurrentTranslationMessage(
-    ...     pofile_sr, potmsgset, rosetta_experts, translations=translations,
-    ...     current_other=is_current_upstream)
+    ...     pofile_sr,
+    ...     potmsgset,
+    ...     rosetta_experts,
+    ...     translations=translations,
+    ...     current_other=is_current_upstream,
+    ... )
 
 As we can see, is the msgid we were looking for.
 
@@ -591,13 +621,15 @@ contributed translations to it.
     ...     for person in persons:
     ...         print(person.name)
     ...     print("--")
+    ...
 
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
-    >>> evolution_trunk = evolution.getSeries('trunk')
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
+    >>> evolution_trunk = evolution.getSeries("trunk")
     >>> potemplatesubset = potemplateset.getSubset(
-    ...     productseries=evolution_trunk)
-    >>> evolution_template = potemplatesubset['evolution-2.2']
-    >>> evolution_es = evolution_template.getPOFileByLang('es')
+    ...     productseries=evolution_trunk
+    ... )
+    >>> evolution_template = potemplatesubset["evolution-2.2"]
+    >>> evolution_es = evolution_template.getPOFileByLang("es")
     >>> print_names(evolution_es.contributors)
     carlos
     mark
@@ -639,10 +671,13 @@ can use the getPOFileContributorsByLanguage() method of IDistroSeries.
 The rosetta_experts team is special: it never shows up in contributors
 lists.
 
-    >>> experts_pofile = factory.makePOFile('nl')
+    >>> experts_pofile = factory.makePOFile("nl")
     >>> experts_message = factory.makeCurrentTranslationMessage(
-    ...     pofile=experts_pofile, translator=rosetta_experts,
-    ...     reviewer=rosetta_experts, translations=['hi'])
+    ...     pofile=experts_pofile,
+    ...     translator=rosetta_experts,
+    ...     reviewer=rosetta_experts,
+    ...     translations=["hi"],
+    ... )
 
     >>> print_names(experts_pofile.contributors)
     --
@@ -655,29 +690,39 @@ With this method we can get all POTMsgSet objects that are fully
 translated for a given POFile.
 
     >>> def print_message_status(potmsgsets, pofile):
-    ...     print("%-10s %-5s %-10s %-11s" % (
-    ...         "msgid", "form", "translat.", "Has plurals"))
+    ...     print(
+    ...         "%-10s %-5s %-10s %-11s"
+    ...         % ("msgid", "form", "translat.", "Has plurals")
+    ...     )
     ...     for potmsgset in potmsgsets:
     ...         translationmessage = potmsgset.getCurrentTranslation(
-    ...             pofile.potemplate, pofile.language,
-    ...             pofile.potemplate.translation_side)
+    ...             pofile.potemplate,
+    ...             pofile.language,
+    ...             pofile.potemplate.translation_side,
+    ...         )
     ...         msgid = potmsgset.msgid_singular.msgid
     ...         if len(msgid) > 10:
-    ...             msgid = msgid[:7] + '...'
+    ...             msgid = msgid[:7] + "..."
     ...         for index in range(len(translationmessage.translations)):
     ...             if translationmessage.translations[index] is None:
-    ...                 translation = 'None'
+    ...                 translation = "None"
     ...             else:
     ...                 translation = translationmessage.translations[index]
     ...                 if len(translation) > 10:
-    ...                     translation = translation[:7] + '...'
-    ...             print("%-10s %-5s %-10s %s" % (
-    ...                 msgid, index, translation,
-    ...                 potmsgset.msgid_plural is not None))
+    ...                     translation = translation[:7] + "..."
+    ...             print(
+    ...                 "%-10s %-5s %-10s %s"
+    ...                 % (
+    ...                     msgid,
+    ...                     index,
+    ...                     translation,
+    ...                     potmsgset.msgid_plural is not None,
+    ...                 )
+    ...             )
+    ...
 
     >>> potmsgsets_translated = evolution_es.getPOTMsgSetTranslated()
-    >>> print_message_status(
-    ...     potmsgsets_translated, evolution_es)
+    >>> print_message_status(potmsgsets_translated, evolution_es)
     msgid      form  translat.  Has plurals
     evoluti... 0     libreta... False
     current... 0     carpeta... False
@@ -698,11 +743,13 @@ This method returns a list of TranslationMessages in a given POFile
 created by a certain person.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> carlos = person_set.getByName('carlos')
+    >>> carlos = person_set.getByName("carlos")
     >>> translationmessages = evolution_es.getTranslationsFilteredBy(carlos)
     >>> for translationmessage in translationmessages:
-    ...     print(pretty(removeSecurityProxy(
-    ...         translationmessage.translations)))
+    ...     print(
+    ...         pretty(removeSecurityProxy(translationmessage.translations))
+    ...     )
+    ...
     ['libreta de direcciones de Evolution']
     ['carpeta de libretas de direcciones actual']
     ['lalalala']
@@ -734,51 +781,67 @@ translated in any other way except through an upload from upstream.
 
 Lets get Spanish translation for alsa-utils.
 
-    >>> alsautils = getUtility(IProductSet).getByName('alsa-utils')
-    >>> alsa_trunk = alsautils.getSeries('trunk')
-    >>> alsa_template = alsa_trunk.getPOTemplate('alsa-utils')
-    >>> alsa_translation = alsa_template.newPOFile('sr')
+    >>> alsautils = getUtility(IProductSet).getByName("alsa-utils")
+    >>> alsa_trunk = alsautils.getSeries("trunk")
+    >>> alsa_template = alsa_trunk.getPOTemplate("alsa-utils")
+    >>> alsa_translation = alsa_template.newPOFile("sr")
 
 This translation file contains a translation-credits message. By default
 it is created with a dummy translation
 
     >>> potmsgset = alsa_template.getPOTMsgSetByMsgIDText(
-    ...     u'translation-credits')
+    ...     "translation-credits"
+    ... )
     >>> current = potmsgset.getCurrentTranslation(
-    ...     alsa_template, alsa_translation.language,
-    ...     alsa_template.translation_side)
+    ...     alsa_template,
+    ...     alsa_translation.language,
+    ...     alsa_template.translation_side,
+    ... )
     >>> for translation in current.translations:
     ...     print(translation)
+    ...
     This is a dummy translation so that the credits are counted as translated.
 
 If we submit an upstream translation, the translation for this message
 is updated.
 
     >>> new_credits = factory.makeCurrentTranslationMessage(
-    ...     alsa_translation, potmsgset, alsa_translation.owner,
-    ...     translations={0: u'Happy translator'}, current_other=True)
+    ...     alsa_translation,
+    ...     potmsgset,
+    ...     alsa_translation.owner,
+    ...     translations={0: "Happy translator"},
+    ...     current_other=True,
+    ... )
     >>> flush_database_updates()
     >>> current = potmsgset.getCurrentTranslation(
-    ...     alsa_template, alsa_translation.language,
-    ...     alsa_template.translation_side)
+    ...     alsa_template,
+    ...     alsa_translation.language,
+    ...     alsa_template.translation_side,
+    ... )
     >>> for translation in current.translations:
     ...     print(translation)
+    ...
     Happy translator
 
 If we submit non-upstream translation, it's rejected.
 
     >>> no_credits = potmsgset.submitSuggestion(
-    ...     alsa_translation, alsa_translation.owner,
-    ...     {0: u'Unhappy translator'})
+    ...     alsa_translation,
+    ...     alsa_translation.owner,
+    ...     {0: "Unhappy translator"},
+    ... )
     >>> print(no_credits)
     None
 
     >>> flush_database_updates()
     >>> current = potmsgset.getCurrentTranslation(
-    ...     alsa_template, alsa_translation.language,
-    ...     alsa_template.translation_side)
+    ...     alsa_template,
+    ...     alsa_translation.language,
+    ...     alsa_template.translation_side,
+    ... )
     >>> for translation in current.translations:
     ...     print(translation)
+    ...
     Happy translator
 
 
@@ -790,14 +853,16 @@ object. It implements the ITranslationFileData interface which is a
 common file format in-memory to convert from one file format to another.
 
     >>> from lp.translations.interfaces.translationcommonformat import (
-    ...     ITranslationFileData)
-    >>> evolution_sourcepackagename = sourcepackagenameset['evolution']
-    >>> ubuntu = distributionset['ubuntu']
-    >>> hoary = ubuntu['hoary']
+    ...     ITranslationFileData,
+    ... )
+    >>> evolution_sourcepackagename = sourcepackagenameset["evolution"]
+    >>> ubuntu = distributionset["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
     >>> potemplatesubset = potemplateset.getSubset(
-    ...     distroseries=hoary, sourcepackagename=evolution_sourcepackagename)
-    >>> evolution_22 = potemplatesubset['evolution-2.2']
-    >>> evolution_ja = evolution_22.getPOFileByLang('ja')
+    ...     distroseries=hoary, sourcepackagename=evolution_sourcepackagename
+    ... )
+    >>> evolution_22 = potemplatesubset["evolution-2.2"]
+    >>> evolution_ja = evolution_22.getPOFileByLang("ja")
 
 Getting the translation file data is just a matter of adapting the
 object to the ITranslationFileData interface. Since there are multiple
@@ -805,7 +870,8 @@ adapters for differnt purposes, this adapter is named.
 
     >>> from zope.component import getAdapter
     >>> translation_file_data = getAdapter(
-    ...     evolution_ja, ITranslationFileData, 'all_messages')
+    ...     evolution_ja, ITranslationFileData, "all_messages"
+    ... )
 
 We get an updated header based on some metadata in our database instead
 of the imported one stored in POFile.header.
@@ -857,7 +923,8 @@ is called POFileToChangedFromPackagedAdapter and it is registered as a
 named adapter, too.
 
     >>> translation_file_data = getAdapter(
-    ...     evolution_ja, ITranslationFileData, 'changed_messages')
+    ...     evolution_ja, ITranslationFileData, "changed_messages"
+    ... )
     >>> ITranslationFileData.providedBy(translation_file_data)
     True
 
@@ -871,14 +938,14 @@ Import the function that will help us to do this test.
 
 A Launchpad admin must have permission to edit an IPOFile always.
 
-    >>> login('foo.bar@canonical.com')
-    >>> check_permission('launchpad.Edit', pofile)
+    >>> login("foo.bar@canonical.com")
+    >>> check_permission("launchpad.Edit", pofile)
     True
 
 And a Rosetta Expert too.
 
-    >>> login('jordi@ubuntu.com')
-    >>> check_permission('launchpad.Edit', pofile)
+    >>> login("jordi@ubuntu.com")
+    >>> check_permission("launchpad.Edit", pofile)
     True
 
 And that's all, folks!

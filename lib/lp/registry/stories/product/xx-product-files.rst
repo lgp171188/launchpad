@@ -7,8 +7,8 @@ links to each.
 
 Any user can see that a project with no releases has no downloads.
 
-    >>> anon_browser.open('http://launchpad.test/aptoncd')
-    >>> content = find_tag_by_id(anon_browser.contents, 'downloads')
+    >>> anon_browser.open("http://launchpad.test/aptoncd")
+    >>> content = find_tag_by_id(anon_browser.contents, "downloads")
     >>> print(extract_text(content))
     Downloads
     APTonCD does not have any download files registered with Launchpad.
@@ -17,8 +17,8 @@ Similarly, if the project does have a release, but that release has no
 files yet, a message is shown to all users that there are no
 downloadable files.
 
-    >>> anon_browser.open('http://launchpad.test/thunderbird')
-    >>> content = find_tag_by_id(anon_browser.contents, 'downloads')
+    >>> anon_browser.open("http://launchpad.test/thunderbird")
+    >>> content = find_tag_by_id(anon_browser.contents, "downloads")
     >>> print(extract_text(content))
     Downloads
     Mozilla Thunderbird does not have any download files
@@ -28,16 +28,19 @@ Any user can see a projects download files organised by series. For each
 series, the owner sees a heading, summary, table of files, and links to each
 release to add download files.
 
-    >>> anon_browser.open('http://launchpad.test/firefox')
-    >>> content = find_tag_by_id(anon_browser.contents, 'downloads')
+    >>> anon_browser.open("http://launchpad.test/firefox")
+    >>> content = find_tag_by_id(anon_browser.contents, "downloads")
     >>> print(extract_text(content))
     Downloads
     Latest version is 0.9.2
     firefox_0.9.2.orig.tar.gz...
 
-    >>> anon_browser.getLink('All downloads').click()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'project-downloads')))
+    >>> anon_browser.getLink("All downloads").click()
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "project-downloads")
+    ...     )
+    ... )
     0.9.2 (One (secure) Tree Hill) release from the trunk series
     released 2004-10-15
     Release information
@@ -51,12 +54,13 @@ Only public projects can have download files, so the portlet is omitted
 otherwise.
 
     >>> from lp.app.enums import InformationType
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> prop_prod = factory.makeProduct(
-    ...     name='prop-prod', information_type=InformationType.PROPRIETARY)
+    ...     name="prop-prod", information_type=InformationType.PROPRIETARY
+    ... )
     >>> logout()
-    >>> admin_browser.open('http://launchpad.test/prop-prod')
-    >>> print(find_tag_by_id(admin_browser.contents, 'downloads'))
+    >>> admin_browser.open("http://launchpad.test/prop-prod")
+    >>> print(find_tag_by_id(admin_browser.contents, "downloads"))
     None
 
 
@@ -66,11 +70,11 @@ Deletion is only for the privileged
 As an anonymous user the files for download should be shown, but not
 the delete options.
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+download')
+    >>> anon_browser.open("http://launchpad.test/firefox/+download")
     >>> anon_browser.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(anon_browser.contents)
-    >>> row = content.find('table').find('tr')
+    >>> row = content.find("table").find("tr")
     >>> print(extract_text(row))
     File
     Description
@@ -79,12 +83,13 @@ the delete options.
 Again, for an authenticated user who is not the firefox product owner.
 
     >>> non_owner = setupBrowser(
-    ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> non_owner.open('http://launchpad.test/firefox/+download')
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
+    >>> non_owner.open("http://launchpad.test/firefox/+download")
     >>> non_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(non_owner.contents)
-    >>> row = content.find('table').find('tr')
+    >>> row = content.find("table").find("tr")
     >>> print(extract_text(row))
     File
     Description
@@ -92,13 +97,12 @@ Again, for an authenticated user who is not the firefox product owner.
 
 Now, login as a firefox admin and see the delete fields.
 
-    >>> firefox_owner = setupBrowser(
-    ...     auth='Basic mark@example.com:test')
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
+    >>> firefox_owner = setupBrowser(auth="Basic mark@example.com:test")
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(firefox_owner.contents)
-    >>> row = content.find('table').find('tr')
+    >>> row = content.find("table").find("tr")
     >>> print(extract_text(row))
     File
     Description
@@ -107,9 +111,8 @@ Now, login as a firefox admin and see the delete fields.
 
 A project owner should not see the delete button when there are no files.
 
-    >>> tbird_owner = setupBrowser(
-    ...     auth='Basic foo.bar@canonical.com:test')
-    >>> tbird_owner.open('http://launchpad.test/thunderbird/+download')
+    >>> tbird_owner = setupBrowser(auth="Basic foo.bar@canonical.com:test")
+    >>> tbird_owner.open("http://launchpad.test/thunderbird/+download")
     >>> print(tbird_owner.title)
     Mozilla Thunderbird project files...
 
@@ -119,7 +122,7 @@ A project owner should not see the delete button when there are no files.
     No download files exist for this project...
     Add download file to the trunk series for release: 0.8
 
-    >>> tbird_owner.getControl('Delete Files')
+    >>> tbird_owner.getControl("Delete Files")
     Traceback (most recent call last):
     ...
     LookupError: label ...'Delete Files'
@@ -132,9 +135,10 @@ The download file layout
 When a project has a series with one or more releases, an option to
 add download files for each release in that series is presented.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
-    >>> for tag in find_tags_by_class(firefox_owner.contents, 'add-files'):
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
+    >>> for tag in find_tags_by_class(firefox_owner.contents, "add-files"):
     ...     print(extract_text(tag))
+    ...
     Add download file to the trunk series for release: 0.9.2, 0.9.1, 0.9
     Add download file to the 1.0 series for release: 1.0.0
 
@@ -142,14 +146,15 @@ If a project has a series with no releases associated with it, that
 series should not show up in the list.
 
     # Create an empty series.
-    >>> firefox_owner.open('http://launchpad.test/firefox')
-    >>> firefox_owner.getLink('Register a series').click()
-    >>> firefox_owner.getControl('Name').value="3.0"
-    >>> firefox_owner.getControl('Summary').value="pi series"
-    >>> firefox_owner.getControl('Register Series').click()
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
-    >>> for tag in find_tags_by_class(firefox_owner.contents, 'add-files'):
+    >>> firefox_owner.open("http://launchpad.test/firefox")
+    >>> firefox_owner.getLink("Register a series").click()
+    >>> firefox_owner.getControl("Name").value = "3.0"
+    >>> firefox_owner.getControl("Summary").value = "pi series"
+    >>> firefox_owner.getControl("Register Series").click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
+    >>> for tag in find_tags_by_class(firefox_owner.contents, "add-files"):
     ...     print(extract_text(tag))
+    ...
     Add download file to the trunk series for release: 0.9.2, 0.9.1, 0.9
     Add download file to the 1.0 series for release: 1.0.0
 
@@ -157,20 +162,21 @@ If a release is added to the new series the series will appear in
 the list.
 
     # Add a release to the empty series.
-    >>> firefox_owner.open('http://launchpad.test/firefox/+series')
-    >>> firefox_owner.getLink('3.0').click()
-    >>> firefox_owner.getLink('Create milestone').click()
-    >>> firefox_owner.getControl('Name').value = '3.14159'
-    >>> firefox_owner.getControl('Register Milestone').click()
-    >>> firefox_owner.getLink(url='+milestone/3.14159').click()
-    >>> firefox_owner.getLink('Create release').click()
-    >>> firefox_owner.getControl('Date released').value = '2000-01-01'
-    >>> firefox_owner.getControl('Create release').click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/+series")
+    >>> firefox_owner.getLink("3.0").click()
+    >>> firefox_owner.getLink("Create milestone").click()
+    >>> firefox_owner.getControl("Name").value = "3.14159"
+    >>> firefox_owner.getControl("Register Milestone").click()
+    >>> firefox_owner.getLink(url="+milestone/3.14159").click()
+    >>> firefox_owner.getLink("Create release").click()
+    >>> firefox_owner.getControl("Date released").value = "2000-01-01"
+    >>> firefox_owner.getControl("Create release").click()
     >>> print(firefox_owner.url)
     http://launchpad.test/firefox/+milestone/3.14159
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
-    >>> for tag in find_tags_by_class(firefox_owner.contents, 'add-files'):
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
+    >>> for tag in find_tags_by_class(firefox_owner.contents, "add-files"):
     ...     print(extract_text(tag))
+    ...
     Add download file to the trunk series for release: 0.9.2, 0.9.1, 0.9
     Add download file to the 3.0 series for release: 3.14159
     Add download file to the 1.0 series for release: 1.0.0
@@ -189,32 +195,32 @@ First, let's use the links on the download files listing page.
 
 Ensure a non-owner doesn't see the 'Add download file' link.
 
-    >>> non_owner.open('http://launchpad.test/firefox/+download')
-    >>> non_owner.getLink('1.0.0')
+    >>> non_owner.open("http://launchpad.test/firefox/+download")
+    >>> non_owner.getLink("1.0.0")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
 To add a download file the release version link is used.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
-    >>> firefox_owner.getLink('1.0.0').click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
+    >>> firefox_owner.getLink("1.0.0").click()
     >>> print(firefox_owner.title)
     Add a download file to Mozilla Firefox...
 
 Ensure a non-owner doesn't see the 'Add download file' link after
 navigating to the product release page.
 
-    >>> non_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> non_owner.getLink('Add download file')
+    >>> non_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> non_owner.getLink("Add download file")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
 To add a download file the +adddownloadfile page is accessed.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> firefox_owner.getLink('Add download file').click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> firefox_owner.getLink("Add download file").click()
 
 The maximum size of the upload file is shown on the page.
 
@@ -227,15 +233,18 @@ Create a file to upload, and upload it. We'll also upload a dummy signature.
 Uploading file signatures is optional, so we'll just try it this once.
 
     >>> from io import BytesIO
-    >>> foo_file = BytesIO(b'Foo installer package...')
-    >>> foo_signature = BytesIO(b'Dummy GPG signature for the Foo installer')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo.txt')
-    >>> firefox_owner.getControl(name='field.signature').add_file(
-    ...    foo_signature, 'text/plain', 'foo.txt.asc')
-    >>> firefox_owner.getControl('Description').value="Foo installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    >>> foo_file = BytesIO(b"Foo installer package...")
+    >>> foo_signature = BytesIO(b"Dummy GPG signature for the Foo installer")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo.txt"
+    ... )
+    >>> firefox_owner.getControl(name="field.signature").add_file(
+    ...     foo_signature, "text/plain", "foo.txt.asc"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Foo installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     Your file 'foo.txt' has been uploaded.
@@ -243,13 +252,16 @@ Uploading file signatures is optional, so we'll just try it this once.
 A file can be uploaded without a GPG signature.
 
     >>> firefox_owner.open(
-    ...     'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
-    >>> bar_file = BytesIO(b'Bar installer package...')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(bar_file,
-    ...    'text/plain', 'bar.txt')
-    >>> firefox_owner.getControl('Description').value="Bar installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    ...     "http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile"
+    ... )
+    >>> bar_file = BytesIO(b"Bar installer package...")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     bar_file, "text/plain", "bar.txt"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Bar installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     Your file 'bar.txt' has been uploaded.
@@ -257,10 +269,11 @@ A file can be uploaded without a GPG signature.
 The uploaded file is also displayed on the project's downloads page for any
 user to see.
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+download')
+    >>> anon_browser.open("http://launchpad.test/firefox/+download")
     >>> content = find_main_content(anon_browser.contents)
-    >>> for tr in content.find_all('table')[1].find_all('tr'):
+    >>> for tr in content.find_all("table")[1].find_all("tr"):
     ...     print(extract_text(tr))
+    ...
     File                 Description      Downloads
     bar.txt (md5)        Bar installer    -
     foo.txt (md5, sig)   Foo installer    -
@@ -268,24 +281,25 @@ user to see.
 In addition to the product owner and product series owner,
 an admin can also delete a release file.
 
-    >>> admin_browser.open(
-    ...     'http://launchpad.test/firefox/1.0/1.0.0')
-    >>> checkbox = admin_browser.getControl(name='checkbox_0')
+    >>> admin_browser.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> checkbox = admin_browser.getControl(name="checkbox_0")
     >>> checkbox.value = checkbox.options
-    >>> table = find_tag_by_id(admin_browser.contents, 'downloads')
-    >>> for tr in table.find_all('tr'):
+    >>> table = find_tag_by_id(admin_browser.contents, "downloads")
+    >>> for tr in table.find_all("tr"):
     ...     print(extract_text(tr))
+    ...
     File                Description    Downloads      Delete
     bar.txt (md5)       Bar installer  -
     foo.txt (md5, sig)  Foo installer  -
 
-    >>> checkbox_tag = table.find(attrs={'name': 'checkbox_0'})
+    >>> checkbox_tag = table.find(attrs={"name": "checkbox_0"})
     >>> admin_browser.getControl("Delete Files").click()
     >>> print_feedback_messages(admin_browser.contents)
     1 file has been deleted.
-    >>> table = find_tag_by_id(admin_browser.contents, 'downloads')
-    >>> for tr in table.find_all('tr'):
+    >>> table = find_tag_by_id(admin_browser.contents, "downloads")
+    >>> for tr in table.find_all("tr"):
     ...     print(extract_text(tr))
+    ...
     File                Description    Downloads     Delete
     foo.txt (md5, sig)  Foo installer  -
 
@@ -293,7 +307,7 @@ Let's go back to the page where the files are listed and ensure it
 shows up now.  Just to be sure, do it as the non-owner. We also see
 the md5 digest of the file, and the signature that we uploaded.
 
-    >>> non_owner.open('http://launchpad.test/firefox/+download')
+    >>> non_owner.open("http://launchpad.test/firefox/+download")
     >>> non_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(non_owner.contents)
@@ -303,16 +317,18 @@ the md5 digest of the file, and the signature that we uploaded.
 
 Try to add a file with no description.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> firefox_owner.getLink('Add download file').click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> firefox_owner.getLink("Add download file").click()
 
 Create a file to upload.
 
-    >>> foo_file = BytesIO(b'Foo installer package...')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo1.txt')
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    >>> foo_file = BytesIO(b"Foo installer package...")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo1.txt"
+    ... )
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     There is 1 error.
@@ -320,17 +336,19 @@ Create a file to upload.
 
 Try to add a file that is empty.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> firefox_owner.getLink('Add download file').click()
+    >>> firefox_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> firefox_owner.getLink("Add download file").click()
 
 Create a file to upload.
 
-    >>> foo_file = BytesIO(b'')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo2.txt')
-    >>> firefox_owner.getControl('Description').value="Foo installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    >>> foo_file = BytesIO(b"")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo2.txt"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Foo installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     There is 1 error.
@@ -338,40 +356,46 @@ Create a file to upload.
 
 Now let's successfully upload two more files.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = BytesIO(b'Foo2 installer package...')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo2.txt')
-    >>> firefox_owner.getControl('Description').value="Foo2 installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    >>> firefox_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> firefox_owner.getLink("Add download file").click()
+    >>> foo_file = BytesIO(b"Foo2 installer package...")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo2.txt"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Foo2 installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     Your file 'foo2.txt' has been uploaded.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
-    >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = BytesIO(b'Foo installer package...')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo3.txt')
-    >>> firefox_owner.getControl('Description').value="Foo3 installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["Installer file"]
+    >>> firefox_owner.open("http://launchpad.test/firefox/1.0/1.0.0")
+    >>> firefox_owner.getLink("Add download file").click()
+    >>> foo_file = BytesIO(b"Foo installer package...")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo3.txt"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Foo3 installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "Installer file"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     Your file 'foo3.txt' has been uploaded.
 
 Add a file to a different release on the same project.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/trunk/0.9')
-    >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = BytesIO(b'Foo installer package...')
-    >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
-    ...    'text/plain', 'foo09.txt')
-    >>> firefox_owner.getControl('Description').value="Foo09 installer"
-    >>> firefox_owner.getControl(
-    ...     name="field.contenttype").displayValue = ["README File"]
+    >>> firefox_owner.open("http://launchpad.test/firefox/trunk/0.9")
+    >>> firefox_owner.getLink("Add download file").click()
+    >>> foo_file = BytesIO(b"Foo installer package...")
+    >>> firefox_owner.getControl(name="field.filecontent").add_file(
+    ...     foo_file, "text/plain", "foo09.txt"
+    ... )
+    >>> firefox_owner.getControl("Description").value = "Foo09 installer"
+    >>> firefox_owner.getControl(name="field.contenttype").displayValue = [
+    ...     "README File"
+    ... ]
     >>> firefox_owner.getControl("Upload").click()
     >>> print_feedback_messages(firefox_owner.contents)
     Your file 'foo09.txt' has been uploaded.
@@ -380,15 +404,15 @@ Examine all of the available files for download for firefox now.  They
 are listed within series in reverse chronological order, except
 'trunk' the developer focus, is first.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(firefox_owner.contents)
-    >>> rows = content.find_all('tr')
+    >>> rows = content.find_all("tr")
     >>> for row in rows[1:]:
-    ...     a_list = row.find_all('a')
+    ...     a_list = row.find_all("a")
     ...     if len(a_list) > 0:
-    ...        print(a_list[0].string)
+    ...         print(a_list[0].string)
     firefox_0.9.2.orig.tar.gz
     foo09.txt
     foo3.txt
@@ -413,10 +437,13 @@ XXX >>> firefox_owner.getLink('foo2.txt').click()
 XXX when bug 113083 is fixed.
 XXX Mon May  7 10:02:49 2007 -- bac
 
-    >>> link = firefox_owner.getLink('foo2.txt')
+    >>> link = firefox_owner.getLink("foo2.txt")
     >>> url_path = urlparse(link.url)[2]
-    >>> redirect_resp = http("""
-    ...     GET %s HTTP/1.1""" % url_path)
+    >>> redirect_resp = http(
+    ...     """
+    ...     GET %s HTTP/1.1"""
+    ...     % url_path
+    ... )
     >>> redirect_url = None
     >>> for line in str(redirect_resp).splitlines()[1:]:
     ...     key, value = line.split(": ", 1)
@@ -428,12 +455,11 @@ XXX Mon May  7 10:02:49 2007 -- bac
 
 Delete the file foo2.txt.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
 
-    >>> checkbox = firefox_owner.getControl(
-    ...     name="checkbox_2_1")
+    >>> checkbox = firefox_owner.getControl(name="checkbox_2_1")
     >>> checkbox.value = checkbox.options
     >>> firefox_owner.getControl("Delete Files").click()
     >>> print_feedback_messages(firefox_owner.contents)
@@ -441,15 +467,15 @@ Delete the file foo2.txt.
 
 Ensure the file is no longer listed.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/+download')
+    >>> firefox_owner.open("http://launchpad.test/firefox/+download")
     >>> firefox_owner.url
     'http://launchpad.test/firefox/+download'
     >>> content = find_main_content(firefox_owner.contents)
-    >>> rows = content.find_all('tr')
+    >>> rows = content.find_all("tr")
     >>> for row in rows[1:]:
-    ...     a_list = row.find_all('a')
+    ...     a_list = row.find_all("a")
     ...     if len(a_list) > 0:
-    ...        print(a_list[0].string)
+    ...         print(a_list[0].string)
     firefox_0.9.2.orig.tar.gz
     foo09.txt
     foo3.txt
@@ -462,16 +488,17 @@ Listing on the ProductRelease page
 Download files are shown on the page for the product release.
 Non-administrators do not have the delete option.
 
-    >>> non_owner.open('http://launchpad.test/firefox/trunk/0.9')
-    >>> table = find_tag_by_id(non_owner.contents, 'downloads')
-    >>> for tr in table.find_all('tr'):
+    >>> non_owner.open("http://launchpad.test/firefox/trunk/0.9")
+    >>> table = find_tag_by_id(non_owner.contents, "downloads")
+    >>> for tr in table.find_all("tr"):
     ...     print(extract_text(tr))
+    ...
     File             Description     Downloads
     foo09.txt (md5)  Foo09 installer -
 
 And no "Delete Files" button is shown.
 
-    >>> non_owner.getControl('Delete Files')
+    >>> non_owner.getControl("Delete Files")
     Traceback (most recent call last):
     ...
     LookupError: label ...'Delete Files'
@@ -481,10 +508,11 @@ As with the other listing, the administrators have the option to
 delete files.  In this context the 'Release' column would be redundant
 so it is not shown.
 
-    >>> firefox_owner.open('http://launchpad.test/firefox/trunk/0.9')
-    >>> table = find_tag_by_id(firefox_owner.contents, 'downloads')
-    >>> for tr in table.find_all('tr'):
+    >>> firefox_owner.open("http://launchpad.test/firefox/trunk/0.9")
+    >>> table = find_tag_by_id(firefox_owner.contents, "downloads")
+    >>> for tr in table.find_all("tr"):
     ...     print(extract_text(tr))
+    ...
     File             Description     Downloads  Delete
     foo09.txt (md5)  Foo09 installer -
 
@@ -492,6 +520,6 @@ A "Delete Files" button is available.
 
     >>> checkbox = firefox_owner.getControl(name="checkbox_0")
     >>> checkbox.value = checkbox.options
-    >>> firefox_owner.getControl('Delete Files').click()
+    >>> firefox_owner.getControl("Delete Files").click()
     >>> print_feedback_messages(firefox_owner.contents)
     1 file has been deleted.

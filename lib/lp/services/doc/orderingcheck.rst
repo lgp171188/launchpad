@@ -16,6 +16,7 @@ seem worth the trouble.
     ...     None on Python 3 we need an additional term.
     ...     """
     ...     return (0 if item is None else 1, item)
+    ...
 
 The OrderingCheck makes it clean and easy.  You create an OrderingCheck
 with the same arguments that go into Python's standard sorting
@@ -25,6 +26,7 @@ functions.
 
     >>> for number in range(3):
     ...     checker.check(number)
+    ...
 
 
 Sorting criteria
@@ -36,6 +38,7 @@ as Python's built-in sorting functions.
     >>> checker = OrderingCheck(key=lambda v: v, reverse=True)
     >>> for number in (3, 2, 1):
     ...     checker.check(number)
+    ...
 
 
 Unexpected values
@@ -80,6 +83,7 @@ ordering, override the "fail" method.
     >>> def alternative_fail(item):
     ...     """Don't raise an error, just print a message."""
     ...     print("Item %s was out of sequence." % item)
+    ...
 
     >>> checker = OrderingCheck(key=sort_key)
     >>> checker.fail = alternative_fail

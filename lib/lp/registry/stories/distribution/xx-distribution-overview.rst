@@ -13,7 +13,7 @@ Distribution listings
 
 There is a listing of all distributions at /distros/:
 
-    >>> anon_browser.open('http://launchpad.test/distros/')
+    >>> anon_browser.open("http://launchpad.test/distros/")
     >>> print(anon_browser.title)
     Distributions registered in Launchpad
 
@@ -27,8 +27,8 @@ series.
 
 Some distributions have listings of major versions, for example Debian:
 
-    >>> anon_browser.open('http://launchpad.test/debian')
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'sandm')))
+    >>> anon_browser.open("http://launchpad.test/debian")
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, "sandm")))
     Active series and milestones
     3.1 “Sarge” series - frozen
     3.0 “Woody” series - current
@@ -43,8 +43,8 @@ rules.
     >>> admin_browser.getControl("Name:").value = "testmilestone"
     >>> admin_browser.getControl("Register Milestone").click()
 
-    >>> anon_browser.open('http://launchpad.test/debian')
-    >>> print(extract_text(find_tag_by_id(anon_browser.contents, 'sandm')))
+    >>> anon_browser.open("http://launchpad.test/debian")
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, "sandm")))
     Active series and milestones
     ...
         Milestones: testmilestone, 3.1, and 3.1-rc1
@@ -53,39 +53,40 @@ rules.
 Each series and milestone are links that take you to that
 series and milestone page.
 
-    >>> print(anon_browser.getLink(url='/debian/sarge').text)
+    >>> print(anon_browser.getLink(url="/debian/sarge").text)
     3.1 “Sarge” series
 
-    >>> print(anon_browser.getLink(url='/debian/woody').text)
+    >>> print(anon_browser.getLink(url="/debian/woody").text)
     3.0 “Woody” series
 
-    >>> anon_browser.getLink(url='/debian/+milestone/3.1').text
+    >>> anon_browser.getLink(url="/debian/+milestone/3.1").text
     '3.1'
 
-    >>> anon_browser.getLink(url='/debian/+milestone/3.1-rc1').text
+    >>> anon_browser.getLink(url="/debian/+milestone/3.1-rc1").text
     '3.1-rc1'
 
 There are also two links "All series" and "All milestones" that take you
 to the distribution series and milestones pages respectively.
 
-    >>> anon_browser.getLink('All series').url
+    >>> anon_browser.getLink("All series").url
     'http://launchpad.test/debian/+series'
 
-    >>> anon_browser.getLink('All milestones').url
+    >>> anon_browser.getLink("All milestones").url
     'http://launchpad.test/debian/+milestones'
 
 Others do not have any series so the portlet is not shown.
 
-    >>> anon_browser.open('http://launchpad.test/gentoo')
-    >>> print(find_tag_by_id(anon_browser.contents, 'sandm'))
+    >>> anon_browser.open("http://launchpad.test/gentoo")
+    >>> print(find_tag_by_id(anon_browser.contents, "sandm"))
     None
 
 The 5 latest derivatives are displayed on the home page
 along with a link to list all of them.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'derivatives')))
+    >>> anon_browser.open("http://launchpad.test/ubuntu")
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "derivatives"))
+    ... )
     Latest derivatives
     9.9.9
     “Hoary Mock” series
@@ -104,15 +105,16 @@ along with a link to list all of them.
 
 The "All derivatives" link takes you to the derivatives page.
 
-    >>> anon_browser.getLink('All derivatives').url
+    >>> anon_browser.getLink("All derivatives").url
     'http://launchpad.test/ubuntu/+derivatives'
 
 If there are no derivatives, the link to the derivatives page is
 not there.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntutest')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'derivatives')))
+    >>> anon_browser.open("http://launchpad.test/ubuntutest")
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "derivatives"))
+    ... )
     Latest derivatives
     No derivatives.
 
@@ -130,8 +132,9 @@ If there is a development series alias, it becomes a redirect.
     Object: <Distribution ...>, name: 'devel'
 
     >>> with celebrity_logged_in("admin"):
-    ...     ubuntu = getUtility(IDistributionSet).getByName(u"ubuntu")
+    ...     ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     ...     ubuntu.development_series_alias = "devel"
+    ...
     >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
     >>> print(anon_browser.url)
     http://launchpad.test/ubuntu/hoary
@@ -145,15 +148,18 @@ Registration information
 
 The distroseries pages presents the registration information.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu')
+    >>> anon_browser.open("http://launchpad.test/ubuntu")
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'registration')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "registration")
+    ...     )
+    ... )
     Registered by
     Registry Administrators
     on 2006-10-16
 
-    >>> print(anon_browser.getLink('Ubuntu Team').url)
+    >>> print(anon_browser.getLink("Ubuntu Team").url)
     http://launchpad.test/~ubuntu-team
 
 

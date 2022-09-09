@@ -5,10 +5,13 @@ The bug tracker set is exported as a collection at /bugs/bugtrackers that
 any user can access.
 
     >>> from lazr.restful.testing.webservice import (
-    ...     pprint_collection, pprint_entry)
+    ...     pprint_collection,
+    ...     pprint_entry,
+    ... )
 
     >>> bug_tracker_collection = anon_webservice.get(
-    ...     '/bugs/bugtrackers').jsonBody()
+    ...     "/bugs/bugtrackers"
+    ... ).jsonBody()
     >>> pprint_collection(bug_tracker_collection)
     next_collection_link:
       'http://.../bugs/bugtrackers?ws.size=5&memo=5&ws.start=5'
@@ -36,33 +39,42 @@ A bug tracker can be retrieved using the bug tracker collection's
 getByName named operation.
 
     >>> bug_tracker = anon_webservice.named_get(
-    ...     '/bugs/bugtrackers', 'getByName',
-    ...     name='gnome-bugzilla').jsonBody()
-    >>> print(bug_tracker['name'])
+    ...     "/bugs/bugtrackers", "getByName", name="gnome-bugzilla"
+    ... ).jsonBody()
+    >>> print(bug_tracker["name"])
     gnome-bugzilla
 
 A bug tracker can be retrieved using the bug tracker collection's
 queryByBaseURL named operation.
 
     >>> bug_tracker = anon_webservice.named_get(
-    ...     '/bugs/bugtrackers', 'queryByBaseURL',
-    ...     base_url='https://bugzilla.mozilla.org/').jsonBody()
-    >>> print(bug_tracker['name'])
+    ...     "/bugs/bugtrackers",
+    ...     "queryByBaseURL",
+    ...     base_url="https://bugzilla.mozilla.org/",
+    ... ).jsonBody()
+    >>> print(bug_tracker["name"])
     mozilla.org
 
 The bug tracker set provides the ensureBugTracker named operation that a
 logged in user can call to create a bug tracker.
 
     >>> params = dict(
-    ...     base_url='http://wombat.zz/', bug_tracker_type='Bugzilla',
-    ...     name='wombat', title='Wombat title', summary='Wombat summary',
-    ...     contact_details='big-nose@wombat.zz')
-    >>> print(webservice.named_post(
-    ...     '/bugs/bugtrackers', 'ensureBugTracker', **params))
+    ...     base_url="http://wombat.zz/",
+    ...     bug_tracker_type="Bugzilla",
+    ...     name="wombat",
+    ...     title="Wombat title",
+    ...     summary="Wombat summary",
+    ...     contact_details="big-nose@wombat.zz",
+    ... )
+    >>> print(
+    ...     webservice.named_post(
+    ...         "/bugs/bugtrackers", "ensureBugTracker", **params
+    ...     )
+    ... )
     HTTP/1.1 201 Created ...
     Location: http://.../bugs/bugtrackers/wombat ...
 
-    >>> bug_tracker = webservice.get('/bugs/bugtrackers/wombat').jsonBody()
+    >>> bug_tracker = webservice.get("/bugs/bugtrackers/wombat").jsonBody()
     >>> pprint_entry(bug_tracker)
     active: True
     base_url: 'http://wombat.zz/'

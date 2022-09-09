@@ -5,14 +5,13 @@ We start by creating a pair of temporary directories to be used in
 this test.
 
     >>> import tempfile
-    >>> pool_path = tempfile.mkdtemp('-pool')
-    >>> temp_path = tempfile.mkdtemp('-pool-tmp')
+    >>> pool_path = tempfile.mkdtemp("-pool")
+    >>> temp_path = tempfile.mkdtemp("-pool-tmp")
 
 We will work within the Ubuntu distribution context only.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...      IDistributionSet)
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
 The no-operation use case, reflects the sampledata status.
 
@@ -21,7 +20,8 @@ The no-operation use case, reflects the sampledata status.
     >>> from lp.archivepublisher.diskpool import DiskPool
 
     >>> disk_pool = DiskPool(
-    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger()
+    ... )
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap(dry_run=True)
     DEBUG 0 Sources
@@ -36,13 +36,11 @@ Removal unreferenced packages
 
 Setup `SoyuzTestPublisher` for creating publications for Ubuntu/hoary.
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
-    >>> from lp.soyuz.enums import (
-    ...     PackagePublishingStatus)
+    >>> from lp.soyuz.enums import PackagePublishingStatus
 
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> hoary = ubuntu.getSeries("hoary")
 
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.addFakeChroots(hoary)
@@ -54,13 +52,15 @@ Build a 'past' and a 'future' timestamps to be used as
     >>> import datetime
     >>> import pytz
 
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> this_year = datetime.datetime.now().year
 
     >>> past_date = datetime.datetime(
-    ...     year=this_year - 2, month=1, day=1, tzinfo=UTC)
+    ...     year=this_year - 2, month=1, day=1, tzinfo=UTC
+    ... )
     >>> future_date = datetime.datetime(
-    ...     year=this_year + 2, month=1, day=1, tzinfo=UTC)
+    ...     year=this_year + 2, month=1, day=1, tzinfo=UTC
+    ... )
 
 Create source publications in various statuses that are all ready to
 be removed.
@@ -68,20 +68,23 @@ be removed.
     >>> deleted_source = test_publisher.getPubSource(
     ...     sourcename="deleted",
     ...     status=PackagePublishingStatus.DELETED,
-    ...     filecontent=b'X',
-    ...     scheduleddeletiondate=past_date)
+    ...     filecontent=b"X",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
     >>> superseded_source = test_publisher.getPubSource(
     ...     sourcename="superseded",
     ...     status=PackagePublishingStatus.SUPERSEDED,
-    ...     filecontent=b'X',
-    ...     scheduleddeletiondate=past_date)
+    ...     filecontent=b"X",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
     >>> obsolete_source = test_publisher.getPubSource(
     ...     sourcename="obsolete",
     ...     status=PackagePublishingStatus.OBSOLETE,
-    ...     filecontent=b'X',
-    ...     scheduleddeletiondate=past_date)
+    ...     filecontent=b"X",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
 Create a chain of dependent source publications:
 
@@ -92,24 +95,30 @@ Create a chain of dependent source publications:
     >>> removed_source = test_publisher.getPubSource(
     ...     sourcename="stuck",
     ...     status=PackagePublishingStatus.SUPERSEDED,
-    ...     filecontent=b'A',
-    ...     scheduleddeletiondate=past_date)
+    ...     filecontent=b"A",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
     >>> postponed_source = test_publisher.getPubSource(
-    ...     sourcename="stuck", version="667",
+    ...     sourcename="stuck",
+    ...     version="667",
     ...     status=PackagePublishingStatus.SUPERSEDED,
-    ...     filecontent=b'B',
-    ...     scheduleddeletiondate=future_date)
+    ...     filecontent=b"B",
+    ...     scheduleddeletiondate=future_date,
+    ... )
 
     >>> published_source = test_publisher.getPubSource(
-    ...     sourcename="stuck", version="668",
-    ...     filecontent=b'C',
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     sourcename="stuck",
+    ...     version="668",
+    ...     filecontent=b"C",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
 They all share a source file.
 
     >>> shared_file = test_publisher.addMockFile(
-    ...     'shared_1.0.tar.gz', filecontent=b'Y')
+    ...     "shared_1.0.tar.gz", filecontent=b"Y"
+    ... )
     >>> discard = removed_source.sourcepackagerelease.addFile(shared_file)
     >>> discard = postponed_source.sourcepackagerelease.addFile(shared_file)
     >>> discard = published_source.sourcepackagerelease.addFile(shared_file)
@@ -118,54 +127,63 @@ Create binary publications in various statuses that are all ready to
 be removed.
 
     >>> deleted_base_source = test_publisher.getPubSource(
-    ...     sourcename='deleted-ignored', architecturehintlist='i386')
+    ...     sourcename="deleted-ignored", architecturehintlist="i386"
+    ... )
     >>> [deleted_binary] = test_publisher.getPubBinaries(
     ...     binaryname="deleted-bin",
     ...     pub_source=deleted_base_source,
     ...     status=PackagePublishingStatus.DELETED,
-    ...     filecontent=b'Z',
-    ...     scheduleddeletiondate = past_date)
+    ...     filecontent=b"Z",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
     >>> superseded_base_source = test_publisher.getPubSource(
-    ...     sourcename='superseded-ignored', architecturehintlist='i386')
+    ...     sourcename="superseded-ignored", architecturehintlist="i386"
+    ... )
     >>> [superseded_binary] = test_publisher.getPubBinaries(
     ...     binaryname="superseded-bin",
     ...     pub_source=superseded_base_source,
     ...     status=PackagePublishingStatus.SUPERSEDED,
-    ...     filecontent=b'Z',
-    ...     scheduleddeletiondate = past_date)
+    ...     filecontent=b"Z",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
     >>> obsolete_base_source = test_publisher.getPubSource(
-    ...     sourcename='obsolete-ignored', architecturehintlist='i386')
+    ...     sourcename="obsolete-ignored", architecturehintlist="i386"
+    ... )
     >>> [obsolete_binary] = test_publisher.getPubBinaries(
     ...     binaryname="obsolete-bin",
     ...     pub_source=obsolete_base_source,
     ...     status=PackagePublishingStatus.OBSOLETE,
-    ...     filecontent=b'Z',
-    ...     scheduleddeletiondate = past_date)
+    ...     filecontent=b"Z",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
 Dependent binary publications.
 
     >>> removed_base_source = test_publisher.getPubSource(
-    ...     sourcename='removed-ignored', architecturehintlist='i386',
-    ...     pocket=PackagePublishingPocket.SECURITY)
+    ...     sourcename="removed-ignored",
+    ...     architecturehintlist="i386",
+    ...     pocket=PackagePublishingPocket.SECURITY,
+    ... )
     >>> [removed_binary] = test_publisher.getPubBinaries(
     ...     binaryname="stuck-bin",
     ...     pub_source=removed_base_source,
     ...     status=PackagePublishingStatus.SUPERSEDED,
-    ...     filecontent=b'Z',
-    ...     scheduleddeletiondate = past_date)
+    ...     filecontent=b"Z",
+    ...     scheduleddeletiondate=past_date,
+    ... )
 
-    >>> [postponed_binary] =  removed_binary.copyTo(
-    ...     hoary, PackagePublishingPocket.PROPOSED, ubuntu.main_archive)
-    >>> postponed_binary.status = (
-    ...     PackagePublishingStatus.SUPERSEDED)
+    >>> [postponed_binary] = removed_binary.copyTo(
+    ...     hoary, PackagePublishingPocket.PROPOSED, ubuntu.main_archive
+    ... )
+    >>> postponed_binary.status = PackagePublishingStatus.SUPERSEDED
     >>> postponed_binary.scheduleddeletiondate = future_date
 
-    >>> [published_binary] =  removed_binary.copyTo(
-    ...     hoary, PackagePublishingPocket.UPDATES, ubuntu.main_archive)
-    >>> published_binary.status = (
-    ...     PackagePublishingStatus.PUBLISHED)
+    >>> [published_binary] = removed_binary.copyTo(
+    ...     hoary, PackagePublishingPocket.UPDATES, ubuntu.main_archive
+    ... )
+    >>> published_binary.status = PackagePublishingStatus.PUBLISHED
 
 Store the 'removable' context in the database as a checkpoint, so it
 can be reused later.
@@ -181,16 +199,16 @@ Group the test publications according to their purpose:
     ...     deleted_binary,
     ...     superseded_binary,
     ...     obsolete_binary,
-    ...     )
+    ... )
 
     >>> dependent_records = (
-    ...    removed_source,
-    ...    postponed_source,
-    ...    published_source,
-    ...    removed_binary,
-    ...    postponed_binary,
-    ...    published_binary,
-    ...    )
+    ...     removed_source,
+    ...     postponed_source,
+    ...     published_source,
+    ...     removed_binary,
+    ...     postponed_binary,
+    ...     published_binary,
+    ... )
 
     >>> all_test_publications = removed_records + dependent_records
 
@@ -198,7 +216,8 @@ Publish files on disk and build a list of all created file paths
 
     >>> from lp.services.log.logger import BufferLogger
     >>> quiet_disk_pool = DiskPool(
-    ...     ubuntu.main_archive, pool_path, temp_path, BufferLogger())
+    ...     ubuntu.main_archive, pool_path, temp_path, BufferLogger()
+    ... )
 
     >>> unique_file_paths = set()
 
@@ -210,9 +229,10 @@ Publish files on disk and build a list of all created file paths
     ...                 pub.pool_name,
     ...                 pub.pool_version,
     ...                 pub_file,
-    ...              )
+    ...             )
     ...             unique_file_paths.add(file_path)
     ...         pub.publish(quiet_disk_pool, BufferLogger())
+    ...
 
     >>> all_test_file_paths = sorted(unique_file_paths, key=str)
 
@@ -222,9 +242,10 @@ the temporary repository.
     >>> def check_pool_files():
     ...     for file_path in all_test_file_paths:
     ...         if file_path.exists():
-    ...             print('%s: OK' % file_path.name)
+    ...             print("%s: OK" % file_path.name)
     ...         else:
-    ...             print('%s: REMOVED' % file_path.name)
+    ...             print("%s: REMOVED" % file_path.name)
+    ...
 
     >>> check_pool_files()
     deleted-bin_666_i386.deb:    OK
@@ -242,7 +263,8 @@ the temporary repository.
 Run DeathRow against the current 'removable' context.
 
     >>> disk_pool = DiskPool(
-    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger()
+    ... )
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 4 Sources
@@ -288,9 +310,11 @@ status was preserved in the database.
     >>> def check_removed(pub):
     ...     properly_removed = pub.dateremoved is not None
     ...     print(pub.displayname, pub.status.name, properly_removed)
+    ...
 
     >>> for pub in removed_records:
     ...     check_removed(pub)
+    ...
     deleted 666 in hoary             DELETED    True
     superseded 666 in hoary          SUPERSEDED True
     obsolete 666 in hoary            OBSOLETE   True
@@ -305,6 +329,7 @@ publications was removed (see more below).
 
     >>> for pub in dependent_records:
     ...     check_removed(pub)
+    ...
     stuck 666 in hoary          SUPERSEDED True
     stuck 667 in hoary          SUPERSEDED False
     stuck 668 in hoary          PUBLISHED  False
@@ -332,14 +357,14 @@ since they are related to only a single file (files can't be
 shared). In order to trigger the consideration of these specific
 publications we have to remove any 'live' publications.
 
-    >>> published_binary.status = (
-    ...    PackagePublishingStatus.SUPERSEDED)
+    >>> published_binary.status = PackagePublishingStatus.SUPERSEDED
     >>> published_binary.scheduleddeletiondate = past_date
 
 Now DeathRow considers 'stuck-bin' publications.
 
     >>> disk_pool = DiskPool(
-    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger()
+    ... )
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 0 Sources
@@ -364,7 +389,8 @@ That done, the publication and its files are free to be removed in a
 single pass.
 
     >>> disk_pool = DiskPool(
-    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger())
+    ...     ubuntu.main_archive, pool_path, temp_path, FakeLogger()
+    ... )
     >>> death_row = DeathRow(ubuntu.main_archive, disk_pool, FakeLogger())
     >>> death_row.reap()
     DEBUG 0 Sources
@@ -405,6 +431,7 @@ database.
 
     >>> for pub in dependent_binaries:
     ...     check_removed(pub)
+    ...
     stuck-bin 666 in hoary i386 SUPERSEDED True
     stuck-bin 666 in hoary i386 SUPERSEDED True
     stuck-bin 666 in hoary i386 SUPERSEDED True

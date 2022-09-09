@@ -13,13 +13,13 @@ https://www.gnu.org/software/gettext/manual/html_node/MO-Files.html
     >>> from zope.interface.verify import verifyObject
     >>> from lp.services.helpers import bytes_to_tarfile
     >>> from lp.translations.interfaces.translationexporter import (
-    ...     ITranslationFormatExporter)
+    ...     ITranslationFormatExporter,
+    ... )
     >>> from lp.translations.utilities.gettext_mo_exporter import (
-    ...     GettextMOExporter)
-    >>> from lp.translations.utilities.gettext_po_parser import (
-    ...     POParser)
-    >>> from lp.translations.utilities.tests.helpers import (
-    ...     is_valid_mofile)
+    ...     GettextMOExporter,
+    ... )
+    >>> from lp.translations.utilities.gettext_po_parser import POParser
+    >>> from lp.translations.utilities.tests.helpers import is_valid_mofile
 
 Interface implementation
 ------------------------
@@ -36,9 +36,10 @@ TranslationFileData.
 To get a TranslationFileData, we use the GettextPOImporter class.
 
     >>> from lp.translations.interfaces.translationfileformat import (
-    ...     TranslationFileFormat)
+    ...     TranslationFileFormat,
+    ... )
     >>> parser = POParser()
-    >>> file_content = '''
+    >>> file_content = """
     ...     msgid ""
     ...     msgstr ""
     ...     "POT-Creation-Date: 2005-08-10 11:00:00+0000\\n"
@@ -50,17 +51,20 @@ To get a TranslationFileData, we use the GettextPOImporter class.
     ...
     ...     msgid "foo"
     ...     msgstr "bar"
-    ...     '''.encode('UTF-8')
+    ...     """.encode(
+    ...     "UTF-8"
+    ... )
     >>> translation_file_es = parser.parse(file_content)
-    >>> translation_file_es.path = 'foo/es.po'
-    >>> translation_file_es.language_code = 'es'
-    >>> translation_file_es.translation_domain = 'foo'
+    >>> translation_file_es.path = "foo/es.po"
+    >>> translation_file_es.language_code = "es"
+    >>> translation_file_es.translation_domain = "foo"
     >>> translation_file_es.format = TranslationFileFormat.PO
 
 When we export a single file, we get a .mo file as output.
 
     >>> from lp.translations.utilities.translation_export import (
-    ...     ExportFileStorage)
+    ...     ExportFileStorage,
+    ... )
     >>> exporter = GettextMOExporter()
     >>> storage = ExportFileStorage()
     >>> exporter.exportTranslationFile(translation_file_es, storage)
@@ -73,16 +77,18 @@ When we export a single file, we get a .mo file as output.
 When we export more than one file, we get a tarball.
 
     >>> from lp.translations.interfaces.translationexporter import (
-    ...     ITranslationExporter)
+    ...     ITranslationExporter,
+    ... )
     >>> translation_file_sr = parser.parse(file_content)
-    >>> translation_file_sr.path = 'foo/sr.po'
-    >>> translation_file_sr.language_code = 'sr'
-    >>> translation_file_sr.translation_domain = 'foo'
+    >>> translation_file_sr.path = "foo/sr.po"
+    >>> translation_file_sr.language_code = "sr"
+    >>> translation_file_sr.translation_domain = "foo"
     >>> translation_file_sr.format = TranslationFileFormat.PO
     >>> translation_exporter = getUtility(ITranslationExporter)
     >>> exported_file = translation_exporter.exportTranslationFiles(
     ...     [translation_file_es, translation_file_sr],
-    ...     target_format=TranslationFileFormat.MO)
+    ...     target_format=TranslationFileFormat.MO,
+    ... )
     >>> print(exported_file.content_type)
     application/x-gtar
     >>> file_content = exported_file.read()
@@ -92,12 +98,13 @@ When we export more than one file, we get a tarball.
     >>> for member in tarfile.getmembers():
     ...     if member.isreg():
     ...         size = len(tarfile.extractfile(member).read())
-    ...         desc = 'non-empty' if size else 'empty'
+    ...         desc = "non-empty" if size else "empty"
     ...     elif member.isdir():
-    ...         desc = 'dir'
+    ...         desc = "dir"
     ...     else:
-    ...         desc = 'unknown'
+    ...         desc = "unknown"
     ...     print("| %9s | %s" % (desc, member.name))
+    ...
     | dir       | es
     | dir       | es/LC_MESSAGES
     | non-empty | es/LC_MESSAGES/foo.mo
@@ -112,27 +119,30 @@ PO compiler helper class
 Launchpad gets .po file content and 'compiles' it to get
 the binary form.
 
-    >>> from lp.translations.utilities.gettext_mo_exporter import (
-    ...     POCompiler)
+    >>> from lp.translations.utilities.gettext_mo_exporter import POCompiler
     >>> compiler = POCompiler()
 
 
 POCompiler.compile gets a string with .po file content and gives you
 a .mo file binary stream.
 
-    >>> mofile_content = compiler.compile(b'''
+    >>> mofile_content = compiler.compile(
+    ...     b"""
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''')
+    ... """
+    ... )
     >>> is_valid_mofile(mofile_content)
     True
 
 Though, if we provide it with something that is not a .po file content, we
 get an export error exception:
 
-    >>> mofile = compiler.compile(b'''
+    >>> mofile = compiler.compile(
+    ...     b"""
     ... blah
-    ... ''')  # noqa
+    ... """
+    ... )  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationexporter.UnknownTranslationExporterError: ...

@@ -12,25 +12,29 @@ changing the status, the target, and the new status.
     >>> from lp.registry.interfaces.product import IProductSet
 
     >>> with lp_dbuser():
-    ...     login('no-priv@canonical.com')
-    ...     no_priv = getUtility(IPersonSet).getByName('no-priv')
+    ...     login("no-priv@canonical.com")
+    ...     no_priv = getUtility(IPersonSet).getByName("no-priv")
     ...     bug_params = CreateBugParams(
-    ...         owner=no_priv, title='Sample bug',
-    ...         comment='This is a sample bug.')
-    ...     firefox = getUtility(IProductSet).getByName('firefox')
+    ...         owner=no_priv,
+    ...         title="Sample bug",
+    ...         comment="This is a sample bug.",
+    ...     )
+    ...     firefox = getUtility(IProductSet).getByName("firefox")
     ...     bug = firefox.createBug(bug_params)
     ...     bug_id = bug.id
     ...     # Set a milestone to ensure that the current db user has enough
     ...     # privileges to access it.
     ...     [firefox_task] = bug.bugtasks
-    ...     firefox_task.milestone = firefox.getMilestone('1.0')
+    ...     firefox_task.milestone = firefox.getMilestone("1.0")
+    ...
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> bug = getUtility(IBugSet).get(bug_id)
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> firefox_bugtask = bug.setStatus(
-    ...     firefox, BugTaskStatus.CONFIRMED, no_priv)
+    ...     firefox, BugTaskStatus.CONFIRMED, no_priv
+    ... )
 
 It returns the edited bugtask.
 
@@ -44,8 +48,12 @@ BugActivity records are created.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
     >>> from lp.services.database.interfaces import IStore
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     No Privileges Person
     >>> print(latest_notification.message.text_contents)
@@ -54,8 +62,12 @@ BugActivity records are created.
 
     >>> from lp.bugs.model.bugactivity import BugActivity
     >>> from lp.services.database.interfaces import IStore
-    >>> latest_activity = IStore(BugActivity).find(
-    ...     BugActivity).order_by(BugActivity.id).last()
+    >>> latest_activity = (
+    ...     IStore(BugActivity)
+    ...     .find(BugActivity)
+    ...     .order_by(BugActivity.id)
+    ...     .last()
+    ... )
     >>> print(latest_activity.whatchanged)
     firefox: status
     >>> print(latest_activity.oldvalue)
@@ -77,11 +89,12 @@ Product series
 If a product series is specified, but the bug is target only to the
 product, not the product series, the product bugtask is edited.
 
-    >>> firefox_trunk = firefox.getSeries('trunk')
+    >>> firefox_trunk = firefox.getSeries("trunk")
     >>> bug.getBugTask(firefox_trunk) is None
     True
     >>> firefox_bugtask = bug.setStatus(
-    ...     firefox_trunk, BugTaskStatus.NEW, no_priv)
+    ...     firefox_trunk, BugTaskStatus.NEW, no_priv
+    ... )
     >>> print(firefox_bugtask.target.name)
     firefox
     >>> firefox_bugtask.status.name
@@ -93,18 +106,21 @@ is edited.
     >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
     >>> with lp_dbuser():
     ...     bug = getUtility(IBugSet).get(bug_id)
-    ...     no_priv = getUtility(IPersonSet).getByName('no-priv')
-    ...     firefox = getUtility(IProductSet).getByName('firefox')
-    ...     firefox_trunk = firefox.getSeries('trunk')
+    ...     no_priv = getUtility(IPersonSet).getByName("no-priv")
+    ...     firefox = getUtility(IProductSet).getByName("firefox")
+    ...     firefox_trunk = firefox.getSeries("trunk")
     ...     ignore = getUtility(IBugTaskSet).createTask(
-    ...         bug, no_priv, firefox_trunk)
+    ...         bug, no_priv, firefox_trunk
+    ...     )
+    ...
 
     >>> bug = getUtility(IBugSet).get(bug_id)
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> firefox_trunk = firefox.getSeries('trunk')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> firefox_trunk = firefox.getSeries("trunk")
     >>> firefox_trunk_bugtask = bug.setStatus(
-    ...     firefox_trunk, BugTaskStatus.INCOMPLETE, no_priv)
+    ...     firefox_trunk, BugTaskStatus.INCOMPLETE, no_priv
+    ... )
 
     >>> print(firefox_trunk_bugtask.target.name)
     trunk
@@ -123,7 +139,8 @@ updated automatically.
     >>> firefox_bugtask.status.name
     'INCOMPLETE'
     >>> firefox_trunk_bugtask = bug.setStatus(
-    ...     firefox_bugtask.target, BugTaskStatus.CONFIRMED, no_priv)
+    ...     firefox_bugtask.target, BugTaskStatus.CONFIRMED, no_priv
+    ... )
     >>> print(firefox_trunk_bugtask.target.name)
     trunk
     >>> firefox_trunk_bugtask.status.name
@@ -139,24 +156,26 @@ for product tasks.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> with lp_dbuser():
-    ...     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    ...     ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     ...     # Set a milestone to ensure that the current db user has enough
     ...     # privileges to access it.
-    ...     ubuntu_hoary = ubuntu.getSeries('hoary')
+    ...     ubuntu_hoary = ubuntu.getSeries("hoary")
     ...     # Only owners, experts, or admins can create a milestone.
-    ...     login('foo.bar@canonical.com')
-    ...     feature_freeze = ubuntu_hoary.newMilestone('feature-freeze')
-    ...     login('no-priv@canonical.com')
+    ...     login("foo.bar@canonical.com")
+    ...     feature_freeze = ubuntu_hoary.newMilestone("feature-freeze")
+    ...     login("no-priv@canonical.com")
     ...     bug = ubuntu.createBug(bug_params)
     ...     [ubuntu_bugtask] = bug.bugtasks
     ...     ubuntu_bugtask.milestone = feature_freeze
     ...     bug_id = bug.id
+    ...
 
     >>> bug = getUtility(IBugSet).get(bug_id)
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu_bugtask = bug.setStatus(
-    ...     ubuntu, BugTaskStatus.CONFIRMED, no_priv)
+    ...     ubuntu, BugTaskStatus.CONFIRMED, no_priv
+    ... )
     >>> print(ubuntu_bugtask.target.name)
     ubuntu
     >>> ubuntu_bugtask.status.name
@@ -165,9 +184,10 @@ for product tasks.
 If a source package is given, but no such package exists, no bugtask
 will be edited.
 
-    >>> ubuntu_firefox = ubuntu.getSourcePackage('mozilla-firefox')
+    >>> ubuntu_firefox = ubuntu.getSourcePackage("mozilla-firefox")
     >>> bug.setStatus(
-    ...     ubuntu_firefox, BugTaskStatus.CONFIRMED, no_priv) is None
+    ...     ubuntu_firefox, BugTaskStatus.CONFIRMED, no_priv
+    ... ) is None
     True
 
 If the bug is targeted to a source package, that bugtask is of course
@@ -175,11 +195,13 @@ edited.
 
     # Need to be privileged user to transition the target.
     >>> from lp.services.webapp.interfaces import ILaunchBag
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> ubuntu_bugtask.transitionToTarget(
-    ...     ubuntu_firefox, getUtility(ILaunchBag).user)
+    ...     ubuntu_firefox, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task = bug.setStatus(
-    ...     ubuntu_firefox, BugTaskStatus.INCOMPLETE, no_priv)
+    ...     ubuntu_firefox, BugTaskStatus.INCOMPLETE, no_priv
+    ... )
     >>> print(ubuntu_firefox_task.target.displayname)
     mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
@@ -189,19 +211,21 @@ If a distro series is given, but the bug is only targeted to the
 distribution and not to the distro series, the distribution task is
 edited.
 
-    >>> ubuntu_warty = ubuntu.getSeries('warty')
-    >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
+    >>> ubuntu_warty = ubuntu.getSeries("warty")
+    >>> warty_firefox = ubuntu_warty.getSourcePackage("mozilla-firefox")
     >>> ubuntu_firefox_task = bug.setStatus(
-    ...     warty_firefox, BugTaskStatus.CONFIRMED, no_priv)
+    ...     warty_firefox, BugTaskStatus.CONFIRMED, no_priv
+    ... )
     >>> print(ubuntu_firefox_task.target.displayname)
     mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
     'CONFIRMED'
 
-    >>> ubuntu_hoary = ubuntu.getSeries('hoary')
-    >>> hoary_firefox = ubuntu_hoary.getSourcePackage('mozilla-firefox')
+    >>> ubuntu_hoary = ubuntu.getSeries("hoary")
+    >>> hoary_firefox = ubuntu_hoary.getSourcePackage("mozilla-firefox")
     >>> ubuntu_firefox_task = bug.setStatus(
-    ...     hoary_firefox, BugTaskStatus.NEW, no_priv)
+    ...     hoary_firefox, BugTaskStatus.NEW, no_priv
+    ... )
     >>> print(ubuntu_firefox_task.target.displayname)
     mozilla-firefox in Ubuntu
     >>> ubuntu_firefox_task.status.name
@@ -215,42 +239,48 @@ targeted to the non-current series of course.
     hoary
 
     # Need to be privileged user to target the bug to a series.
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> with lp_dbuser():
     ...     bug = getUtility(IBugSet).get(bug_id)
-    ...     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    ...     ubuntu_hoary = ubuntu.getSeries('hoary')
+    ...     ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    ...     ubuntu_hoary = ubuntu.getSeries("hoary")
     ...     nomination = bug.addNomination(
-    ...         getUtility(ILaunchBag).user, ubuntu_hoary)
+    ...         getUtility(ILaunchBag).user, ubuntu_hoary
+    ...     )
     ...     nomination.approve(getUtility(ILaunchBag).user)
-    >>> login('no-priv@canonical.com')
+    ...
+    >>> login("no-priv@canonical.com")
 
     >>> bug = getUtility(IBugSet).get(bug_id)
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> ubuntu_warty = ubuntu.getSeries('warty')
-    >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> ubuntu_warty = ubuntu.getSeries("warty")
+    >>> warty_firefox = ubuntu_warty.getSourcePackage("mozilla-firefox")
     >>> bug.setStatus(
-    ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv) is None
+    ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv
+    ... ) is None
     True
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> with lp_dbuser():
     ...     bug = getUtility(IBugSet).get(bug_id)
-    ...     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    ...     ubuntu_warty = ubuntu.getSeries('warty')
+    ...     ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    ...     ubuntu_warty = ubuntu.getSeries("warty")
     ...     nomination = bug.addNomination(
-    ...         getUtility(ILaunchBag).user, ubuntu_warty)
+    ...         getUtility(ILaunchBag).user, ubuntu_warty
+    ...     )
     ...     nomination.approve(getUtility(ILaunchBag).user)
-    >>> login('no-priv@canonical.com')
+    ...
+    >>> login("no-priv@canonical.com")
 
     >>> bug = getUtility(IBugSet).get(bug_id)
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> ubuntu_warty = ubuntu.getSeries('warty')
-    >>> warty_firefox = ubuntu_warty.getSourcePackage('mozilla-firefox')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> ubuntu_warty = ubuntu.getSeries("warty")
+    >>> warty_firefox = ubuntu_warty.getSourcePackage("mozilla-firefox")
     >>> ubuntu_firefox_task = bug.setStatus(
-    ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv)
+    ...     warty_firefox, BugTaskStatus.INCOMPLETE, no_priv
+    ... )
     >>> print(ubuntu_firefox_task.target.displayname)
     mozilla-firefox in Ubuntu Warty
     >>> ubuntu_firefox_task.status.name

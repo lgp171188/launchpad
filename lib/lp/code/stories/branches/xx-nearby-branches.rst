@@ -5,11 +5,12 @@ At the bottom of the main branch page there are links to other related
 branches.
 
     >>> login(ANONYMOUS)
-    >>> eric = factory.makePerson(name='eric')
-    >>> vikings = factory.makeTeam(owner=eric, name='vikings')
-    >>> fooix = factory.makeProduct(name='fooix')
+    >>> eric = factory.makePerson(name="eric")
+    >>> vikings = factory.makeTeam(owner=eric, name="vikings")
+    >>> fooix = factory.makeProduct(name="fooix")
     >>> branch = factory.makeProductBranch(
-    ...     product=fooix, owner=vikings, registrant=eric)
+    ...     product=fooix, owner=vikings, registrant=eric
+    ... )
     >>> url = canonical_url(branch)
     >>> logout()
 
@@ -18,8 +19,9 @@ branches.
 Since the links point to the code subdomain, the links are relative to the
 root.
 
-    >>> div = find_tag_by_id(browser.contents, 'nearby-branches')
-    >>> for anchor in div.find_all('a'):
-    ...     print(anchor['href'], anchor.string)
+    >>> div = find_tag_by_id(browser.contents, "nearby-branches")
+    >>> for anchor in div.find_all("a"):
+    ...     print(anchor["href"], anchor.string)
+    ...
     /fooix                      Other Fooix branches
     /~vikings                   Other branches owned by Vikings

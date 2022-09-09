@@ -10,12 +10,12 @@ in one or more series of a `Distribution`.
     # addresses and a bug reference.
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> stp = SoyuzTestPublisher()
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> stp.prepareBreezyAutotest()
-    >>> source = stp.getPubSource('testing-dspr', version='1.0')
+    >>> source = stp.getPubSource("testing-dspr", version="1.0")
     >>> source.setPublished()
     >>> binaries = stp.getPubBinaries(pub_source=source)
-    >>> maintainer = factory.makePerson(name='maintainer')
+    >>> maintainer = factory.makePerson(name="maintainer")
     >>> source.sourcepackagerelease.maintainer = maintainer
     >>> source.sourcepackagerelease.changelog_entry = """
     ... Testing!!!
@@ -30,8 +30,9 @@ The `DistributionSourcePackageRelease` page is accessed from the
 `DistributionSourcePackage`.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntutest/+source/testing-dspr')
-    >>> anon_browser.getLink('1.0').click()
+    ...     "http://launchpad.test/ubuntutest/+source/testing-dspr"
+    ... )
+    >>> anon_browser.getLink("1.0").click()
 
     >>> print(anon_browser.url)
     http://launchpad.test/ubuntutest/+source/testing-dspr/1.0
@@ -62,7 +63,7 @@ release changelog. It shows the reason why this version of the package
 exists, will usually describe a bug that was fixed or a feature that
 was introduced.
 
-    >>> print_tag_with_id(anon_browser.contents, 'source-changelog')
+    >>> print_tag_with_id(anon_browser.contents, "source-changelog")
     Changelog
     Testing!!!
     &lt;email address hidden&gt;
@@ -71,7 +72,7 @@ was introduced.
 
 Bug references in the 'changelog' are 'linkified'.
 
-    >>> print(anon_browser.getLink('1234').url)
+    >>> print(anon_browser.getLink("1234").url)
     http://launchpad.test/bugs/1234
 
 The email addresses mentioned in the 'changelog' are only rendered to
@@ -79,27 +80,30 @@ users logged in. They also become a link to the corresponding person
 in Launchpad if it exists.
 
     >>> user_browser.open(anon_browser.url)
-    >>> print_tag_with_id(user_browser.contents, 'source-changelog')
+    >>> print_tag_with_id(user_browser.contents, "source-changelog")
     Changelog
     Testing!!!
     biscuit@canonical.com
     LP: #1234
     celso.providelo@canonical.com
 
-    >>> user_browser.getLink('biscuit@canonical.com')
+    >>> user_browser.getLink("biscuit@canonical.com")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> print(user_browser.getLink('celso.providelo@canonical.com').url)
+    >>> print(user_browser.getLink("celso.providelo@canonical.com").url)
     http://launchpad.test/~cprov
 
 The following portlet presents its 'Upload details' and link to the
 users involved with it and the `DistroSeries` it was originally
 uploaded to.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Upload details')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Upload details")
+    ...     )
+    ... )
     Upload details
     Uploaded by:
     Foo Bar ... ago
@@ -114,27 +118,30 @@ uploaded to.
     Urgency:
     Low Urgency
 
-    >>> print(anon_browser.getLink('Foo Bar').url)
+    >>> print(anon_browser.getLink("Foo Bar").url)
     http://launchpad.test/~name16
 
-    >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
+    >>> print(anon_browser.getLink("Breezy Badger Autotest").url)
     http://launchpad.test/ubuntutest/breezy-autotest
 
-    >>> print(anon_browser.getLink('Maintainer').url)
+    >>> print(anon_browser.getLink("Maintainer").url)
     http://launchpad.test/~maintainer
 
 If the upload was 'sponsored' (changes uploaded on behalf of someone
 else) it also points to the 'sponsor' user.
 
     # Transform the testing publication in a 'sponsored' upload.
-    >>> login('foo.bar@canonical.com')
-    >>> creator = factory.makePerson(name='creator')
+    >>> login("foo.bar@canonical.com")
+    >>> creator = factory.makePerson(name="creator")
     >>> source.sourcepackagerelease.creator = creator
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Upload details')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Upload details")
+    ...     )
+    ... )
     Upload details
     Uploaded by:
     Creator ... ago
@@ -142,16 +149,16 @@ else) it also points to the 'sponsor' user.
     Foo Bar
     ...
 
-    >>> print(anon_browser.getLink('Creator').url)
+    >>> print(anon_browser.getLink("Creator").url)
     http://launchpad.test/~creator
 
-    >>> print(anon_browser.getLink('Foo Bar').url)
+    >>> print(anon_browser.getLink("Foo Bar").url)
     http://launchpad.test/~name16
 
 The 'Publishing' portlet lists all distroseries of the context
 distribution where this source package release is published.
 
-    >>> print_tag_with_id(anon_browser.contents, 'source-publishing')
+    >>> print_tag_with_id(anon_browser.contents, "source-publishing")
     See full publishing history
     Publishing
     Series                  Pocket   Published  Component  Section
@@ -160,7 +167,7 @@ distribution where this source package release is published.
 This section also has a link to a separate page where all publications
 of this source in the context distribution are listed.
 
-    >>> anon_browser.getLink('See full publishing history').click()
+    >>> anon_browser.getLink("See full publishing history").click()
 
     >>> from lp.services.helpers import backslashreplace
     >>> print(backslashreplace(anon_browser.title))
@@ -176,17 +183,16 @@ of this source in the context distribution are listed.
     ...
     «back
 
-    >>> anon_browser.getLink('back').click()
+    >>> anon_browser.getLink("back").click()
 
 The next section presented lists, and links, to all the builds of this
 source in the context distribution, grouped by distroseries.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Builds')))
+    >>> print(extract_text(find_portlet(anon_browser.contents, "Builds")))
     Builds
     Breezy Badger Autotest: i386
 
-    >>> print(anon_browser.getLink('i386').url)
+    >>> print(anon_browser.getLink("i386").url)
     http://launchpad.test/ubuntutest/+source/testing-dspr/1.0/+build/...
 
 The 'Downloads' section lists and links to the files for this
@@ -194,32 +200,32 @@ source. Each file links to its normalized download path based on the
 distribution primary archive URL. It allows the files to be download
 via `dget`.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Downloads')))
+    >>> print(extract_text(find_portlet(anon_browser.contents, "Downloads")))
     Downloads
     File                  Size      SHA-256 Checksum
     testing-dspr_1.0.dsc  28 bytes
     ac512102db9724bee18f26945efeeb82fdab89819e64e120fbfda755ca50c2c6
     View changes file
 
-    >>> print(anon_browser.getLink('testing-dspr_1.0.dsc').url)  # noqa
+    >>> print(anon_browser.getLink("testing-dspr_1.0.dsc").url)  # noqa
     http://.../ubuntutest/+archive/primary/+sourcefiles/testing-dspr/1.0/testing-dspr_1.0.dsc
 
 The 'Downloads' section also lists and link to package diffs when they
 are available.
 
-    >>> login('foo.bar@canonical.com')
-    >>> ancestry = stp.getPubSource('testing-dspr', version='0.9')
-    >>> package_diff  = ancestry.sourcepackagerelease.requestDiffTo(
-    ...     stp.person, source.sourcepackagerelease)
+    >>> login("foo.bar@canonical.com")
+    >>> ancestry = stp.getPubSource("testing-dspr", version="0.9")
+    >>> package_diff = ancestry.sourcepackagerelease.requestDiffTo(
+    ...     stp.person, source.sourcepackagerelease
+    ... )
     >>> package_diff.diff_content = stp.addMockFile(
-    ...     'testing-dspr_0.9_1.0.diff.gz')
+    ...     "testing-dspr_0.9_1.0.diff.gz"
+    ... )
     >>> package_diff.date_fulfilled = package_diff.date_requested
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Downloads')))
+    >>> print(extract_text(find_portlet(anon_browser.contents, "Downloads")))
     Downloads
     File                  Size      SHA-256 Checksum
     testing-dspr_1.0.dsc  28 bytes
@@ -228,22 +234,27 @@ are available.
     diff from 0.9 to 1.0 (7 bytes)
     View changes file
 
-    >>> print(anon_browser.getLink('0.9 to 1.0').url)
+    >>> print(anon_browser.getLink("0.9 to 1.0").url)
     http://.../.../testing-dspr_0.9_1.0.diff.gz
 
 Finally, the 'Binary packages' section lists all binary packages
 produced by this source. Each binary links to its specific
 `DistroSeriesBinaryPackage` page.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents,
-    ...     'Binary packages built by this source')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents,
+    ...             "Binary packages built by this source",
+    ...         )
+    ...     )
+    ... )
     Binary packages built by this source
     foo-bin:
     No summary available for foo-bin in ubuntutest breezy-autotest.
     No description available for foo-bin in ubuntutest breezy-autotest.
 
-    >>> print(anon_browser.getLink('foo-bin').url)
+    >>> print(anon_browser.getLink("foo-bin").url)
     http://launchpad.test/ubuntutest/breezy-autotest/+package/foo-bin
 
 The binary package summary and description are retrieved from the
@@ -255,21 +266,29 @@ package caches (see doc/package-cache.rst).
     >>> from lp.services.log.logger import BufferLogger
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.model.distroseriespackagecache import (
-    ...     DistroSeriesPackageCache)
+    ...     DistroSeriesPackageCache,
+    ... )
     >>> from lp.testing.dbuser import dbuser
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> logger = BufferLogger()
-    >>> ubuntutest = getUtility(IDistributionSet).getByName('ubuntutest')
-    >>> breezy_autotest = ubuntutest.getSeries('breezy-autotest')
+    >>> ubuntutest = getUtility(IDistributionSet).getByName("ubuntutest")
+    >>> breezy_autotest = ubuntutest.getSeries("breezy-autotest")
     >>> with dbuser(config.statistician.dbuser):
     ...     unused = DistroSeriesPackageCache.updateAll(
-    ...         breezy_autotest, ubuntutest.main_archive, logger, transaction)
+    ...         breezy_autotest, ubuntutest.main_archive, logger, transaction
+    ...     )
+    ...
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents,
-    ...     'Binary packages built by this source')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents,
+    ...             "Binary packages built by this source",
+    ...         )
+    ...     )
+    ... )
     Binary packages built by this source
     foo-bin: Foo app is great
     Well ... it does nothing, though
@@ -277,12 +296,13 @@ package caches (see doc/package-cache.rst).
 The full change log can be viewed as follows:
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/ubuntutest/+source/testing-dspr')
-    >>> user_browser.getLink('View full change log').click()
+    ...     "http://launchpad.test/ubuntutest/+source/testing-dspr"
+    ... )
+    >>> user_browser.getLink("View full change log").click()
     >>> print(user_browser.url)
     http://launchpad.test/ubuntutest/+source/testing-dspr/+changelog
 
-    >>> print_tag_with_id(user_browser.contents, 'body_testing-dspr_1.0')
+    >>> print_tag_with_id(user_browser.contents, "body_testing-dspr_1.0")
     Testing!!!
     biscuit@canonical.com
     LP: #1234

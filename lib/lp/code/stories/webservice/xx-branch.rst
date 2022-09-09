@@ -22,8 +22,10 @@ helpers. This one turns a JSON date/time response into a Python
     ...     """Return a datetime object from a JSON response."""
     ...     returned_time = response.jsonBody()
     ...     marshaller = DateTimeFieldMarshaller(
-    ...         IBranch['next_mirror_time'], response)
+    ...         IBranch["next_mirror_time"], response
+    ...     )
     ...     return marshaller.marshall_from_json_data(returned_time)
+    ...
 
 
 Requesting a mirror
@@ -41,7 +43,8 @@ Let's make a mirrored branch to play with:
 
     >>> login(ANONYMOUS)
     >>> branch = removeSecurityProxy(
-    ...     factory.makeAnyBranch(branch_type=BranchType.MIRRORED))
+    ...     factory.makeAnyBranch(branch_type=BranchType.MIRRORED)
+    ... )
     >>> logout()
 
 At the moment, it's not scheduled to be mirrored.
@@ -51,9 +54,9 @@ At the moment, it's not scheduled to be mirrored.
 
 But we can ask for it to be mirrored using the webservice:
 
-    >>> branch_url = '/' + branch.unique_name
+    >>> branch_url = "/" + branch.unique_name
     >>> start_time = datetime.now(pytz.UTC)
-    >>> response = webservice.named_post(branch_url, 'requestMirror')
+    >>> response = webservice.named_post(branch_url, "requestMirror")
     >>> end_time = datetime.now(pytz.UTC)
     >>> new_mirror_time = get_as_datetime(response)
     >>> branch.next_mirror_time == new_mirror_time
@@ -73,31 +76,45 @@ Not everything about a branch is exposed.  Hopefully most of what users
 really care about is exposed, and we will undoubtedly expand this as
 time goes on.
 
-    >>> login('admin@canonical.com')
-    >>> eric = factory.makePerson(name='eric')
-    >>> marley = factory.makePerson(name='marley')
-    >>> fooix = factory.makeProduct(name='fooix')
+    >>> login("admin@canonical.com")
+    >>> eric = factory.makePerson(name="eric")
+    >>> marley = factory.makePerson(name="marley")
+    >>> fooix = factory.makeProduct(name="fooix")
     >>> branch = factory.makeProductBranch(
-    ...     branch_type=BranchType.HOSTED, owner=eric, product=fooix,
-    ...     name='trunk', title='The Fooix Trunk',
-    ...     date_created=datetime(2009, 1, 1, tzinfo=pytz.UTC))
+    ...     branch_type=BranchType.HOSTED,
+    ...     owner=eric,
+    ...     product=fooix,
+    ...     name="trunk",
+    ...     title="The Fooix Trunk",
+    ...     date_created=datetime(2009, 1, 1, tzinfo=pytz.UTC),
+    ... )
     >>> feature_branch = factory.makeAnyBranch(
-    ...     owner=eric, product=fooix, name='feature-branch',
-    ...     lifecycle_status=BranchLifecycleStatus.EXPERIMENTAL)
-    >>> feature_branch_bug = factory.makeBug(target=fooix,
-    ...     title='Stuff needs features')
-    >>> feature_branch_spec = factory.makeSpecification(product=fooix,
-    ...     title='Super Feature X')
+    ...     owner=eric,
+    ...     product=fooix,
+    ...     name="feature-branch",
+    ...     lifecycle_status=BranchLifecycleStatus.EXPERIMENTAL,
+    ... )
+    >>> feature_branch_bug = factory.makeBug(
+    ...     target=fooix, title="Stuff needs features"
+    ... )
+    >>> feature_branch_spec = factory.makeSpecification(
+    ...     product=fooix, title="Super Feature X"
+    ... )
     >>> merge_proposal = factory.makeBranchMergeProposal(
-    ...     target_branch=branch, source_branch=feature_branch,
-    ...     registrant=eric)
-    >>> branch_url = '/' + branch.unique_name
-    >>> feature_branch_url = '/' + feature_branch.unique_name
-    >>> feature_branch_bug_url = '/bugs/' + str(feature_branch_bug.id)
-    >>> feature_branch_spec_url = '/' + '/'.join([
-    ...     feature_branch_spec.product.name,
-    ...     '+spec',
-    ...     feature_branch_spec.name])
+    ...     target_branch=branch,
+    ...     source_branch=feature_branch,
+    ...     registrant=eric,
+    ... )
+    >>> branch_url = "/" + branch.unique_name
+    >>> feature_branch_url = "/" + feature_branch.unique_name
+    >>> feature_branch_bug_url = "/bugs/" + str(feature_branch_bug.id)
+    >>> feature_branch_spec_url = "/" + "/".join(
+    ...     [
+    ...         feature_branch_spec.product.name,
+    ...         "+spec",
+    ...         feature_branch_spec.name,
+    ...     ]
+    ... )
     >>> logout()
 
     >>> from lp.testing.pages import webservice_for_person
@@ -154,32 +171,37 @@ There is a branch merge proposal with Fooix trunk as the target branch, so it
 should have a branch at the endpoint of landing_candidates.
 
     >>> landing_candidates = webservice.get(
-    ...     fooix_trunk['landing_candidates_collection_link']).jsonBody()
-    >>> for candidate in landing_candidates['entries']:
-    ...     print(candidate['source_branch_link'])
+    ...     fooix_trunk["landing_candidates_collection_link"]
+    ... ).jsonBody()
+    >>> for candidate in landing_candidates["entries"]:
+    ...     print(candidate["source_branch_link"])
+    ...
     http://.../~eric/fooix/feature-branch
 
 
 The source_branch of the landing candidate should have this same merge
 proposal in its landing_targets.
 
-    >>> feature_branch_link = \
-    ...     '/~eric/fooix/feature-branch'
+    >>> feature_branch_link = "/~eric/fooix/feature-branch"
     >>> feature_branch = webservice.get(feature_branch_link).jsonBody()
-    >>> print(feature_branch['unique_name'])
+    >>> print(feature_branch["unique_name"])
     ~eric/fooix/feature-branch
 
     >>> landing_targets = webservice.get(
-    ...     feature_branch['landing_targets_collection_link']).jsonBody()
-    >>> for target in landing_targets['entries']:
-    ...     print(target['target_branch_link'])
+    ...     feature_branch["landing_targets_collection_link"]
+    ... ).jsonBody()
+    >>> for target in landing_targets["entries"]:
+    ...     print(target["target_branch_link"])
+    ...
     http://.../~eric/fooix/trunk
 
 The isPersonTrustedReviewer method is exposed, and takes a person link.
 
     >>> trusted = webservice.named_get(
-    ...     feature_branch['self_link'], 'isPersonTrustedReviewer',
-    ...     reviewer=feature_branch['owner_link']).jsonBody()
+    ...     feature_branch["self_link"],
+    ...     "isPersonTrustedReviewer",
+    ...     reviewer=feature_branch["owner_link"],
+    ... ).jsonBody()
     >>> print(trusted)
     True
 
@@ -192,29 +214,36 @@ The branches of a project are also available.
     >>> from operator import itemgetter
 
     >>> def print_branch(branch):
-    ...     print(branch['unique_name'] + ' - ' + branch['lifecycle_status'])
+    ...     print(branch["unique_name"] + " - " + branch["lifecycle_status"])
+    ...
     >>> def print_branches(webservice, url, status=None, modified_since=None):
     ...     branches = webservice.named_get(
-    ...         url, 'getBranches',
-    ...         status=status, modified_since=modified_since).jsonBody()
+    ...         url,
+    ...         "getBranches",
+    ...         status=status,
+    ...         modified_since=modified_since,
+    ...     ).jsonBody()
     ...     for branch in sorted(
-    ...             branches['entries'], key=itemgetter('unique_name')):
+    ...         branches["entries"], key=itemgetter("unique_name")
+    ...     ):
     ...         print_branch(branch)
+    ...
 
-    >>> print_branches(webservice, '/fooix')
+    >>> print_branches(webservice, "/fooix")
     ~eric/fooix/feature-branch - Experimental
     ~eric/fooix/trunk - Development
 
 The branches can be limited to those that have been modified since a specified
 time.
 
-    >>> print_branches(webservice, '/fooix',
-    ...                modified_since=u'2010-01-01T00:00:00+00:00')
+    >>> print_branches(
+    ...     webservice, "/fooix", modified_since="2010-01-01T00:00:00+00:00"
+    ... )
     ~eric/fooix/feature-branch - Experimental
 
 A list of lifecycle statuses can be provided for filtering.
 
-    >>> print_branches(webservice, '/fooix', ('Experimental'))
+    >>> print_branches(webservice, "/fooix", ("Experimental"))
     ~eric/fooix/feature-branch - Experimental
 
 Branches for people
@@ -222,13 +251,13 @@ Branches for people
 
 The branches owned by a person are available from the person object.
 
-    >>> print_branches(webservice, '/~eric')
+    >>> print_branches(webservice, "/~eric")
     ~eric/fooix/feature-branch - Experimental
     ~eric/fooix/trunk - Development
 
 As with projects, these can be filtered by the branch status.
 
-    >>> print_branches(webservice, '/~eric', ('Experimental'))
+    >>> print_branches(webservice, "/~eric", ("Experimental"))
     ~eric/fooix/feature-branch - Experimental
 
 Project group branches
@@ -236,22 +265,22 @@ Project group branches
 
 Branches are also accessible for a project group.
 
-    >>> login('admin@canonical.com')
-    >>> projectgroup = factory.makeProject(name='widgets')
+    >>> login("admin@canonical.com")
+    >>> projectgroup = factory.makeProject(name="widgets")
     >>> fooix.projectgroup = projectgroup
-    >>> blob = factory.makeProduct(name='blob', projectgroup=projectgroup)
-    >>> branch = factory.makeProductBranch(product=blob, name='bar')
-    >>> branch.owner.name = 'mary'
+    >>> blob = factory.makeProduct(name="blob", projectgroup=projectgroup)
+    >>> branch = factory.makeProductBranch(product=blob, name="bar")
+    >>> branch.owner.name = "mary"
     >>> logout()
 
-    >>> print_branches(webservice, '/widgets')
+    >>> print_branches(webservice, "/widgets")
     ~eric/fooix/feature-branch - Experimental
     ~eric/fooix/trunk - Development
     ~mary/blob/bar - Development
 
 As with projects, these can be filtered by the branch status.
 
-    >>> print_branches(webservice, '/widgets', ('Experimental'))
+    >>> print_branches(webservice, "/widgets", ("Experimental"))
     ~eric/fooix/feature-branch - Experimental
 
 Differences between versions
@@ -261,20 +290,24 @@ In version 'beta', a branch can be made private or public by invoking
 the named operation 'setPrivate'.
 
     >>> branch = webservice.get(branch_url).jsonBody()
-    >>> print(branch['private'])
+    >>> print(branch["private"])
     False
 
     >>> response = webservice.named_post(
-    ...     branch_url, 'setPrivate', api_version='beta', private=True)
+    ...     branch_url, "setPrivate", api_version="beta", private=True
+    ... )
     >>> branch = webservice.get(branch_url).jsonBody()
-    >>> print(branch['information_type'])
+    >>> print(branch["information_type"])
     Private
 
 In subsequent versions, 'setPrivate' is gone; you have to use the
 'transitionToInformationType' method.
 
-    >>> print(webservice.named_post(
-    ...     branch_url, 'setPrivate', api_version='devel', private=True))
+    >>> print(
+    ...     webservice.named_post(
+    ...         branch_url, "setPrivate", api_version="devel", private=True
+    ...     )
+    ... )
     HTTP/1.1 400 Bad Request
     ...
     No such operation: setPrivate
@@ -285,24 +318,25 @@ Removing branches
 Branches may have dependencies so it may not necessarily be possible to
 delete them.
 
-    >>> deletable = webservice.named_get('/~eric/fooix/feature-branch',
-    ...                                  'canBeDeleted').jsonBody()
+    >>> deletable = webservice.named_get(
+    ...     "/~eric/fooix/feature-branch", "canBeDeleted"
+    ... ).jsonBody()
     >>> print(deletable)
     False
 
     Deleting only works on branches that do not have anything else
     depending on them.
 
-    >>> response = webservice.delete('/~eric/fooix/feature-branch')
+    >>> response = webservice.delete("/~eric/fooix/feature-branch")
     >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
-    >>> response = webservice.delete('/~mary/blob/bar')
+    >>> response = webservice.delete("/~mary/blob/bar")
     >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
-    >>> print_branches(webservice, '/widgets')
+    >>> print_branches(webservice, "/widgets")
     ~eric/fooix/trunk - Development
 

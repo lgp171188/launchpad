@@ -7,7 +7,10 @@ can support Unicode contents.
 
     >>> import six
     >>> from lp.testing.gpgkeys import (
-    ...     import_public_test_keys, import_secret_test_key, decrypt_content)
+    ...     import_public_test_keys,
+    ...     import_secret_test_key,
+    ...     decrypt_content,
+    ... )
     >>> import transaction
     >>> import_public_test_keys()
     >>> key = import_secret_test_key()
@@ -25,7 +28,7 @@ Sample Person has public and secret keys set.
     >>> bag.user is None
     True
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> print(bag.user.name)
     name12
 
@@ -36,7 +39,7 @@ Let's use a unicode content, it can't be directly typed as
 unicode, because doctest system seems to be reencoding the test
 content, let's use cryptic form.
 
-    >>> content = u'\ufcber'
+    >>> content = "\ufcber"
 
 Note, gpg_keys is ordered (by GPGKey.id), we can slice it without
 generating warnings: (its is also valid for Person.inactive_gpg_keys
@@ -50,27 +53,27 @@ Note fingerprint is also unicode.
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
     >>> key = gpghandler.retrieveKey(fingerprint)
-    >>> cipher = gpghandler.encryptContent(content.encode('utf-8'), key)
+    >>> cipher = gpghandler.encryptContent(content.encode("utf-8"), key)
 
 cipher contains the encrypted content.
 
 Storing the raw password may compromise the security, but is the
 only way we can decrypt the cipher content.
 
-    >>> password = 'test'
+    >>> password = "test"
     >>> plain = decrypt_content(cipher, password)
 
 voilá, the same content shows up again.
 
-    >>> print(backslashreplace(plain.decode('utf-8')))
+    >>> print(backslashreplace(plain.decode("utf-8")))
     \ufcber
 
 The encryption process supports passing another charset string.
 
-    >>> content = u'a\xe7ucar'
-    >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
-    >>> plain = decrypt_content(cipher, 'test')
-    >>> print(backslashreplace(plain.decode('iso-8859-1')))
+    >>> content = "a\xe7ucar"
+    >>> cipher = gpghandler.encryptContent(content.encode("iso-8859-1"), key)
+    >>> plain = decrypt_content(cipher, "test")
+    >>> print(backslashreplace(plain.decode("iso-8859-1")))
     a\xe7ucar
 
 Let's try to pass unicode and see if it fails
@@ -82,10 +85,10 @@ Let's try to pass unicode and see if it fails
 
 Decrypt a unicode content:
 
-    >>> content = u'a\xe7ucar'
-    >>> cipher = gpghandler.encryptContent(content.encode('iso-8859-1'), key)
+    >>> content = "a\xe7ucar"
+    >>> cipher = gpghandler.encryptContent(content.encode("iso-8859-1"), key)
     >>> cipher = six.ensure_text(cipher)
-    >>> plain = decrypt_content(cipher, 'test')
+    >>> plain = decrypt_content(cipher, "test")
     Traceback (most recent call last):
     ...
     TypeError: Content must be bytes.
@@ -113,7 +116,7 @@ What about a message encrypted for an unknown key.
     ... =LQK5
     ... -----END PGP MESSAGE-----
     ... """
-    >>> plain = decrypt_content(cipher, 'test')
+    >>> plain = decrypt_content(cipher, "test")
     >>> plain is None
     True
 

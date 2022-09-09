@@ -24,28 +24,35 @@ Launchpad currently.
     >>> from lp.bugs.model.bugtask import BugTask
     >>> from lp.services.database.interfaces import IStore
     >>> store = IStore(BugTask)
-    >>> [bugtask.bug.id
-    ...  for bugtask in store.find(
-    ...     BugTask, BugTask._status == BugTaskStatus.FIXRELEASED)]
+    >>> [
+    ...     bugtask.bug.id
+    ...     for bugtask in store.find(
+    ...         BugTask, BugTask._status == BugTaskStatus.FIXRELEASED
+    ...     )
+    ... ]
     [8]
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))
+    ...
     8: Printing doesn't work
 
 Let's reopen it and close it again, to ensure that the date closed isn't
 in the future.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> bug_eight = getUtility(IBugSet).get(8)
     >>> len(bug_eight.bugtasks)
     1
     >>> bug_eight.bugtasks[0].transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, bug_eight.bugtasks[0].distribution.owner)
+    ...     BugTaskStatus.CONFIRMED, bug_eight.bugtasks[0].distribution.owner
+    ... )
     >>> def fix_bug(bug_id, bugtask_index=0):
     ...     bugtask = getUtility(IBugSet).get(bug_id).bugtasks[bugtask_index]
     ...     bugtask.transitionToStatus(
-    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ...     )
+    ...
     >>> fix_bug(8)
 
 If we fix a few other bugs, these will turn up first in the list. It
@@ -57,6 +64,7 @@ doesn't matter which bugtask that gets fixed.
 
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))
+    ...
     4: Reflow problems with complex page layouts
     2: Blackhole Trash folder
     1: Firefox does not support SVG
@@ -70,6 +78,7 @@ simply appear on the top of the list.
 
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))
+    ...
     1: Firefox does not support SVG
     4: Reflow problems with complex page layouts
     2: Blackhole Trash folder
@@ -83,11 +92,12 @@ they're not subscribed to it.
     >>> bug_4.setPrivate(True, getUtility(ILaunchBag).user)
     True
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> bugs_view = MaloneView(MaloneApplication(), LaunchpadTestRequest())
     >>> bugs_view.initialize()
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))
+    ...
     1: Firefox does not support SVG
     2: Blackhole Trash folder
     8: Printing doesn't work
@@ -96,16 +106,18 @@ If Person David gets subscribed to bug #4, he can see it in the list.
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> person_set = getUtility(IPersonSet)
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug_4.subscribe(
-    ...     person_set.getByEmail('david@canonical.com'),
-    ...     person_set.getByEmail('foo.bar@canonical.com'))
+    ...     person_set.getByEmail("david@canonical.com"),
+    ...     person_set.getByEmail("foo.bar@canonical.com"),
+    ... )
     <lp.bugs.model.bugsubscription.BugSubscription ...>
-    >>> login('david@canonical.com')
+    >>> login("david@canonical.com")
     >>> bugs_view = MaloneView(MaloneApplication(), LaunchpadTestRequest())
     >>> bugs_view.initialize()
     >>> for bug in bugs_view.most_recently_fixed_bugs:
     ...     print("%s: %s" % (bug.id, bug.title))
+    ...
     1: Firefox does not support SVG
     4: Reflow problems with complex page layouts
     2: Blackhole Trash folder
@@ -115,13 +127,19 @@ Only five bugs are returned by default:
 
     >>> from lp.bugs.interfaces.bug import CreateBugParams
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> for index in range(20):
-    ...     bug = firefox.createBug(CreateBugParams(
-    ...         getUtility(ILaunchBag).user, 'Test Bug #%s' % index,
-    ...         comment='Test bug #%s.' % index))
+    ...     bug = firefox.createBug(
+    ...         CreateBugParams(
+    ...             getUtility(ILaunchBag).user,
+    ...             "Test Bug #%s" % index,
+    ...             comment="Test bug #%s." % index,
+    ...         )
+    ...     )
     ...     bug.bugtasks[0].transitionToStatus(
-    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ...     )
+    ...
 
     >>> len(bugs_view.most_recently_fixed_bugs)
     5

@@ -20,6 +20,7 @@ class Parser:
     >>> p.feed("INSERT INTO foo (id, x) VALUES (2, 34);\n")
     >>> for line in p.lines:
     ...     print(repr(line))
+    ...
     ((0, None), "UPDATE foo SET bar='baz';")
     ((0, None), '')
     ((1, 1), 'INSERT INTO foo (id, x) VALUES (1, 23);')
@@ -85,37 +86,41 @@ class Parser:
         return False
 
     def parse_line(self, line):
-        r"""Parse a single line of SQL.
+        r'''Parse a single line of SQL.
 
         >>> p = Parser()
 
         Something that's not an INSERT.
 
-        >>> p.parse_line('''UPDATE foo SET bar = 42;\n''')
+        >>> p.parse_line("""UPDATE foo SET bar = 42;\n""")
         ((0, None), 'UPDATE foo SET bar = 42;\n')
 
         A simple INSERT.
 
-        >>> p.parse_line('''INSERT INTO foo (id, x) VALUES (2, 'foo');\n''')
+        >>> p.parse_line("""INSERT INTO foo (id, x) VALUES (2, 'foo');\n""")
         ((1, 2), "INSERT INTO foo (id, x) VALUES (2, 'foo');\n")
 
         Something trickier: multiple lines, and a ');' in the middle.
 
-        >>> p.parse_line('''INSERT INTO foo (id, x) VALUES (3, 'b',
+        >>> p.parse_line(
+        ...     """INSERT INTO foo (id, x) VALUES (3, 'b',
         ... 'b
         ... b);
         ... b');
-        ... ''')
+        ... """
+        ... )
         ((1, 3), "INSERT INTO foo (id, x) VALUES (3, 'b',\n'b\nb);\nb');\n")
 
         Something that doesn't have an id integer field and hence doesn't
         match the insert pattern.
 
-        >>> p.parse_line('''INSERT INTO foo (name)
-        ... VALUES ('Foo');\n''')  # doctest: +NORMALIZE_WHITESPACE
+        >>> p.parse_line(
+        ...     """INSERT INTO foo (name)
+        ... VALUES ('Foo');\n"""
+        ... )  # doctest: +NORMALIZE_WHITESPACE
         ((2, "INSERT INTO foo (name)\nVALUES ('Foo');\n"),
         "INSERT INTO foo (name)\nVALUES ('Foo');\n")
-        """
+        '''
 
         if not line.startswith("INSERT "):
             return (0, None), line
@@ -161,16 +166,20 @@ def print_lines_sorted(file, lines):
 
     >>> lines = [
     ...     ((1, 10), "INSERT INTO foo (id, x) VALUES (10, 'data');"),
-    ...     ((1, 4),
-    ...      "INSERT INTO foo (id, x) VALUES (4, 'data\nmore\nmore');"),
+    ...     (
+    ...         (1, 4),
+    ...         "INSERT INTO foo (id, x) VALUES (4, 'data\nmore\nmore');",
+    ...     ),
     ...     ((1, 7), "INSERT INTO foo (id, x) VALUES (7, 'data');"),
     ...     ((1, 1), "INSERT INTO foo (id, x) VALUES (1, 'data');"),
     ...     ((0, None), ""),
     ...     ((1, 2), "INSERT INTO baz (id, x) VALUES (2, 'data');"),
     ...     ((1, 1), "INSERT INTO baz (id, x) VALUES (1, 'data');"),
-    ...     ((2, "INSERT INTO f (name) VALUES ('a');"),
-    ...      "INSERT INTO f (name) values ('a');")
-    ...     ]
+    ...     (
+    ...         (2, "INSERT INTO f (name) VALUES ('a');"),
+    ...         "INSERT INTO f (name) values ('a');",
+    ...     ),
+    ... ]
     >>> import sys
     >>> print_lines_sorted(sys.stdout, lines)
     INSERT INTO foo (id, x) VALUES (1, 'data');

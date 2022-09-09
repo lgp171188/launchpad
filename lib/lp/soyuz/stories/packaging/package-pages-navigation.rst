@@ -16,7 +16,7 @@ Distribution source package
 A distribution source package has its own Overview, Bugs, and Answers
 pages.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/+source/alsa-utils')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+source/alsa-utils")
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -30,7 +30,8 @@ pages.
     Main heading: alsa-utils package in Ubuntu
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/alsa-utils')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/alsa-utils"
+    ... )
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -53,7 +54,8 @@ hierarchy. Instead it has the same hierarchy and tabs as its parent
 source package.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1')
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1"
+    ... )
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -74,8 +76,9 @@ A distribution source package release build should have almost the same
 navigation as its parent distribution source package release.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1/'
-    ...     '+build/11')
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1/"
+    ...     "+build/11"
+    ... )
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package > 1.0.9a-4ubuntu1 > i386 build
     Tabs:
@@ -97,7 +100,8 @@ A distribution series source package inherits its distribution source
 package's facets.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/+source/alsa-utils')
+    ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils"
+    ... )
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
@@ -117,7 +121,7 @@ Distribution series architecture
 Distribution series architectures pages inherit facets from the
 distribution.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary/i386')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary/i386")
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386
     Tabs:
@@ -136,7 +140,7 @@ Distribution series architecture binary package
 The distribution series architecture binary packages page inherits Code,
 Bugs, Blueprints and Translations from the distribution.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary/i386/pmount')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary/i386/pmount")
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386 > pmount
     Tabs:
@@ -156,7 +160,8 @@ Distribution series architecture binary package releases pages inherit
 facets from the distribution.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1')
+    ...     "http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1"
+    ... )
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > Hoary (5.04) > i386 > pmount > 0.1-1
     Tabs:

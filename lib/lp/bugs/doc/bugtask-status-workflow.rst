@@ -23,7 +23,8 @@ a new bug to work with:
     >>> ubuntu_mozilla_firefox = ubuntu.getSourcePackage("mozilla-firefox")
 
     >>> params = CreateBugParams(
-    ...     owner=foobar, title="a new bug", comment="a test comment")
+    ...     owner=foobar, title="a new bug", comment="a test comment"
+    ... )
     >>> new_bug = ubuntu_mozilla_firefox.createBug(params)
 
     >>> ubuntu_firefox_task = new_bug.bugtasks[0]
@@ -70,7 +71,8 @@ CONFIRMED task to CONFIRMED again will not alter the date_confirmed
 value.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.status.title)
     Confirmed
@@ -80,7 +82,8 @@ value.
     >>> prev_date_confirmed = ubuntu_firefox_task.date_confirmed
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_confirmed == prev_date_confirmed
     True
@@ -90,20 +93,26 @@ In addition, we record the date on which this task left the NEW status.
     >>> ubuntu_firefox_task.date_left_new
     datetime.datetime...
 
-    >>> (ubuntu_firefox_task.date_left_new ==
-    ...     ubuntu_firefox_task.date_confirmed)
+    >>> (
+    ...     ubuntu_firefox_task.date_left_new
+    ...     == ubuntu_firefox_task.date_confirmed
+    ... )
     True
 
 Unlike in other transitions, `date_left_new` is never reset back. We always
 keep the first time the task's status changed from NEW.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
 
-    >>> (ubuntu_firefox_task.date_left_new <
-    ...     ubuntu_firefox_task.date_confirmed)
+    >>> (
+    ...     ubuntu_firefox_task.date_left_new
+    ...     < ubuntu_firefox_task.date_confirmed
+    ... )
     True
 
 If the status regresses to an earlier workflow state, the date_confirmed
@@ -111,7 +120,8 @@ is set to None, because it wouldn't make sense to have a date_confirmed
 on a bug that's New.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_confirmed is None
     True
@@ -121,7 +131,8 @@ like an "implicit" confirmation of the bug, so date_confirmed will be
 set too.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.status.title)
     In Progress
@@ -133,7 +144,8 @@ set too.
     >>> prev_date_inprogress = ubuntu_firefox_task.date_inprogress
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_inprogress == prev_date_inprogress
     True
@@ -142,7 +154,8 @@ If the status regresses to an earlier workflow state, then
 date_inprogress is set to None, similar to the logic behind date_confirmed:
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_inprogress is None
     True
@@ -153,7 +166,8 @@ Marking the bug Triaged sets `date_triaged`.
     None
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.TRIAGED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.TRIAGED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_triaged
     datetime.datetime...
@@ -161,7 +175,8 @@ Marking the bug Triaged sets `date_triaged`.
 But rolling it back to a previous status unsets `date_triaged` to None.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.NEW, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.date_triaged)
     None
@@ -173,37 +188,44 @@ set to an open status. Note in the transition to FIXRELEASED the
 date_inprogress is also set, when it had previously been None.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_closed
     datetime.datetime...
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_closed is None
     True
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.EXPIRED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.EXPIRED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_closed
     datetime.datetime...
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_closed is None
     True
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.OPINION, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.OPINION, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_closed
     datetime.datetime...
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_inprogress is None
     True
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_closed
     datetime.datetime...
     >>> ubuntu_firefox_task.date_inprogress
@@ -216,7 +238,8 @@ date_closed.
     Fix Released
     >>> prev_date_closed = ubuntu_firefox_task.date_closed
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.status.title)
     Invalid
@@ -230,7 +253,8 @@ a closed status to an open one, we record the date in date_left_closed.
     >>> ubuntu_firefox_task.date_left_closed > last_date_closed
     False
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.TRIAGED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.TRIAGED, getUtility(ILaunchBag).user
+    ... )
     >>> ubuntu_firefox_task.date_left_closed > last_date_closed
     True
 
@@ -240,7 +264,8 @@ We also record the date a task was marked Fix Committed.
     None
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.FIXCOMMITTED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXCOMMITTED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_fix_committed
     datetime.datetime...
@@ -248,7 +273,8 @@ We also record the date a task was marked Fix Committed.
 But rolling it back to a previous status unsets `date_fix_committed` to None.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.date_fix_committed)
     None
@@ -259,7 +285,8 @@ We also record the date a task was marked Fix Released.
     None
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_fix_released
     datetime.datetime...
@@ -267,7 +294,8 @@ We also record the date a task was marked Fix Released.
 But rolling it back to a previous status unsets `date_fix_released` to None.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INPROGRESS, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(ubuntu_firefox_task.date_fix_committed)
     None
@@ -310,7 +338,8 @@ is the lowest status, and the task didn't yet progress through
 these statuses.
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_confirmed
     datetime.datetime...
@@ -331,7 +360,8 @@ these statuses.
     datetime.datetime...
 
     >>> ubuntu_firefox_task.transitionToStatus(
-    ...     BugTaskStatus.UNKNOWN, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.UNKNOWN, getUtility(ILaunchBag).user
+    ... )
 
     >>> ubuntu_firefox_task.date_confirmed is None
     True

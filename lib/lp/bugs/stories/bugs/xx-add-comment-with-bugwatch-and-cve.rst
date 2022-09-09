@@ -6,25 +6,28 @@ added to the bugwatches resp CVEs related to this bug
 
 
     >>> user_browser.open(
-    ...     'http://localhost/debian/+source/mozilla-firefox/+bug/1')
-    >>> user_browser.getControl(name='field.comment').value = (
-    ...     '''This is a test comment. This bug is the same as the one
+    ...     "http://localhost/debian/+source/mozilla-firefox/+bug/1"
+    ... )
+    >>> user_browser.getControl(
+    ...     name="field.comment"
+    ... ).value = """This is a test comment. This bug is the same as the one
     ...        described here http://some.bugzilla/show_bug.cgi?id=9876
     ...        See also CVE-1991-9911
-    ...     ''')
-    >>> user_browser.getControl('Post Comment', index=-1).click()
+    ...     """
+    >>> user_browser.getControl("Post Comment", index=-1).click()
 
     >>> user_browser.url
     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
-    >>> added_cve_link = user_browser.getLink('1991-9911')
+    >>> added_cve_link = user_browser.getLink("1991-9911")
     >>> print(added_cve_link)
     <.../bugs/cve/1991-9911'>
 
-    >>> bugwatch_portlet = find_portlet(user_browser.contents,
-    ...    'Remote bug watches')
-    >>> added_bugwatch_link = bugwatch_portlet('a')[-2]
-    >>> print(added_bugwatch_link['href'])
+    >>> bugwatch_portlet = find_portlet(
+    ...     user_browser.contents, "Remote bug watches"
+    ... )
+    >>> added_bugwatch_link = bugwatch_portlet("a")[-2]
+    >>> print(added_bugwatch_link["href"])
     http://some.bugzilla/show_bug.cgi?id=9876
 
     >>> print(extract_text(added_bugwatch_link))
@@ -37,18 +40,20 @@ a comment, both on the same line, one surrounded by non-ascii characters.
 One of these URLs looks like a remote bugzilla bug, the other is not the
 url of a remote bug.
 
-    >>> user_browser.getControl(name='field.comment').value = (
-    ...     u'\xabhttps://answers.launchpad.net/ubuntu\xbb is not a linked '
-    ...     u'bug but https://bugzilla.example.org/show_bug.cgi?id=1235555 '
-    ...     u'is.'.encode('utf-8'))
-    >>> user_browser.getControl('Post Comment', index=-1).click()
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "\xabhttps://answers.launchpad.net/ubuntu\xbb is not a linked "
+    ...     "bug but https://bugzilla.example.org/show_bug.cgi?id=1235555 "
+    ...     "is.".encode("utf-8")
+    ... )
+    >>> user_browser.getControl("Post Comment", index=-1).click()
     >>> user_browser.url
     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
-    >>> bugwatch_portlet = find_portlet(user_browser.contents,
-    ...    'Remote bug watches')
-    >>> added_bugwatch_link = bugwatch_portlet('a')[-2]
+    >>> bugwatch_portlet = find_portlet(
+    ...     user_browser.contents, "Remote bug watches"
+    ... )
+    >>> added_bugwatch_link = bugwatch_portlet("a")[-2]
     >>> print(extract_text(added_bugwatch_link))
     auto-bugzilla.example.org #1235555
-    >>> 'answers.launchpad.net' in extract_text(bugwatch_portlet)
+    >>> "answers.launchpad.net" in extract_text(bugwatch_portlet)
     False

@@ -9,10 +9,11 @@ Edit IRC
 
 The +editircnickname provides a label and a title.
 
-    >>> person = factory.makePerson(name='basil', displayname='Basil')
+    >>> person = factory.makePerson(name="basil", displayname="Basil")
     >>> ignored = login_person(person)
     >>> view = create_initialized_view(
-    ...     person, name='+editircnicknames', form={}, principal=person)
+    ...     person, name="+editircnicknames", form={}, principal=person
+    ... )
     >>> print(view.label)
     Basil's IRC nicknames
 
@@ -25,12 +26,13 @@ The +editircnickname provides a label and a title.
 The IRC form requires a nickname.
 
     >>> form = {
-    ...     'newnetwork': 'chat.freenode.net',
-    ...     'newnick': '',
-    ...     'field.actions.save': 'Save Changes',
-    ...     }
+    ...     "newnetwork": "chat.freenode.net",
+    ...     "newnick": "",
+    ...     "field.actions.save": "Save Changes",
+    ... }
     >>> view = create_initialized_view(
-    ...     person, name='+editircnicknames', form=form, principal=person)
+    ...     person, name="+editircnicknames", form=form, principal=person
+    ... )
 
     # This form does not use schema or LaunchpadFormView validation.
     >>> view.errors
@@ -38,6 +40,7 @@ The IRC form requires a nickname.
 
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
+    ...
     Neither Nickname nor Network can be empty...
 
     >>> [irc for irc in person.ircnicknames]
@@ -46,12 +49,13 @@ The IRC form requires a nickname.
 The IRC form requires a network.
 
     >>> form = {
-    ...     'newnetwork': '',
-    ...     'newnick': 'basil',
-    ...     'field.actions.save': 'Save Changes',
-    ...     }
+    ...     "newnetwork": "",
+    ...     "newnick": "basil",
+    ...     "field.actions.save": "Save Changes",
+    ... }
     >>> view = create_initialized_view(
-    ...     person, name='+editircnicknames', form=form, principal=person)
+    ...     person, name="+editircnicknames", form=form, principal=person
+    ... )
 
     # This form does not use schema or LaunchpadFormView validation.
     >>> view.errors
@@ -59,6 +63,7 @@ The IRC form requires a network.
 
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
+    ...
     Neither Nickname nor Network can be empty.
 
     >>> [irc for irc in person.ircnicknames]
@@ -67,12 +72,13 @@ The IRC form requires a network.
 The IRC nickname is added when both the nickname and network are submitted.
 
     >>> form = {
-    ...     'newnetwork': 'chat.freenode.net',
-    ...     'newnick': 'basil',
-    ...     'field.actions.save': 'Save Changes',
-    ...     }
+    ...     "newnetwork": "chat.freenode.net",
+    ...     "newnick": "basil",
+    ...     "field.actions.save": "Save Changes",
+    ... }
     >>> view = create_initialized_view(
-    ...     person, name='+editircnicknames', form=form, principal=person)
+    ...     person, name="+editircnicknames", form=form, principal=person
+    ... )
 
     # This form does not use schema or LaunchpadFormView validation.
     >>> view.errors
@@ -93,13 +99,14 @@ An IRC nickname can be removed.
 
     >>> id = ircnickname.id
     >>> form = {
-    ...     'newnetwork_%s' % ircnickname.id: 'chat.freenode.net',
-    ...     'newnick_%s' % ircnickname.id: 'basil',
-    ...     'remove_%s' % ircnickname.id: 'Remove',
-    ...     'field.actions.save': 'Save Changes',
-    ...     }
+    ...     "newnetwork_%s" % ircnickname.id: "chat.freenode.net",
+    ...     "newnick_%s" % ircnickname.id: "basil",
+    ...     "remove_%s" % ircnickname.id: "Remove",
+    ...     "field.actions.save": "Save Changes",
+    ... }
     >>> view = create_initialized_view(
-    ...     person, name='+editircnicknames', form=form, principal=person)
+    ...     person, name="+editircnicknames", form=form, principal=person
+    ... )
 
     # This form does not use schema or LaunchpadFormView validation.
     >>> view.errors

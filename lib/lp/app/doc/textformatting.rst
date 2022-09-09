@@ -27,9 +27,10 @@ So, with textwrap:
     ...     "that the edit notification email generator knows how to indent "
     ...     "and wrap descriptions, so this will appear quite nice in the "
     ...     "actual email that gets sent.\n\n"
-    ...     "It's also smart enough to preserve whitespace, finally!")
+    ...     "It's also smart enough to preserve whitespace, finally!"
+    ... )
     >>> wrapped_description = textwrap.fill(description, width=56)
-    >>> print(wrapped_description)  #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_description)  # doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -45,7 +46,9 @@ MailWrapper to the rescue!
 
     >>> from lp.services.mail.mailwrapper import MailWrapper
     >>> mailwrapper = MailWrapper(width=56)
-    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(
+    ...     mailwrapper.format(description)
+    ... )  # doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -63,9 +66,10 @@ Let's just make sure that it handles a single paragraph as well.
     ...     "A new description that is quite long. But the nice thing is "
     ...     "that the edit notification email generator knows how to indent "
     ...     "and wrap descriptions, so this will appear quite nice in the "
-    ...     "actual email that gets sent.")
+    ...     "actual email that gets sent."
+    ... )
     >>> wrapped_text = mailwrapper.format(single_paragraph)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
     is that the edit notification email generator knows how
     to indent and wrap descriptions, so this will appear
@@ -80,7 +84,7 @@ already.
     ... characters. It shouldn't be wrapped.
     ... """
     >>> wrapped_text = mailwrapper.format(already_wrapped)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     This paragraph contains only lines that are less than 56
     characters. It shouldn't be wrapped.
 
@@ -88,14 +92,18 @@ already.
 Text where the lines are of proper length, and one empty line consisting
 of spaces:
 
-    >>> already_wrapped = """\
+    >>> already_wrapped = (
+    ...     """\
     ... This paragraph contains only lines that are less than 56
     ... characters.
-    ... """ + "     " + """
+    ... """
+    ...     + "     "
+    ...     + """
     ... It shouldn't be wrapped.
     ... """
+    ... )
     >>> wrapped_text = mailwrapper.format(already_wrapped)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     This paragraph contains only lines that are less than 56
     characters.
     <BLANKLINE>
@@ -113,7 +121,7 @@ allowed length. These shouldn't be wrapped.
     ... This is a reply to the line above.
     ... """
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     > > > > > Someone wrote this a long time ago. When it was written
     > > > > > all lines were less than 56 characters, but now they are
     > > > > > longer.
@@ -128,9 +136,10 @@ single line, such as URLs.
     ...     "This paragraph includes a long URL, "
     ...     "https://launchpad.net/greenishballoon/+bug/1733/+subscriptions. "
     ...     "Even though it's longer than 56 characters, it stays on a "
-    ...     "single line.")
+    ...     "single line."
+    ... )
     >>> wrapped_text = mailwrapper.format(long_word)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     This paragraph includes a long URL,
     https://launchpad.net/greenishballoon/+bug/1733/+subscriptions.
     Even though it's longer than 56 characters, it stays on
@@ -160,7 +169,7 @@ It preserves whitespace in the beginning of the line.
     ...                `^'     \ :/           `^'  `-^-'   \v/ :  \/
     ... """
     >>> wrapped_text = mailwrapper.format(ascii_cow)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     <BLANKLINE>
                                                   /;    ;\
                                               __  \\____//
@@ -184,16 +193,18 @@ It preserves whitespace in the beginning of the line.
 
 We can indent text as well:
 
-    >>> mailwrapper = MailWrapper(width=56, indent=4*' ')
+    >>> mailwrapper = MailWrapper(width=56, indent=4 * " ")
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
         > > > > > Someone wrote this a long time ago. When it was written
         > > > > > all lines were less than 56 characters, but now they are
         > > > > > longer.
     <BLANKLINE>
         This is a reply to the line above.
 
-    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(
+    ...     mailwrapper.format(description)
+    ... )  # doctest: -NORMALIZE_WHITESPACE
         A new description that is quite long. But the nice
         thing is that the edit notification email generator
         knows how to indent and wrap descriptions, so this
@@ -207,8 +218,11 @@ We can indent text as well:
 Sometimes we don't want to indent the first line.
 
     >>> mailwrapper = MailWrapper(
-    ...     width=56, indent=4*' ', indent_first_line=False)
-    >>> print(mailwrapper.format(description)) #doctest: -NORMALIZE_WHITESPACE
+    ...     width=56, indent=4 * " ", indent_first_line=False
+    ... )
+    >>> print(
+    ...     mailwrapper.format(description)
+    ... )  # doctest: -NORMALIZE_WHITESPACE
     A new description that is quite long. But the nice thing
         is that the edit notification email generator knows
         how to indent and wrap descriptions, so this will
@@ -219,7 +233,7 @@ Sometimes we don't want to indent the first line.
         finally!
 
     >>> wrapped_text = mailwrapper.format(long_quoted_lines)
-    >>> print(wrapped_text) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(wrapped_text)  # doctest: -NORMALIZE_WHITESPACE
     > > > > > Someone wrote this a long time ago. When it was written
         > > > > > all lines were less than 56 characters, but now they are
         > > > > > longer.
@@ -235,9 +249,10 @@ dos-style line endings, we get the following result:
     ...     " be wrapped even though the paragraphs are separated with"
     ...     " dos-style line endings."
     ...     "\r\n\r\n"
-    ...     "Here's the second paragraph.")
+    ...     "Here's the second paragraph."
+    ... )
     >>> wrapped_text = mailwrapper.format(dos_style_comment)
-    >>> wrapped_text.split('\n')
+    >>> wrapped_text.split("\n")
     ['This paragraph is longer than 56 characters, so it',
      'should be wrapped even though the paragraphs are',
      'separated with dos-style line endings.',
@@ -248,19 +263,21 @@ Sometimes certain paragraphs should not be wrapped, e.g. a line containing a
 long hyphenated URL.  Under normal circumstances, this will get wrapped.
 
     >>> from lp.services.mail.helpers import get_email_template
-    >>> template = get_email_template('new-held-message.txt', app='registry')
+    >>> template = get_email_template("new-held-message.txt", app="registry")
     >>> text = template % dict(
     ...     user="Scarlett O'Hara",
-    ...     team='frankly-my-dear-i-dont-give-a-damn',
-    ...     subject='Thing',
-    ...     author_name='Rhett Butler',
-    ...     author_url='http://whatever.example.com/rhett',
-    ...     date='today',
-    ...     message_id='<aardvark>',
+    ...     team="frankly-my-dear-i-dont-give-a-damn",
+    ...     subject="Thing",
+    ...     author_name="Rhett Butler",
+    ...     author_url="http://whatever.example.com/rhett",
+    ...     date="today",
+    ...     message_id="<aardvark>",
     ...     # And this is the one we're really interested in.
-    ...     review_url=('http://launchpad.test/~frankly-my-dear-i-'
-    ...                 'dont-give-a-damn/+review-moderation-messages'),
-    ...     )
+    ...     review_url=(
+    ...         "http://launchpad.test/~frankly-my-dear-i-"
+    ...         "dont-give-a-damn/+review-moderation-messages"
+    ...     ),
+    ... )
 
     >>> wrapper = MailWrapper(72)
     >>> body = wrapper.format(text, force_wrap=True)
@@ -294,7 +311,8 @@ callable to format().  This callable prevents wrapping when it returns False.
 The callable's argument is the pre-wrapped paragraph.
 
     >>> def nowrap(paragraph):
-    ...     return paragraph.startswith('http://')
+    ...     return paragraph.startswith("http://")
+    ...
 
     >>> body = wrapper.format(text, force_wrap=True, wrap_func=nowrap)
     >>> print(body)  # noqa

@@ -69,6 +69,7 @@ interface, we'll define one here.
     ...
     ...         Returns None if there is no thing.
     ...         """
+    ...
 
     >>> from zope.publisher.interfaces.browser import IBrowserRequest
 
@@ -80,11 +81,11 @@ interface, we'll define one here.
     ...     def redirect(self, name, status=None):
     ...         self.redirected_to = name
     ...         self.status = status
+    ...
 
     >>> import lp.services.webapp.servers
 
     >>> class StepsToGo(lp.services.webapp.servers.StepsToGo):
-    ...
     ...     def __init__(self, stack):
     ...         self.travstack = stack
     ...
@@ -103,10 +104,10 @@ interface, we'll define one here.
     ...             return self.travstack.pop()
     ...         except IndexError:
     ...             return None
+    ...
 
     >>> @implementer(IBrowserRequest)
     ... class Request:
-    ...
     ...     def __init__(self):
     ...         self.response = Response()
     ...         self.traversal_stack = []
@@ -118,7 +119,7 @@ interface, we'll define one here.
     ...         return StepsToGo(self.traversal_stack)
     ...
     ...     def getURL(self, idx=None, path_only=False):
-    ...         return 'URL %s' % idx
+    ...         return "URL %s" % idx
     ...
     ...     def getNearest(self, *some_interfaces):
     ...         for context in reversed(self.traversed_objects):
@@ -129,7 +130,7 @@ interface, we'll define one here.
     ...             return None, None
     ...
     ...     def get(self, name):
-    ...         if name == 'QUERY_STRING':
+    ...         if name == "QUERY_STRING":
     ...             return self.query_string
     ...         else:
     ...             return None
@@ -138,11 +139,11 @@ interface, we'll define one here.
 
     >>> class IThing(Interface):
     ...
-    ...     value = Attribute('the value of the thing')
+    ...     value = Attribute("the value of the thing")
+    ...
 
     >>> @implementer(IThing)
     ... class Thing:
-    ...
     ...     def __init__(self, value):
     ...         self.value = value
     ...
@@ -151,20 +152,20 @@ interface, we'll define one here.
 
     >>> @implementer(IThingSet)
     ... class ThingSet:
-    ...
     ...     def getThing(self, name):
-    ...         if name.startswith('t'):
+    ...         if name.startswith("t"):
     ...             return Thing(name.upper())
     ...         else:
     ...             return None
     ...
     ...     def __repr__(self):
-    ...         return '<ThingSet>'
+    ...         return "<ThingSet>"
 
     >>> thingset = ThingSet()
 
     >>> class INewLayer(Interface):
     ...     """New layer for the request."""
+    ...
 
 
 Navigation components look up the next object to traverse to according to
@@ -222,7 +223,7 @@ The name doesn't begin with a 't', so it isn't found.
 
     >>> INewLayer.providedBy(request)
     False
-    >>> navigation.publishTraverse(request, 'xxx')
+    >>> navigation.publishTraverse(request, "xxx")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet...name: 'xxx'
@@ -234,12 +235,12 @@ Note that the request has been put onto the INewLayer layer.
 
 The name begins with a 't', so the thing's value is TTT.
 
-    >>> navigation.publishTraverse(request, 'ttt')
+    >>> navigation.publishTraverse(request, "ttt")
     <Thing 'TTT'>
 
 The name begins with a 't', so the thing's value is THINGVIEW.
 
-    >>> navigation.publishTraverse(request, 'thingview')
+    >>> navigation.publishTraverse(request, "thingview")
     <Thing 'THINGVIEW'>
 
 
@@ -249,9 +250,9 @@ ZCML for browser:navigation
 The zcml processor `browser:navigation` registers navigation classes.
 
     >>> class ThingSetView:
-    ...
     ...     def __call__(self):
     ...         return "a view on a thingset"
+    ...
 
     >>> import lp.testing
     >>> lp.testing.ThingSetView = ThingSetView
@@ -259,7 +260,8 @@ The zcml processor `browser:navigation` registers navigation classes.
     >>> lp.testing.IThingSet = IThingSet
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="zope.browserpage" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
@@ -276,7 +278,8 @@ The zcml processor `browser:navigation` registers navigation classes.
     ...       layer="zope.publisher.interfaces.browser.IBrowserRequest"
     ...       />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
 Once registered, we can look the navigation up using getMultiAdapter().
 
@@ -284,13 +287,14 @@ Once registered, we can look the navigation up using getMultiAdapter().
     >>> from zope.publisher.interfaces.browser import IBrowserPublisher
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> navigation = getMultiAdapter(
-    ...     (thingset, LaunchpadTestRequest()), IBrowserPublisher, name='')
+    ...     (thingset, LaunchpadTestRequest()), IBrowserPublisher, name=""
+    ... )
 
 This time, we get the view object for the page that was registered.
 
-    >>> navigation.publishTraverse(request, 'thingview')
+    >>> navigation.publishTraverse(request, "thingview")
     <...ThingSetView object...>
-    >>> print(navigation.publishTraverse(request, 'thingview')())
+    >>> print(navigation.publishTraverse(request, "thingview")())
     a view on a thingset
 
 
@@ -315,32 +319,32 @@ Let's create a subclass of ThingSetNavigation, and add a 'stepto'.
     >>> from lp.app.errors import NotFoundError
 
     >>> class ThingSetNavigation2(ThingSetNavigation):
-    ...
-    ...     @stepto('thistle')
+    ...     @stepto("thistle")
     ...     def thistle(self):
-    ...         return 'A little thistle'
+    ...         return "A little thistle"
     ...
-    ...     @stepto('neverthere')
+    ...     @stepto("neverthere")
     ...     def neverthere(self):
     ...         return None
     ...
-    ...     @stepto('neverthere2')
+    ...     @stepto("neverthere2")
     ...     def neverthere2(self):
     ...         raise NotFoundError
+    ...
 
     >>> navigation2 = ThingSetNavigation2(thingset, request)
 
-    >>> navigation2.publishTraverse(request, 'ttt')
+    >>> navigation2.publishTraverse(request, "ttt")
     <Thing 'TTT'>
-    >>> print(navigation2.publishTraverse(request, 'thingview')())
+    >>> print(navigation2.publishTraverse(request, "thingview")())
     a view on a thingset
-    >>> print(navigation2.publishTraverse(request, 'thistle'))
+    >>> print(navigation2.publishTraverse(request, "thistle"))
     A little thistle
-    >>> navigation2.publishTraverse(request, 'neverthere')
+    >>> navigation2.publishTraverse(request, "neverthere")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'neverthere'
-    >>> navigation2.publishTraverse(request, 'neverthere2')
+    >>> navigation2.publishTraverse(request, "neverthere2")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'neverthere2'
@@ -367,32 +371,32 @@ Let's create another subclass and add a stepthrough.
     >>> from lp.services.webapp import stepthrough
 
     >>> class ThingSetNavigation3(ThingSetNavigation):
-    ...
-    ...     @stepthrough('toad')
+    ...     @stepthrough("toad")
     ...     def traverse_toad(self, name):
-    ...         return 'the toad called %s' % name
+    ...         return "the toad called %s" % name
     ...
-    ...     @stepthrough('neverland')
+    ...     @stepthrough("neverland")
     ...     def traverse_neverland(self, name):
     ...         return None
     ...
-    ...     @stepthrough('neverland2')
+    ...     @stepthrough("neverland2")
     ...     def traverse_neverland2(self, name):
     ...         raise NotFoundError
+    ...
 
-    >>> request.traversal_stack = ['prince', 'charming']
+    >>> request.traversal_stack = ["prince", "charming"]
     >>> navigation3 = ThingSetNavigation3(thingset, request)
-    >>> print(navigation3.publishTraverse(request, 'toad'))
+    >>> print(navigation3.publishTraverse(request, "toad"))
     the toad called charming
-    >>> request.traversal_stack = ['prince', 'charming']
+    >>> request.traversal_stack = ["prince", "charming"]
     >>> navigation3 = ThingSetNavigation3(thingset, request)
-    >>> navigation3.publishTraverse(request, 'neverland')
+    >>> navigation3.publishTraverse(request, "neverland")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'charming'
-    >>> request.traversal_stack = ['prince', 'charming']
+    >>> request.traversal_stack = ["prince", "charming"]
     >>> navigation3 = ThingSetNavigation3(thingset, request)
-    >>> navigation3.publishTraverse(request, 'neverland2')
+    >>> navigation3.publishTraverse(request, "neverland2")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...ThingSet..., name: 'charming'
@@ -434,59 +438,59 @@ Let's make another navigation class to test redirection.
     >>> from lp.services.webapp import redirection
 
     >>> class ThingSetNavigation4(ThingSetNavigation):
-    ...
-    ...     @redirection('tree', status=301)
+    ...     @redirection("tree", status=301)
     ...     def redirect_tree(self):
-    ...         return 'trees'
+    ...         return "trees"
     ...
-    ...     @redirection('toad')
+    ...     @redirection("toad")
     ...     def redirect_toad(self):
-    ...         return 'toads'
+    ...         return "toads"
     ...
     ...     def traverse(self, name):
-    ...         return redirection('/another/place', status=301)
+    ...         return redirection("/another/place", status=301)
     ...
-    ...     @stepthrough('outerspace')
+    ...     @stepthrough("outerspace")
     ...     def traverse_outerspace(self, name):
-    ...         return redirection('/siberia/%s' % name)
+    ...         return redirection("/siberia/%s" % name)
     ...
-    ...     @redirection('here', status=301)
+    ...     @redirection("here", status=301)
     ...     def redirect_here(self):
-    ...         return '/there'
+    ...         return "/there"
+    ...
 
     >>> navigation4 = ThingSetNavigation4(thingset, request)
-    >>> navigation4.publishTraverse(request, 'tree')
+    >>> navigation4.publishTraverse(request, "tree")
     <...RedirectionView...>
-    >>> print(navigation4.publishTraverse(request, 'tree')())
+    >>> print(navigation4.publishTraverse(request, "tree")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     trees
     >>> print(request.response.status)
     301
 
-    >>> print(navigation4.publishTraverse(request, 'toad')())
+    >>> print(navigation4.publishTraverse(request, "toad")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     toads
     >>> print(request.response.status)
     None
 
-    >>> print(navigation4.publishTraverse(request, 'something')())
+    >>> print(navigation4.publishTraverse(request, "something")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     /another/place
     >>> print(request.response.status)
     301
 
-    >>> request.traversal_stack = ['tundra']
-    >>> print(navigation4.publishTraverse(request, 'outerspace')())
+    >>> request.traversal_stack = ["tundra"]
+    >>> print(navigation4.publishTraverse(request, "outerspace")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     /siberia/tundra
     >>> print(request.response.status)
     None
 
-    >>> print(navigation4.publishTraverse(request, 'here')())
+    >>> print(navigation4.publishTraverse(request, "here")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     /there
@@ -503,26 +507,28 @@ with the remainder of the URL and or query string.
 
     >>> class ThingSetNavigation5(ThingSetNavigation):
     ...     def traverse(self, name):
-    ...         return self.redirectSubTree('http://ubuntu.com/%s' % name)
+    ...         return self.redirectSubTree("http://ubuntu.com/%s" % name)
     ...
-    ...     @stepto('+foo')
+    ...     @stepto("+foo")
     ...     def traverse_foo(self):
     ...         return self.redirectSubTree(
-    ...             'http://wiki.canonical.com', status=303)
+    ...             "http://wiki.canonical.com", status=303
+    ...         )
+    ...
 
     >>> navigation5 = ThingSetNavigation5(thingset, request)
-    >>> navigation5.publishTraverse(request, 'jobs')
+    >>> navigation5.publishTraverse(request, "jobs")
     <...RedirectionView...>
-    >>> print(navigation5.publishTraverse(request, 'jobs')())
+    >>> print(navigation5.publishTraverse(request, "jobs")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     http://ubuntu.com/jobs
     >>> print(request.response.status)
     301
 
-    >>> request.traversal_stack = ['LaunchpadMeeting']
-    >>> request.query_string = 'hilight=Time'
-    >>> print(navigation5.publishTraverse(request, '+foo')())
+    >>> request.traversal_stack = ["LaunchpadMeeting"]
+    >>> request.query_string = "hilight=Time"
+    >>> print(navigation5.publishTraverse(request, "+foo")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     http://wiki.canonical.com/LaunchpadMeeting?hilight=Time
@@ -552,70 +558,70 @@ Let's define one of those, using all the navigation classes we have made
 so far, and also defining some more stepthroughs and steptos and redirections.
 
     >>> class UberEverythingThingNavigation(
-    ...     ThingSetNavigation2, ThingSetNavigation3, ThingSetNavigation4):
-    ...
-    ...     @stepto('teeth')
+    ...     ThingSetNavigation2, ThingSetNavigation3, ThingSetNavigation4
+    ... ):
+    ...     @stepto("teeth")
     ...     def teeth(self):
-    ...         return 'some teeth'
+    ...         return "some teeth"
     ...
-    ...     @stepthrough('diplodocus')
+    ...     @stepthrough("diplodocus")
     ...     def traverse_diplodocus(self, name):
-    ...         return 'diplodocus called %s' % name
+    ...         return "diplodocus called %s" % name
     ...
-    ...     @redirection('topology')
+    ...     @redirection("topology")
     ...     def redirect_topology(self):
-    ...         return 'topologies'
+    ...         return "topologies"
 
     >>> ubernav = UberEverythingThingNavigation(thingset, request)
 
 Check out the traversals defined directly.
 
-    >>> print(ubernav.publishTraverse(request, 'teeth'))
+    >>> print(ubernav.publishTraverse(request, "teeth"))
     some teeth
 
-    >>> ubernav.publishTraverse(request, 'diplodocus')
+    >>> ubernav.publishTraverse(request, "diplodocus")
     <...RedirectionView...>
 
-    >>> request.traversal_stack = ['frank']
-    >>> print(ubernav.publishTraverse(request, 'diplodocus'))
+    >>> request.traversal_stack = ["frank"]
+    >>> print(ubernav.publishTraverse(request, "diplodocus"))
     diplodocus called frank
 
-    >>> print(ubernav.publishTraverse(request, 'topology')())
+    >>> print(ubernav.publishTraverse(request, "topology")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     topologies
 
 Check those from ThingSetNavigation, implicitly:
 
-    >>> print(ubernav.publishTraverse(request, 'thingview')())
+    >>> print(ubernav.publishTraverse(request, "thingview")())
     a view on a thingset
 
 Check those from ThingSetNavigation2:
 
-    >>> print(ubernav.publishTraverse(request, 'thistle'))
+    >>> print(ubernav.publishTraverse(request, "thistle"))
     A little thistle
 
 Check those from ThingSetNavigation3:
 
-    >>> request.traversal_stack = ['prince', 'charming']
-    >>> print(ubernav.publishTraverse(request, 'toad'))
+    >>> request.traversal_stack = ["prince", "charming"]
+    >>> print(ubernav.publishTraverse(request, "toad"))
     the toad called charming
 
     >>> request.traversal_stack = []
 
 Check those from ThingSetNavigation4:
 
-    >>> print(ubernav.publishTraverse(request, 'tree')())
+    >>> print(ubernav.publishTraverse(request, "tree")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     trees
 
-    >>> print(ubernav.publishTraverse(request, 'toad')())
+    >>> print(ubernav.publishTraverse(request, "toad")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     toads
 
-    >>> print(ubernav.publishTraverse(request, 'ttt')())
+    >>> print(ubernav.publishTraverse(request, "ttt")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
     /another/place
@@ -625,39 +631,39 @@ Testing that multiple inheritance involving decorators works
 ------------------------------------------------------------
 
     >>> class A:
-    ...
-    ...     @stepto('foo')
+    ...     @stepto("foo")
     ...     def traverse_foo(self):
-    ...         return 'foo'
+    ...         return "foo"
     ...
-    ...     @stepto('foo2')
+    ...     @stepto("foo2")
     ...     def traverse_foo2(self):
-    ...         return 'foo2'
+    ...         return "foo2"
+    ...
 
     >>> class B:
-    ...
-    ...     @stepto('bar')
+    ...     @stepto("bar")
     ...     def traverse_bar(self):
-    ...         return 'bar'
+    ...         return "bar"
+    ...
 
     >>> class C(Navigation, A, B):
-    ...
-    ...     @stepto('baz')
+    ...     @stepto("baz")
     ...     def traverse_baz(self):
-    ...         return 'baz'
+    ...         return "baz"
     ...
-    ...     @stepto('foo2')
+    ...     @stepto("foo2")
     ...     def traverse_another_foo(self):
-    ...         return 'foo2 from C'
+    ...         return "foo2 from C"
+    ...
 
     >>> instance_of_c = C(thingset, request)
-    >>> print(instance_of_c.publishTraverse(request, 'foo'))
+    >>> print(instance_of_c.publishTraverse(request, "foo"))
     foo
-    >>> print(instance_of_c.publishTraverse(request, 'bar'))
+    >>> print(instance_of_c.publishTraverse(request, "bar"))
     bar
-    >>> print(instance_of_c.publishTraverse(request, 'baz'))
+    >>> print(instance_of_c.publishTraverse(request, "baz"))
     baz
-    >>> print(instance_of_c.publishTraverse(request, 'foo2'))
+    >>> print(instance_of_c.publishTraverse(request, "foo2"))
     foo2 from C
 
 
@@ -665,19 +671,19 @@ Showing that the name of the function really doesn't matter
 -----------------------------------------------------------
 
     >>> class DupeNames(Navigation):
-    ...
-    ...     @stepto('foo')
+    ...     @stepto("foo")
     ...     def doit_foo(self):
-    ...         return 'foo'
+    ...         return "foo"
     ...
-    ...     @stepto('bar')
+    ...     @stepto("bar")
     ...     def doit_bar(self):
-    ...         return 'bar'
+    ...         return "bar"
+    ...
 
     >>> instance_of_dupenames = DupeNames(thingset, request)
-    >>> print(instance_of_dupenames.publishTraverse(request, 'foo'))
+    >>> print(instance_of_dupenames.publishTraverse(request, "foo"))
     foo
-    >>> print(instance_of_dupenames.publishTraverse(request, 'bar'))
+    >>> print(instance_of_dupenames.publishTraverse(request, "bar"))
     bar
 
 The doit_*() methods still work though.

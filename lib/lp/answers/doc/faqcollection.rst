@@ -30,27 +30,51 @@ collection.
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> personset = getUtility(IPersonSet)
-    >>> no_priv = personset.getByName('no-priv')
-    >>> foo_bar = personset.getByEmail('foo.bar@canonical.com')
-    >>> sample_person = personset.getByEmail('test@canonical.com')
+    >>> no_priv = personset.getByName("no-priv")
+    >>> foo_bar = personset.getByEmail("foo.bar@canonical.com")
+    >>> sample_person = personset.getByEmail("test@canonical.com")
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> faq_specifications = [
-    ...     (no_priv, 'How do I install Foo?',
-    ...      'See http://www.foo.org/install', 'foo install'),
-    ...     (sample_person, 'What is The Meaning of Life?',
-    ...      'A Monty Python film!', 'film monty python'),
-    ...     (foo_bar, 'How do I make money quickly off the Internet?',
-    ...      'Install this really nice software that you can find at '
-    ...      'http://www.getrichquick.com/.', None),
-    ...     (no_priv, 'How do I play the Game of Life?',
-    ...      'Keep breathing!', 'install'),
-    ...     (sample_person, 'Who really shot JFK?',
-    ...     'You decide: there were at least six conspiracies going on '
-    ...     'in Dallas on Nov 22nd 1963.', None),
-    ...     (no_priv, 'What were the famous last words?',
-    ...      'Who turned off the light?', None)
-    ...    ]
+    ...     (
+    ...         no_priv,
+    ...         "How do I install Foo?",
+    ...         "See http://www.foo.org/install",
+    ...         "foo install",
+    ...     ),
+    ...     (
+    ...         sample_person,
+    ...         "What is The Meaning of Life?",
+    ...         "A Monty Python film!",
+    ...         "film monty python",
+    ...     ),
+    ...     (
+    ...         foo_bar,
+    ...         "How do I make money quickly off the Internet?",
+    ...         "Install this really nice software that you can find at "
+    ...         "http://www.getrichquick.com/.",
+    ...         None,
+    ...     ),
+    ...     (
+    ...         no_priv,
+    ...         "How do I play the Game of Life?",
+    ...         "Keep breathing!",
+    ...         "install",
+    ...     ),
+    ...     (
+    ...         sample_person,
+    ...         "Who really shot JFK?",
+    ...         "You decide: there were at least six conspiracies going on "
+    ...         "in Dallas on Nov 22nd 1963.",
+    ...         None,
+    ...     ),
+    ...     (
+    ...         no_priv,
+    ...         "What were the famous last words?",
+    ...         "Who turned off the light?",
+    ...         None,
+    ...     ),
+    ... ]
 
     >>> from datetime import datetime, timedelta
     >>> from pytz import UTC
@@ -60,6 +84,7 @@ collection.
     >>> for owner, title, content, keywords in faq_specifications:
     ...     date = now + timedelta(minutes=len(faq_set))
     ...     faq_set.append(newFAQ(owner, title, content, keywords, date))
+    ...
 
     >>> login(ANONYMOUS)
 
@@ -84,16 +109,18 @@ requested collection:
 
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu != collection
     True
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> foo_bar = getUtility(ILaunchBag).user
     >>> ubuntu_faq = ubuntu.newFAQ(
-    ...     foo_bar, 'Ubuntu Installation HowTo',
-    ...     'Ubuntu installation procedure can be found at: '
-    ...     'https://help.ubuntu.com/community/Installation')
+    ...     foo_bar,
+    ...     "Ubuntu Installation HowTo",
+    ...     "Ubuntu installation procedure can be found at: "
+    ...     "https://help.ubuntu.com/community/Installation",
+    ... )
 
     >>> login(ANONYMOUS)
     >>> print(collection.getFAQ(ubuntu_faq.id))
@@ -111,6 +138,7 @@ When no criteria are given, all the FAQs in the collection are returned.
 
     >>> for faq in collection.searchFAQs():
     ...     print(faq.title)
+    ...
     What were the famous last words?
     Who really shot JFK?
     How do I play the Game of Life?
@@ -126,8 +154,9 @@ The first criterion is search_text. It will select FAQs matching the
 keywords specified. Keywords are looked for in the title, content and
 keywords field of the FAQ.
 
-    >>> for faq in collection.searchFAQs(search_text=u'install'):
+    >>> for faq in collection.searchFAQs(search_text="install"):
     ...     print(faq.title)
+    ...
     How do I install Foo?
     How do I play the Game of Life?
     How do I make money quickly off the Internet?
@@ -145,6 +174,7 @@ were created by the specified user.
 
     >>> for faq in collection.searchFAQs(owner=no_priv):
     ...     print(faq.title)
+    ...
     What were the famous last words?
     How do I play the Game of Life?
     How do I install Foo?
@@ -159,7 +189,8 @@ You can combine multiple criteria. Only FAQs matching all the criteria
 will be returned.
 
     >>> for faq in collection.searchFAQs(
-    ...         search_text=u'install', owner=no_priv):
+    ...     search_text="install", owner=no_priv
+    ... ):
     ...     print(faq.title)
     How do I install Foo?
     How do I play the Game of Life?
@@ -175,7 +206,8 @@ date of creation (most recent first):
 
     >>> from lp.answers.interfaces.faqcollection import FAQSort
     >>> for faq in collection.searchFAQs(
-    ...         search_text=u'install', sort=FAQSort.NEWEST_FIRST):
+    ...     search_text="install", sort=FAQSort.NEWEST_FIRST
+    ... ):
     ...     print(faq.title)
     How do I play the Game of Life?
     How do I make money quickly off the Internet?
@@ -186,6 +218,7 @@ first:
 
     >>> for faq in collection.searchFAQs(sort=FAQSort.OLDEST_FIRST):
     ...     print(faq.title)
+    ...
     How do I install Foo?
     What is The Meaning of Life?
     How do I make money quickly off the Internet?

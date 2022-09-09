@@ -23,6 +23,7 @@ AnswerTrackerHandler.
     ...     while True:
     ...         yield now
     ...         now += timedelta(seconds=1)
+    ...
 
     # We are using a date in the past because MessageSet disallows the
     # creation of email message with a future date.
@@ -35,25 +36,26 @@ AnswerTrackerHandler.
     >>> handler = AnswerTrackerHandler()
     >>> def send_question_email(question_id, from_addr, subject, body):
     ...     login(from_addr)
-    ...     lines = ['From: %s' % from_addr]
-    ...     to_addr = 'question%s@answers.launchpad.net' % question_id
-    ...     lines.append('To: %s' % to_addr)
-    ...     date = mktime_tz(next(now).utctimetuple() + (0, ))
-    ...     lines.append('Date: %s' % formatdate(date))
+    ...     lines = ["From: %s" % from_addr]
+    ...     to_addr = "question%s@answers.launchpad.net" % question_id
+    ...     lines.append("To: %s" % to_addr)
+    ...     date = mktime_tz(next(now).utctimetuple() + (0,))
+    ...     lines.append("Date: %s" % formatdate(date))
     ...     msgid = make_msgid()
-    ...     lines.append('Message-Id: %s' % msgid)
-    ...     lines.append('Subject: %s' % subject)
-    ...     lines.append('')
+    ...     lines.append("Message-Id: %s" % msgid)
+    ...     lines.append("Subject: %s" % subject)
+    ...     lines.append("")
     ...     lines.append(body)
-    ...     raw_msg = '\n'.join(lines)
-    ...     msg = signed_message_from_bytes(raw_msg.encode('UTF-8'))
-    ...     if handler.process(msg, msg['To']):
+    ...     raw_msg = "\n".join(lines)
+    ...     msg = signed_message_from_bytes(raw_msg.encode("UTF-8"))
+    ...     if handler.process(msg, msg["To"]):
     ...         # Ensures that the DB user has the correct permission to \
     ...         # saves the changes.
     ...         flush_database_updates()
     ...         return msgid
     ...     else:
     ...         return None
+    ...
 
 It only processes emails which are sent to an address of the form
 'question<ID>@answers.launchpad.net', where <ID> is the question id. (The
@@ -68,7 +70,7 @@ All other email addresses are ignored:
     ...
     ... Hello there."""
     >>> msg = signed_message_from_bytes(raw_msg)
-    >>> handler.process(msg, msg['To'])
+    >>> handler.process(msg, msg["To"])
     False
 
 
@@ -76,7 +78,8 @@ The message will also be ignored if no question with the addressed ID
 can be found:
 
     >>> comment_msgid = send_question_email(
-    ...     1234, 'foo.bar@canonical.com', 'Hey', 'This is another comment.')
+    ...     1234, "foo.bar@canonical.com", "Hey", "This is another comment."
+    ... )
     >>> comment_msgid is None
     True
 
@@ -102,22 +105,26 @@ possibilities for the user.
     # question.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> personset = getUtility(IPersonSet)
-    >>> sample_person = personset.getByEmail('test@canonical.com')
-    >>> no_priv = personset.getByEmail('no-priv@canonical.com')
-    >>> foo_bar = personset.getByEmail('foo.bar@canonical.com')
+    >>> sample_person = personset.getByEmail("test@canonical.com")
+    >>> no_priv = personset.getByEmail("no-priv@canonical.com")
+    >>> foo_bar = personset.getByEmail("foo.bar@canonical.com")
 
     >>> import transaction
     >>> from lp.testing.dbuser import lp_dbuser
 
     >>> with lp_dbuser():
-    ...     ubuntu = getUtility(IDistributionSet)['ubuntu']
+    ...     ubuntu = getUtility(IDistributionSet)["ubuntu"]
     ...     question = ubuntu.newQuestion(
-    ...         no_priv, 'Unable to boot installer',
+    ...         no_priv,
+    ...         "Unable to boot installer",
     ...         "I've tried installing Ubuntu on a Mac. But the installer "
-    ...         "never boots.", datecreated=next(now))
+    ...         "never boots.",
+    ...         datecreated=next(now),
+    ...     )
     ...     question_id = question.id
+    ...
 
     # We need to refetch the question, since a new transaction was started.
     >>> from lp.answers.interfaces.questioncollection import IQuestionSet
@@ -125,10 +132,12 @@ possibilities for the user.
 
     # Define an helper to change the question status easily.
     >>> def setQuestionStatus(question, new_status):
-    ...     login('foo.bar@canonical.com')
-    ...     question.setStatus(foo_bar, new_status, 'Status Change',
-    ...                            datecreated=next(now))
-    ...     login('no-priv@canonical.com')
+    ...     login("foo.bar@canonical.com")
+    ...     question.setStatus(
+    ...         foo_bar, new_status, "Status Change", datecreated=next(now)
+    ...     )
+    ...     login("no-priv@canonical.com")
+    ...
 
 Message From the Question Owner
 -------------------------------
@@ -146,8 +155,11 @@ more information on the problem.
 For example, from the Open state:
 
     >>> msgid = send_question_email(
-    ...     question.id, 'no-priv@canonical.com', 'PowerMac 7200',
-    ...     "I forgot to specify that I'm installing on a PowerMac 7200.")
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "PowerMac 7200",
+    ...     "I forgot to specify that I'm installing on a PowerMac 7200.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -165,9 +177,12 @@ And from the Needs information state:
     >>> from lp.answers.enums import QuestionStatus
     >>> setQuestionStatus(question, QuestionStatus.NEEDSINFO)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'no-priv@canonical.com', 'Re: What model?',
-    ...     'A PowerMac 7200.')
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "Re: What model?",
+    ...     "A PowerMac 7200.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -190,10 +205,13 @@ the email is reopening the question with more information.
     >>> setQuestionStatus(question, QuestionStatus.ANSWERED)
 
     >>> msgid = send_question_email(
-    ...     question.id, 'no-priv@canonical.com', 'Re: BootX',
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "Re: BootX",
     ...     "I installed BootX, but I must have made a mistake somewhere "
     ...     "because it still doesn't boot. I have a dialog which says "
-    ...     "cannot find any kernel images.")
+    ...     "cannot find any kernel images.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -211,9 +229,12 @@ From the Expired state:
 
     >>> setQuestionStatus(question, QuestionStatus.EXPIRED)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'no-priv@canonical.com', 'Need Help',
-    ...     "I still cannot install on my PowerMac.")
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "Need Help",
+    ...     "I still cannot install on my PowerMac.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -233,9 +254,12 @@ message as a comment.
 
     >>> setQuestionStatus(question, QuestionStatus.SOLVED)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'no-priv@canonical.com', "Thanks",
-    ...     "Thanks for helping me make BootX work.")
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "Thanks",
+    ...     "Thanks for helping me make BootX work.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -251,10 +275,13 @@ And from the Invalid:
 
     >>> setQuestionStatus(question, QuestionStatus.INVALID)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'no-priv@canonical.com', 'Come on!',
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "no-priv@canonical.com",
+    ...     "Come on!",
     ...     "Trying to install on an old machine shouldn't be considered "
-    ...     "an invalid question!")
+    ...     "an invalid question!",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -278,10 +305,13 @@ fine. So it is the safest thing to assume.
 
     >>> setQuestionStatus(question, QuestionStatus.OPEN)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'BootX',
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "BootX",
     ...     "You need to install and configure BootX to boot the installer "
-    ...     "CD.")
+    ...     "CD.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -294,9 +324,12 @@ Needs information example:
 
     >>> setQuestionStatus(question, QuestionStatus.NEEDSINFO)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'What model?',
-    ...     "What Mac model are you trying to install on?")
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "What model?",
+    ...     "What Mac model are you trying to install on?",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -308,10 +341,13 @@ Answered example:
     >>> print(question.status.title)
     Answered
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'More info on BootX',
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "More info on BootX",
     ...     "You can find instructions on BootX installation at that URL: "
-    ...     "https://help.ubuntu.com/community/Installation/OldWorldMacs")
+    ...     "https://help.ubuntu.com/community/Installation/OldWorldMacs",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -328,10 +364,13 @@ interpretation is that it is a comment.
 
     >>> setQuestionStatus(question, QuestionStatus.SOLVED)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'RAM',
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "RAM",
     ...     "You will probably need to install some RAM to make this usable "
-    ...     "though.")
+    ...     "though.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -340,10 +379,13 @@ interpretation is that it is a comment.
 
     >>> setQuestionStatus(question, QuestionStatus.EXPIRED)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'How weird',
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "How weird",
     ...     "Is somebody really trying to install Ubuntu on such obsolete "
-    ...     "hardware?")
+    ...     "hardware?",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -352,9 +394,12 @@ interpretation is that it is a comment.
 
     >>> setQuestionStatus(question, QuestionStatus.INVALID)
 
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'Error?',
-    ...     "I think the rejection was an error.")
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "Error?",
+    ...     "I think the rejection was an error.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -371,20 +416,26 @@ Answers may also be linked to FAQ questions.
     >>> from zope.security.proxy import removeSecurityProxy
 
     >>> with lp_dbuser():
-    ...     login('foo.bar@canonical.com')
+    ...     login("foo.bar@canonical.com")
     ...     faq = question.target.newFAQ(
-    ...         no_priv, 'Why everyone think this is weird.',
-    ...         "That's an easy one. It's because it is!")
+    ...         no_priv,
+    ...         "Why everyone think this is weird.",
+    ...         "That's an easy one. It's because it is!",
+    ...     )
     ...     removeSecurityProxy(question).faq = faq
+    ...
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
     # Make sure that the database security and permissions are set up
     # correctly for answers that link to FAQs.  If they are not, then
     # this will raise an error; See bug #196661.
-    >>> msgid =  send_question_email(
-    ...     question.id, 'test@canonical.com', 'Fnord',
-    ...     "You will probably need to install some RAM to see the fnords.")
+    >>> msgid = send_question_email(
+    ...     question.id,
+    ...     "test@canonical.com",
+    ...     "Fnord",
+    ...     "You will probably need to install some RAM to see the fnords.",
+    ... )
     >>> message = question.messages[-1]
     >>> message.rfc822msgid == msgid
     True
@@ -410,16 +461,21 @@ config.answertracker.email_domain to the AnswerTrackerHandler.
 
     # Clear email queue of outgoing notifications.
     >>> stub.test_emails = []
-    >>> stub.test_emails.append((
-    ...     'test@canonical.com', ['question1@answers.launchpad.net'],
-    ...     raw_msg))
+    >>> stub.test_emails.append(
+    ...     (
+    ...         "test@canonical.com",
+    ...         ["question1@answers.launchpad.net"],
+    ...         raw_msg,
+    ...     )
+    ... )
 
     >>> from lp.services.mail.incoming import handleMail
     >>> handleMail()
 
     >>> question_one = getUtility(IQuestionSet).get(1)
-    >>> '<comment1@localhost>' in [
-    ...     comment.rfc822msgid for comment in question_one.messages]
+    >>> "<comment1@localhost>" in [
+    ...     comment.rfc822msgid for comment in question_one.messages
+    ... ]
     True
 
 For backward compatibility with notifications sent before the support
@@ -434,12 +490,17 @@ to the old ticket<ID>@support.launchpad.net address:
     ...
     ... This is another comment.
     ... """
-    >>> stub.test_emails.append((
-    ...     'test@canonical.com', ['ticket11@support.launchpad.net'],
-    ...     raw_msg))
+    >>> stub.test_emails.append(
+    ...     (
+    ...         "test@canonical.com",
+    ...         ["ticket11@support.launchpad.net"],
+    ...         raw_msg,
+    ...     )
+    ... )
     >>> handleMail()
 
     >>> question_11 = getUtility(IQuestionSet).get(11)
-    >>> '<comment2@localhost>' in [
-    ...     comment.rfc822msgid for comment in question_11.messages]
+    >>> "<comment2@localhost>" in [
+    ...     comment.rfc822msgid for comment in question_11.messages
+    ... ]
     True

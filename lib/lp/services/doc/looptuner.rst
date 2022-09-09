@@ -30,8 +30,10 @@ ITunableLoop interface.
     >>> class NotATunableLoop:
     ...     def isDone(self):
     ...         return True
+    ...
     ...     def __call__(self, chunk_size):
     ...         "This never gets called"
+    ...
     >>> LoopTuner(NotATunableLoop(), 1, 10)
     Traceback (most recent call last):
     ...
@@ -64,6 +66,7 @@ architectures, compilers used for the Python interpreter, etc.
     ...     ratio = new_chunk_size / last_chunk_size
     ...     order_of_magnitude = math.log10(ratio)
     ...     print("%s (%.1f)" % (change, order_of_magnitude))
+    ...
 
     >>> @implementer(ITunableLoop)
     ... class PlannedLoop:
@@ -93,6 +96,7 @@ subclass the LoopTuner.
     >>> class TestTuner(LoopTuner):
     ...     def _time(self):
     ...         return float(self.operation.clock)
+    ...
 
 
 Trivial Case
@@ -202,7 +206,7 @@ This variant of the LoopTuner simulates an overridable cost function:
     ...         self.clock = 0
     ...
     ...     def isDone(self):
-    ...         done = (self.iteration >= self.counter)
+    ...         done = self.iteration >= self.counter
     ...         if done:
     ...             print("done")
     ...         return done
@@ -225,6 +229,7 @@ This variant of the LoopTuner simulates an overridable cost function:
     ...         if self.operation.last_chunk_size is not None:
     ...             self.clock += self.operation.computeCost()
     ...         return self.clock
+    ...
 
 Below we'll see how the loop tuner adapts to various cost functions.
 
@@ -249,7 +254,7 @@ out not to affect performance at all.  Chunk size is capped to stop it from
 spinning into infinity in that case, or if for some reason execution time
 should turn out to vary inversely with chunk size.
 
-    >>> body = CostedLoop((lambda c: goal_seconds/2), 20)
+    >>> body = CostedLoop((lambda c: goal_seconds / 2), 20)
     >>> loop = CostedTuner(body, goal_seconds, 100, 1000)
     >>> loop.run()
     start
@@ -276,7 +281,7 @@ Without Constant
 If cost function is purely linear with zero overhead, we approach our time
 goal asymptotically.  In principle we never quite get there.
 
-    >>> body = CostedLoop((lambda c: c/20), 10)
+    >>> body = CostedLoop((lambda c: c / 20), 10)
     >>> loop = CostedTuner(body, goal_seconds, 100)
     >>> loop.run()
     start
@@ -290,7 +295,7 @@ goal asymptotically.  In principle we never quite get there.
 
     >>> body.computeCost() < goal_seconds
     True
-    >>> body.computeCost() > goal_seconds*0.9
+    >>> body.computeCost() > goal_seconds * 0.9
     True
 
 
@@ -301,7 +306,7 @@ Here's a variant with a relatively flat linear cost function (25 units of work
 per second), plus a large constant overhead of half the time goal.  It does
 not achieve equilibrium in 10 iterations:
 
-    >>> body = CostedLoop((lambda c: goal_seconds/2+c/25), 10)
+    >>> body = CostedLoop((lambda c: goal_seconds / 2 + c / 25), 10)
     >>> loop = CostedTuner(body, goal_seconds, 100)
     >>> loop.run()
     start
@@ -316,7 +321,7 @@ not achieve equilibrium in 10 iterations:
 
 But once again it does get pretty close:
 
-    >>> body.computeCost() > goal_seconds*0.9
+    >>> body.computeCost() > goal_seconds * 0.9
     True
 
 
@@ -398,6 +403,7 @@ but still print out what would happen.
     ...         else:
     ...             print("Cooldown for %.1f seconds." % self.cooldown_time)
     ...         return bedtime
+    ...
 
 SimpleLoop is a loop that does a constant number of iterations, regardless
 of the actual run-time.
@@ -410,7 +416,7 @@ of the actual run-time.
     ...         self.clock = 0
     ...
     ...     def isDone(self):
-    ...         done = (self.iteration >= self.total_iterations)
+    ...         done = self.iteration >= self.total_iterations
     ...         if done:
     ...             print("done")
     ...         return done
@@ -484,7 +490,8 @@ the isDone() method, and __del__ is fragile and can never be relied on.
 
     >>> class PlannedLoopWithCleanup(PlannedLoop):
     ...     def cleanUp(self):
-    ...         print('clean up')
+    ...         print("clean up")
+    ...
 
     >>> body = PlannedLoopWithCleanup([])
     >>> loop = TestTuner(body, goal_seconds, 100)

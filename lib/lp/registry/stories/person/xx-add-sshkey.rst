@@ -10,20 +10,19 @@ Profile page
 
 User keys are shown on profile pages, and any user can see that.
 
-    >>> anon_browser.open('http://launchpad.test/~name12')
+    >>> anon_browser.open("http://launchpad.test/~name12")
     >>> print(anon_browser.title)
     Sample Person in Launchpad
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'sshkeys')))
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, "sshkeys")))
     SSH keys: andrew@trogdor
 
 Salgado does not have a key, so we omit the 'SSH keys' section for anonymous
 users.
 
-    >>> anon_browser.open('http://launchpad.test/~salgado')
+    >>> anon_browser.open("http://launchpad.test/~salgado")
     >>> print(anon_browser.title)
     Guilherme Salgado in Launchpad
-    >>> print(find_tag_by_id(anon_browser.contents, 'sshkeys'))
+    >>> print(find_tag_by_id(anon_browser.contents, "sshkeys"))
     None
 
 Salgado sees a message explaining that he can register his ssh key.
@@ -33,14 +32,14 @@ Salgado sees a message explaining that he can register his ssh key.
     >>> from lp.testing.pages import setupBrowserFreshLogin
     >>> login(ANONYMOUS)
     >>> salgado = getUtility(IPersonSet).getByEmail(
-    ...     'guilherme.salgado@canonical.com')
+    ...     "guilherme.salgado@canonical.com"
+    ... )
     >>> logout()
     >>> browser = setupBrowserFreshLogin(salgado)
-    >>> browser.open('http://launchpad.test/~salgado')
+    >>> browser.open("http://launchpad.test/~salgado")
     >>> print(browser.title)
     Guilherme Salgado in Launchpad
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'sshkeys')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "sshkeys")))
     SSH keys: Add an SSH key
     No SSH keys registered.
 
@@ -52,7 +51,7 @@ The +editsshkeys page can be used to upload a public ssh key or to remove
 an already uploaded one. Salgado sees a link on his profile page to update
 his SSH keys. The page allows him to add a key.
 
-    >>> browser.getLink('Add an SSH key').click()
+    >>> browser.getLink("Add an SSH key").click()
     >>> print(browser.title)
     Change your SSH keys...
 
@@ -62,24 +61,27 @@ ecdsa-sha2-nistp521, or ssh-ed25519.  If the key doesn't match the expected
 format, an error message will be shown.
 
     >>> sshkey = "ssh-rsa   "
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
-    >>> for tag in find_main_content(browser.contents)('p', 'error message'):
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
+    >>> for tag in find_main_content(browser.contents)("p", "error message"):
     ...     print(tag.decode_contents())
+    ...
     Invalid public key
 
     >>> sshkey = "ssh-rsa foo"
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
-    >>> for tag in find_main_content(browser.contents)('p', 'error message'):
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
+    >>> for tag in find_main_content(browser.contents)("p", "error message"):
     ...     print(tag.decode_contents())
+    ...
     Invalid public key
 
     >>> sshkey = "ssh-xsa foo comment"
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
-    >>> for tag in find_main_content(browser.contents)('p', 'error message'):
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
+    >>> for tag in find_main_content(browser.contents)("p", "error message"):
     ...     print(tag.decode_contents())
+    ...
     Invalid public key
 
 
@@ -93,12 +95,14 @@ format.
     ...     "/kGxBM5/no/4FeJU3fgc+1XQNH7tMDQIcaqoHarc2kefGC8/sbRwbzajhg9yeqsk"
     ...     "gs6o6y+7931/bcZSLZ/wU53m5nB7eVkkVihk7KD+sf9jKG91LnaRW1IjBgo8AAbX"
     ...     "l+e556XkwIwVoieKNYW2Fvw8ybcW5rCTvJ1e/3Cvo2hw8ZsDMRofSifiKw== "
-    ...     "salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey = (
@@ -119,35 +123,41 @@ format.
     ...     "NF0GAHbNlJTK3FWC3gstbCJU2hyV3UzgB95b6zqpUHeyn1RK4VAFYGY9fCIdZNy9"
     ...     "26HEart6uO/N6cO1ETw5B63kI8fTBjU7HLGgGXRjOv1APAqvKgry3tQD2WYkVJGR"
     ...     "yYLjDK9d8nStUpwN5swI1xx2IWAbD+UCsRXAixn8s3mvpBD/jbnWjrzEensBc96j"
-    ...     "tiAsx2P5oXEd salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "tiAsx2P5oXEd salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey = (
     ...     "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAy"
     ...     "NTYAAABBBJseCUmxVG7D6qh4JmhLp0Du4kScScJ9PtZ0LGHYHaURnRw9tbX1wwUR"
-    ...     "Aio8og6dbnT75CQ3TbUE/xJhxI0aFXE= salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "Aio8og6dbnT75CQ3TbUE/xJhxI0aFXE= salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey = (
     ...     "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQAAAAIbmlzdHAz"
     ...     "ODQAAABhBDUR0E0zCHRHJER6uzjfE/o0HAHFLcq/n8lp0duThpeIPsmo+wr3vHHu"
     ...     "AAyOddOgkuQC8Lj8FzHlrOEYgXL6qa7FvpviE9YWUgmqVDa/yJbL/m6Mg8fvSIXl"
-    ...     "DJKmvOSv6g== salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "DJKmvOSv6g== salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey = (
@@ -155,41 +165,47 @@ format.
     ...     "MjEAAACFBAB3rpD+Ozb/kwUOqCZUXSiruAkIx6sNZLJyjJ0zxVTZSannaysCLxMQ"
     ...     "/IiVxCd59+U2NaLduMzd93JcYDRlX3M5+AApY+3JjfSPo01Sb17HTLNSYU3RZWx0"
     ...     "A3XJxm/YN+x/iuYZ3IziuAKeYMsNsdfHlO4/IWjw4Ruy0enW+QhWaY2qAQ== "
-    ...     "salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey = (
     ...     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGAwHVarhTHSYjZiZcbrf9xM+pAh"
-    ...     "Z/MzqqxTc5Mi+oTX salgado@canario")
-    >>> browser.getControl(name='sshkey').value = sshkey
-    >>> browser.getControl('Import Public Key').click()
+    ...     "Z/MzqqxTc5Mi+oTX salgado@canario"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
     >>> sshkey_without_comment = (
     ...     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGoDIdJaOkdr0wn0egyWEOtGxhe"
-    ...     "3x0Iz9um6CEOFaqIw")
-    >>> browser.getControl(name='sshkey').value = sshkey_without_comment
-    >>> browser.getControl('Import Public Key').click()
+    ...     "3x0Iz9um6CEOFaqIw"
+    ... )
+    >>> browser.getControl(name="sshkey").value = sshkey_without_comment
+    >>> browser.getControl("Import Public Key").click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     SSH public key added.
 
 Launchpad administrators are not allowed to poke at other user's ssh keys.
 
     >>> login(ANONYMOUS)
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> logout()
     >>> admin_browser = setupBrowserFreshLogin(foo_bar)
-    >>> admin_browser.open('http://launchpad.test/~salgado/+editsshkeys')
+    >>> admin_browser.open("http://launchpad.test/~salgado/+editsshkeys")
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -197,10 +213,10 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
 Salgado chooses to remove one of his ssh keys from Launchpad. The link
 to edit his keys is on the page.
 
-    >>> browser.open('http://launchpad.test/~salgado')
+    >>> browser.open("http://launchpad.test/~salgado")
     >>> print(browser.title)
     Guilherme Salgado in Launchpad
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'sshkeys')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "sshkeys")))
     SSH keys: Update SSH keys
     salgado@canario
     salgado@canario
@@ -209,37 +225,39 @@ to edit his keys is on the page.
     salgado@canario
     salgado@canario
     ED25519 key
-    >>> browser.getLink('Update SSH keys').click()
+    >>> browser.getLink("Update SSH keys").click()
     >>> print(browser.title)
     Change your SSH keys...
 
-    >>> browser.getControl('Remove', index=0).click()
+    >>> browser.getControl("Remove", index=0).click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'informational message'):
+    >>> for tag in soup("p", "informational message"):
     ...     print(tag.decode_contents())
+    ...
     Key ... removed
 
 If Salgado tries to remove a key that doesn't exist or one that doesn't
 belong to him, it will fail with an error message.
 
-    >>> browser.getControl(name='key', index=0).value = '99999'
-    >>> browser.getControl('Remove', index=0).click()
+    >>> browser.getControl(name="key", index=0).value = "99999"
+    >>> browser.getControl("Remove", index=0).click()
     >>> soup = find_main_content(browser.contents)
-    >>> for tag in soup('p', 'error message'):
+    >>> for tag in soup("p", "error message"):
     ...     print(tag.decode_contents())
+    ...
     Cannot remove a key that doesn't exist
 
-    >>> browser.getControl(name='key', index=0).value = '1'
-    >>> browser.getControl('Remove', index=0).click()
+    >>> browser.getControl(name="key", index=0).value = "1"
+    >>> browser.getControl("Remove", index=0).click()
     Traceback (most recent call last):
     lp.app.errors.UnexpectedFormData: ...
 
 Similarly, it's not possible to remove an unspecified ssh key, although in
 this case we'll raise an UnexpectedFormData.
 
-    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
-    >>> browser.getControl(name='key', index=0).value = ''
-    >>> browser.getControl('Remove', index=0).click()
+    >>> browser.open("http://launchpad.test/~salgado/+editsshkeys")
+    >>> browser.getControl(name="key", index=0).value = ""
+    >>> browser.getControl("Remove", index=0).click()
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: ...
@@ -250,13 +268,13 @@ that the key has been removed.
     >>> import email
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
-    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
-    >>> browser.getControl('Remove', index=0).click()
+    >>> browser.open("http://launchpad.test/~salgado/+editsshkeys")
+    >>> browser.getControl("Remove", index=0).click()
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
     ['guilherme.salgado@canonical.com']
     >>> payload = email.message_from_bytes(msg).get_payload()
-    >>> assert payload.startswith('The SSH key')
+    >>> assert payload.startswith("The SSH key")
 
 
 Keys containing non-ASCII comments
@@ -266,15 +284,16 @@ These keys can be imported just like the others which have ASCII
 comments.
 
     >>> key = (
-    ...     'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAzSc+OzlZaURcX8NK9Hy1VoA1SXXu'
-    ...     'xFAvLw9ljz6xXEFgodmkSgSE/Pc+nR2fO/hl0rnWi//8oOwkHlwLVPQpor2cjQlc'
-    ...     'eVs9rKaQcrcwRm6Jmi8CYKlEIBq82kpaLwXwK/x5ZsDfFtYUq558C5IKZOnDozth'
-    ...     'C7REPYK0cQ8gZ4bLf+5hmJ6QO4sSRZcXTZuPvgUixhlazFo6w6GqWbynf29Wp+Wk'
-    ...     'LFGxGF2UE/dI8HyQy2j7ddaLnW50mGfB00B/pYtO246s84097BRUE8XoBC3SvzsZ'
-    ...     'x6IbI3hOd2e834lq6kOj6QI0wu6+GINRCZf5UyNlpJv6X809XBvq68SCgw== '
-    ...     'St\xc3\xa9phane')
-    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
-    >>> browser.getControl(name='sshkey').value = key
-    >>> browser.getControl('Import Public Key').click()
+    ...     "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAzSc+OzlZaURcX8NK9Hy1VoA1SXXu"
+    ...     "xFAvLw9ljz6xXEFgodmkSgSE/Pc+nR2fO/hl0rnWi//8oOwkHlwLVPQpor2cjQlc"
+    ...     "eVs9rKaQcrcwRm6Jmi8CYKlEIBq82kpaLwXwK/x5ZsDfFtYUq558C5IKZOnDozth"
+    ...     "C7REPYK0cQ8gZ4bLf+5hmJ6QO4sSRZcXTZuPvgUixhlazFo6w6GqWbynf29Wp+Wk"
+    ...     "LFGxGF2UE/dI8HyQy2j7ddaLnW50mGfB00B/pYtO246s84097BRUE8XoBC3SvzsZ"
+    ...     "x6IbI3hOd2e834lq6kOj6QI0wu6+GINRCZf5UyNlpJv6X809XBvq68SCgw== "
+    ...     "St\xc3\xa9phane"
+    ... )
+    >>> browser.open("http://launchpad.test/~salgado/+editsshkeys")
+    >>> browser.getControl(name="sshkey").value = key
+    >>> browser.getControl("Import Public Key").click()
     >>> print_feedback_messages(browser.contents)
     SSH public key added.

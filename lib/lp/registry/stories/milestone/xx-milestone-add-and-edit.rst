@@ -6,10 +6,11 @@ structural object (product, project, distroseries, productseries). This
 utility function will print out the milestones in that portlet:
 
     >>> def milestones_in_portlet(browser):
-    ...     portlet = find_portlet(browser.contents, 'Active milestones')
+    ...     portlet = find_portlet(browser.contents, "Active milestones")
     ...     if portlet is None:
-    ...         return 'NO MILESTONE PORTLET'
-    ...     return extract_text(portlet.find('table'))
+    ...         return "NO MILESTONE PORTLET"
+    ...     return extract_text(portlet.find("table"))
+    ...
 
 Adding a milestone
 ------------------
@@ -17,35 +18,36 @@ Adding a milestone
 Let's make Sample Person the owner of Ubuntu and alsa-utils for this
 story.
 
-    >>> admin_browser.open('http://launchpad.test/ubuntu/+reassign')
-    >>> admin_browser.getControl(name='field.owner').value = 'name12'
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.open("http://launchpad.test/ubuntu/+reassign")
+    >>> admin_browser.getControl(name="field.owner").value = "name12"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> admin_browser.open('http://launchpad.test/alsa-utils/+edit-people')
-    >>> admin_browser.getControl(name='field.owner').value = 'name12'
-    >>> admin_browser.getControl('Save changes').click()
+    >>> admin_browser.open("http://launchpad.test/alsa-utils/+edit-people")
+    >>> admin_browser.getControl(name="field.owner").value = "name12"
+    >>> admin_browser.getControl("Save changes").click()
 
 Milestone creations is restricted to the project owner, or to the series
 owner or driver. This means that No Privileges Person won't be able to
 see the link to add a milestone nor access the page directly.
 
-    >>> user_browser.open('http://launchpad.test/alsa-utils/trunk')
-    >>> user_browser.getLink('Create milestone').click()
+    >>> user_browser.open("http://launchpad.test/alsa-utils/trunk")
+    >>> user_browser.getLink("Create milestone").click()
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> user_browser.open(
-    ...     'http://launchpad.test/alsa-utils/trunk/+addmilestone')
+    ...     "http://launchpad.test/alsa-utils/trunk/+addmilestone"
+    ... )
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
-    >>> user_browser.getLink('Create milestone').click()
+    >>> user_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> user_browser.getLink("Create milestone").click()
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
+    >>> user_browser.open("http://launchpad.test/ubuntu/hoary/+addmilestone")
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -53,14 +55,14 @@ see the link to add a milestone nor access the page directly.
 But Sample Person will be able to use the 'Create milestone' link to
 create a new milestone.
 
-    >>> test_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> test_browser.open('http://launchpad.test/alsa-utils/trunk')
-    >>> test_browser.getLink('Create milestone').click()
+    >>> test_browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> test_browser.open("http://launchpad.test/alsa-utils/trunk")
+    >>> test_browser.getLink("Create milestone").click()
     >>> test_browser.url
     'http://launchpad.test/alsa-utils/trunk/+addmilestone'
 
-    >>> test_browser.open('http://launchpad.test/ubuntu/hoary')
-    >>> test_browser.getLink('Create milestone').click()
+    >>> test_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> test_browser.getLink("Create milestone").click()
     >>> test_browser.url
     'http://launchpad.test/ubuntu/hoary/+addmilestone'
 
@@ -71,8 +73,8 @@ Milestone bug subscriptions
 To receive email notifications about bugs pretaining to a milestone, we
 can create structural bug subscriptions.
 
-    >>> user_browser.open('http://launchpad.test/firefox/+milestone/1.0')
-    >>> user_browser.getLink('Subscribe to bug mail').click()
+    >>> user_browser.open("http://launchpad.test/firefox/+milestone/1.0")
+    >>> user_browser.getLink("Subscribe to bug mail").click()
     >>> print(user_browser.url)
     http://launchpad.test/firefox/+milestone/1.0/+subscribe
     >>> print(user_browser.title)
@@ -80,8 +82,8 @@ can create structural bug subscriptions.
 
 But we can't subscribe to project milestones, since they are not real objects.
 
-    >>> user_browser.open('http://launchpad.test/mozilla/+milestone/1.0')
-    >>> user_browser.getLink('Subscribe to bug mail')
+    >>> user_browser.open("http://launchpad.test/mozilla/+milestone/1.0")
+    >>> user_browser.getLink("Subscribe to bug mail")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -93,12 +95,15 @@ Deleting milestones
 The series page lists all the active and releases milestones targeted to
 the series.
 
-    >>> driver_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> driver_browser.open('http://launchpad.test/firefox/trunk')
+    >>> driver_browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> driver_browser.open("http://launchpad.test/firefox/trunk")
     >>> print(driver_browser.title)
     Series trunk : Mozilla Firefox
-    >>> print(extract_text(find_tag_by_id(
-    ...     driver_browser.contents, 'series-trunk')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(driver_browser.contents, "series-trunk")
+    ...     )
+    ... )
     Version                   Expected  Released                   Summary
     Mozilla Firefox 0.9.2...  Set date  Change details 2004-10-16
     ...
@@ -112,11 +117,11 @@ the series.
 A user with launchpad.Edit rights for a release can see the delete link and
 access the delete page. Sample Person is the driver so they have those rights.
 
-    >>> driver_browser.getLink('0.9.2').click()
+    >>> driver_browser.getLink("0.9.2").click()
     >>> print(driver_browser.title)
     0.9.2 "One (secure) Tree Hill" : Mozilla Firefox
 
-    >>> driver_browser.getLink('Delete milestone').click()
+    >>> driver_browser.getLink("Delete milestone").click()
     >>> print(driver_browser.title)
     Delete Mozilla Firefox 0.9.2...
 
@@ -133,14 +138,17 @@ Person reads that they will be deleted too.
 Sample Person chooses the delete button, then reads that the action is
 successful.
 
-    >>> driver_browser.getControl('Delete Milestone').click()
+    >>> driver_browser.getControl("Delete Milestone").click()
     >>> print(driver_browser.title)
     Series trunk : Mozilla Firefox
 
     >>> print_feedback_messages(driver_browser.contents)
     Milestone 0.9.2 deleted.
-    >>> print(extract_text(find_tag_by_id(
-    ...     driver_browser.contents, 'series-trunk')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(driver_browser.contents, "series-trunk")
+    ...     )
+    ... )
     Version                Expected   Released     Summary
     Mozilla Firefox 0.9.1 ...
     Mozilla Firefox 0.9 ...

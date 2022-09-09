@@ -124,27 +124,28 @@ def append_footer(main, footer):
 def format_address(name, address):
     r"""Formats a name and address to be used as an email header.
 
-        >>> format_address('Name', 'foo@bar.com')
+        >>> format_address("Name", "foo@bar.com")
         'Name <foo@bar.com>'
-        >>> format_address('', 'foo@bar.com')
+        >>> format_address("", "foo@bar.com")
         'foo@bar.com'
-        >>> format_address(None, u'foo@bar.com')
+        >>> format_address(None, "foo@bar.com")
         'foo@bar.com'
 
     It handles unicode and characters that need quoting as well.
 
-        >>> format_address(u'F\xf4\xf4 Bar', 'foo.bar@canonical.com')
+        >>> format_address("F\xf4\xf4 Bar", "foo.bar@canonical.com")
         '=?utf-8?b?RsO0w7QgQmFy?= <foo.bar@canonical.com>'
 
-        >>> format_address('Foo "Baz" Bar', 'foo.bar@canonical.com')
+        >>> format_address('Foo "Baz" Bar', "foo.bar@canonical.com")
         '"Foo \\"Baz\\" Bar" <foo.bar@canonical.com>'
 
     Really long names doesn't get folded, since we're not constructing
     an email header here.
 
         >>> formatted_address = format_address(
-        ...     'a '*100, 'long.name@example.com')
-        >>> '\n' in formatted_address
+        ...     "a " * 100, "long.name@example.com"
+        ... )
+        >>> "\n" in formatted_address
         False
     """
     if not name:
@@ -355,17 +356,17 @@ def simple_sendmail_from_person(person, to_addrs, subject, body, headers=None):
 def get_addresses_from_header(email_header):
     r"""Get the email addresses specificed in an email header.
 
-    >>> get_addresses_from_header('one@example.com')
+    >>> get_addresses_from_header("one@example.com")
     ['one@example.com']
-    >>> get_addresses_from_header('one@example.com, two@example.com')
+    >>> get_addresses_from_header("one@example.com, two@example.com")
     ['one@example.com', 'two@example.com']
-    >>> get_addresses_from_header('One\n <one@example.com>')
+    >>> get_addresses_from_header("One\n <one@example.com>")
     ['One <one@example.com>']
-    >>> get_addresses_from_header('One\r\n <one@example.com>')
+    >>> get_addresses_from_header("One\r\n <one@example.com>")
     ['One <one@example.com>']
     >>> get_addresses_from_header(
-    ...     '"One, A" <one.a@example.com>,\n'
-    ...     ' "Two, B" <two.b@example.com>')
+    ...     '"One, A" <one.a@example.com>,\n' ' "Two, B" <two.b@example.com>'
+    ... )
     ['"One, A" <one.a@example.com>', '"Two, B" <two.b@example.com>']
 
     """

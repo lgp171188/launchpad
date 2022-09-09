@@ -6,7 +6,7 @@ Cached Properties in propertycache
     ...     clear_property_cache,
     ...     get_property_cache,
     ...     IPropertyCache,
-    ...     )
+    ... )
 
 Cached properties are for situations where a property is computed once
 and then returned each time it is asked for.
@@ -18,6 +18,7 @@ and then returned each time it is asked for.
     ...     @cachedproperty
     ...     def bar(self):
     ...         return next(counter)
+    ...
 
     >>> foo = Foo()
 
@@ -127,9 +128,11 @@ is the name under which values will be cached.
     ...     @cachedproperty("a_in_cache")
     ...     def a(self):
     ...         return 1234
+    ...
     ...     @cachedproperty
     ...     def b(self):
     ...         return 5678
+    ...
 
     >>> foo = Foo()
 

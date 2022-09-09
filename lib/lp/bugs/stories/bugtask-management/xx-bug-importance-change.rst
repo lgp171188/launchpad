@@ -3,9 +3,9 @@ Bugtask importance
 
 It is possible to set the bug importance using the bugtask edit form.
 
-    >>> admin_browser.open('http://bugs.launchpad.test/bugs/10')
-    >>> importance_control = admin_browser.getControl('Importance')
-    >>> print('\n'.join(importance_control.displayOptions))
+    >>> admin_browser.open("http://bugs.launchpad.test/bugs/10")
+    >>> importance_control = admin_browser.getControl("Importance")
+    >>> print("\n".join(importance_control.displayOptions))
     Undecided
     Critical
     High
@@ -41,8 +41,7 @@ product or distro, can edit Importance.
     ...     naked_email = removeSecurityProxy(user.preferredemail)
     ...     transaction.commit()
     ...     logout()
-    ...     browser = setupBrowser(
-    ...         "Basic %s:test" % naked_email.email)
+    ...     browser = setupBrowser("Basic %s:test" % naked_email.email)
     ...     browser.open(url)
     ...     try:
     ...         browser.getControl("Importance")
@@ -50,6 +49,7 @@ product or distro, can edit Importance.
     ...         return False
     ...     else:
     ...         return True
+    ...
 
 For a product bug supervisor.
 
@@ -57,7 +57,8 @@ For a product bug supervisor.
     >>> firefox.bug_supervisor = no_priv
     >>> user_sees_importance_widget(
     ...     user=no_priv,
-    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus")
+    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus",
+    ... )
     True
 
 For a product owner.
@@ -70,7 +71,8 @@ For a product owner.
     >>> sample_person = personset.getByName("name12")
     >>> user_sees_importance_widget(
     ...     user=sample_person,
-    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus")
+    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus",
+    ... )
     True
 
 For someone else. We'll unset no_priv as the bug supervisor, and note that
@@ -80,7 +82,8 @@ they can no longer see the widget.
     >>> firefox.bug_supervisor = None
     >>> user_sees_importance_widget(
     ...     user=no_priv,
-    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus")
+    ...     url="http://bugs.launchpad.test/firefox/+bug/1/+editstatus",
+    ... )
     False
 
 For a distribution bug supervisor.
@@ -89,8 +92,9 @@ For a distribution bug supervisor.
     >>> ubuntu.bug_supervisor = no_priv
     >>> user_sees_importance_widget(
     ...     user=no_priv,
-    ...     url='http://bugs.launchpad.test/'
-    ...         'ubuntu/+source/mozilla-firefox/+bug/1/+editstatus')
+    ...     url="http://bugs.launchpad.test/"
+    ...     "ubuntu/+source/mozilla-firefox/+bug/1/+editstatus",
+    ... )
     True
 
 For a distribution owner.
@@ -101,8 +105,9 @@ For a distribution owner.
 
     >>> user_sees_importance_widget(
     ...     user=mark,
-    ...     url='http://bugs.launchpad.test/'
-    ...         'ubuntu/+source/mozilla-firefox/+bug/1/+editstatus')
+    ...     url="http://bugs.launchpad.test/"
+    ...     "ubuntu/+source/mozilla-firefox/+bug/1/+editstatus",
+    ... )
     True
 
 For someone else, on Ubuntu.
@@ -111,6 +116,7 @@ For someone else, on Ubuntu.
     >>> ubuntu.bug_supervisor = None
     >>> user_sees_importance_widget(
     ...     user=no_priv,
-    ...     url='http://bugs.launchpad.test/'
-    ...         'ubuntu/+source/mozilla-firefox/+bug/1/+editstatus')
+    ...     url="http://bugs.launchpad.test/"
+    ...     "ubuntu/+source/mozilla-firefox/+bug/1/+editstatus",
+    ... )
     False

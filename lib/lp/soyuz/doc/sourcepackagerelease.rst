@@ -30,6 +30,7 @@ SourcePackageRelease is published in.
 
     >>> for archive in spr.published_archives:
     ...     print(archive.displayname)
+    ...
     Primary Archive for Ubuntu Linux
     PPA for Celso Providelo
 
@@ -46,7 +47,7 @@ Check if the result match the locally calculated one:
 
     >>> import datetime
     >>> import pytz
-    >>> local_now = datetime.datetime.now(pytz.timezone('UTC'))
+    >>> local_now = datetime.datetime.now(pytz.timezone("UTC"))
 
     >>> expected_age = local_now - spr.dateuploaded
     >>> spr.age.days == expected_age.days
@@ -55,7 +56,7 @@ Check if the result match the locally calculated one:
 Modify dateuploaded to a certain number of days in the past and check
 if the 'age' result looks sane:
 
-    >>> spr.dateuploaded = (local_now - datetime.timedelta(days=10))
+    >>> spr.dateuploaded = local_now - datetime.timedelta(days=10)
     >>> spr.age.days == 10
     True
 
@@ -65,11 +66,12 @@ property only returns the non-PPA builds.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     >>> from storm.store import Store
-    >>> cprov_ppa = getUtility(IPersonSet).getByName('cprov').archive
+    >>> cprov_ppa = getUtility(IPersonSet).getByName("cprov").archive
     >>> ff_ppa_build = Store.of(cprov_ppa).find(
     ...     BinaryPackageBuild,
     ...     BinaryPackageBuild.source_package_release == spr,
-    ...     BinaryPackageBuild.archive == cprov_ppa)
+    ...     BinaryPackageBuild.archive == cprov_ppa,
+    ... )
     >>> ff_ppa_build.count()
     1
     >>> ff_ppa_build[0].archive.purpose.name
@@ -81,6 +83,7 @@ All the builds returned are for non-PPA archives:
 
     >>> for item in set(build.archive.purpose.name for build in spr.builds):
     ...     print(item)
+    ...
     PRIMARY
 
 Check that the uploaded changesfile works:
@@ -98,8 +101,8 @@ Check ISourcePackageRelease.override() behaviour:
 
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> from lp.soyuz.interfaces.section import ISectionSet
-    >>> new_comp = getUtility(IComponentSet)['universe']
-    >>> new_sec = getUtility(ISectionSet)['mail']
+    >>> new_comp = getUtility(IComponentSet)["universe"]
+    >>> new_sec = getUtility(ISectionSet)["mail"]
 
 Override the current sourcepackagerelease with new component/section
 pair:
@@ -125,22 +128,23 @@ IDistroSeries API:
     >>> from lp.registry.interfaces.sourcepackage import (
     ...     SourcePackageType,
     ...     SourcePackageUrgency,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet,
-    ...     )
+    ... )
 
-    >>> hoary = getUtility(IDistributionSet)['ubuntu']['hoary']
+    >>> hoary = getUtility(IDistributionSet)["ubuntu"]["hoary"]
 
 All the arguments to create an ISourcePackageRelease are obtained when
 processing a source upload, see more details in nascentupload.rst.
 Some of the 20 required arguments are foreign keys or DB contants:
 
-    >>> arg_name = getUtility(ISourcePackageNameSet)['pmount']
-    >>> arg_comp = getUtility(IComponentSet)['universe']
-    >>> arg_sect = getUtility(ISectionSet)['web']
+    >>> arg_name = getUtility(ISourcePackageNameSet)["pmount"]
+    >>> arg_comp = getUtility(IComponentSet)["universe"]
+    >>> arg_sect = getUtility(ISectionSet)["web"]
     >>> arg_key = getUtility(IGPGKeySet).getByFingerprint(
-    ...     'ABCDEF0123456789ABCDDCBA0000111112345678')
+    ...     "ABCDEF0123456789ABCDDCBA0000111112345678"
+    ... )
     >>> arg_maintainer = hoary.owner
     >>> arg_creator = hoary.owner
     >>> arg_urgency = SourcePackageUrgency.LOW
@@ -149,17 +153,17 @@ Some of the 20 required arguments are foreign keys or DB contants:
 
 The other argurments are strings:
 
-    >>> version = '0.0.99'
-    >>> dsc = 'smashed dsc...'
-    >>> copyright = 'smashed debian/copyright ...'
-    >>> changelog_entry = 'contigous text....'
-    >>> archhintlist = 'any'
-    >>> builddepends = 'cdbs, debhelper (>= 4.1.0), libsysfs-dev, libhal-dev'
-    >>> builddependsindep = ''
-    >>> dsc_maintainer_rfc822 = 'Foo Bar <foo@bar.com>'
-    >>> dsc_standards_version = '2.6.1'
-    >>> dsc_format = '1.0'
-    >>> dsc_binaries = 'pmount'
+    >>> version = "0.0.99"
+    >>> dsc = "smashed dsc..."
+    >>> copyright = "smashed debian/copyright ..."
+    >>> changelog_entry = "contigous text...."
+    >>> archhintlist = "any"
+    >>> builddepends = "cdbs, debhelper (>= 4.1.0), libsysfs-dev, libhal-dev"
+    >>> builddependsindep = ""
+    >>> dsc_maintainer_rfc822 = "Foo Bar <foo@bar.com>"
+    >>> dsc_standards_version = "2.6.1"
+    >>> dsc_format = "1.0"
+    >>> dsc_binaries = "pmount"
     >>> archive = hoary.main_archive
 
 Having proper arguments in hand we can create a new
@@ -231,10 +235,10 @@ kilo-bytes).
 Verify that empty packages have a size of zero.
 
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> linux_src = SourcePackageName.selectOneBy(
-    ...     name="linux-source-2.6.15")
+    >>> linux_src = SourcePackageName.selectOneBy(name="linux-source-2.6.15")
     >>> spr = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagename=linux_src, version='2.6.15.3')
+    ...     sourcepackagename=linux_src, version="2.6.15.3"
+    ... )
     >>> spr.getPackageSize()
     0.0
 
@@ -247,16 +251,14 @@ they are published.
 
 We will use SoyuzTestPublisher to create new publications.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 
     >>> test_publisher = SoyuzTestPublisher()
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
     >>> test_publisher.addFakeChroots(hoary)
     >>> unused = test_publisher.setUpDefaultDistroSeries(hoary)
 
@@ -264,14 +266,16 @@ If a SourcePackageRelease is only published in a private PPA, only
 users with access (launchpad.View) to that archive will be able to get
 the same permission on it.
 
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> cprov_private_ppa = factory.makeArchive(
-    ...     owner=cprov, private=True, name='pppa')
+    ...     owner=cprov, private=True, name="pppa"
+    ... )
 
     >>> private_publication = test_publisher.getPubSource(
-    ...     archive=cprov_private_ppa)
+    ...     archive=cprov_private_ppa
+    ... )
 
     >>> test_sourcepackagerelease = private_publication.sourcepackagerelease
     >>> print(test_sourcepackagerelease.title)
@@ -280,35 +284,35 @@ the same permission on it.
     >>> published_archives = test_sourcepackagerelease.published_archives
     >>> for archive in published_archives:
     ...     print(archive.displayname)
+    ...
     PPA named pppa for Celso Providelo
 
 'foo - 666' sourcepackagerelease is only published in Celso's Private
 PPA. So, Only Celso and administrators can get 'launchpad.View' on it.
 
-    >>> from lp.services.webapp.authorization import (
-    ...     check_permission)
+    >>> from lp.services.webapp.authorization import check_permission
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     False
 
-    >>> login('celso.providelo@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("celso.providelo@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
-    >>> login('foo.bar@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("foo.bar@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
 Once the SourcePackageRelease in question gets copied to a public
 archive, let's say Ubuntu primary archive, it will become publicly
 available.
 
-    >>> from lp.registry.interfaces.pocket import (
-    ...     PackagePublishingPocket)
+    >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
 
     >>> public_publication = private_publication.copyTo(
-    ...     hoary, PackagePublishingPocket.RELEASE, ubuntu.main_archive)
+    ...     hoary, PackagePublishingPocket.RELEASE, ubuntu.main_archive
+    ... )
 
 'foo - 666' is now published in Celso's private PPA and the Ubuntu
 primary archive, which is public.
@@ -316,25 +320,26 @@ primary archive, which is public.
     >>> published_archives = test_sourcepackagerelease.published_archives
     >>> for archive in published_archives:
     ...     print(archive.displayname)
+    ...
     Primary Archive for Ubuntu Linux
     PPA named pppa for Celso Providelo
 
 And we can see it's publicly available now, as expected.
 
     >>> login(ANONYMOUS)
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
-    >>> login('celso.providelo@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("celso.providelo@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
-    >>> login('foo.bar@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("foo.bar@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
 Another common scenario is that once the package is unembargoed from the
@@ -343,18 +348,18 @@ package is still public:
 
     >>> private_publication.requestDeletion(cprov)
     >>> transaction.commit()
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
 The next stage of the lifecycle is for the remaining publication to be
 superseded.  The package will still be public after that happens.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> unused = public_publication.supersede()
     >>> transaction.commit()
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.View', test_sourcepackagerelease)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.View", test_sourcepackagerelease)
     True
 
 published_archives shows the superseded/deleted publications still:
@@ -362,5 +367,6 @@ published_archives shows the superseded/deleted publications still:
     >>> published_archives = test_sourcepackagerelease.published_archives
     >>> for archive in published_archives:
     ...     print(archive.displayname)
+    ...
     Primary Archive for Ubuntu Linux
     PPA named pppa for Celso Providelo

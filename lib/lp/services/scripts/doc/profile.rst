@@ -8,20 +8,24 @@ The profile data is saved in the argument when the program exits.
     >>> import tempfile
     >>> import pstats
 
-    >>> profile_dir = tempfile.mkdtemp(prefix='profile')
+    >>> profile_dir = tempfile.mkdtemp(prefix="profile")
     >>> from lp.services.scripts.base import LaunchpadScript
     >>> class ProfiledScript(LaunchpadScript):
     ...     def main(self):
     ...         pass
+    ...
     ...     def _init_zca(self, use_web_security):
     ...         pass
+    ...
     ...     def _init_db(self, isolation):
     ...         pass
+    ...
 
-    >>> profile_file = os.path.join(profile_dir, 'myscript.prof')
+    >>> profile_file = os.path.join(profile_dir, "myscript.prof")
     >>> script = ProfiledScript(
-    ...     'test-script.py', test_args=[
-    ...         'test-script.py', '--profile', profile_file])
+    ...     "test-script.py",
+    ...     test_args=["test-script.py", "--profile", profile_file],
+    ... )
 
     >>> script.run()
     >>> stats = pstats.Stats(profile_file)

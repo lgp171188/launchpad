@@ -21,11 +21,12 @@ Here are some imports we need to get this test running.
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -35,12 +36,12 @@ And also, the DBSchema to change the imports status
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 Here's the person who'll be doing the import.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> person = person_set.getByName('mark')
+    >>> person = person_set.getByName("mark")
 
 Now it's time to create the new potemplate
 
@@ -51,18 +52,20 @@ Now it's time to create the new potemplate
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.new(
-    ...     name='firefox',
-    ...     translation_domain='firefox',
-    ...     path='po/firefox.pot',
-    ...     owner=person)
+    ...     name="firefox",
+    ...     translation_domain="firefox",
+    ...     path="po/firefox.pot",
+    ...     owner=person,
+    ... )
 
 We create the POFile object where we are going to attach the .po file.
 
-    >>> pofile = potemplate.newPOFile('cy')
+    >>> pofile = potemplate.newPOFile("cy")
 
 First, we do a valid import.
 
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -74,11 +77,19 @@ First, we do a valid import.
     ...
     ... msgid "foo"
     ... msgstr "blah"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We must approve the entry to be able to import it.
@@ -110,7 +121,8 @@ file we just imported.
 Now, we are going to import a .po file that has a 'PO-Revision-Date'
 field with a date older than a previous .po import.
 
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-05-03 19:41+0100\n"
@@ -122,11 +134,19 @@ field with a date older than a previous .po import.
     ...
     ... msgid "foo"
     ... msgstr "blah"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We must approve the entry to be able to import it.
@@ -188,8 +208,14 @@ Finally we are going to import the same po file with the old
 
     >>> by_maintainer = True
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We approve the entry and import it.

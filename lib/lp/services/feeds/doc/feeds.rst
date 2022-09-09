@@ -16,8 +16,7 @@ In order to demonstrate a feed class, we need to create an interface
 for the thing comprising the feed.  Rather than use a standard
 Launchpad interface, we'll define one here.
 
-    >>> from lp.services.feeds.tests.helper import (
-    ...     IThing, Thing)
+    >>> from lp.services.feeds.tests.helper import IThing, Thing
 
 
 ZCML for browser:feeds
@@ -26,7 +25,8 @@ ZCML for browser:feeds
 The zcml `browser:feeds` directive describes a feed view.
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
@@ -35,7 +35,8 @@ The zcml `browser:feeds` directive describes a feed view.
     ...       classes="ThingFeedView"
     ...       />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
 Get the view from a `thing` on 'thing-feed' for a request.
 
@@ -53,10 +54,10 @@ must be in the FeedsLayer.
 The request we just created is not in the FeedsLayer, so the view will
 not be found.
 
-    >>> thing = Thing('thing 1')
+    >>> thing = Thing("thing 1")
     >>> verifyObject(IThing, thing)
     True
-    >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
+    >>> feed_view = getMultiAdapter((thing, request), name="thing-feed.xml")
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...
@@ -76,7 +77,7 @@ found.
     zope.interface.exceptions.MultipleInvalid: ...
     Does not declaratively implement the interface
     The lp.services.feeds.tests.helper.IThing.value attribute was not provided
-    >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.atom')
+    >>> feed_view = getMultiAdapter((thing, request), name="thing-feed.atom")
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...
@@ -84,10 +85,10 @@ found.
 If the name is not one of the supported names the view will not be
 found.
 
-    >>> thing = Thing('thing 1')
+    >>> thing = Thing("thing 1")
     >>> verifyObject(IThing, thing)
     True
-    >>> feed_view = getMultiAdapter((thing, request), name='thing-feed.xml')
+    >>> feed_view = getMultiAdapter((thing, request), name="thing-feed.xml")
     Traceback (most recent call last):
       ...
     zope.interface.interfaces.ComponentLookupError: ...
@@ -95,12 +96,13 @@ found.
 If the thing is an IThing and the name is supported the view will be
 found, indicated by the absence of a ComponentLookupError.
 
-    >>> thing = Thing('thing 1')
+    >>> thing = Thing("thing 1")
     >>> verifyObject(IThing, thing)
     True
-    >>> for name in ['thing-feed.atom', 'thing-feed.html']:
+    >>> for name in ["thing-feed.atom", "thing-feed.html"]:
     ...     feed_view = getMultiAdapter((thing, request), name=name)
     ...     print(feed_view())
+    ...
     a feed view on an IThing
     a feed view on an IThing
 
@@ -125,8 +127,10 @@ by browsers and the reverse-proxy in front of the feeds servers.
     1800
     >>> config.launchpad.max_feed_cache_minutes * 60 == FeedBase.max_age
     True
-    >>> (config.launchpad.max_bug_feed_cache_minutes * 60
-    ...  == BugsFeedBase.max_age)
+    >>> (
+    ...     config.launchpad.max_bug_feed_cache_minutes * 60
+    ...     == BugsFeedBase.max_age
+    ... )
     True
 
 
@@ -160,7 +164,8 @@ the xhtml entities will be converted to valid UTF-8. Since some simplistic
 feed readers may expect ascii, we prefer using "html" over "xhtml", however,
 we are testing xhtml encoding here in case we need it in the future.
 
-    >>> xhtml = FeedTypedData("<b> and &nbsp; and &amp;</b><hr/>",
-    ...               content_type="xhtml")
+    >>> xhtml = FeedTypedData(
+    ...     "<b> and &nbsp; and &amp;</b><hr/>", content_type="xhtml"
+    ... )
     >>> print(backslashreplace(xhtml.content))
     <b> and \xa0 and &amp;</b><hr/>

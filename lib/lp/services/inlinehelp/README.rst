@@ -24,15 +24,18 @@ takes the directory served by the HelpFolder and the request type for which
 it should be registered.
 
     >>> import tempfile
-    >>> help_folder = tempfile.mkdtemp(prefix='help')
+    >>> help_folder = tempfile.mkdtemp(prefix="help")
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="lp.services.inlinehelp" file="meta.zcml" />
     ...   <lp:help-folder folder="%s" name="+help"/>
     ... </configure>
-    ... """ % help_folder)
+    ... """
+    ...     % help_folder
+    ... )
 
 The help folder is registered on the ILaunchpadRoot interface.
 
@@ -40,6 +43,7 @@ The help folder is registered on the ILaunchpadRoot interface.
     >>> from zope.publisher.interfaces.browser import IBrowserRequest
     >>> class FakeRequest:
     ...     pass
+    ...
     >>> request = FakeRequest()
     >>> directlyProvides(request, IBrowserRequest)
 

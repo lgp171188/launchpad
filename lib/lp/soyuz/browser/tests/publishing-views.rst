@@ -13,16 +13,17 @@ filenames and filesizes.
 We'll create SourcePackagePublishingHistory entries for
 alsa-utils and foobar in ubuntu to test with:
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
-    >>> from lp.soyuz.enums import (
-    ...     PackagePublishingStatus)
-    >>> with celebrity_logged_in('admin'):
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
+    >>> from lp.soyuz.enums import PackagePublishingStatus
+    >>> with celebrity_logged_in("admin"):
     ...     stp = SoyuzTestPublisher()
     ...     stp.prepareBreezyAutotest()
-    ...     alsa_pub = stp.getPubSource(sourcename='alsa-utils-test')
-    ...     foo_pub = stp.getPubSource(sourcename='foobar-test',
-    ...         status=PackagePublishingStatus.DELETED)
+    ...     alsa_pub = stp.getPubSource(sourcename="alsa-utils-test")
+    ...     foo_pub = stp.getPubSource(
+    ...         sourcename="foobar-test",
+    ...         status=PackagePublishingStatus.DELETED,
+    ...     )
+    ...
 
 The base class BasePublishingRecordView provides a few helper methods
 and properties for querying the publishing history record:
@@ -40,7 +41,7 @@ the view property returns 'None provided.'
 
 Otherwise the removal comment will be returned
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> foo_pub.removal_comment = "It had to go."
 
     >>> print(view.context.removal_comment)
@@ -75,10 +76,12 @@ inspected.
     >>> cprov = getUtility(IPersonSet).getByName("cprov")
 
     >>> iceweasel_source_pub = cprov.archive.getPublishedSources(
-    ...     u'iceweasel').first()
+    ...     "iceweasel"
+    ... ).first()
 
     >>> ppa_source_view = create_initialized_view(
-    ...     iceweasel_source_pub, "+listing-archive-detailed")
+    ...     iceweasel_source_pub, "+listing-archive-detailed"
+    ... )
 
     >>> print(pretty(ppa_source_view.published_source_and_binary_files))
     ... # noqa
@@ -102,7 +105,8 @@ publication.
 Continuing to use the 'iceweasel' source publication in Celso's PPA.
 
     >>> source_details_view = create_initialized_view(
-    ...     iceweasel_source_pub, "+record-details")
+    ...     iceweasel_source_pub, "+record-details"
+    ... )
 
 We probe the 'is_source' and 'is_binary' properties.
 
@@ -119,7 +123,8 @@ BinaryPackagePublishingHistoryView.
     >>> iceweasel_binary_pub = iceweasel_source_pub.getPublishedBinaries()[0]
 
     >>> binary_details_view = create_initialized_view(
-    ...     iceweasel_binary_pub, "+record-details")
+    ...     iceweasel_binary_pub, "+record-details"
+    ... )
 
     >>> print(binary_details_view.is_source)
     False
@@ -133,11 +138,13 @@ This test will fail if we add a new value to the PackagePublishingStatus
 enumeration but neglect to update BasePublishingRecordView.timestamp_map
 accordingly.
 
-    >>> from lp.soyuz.browser.publishing import (
-    ...     BasePublishingRecordView)
+    >>> from lp.soyuz.browser.publishing import BasePublishingRecordView
     >>> for pps in PackagePublishingStatus.items:
-    ...     print('%s -> %s' % (
-    ...         pps, BasePublishingRecordView.timestamp_map[pps]))
+    ...     print(
+    ...         "%s -> %s"
+    ...         % (pps, BasePublishingRecordView.timestamp_map[pps])
+    ...     )
+    ...
     Pending -> datecreated
     Published -> datepublished
     Superseded -> datesuperseded
@@ -147,7 +154,7 @@ accordingly.
 Any key that's not in the PackagePublishingStatus enumeration will cause an
 exception to be thrown.
 
-    >>> print(BasePublishingRecordView.timestamp_map['key_not_there'])
+    >>> print(BasePublishingRecordView.timestamp_map["key_not_there"])
     Traceback (most recent call last):
     ...
     KeyError: ...'key_not_there'
@@ -156,11 +163,13 @@ The view knows how to render a publication's phased update percentage.
 
     >>> print(binary_details_view.phased_update_percentage)
 
-    >>> login('celso.providelo@canonical.com')
+    >>> login("celso.providelo@canonical.com")
     >>> iceweasel_binary_pub_phased = iceweasel_binary_pub.changeOverride(
-    ...     new_phased_update_percentage=50)
+    ...     new_phased_update_percentage=50
+    ... )
     >>> binary_details_view = create_initialized_view(
-    ...     iceweasel_binary_pub_phased, "+record-details")
+    ...     iceweasel_binary_pub_phased, "+record-details"
+    ... )
     >>> print(binary_details_view.phased_update_percentage)
     50% of users
 
@@ -169,11 +178,13 @@ DistroArchSeriesBinaryPackage:+index, showing a summary of each publication.
 It handles phased update percentages correctly.
 
     >>> binary_summary_view = create_initialized_view(
-    ...     iceweasel_binary_pub, "+listing-summary")
+    ...     iceweasel_binary_pub, "+listing-summary"
+    ... )
     >>> print(binary_summary_view.phased_update_percentage)
 
     >>> binary_summary_view_phased = create_initialized_view(
-    ...     iceweasel_binary_pub_phased, "+listing-summary")
+    ...     iceweasel_binary_pub_phased, "+listing-summary"
+    ... )
     >>> print(binary_summary_view_phased.phased_update_percentage)
     50% of users
 
@@ -185,18 +196,23 @@ The SourcePublishingRecordView includes a build_status_summary property
 that returns a dict summary of the build status for the context record:
 
     >>> src_pub_record_view = create_initialized_view(
-    ...     iceweasel_source_pub,
-    ...     name="+listing-compact")
+    ...     iceweasel_source_pub, name="+listing-compact"
+    ... )
 
 Create a small function for displaying the results:
 
     >>> def print_build_summary(summary):
-    ...     print("%s\n%s\nRelevant builds:\n%s" % (
-    ...         summary['status'].title,
-    ...         summary['status'].description,
-    ...         "\n".join(
-    ...             " - %s" % build.title for build in summary['builds'])
-    ...     ))
+    ...     print(
+    ...         "%s\n%s\nRelevant builds:\n%s"
+    ...         % (
+    ...             summary["status"].title,
+    ...             summary["status"].description,
+    ...             "\n".join(
+    ...                 " - %s" % build.title for build in summary["builds"]
+    ...             ),
+    ...         )
+    ...     )
+    ...
 
     >>> print_build_summary(src_pub_record_view.build_status_summary)
     FULLYBUILT_PENDING
@@ -220,4 +236,5 @@ As well as some helpers to determine the publishing status from templates:
 
     >>> for build in src_pub_record_view.pending_builds:
     ...     print(build.title)
+    ...
     i386 build of iceweasel 1.0 in ubuntu warty RELEASE

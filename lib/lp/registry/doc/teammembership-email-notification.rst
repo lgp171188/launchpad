@@ -9,41 +9,47 @@ one for all team admins and another for the member.
 
     >>> from operator import itemgetter
 
-    >>> def setStatus(membership, status, reviewer=None, comment=None,
-    ...               silent=False):
+    >>> def setStatus(
+    ...     membership, status, reviewer=None, comment=None, silent=False
+    ... ):
     ...     """Set the status of the given membership.
     ...
     ...     Also sets the reviewer and comment, calling flush_database_updates
     ...     and transaction.commit after, to ensure the changes are flushed to
     ...     the database.
     ...     """
-    ...     membership.setStatus(status, reviewer, comment=comment,
-    ...         silent=silent)
+    ...     membership.setStatus(
+    ...         status, reviewer, comment=comment, silent=silent
+    ...     )
     ...     flush_database_updates()
     ...     transaction.commit()
 
     >>> from lp.services.mail import stub
     >>> from lp.testing.mail_helpers import (
-    ...     pop_notifications, print_distinct_emails, run_mail_jobs)
+    ...     pop_notifications,
+    ...     print_distinct_emails,
+    ...     run_mail_jobs,
+    ... )
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet,
     ...     TeamMembershipRenewalPolicy,
     ...     TeamMembershipPolicy,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.teammembership import (
     ...     ITeamMembershipSet,
     ...     TeamMembershipStatus,
-    ...     )
+    ... )
     >>> personset = getUtility(IPersonSet)
     >>> membershipset = getUtility(ITeamMembershipSet)
-    >>> mark = personset.getByName('mark')
-    >>> kamion = personset.getByName('kamion')
-    >>> sampleperson = personset.getByName('name12')
-    >>> ubuntu_team = personset.getByName('ubuntu-team')
+    >>> mark = personset.getByName("mark")
+    >>> kamion = personset.getByName("kamion")
+    >>> sampleperson = personset.getByName("name12")
+    >>> ubuntu_team = personset.getByName("ubuntu-team")
     >>> open_team = factory.makeTeam(
-    ...     membership_policy=TeamMembershipPolicy.OPEN)
+    ...     membership_policy=TeamMembershipPolicy.OPEN
+    ... )
     >>> from lp.testing.sampledata import ADMIN_EMAIL
     >>> admin_person = personset.getByEmail(ADMIN_EMAIL)
 
@@ -70,7 +76,7 @@ In open teams joining and leaving the team generates no notifications.
 Now Robert Collins proposes himself as a member of the Ubuntu Team. This
 generates a notification email only to Ubuntu Team administrators.
 
-    >>> lifeless = personset.getByName('lifeless')
+    >>> lifeless = personset.getByName("lifeless")
     >>> ignored = login_person(lifeless)
     >>> lifeless.join(ubuntu_team)
     >>> membership = membershipset.getByPersonAndTeam(lifeless, ubuntu_team)
@@ -121,7 +127,7 @@ member and each of the team's admins.
     # Need to be logged in as a team admin to be able to change memberships of
     # that team.
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> setStatus(membership, TeamMembershipStatus.DECLINED, reviewer=mark)
 
 addMember() has queued up a job to send out the emails. We'll run the
@@ -170,7 +176,7 @@ job now.
 
 The same goes for approving a proposed member.
 
-    >>> daf = getUtility(IPersonSet).getByName('daf')
+    >>> daf = getUtility(IPersonSet).getByName("daf")
     >>> daf.join(ubuntu_team)
     >>> daf_membership = membershipset.getByPersonAndTeam(daf, ubuntu_team)
     >>> daf_membership.status.title
@@ -182,8 +188,12 @@ The same goes for approving a proposed member.
     >>> run_mail_jobs()
     >>> dummy = pop_notifications()
 
-    >>> setStatus(daf_membership, TeamMembershipStatus.APPROVED,
-    ...           reviewer=mark, comment='This is a nice guy; I like him')
+    >>> setStatus(
+    ...     daf_membership,
+    ...     TeamMembershipStatus.APPROVED,
+    ...     reviewer=mark,
+    ...     comment="This is a nice guy; I like him",
+    ... )
     >>> run_mail_jobs()
     >>> stub.test_emails.sort(key=itemgetter(1))
     >>> len(stub.test_emails)
@@ -232,8 +242,9 @@ The same goes for approving a proposed member.
 
 The same for deactivating a membership.
 
-    >>> setStatus(daf_membership, TeamMembershipStatus.DEACTIVATED,
-    ...           reviewer=mark)
+    >>> setStatus(
+    ...     daf_membership, TeamMembershipStatus.DEACTIVATED, reviewer=mark
+    ... )
     >>> run_mail_jobs()
     >>> stub.test_emails.sort(key=itemgetter(1))
     >>> len(stub.test_emails)
@@ -279,7 +290,7 @@ in that case we'll use the requester's (the person proposing the team as
 the other's member) email address in the 'Reply-To' header of the
 message sent.
 
-    >>> admins = personset.getByName('admins')
+    >>> admins = personset.getByName("admins")
     >>> admins.join(ubuntu_team, requester=mark)
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
@@ -327,8 +338,8 @@ When a person is added as a member of a team by one of that team's
 administrators, an email is sent to all team administrators and to the
 new member.
 
-    >>> cprov = personset.getByName('cprov')
-    >>> marilize = personset.getByName('marilize')
+    >>> cprov = personset.getByName("cprov")
+    >>> marilize = personset.getByName("marilize")
     >>> ignored = ubuntu_team.addMember(marilize, reviewer=cprov)
     >>> run_mail_jobs()
 
@@ -387,7 +398,7 @@ By default, if the newly added member is actually a team, we'll only
 send an invitation to the team's admins, telling them that the
 membership will only be activated if they accept the invitation.
 
-    >>> mirror_admins = personset.getByName('ubuntu-mirror-admins')
+    >>> mirror_admins = personset.getByName("ubuntu-mirror-admins")
     >>> mirror_admins.getTeamAdminsEmailAddresses()
     ['mark@example.com']
 
@@ -481,7 +492,7 @@ team.
 
 Similarly, a notification is sent if the invitation is declined.
 
-    >>> landscape = personset.getByName('landscape-developers')
+    >>> landscape = personset.getByName("landscape-developers")
     >>> ignored = ubuntu_team.addMember(landscape, reviewer=cprov)
 
     # Reset stub.test_emails as we don't care about the notification triggered
@@ -545,9 +556,10 @@ Similarly, a notification is sent if the invitation is declined.
 It's also possible to forcibly add a team as a member of another one, by
 passing force_team_add=True to the addMember() method.
 
-    >>> launchpad = personset.getByName('launchpad')
+    >>> launchpad = personset.getByName("launchpad")
     >>> ignored = ubuntu_team.addMember(
-    ...     launchpad, reviewer=cprov, force_team_add=True)
+    ...     launchpad, reviewer=cprov, force_team_add=True
+    ... )
     >>> flush_database_updates()
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
@@ -606,18 +618,20 @@ ITeamMembership.sendExpirationWarningEmail to do its job.
 
     >>> import pytz
     >>> from datetime import datetime, timedelta
-    >>> utc_now = datetime.now(pytz.timezone('UTC'))
+    >>> utc_now = datetime.now(pytz.timezone("UTC"))
 
 In the case of the beta-testers team, the email is sent only to the
 team's owner, who doesn't have the necessary rights to renew the
 membership of their team, so they're instructed to contact one of the
 ubuntu-team's admins.
 
-    >>> beta_testers = personset.getByName('launchpad-beta-testers')
+    >>> beta_testers = personset.getByName("launchpad-beta-testers")
     >>> beta_testers_on_ubuntu_team = membershipset.getByPersonAndTeam(
-    ...     beta_testers, ubuntu_team)
+    ...     beta_testers, ubuntu_team
+    ... )
     >>> beta_testers_on_ubuntu_team.setExpirationDate(
-    ...     utc_now + timedelta(days=9), mark)
+    ...     utc_now + timedelta(days=9), mark
+    ... )
     >>> flush_database_updates()
     >>> beta_testers_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
@@ -661,9 +675,11 @@ to renew their own membership.
     >>> ubuntu_team.renewal_policy = TeamMembershipRenewalPolicy.ONDEMAND
     >>> ubuntu_team.defaultrenewalperiod = 365
     >>> kamion_on_ubuntu_team = membershipset.getByPersonAndTeam(
-    ...     kamion, ubuntu_team)
+    ...     kamion, ubuntu_team
+    ... )
     >>> kamion_on_ubuntu_team.setExpirationDate(
-    ...     utc_now + timedelta(days=9), mark)
+    ...     utc_now + timedelta(days=9), mark
+    ... )
     >>> flush_database_updates()
     >>> kamion_on_ubuntu_team.sendExpirationWarningEmail()
     >>> run_mail_jobs()
@@ -734,9 +750,11 @@ their membership page, where they can extend it.
     test@canonical.com
 
     >>> sampleperson_on_landscape = membershipset.getByPersonAndTeam(
-    ...     sampleperson, landscape)
+    ...     sampleperson, landscape
+    ... )
     >>> sampleperson_on_landscape.setExpirationDate(
-    ...     utc_now + timedelta(days=9), sampleperson)
+    ...     utc_now + timedelta(days=9), sampleperson
+    ... )
     >>> flush_database_updates()
     >>> sampleperson_on_landscape.sendExpirationWarningEmail()
     >>> run_mail_jobs()
@@ -775,11 +793,12 @@ team members are invited to renew their membership once it gets close to
 their expiration date. When a member renews their own membership, a
 notification is sent to all team admins.
 
-    >>> karl = personset.getByName('karl')
-    >>> mirror_admins = personset.getByName('ubuntu-mirror-admins')
+    >>> karl = personset.getByName("karl")
+    >>> mirror_admins = personset.getByName("ubuntu-mirror-admins")
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
-    ...     karl, mirror_admins)
-    >>> tomorrow = datetime.now(pytz.timezone('UTC')) + timedelta(days=1)
+    ...     karl, mirror_admins
+    ... )
+    >>> tomorrow = datetime.now(pytz.timezone("UTC")) + timedelta(days=1)
     >>> print(karl_on_mirroradmins.status.title)
     Approved
 
@@ -788,7 +807,8 @@ notification is sent to all team admins.
 
     >>> ignored = login_person(mirror_admins.teamowner)
     >>> karl_on_mirroradmins.setExpirationDate(
-    ...     tomorrow, mirror_admins.teamowner)
+    ...     tomorrow, mirror_admins.teamowner
+    ... )
     >>> ondemand = TeamMembershipRenewalPolicy.ONDEMAND
     >>> karl_on_mirroradmins.team.renewal_policy = ondemand
     >>> mirror_admins.defaultrenewalperiod = 365
@@ -828,7 +848,7 @@ Some special cases
 When creating a new team, the owner has their membership's status changed
 from approved to admin, but they won't get a notification of that.
 
-    >>> team = personset.newTeam(mark, 'testteam', 'Test')
+    >>> team = personset.newTeam(mark, "testteam", "Test")
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
     0
@@ -842,12 +862,12 @@ from approved to admin, but they won't get a notification of that.
 If cprov is made an administrator of ubuntu_team, he'll only get one
 email notification.
 
-    >>> cprov = personset.getByName('cprov')
+    >>> cprov = personset.getByName("cprov")
     >>> cprov_membership = membershipset.getByPersonAndTeam(
-    ...     cprov, ubuntu_team)
-    >>> login('mark@example.com')
-    >>> setStatus(
-    ...     cprov_membership, TeamMembershipStatus.ADMIN, reviewer=mark)
+    ...     cprov, ubuntu_team
+    ... )
+    >>> login("mark@example.com")
+    >>> setStatus(cprov_membership, TeamMembershipStatus.ADMIN, reviewer=mark)
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
     6
@@ -891,10 +911,11 @@ If a team admin changes their own membership, the notification sent will
 clearly say that the change was performed by the user themselves, and it
 will only be sent to the team administrators.
 
-    >>> jdub = getUtility(IPersonSet).getByName('jdub')
+    >>> jdub = getUtility(IPersonSet).getByName("jdub")
     >>> jdub_membership = membershipset.getByPersonAndTeam(jdub, ubuntu_team)
-    >>> setStatus(jdub_membership, TeamMembershipStatus.APPROVED,
-    ...           reviewer=jdub)
+    >>> setStatus(
+    ...     jdub_membership, TeamMembershipStatus.APPROVED, reviewer=jdub
+    ... )
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
     5
@@ -927,9 +948,14 @@ membership was deactivated will not talk about "your membership" as it
 wouldn't make sense to the members of the team reading it.
 
     >>> mirror_admins_membership = membershipset.getByPersonAndTeam(
-    ...     mirror_admins, ubuntu_team)
-    >>> setStatus(mirror_admins_membership, TeamMembershipStatus.DEACTIVATED,
-    ...           reviewer=mark, silent=False)
+    ...     mirror_admins, ubuntu_team
+    ... )
+    >>> setStatus(
+    ...     mirror_admins_membership,
+    ...     TeamMembershipStatus.DEACTIVATED,
+    ...     reviewer=mark,
+    ...     silent=False,
+    ... )
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
     6
@@ -972,16 +998,21 @@ wouldn't make sense to the members of the team reading it.
 Deactivating memberships can also be done silently (no email
 notifications sent) by Launchpad Administrators.
 
-    >>> dumper = getUtility(IPersonSet).getByName('dumper')
-    >>> hwdb_admins = personset.getByName('hwdb-team')
-    >>> dumper_hwdb_membership = membershipset.getByPersonAndTeam(dumper,
-    ...     hwdb_admins)
+    >>> dumper = getUtility(IPersonSet).getByName("dumper")
+    >>> hwdb_admins = personset.getByName("hwdb-team")
+    >>> dumper_hwdb_membership = membershipset.getByPersonAndTeam(
+    ...     dumper, hwdb_admins
+    ... )
     >>> print(dumper_hwdb_membership.status.title)
     Approved
 
     >>> ignored = login_person(admin_person)
-    >>> setStatus(dumper_hwdb_membership, TeamMembershipStatus.DEACTIVATED,
-    ...     reviewer=admin_person, silent=True)
+    >>> setStatus(
+    ...     dumper_hwdb_membership,
+    ...     TeamMembershipStatus.DEACTIVATED,
+    ...     reviewer=admin_person,
+    ...     silent=True,
+    ... )
     >>> run_mail_jobs()
     >>> len(stub.test_emails)
     0
@@ -992,22 +1023,28 @@ notifications sent) by Launchpad Administrators.
 People who are not Launchpad Administrators, may not change other's
 membership statues silently.
 
-    >>> kamion = getUtility(IPersonSet).getByName('kamion')
-    >>> stevea = getUtility(IPersonSet).getByName('stevea')
+    >>> kamion = getUtility(IPersonSet).getByName("kamion")
+    >>> stevea = getUtility(IPersonSet).getByName("stevea")
     >>> ignored = login_person(kamion)
-    >>> ubuntu_team = personset.getByName('ubuntu-team')
+    >>> ubuntu_team = personset.getByName("ubuntu-team")
     >>> kamion_ubuntu_team_membership = membershipset.getByPersonAndTeam(
-    ...     kamion, ubuntu_team)
+    ...     kamion, ubuntu_team
+    ... )
     >>> stevea_ubuntu_team_membership = membershipset.getByPersonAndTeam(
-    ...     stevea, ubuntu_team)
+    ...     stevea, ubuntu_team
+    ... )
     >>> print(kamion_ubuntu_team_membership.status.title)
     Administrator
 
     >>> print(stevea_ubuntu_team_membership.status.title)
     Approved
 
-    >>> setStatus(stevea_ubuntu_team_membership,
-    ...     TeamMembershipStatus.DEACTIVATED, reviewer=kamion, silent=True)
+    >>> setStatus(
+    ...     stevea_ubuntu_team_membership,
+    ...     TeamMembershipStatus.DEACTIVATED,
+    ...     reviewer=kamion,
+    ...     silent=True,
+    ... )
     Traceback (most recent call last):
     lp.registry.errors.UserCannotChangeMembershipSilently: ...
 
@@ -1021,13 +1058,15 @@ Joining a team with a mailing list
 When a user joins a team with a mailing list, the new member's
 notification email contain subscription information.
 
-    >>> owner = factory.makePerson(name='team-owner')
+    >>> owner = factory.makePerson(name="team-owner")
     >>> ignored = login_person(owner)
     >>> team_one, list_one = factory.makeTeamAndMailingList(
-    ...     'team-one', owner.name)
+    ...     "team-one", owner.name
+    ... )
     >>> dummy = pop_notifications()
     >>> member = factory.makePerson(
-    ...     name='team-member', email='team-member@example.com')
+    ...     name="team-member", email="team-member@example.com"
+    ... )
     >>> ignored = team_one.addMember(member, owner)
     >>> run_mail_jobs()
     >>> print_distinct_emails(decode=True)  # noqa
@@ -1054,7 +1093,8 @@ When a team join a team with a mailing list, the new member notification
 emails contain subscription information.
 
     >>> team_two = factory.makeTeam(
-    ...     name='team-two', email='team-two@example.com', owner=owner)
+    ...     name="team-two", email="team-two@example.com", owner=owner
+    ... )
     >>> ignored = team_one.addMember(team_two, owner, force_team_add=True)
     >>> run_mail_jobs()
     >>> print_distinct_emails(include_for=True, decode=True)  # noqa

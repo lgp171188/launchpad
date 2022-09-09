@@ -8,16 +8,15 @@ IMilestone.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.product import IProductSet
     >>> productset = getUtility(IProductSet)
-    >>> firefox = productset['firefox']
-    >>> firefox_1_0 = firefox.getSeries('1.0')
+    >>> firefox = productset["firefox"]
+    >>> firefox_1_0 = firefox.getSeries("1.0")
     >>> owner = firefox_1_0.owner
     >>> ignored = login_person(owner)
-    >>> milestone = firefox_1_0.newMilestone('1.0.9')
+    >>> milestone = firefox_1_0.newMilestone("1.0.9")
     >>> from datetime import datetime
     >>> from pytz import UTC
     >>> firefox_109 = milestone.createProductRelease(owner, datetime.now(UTC))
-    >>> from lp.registry.interfaces.productrelease import (
-    ...     IProductRelease)
+    >>> from lp.registry.interfaces.productrelease import IProductRelease
     >>> verifyObject(IProductRelease, firefox_109)
     True
 
@@ -26,18 +25,18 @@ manager and can make changes.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> driver = factory.makePerson(name='driver')
+    >>> driver = factory.makePerson(name="driver")
     >>> firefox_109.milestone.target.driver = driver
 
-    >>> release_manager = factory.makePerson(name='release-manager')
+    >>> release_manager = factory.makePerson(name="release-manager")
     >>> firefox_109.milestone.series_target.driver = release_manager
 
     >>> ignored = login_person(driver)
-    >>> check_permission('launchpad.Edit', firefox_109)
+    >>> check_permission("launchpad.Edit", firefox_109)
     True
 
     >>> ignored = login_person(release_manager)
-    >>> check_permission('launchpad.Edit', firefox_109)
+    >>> check_permission("launchpad.Edit", firefox_109)
     True
 
 A product release can be deleted using its destroySelf() method, as long
@@ -47,20 +46,21 @@ as it doesn't have any IProductReleaseFiles associated with it.
     >>> firefox_109.files.count()
     0
     >>> firefox_109.destroySelf()
-    >>> print(firefox_1_0.getRelease('1.0.9'))
+    >>> print(firefox_1_0.getRelease("1.0.9"))
     None
 
 If a product release has files associated with it, though, it can't be
 deleted.
 
-    >>> milestone = firefox_1_0.newMilestone('1.0.10')
-    >>> firefox_1010 = milestone.createProductRelease(owner,
-    ...                                               datetime.now(UTC))
-    >>> firefox_1010.addReleaseFile('test', b'test', 'text/plain', owner)
+    >>> milestone = firefox_1_0.newMilestone("1.0.10")
+    >>> firefox_1010 = milestone.createProductRelease(
+    ...     owner, datetime.now(UTC)
+    ... )
+    >>> firefox_1010.addReleaseFile("test", b"test", "text/plain", owner)
     <ProductReleaseFile...
     >>> firefox_1010.destroySelf()
     Traceback (most recent call last):
     ...
     AssertionError:...
-    >>> firefox_1_0.getRelease('1.0.10')
+    >>> firefox_1_0.getRelease("1.0.10")
     <ProductRelease...

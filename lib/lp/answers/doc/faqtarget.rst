@@ -30,14 +30,14 @@ The newFAQ() method is used to create a new IFAQ object on the target.
 That method is only available to a user who has 'launchpad.Append' on
 the target.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> from lp.services.webapp.authorization import check_permission
     >>> from lp.services.webapp.interfaces import ILaunchBag
-    >>> check_permission('launchpad.Append', target)
+    >>> check_permission("launchpad.Append", target)
     False
 
     >>> no_priv = getUtility(ILaunchBag).user
-    >>> target.newFAQ(no_priv, 'Title', 'Summary', content='Content')
+    >>> target.newFAQ(no_priv, "Title", "Summary", content="Content")
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -49,8 +49,8 @@ or one of its answer contacts is authorized to create a new FAQ.
 
     >>> removeSecurityProxy(target).owner = no_priv
     >>> from lp.services.webapp.authorization import clear_cache
-    >>> clear_cache() # Clear authorization cache for check_permission.
-    >>> check_permission('launchpad.Append', target)
+    >>> clear_cache()  # Clear authorization cache for check_permission.
+    >>> check_permission("launchpad.Append", target)
     True
 
     >>> removeSecurityProxy(target).owner = old_owner
@@ -58,15 +58,15 @@ or one of its answer contacts is authorized to create a new FAQ.
     # An answer contact must have a preferred language registered.
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> no_priv.addLanguage(getUtility(ILanguageSet)['en'])
+    >>> no_priv.addLanguage(getUtility(ILanguageSet)["en"])
     >>> target.addAnswerContact(no_priv, no_priv)
     True
 
-    >>> clear_cache() # Clear authorization cache for check_permission.
-    >>> check_permission('launchpad.Append', target)
+    >>> clear_cache()  # Clear authorization cache for check_permission.
+    >>> check_permission("launchpad.Append", target)
     True
 
-    >>> faq = target.newFAQ(no_priv, 'Title', 'Content')
+    >>> faq = target.newFAQ(no_priv, "Title", "Content")
 
 The returned object provides the IFAQ interface:
 
@@ -74,6 +74,7 @@ The returned object provides the IFAQ interface:
     >>> from lp.testing import admin_logged_in
     >>> with admin_logged_in():
     ...     verifyObject(IFAQ, faq)
+    ...
     True
 
 The newFAQ() requires an owner, title, and content parameter. It also
@@ -86,8 +87,12 @@ FAQ's keywords.
     >>> now = datetime.now(UTC)
 
     >>> faq = target.newFAQ(
-    ...     no_priv, 'How to do something', 'Explain how to do something.',
-    ...     keywords='documentation howto', date_created=now)
+    ...     no_priv,
+    ...     "How to do something",
+    ...     "Explain how to do something.",
+    ...     keywords="documentation howto",
+    ...     date_created=now,
+    ... )
 
     >>> print(faq.owner.displayname)
     No Privileges Person
@@ -132,18 +137,20 @@ requested target:
 
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu != target
     True
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> foo_bar = getUtility(ILaunchBag).user
     >>> ubuntu_faq = ubuntu.newFAQ(
-    ...     foo_bar, 'Ubuntu Installation HowTo',
-    ...     'Ubuntu installation procedure can be found at: '
-    ...     'https://help.ubuntu.com/community/Installation')
+    ...     foo_bar,
+    ...     "Ubuntu Installation HowTo",
+    ...     "Ubuntu installation procedure can be found at: "
+    ...     "https://help.ubuntu.com/community/Installation",
+    ... )
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> print(target.getFAQ(ubuntu_faq.id))
     None
 
@@ -163,20 +170,27 @@ common words and stop words.
     # Create more FAQs.
 
     >>> faq = target.newFAQ(
-    ...     no_priv, 'How to answer a question',
-    ...     'Description on how to use the Answer Tracker can be found at: '
-    ...     'https://help.launchpad.net/AnswerTrackerDocumentation')
+    ...     no_priv,
+    ...     "How to answer a question",
+    ...     "Description on how to use the Answer Tracker can be found at: "
+    ...     "https://help.launchpad.net/AnswerTrackerDocumentation",
+    ... )
     >>> faq = target.newFAQ(
-    ...     no_priv, 'How to become a Launchpad king',
-    ...     'The secret to achieve uber-karma is to answer questions using '
-    ...     'the Launchpad Answer Tracker')
+    ...     no_priv,
+    ...     "How to become a Launchpad king",
+    ...     "The secret to achieve uber-karma is to answer questions using "
+    ...     "the Launchpad Answer Tracker",
+    ... )
     >>> faq = target.newFAQ(
-    ...     no_priv, 'How to use bug mail',
-    ...     'The syntax of bug mail commands is described at: '
-    ...     'https://help.launchpad.net/BugTrackerEmailInterface')
+    ...     no_priv,
+    ...     "How to use bug mail",
+    ...     "The syntax of bug mail commands is described at: "
+    ...     "https://help.launchpad.net/BugTrackerEmailInterface",
+    ... )
 
-    >>> for faq in target.findSimilarFAQs('How do I use the Answer Tracker'):
+    >>> for faq in target.findSimilarFAQs("How do I use the Answer Tracker"):
     ...     print(faq.title)
+    ...
     How to answer a question
     How to become a Launchpad king
 
@@ -186,8 +200,9 @@ appear in the content in the other document).
 
 If there are no similar FAQ, no result should be returned:
 
-    >>> for faq in target.findSimilarFAQs('How do I do this?'):
+    >>> for faq in target.findSimilarFAQs("How do I do this?"):
     ...     print(faq.title)
+    ...
 
 Since only common and stop words are in that summary, no similar FAQ
 could be found.

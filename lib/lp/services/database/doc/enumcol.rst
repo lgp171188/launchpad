@@ -8,14 +8,16 @@ Firstly we need an example table.
 
     >>> from lp.services.database.sqlbase import cursor
     >>> cur = cursor()
-    >>> cur.execute('''
+    >>> cur.execute(
+    ...     """
     ...     CREATE TABLE FooTest (
     ...         id serial NOT NULL,
     ...         foo integer DEFAULT 1 NOT NULL
     ...     );
-    ... ''')
-    >>> cur.execute('GRANT ALL ON TABLE FooTest TO launchpad;')
-    >>> cur.execute('GRANT ALL ON footest_id_seq TO launchpad;')
+    ... """
+    ... )
+    >>> cur.execute("GRANT ALL ON TABLE FooTest TO launchpad;")
+    >>> cur.execute("GRANT ALL ON footest_id_seq TO launchpad;")
     >>> import transaction
     >>> transaction.commit()
 
@@ -28,8 +30,10 @@ result in an error.
     >>> from lazr.enum import EnumeratedType, Item, use_template
     >>> class PlainFooType(EnumeratedType):
     ...     """Enumerated type for the foo column."""
+    ...
     ...     ONE = Item("One")
     ...     TWO = Item("Two")
+    ...
 
     >>> from storm.locals import Int
     >>> from lp.services.database.constants import DEFAULT
@@ -40,6 +44,7 @@ result in an error.
     ...     __storm_table__ = "footest"
     ...     id = Int(primary=True)
     ...     foo = DBEnum(enum=PlainFooType, default=DEFAULT)
+    ...
     Traceback (most recent call last):
     ...
     TypeError: <EnumeratedType 'PlainFooType'> must be a
@@ -48,17 +53,25 @@ result in an error.
     >>> from lazr.enum import DBEnumeratedType, DBItem
     >>> class FooType(DBEnumeratedType):
     ...     """Enumerated type for the foo column."""
-    ...     ONE = DBItem(1, """
+    ...
+    ...     ONE = DBItem(
+    ...         1,
+    ...         """
     ...         One
     ...
     ...         Number one.
-    ...         """)
+    ...         """,
+    ...     )
     ...
-    ...     TWO = DBItem(2, """
+    ...     TWO = DBItem(
+    ...         2,
+    ...         """
     ...         Two
     ...
     ...         Number two.
-    ...         """)
+    ...         """,
+    ...     )
+    ...
 
 The database implementation class then refers to the enumerated type.
 
@@ -66,6 +79,7 @@ The database implementation class then refers to the enumerated type.
     ...     __storm_table__ = "footest"
     ...     id = Int(primary=True)
     ...     foo = DBEnum(enum=FooType, default=DEFAULT)
+    ...
 
 Create a row in the table.
 
@@ -99,11 +113,15 @@ You can of course use items from FooType.
 But not items from another schema.
 
     >>> class AnotherType(DBEnumeratedType):
-    ...     ONE = DBItem(1, """
+    ...     ONE = DBItem(
+    ...         1,
+    ...         """
     ...         One
     ...
     ...         Number one.
-    ...         """)
+    ...         """,
+    ...     )
+    ...
     >>> t.foo = AnotherType.ONE
     Traceback (most recent call last):
     ...
@@ -114,6 +132,7 @@ The type assigned in must be the exact type, not a derived types.
 
     >>> class DerivedType(FooType):
     ...     """A derived DB enumerated type."""
+    ...
 
     >>> item = DerivedType.ONE
     >>> t.foo = item
@@ -131,8 +150,9 @@ Sometimes its useful to serialise things from two different (but related)
 schemas into one table. This works if you tell the column about both enums:
 
     >>> class BarType(DBEnumeratedType):
-    ...     use_template(FooType, exclude=('TWO'))
+    ...     use_template(FooType, exclude=("TWO"))
     ...     THREE = DBItem(3, "Three")
+    ...
 
 Redefine the table with awareness of BarType:
 
@@ -140,6 +160,7 @@ Redefine the table with awareness of BarType:
     ...     __storm_table__ = "footest"
     ...     id = Int(primary=True)
     ...     foo = DBEnum(enum=[FooType, BarType], default=DEFAULT)
+    ...
 
 We can assign items from either schema to the table;
 

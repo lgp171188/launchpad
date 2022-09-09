@@ -4,35 +4,40 @@ Redirection of Mixed Case paths
 When someone visits a page such as http://launchpad.net/jOkOshEr
 launchpad does a permanent redirect to the lowercase path:
 
-    >>> anon_browser.open('http://launchpad.test/jOkOshEr')
+    >>> anon_browser.open("http://launchpad.test/jOkOshEr")
     >>> print(anon_browser.url)
     http://launchpad.test/jokosher
 
 The redirection also works for URLs below the root, and with query
 parameters:
 
-    >>> anon_browser.open('http://launchpad.test/UbUntU/+search?text=foo')
+    >>> anon_browser.open("http://launchpad.test/UbUntU/+search?text=foo")
     >>> print(anon_browser.url)
     http://launchpad.test/ubuntu/+search?text=foo
 
 The redirection also works for other Launchpad subdomains:
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/jOkOshEr/+bugs?orderby=-datecreated')
+    ...     "http://bugs.launchpad.test/jOkOshEr/+bugs?orderby=-datecreated"
+    ... )
     >>> print(anon_browser.url)
     http://bugs.launchpad.test/jokosher/+bugs?orderby=-datecreated
 
-    >>> anon_browser.open('http://answers.launchpad.test/~nAmE12')
+    >>> anon_browser.open("http://answers.launchpad.test/~nAmE12")
     >>> print(anon_browser.url)
     http://answers.launchpad.test/~name12
 
 When doing a POST to an invalid URL, we get an error:
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /UbUntU/hoary/+source/evolution/+pots/evolution-2.2/es/+translate HTTP/1.1
     ... Host: translations.launchpad.test
     ... Referer: https://launchpad.test/
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 500 Internal Server Error
     ...
     </ul><p>...POSTToNonCanonicalURL...

@@ -10,9 +10,11 @@ pagtests/soyuz/xx-portlet-publishing-details.  Here, we just show that it
 is present on the page.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/alsa-utils/')
-    >>> portlet = find_portlet(anon_browser.contents,
-    ...     '"alsa-utils" versions published in Ubuntu')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/alsa-utils/"
+    ... )
+    >>> portlet = find_portlet(
+    ...     anon_browser.contents, '"alsa-utils" versions published in Ubuntu'
+    ... )
     >>> print(portlet)
     <div class="portlet" id="portlet-publishing-details">
     ...

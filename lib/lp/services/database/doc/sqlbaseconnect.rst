@@ -2,19 +2,24 @@ Ensure that lp.services.database.sqlbase connects as we expect.
 
     >>> from lp.services.config import config
     >>> from lp.services.database.sqlbase import (
-    ...     connect, ISOLATION_LEVEL_DEFAULT, ISOLATION_LEVEL_SERIALIZABLE)
+    ...     connect,
+    ...     ISOLATION_LEVEL_DEFAULT,
+    ...     ISOLATION_LEVEL_SERIALIZABLE,
+    ... )
 
     >>> def do_connect(user, dbname=None, isolation=ISOLATION_LEVEL_DEFAULT):
     ...     con = connect(user=user, dbname=dbname, isolation=isolation)
     ...     cur = con.cursor()
-    ...     cur.execute('SHOW session_authorization')
+    ...     cur.execute("SHOW session_authorization")
     ...     who = cur.fetchone()[0]
-    ...     cur.execute('SELECT current_database()')
+    ...     cur.execute("SELECT current_database()")
     ...     where = cur.fetchone()[0]
-    ...     cur.execute('SHOW transaction_isolation')
+    ...     cur.execute("SHOW transaction_isolation")
     ...     how = cur.fetchone()[0]
     ...     print(
-    ...         'Connected as %s to %s in %s isolation.' % (who, where, how))
+    ...         "Connected as %s to %s in %s isolation." % (who, where, how)
+    ...     )
+    ...
 
 Specifying the user connects as that user.
 
@@ -23,7 +28,7 @@ Specifying the user connects as that user.
 
 Specifying the database name connects to that database.
 
-    >>> do_connect(user=config.launchpad.dbuser, dbname='launchpad_empty')
+    >>> do_connect(user=config.launchpad.dbuser, dbname="launchpad_empty")
     Connected as launchpad_main to launchpad_empty in read committed
     isolation.
 
@@ -31,5 +36,6 @@ Specifying the isolation level works too.
 
     >>> do_connect(
     ...     user=config.launchpad.dbuser,
-    ...     isolation=ISOLATION_LEVEL_SERIALIZABLE)
+    ...     isolation=ISOLATION_LEVEL_SERIALIZABLE,
+    ... )
     Connected as launchpad_main to ... in serializable isolation.

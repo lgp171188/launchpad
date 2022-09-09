@@ -8,8 +8,8 @@ builder state. In the sampledata, the builder 'bob' is building
     >>> from zope.component import getUtility
     >>> from lp.buildmaster.interfaces.builder import IBuilderSet
 
-    >>> login('foo.bar@canonical.com')
-    >>> bob_builder = getUtility(IBuilderSet)['bob']
+    >>> login("foo.bar@canonical.com")
+    >>> bob_builder = getUtility(IBuilderSet)["bob"]
     >>> bob_builder.version = "100"
     >>> logout()
 
@@ -23,8 +23,13 @@ builder state. In the sampledata, the builder 'bob' is building
     Admins.
     ...
 
-    >>> print(extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents, "View full history Current status"
+    ...         )
+    ...     )
+    ... )
     View full history Current status
     Building i386 build of mozilla-firefox 0.9 in ubuntu hoary RELEASE
     Started ... ago.
@@ -37,8 +42,13 @@ timezone. This way they can easily find out if they are reading
 outdated information.
 
     >>> user_browser.open(anon_browser.url)
-    >>> print(extract_text(find_portlet(
-    ...     user_browser.contents, 'View full history Current status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             user_browser.contents, "View full history Current status"
+    ...         )
+    ...     )
+    ... )
     View full history Current status
     Building i386 build of mozilla-firefox 0.9 in ubuntu hoary RELEASE
     Started ... ago.
@@ -50,8 +60,11 @@ The anonymous user can see the builder details portlet and it contains
 information about the builder itself, like name, architecture and
 location.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Builder information')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Builder information")
+    ...     )
+    ... )
     Builder information
     Architectures: 386
     Location: http://localhost:8221/
@@ -70,25 +83,43 @@ Idle builders show more details of their status.
     >>> from lp.buildmaster.enums import BuilderCleanStatus
     >>> from lp.testing import admin_logged_in
     >>> with admin_logged_in():
-    ...     builder = factory.makeBuilder(name='victim')
+    ...     builder = factory.makeBuilder(name="victim")
     ...     builder.setCleanStatus(BuilderCleanStatus.DIRTY)
-    >>> anon_browser.open('http://launchpad.test/builders/victim')
-    >>> print(extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status')))
+    ...
+    >>> anon_browser.open("http://launchpad.test/builders/victim")
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents, "View full history Current status"
+    ...         )
+    ...     )
+    ... )
     View full history Current status
     Cleaning
     >>> with admin_logged_in():
     ...     builder.setCleanStatus(BuilderCleanStatus.CLEANING)
+    ...
     >>> anon_browser.open(anon_browser.url)
-    >>> print(extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents, "View full history Current status"
+    ...         )
+    ...     )
+    ... )
     View full history Current status
     Cleaning
     >>> with admin_logged_in():
     ...     builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+    ...
     >>> anon_browser.open(anon_browser.url)
-    >>> print(extract_text(find_portlet(
-    ...     anon_browser.contents, 'View full history Current status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(
+    ...             anon_browser.contents, "View full history Current status"
+    ...         )
+    ...     )
+    ... )
     View full history Current status
     Idle
 
@@ -104,10 +135,11 @@ Celso is a member of launchpad-buildd-admins, he has full access to
 the builder actions.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth='Basic celso.providelo@canonical.com:test')
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
 
-    >>> cprov_browser.open('http://launchpad.test/builders')
-    >>> cprov_browser.getLink('bob').click()
+    >>> cprov_browser.open("http://launchpad.test/builders")
+    >>> cprov_browser.getLink("bob").click()
 
 Celso sees both the Change details and Toggle mode actions, which are
 displayed in context as shown below. See 'xx-builds-pages.rst' for
@@ -115,7 +147,7 @@ documentation about 'Show build history'.'
 
 Celso can modify the location and the visible details of the builder.
 
-    >>> cprov_browser.getLink('Change details').click()
+    >>> cprov_browser.getLink("Change details").click()
     >>> cprov_browser.getControl(name="field.name").value
     'bob'
     >>> cprov_browser.getControl(name="field.title").value
@@ -154,9 +186,11 @@ effect immediately.
 
     >>> title = cprov_browser.getControl(name="field.title")
     >>> original_title = title.value
-    >>> title.value = 'Donkey builder'
-    >>> cprov_browser.getControl(name='field.processors').value = [
-    ...     'amd64', 'hppa']
+    >>> title.value = "Donkey builder"
+    >>> cprov_browser.getControl(name="field.processors").value = [
+    ...     "amd64",
+    ...     "hppa",
+    ... ]
     >>> cprov_browser.getControl("Change").click()
 
     # Submitting the change details form redirects to the index page
@@ -166,16 +200,16 @@ effect immediately.
 
 Then restores it once he realises his mistake.
 
-    >>> cprov_browser.getLink('Change details').click()
-    >>> cprov_browser.getControl(
-    ...     name="field.title").value = original_title
+    >>> cprov_browser.getLink("Change details").click()
+    >>> cprov_browser.getControl(name="field.title").value = original_title
     >>> cprov_browser.getControl("Change").click()
 
 By looking at 'details' portlet, Celso realises the builder is in
 automatic (AUTO) mode.
 
     >>> details_portlet = find_portlet(
-    ...     cprov_browser.contents, "Builder information")
+    ...     cprov_browser.contents, "Builder information"
+    ... )
     >>> print(str(extract_text(details_portlet)))
     Builder information
     Architectures: amd64 hppa
@@ -192,7 +226,8 @@ He clicks on the Toggle mode button to put the builder into manual mode.
 He can see now, in the details portlet that the builder is in manual-mode.
 
     >>> details_portlet = find_portlet(
-    ...     cprov_browser.contents, "Builder information")
+    ...     cprov_browser.contents, "Builder information"
+    ... )
     >>> print(str(extract_text(details_portlet)))
     Builder information
     ...
@@ -232,14 +267,14 @@ The builder administrators can hide a builder from the public list
 when they judge it convenient, for instance, when the builder present
 transient failures or is used for another purpose.
 
-    >>> cprov_browser.open('http://launchpad.test/builders')
-    >>> cprov_browser.getLink('bob').click()
+    >>> cprov_browser.open("http://launchpad.test/builders")
+    >>> cprov_browser.getLink("bob").click()
     >>> print(backslashreplace(cprov_browser.title))
     Bob The Builder : Build Farm
 
 Celso can toggle the active bit using the Change details form.
 
-    >>> cprov_browser.getLink('Change details').click()
+    >>> cprov_browser.getLink("Change details").click()
     >>> active = cprov_browser.getControl(name="field.active")
     >>> active.value
     True
@@ -265,14 +300,14 @@ Farm list. Celso cannot see the link to it.
     Architecture Builders Queue
     386          1        empty
 
-    >>> cprov_browser.getLink('bob').click()
+    >>> cprov_browser.getLink("bob").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
 But Celso can access the deactivated builder via its URL.
 
-    >>> cprov_browser.open('http://launchpad.test/+builds/bob')
+    >>> cprov_browser.open("http://launchpad.test/+builds/bob")
     >>> print(backslashreplace(cprov_browser.title))
     Bob The Builder : Build Farm
 
@@ -284,7 +319,7 @@ Normal users, such as No Privileges Person are not shown the
 Change details link.
 
     >>> user_browser.open("http://localhost/+builds/bob")
-    >>> user_browser.getLink('Change details')
+    >>> user_browser.getLink("Change details")
     Traceback (most recent call last):
     zope.testbrowser.browser.LinkNotFoundError
 
@@ -304,7 +339,7 @@ Nor can they access the edit page directly via URL.
 The same is true for the anonymous user:
 
     >>> anon_browser.open("http://localhost/+builds/bob")
-    >>> anon_browser.getLink('Change details')
+    >>> anon_browser.getLink("Change details")
     Traceback (most recent call last):
     zope.testbrowser.browser.LinkNotFoundError
 

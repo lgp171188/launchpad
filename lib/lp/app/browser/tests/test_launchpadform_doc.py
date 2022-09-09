@@ -109,17 +109,20 @@ def doctest_custom_widget_with_setUpFields_override():
         ...     # initialization.
         ...     def __init__(self, field, request):
         ...         self.field, self.request = field, request
+        ...
         ...     def setPrefix(self, prefix):
-        ...         self.name = '.'.join((prefix, self.field.__name__))
+        ...         self.name = ".".join((prefix, self.field.__name__))
+        ...
         ...     def hasInput(self):
         ...         return False
+        ...
         ...     def setRenderedValue(self, value):
         ...         self.value = value
-        ...
         >>> class CustomView(LaunchpadFormView):
         ...     custom_widget_my_bool = CustomStubWidget
+        ...
         ...     def setUpFields(self):
-        ...         self.form_fields = form.Fields(Bool(__name__='my_bool'))
+        ...         self.form_fields = form.Fields(Bool(__name__="my_bool"))
         ...
 
     The custom setUpFields adds a field dynamically. Then setUpWidgets will
@@ -130,7 +133,7 @@ def doctest_custom_widget_with_setUpFields_override():
         >>> view = CustomView(None, TestRequest())
         >>> view.setUpFields()
         >>> view.setUpWidgets()
-        >>> isinstance(view.widgets['my_bool'], CustomStubWidget)
+        >>> isinstance(view.widgets["my_bool"], CustomStubWidget)
         True
     """
 

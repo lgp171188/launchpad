@@ -7,19 +7,22 @@ or warning output that the entry may have incurred.
 By default, this is nothing.
 
     >>> from lp.translations.model.translationimportqueue import (
-    ...     TranslationImportQueue)
+    ...     TranslationImportQueue,
+    ... )
 
     >>> def find_error_output(browser):
     ...     """Find error-output section on page."""
-    ...     return find_tag_by_id(browser.contents, 'error-output')
+    ...     return find_tag_by_id(browser.contents, "error-output")
+    ...
 
     >>> login(ANONYMOUS)
     >>> queue = TranslationImportQueue()
     >>> product = factory.makeProduct()
-    >>> trunk = product.getSeries('trunk')
+    >>> trunk = product.getSeries("trunk")
     >>> entry = queue.addOrUpdateEntry(
-    ...     'la.po', b'# contents', False, product.owner, productseries=trunk)
-    >>> entry_url = canonical_url(entry, rootsite='translations')
+    ...     "la.po", b"# contents", False, product.owner, productseries=trunk
+    ... )
+    >>> entry_url = canonical_url(entry, rootsite="translations")
     >>> logout()
 
     >>> admin_browser.open(entry_url)

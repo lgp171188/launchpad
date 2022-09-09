@@ -12,7 +12,7 @@ does not use Launchpad for tracking bugs.
 Change debian to track bugs in Launchpad and the portlet becomes visible.
 
     >>> from lp.testing.service_usage_helpers import set_service_usage
-    >>> set_service_usage('debian', bug_tracking_usage='LAUNCHPAD')
+    >>> set_service_usage("debian", bug_tracking_usage="LAUNCHPAD")
 
     >>> anon_browser.open("http://bugs.launchpad.test/debian/+bugs")
     >>> portlet = find_portlet(anon_browser.contents, "Series-targeted bugs")

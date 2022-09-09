@@ -15,12 +15,21 @@ LaunchpadCronScript) also log warnings and and errors as OOPS reports.
     >>> import os.path, subprocess
     >>> from lp.services.config import config
     >>> cronscript_crash_path = os.path.join(
-    ...     config.root, 'lib', 'lp', 'services', 'scripts', 'tests',
-    ...     'cronscript-crash.py')
+    ...     config.root,
+    ...     "lib",
+    ...     "lp",
+    ...     "services",
+    ...     "scripts",
+    ...     "tests",
+    ...     "cronscript-crash.py",
+    ... )
     >>> p = subprocess.Popen(
-    ...     [cronscript_crash_path, '-vq'],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-    ...     stdin=subprocess.PIPE, universal_newlines=True)
+    ...     [cronscript_crash_path, "-vq"],
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.STDOUT,
+    ...     stdin=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> print(p.communicate()[0])
     INFO    Creating lockfile: ...
     WARNING This is a warning

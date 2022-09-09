@@ -9,10 +9,12 @@ comment should be accepted anyway. There should be no need for copying
 the comment to another comment field.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+editstatus')
-    >>> user_browser.getControl('Comment').value = (
-    ...     'A comment with no change to the bug task.')
-    >>> user_browser.getControl('Save Changes').click()
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+editstatus"
+    ... )
+    >>> user_browser.getControl(
+    ...     "Comment"
+    ... ).value = "A comment with no change to the bug task."
+    >>> user_browser.getControl("Save Changes").click()
 
 The user was returned to the bug page, and the comment was added.
 
@@ -20,6 +22,6 @@ The user was returned to the bug page, and the comment was added.
     'http://bugs.launchpad.test/firefox/+bug/1'
 
     >>> main_content = find_main_content(user_browser.contents)
-    >>> last_comment = main_content('div', 'boardCommentBody')[-1]
+    >>> last_comment = main_content("div", "boardCommentBody")[-1]
     >>> print(last_comment.div.decode_contents())
     <div...><p>A comment with no change to the bug task.</p></div>

@@ -42,17 +42,21 @@ Now it's empty, so let's add some mails to it by using simple_sendmail:
 
     >>> import transaction
     >>> from lp.services.mail.sendmail import simple_sendmail
-    >>> msgid = simple_sendmail('test@canonical.com',
-    ...                         '123@bugs.canonical.com',
-    ...                         'Hello',
-    ...                         'bla bla bla',
-    ...                         headers={'Message-ID': '<test1>'})
+    >>> msgid = simple_sendmail(
+    ...     "test@canonical.com",
+    ...     "123@bugs.canonical.com",
+    ...     "Hello",
+    ...     "bla bla bla",
+    ...     headers={"Message-ID": "<test1>"},
+    ... )
     >>> transaction.commit()
-    >>> msgid = simple_sendmail('test@canonical.com',
-    ...                         '456@bugs.canonical.com',
-    ...                         'Hello',
-    ...                         'bla bla bla',
-    ...                         headers={'Message-ID': '<test2>'})
+    >>> msgid = simple_sendmail(
+    ...     "test@canonical.com",
+    ...     "456@bugs.canonical.com",
+    ...     "Hello",
+    ...     "bla bla bla",
+    ...     headers={"Message-ID": "<test2>"},
+    ... )
     >>> transaction.commit()
 
 Before we can use it, it has to be opened.
@@ -76,7 +80,7 @@ before:
     >>> id, raw_mail = mails[0]
     >>> import email
     >>> mail = email.message_from_bytes(raw_mail)
-    >>> print(mail['Message-ID'])
+    >>> print(mail["Message-ID"])
     <test1>
 
 When we're done using the mail box we have to close it:
@@ -91,13 +95,14 @@ Since we didn't delete the mail, it's still in there:
     2
     >>> id, raw_mail = mails[0]
     >>> mail = email.message_from_bytes(raw_mail)
-    >>> print(mail['Message-ID'])
+    >>> print(mail["Message-ID"])
     <test1>
 
 Let's delete all mails in the mail box:
 
     >>> for id, mail in mailbox.items():
     ...     mailbox.delete(id)
+    ...
     >>> list(mailbox.items())
     []
 

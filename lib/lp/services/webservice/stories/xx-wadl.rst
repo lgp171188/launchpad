@@ -21,7 +21,8 @@ does not have any WADL files written to disk.
     >>> import os
     >>> from lp.services.config import config
     >>> wadl_filename = WebServiceApplication.cachedWADLPath(
-    ...     config.instance_name, 'devel')
+    ...     config.instance_name, "devel"
+    ... )
     >>> os.path.exists(wadl_filename)
     False
 
@@ -34,8 +35,13 @@ Let's write some fake WADL to disk.
 When we request the WADL for version "devel", the fake WADL is loaded
 from disk.
 
-    >>> print(six.ensure_text(webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body))
+    >>> print(
+    ...     six.ensure_text(
+    ...         webservice.get(
+    ...             "/", "application/vd.sun.wadl+xml", api_version="devel"
+    ...         ).body
+    ...     )
+    ... )
     Some fake WADL.
 
 The fake WADL is now present in the cache.
@@ -45,10 +51,15 @@ The fake WADL is now present in the cache.
 
 Change the cached value, and we change the document served.
 
-    >>> WebServiceApplication.cached_wadl['devel'] = "More fake WADL."
+    >>> WebServiceApplication.cached_wadl["devel"] = "More fake WADL."
 
-    >>> print(six.ensure_text(webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body))
+    >>> print(
+    ...     six.ensure_text(
+    ...         webservice.get(
+    ...             "/", "application/vd.sun.wadl+xml", api_version="devel"
+    ...         ).body
+    ...     )
+    ... )
     More fake WADL.
 
 If there's no value in the cache and no cached file on disk, the WADL
@@ -58,8 +69,9 @@ is generated from scratch.
     >>> os.remove(wadl_filename)
 
     >>> wadl = webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='devel').body
-    >>> wadl = wadl.decode('UTF-8')
+    ...     "/", "application/vd.sun.wadl+xml", api_version="devel"
+    ... ).body
+    >>> wadl = wadl.decode("UTF-8")
 
 Unlike the test strings we used earlier, this is a valid WADL file.
 
@@ -69,31 +81,32 @@ Unlike the test strings we used earlier, this is a valid WADL file.
 
     # We need to replace the nbsp entity, because the validator
     # doesn't support embedded definition.
-    >>> wadl_schema.validate(
-    ...     wadl.replace('&nbsp;', '&#160;').encode('UTF-8'))
+    >>> wadl_schema.validate(wadl.replace("&nbsp;", "&#160;").encode("UTF-8"))
     True
 
 The WADL we received is keyed to the 'devel' version of the web
 service. The URL to this version's service root will always be
 present.
 
-    >>> 'http://api.launchpad.test/devel/' in wadl
+    >>> "http://api.launchpad.test/devel/" in wadl
     True
 
 If we retrieve the WADL for the '1.0' version of the web service,
 we'll get a document keyed to the '1.0' version.
 
     >>> wadl_10 = webservice.get(
-    ...     '/', 'application/vd.sun.wadl+xml', api_version='1.0').body
-    >>> wadl_10 = wadl_10.decode('UTF-8')
+    ...     "/", "application/vd.sun.wadl+xml", api_version="1.0"
+    ... ).body
+    >>> wadl_10 = wadl_10.decode("UTF-8")
 
-    >>> 'http://api.launchpad.test/1.0/' in wadl_10
+    >>> "http://api.launchpad.test/1.0/" in wadl_10
     True
 
 All of these documents were cached as they were generated:
 
     >>> for key in sorted(WebServiceApplication.cached_wadl.keys()):
     ...     print(key)
+    ...
     1.0
     devel
 

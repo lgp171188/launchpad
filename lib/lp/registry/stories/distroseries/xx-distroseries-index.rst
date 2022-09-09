@@ -4,8 +4,8 @@ Distribution series main page
 In the main page for a distribution we have a link to help translating
 this distribution series.
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
-    >>> user_browser.getLink('Help translate').click()
+    >>> user_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> user_browser.getLink("Help translate").click()
     >>> print(user_browser.title)
     Hoary (5.04) : Translations : Ubuntu
 
@@ -16,10 +16,13 @@ Registering information
 The distroseries pages presents the 'registering' information besides
 its main 'heading'.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
+    >>> anon_browser.open("http://launchpad.test/ubuntu/warty")
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'registration')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "registration")
+    ...     )
+    ... )
     Registered by
     Ubuntu Team on
     2006-10-16
@@ -28,7 +31,7 @@ its main 'heading'.
     Warty
     ...
 
-    >>> print(anon_browser.getLink('Ubuntu Team').url)
+    >>> print(anon_browser.getLink("Ubuntu Team").url)
     http://launchpad.test/~ubuntu-team
 
 
@@ -38,8 +41,11 @@ Details portlet
 The distroseries page contains a details portlet giving more information
 on the series' details.
 
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information')))
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Series information")
+    ...     )
+    ... )
     Series information
     Distribution: Ubuntu
     Series: Warty (4.10)
@@ -54,9 +60,12 @@ on the series' details.
 On series that have no source or binary packages, the portlet will
 change its text slightly to annouce this:
 
-    >>> anon_browser.open('http://launchpad.test/debian/sarge')
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information')))
+    >>> anon_browser.open("http://launchpad.test/debian/sarge")
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Series information")
+    ...     )
+    ... )
     Series information
     Distribution: Debian
     Series: Sarge (3.1)
@@ -76,26 +85,36 @@ the series derived from this series:
     >>> from zope.component import getUtility
 
     >>> with celebrity_logged_in("admin"):
-    ...     debian = getUtility(IDistributionSet).getByName(u"debian")
-    ...     sarge = debian.getSeries(u"sarge")
+    ...     debian = getUtility(IDistributionSet).getByName("debian")
+    ...     sarge = debian.getSeries("sarge")
     ...     parents = [
-    ...         factory.makeDistroSeries(name=u"dobby"),
-    ...         factory.makeDistroSeries(name=u"knobby")]
+    ...         factory.makeDistroSeries(name="dobby"),
+    ...         factory.makeDistroSeries(name="knobby"),
+    ...     ]
     ...     distro_series_parents = [
     ...         factory.makeDistroSeriesParent(
-    ...             derived_series=sarge, parent_series=parent)
-    ...         for parent in parents]
+    ...             derived_series=sarge, parent_series=parent
+    ...         )
+    ...         for parent in parents
+    ...     ]
     ...     children = [
-    ...         factory.makeDistroSeries(name=u"bobby"),
-    ...         factory.makeDistroSeries(name=u"tables")]
+    ...         factory.makeDistroSeries(name="bobby"),
+    ...         factory.makeDistroSeries(name="tables"),
+    ...     ]
     ...     distro_series_children = [
     ...         factory.makeDistroSeriesParent(
-    ...             derived_series=child, parent_series=sarge)
-    ...         for child in children]
+    ...             derived_series=child, parent_series=sarge
+    ...         )
+    ...         for child in children
+    ...     ]
+    ...
 
-    >>> anon_browser.open('http://launchpad.test/debian/sarge')
-    >>> print(extract_text(
-    ...     find_portlet(anon_browser.contents, 'Series information')))
+    >>> anon_browser.open("http://launchpad.test/debian/sarge")
+    >>> print(
+    ...     extract_text(
+    ...         find_portlet(anon_browser.contents, "Series information")
+    ...     )
+    ... )
     Series information
     Distribution: Debian
     Series: Sarge (3.1)
@@ -114,8 +133,8 @@ Distribution series bug subscriptions
 To receive email notifications about bugs pertaining to a distribution
 series, we can create structural bug subscriptions.
 
-    >>> admin_browser.open('http://launchpad.test/ubuntu/warty')
-    >>> admin_browser.getLink('Subscribe to bug mail').click()
+    >>> admin_browser.open("http://launchpad.test/ubuntu/warty")
+    >>> admin_browser.getLink("Subscribe to bug mail").click()
     >>> print(admin_browser.url)
     http://launchpad.test/ubuntu/warty/+subscribe
 
@@ -132,9 +151,12 @@ upstream packaging.
 Note that warty's sourcecount is stale in sample data which causes -2 need
 linking.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'series-packaging')))
+    >>> anon_browser.open("http://launchpad.test/ubuntu/warty")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "series-packaging")
+    ...     )
+    ... )
     Upstream packaging
     5 source packages are linked to registered upstream projects.
     3 need linking.

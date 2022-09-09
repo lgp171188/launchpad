@@ -15,10 +15,10 @@ using a different email address.
 
     >>> login(ANONYMOUS)
     >>> personset = getUtility(IPersonSet)
-    >>> name16 = personset.getByName('name16')
-    >>> sample = personset.getByName('name12')
-    >>> admins = personset.getByName('admins')
-    >>> marilize = personset.getByName('marilize')
+    >>> name16 = personset.getByName("name16")
+    >>> sample = personset.getByName("name12")
+    >>> admins = personset.getByName("admins")
+    >>> marilize = personset.getByName("marilize")
 
 
 Sanity checks
@@ -41,22 +41,22 @@ put the person we will merge into some of those.
     # To assign marilize as the ubuntu team owner, we must log on as the
     # previous owner.
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
 
-    >>> ubuntu_team = personset.getByName('ubuntu-team')
+    >>> ubuntu_team = personset.getByName("ubuntu-team")
     >>> ubuntu_team.teamowner = marilize
 
-    >>> ubuntu_translators = personset.getByName('ubuntu-translators')
+    >>> ubuntu_translators = personset.getByName("ubuntu-translators")
     >>> ignored = ubuntu_translators.addMember(marilize, marilize)
-    >>> rosetta_admins = personset.getByName('rosetta-admins')
+    >>> rosetta_admins = personset.getByName("rosetta-admins")
     >>> ignored = rosetta_admins.addMember(marilize, marilize)
 
 Karma gets reassigned to the person we merge into. Let's assign karma to
 Marilize and save it for later comparison.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> marilize_karma = marilize.assignKarma('bugfixed', product=firefox)
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> marilize_karma = marilize.assignKarma("bugfixed", product=firefox)
     >>> saved_marilize_karma_id = marilize_karma.id
     >>> print(marilize_karma.person.name)
     marilize
@@ -79,15 +79,20 @@ simple to implement, and it be should extremely rare for the case to
 occur.
 
     >>> peoplemerge = factory.makePersonalBranch(
-    ...     name='peoplemerge', owner=sample)
+    ...     name="peoplemerge", owner=sample
+    ... )
     >>> peoplemerge1 = factory.makePersonalBranch(
-    ...     name='peoplemerge-1', owner=sample)
+    ...     name="peoplemerge-1", owner=sample
+    ... )
     >>> peoplemerge0 = factory.makePersonalBranch(
-    ...     name='peoplemerge-0', owner=marilize)
+    ...     name="peoplemerge-0", owner=marilize
+    ... )
     >>> peoplemerge2 = factory.makePersonalBranch(
-    ...     name='peoplemerge', owner=marilize)
+    ...     name="peoplemerge", owner=marilize
+    ... )
     >>> peoplemerge11 = factory.makePersonalBranch(
-    ...     name='peoplemerge-1', owner=marilize)
+    ...     name="peoplemerge-1", owner=marilize
+    ... )
 
 'Sample Person' is a deactivated member of the 'Ubuntu Translators'
 team, while marilize is an active member. After the merge, 'Sample
@@ -102,12 +107,17 @@ Person' will be an active member of that team.
 marilize happens to have an LoginToken.
 
     >>> from lp.services.verification.interfaces.logintoken import (
-    ...     ILoginTokenSet)
+    ...     ILoginTokenSet,
+    ... )
     >>> from lp.services.verification.interfaces.authtoken import (
-    ...     LoginTokenType)
+    ...     LoginTokenType,
+    ... )
     >>> token = getUtility(ILoginTokenSet).new(
-    ...     marilize, marilize.preferredemail.email, 'willdie@example.com',
-    ...     LoginTokenType.VALIDATEEMAIL)
+    ...     marilize,
+    ...     marilize.preferredemail.email,
+    ...     "willdie@example.com",
+    ...     LoginTokenType.VALIDATEEMAIL,
+    ... )
 
 Do the merge!
 -------------
@@ -117,7 +127,8 @@ Do the merge!
     # a person's preferred email.
 
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     EmailAddressStatus)
+    ...     EmailAddressStatus,
+    ... )
     >>> email = marilize.preferredemail
     >>> email.status = EmailAddressStatus.VALIDATED
     >>> email.destroySelf()
@@ -141,22 +152,21 @@ Translators'
 
 Check that the branches have been renamed properly.
 
-    >>> from lp.code.interfaces.branchnamespace import (
-    ...     get_branch_namespace)
+    >>> from lp.code.interfaces.branchnamespace import get_branch_namespace
     >>> sample_junk = get_branch_namespace(sample)
-    >>> sample_junk.getByName('peoplemerge') == peoplemerge
+    >>> sample_junk.getByName("peoplemerge") == peoplemerge
     True
 
-    >>> sample_junk.getByName('peoplemerge-0') == peoplemerge0
+    >>> sample_junk.getByName("peoplemerge-0") == peoplemerge0
     True
 
-    >>> sample_junk.getByName('peoplemerge-1') == peoplemerge1
+    >>> sample_junk.getByName("peoplemerge-1") == peoplemerge1
     True
 
-    >>> sample_junk.getByName('peoplemerge-2') == peoplemerge2
+    >>> sample_junk.getByName("peoplemerge-2") == peoplemerge2
     True
 
-    >>> sample_junk.getByName('peoplemerge-1-1') == peoplemerge11
+    >>> sample_junk.getByName("peoplemerge-1-1") == peoplemerge11
     True
 
 The Karma that was previously assigned to marilize is now assigned to
@@ -181,14 +191,16 @@ A merged person gets a -merged suffix on its name.
     >>> from storm.store import Store
     >>> store = Store.of(marilize)
     >>> results = store.execute(
-    ...     "SELECT id FROM Person WHERE name='marilize-merged'")
+    ...     "SELECT id FROM Person WHERE name='marilize-merged'"
+    ... )
     >>> results.get_one()[0] == marilize.id
     True
 
     >>> results = store.execute(
     ...     "SELECT person, team, status from TeamMembership WHERE "
-    ...     "person = %s and team = %s" % sqlvalues(
-    ...     sample.id, rosetta_admins.id))
+    ...     "person = %s and team = %s"
+    ...     % sqlvalues(sample.id, rosetta_admins.id)
+    ... )
     >>> results.get_one()
     (12, 30, 2)
 
@@ -197,7 +209,8 @@ A merged person gets a -merged suffix on its name.
 
     >>> results = store.execute(
     ...     "SELECT p1.name FROM Person as p1, Person as p2 "
-    ...     "WHERE p1.id = p2.teamowner and p2.name = 'ubuntu-team'")
+    ...     "WHERE p1.id = p2.teamowner and p2.name = 'ubuntu-team'"
+    ... )
     >>> print(results.get_one()[0])
     name12
 
@@ -205,12 +218,14 @@ The person that has been merged is flagged. We can use this to eliminate
 merged persons from lists etc.
 
     >>> results = store.execute(
-    ...     "SELECT merged FROM Person WHERE name='marilize-merged'")
+    ...     "SELECT merged FROM Person WHERE name='marilize-merged'"
+    ... )
     >>> results.get_one()[0]
     12
 
     >>> results = store.execute(
-    ...     "SELECT merged FROM Person WHERE name='name12'")
+    ...     "SELECT merged FROM Person WHERE name='name12'"
+    ... )
     >>> results.get_one()[0] is None
     True
 
@@ -218,7 +233,8 @@ An email is sent to the user informing them that they should review their
 email and mailing list subscription settings.
 
     >>> from lp.registry.interfaces.personnotification import (
-    ...     IPersonNotificationSet)
+    ...     IPersonNotificationSet,
+    ... )
 
     >>> notification_set = getUtility(IPersonNotificationSet)
     >>> notifications = notification_set.getNotificationsToSend()
@@ -242,8 +258,11 @@ email and mailing list subscription settings.
 
 sample has not been transferred marilize's logintoken.
 
-    >>> list(getUtility(ILoginTokenSet).searchByEmailRequesterAndType(
-    ...     'willdie@example.com', sample, LoginTokenType.VALIDATEEMAIL))
+    >>> list(
+    ...     getUtility(ILoginTokenSet).searchByEmailRequesterAndType(
+    ...         "willdie@example.com", sample, LoginTokenType.VALIDATEEMAIL
+    ...     )
+    ... )
     []
 
 Person decoration
@@ -263,33 +282,43 @@ create, and then delete, the needed two people.
 
     >>> skip = []
     >>> def decorator_refs(store, winner, loser):
-    ...    results = store.execute(
-    ...        "SELECT person, last_modified_by FROM PersonLocation "
-    ...        "WHERE person IN (%(loser)d, %(winner)d)"
-    ...        "      OR last_modified_by IN (%(loser)d, %(winner)d)"
-    ...        "ORDER BY date_created" % {
-    ...        'winner': winner.id, 'loser': loser.id})
-    ...    result = ''
-    ...    for line in results.get_all():
-    ...        for item in line:
-    ...            if item == winner.id: result += 'winner, '
-    ...            elif item == loser.id: result += 'loser, '
-    ...            else: result += str(item) + ', '
-    ...        result += '\n'
-    ...    return result.strip()
+    ...     results = store.execute(
+    ...         "SELECT person, last_modified_by FROM PersonLocation "
+    ...         "WHERE person IN (%(loser)d, %(winner)d)"
+    ...         "      OR last_modified_by IN (%(loser)d, %(winner)d)"
+    ...         "ORDER BY date_created"
+    ...         % {"winner": winner.id, "loser": loser.id}
+    ...     )
+    ...     result = ""
+    ...     for line in results.get_all():
+    ...         for item in line:
+    ...             if item == winner.id:
+    ...                 result += "winner, "
+    ...             elif item == loser.id:
+    ...                 result += "loser, "
+    ...             else:
+    ...                 result += str(item) + ", "
+    ...         result += "\n"
+    ...     return result.strip()
+    ...
     >>> def new_players():
-    ...  lead = 99
-    ...  while True:
-    ...     lead += 1
-    ...     name = str(lead)
-    ...     lp = PersonCreationRationale.OWNER_CREATED_LAUNCHPAD
-    ...     winner = Person(
-    ...         name=name+'.winner', display_name='Merge Winner',
-    ...         creation_rationale=lp)
-    ...     loser = Person(
-    ...         name=name+'.loser', display_name='Merge Loser',
-    ...         creation_rationale=lp)
-    ...     yield winner, loser
+    ...     lead = 99
+    ...     while True:
+    ...         lead += 1
+    ...         name = str(lead)
+    ...         lp = PersonCreationRationale.OWNER_CREATED_LAUNCHPAD
+    ...         winner = Person(
+    ...             name=name + ".winner",
+    ...             display_name="Merge Winner",
+    ...             creation_rationale=lp,
+    ...         )
+    ...         loser = Person(
+    ...             name=name + ".loser",
+    ...             display_name="Merge Loser",
+    ...             creation_rationale=lp,
+    ...         )
+    ...         yield winner, loser
+    ...
     >>> endless_supply_of_players = new_players()
 
 First, we will test a merge where there is no decoration.
@@ -299,8 +328,16 @@ First, we will test a merge where there is no decoration.
     <BLANKLINE>
 
     >>> from lp.registry.personmerge import _merge_person_decoration
-    >>> _merge_person_decoration(winner, loser, skip,
-    ...     'PersonLocation', 'person', ['last_modified_by',])
+    >>> _merge_person_decoration(
+    ...     winner,
+    ...     loser,
+    ...     skip,
+    ...     "PersonLocation",
+    ...     "person",
+    ...     [
+    ...         "last_modified_by",
+    ...     ],
+    ... )
 
 "Skip" should have been updated with the table and unique reference
 column name.
@@ -317,12 +354,20 @@ OK, now, this time, we will add some decorator information to the winner
 but not the loser.
 
     >>> winner, loser = next(endless_supply_of_players)
-    >>> winner.setLocation(None, None, 'America/Santiago', winner)
+    >>> winner.setLocation(None, None, "America/Santiago", winner)
     >>> print(decorator_refs(store, winner, loser))
     winner, winner,
 
-    >>> _merge_person_decoration(winner, loser, skip,
-    ...     'PersonLocation', 'person', ['last_modified_by',])
+    >>> _merge_person_decoration(
+    ...     winner,
+    ...     loser,
+    ...     skip,
+    ...     "PersonLocation",
+    ...     "person",
+    ...     [
+    ...         "last_modified_by",
+    ...     ],
+    ... )
 
 There should now still be one decorator, with all columns pointing to
 the winner:
@@ -334,12 +379,20 @@ This time, we will have a decorator for the person that is being merged
 INTO another person, but nothing on the target person.
 
     >>> winner, loser = next(endless_supply_of_players)
-    >>> loser.setLocation(None, None, 'America/Santiago', loser)
+    >>> loser.setLocation(None, None, "America/Santiago", loser)
     >>> print(decorator_refs(store, winner, loser))
     loser, loser,
 
-    >>> _merge_person_decoration(winner, loser, skip,
-    ...     'PersonLocation', 'person', ['last_modified_by',])
+    >>> _merge_person_decoration(
+    ...     winner,
+    ...     loser,
+    ...     skip,
+    ...     "PersonLocation",
+    ...     "person",
+    ...     [
+    ...         "last_modified_by",
+    ...     ],
+    ... )
 
 There should now still be one decorator, with all columns pointing to
 the winner:
@@ -353,14 +406,22 @@ will remain as noise but non-unique columns will have been updated to
 point to the winner, and the to_person will be unaffected.
 
     >>> winner, loser = next(endless_supply_of_players)
-    >>> winner.setLocation(None, None, 'America/Santiago', winner)
-    >>> loser.setLocation(None, None, 'America/New_York', loser)
+    >>> winner.setLocation(None, None, "America/Santiago", winner)
+    >>> loser.setLocation(None, None, "America/New_York", loser)
     >>> print(decorator_refs(store, winner, loser))
     winner, winner,
     loser, loser,
 
-    >>> _merge_person_decoration(winner, loser, skip,
-    ...     'PersonLocation', 'person', ['last_modified_by',])
+    >>> _merge_person_decoration(
+    ...     winner,
+    ...     loser,
+    ...     skip,
+    ...     "PersonLocation",
+    ...     "person",
+    ...     [
+    ...         "last_modified_by",
+    ...     ],
+    ... )
     >>> print(decorator_refs(store, winner, loser))
     winner, winner,
     loser, winner,
@@ -377,20 +438,28 @@ hand, are carried over just like when merging people.
     >>> from datetime import datetime, timedelta
     >>> import pytz
     >>> from lp.registry.interfaces.poll import IPollSubset, PollSecrecy
-    >>> test_team = personset.newTeam(sample, 'test-team', 'Test team')
-    >>> launchpad_devs = personset.getByName('launchpad')
+    >>> test_team = personset.newTeam(sample, "test-team", "Test team")
+    >>> launchpad_devs = personset.getByName("launchpad")
     >>> ignored = launchpad_devs.addMember(
-    ...     test_team, reviewer=launchpad_devs.teamowner, force_team_add=True)
-    >>> today = datetime.now(pytz.timezone('UTC'))
+    ...     test_team, reviewer=launchpad_devs.teamowner, force_team_add=True
+    ... )
+    >>> today = datetime.now(pytz.timezone("UTC"))
     >>> tomorrow = today + timedelta(days=1)
     >>> poll = IPollSubset(test_team).new(
-    ...     u'test-poll', u'Title', u'Proposition', today, tomorrow,
-    ...     PollSecrecy.OPEN, allowspoilt=True)
+    ...     "test-poll",
+    ...     "Title",
+    ...     "Proposition",
+    ...     today,
+    ...     tomorrow,
+    ...     PollSecrecy.OPEN,
+    ...     allowspoilt=True,
+    ... )
 
     # test_team has a superteam, one active member and a poll.
 
     >>> for team in test_team.super_teams:
     ...     print(team.name)
+    ...
     launchpad
 
     >>> print(test_team.teamowner.name)
@@ -398,6 +467,7 @@ hand, are carried over just like when merging people.
 
     >>> for member in test_team.allmembers:
     ...     print(member.name)
+    ...
     name12
 
     >>> list(IPollSubset(test_team).getAll())
@@ -405,7 +475,7 @@ hand, are carried over just like when merging people.
 
     # Landscape-developers has no super teams, two members and no polls.
 
-    >>> landscape = personset.getByName('landscape-developers')
+    >>> landscape = personset.getByName("landscape-developers")
     >>> [team.name for team in landscape.super_teams]
     []
 
@@ -414,6 +484,7 @@ hand, are carried over just like when merging people.
 
     >>> for member in landscape.allmembers:
     ...     print(member.name)
+    ...
     salgado
     name12
 

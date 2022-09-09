@@ -2,9 +2,9 @@ In order to minimise problems related to page encodings, we want all
 our pages to always be encoded using utf-8, even if the client says
 that it doesn't accept it.
 
-    >>> anon_browser.addHeader('Accept-Charset', 'iso8859-1')
-    >>> anon_browser.open('http://launchpad.test/')
-    >>> anon_browser.headers['Content-Type']
+    >>> anon_browser.addHeader("Accept-Charset", "iso8859-1")
+    >>> anon_browser.open("http://launchpad.test/")
+    >>> anon_browser.headers["Content-Type"]
     'text/html;charset=utf-8'
 
 The status is still 200, instead of 406 which is recommended, since it's
@@ -24,5 +24,5 @@ Firefox. Also, RFC 2616 states:
       an incoming response to determine if it is acceptable.
 """
 
-    >>> anon_browser.headers['status']
+    >>> anon_browser.headers["status"]
     '200 Ok'

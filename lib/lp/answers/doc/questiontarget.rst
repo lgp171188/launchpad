@@ -13,7 +13,7 @@ implementing IQuestionTarget.
     #
     # Some parts of the IQuestionTarget interface are only accessible
     # to a registered user.
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
     >>> from zope.component import getUtility
     >>> from zope.interface.verify import verifyObject
@@ -30,7 +30,8 @@ Questions are always owned by a registered user.
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
 
 The newQuestion() method is used to create a question that will be associated
 with the target.  It takes as parameters the question's owner, title and
@@ -42,8 +43,12 @@ to UTC_NOW.
     >>> from pytz import UTC
     >>> now = datetime.now(UTC)
 
-    >>> question = target.newQuestion(sample_person, 'New question',
-    ...     'Question description', datecreated=now)
+    >>> question = target.newQuestion(
+    ...     sample_person,
+    ...     "New question",
+    ...     "Question description",
+    ...     datecreated=now,
+    ... )
     >>> print(question.title)
     New question
     >>> print(question.description)
@@ -63,6 +68,7 @@ subscribed to the question.
 
     >>> for subscription in question.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Sample Person
 
 Questions can be written in any languages supported in Launchpad.  The
@@ -76,11 +82,14 @@ It is possible to create questions in another language than English, by
 passing in the language that the question is written in.
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> french = getUtility(ILanguageSet)['fr']
+    >>> french = getUtility(ILanguageSet)["fr"]
     >>> question = target.newQuestion(
-    ...     sample_person, "De l'aide S.V.P.",
-    ...     "Pouvez-vous m'aider?", language=french,
-    ...     datecreated=now + timedelta(seconds=30))
+    ...     sample_person,
+    ...     "De l'aide S.V.P.",
+    ...     "Pouvez-vous m'aider?",
+    ...     language=french,
+    ...     datecreated=now + timedelta(seconds=30),
+    ... )
     >>> print(question.language.code)
     fr
 
@@ -88,7 +97,8 @@ Anonymous users cannot use newQuestion().
 
     >>> login(ANONYMOUS)
     >>> question = target.newQuestion(
-    ...     sample_person, 'This will fail', 'Failed?')
+    ...     sample_person, "This will fail", "Failed?"
+    ... )
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -117,40 +127,55 @@ Searching for questions
 
     # Create new questions for the following tests.  Odd questions will be
     # owned by Foo Bar and even questions will be owned by Sample Person.
-    >>> login('no-priv@canonical.com')
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> login("no-priv@canonical.com")
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> questions = []
     >>> for num in range(5):
     ...     if num % 2:
     ...         owner = foo_bar
     ...     else:
     ...         owner = sample_person
-    ...     description = ('Support request description%d.\n'
-    ...         'This request index is %d.') % (num, num)
-    ...     questions.append(target.newQuestion(
-    ...         owner, 'Question title%d' % num, description,
-    ...         datecreated=now+timedelta(minutes=num+1)))
+    ...     description = (
+    ...         "Support request description%d.\n" "This request index is %d."
+    ...     ) % (num, num)
+    ...     questions.append(
+    ...         target.newQuestion(
+    ...             owner,
+    ...             "Question title%d" % num,
+    ...             description,
+    ...             datecreated=now + timedelta(minutes=num + 1),
+    ...         )
+    ...     )
+    ...
 
     # For more variety, we will set the status of the last to INVALID and the
     # fourth one to ANSWERED.
-    >>> login('foo.bar@canonical.com')
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> message = questions[-1].reject(
-    ...     foo_bar, 'Invalid question.', datecreated=now+timedelta(hours=1))
+    ...     foo_bar, "Invalid question.", datecreated=now + timedelta(hours=1)
+    ... )
     >>> message = questions[3].giveAnswer(
-    ...     sample_person, 'This is your answer.',
-    ...     datecreated=now+timedelta(hours=1))
+    ...     sample_person,
+    ...     "This is your answer.",
+    ...     datecreated=now + timedelta(hours=1),
+    ... )
 
     # Also add a reply from the owner on the first of these.
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> message = questions[0].giveInfo(
-    ...     'I think I forgot something.', datecreated=now+timedelta(hours=4))
+    ...     "I think I forgot something.",
+    ...     datecreated=now + timedelta(hours=4),
+    ... )
 
     # Create another one that will also have the word 'new' in its
     # description.
-    >>> question = target.newQuestion(sample_person, 'Another question',
-    ...     'Another new question that is actually very new.',
-    ...     datecreated=now+timedelta(hours=1))
+    >>> question = target.newQuestion(
+    ...     sample_person,
+    ...     "Another question",
+    ...     "Another new question that is actually very new.",
+    ...     datecreated=now + timedelta(hours=1),
+    ... )
     >>> login(ANONYMOUS)
 
 The searchQuestions() method is used to search for questions.
@@ -163,8 +188,9 @@ The search_text parameter will select the questions that contain the
 passed in text.  The standard text searching algorithm is used; see
 lib/lp/services/database/doc/textsearching.rst.
 
-    >>> for t in target.searchQuestions(search_text=u'new'):
+    >>> for t in target.searchQuestions(search_text="new"):
     ...     print(t.title)
+    ...
     New question
     Another question
 
@@ -181,6 +207,7 @@ The searchQuestions() method can also filter questions by status.
     >>> from lp.answers.enums import QuestionStatus
     >>> for t in target.searchQuestions(status=QuestionStatus.OPEN):
     ...     print(t.title)
+    ...
     Another question
     Question title2
     Question title1
@@ -193,6 +220,7 @@ default sort order is from newest to oldest.
 
     >>> for t in target.searchQuestions(status=QuestionStatus.INVALID):
     ...     print(t.title)
+    ...
     Question title4
 
 You can pass in a list of statuses, and you can also use the search_text and
@@ -200,8 +228,9 @@ status parameters at the same time.  This will search OPEN and INVALID
 questions with the word 'index'.
 
     >>> for t in target.searchQuestions(
-    ...     search_text=u'request index',
-    ...     status=(QuestionStatus.OPEN, QuestionStatus.INVALID)):
+    ...     search_text="request index",
+    ...     status=(QuestionStatus.OPEN, QuestionStatus.INVALID),
+    ... ):
     ...     print(t.title)
     Question title4
     Question title2
@@ -218,8 +247,9 @@ QuestionSort.  Previously, we saw the NEWEST_FIRST and RELEVANCY sort order.
 You can sort also from oldest to newest using the OLDEST_FIRST constant.
 
     >>> from lp.answers.enums import QuestionSort
-    >>> for t in target.searchQuestions(search_text='new',
-    ...                                 sort=QuestionSort.OLDEST_FIRST):
+    >>> for t in target.searchQuestions(
+    ...     search_text="new", sort=QuestionSort.OLDEST_FIRST
+    ... ):
     ...     print(t.title)
     New question
     Another question
@@ -229,9 +259,9 @@ EXPIRED, INVALID).  This also sorts from newest to oldest as a secondary key.
 Here we use status=None to search for all statuses; by default INVALID and
 EXPIRED questions are excluded.
 
-    >>> for t in target.searchQuestions(search_text='request index',
-    ...                                 status=None,
-    ...                                 sort=QuestionSort.STATUS):
+    >>> for t in target.searchQuestions(
+    ...     search_text="request index", status=None, sort=QuestionSort.STATUS
+    ... ):
     ...     print(t.status.title, t.title)
     Open Question title2
     Open Question title1
@@ -246,6 +276,7 @@ the questions will be sorted NEWEST_FIRST.
     # its status.
     >>> for t in target.searchQuestions(sort=QuestionSort.RELEVANCY):
     ...     print(t.title)
+    ...
     Another question
     Question title3
     Question title2
@@ -261,7 +292,8 @@ datelastquery attribute.
     # Question title0 sorts first because it has a message from its owner
     # after the others were created.
     >>> for t in target.searchQuestions(
-    ...                             sort=QuestionSort.RECENT_OWNER_ACTIVITY):
+    ...     sort=QuestionSort.RECENT_OWNER_ACTIVITY
+    ... ):
     ...     print(t.title)
     Question title0
     Another question
@@ -279,6 +311,7 @@ You can find question owned by a particular user by using the owner parameter.
 
     >>> for t in target.searchQuestions(owner=foo_bar):
     ...     print(t.title)
+    ...
     Question title3
     Question title1
 
@@ -289,13 +322,15 @@ Language
 The language criteria can be used to select only questions written in a
 particular language.
 
-    >>> english = getUtility(ILanguageSet)['en']
+    >>> english = getUtility(ILanguageSet)["en"]
     >>> for t in target.searchQuestions(language=french):
     ...     print(t.title)
+    ...
     De l'aide S.V.P.
 
     >>> for t in target.searchQuestions(language=(english, french)):
     ...     print(t.title)
+    ...
     Another question
     Question title3
     Question title2
@@ -314,23 +349,29 @@ state.  Questions on which the user gave an answer or requested for more
 information, and that are back in the OPEN state, are also included.
 
     # One of Sample Person's question gets to need attention from Foo Bar.
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> message = questions[0].requestInfo(
-    ...     foo_bar, 'Do you have a clue?',
-    ...     datecreated=now+timedelta(hours=1))
+    ...     foo_bar,
+    ...     "Do you have a clue?",
+    ...     datecreated=now + timedelta(hours=1),
+    ... )
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> message = questions[0].giveInfo(
-    ...     'I do, now please help me.', datecreated=now+timedelta(hours=2))
+    ...     "I do, now please help me.", datecreated=now + timedelta(hours=2)
+    ... )
 
     # Another one of Foo Bar's questions needs attention.
     >>> message = questions[1].requestInfo(
-    ...     sample_person, 'And you, do you have a clue?',
-    ...     datecreated=now+timedelta(hours=1))
+    ...     sample_person,
+    ...     "And you, do you have a clue?",
+    ...     datecreated=now + timedelta(hours=1),
+    ... )
 
     >>> login(ANONYMOUS)
     >>> for t in target.searchQuestions(needs_attention_from=foo_bar):
     ...     print(t.status.title, t.title, t.owner.displayname)
+    ...
     Answered Question title3 Foo Bar
     Needs information Question title1 Foo Bar
     Open Question title0 Sample Person
@@ -344,6 +385,7 @@ language that is not spoken by any of the Support Contacts.
 
     >>> for t in target.searchQuestions(unsupported=True):
     ...     print(t.title)
+    ...
     De l'aide S.V.P.
 
 
@@ -356,8 +398,9 @@ target text.  The questions don't have to contain all the words of the text.
     # This returns the same results as with the search 'new' because
     # all other words in the text are either common ('question', 'title') or
     # stop words ('with', 'a').
-    >>> for t in target.findSimilarQuestions('new questions with a title'):
+    >>> for t in target.findSimilarQuestions("new questions with a title"):
     ...     print(t.title)
+    ...
     New question
     Another question
 
@@ -385,7 +428,7 @@ contacts defined in the current IQuestionTarget context.
 You add an answer contact by using the addAnswerContact() method.  This
 is only available to registered users.
 
-    >>> name18 = getUtility(IPersonSet).getByName('name18')
+    >>> name18 = getUtility(IPersonSet).getByName("name18")
     >>> target.addAnswerContact(name18, name18)
     Traceback (most recent call last):
       ...
@@ -394,7 +437,7 @@ is only available to registered users.
 This method returns True when the contact was added the list and False when it
 was already on the list.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> target.addAnswerContact(name18, name18)
     True
     >>> people = [p.name for p in target.answer_contacts]
@@ -413,7 +456,7 @@ was already on the list.
 An answer contact must have at least one language among their preferred
 languages.
 
-    >>> sample_person = getUtility(IPersonSet).getByName('name12')
+    >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> len(sample_person.languages)
     0
     >>> target.addAnswerContact(sample_person, sample_person)
@@ -460,10 +503,11 @@ support when there are no answer contacts.
     en
 
     # Let's add some answer contacts which speak different languages.
-    >>> login('carlos@canonical.com')
-    >>> carlos = getUtility(IPersonSet).getByName('carlos')
+    >>> login("carlos@canonical.com")
+    >>> carlos = getUtility(IPersonSet).getByName("carlos")
     >>> for language in carlos.languages:
     ...     print(language.code)
+    ...
     ca
     en
     es
@@ -472,10 +516,11 @@ support when there are no answer contacts.
 
 While daf has en_GB as one of his preferred languages...
 
-    >>> login('daf@canonical.com')
-    >>> daf = getUtility(IPersonSet).getByName('daf')
+    >>> login("daf@canonical.com")
+    >>> daf = getUtility(IPersonSet).getByName("daf")
     >>> for language in daf.languages:
     ...     print(language.code)
+    ...
     en_GB
     ja
     cy
@@ -486,10 +531,14 @@ While daf has en_GB as one of his preferred languages...
 English variants are converted to English.
 
     >>> from operator import attrgetter
-    >>> print(', '.join(
-    ...     language.code
-    ...     for language in sorted(target.getSupportedLanguages(),
-    ...                            key=attrgetter('code'))))
+    >>> print(
+    ...     ", ".join(
+    ...         language.code
+    ...         for language in sorted(
+    ...             target.getSupportedLanguages(), key=attrgetter("code")
+    ...         )
+    ...     )
+    ... )
     ca, cy, en, es, ja
 
 
@@ -500,10 +549,11 @@ getAnswerContactsForLanguage() method returns a list of answer contacts who
 support the specified language in their preferred languages.  Daf is in the
 list because he speaks an English variant, which is treated as English.
 
-    >>> spanish = getUtility(ILanguageSet)['es']
+    >>> spanish = getUtility(ILanguageSet)["es"]
     >>> answer_contacts = target.getAnswerContactsForLanguage(spanish)
     >>> for person in answer_contacts:
     ...     print(person.name)
+    ...
     carlos
 
     >>> answer_contacts = target.getAnswerContactsForLanguage(english)
@@ -519,9 +569,14 @@ A question's languages
 The getQuestionLanguages() method returns the set of languages used by all
 of the target's questions.
 
-    >>> print(', '.join(
-    ...     sorted(language.code
-    ...            for language in target.getQuestionLanguages())))
+    >>> print(
+    ...     ", ".join(
+    ...         sorted(
+    ...             language.code
+    ...             for language in target.getQuestionLanguages()
+    ...         )
+    ...     )
+    ... )
     en, fr
 
 
@@ -539,14 +594,18 @@ copied to the question.
     >>> from pytz import UTC
 
     >>> now = datetime.now(UTC)
-    >>> target = getUtility(IProductSet)['jokosher']
+    >>> target = getUtility(IProductSet)["jokosher"]
     >>> bug_params = CreateBugParams(
-    ...     title="Print is broken", comment="blah blah blah",
-    ...     owner=sample_person)
+    ...     title="Print is broken",
+    ...     comment="blah blah blah",
+    ...     owner=sample_person,
+    ... )
     >>> target_bug = target.createBug(bug_params)
     >>> bug_message = target_bug.newMessage(
-    ...     owner=sample_person, subject="Oops, my mistake",
-    ...     content="This is really a question.")
+    ...     owner=sample_person,
+    ...     subject="Oops, my mistake",
+    ...     content="This is really a question.",
+    ... )
 
     >>> target_question = target.createQuestionFromBug(target_bug)
 
@@ -562,6 +621,7 @@ copied to the question.
 
     >>> for bug in target_question.bugs:
     ...     print(bug.title)
+    ...
     Print is broken
     >>> print(target_question.messages[-1].text_contents)
     This is really a question.

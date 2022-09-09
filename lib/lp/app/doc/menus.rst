@@ -25,16 +25,18 @@ later, implementations having facets and menus will be defined.
 
     >>> class ICookbook(Interface):
     ...     """An object with facets and menus."""
+    ...
 
     >>> class IRecipe(Interface):
     ...     """An object with facets and menus."""
+    ...
 
     # Create a fake module that we'll patch our examples into.
 
     >>> import sys
     >>> import types
-    >>> cookingexample = types.ModuleType('cookingexample')
-    >>> sys.modules['lp.app.cookingexample'] = cookingexample
+    >>> cookingexample = types.ModuleType("cookingexample")
+    >>> sys.modules["lp.app.cookingexample"] = cookingexample
 
     >>> cookingexample.ICookbook = ICookbook
     >>> cookingexample.IRecipe = IRecipe
@@ -48,7 +50,6 @@ for traversable objects.
 
     >>> @implementer(ICanonicalUrlData)
     ... class BaseContent:
-    ...
     ...     def __init__(self, name, parent):
     ...         self.name = name
     ...         self.path = name
@@ -57,6 +58,7 @@ for traversable objects.
 
     >>> class Root(BaseContent):
     ...     """The root of 'cookery', a vhost and facet."""
+    ...
 
     >>> @implementer(ICookbook)
     ... class Cookbook(BaseContent):
@@ -81,13 +83,14 @@ object has a canonical url derived from its place in the hierarchy.
     >>> from lp.services.webapp import canonical_url
     >>> from lp.testing.menu import make_fake_request
 
-    >>> root = Root('', None)
-    >>> cookbook = Cookbook('joy-of-cooking', root)
-    >>> recipe = Recipe('fried-spam', cookbook)
+    >>> root = Root("", None)
+    >>> cookbook = Cookbook("joy-of-cooking", root)
+    >>> recipe = Recipe("fried-spam", cookbook)
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.test/joy-of-cooking/fried-spam',
-    ...     traversed_objects=[cookbook, recipe])
+    ...     "http://launchpad.test/joy-of-cooking/fried-spam",
+    ...     traversed_objects=[cookbook, recipe],
+    ... )
 
     >>> print(canonical_url(cookbook))
     http://launchpad.test/joy-of-cooking
@@ -108,12 +111,15 @@ content object's menu.
 
     >>> class IRecipeEditMenuMarker(Interface):
     ...     """A marker interface of the RecipeEditMenu."""
+    ...
 
     >>> class IRecipeJournalMenuMarker(Interface):
     ...     """A marker interface of the RecipeJournalMenu."""
+    ...
 
     >>> class RecipeIndexView(LaunchpadView):
     ...     """View for summary of a recipe on the cookery facet."""
+    ...
 
     >>> @implementer(IRecipeEditMenuMarker)
     ... class RecipeEditInstructionsView(LaunchpadView):
@@ -129,6 +135,7 @@ content object's menu.
 
     >>> class RecipeQuestionsAllView(LaunchpadView):
     ...     """View for all questions of a recipe on the questions facet."""
+    ...
 
     # Monkey patch the interfaces and views into the cookingexample module.
 
@@ -152,7 +159,8 @@ they are assigned to the same facet.
 
     >>> from zope.configuration import xmlconfig
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns="http://namespaces.zope.org/zope"
     ...            xmlns:zope="http://namespaces.zope.org/zope"
     ...            xmlns:browser="http://namespaces.zope.org/browser">
@@ -200,7 +208,8 @@ they are assigned to the same facet.
     ...     permission="zope.Public"
     ...     />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
 
 The FacetMenu class
@@ -220,6 +229,7 @@ IFacetMenu classes.  An error is raise if it is directly called.
     >>> bad_idea_menu = FacetMenu(object())
     >>> for link in bad_idea_menu.iterlinks():
     ...     pass
+    ...
     Traceback (most recent call last):
     ...
     AssertionError: Subclasses of FacetMenu must provide self.links
@@ -238,27 +248,28 @@ are appropriate for a context object.
     >>> class CookeryFacetMenu(FacetMenu):
     ...
     ...     usedfor = ICookbook
-    ...     links = ['summary', 'questions', 'variations']
-    ...     defaultlink = 'summary'
-    ...     enable_only = ['summary', 'questions']
+    ...     links = ["summary", "questions", "variations"]
+    ...     defaultlink = "summary"
+    ...     enable_only = ["summary", "questions"]
     ...
     ...     def summary(self):
-    ...         target = ''
-    ...         text = 'Summary'
-    ...         summary = 'Summary of %s in Cookery' % self.context.name
+    ...         target = ""
+    ...         text = "Summary"
+    ...         summary = "Summary of %s in Cookery" % self.context.name
     ...         return Link(target, text, summary)
     ...
     ...     def questions(self):
-    ...         target = '+questions'
-    ...         text = 'Questions'
-    ...         summary = 'Questions and answers about %s' % self.context.name
+    ...         target = "+questions"
+    ...         text = "Questions"
+    ...         summary = "Questions and answers about %s" % self.context.name
     ...         return Link(target, text, summary)
     ...
     ...     def variations(self):
-    ...         target = '+variations'
-    ...         text = 'Variations'
-    ...         summary = 'recipe variations for %s' % self.context.name
+    ...         target = "+variations"
+    ...         text = "Variations"
+    ...         summary = "recipe variations for %s" % self.context.name
     ...         return Link(target, text, summary)
+    ...
 
     >>> cookingexample.CookeryFacetMenu = CookeryFacetMenu
 
@@ -268,11 +279,12 @@ can access `self.context`.
 
     >>> from zope.component import provideAdapter
     >>> from zope.security.checker import (
-    ...     defineChecker, InterfaceChecker, NamesChecker)
-    >>> from lp.services.webapp.interfaces import (
-    ...     IFacetLink, ILink, ILinkData)
-    >>> from lp.services.webapp.menu import (
-    ...     FacetLink, MenuLink)
+    ...     defineChecker,
+    ...     InterfaceChecker,
+    ...     NamesChecker,
+    ... )
+    >>> from lp.services.webapp.interfaces import IFacetLink, ILink, ILinkData
+    >>> from lp.services.webapp.menu import FacetLink, MenuLink
     >>> from lazr.uri import URI
 
     # The adapters for the link types used by menus are registered in ZCML.
@@ -290,19 +302,21 @@ can access `self.context`.
     ...         url = URI(url)
     ...     extra_arguments = {}
     ...     if facet is not None:
-    ...         extra_arguments['selectedfacetname'] = facet
+    ...         extra_arguments["selectedfacetname"] = facet
     ...     for link in menu.iterlinks(url, **extra_arguments):
-    ...         print('link %s' % link.name)
-    ...         attributes = ('url', 'enabled', 'menu', 'selected', 'linked')
+    ...         print("link %s" % link.name)
+    ...         attributes = ("url", "enabled", "menu", "selected", "linked")
     ...         for attrname in attributes:
     ...             if not hasattr(link, attrname):
     ...                 continue
-    ...             print('    %s: %s' % (attrname, getattr(link, attrname)))
+    ...             print("    %s: %s" % (attrname, getattr(link, attrname)))
+    ...
 
     >>> summarise_links(
     ...     CookeryFacetMenu(cookbook),
-    ...     url='http://launchpad.test/joy-of-cooking',
-    ...     facet=None)
+    ...     url="http://launchpad.test/joy-of-cooking",
+    ...     facet=None,
+    ... )
     link summary
         url: http://launchpad.test/joy-of-cooking
         enabled: True
@@ -344,6 +358,7 @@ implementations. It cannot be used directly.
 
     >>> for link in bad_idea_menu.iterlinks():
     ...     pass
+    ...
     Traceback (most recent call last):
     ...
     AssertionError: Subclasses of NavigationMenu must provide self.links
@@ -356,19 +371,20 @@ menu though one of its links.
 
     >>> class RecipeEditMenu(NavigationMenu):
     ...     usedfor = IRecipeEditMenuMarker
-    ...     facet = 'cookery'
-    ...     title = 'Edit'
-    ...     links = ('edit_instructions', 'edit_ingredients')
+    ...     facet = "cookery"
+    ...     title = "Edit"
+    ...     links = ("edit_instructions", "edit_ingredients")
     ...
     ...     def edit_instructions(self):
-    ...         target = '+edit-instructions'
-    ...         text = 'Edit instructions'
+    ...         target = "+edit-instructions"
+    ...         text = "Edit instructions"
     ...         return Link(target, text)
     ...
     ...     def edit_ingredients(self):
-    ...         target = '+edit-ingredients'
-    ...         text = 'Edit ingredients'
+    ...         target = "+edit-ingredients"
+    ...         text = "Edit ingredients"
     ...         return Link(target, text)
+    ...
 
 Menus can provide extra attributes that are available to the TAL
 processing. These are defined by the attribute 'extra_attributes'.  When
@@ -377,54 +393,57 @@ available in the generated dictionary.
 
     >>> class RecipeJournalMenu(NavigationMenu):
     ...     usedfor = IRecipeJournalMenuMarker
-    ...     facet = 'cookery'
-    ...     title = 'Journal'
-    ...     links = ('read_journal', 'write_entry')
-    ...     extra_attributes = ('journal_entries',)
+    ...     facet = "cookery"
+    ...     title = "Journal"
+    ...     links = ("read_journal", "write_entry")
+    ...     extra_attributes = ("journal_entries",)
     ...
     ...     @property
     ...     def journal_entries(self):
     ...         return 42
     ...
     ...     def read_journal(self):
-    ...         target = '+read-journal'
-    ...         text = 'Read Journal entries'
+    ...         target = "+read-journal"
+    ...         text = "Read Journal entries"
     ...         return Link(target, text)
     ...
     ...     def write_entry(self):
-    ...         target = '+write-entry'
-    ...         text = 'Write a journal entry'
+    ...         target = "+write-entry"
+    ...         text = "Write a journal entry"
     ...         return Link(target, text)
+    ...
 
     >>> class RecipeMenu(NavigationMenu):
     ...     usedfor = IRecipe
-    ...     facet = 'cookery'
-    ...     links = ('summary', 'journal')
+    ...     facet = "cookery"
+    ...     links = ("summary", "journal")
     ...
     ...     def summary(self):
-    ...         target = ''
-    ...         text = 'Summary'
+    ...         target = ""
+    ...         text = "Summary"
     ...         return Link(target, text, menu=IRecipeEditMenuMarker)
     ...
     ...     def journal(self):
-    ...         target = '+journal'
-    ...         text = 'Journal'
+    ...         target = "+journal"
+    ...         text = "Journal"
     ...         return Link(target, text, menu=IRecipeJournalMenuMarker)
+    ...
 
     >>> class RecipeQuestionsMenu(NavigationMenu):
     ...     usedfor = IRecipe
-    ...     facet = 'questions'
-    ...     links = ('all_questions', 'answered')
+    ...     facet = "questions"
+    ...     links = ("all_questions", "answered")
     ...
     ...     def all_questions(self):
-    ...         target = '+questions?filter=all'
-    ...         text = 'All'
+    ...         target = "+questions?filter=all"
+    ...         text = "All"
     ...         return Link(target, text)
     ...
     ...     def answered(self):
-    ...         target = '+questions?filter=answered'
-    ...         text = 'Answered'
+    ...         target = "+questions?filter=answered"
+    ...         text = "Answered"
     ...         return Link(target, text)
+    ...
 
     # Monkey patch the menus into the cookingexample module.
 
@@ -440,7 +459,8 @@ is defined in by the RecipeMenu class and the view of recipe.
 
     >>> summarise_links(
     ...     RecipeMenu(recipe),
-    ...     url='http://launchpad.test/joy-of-cooking/fried-spam')
+    ...     url="http://launchpad.test/joy-of-cooking/fried-spam",
+    ... )
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
@@ -472,7 +492,8 @@ content object and it has all facet links enabled.
     >>> class RecipeFacetMenu(CookeryFacetMenu):
     ...
     ...     usedfor = IRecipe
-    ...     enable_only = ['summary', 'questions', 'variations']
+    ...     enable_only = ["summary", "questions", "variations"]
+    ...
 
     # Monkey patch the menus into the cookingexample module.
 
@@ -480,8 +501,9 @@ content object and it has all facet links enabled.
 
     >>> summarise_links(
     ...     RecipeFacetMenu(recipe),
-    ...     url='http://launchpad.test/joy-of-cooking/fried-spam',
-    ...     facet=None)
+    ...     url="http://launchpad.test/joy-of-cooking/fried-spam",
+    ...     facet=None,
+    ... )
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
@@ -517,6 +539,7 @@ not defined, or links is not of the right type, an error is raised.
 
     >>> class BogusMenu(NavigationMenu):
     ...     usedfor = IRecipe
+    ...
 
     >>> summarise_links(BogusMenu(recipe))
     Traceback (most recent call last):
@@ -525,8 +548,9 @@ not defined, or links is not of the right type, an error is raised.
 
     >>> class BogusMenu(NavigationMenu):
     ...     usedfor = IRecipe
-    ...     title = 'Bogus menu'
-    ...     links = 'not a tuple'
+    ...     title = "Bogus menu"
+    ...     links = "not a tuple"
+    ...
 
     >>> summarise_links(BogusMenu(recipe))
     Traceback (most recent call last):
@@ -540,12 +564,14 @@ error is raised when BogusFacetMenu is used.
     >>> class BogusFacetMenu(CookeryFacetMenu):
     ...
     ...     usedfor = IRecipe
-    ...     enable_only = ['summary', 'non_link']
+    ...     enable_only = ["summary", "non_link"]
+    ...
 
     >>> summarise_links(
     ...     BogusFacetMenu(recipe),
-    ...     url='http://launchpad.test/joy-of-cooking/fried-spam',
-    ...     facet=None)
+    ...     url="http://launchpad.test/joy-of-cooking/fried-spam",
+    ...     facet=None,
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: Links in 'enable_only' not found in 'links': non_link
@@ -572,13 +598,13 @@ normally performed in ZCML; without the ZCML registration, the cookery
 objects cannot be adapted to menus.
 
     >>> from zope.component import getMultiAdapter, queryAdapter
-    >>> from lp.services.webapp.interfaces import (
-    ...     IFacetMenu, INavigationMenu)
+    >>> from lp.services.webapp.interfaces import IFacetMenu, INavigationMenu
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.test/joy-of-cooking/fried-spam',
-    ...     traversed_objects=[cookbook, recipe])
-    >>> recipe_view = getMultiAdapter((recipe, request), name='+index')
+    ...     "http://launchpad.test/joy-of-cooking/fried-spam",
+    ...     traversed_objects=[cookbook, recipe],
+    ... )
+    >>> recipe_view = getMultiAdapter((recipe, request), name="+index")
     >>> request._last_obj_traversed = recipe_view
     >>> print(queryAdapter(recipe_view, INavigationMenu))
     None
@@ -588,7 +614,8 @@ adapted from a Recipe. The RecipeMenu and RecipeQuestionsMenu
 INavigationMenus can also be adapted from a Recipe by including the
 facet name.
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include file="lib/lp/services/webapp/meta.zcml" />
     ...   <browser:menus
@@ -598,20 +625,22 @@ facet name.
     ...       RecipeMenu RecipeEditMenu RecipeJournalMenu RecipeQuestionsMenu"
     ...     />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
-    >>> recipe_facetmenu = queryAdapter(
-    ...     recipe, IFacetMenu)
+    >>> recipe_facetmenu = queryAdapter(recipe, IFacetMenu)
     >>> recipe_facetmenu
     <RecipeFacetMenu ...>
 
     >>> recipe_navigationmenu = queryAdapter(
-    ...     recipe, INavigationMenu, name='cookery')
+    ...     recipe, INavigationMenu, name="cookery"
+    ... )
     >>> recipe_navigationmenu
     <RecipeMenu ...>
 
     >>> recipe_questions_navigationmenu = queryAdapter(
-    ...     recipe, INavigationMenu, name='questions')
+    ...     recipe, INavigationMenu, name="questions"
+    ... )
     >>> recipe_questions_navigationmenu
     <RecipeQuestionsMenu ...>
 
@@ -619,9 +648,11 @@ And the RecipeEditMenu can be retrieved by adapting the recipe's view
 +edit-ingredients.
 
     >>> recipe_ingredients_view = getMultiAdapter(
-    ...     (recipe, request), name='+edit-ingredients')
+    ...     (recipe, request), name="+edit-ingredients"
+    ... )
     >>> recipe_overview_menu = queryAdapter(
-    ...     recipe_ingredients_view, INavigationMenu, name='cookery')
+    ...     recipe_ingredients_view, INavigationMenu, name="cookery"
+    ... )
     >>> recipe_overview_menu
     <RecipeEditMenu ...>
 
@@ -634,7 +665,8 @@ the request URI; the user should not navigate to a page they are already
 seeing. The matched URI comes from the view's request...
 
     >>> recipe_navigationmenu = queryAdapter(
-    ...     recipe, INavigationMenu, name='cookery')
+    ...     recipe, INavigationMenu, name="cookery"
+    ... )
     >>> request.getURL()
     'http://launchpad.test/joy-of-cooking/fried-spam'
 
@@ -655,7 +687,8 @@ passed by the helper function.
 
     >>> summarise_links(
     ...     recipe_navigationmenu,
-    ...     url='http://launchpad.test/joy-of-cooking/fried-spam/+journal')
+    ...     url="http://launchpad.test/joy-of-cooking/fried-spam/+journal",
+    ... )
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         enabled: True
@@ -671,7 +704,8 @@ Note that query parameters are ignored when matching the URL.
 
     >>> summarise_links(
     ...     recipe_navigationmenu,
-    ...     url='http://launchpad.test/joy-of-cooking/fried-spam?x=1')
+    ...     url="http://launchpad.test/joy-of-cooking/fried-spam?x=1",
+    ... )
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
         ...
@@ -686,8 +720,11 @@ prefix to be considered the current one.
 
     >>> summarise_links(
     ...     recipe_questions_navigationmenu,
-    ...     url=('http://launchpad.test/joy-of-cooking/fried-spam/+questions'
-    ...          '?filter=all&sort=Descending'))
+    ...     url=(
+    ...         "http://launchpad.test/joy-of-cooking/fried-spam/+questions"
+    ...         "?filter=all&sort=Descending"
+    ...     ),
+    ... )
     link all_questions
         url: http://.../joy-of-cooking/fried-spam/+questions?filter=all
         ...
@@ -699,8 +736,11 @@ prefix to be considered the current one.
 
     >>> summarise_links(
     ...     recipe_questions_navigationmenu,
-    ...     url=('http://launchpad.test/joy-of-cooking/fried-spam/+questions'
-    ...          '?filter=Obsolete'))
+    ...     url=(
+    ...         "http://launchpad.test/joy-of-cooking/fried-spam/+questions"
+    ...         "?filter=Obsolete"
+    ...     ),
+    ... )
     link all_questions
         url: http://.../joy-of-cooking/fried-spam/+questions?filter=all
         ...
@@ -725,9 +765,7 @@ linked, as can be seen when the url is not explicitly passed.
     >>> request.getURL()
     'http://launchpad.test/joy-of-cooking/fried-spam'
 
-    >>> summarise_links(
-    ...     CookeryFacetMenu(cookbook),
-    ...     facet='questions')
+    >>> summarise_links(CookeryFacetMenu(cookbook), facet="questions")
     link summary
         url: http://launchpad.test/joy-of-cooking
         enabled: True
@@ -762,15 +800,18 @@ itself. (It is assume that one of the link in the child menu, will be
 identical to the one in the parent's menu.)
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.test'
-    ...     '/joy-of-cooking/fried-spam/+edit-ingredients',
-    ...     traversed_objects=[cookbook, recipe])
+    ...     "http://launchpad.test"
+    ...     "/joy-of-cooking/fried-spam/+edit-ingredients",
+    ...     traversed_objects=[cookbook, recipe],
+    ... )
     >>> recipe_ingredients_view = getMultiAdapter(
-    ...     (recipe, request), name='+edit-ingredients')
+    ...     (recipe, request), name="+edit-ingredients"
+    ... )
     >>> request._last_obj_traversed = recipe_ingredients_view
 
     >>> recipe_summary_menu = queryAdapter(
-    ...     recipe, INavigationMenu, name='cookery')
+    ...     recipe, INavigationMenu, name="cookery"
+    ... )
     >>> summarise_links(recipe_summary_menu)
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
@@ -784,7 +825,8 @@ identical to the one in the parent's menu.)
         linked: True
 
     >>> recipe_overview_menu = queryAdapter(
-    ...     recipe_ingredients_view, INavigationMenu, name='cookery')
+    ...     recipe_ingredients_view, INavigationMenu, name="cookery"
+    ... )
     >>> summarise_links(recipe_overview_menu)
     link edit_instructions
         url:
@@ -803,10 +845,12 @@ sub menu is viewed. Viewing the +read_journal view in the Journal sub
 menu of the RecipeMenu will change the state of both menus.
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.test/joy-of-cooking/fried-spam/+read-journal',
-    ...     traversed_objects=[cookbook, recipe])
+    ...     "http://launchpad.test/joy-of-cooking/fried-spam/+read-journal",
+    ...     traversed_objects=[cookbook, recipe],
+    ... )
     >>> recipe_journal_view = getMultiAdapter(
-    ...     (recipe, request), name='+read-journal')
+    ...     (recipe, request), name="+read-journal"
+    ... )
     >>> request._last_obj_traversed = recipe_journal_view
 
     >>> summarise_links(recipe_summary_menu)
@@ -822,8 +866,8 @@ menu of the RecipeMenu will change the state of both menus.
         linked: False
 
     >>> summarise_links(
-    ...     queryAdapter(
-    ...         recipe_journal_view, INavigationMenu, name='cookery'))
+    ...     queryAdapter(recipe_journal_view, INavigationMenu, name="cookery")
+    ... )
     link read_journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+read-journal
         enabled: True
@@ -854,36 +898,38 @@ canonical_url as for the current request.  This is what we will use to
 see if we have a link to a page within Launchpad.
 
     >>> class AbsoluteUrlTargetTestFacets(FacetMenu):
-    ...     links = ['foo', 'bar', 'baz', 'spoo']
+    ...     links = ["foo", "bar", "baz", "spoo"]
     ...
     ...     def foo(self):
-    ...         target = ''
-    ...         text = 'Foo'
+    ...         target = ""
+    ...         text = "Foo"
     ...         return Link(target, text)
     ...
     ...     def bar(self):
-    ...         target = 'ftp://barlink.example.com/barbarbar'
-    ...         text = 'External bar'
+    ...         target = "ftp://barlink.example.com/barbarbar"
+    ...         text = "External bar"
     ...         return Link(target, text)
     ...
     ...     def baz(self):
-    ...         target = 'http://launchpad.test/joy-of-cooking/+baz'
-    ...         text = 'Baz'
+    ...         target = "http://launchpad.test/joy-of-cooking/+baz"
+    ...         text = "Baz"
     ...         return Link(target, text)
     ...
     ...     def spoo(self):
-    ...         target = '/joy-of-cooking/+spoo'
-    ...         text = 'Spoo'
+    ...         target = "/joy-of-cooking/+spoo"
+    ...         text = "Spoo"
     ...         return Link(target, text)
+    ...
 
     >>> print(canonical_url(cookbook))
     http://launchpad.test/joy-of-cooking
 
-    >>> request_url = URI('http://launchpad.test/joy-of-cooking')
+    >>> request_url = URI("http://launchpad.test/joy-of-cooking")
 
     >>> facets = AbsoluteUrlTargetTestFacets(cookbook)
     >>> for link in facets.iterlinks(request_url):
     ...     print(link.url, link.linked)
+    ...
     http://launchpad.test/joy-of-cooking False
     ftp://barlink.example.com/barbarbar True
     http://launchpad.test/joy-of-cooking/+baz True
@@ -942,11 +988,19 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
     # approximates what is done by the code:
 
     >>> classImplements(MenuAPI, IPathAdapter)
-    >>> provideAdapter(MenuAPI, [Interface,], IPathAdapter, name='menu')
+    >>> provideAdapter(
+    ...     MenuAPI,
+    ...     [
+    ...         Interface,
+    ...     ],
+    ...     IPathAdapter,
+    ...     name="menu",
+    ... )
     >>> provideAdapter(DefaultTraversable, (Interface,), ITraversable)
 
     >>> links_list = test_tales(
-    ...     'context/menu:facet', context=recipe, request=request)
+    ...     "context/menu:facet", context=recipe, request=request
+    ... )
     >>> summarise_tal_links(links_list)
     link summary
         url: http://launchpad.test/joy-of-cooking/fried-spam
@@ -968,7 +1022,8 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
         linked: True
 
     >>> links_dict = test_tales(
-    ...     'context/menu:navigation', context=recipe, request=request)
+    ...     "context/menu:navigation", context=recipe, request=request
+    ... )
     >>> summarise_tal_links(links_dict)
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
@@ -982,8 +1037,10 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
         linked: True
 
     >>> links_dict = test_tales(
-    ...     'context/menu:navigation', context=recipe_journal_view,
-    ...     request=request)
+    ...     "context/menu:navigation",
+    ...     context=recipe_journal_view,
+    ...     request=request,
+    ... )
     >>> summarise_tal_links(links_dict)
     attribute journal_entries: 42
     link read_journal
@@ -999,8 +1056,13 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
 
 The attributes of the menu can be accessed with the normal path method.
 
-    >>> print(test_tales('context/menu:navigation/journal_entries',
-    ...     context=recipe_journal_view, request=request))
+    >>> print(
+    ...     test_tales(
+    ...         "context/menu:navigation/journal_entries",
+    ...         context=recipe_journal_view,
+    ...         request=request,
+    ...     )
+    ... )
     42
 
 
@@ -1018,6 +1080,7 @@ that the comment refers to.
 
     >>> class IComment(Interface):
     ...     """A comment on a recipe."""
+    ...
 
     >>> @implementer(IComment)
     ... class Comment(BaseContent):
@@ -1028,13 +1091,12 @@ that the comment refers to.
     >>> from zope.publisher.interfaces import IDefaultViewName
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
     >>> provideAdapter(
-    ...     '+index',
-    ...     [IComment, IDefaultBrowserLayer],
-    ...     IDefaultViewName)
+    ...     "+index", [IComment, IDefaultBrowserLayer], IDefaultViewName
+    ... )
 
 We'll simulate the user viewing a comment.
 
-    >>> comment = Comment('a-comment', recipe)
+    >>> comment = Comment("a-comment", recipe)
     >>> print(canonical_url(comment))
     http://launchpad.test/joy-of-cooking/fried-spam/a-comment
 
@@ -1042,8 +1104,7 @@ When we try to look up the menu for the comment, the navigation menu for
 the next highest object in the URL hierarchy, the Recipe, will be
 returned.
 
-    >>> links_dict = test_tales(
-    ...     'context/menu:navigation', context=comment)
+    >>> links_dict = test_tales("context/menu:navigation", context=comment)
     >>> summarise_tal_links(links_dict)
     link journal
         url: http://launchpad.test/joy-of-cooking/fried-spam/+journal
@@ -1065,11 +1126,12 @@ or a navigation menu adapter, then no menu will be returned, and no
 error will be raised by the template.
 
     >>> class MenulessView(LaunchpadView):
-    ...     __launchpad_facetname__ = 'cookery'
+    ...     __launchpad_facetname__ = "cookery"
+    ...
 
     >>> menuless_view = MenulessView(comment, request)
 
-    >>> test_tales('view/menu:navigation', view=menuless_view)
+    >>> test_tales("view/menu:navigation", view=menuless_view)
     {}
 
 
@@ -1089,8 +1151,7 @@ NavigationMenus used in the previous TALES section.
     >>> import operator
     >>> import tempfile
     >>> from zope.browserpage import ViewPageTemplateFile
-    >>> from lp.services.webapp.menu import (
-    ...     get_facet, get_current_view)
+    >>> from lp.services.webapp.menu import get_facet, get_current_view
 
     >>> menu_fragment = """\
     ...  <div>
@@ -1111,12 +1172,13 @@ NavigationMenus used in the previous TALES section.
     ...      </li>
     ...    </ul>
     ...  </div>"""
-    >>> template_file = tempfile.NamedTemporaryFile(mode='w')
+    >>> template_file = tempfile.NamedTemporaryFile(mode="w")
     >>> _ = template_file.write(menu_fragment)
     >>> template_file.flush()
 
     >>> class FacetMenuView(LaunchpadView):
     ...     template = ViewPageTemplateFile(template_file.name)
+    ...
     ...     def initialize(self):
     ...         requested_view = get_current_view(self.request)
     ...         facet = get_facet(requested_view)
@@ -1124,16 +1186,19 @@ NavigationMenus used in the previous TALES section.
     ...         menu.request = self.request
     ...         self.links = sorted(
     ...             [link for link in menu.iterlinks() if link.enabled],
-    ...             key=operator.attrgetter('sort_key'))
+    ...             key=operator.attrgetter("sort_key"),
+    ...         )
     ...
     ...     def getMenu(self, facet=None):
     ...         return queryAdapter(self.context, IFacetMenu)
+    ...
 
     >>> class NavigationMenuView(FacetMenuView):
     ...     def getMenu(self, facet=None):
     ...         menu = queryAdapter(self.context, INavigationMenu, name=facet)
     ...         self.title = menu.title
     ...         return menu
+    ...
 
     # NavigationMenuView is normally registered as an IPathAdapter in ZCML.
     # This approximates what is done by the code:
@@ -1189,7 +1254,8 @@ URL.
     'http://launchpad.test/joy-of-cooking/fried-spam/+read-journal'
 
     >>> recipe_view_menu_view = NavigationMenuView(
-    ...     recipe_journal_view, request)
+    ...     recipe_journal_view, request
+    ... )
     >>> recipe_view_menu_view.initialize()
     >>> print(recipe_view_menu_view())
     <div>
@@ -1222,12 +1288,14 @@ None. See `http://www.python.org/doc/essays/cleanup/` steps C1-3.
     >>> from zope.testing.cleanup import cleanUp
     >>> cleanUp()
     >>> del cookingexample
-    >>> cooking_module = 'lp.app.cookingexample'
+    >>> cooking_module = "lp.app.cookingexample"
     >>> for key in sys.modules[cooking_module].__dict__:
-    ...     if key.startswith('_') and not key.startswith('__'):
+    ...     if key.startswith("_") and not key.startswith("__"):
     ...         sys.modules[cooking_module].__dict__[key] = None
+    ...
     >>> for key in sys.modules[cooking_module].__dict__:
-    ...     if key != '__builtins__':
+    ...     if key != "__builtins__":
     ...         sys.modules[cooking_module].__dict__[key] = None
+    ...
     >>> sys.modules[cooking_module] = None
-    >>> del sys.modules['lp.app.cookingexample']
+    >>> del sys.modules["lp.app.cookingexample"]

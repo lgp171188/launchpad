@@ -11,10 +11,11 @@ Here are some imports we need to get this test running.
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -28,12 +29,12 @@ And also, the DBSchema to change the imports status
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 Here's the person who'll be doing the import.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> person = person_set.getByName('mark')
+    >>> person = person_set.getByName("mark")
 
 Now, is time to create the new potemplate
 
@@ -44,22 +45,28 @@ Now, is time to create the new potemplate
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.new(
-    ...     name='firefox',
-    ...     translation_domain='firefox',
-    ...     path='po/firefox.pot',
-    ...     owner=person)
+    ...     name="firefox",
+    ...     translation_domain="firefox",
+    ...     path="po/firefox.pot",
+    ...     owner=person,
+    ... )
 
 Let's import a .pot file that is missing its header. That's a
 TranslationFormatSyntaxError
 
-    >>> potemplate_contents = br'''
+    >>> potemplate_contents = rb"""
     ... msgid "foo"
     ... msgstr ""
-    ... '''
+    ... """
     >>> by_maintainer = True
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     potemplate.path, potemplate_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate)
+    ...     potemplate.path,
+    ...     potemplate_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = potemplate.importFromQueue(entry)
@@ -105,23 +112,31 @@ Encoding errors
 ===============
 
     >>> potemplate = subset.new(
-    ...     name='nonascii',
-    ...     translation_domain='nonascii',
-    ...     path='po/nonascii.pot',
-    ...     owner=person)
+    ...     name="nonascii",
+    ...     translation_domain="nonascii",
+    ...     path="po/nonascii.pot",
+    ...     owner=person,
+    ... )
 
-    >>> potemplate_contents = u'''
+    >>> potemplate_contents = """
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=ASCII\\n"
     ...
     ... msgid "\xa9 Yoyodine Industries"
     ... msgstr ""
-    ... '''.encode('utf-8')
+    ... """.encode(
+    ...     "utf-8"
+    ... )
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     potemplate.path, potemplate_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate)
+    ...     potemplate.path,
+    ...     potemplate_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = potemplate.importFromQueue(entry)

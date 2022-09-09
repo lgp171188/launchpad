@@ -22,7 +22,7 @@ To retrieve a specific Bug, use IBugSet.get:
 
 Or you can use IBugSet.getByNameOrID to get it by its nickname:
 
-    >>> blackhole_bug = bugset.getByNameOrID('blackhole')
+    >>> blackhole_bug = bugset.getByNameOrID("blackhole")
     >>> print(blackhole_bug.title)
     Blackhole Trash folder
 
@@ -34,7 +34,7 @@ raised:
       ...
     lp.app.errors.NotFoundError: 'Unable to locate bug with ID 123456.'
 
-    >>> bugset.getByNameOrID('+bugs')
+    >>> bugset.getByNameOrID("+bugs")
     Traceback (most recent call last):
       ...
     lp.app.errors.NotFoundError: 'Unable to locate bug with nickname +bugs.'
@@ -58,7 +58,8 @@ result set below has only one element.
     2
 
     >>> for bug in result_set:
-    ...     print('%d: %s' % (bug.id, bug.title[:40]))  # noqa
+    ...     print("%d: %s" % (bug.id, bug.title[:40]))  # noqa
+    ...
     1: Firefox does not support SVG
     6: Firefox crashes when Save As dialog for 
 
@@ -84,21 +85,25 @@ we will register a handler to observe the event.
     ...     print("New bug created: %s" % (bug.title,))
     ...     print("          Owner: %s" % (bug.owner.name,))
     ...     print("       Filed by: %s" % (event.user.name,))
+    ...
 
     >>> globalSiteManager.registerHandler(
-    ...     show_bug_creation_event, (IBug, IObjectCreatedEvent))
+    ...     show_bug_creation_event, (IBug, IObjectCreatedEvent)
+    ... )
 
 The event can be seen when we file a bug.
 
     >>> from lp.bugs.interfaces.bug import CreateBugParams
     >>> from lp.app.enums import InformationType
 
-    >>> steve_harris = factory.makePerson(name='steve-harris')
+    >>> steve_harris = factory.makePerson(name="steve-harris")
     >>> jukebox = factory.makeProduct()
     >>> params = CreateBugParams(
-    ...     owner=steve_harris, title="Oh I hate this song",
+    ...     owner=steve_harris,
+    ...     title="Oh I hate this song",
     ...     comment="Janick keeps playing Mr Blobby.",
-    ...     target=jukebox)
+    ...     target=jukebox,
+    ... )
 
     >>> bug = bugset.createBug(params)
     New bug created: Oh I hate this song
@@ -110,12 +115,14 @@ specified in `params`. However, when importing bugs, a user other than
 the bug owner will create the bugs. A `CreateBugParams.filed_by`
 parameter is available to override the user recorded in the event.
 
-    >>> rod_smallwood = factory.makePerson(name='rod-smallwood')
+    >>> rod_smallwood = factory.makePerson(name="rod-smallwood")
     >>> params = CreateBugParams(
-    ...     owner=steve_harris, filed_by=rod_smallwood,
+    ...     owner=steve_harris,
+    ...     filed_by=rod_smallwood,
     ...     title="Steve really hates this song",
     ...     comment="He thinks Janick is doing it, but it's really me.",
-    ...     target=jukebox)
+    ...     target=jukebox,
+    ... )
     >>> bug = bugset.createBug(params)
     New bug created: Steve really hates this song
               Owner: steve-harris
@@ -126,7 +133,8 @@ parameter is available to override the user recorded in the event.
 We must unregister the handler.
 
     >>> globalSiteManager.unregisterHandler(
-    ...     show_bug_creation_event, (IBug, IObjectCreatedEvent))
+    ...     show_bug_creation_event, (IBug, IObjectCreatedEvent)
+    ... )
     True
 
 
@@ -173,6 +181,7 @@ private. A bug cannot be made private by an anonymous user.
 
     >>> def current_user():
     ...     return getUtility(ILaunchBag).user
+    ...
 
     >>> firefox_crashes.private = True
     Traceback (most recent call last):
@@ -216,6 +225,7 @@ We must use setPrivate:
 
     >>> with notify_modified(firefox_crashes, ["id", "title", "private"]):
     ...     firefox_crashes.setPrivate(True, current_user())
+    ...
     True
     >>> flush_database_updates()
 
@@ -258,9 +268,13 @@ private:
     >>> taskset = getUtility(IBugTaskSet)
     >>> def hidden_bugs():
     ...     found_bugs = set(
-    ...         task.bug.id for task in taskset.search(
-    ...             BugTaskSearchParams(current_user())))
+    ...         task.bug.id
+    ...         for task in taskset.search(
+    ...             BugTaskSearchParams(current_user())
+    ...         )
+    ...     )
     ...     return sorted(all_bugs - found_bugs)
+    ...
 
     >>> login("test@canonical.com")
     >>> hidden_bugs()
@@ -293,6 +307,7 @@ And again, let's fake setting the bug private:
 
     >>> with notify_modified(reflow_problems_bug, ["id", "title", "private"]):
     ...     reflow_problems_bug.setPrivate(True, current_user())
+    ...
     True
     >>> flush_database_updates()
 
@@ -303,8 +318,7 @@ the Cc list:
     >>> personset = getUtility(IPersonSet)
 
     >>> ubuntu_team = personset.get(17)
-    >>> subscription = reflow_problems_bug.subscribe(
-    ...     ubuntu_team, ubuntu_team)
+    >>> subscription = reflow_problems_bug.subscribe(ubuntu_team, ubuntu_team)
 
 Jeff Waugh, a member of the Ubuntu Team, is able to access this bug:
 
@@ -358,10 +372,13 @@ When a public bug is filed:
     >>> from lp.registry.interfaces.product import IProductSet
     >>> productset = getUtility(IProductSet)
     >>> firefox = productset.get(4)
-    >>> foobar = personset.getByEmail('foo.bar@canonical.com')
+    >>> foobar = personset.getByEmail("foo.bar@canonical.com")
     >>> params = CreateBugParams(
-    ...     title="test firefox bug", comment="blah blah blah", owner=foobar,
-    ...     target=firefox)
+    ...     title="test firefox bug",
+    ...     comment="blah blah blah",
+    ...     owner=foobar,
+    ...     target=firefox,
+    ... )
     >>> added_bug = getUtility(IBugSet).createBug(params)
     >>> public_bug = bugset.get(added_bug.id)
 
@@ -369,8 +386,12 @@ the submitter and the maintainer are directly subscribed. Note that
 passing both a comment /and/ a msg would have raised an AssertionError:
 
     >>> params = CreateBugParams(
-    ...     title="test firefox bug", comment="blah blah blah",
-    ...     msg="foo foo foo", owner=foobar, target=firefox)
+    ...     title="test firefox bug",
+    ...     comment="blah blah blah",
+    ...     msg="foo foo foo",
+    ...     owner=foobar,
+    ...     target=firefox,
+    ... )
     >>> added_bug = getUtility(IBugSet).createBug(params)
     Traceback (most recent call last):
     ...
@@ -381,6 +402,7 @@ So, let's continue:
 
     >>> for subscription in public_bug.subscriptions:
     ...     print(subscription.person.name)
+    ...
     name16
 
 The first comment made (this is submitted in the bug report) is set to
@@ -393,15 +415,19 @@ The bug description can also be accessed through the task:
 
     >>> print(public_bug.bugtasks[0].bug.description)
     blah blah blah
-    >>> public_bug.description = 'a new description'
+    >>> public_bug.description = "a new description"
     >>> print(public_bug.bugtasks[0].bug.description)
     a new description
 
 When a private bug is filed:
 
     >>> params = CreateBugParams(
-    ...     title="test firefox bug", comment="blah blah blah", owner=foobar,
-    ...     information_type=InformationType.USERDATA, target=firefox)
+    ...     title="test firefox bug",
+    ...     comment="blah blah blah",
+    ...     owner=foobar,
+    ...     information_type=InformationType.USERDATA,
+    ...     target=firefox,
+    ... )
     >>> added_bug = getUtility(IBugSet).createBug(params)
     >>> private_bug = bugset.get(added_bug.id)
 
@@ -409,6 +435,7 @@ When a private bug is filed:
 
     >>> for subscriber in private_bug.getDirectSubscribers():
     ...     print(subscriber.name)
+    ...
     name16
 
 It's up to the submitter to subscribe the maintainer, if they so choose.
@@ -419,19 +446,24 @@ sourcepackage. E.g.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
+    ...     ISourcePackageNameSet,
+    ... )
     >>> distributionset = getUtility(IDistributionSet)
     >>> spnset = getUtility(ISourcePackageNameSet)
     >>> ubuntu = distributionset.get(1)
     >>> evolution = spnset.get(9)
     >>> params = CreateBugParams(
-    ...     title="test firefox bug", comment="blah blah blah",
-    ...     owner=foobar, information_type=InformationType.USERDATA,
-    ...     target=ubuntu.getSourcePackage(evolution))
+    ...     title="test firefox bug",
+    ...     comment="blah blah blah",
+    ...     owner=foobar,
+    ...     information_type=InformationType.USERDATA,
+    ...     target=ubuntu.getSourcePackage(evolution),
+    ... )
     >>> added_bug = getUtility(IBugSet).createBug(params)
     >>> private_bug = bugset.get(added_bug.id)
     >>> for subscriber in private_bug.getDirectSubscribers():
     ...     print(subscriber.name)
+    ...
     name16
 
 
@@ -443,8 +475,11 @@ to prevent the reporter from being subscribed to the bug. This is useful
 when importing bugs.
 
     >>> params = CreateBugParams(
-    ...     owner=current_user(), title="test", comment="test",
-    ...     subscribe_owner=False)
+    ...     owner=current_user(),
+    ...     title="test",
+    ...     comment="test",
+    ...     subscribe_owner=False,
+    ... )
     >>> bug = ubuntu.createBug(params)
     >>> [person.name for person in bug.getDirectSubscribers()]
     []
@@ -466,7 +501,8 @@ ensure that new bugs sort appropriately.
     >>> params = CreateBugParams(
     ...     title="a test firefox bug",
     ...     comment="a description of the bug",
-    ...     owner=current_user())
+    ...     owner=current_user(),
+    ... )
     >>> firefox_bug = firefox.createBug(params)
 
     >>> firefox_bug.datecreated == firefox_bug.date_last_updated
@@ -479,7 +515,8 @@ Adding a comment.
     >>> comment = firefox_bug.newMessage(
     ...     owner=current_user(),
     ...     subject="blah blah blah",
-    ...     content="blah blah blah")
+    ...     content="blah blah blah",
+    ... )
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -490,6 +527,7 @@ Changing the bug summary.
 
     >>> with notify_modified(firefox_bug, ["title"]):
     ...     firefox_bug.title = "a new title"
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -500,6 +538,7 @@ Changing the description.
 
     >>> with notify_modified(firefox_bug, ["description"]):
     ...     firefox_bug.description = "a new description"
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -507,7 +546,9 @@ Changing the description.
 Modifying a bugtask will update IBug.date_last_updated.
 
     >>> from lp.bugs.interfaces.bugtask import (
-    ...     BugTaskImportance, BugTaskStatus)
+    ...     BugTaskImportance,
+    ...     BugTaskStatus,
+    ... )
 
     >>> firefox_task = firefox_bug.bugtasks[0]
 
@@ -523,9 +564,12 @@ Modifying a bugtask will update IBug.date_last_updated.
 
     >>> with notify_modified(firefox_task, ["status", "importance"]):
     ...     firefox_task.transitionToImportance(
-    ...         BugTaskImportance.CRITICAL, current_user())
+    ...         BugTaskImportance.CRITICAL, current_user()
+    ...     )
     ...     firefox_task.transitionToStatus(
-    ...         BugTaskStatus.CONFIRMED, current_user())
+    ...         BugTaskStatus.CONFIRMED, current_user()
+    ...     )
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -542,7 +586,8 @@ Adding a new task.
     thunderbird
 
     >>> thunderbird_task = getUtility(IBugTaskSet).createTask(
-    ...     firefox_bug, foobar, thunderbird)
+    ...     firefox_bug, foobar, thunderbird
+    ... )
 
     >>> current_date_last_updated = firefox_bug.date_last_updated
 
@@ -555,9 +600,8 @@ A new task can also be added using IBug.addTask(), which takes an
 IBugTarget parameter and works out what parameters to pass to
 createTask(), above.
 
-    >>> redfish = getUtility(IProductSet).getByName('redfish')
-    >>> redfish_task = firefox_bug.addTask(
-    ...     owner=foobar, target=redfish)
+    >>> redfish = getUtility(IProductSet).getByName("redfish")
+    >>> redfish_task = firefox_bug.addTask(owner=foobar, target=redfish)
 
     >>> current_date_last_updated = firefox_bug.date_last_updated
 
@@ -569,9 +613,8 @@ createTask(), above.
 You can also add bugs for a specific distro.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> ubuntu_task = firefox_bug.addTask(
-    ...     owner=foobar, target=ubuntu)
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> ubuntu_task = firefox_bug.addTask(owner=foobar, target=ubuntu)
     >>> notify(ObjectCreatedEvent(ubuntu_task))
 
     >>> print(ubuntu_task.distribution.title)
@@ -579,9 +622,8 @@ You can also add bugs for a specific distro.
 
 And for a specific distribution series.
 
-    >>> warty = ubuntu.getSeries('warty')
-    >>> warty_task = firefox_bug.addTask(
-    ...     owner=foobar, target=warty)
+    >>> warty = ubuntu.getSeries("warty")
+    >>> warty_task = firefox_bug.addTask(owner=foobar, target=warty)
     >>> notify(ObjectCreatedEvent(warty_task))
 
     >>> print(warty_task.distroseries.title)
@@ -589,10 +631,9 @@ And for a specific distribution series.
 
 Also for a specific distribution source package.
 
-    >>> tubuntu = factory.makeDistribution(name='tubuntu')
-    >>> linux_source = tubuntu.getSourcePackage('linux-source-2.6.15')
-    >>> linux_task = firefox_bug.addTask(
-    ...     owner=foobar, target=linux_source)
+    >>> tubuntu = factory.makeDistribution(name="tubuntu")
+    >>> linux_source = tubuntu.getSourcePackage("linux-source-2.6.15")
+    >>> linux_task = firefox_bug.addTask(owner=foobar, target=linux_source)
     >>> notify(ObjectCreatedEvent(linux_task))
 
     >>> print(linux_task.bugtargetname)
@@ -601,12 +642,14 @@ Also for a specific distribution source package.
 And for a distro series source package.
 
     >>> from lp.registry.model.sourcepackage import SourcePackage
-    >>> firefox_package = ubuntu.getSourcePackage('mozilla-firefox')
+    >>> firefox_package = ubuntu.getSourcePackage("mozilla-firefox")
     >>> warty_fox_package = SourcePackage(
     ...     distroseries=warty,
-    ...     sourcepackagename=firefox_package.sourcepackagename)
+    ...     sourcepackagename=firefox_package.sourcepackagename,
+    ... )
     >>> warty_fox_task = firefox_bug.addTask(
-    ...     owner=foobar, target=warty_fox_package)
+    ...     owner=foobar, target=warty_fox_package
+    ... )
     >>> notify(ObjectCreatedEvent(warty_fox_task))
 
     >>> print(warty_fox_task.bugtargetname)
@@ -634,6 +677,7 @@ Changing bug visibility.
 
     >>> with notify_modified(firefox_bug, ["private"]):
     ...     firefox_bug.setPrivate(True, current_user())
+    ...
     True
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
@@ -648,7 +692,9 @@ Changing bug security.
 
     >>> with notify_modified(firefox_bug, ["security_related"]):
     ...     changed = firefox_bug.setSecurityRelated(
-    ...         True, getUtility(ILaunchBag).user)
+    ...         True, getUtility(ILaunchBag).user
+    ...     )
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -662,6 +708,7 @@ Marking as duplicate.
 
     >>> with notify_modified(firefox_bug, ["duplicateof"]):
     ...     firefox_bug.markAsDuplicate(factory.makeBug())
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -670,8 +717,7 @@ Adding an attachment.
 
     >>> import io
     >>> from lp.bugs.interfaces.bugattachment import IBugAttachmentSet
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> from lp.services.messages.interfaces.message import IMessageSet
 
     >>> firefox_bug.attachments.count()
@@ -679,19 +725,26 @@ Adding an attachment.
 
 (Upload a file to the Librarian.)
 
-    >>> filecontent = b'Some useful information.'
+    >>> filecontent = b"Some useful information."
     >>> filealias = getUtility(ILibraryFileAliasSet).create(
-    ...     name='foo.txt', size=len(filecontent),
-    ...     file=io.BytesIO(filecontent), contentType='text/plain')
+    ...     name="foo.txt",
+    ...     size=len(filecontent),
+    ...     file=io.BytesIO(filecontent),
+    ...     contentType="text/plain",
+    ... )
 
 (Attach it to the bug.)
 
     >>> message = getUtility(IMessageSet).fromText(
-    ...     subject="title", content="added an attachment.")
+    ...     subject="title", content="added an attachment."
+    ... )
     >>> attachmentset = getUtility(IBugAttachmentSet)
     >>> attachment = attachmentset.create(
-    ...     bug=firefox_bug, filealias=filealias, title='Some info.',
-    ...     message=message)
+    ...     bug=firefox_bug,
+    ...     filealias=filealias,
+    ...     title="Some info.",
+    ...     message=message,
+    ... )
 
     >>> current_date_last_updated = firefox_bug.date_last_updated
 
@@ -709,6 +762,7 @@ Editing an attachment.
 
     >>> with notify_modified(attachment, ["title"]):
     ...     attachment.title = "a new title"
+    ...
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -736,10 +790,13 @@ Linking to an external bug tracker.
     >>> firefox_bug.watches.count()
     0
 
-    >>> mozilla_bugtracker = getUtility(IBugTrackerSet)['mozilla.org']
+    >>> mozilla_bugtracker = getUtility(IBugTrackerSet)["mozilla.org"]
     >>> bugwatch = getUtility(IBugWatchSet).createBugWatch(
-    ...     bug=firefox_bug, owner=current_user(),
-    ...     bugtracker=mozilla_bugtracker, remotebug='1234')
+    ...     bug=firefox_bug,
+    ...     owner=current_user(),
+    ...     bugtracker=mozilla_bugtracker,
+    ...     remotebug="1234",
+    ... )
 
     >>> current_date_last_updated = firefox_bug.date_last_updated
 
@@ -759,8 +816,9 @@ Editing the external bug watch.
     >>> current_date_last_updated = firefox_bug.date_last_updated
 
     >>> with notify_modified(
-    ...         bugwatch, ["remotebug"], user=bugwatch.bug.owner):
-    ...     bugwatch.remotebug = '5678'
+    ...     bugwatch, ["remotebug"], user=bugwatch.bug.owner
+    ... ):
+    ...     bugwatch.remotebug = "5678"
 
     >>> firefox_bug.date_last_updated > current_date_last_updated
     True
@@ -772,8 +830,8 @@ Adding a comment imported from an external bugtracker.
     ...     subject="blah blah blah again",
     ...     content="blah blah blah blah remotely",
     ...     bugwatch=bugwatch,
-    ...     remote_comment_id='blah'
-    ...     )
+    ...     remote_comment_id="blah",
+    ... )
 
     >>> imported_message = bugwatch.getImportedBugMessages()[0]
     >>> print(imported_message.message.text_contents)
@@ -827,6 +885,7 @@ incomplete, and show the status of each of the tasts:
 
     >>> for task in b8.bugtasks:
     ...     print(task.bugtargetdisplayname, task.is_complete)
+    ...
     Mozilla Firefox False
     mozilla-firefox (Debian) True
 
@@ -841,7 +900,9 @@ status, importance, assignee, and so on.
 You can get the set of bugtasks for at bug with the 'bugtasks' attribute:
 
     >>> bug_two = bugset.get(2)
-    >>> for task in bug_two.bugtasks: print(task.target.displayname)
+    >>> for task in bug_two.bugtasks:
+    ...     print(task.target.displayname)
+    ...
     Tomcat
     Ubuntu
     Hoary
@@ -852,6 +913,7 @@ You can also get a list of the "LP pillars" affected by a particular bug.
 
     >>> for pillar in bug_two.affected_pillars:
     ...     print(pillar.displayname)
+    ...
     Tomcat
     Ubuntu
     Debian
@@ -861,29 +923,29 @@ Yes, this is TERRIBLE sample data, but it serves to illustrate the point.
 If you are interested in bugtask targeted to a specific target, you can
 use getBugTask() to get it.
 
-    >>> tomcat = getUtility(IProductSet).getByName('tomcat')
+    >>> tomcat = getUtility(IProductSet).getByName("tomcat")
     >>> tomcat_task = bug_two.getBugTask(tomcat)
     >>> print(tomcat_task.target.name)
     tomcat
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu_task = bug_two.getBugTask(ubuntu)
     >>> print(ubuntu_task.target.name)
     ubuntu
 
-    >>> ubuntu_hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu_hoary = ubuntu.getSeries("hoary")
     >>> ubuntu_hoary_task = bug_two.getBugTask(ubuntu_hoary)
     >>> print(ubuntu_hoary_task.target.name)
     hoary
 
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
-    >>> mozilla_in_debian = debian.getSourcePackage('mozilla-firefox')
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
+    >>> mozilla_in_debian = debian.getSourcePackage("mozilla-firefox")
     >>> mozilla_in_debian_task = bug_two.getBugTask(mozilla_in_debian)
     >>> print(mozilla_in_debian_task.target.displayname)
     mozilla-firefox in Debian
 
-    >>> debian_woody = debian.getSeries('woody')
-    >>> mozilla_in_woody = debian_woody.getSourcePackage('mozilla-firefox')
+    >>> debian_woody = debian.getSeries("woody")
+    >>> mozilla_in_woody = debian_woody.getSourcePackage("mozilla-firefox")
     >>> mozilla_in_woody_task = bug_two.getBugTask(mozilla_in_woody)
     >>> print(mozilla_in_woody_task.target.displayname)
     mozilla-firefox in Debian Woody
@@ -920,7 +982,7 @@ bug or bugtask must be synced back to the database to test can_expire.
 
     >>> from lp.bugs.tests.bug import create_old_bug
 
-    >>> upstream_bugtask = create_old_bug('bug a', 1, thunderbird)
+    >>> upstream_bugtask = create_old_bug("bug a", 1, thunderbird)
     >>> upstream_bugtask.status.name
     'INCOMPLETE'
     >>> upstream_bugtask.pillar.enable_bug_expiration
@@ -934,7 +996,8 @@ Ubuntu has enabled bug expiration. Incomplete, unattended bugs can
 expire.
 
     >>> expirable_bugtask = create_old_bug(
-    ...     'bug c', 61, ubuntu, with_message=False)
+    ...     "bug c", 61, ubuntu, with_message=False
+    ... )
 
     >>> expirable_bugtask.status.name
     'INCOMPLETE'
@@ -959,7 +1022,8 @@ Changing the status of the bug's single bugtask to any value other
 than Incomplete, will cause the bug to not permit expiration.
 
     >>> expirable_bugtask.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, sample_person)
+    ...     BugTaskStatus.CONFIRMED, sample_person
+    ... )
     >>> expirable_bugtask.bug.permits_expiration
     False
     >>> expirable_bugtask.bug.can_expire
@@ -981,10 +1045,16 @@ show messages in the bugtask index template in one shot.
     >>> queries = len(CursorWrapper.last_executed_sql)
 
     >>> chunks = bug_two.getMessagesForView(None)
-    >>> for _, _, chunk in sorted(chunks, key=lambda x:x[2].id):
-    ...    print('%d %d %d: %s' % (
-    ...        chunk.id, chunk.message.id, chunk.message.owner.id,
-    ...        chunk.content[:30]))
+    >>> for _, _, chunk in sorted(chunks, key=lambda x: x[2].id):
+    ...     print(
+    ...         "%d %d %d: %s"
+    ...         % (
+    ...             chunk.id,
+    ...             chunk.message.id,
+    ...             chunk.message.owner.id,
+    ...             chunk.content[:30],
+    ...         )
+    ...     )
     4 1 16: Problem exists between chair a
     7 5 12: This would be a real killer fe
     8 6 12: Oddly enough the bug system se
@@ -1004,8 +1074,10 @@ getMessagesForView supports slicing operations:
 
     >>> def message_ids(slices):
     ...     chunks = bug_two.getMessagesForView(slices)
-    ...     return sorted(set(
-    ...         bugmessage.index for bugmessage, _, _1 in chunks))
+    ...     return sorted(
+    ...         set(bugmessage.index for bugmessage, _, _1 in chunks)
+    ...     )
+    ...
     >>> message_ids([slice(1, 2)])
     [1]
 
@@ -1025,9 +1097,15 @@ implementation of the canonical url resolution for messages when they are
 exported using the webservice API.
 
     >>> for indexed_message in bug_two.indexed_messages:
-    ...     print('%s\t%s\t%s' % (
-    ...         indexed_message.index, indexed_message.subject,
-    ...         indexed_message.inside.title))
+    ...     print(
+    ...         "%s\t%s\t%s"
+    ...         % (
+    ...             indexed_message.index,
+    ...             indexed_message.subject,
+    ...             indexed_message.inside.title,
+    ...         )
+    ...     )
+    ...
     0 PEBCAK
     Bug #2 in Tomcat: "Blackhole Trash folder"
     1 Fantastic idea, I'd really like to see this
@@ -1043,10 +1121,10 @@ Users can mark bugs as affecting or not affecting them. For each bug we
 then keep a count of the number of users affected by it, as well as the
 number of users not affected by it.
 
-    >>> test_bug_owner = factory.makePerson(name='paul-dianno')
+    >>> test_bug_owner = factory.makePerson(name="paul-dianno")
     >>> test_bug = factory.makeBug(owner=test_bug_owner)
-    >>> affected_user = factory.makePerson(name='bruce-dickinson')
-    >>> unaffected_user = factory.makePerson(name='blaze-bayley')
+    >>> affected_user = factory.makePerson(name="bruce-dickinson")
+    >>> unaffected_user = factory.makePerson(name="blaze-bayley")
 
 Initially, only the bug reporter is marked as affected. Other users,
 including the anonymous user, are neither marked as affected nor as
@@ -1106,8 +1184,9 @@ And we can change whether a user is marked as affected or unaffected.
 
 We can also get the collection of users affected by a bug.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in test_bug.users_affected))
+    ... )
     bruce-dickinson
     paul-dianno
 
@@ -1117,8 +1196,9 @@ We can also get the collection of users affected by a bug.
 
 Similarly, we can get the collection of users unaffected by a bug.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_unaffected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in test_bug.users_unaffected))
+    ... )
     blaze-bayley
 
 If a user is marked as being affected by a bug (either by explicitly
@@ -1126,7 +1206,7 @@ marking it so, or by being the bug's owner), and then that bug is
 marked as a duplicate of master bug, then the users_affected_count of
 the master bug increases too.
 
-    >>> dupe_affected_user = factory.makePerson(name='sheila-shakespeare')
+    >>> dupe_affected_user = factory.makePerson(name="sheila-shakespeare")
     >>> dupe_one = factory.makeBug(owner=dupe_affected_user)
     >>> dupe_one.markAsDuplicate(test_bug)
     >>> test_bug.users_affected_count_with_dupes
@@ -1134,8 +1214,13 @@ the master bug increases too.
 
 And the list of users the master bug affects includes that user.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_affected_with_dupes)))
+    >>> print(
+    ...     "\n".join(
+    ...         sorted(
+    ...             user.name for user in test_bug.users_affected_with_dupes
+    ...         )
+    ...     )
+    ... )
     bruce-dickinson
     paul-dianno
     sheila-shakespeare
@@ -1151,8 +1236,13 @@ just because they are also affected by the duplicate.
 And the list of users that the master bug affects still includes the
 user, of course.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_affected_with_dupes)))
+    >>> print(
+    ...     "\n".join(
+    ...         sorted(
+    ...             user.name for user in test_bug.users_affected_with_dupes
+    ...         )
+    ...     )
+    ... )
     bruce-dickinson
     paul-dianno
     sheila-shakespeare
@@ -1161,7 +1251,8 @@ If there is another dup of the master bug, filed by someone else, the
 master bug's affected count with dups increases.
 
     >>> dupe_affected_other_user = factory.makePerson(
-    ...     name='napoleon-bonaparte')
+    ...     name="napoleon-bonaparte"
+    ... )
     >>> dupe_three = factory.makeBug(owner=dupe_affected_other_user)
     >>> dupe_three.markAsDuplicate(test_bug)
     >>> test_bug.users_affected_count_with_dupes
@@ -1178,18 +1269,25 @@ user_affected_count still only increments by 1 for that user.
 
 Both duplicates claim to affect just that user:
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_one.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_one.users_affected))
+    ... )
     sheila-shakespeare
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_two.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_two.users_affected))
+    ... )
     sheila-shakespeare
 
 And the list of users that the master bug affects includes the user
 exactly once, of course.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_affected_with_dupes)))
+    >>> print(
+    ...     "\n".join(
+    ...         sorted(
+    ...             user.name for user in test_bug.users_affected_with_dupes
+    ...         )
+    ...     )
+    ... )
     bruce-dickinson
     napoleon-bonaparte
     paul-dianno
@@ -1215,26 +1313,35 @@ The master bug's affected count, with or without dups, is reduced by one:
 The dup user no longer appears as affected by the master bug nor
 either of the dups:
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in test_bug.users_affected_with_dupes)))
+    >>> print(
+    ...     "\n".join(
+    ...         sorted(
+    ...             user.name for user in test_bug.users_affected_with_dupes
+    ...         )
+    ...     )
+    ... )
     bruce-dickinson
     napoleon-bonaparte
     paul-dianno
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_one.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_one.users_affected))
+    ... )
     <BLANKLINE>
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_two.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_two.users_affected))
+    ... )
     <BLANKLINE>
 
 Since the user who filed the first two dups had an entry explicitly
 saying they were affected, they now claim that they are unaffected.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_one.users_unaffected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_one.users_unaffected))
+    ... )
     sheila-shakespeare
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_two.users_unaffected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_two.users_unaffected))
+    ... )
     sheila-shakespeare
 
 But they didn't file the third dup, so there was never any explicit
@@ -1242,16 +1349,20 @@ record saying they were affected by it.  Thus they also do not appear
 as explicitly unaffected, even after marking the master bug as not
 affecting them.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_three.users_unaffected)))
+    >>> print(
+    ...     "\n".join(
+    ...         sorted(user.name for user in dupe_three.users_unaffected)
+    ...     )
+    ... )
     <BLANKLINE>
 
 However, if a dup was not marked either way for that user, then do
 nothing to the dup when the master is marked as not affecting the
 user.
 
-    >>> print('\n'.join(
-    ...     sorted(user.name for user in dupe_three.users_affected)))
+    >>> print(
+    ...     "\n".join(sorted(user.name for user in dupe_three.users_affected))
+    ... )
     napoleon-bonaparte
 
 
@@ -1268,15 +1379,19 @@ and a user and returns the set of Bugs for those BugTasks.
 
     >>> from operator import attrgetter
     >>> bug_tasks = [
-    ...     factory.makeBug(
-    ...         target=firefox, title="New bug %s" % i).bugtasks[0]
-    ...     for i in range(5)]
+    ...     factory.makeBug(target=firefox, title="New bug %s" % i).bugtasks[
+    ...         0
+    ...     ]
+    ...     for i in range(5)
+    ... ]
 
     >>> bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     bug_tasks, user=sample_person)
-    >>> bugs = sorted(bugs, key=attrgetter('title'))
+    ...     bug_tasks, user=sample_person
+    ... )
+    >>> bugs = sorted(bugs, key=attrgetter("title"))
     >>> for bug in bugs:
     ...     print(bug.title)
+    ...
     New bug 0
     New bug 1
     New bug 2
@@ -1286,19 +1401,20 @@ and a user and returns the set of Bugs for those BugTasks.
 If two BugTasks share a Bug, the Bug will only be returned once.
 
     >>> new_bug_0 = bugs[0]
-    >>> new_bugtask = factory.makeBugTask(
-    ...     bug=new_bug_0, target=thunderbird)
+    >>> new_bugtask = factory.makeBugTask(bug=new_bug_0, target=thunderbird)
 
     >>> matching_bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     [new_bugtask], user=sample_person)
+    ...     [new_bugtask], user=sample_person
+    ... )
     >>> len(matching_bugs)
     1
 
     >>> print(matching_bugs[0].title)
     New bug 0
 
-    >>> for task in sorted(matching_bugs[0].bugtasks,
-    ...     key=attrgetter('bugtargetname')):
+    >>> for task in sorted(
+    ...     matching_bugs[0].bugtasks, key=attrgetter("bugtargetname")
+    ... ):
     ...     print(task.bugtargetname)
     firefox
     thunderbird
@@ -1310,12 +1426,14 @@ private and the user wouldn't be able to see it, it won't be returned.
     >>> new_bug_2.setPrivate(True, foobar)
     True
 
-    >>> no_priv = personset.getByEmail('no-priv@canonical.com')
+    >>> no_priv = personset.getByEmail("no-priv@canonical.com")
     >>> matching_bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     bug_tasks, user=no_priv)
+    ...     bug_tasks, user=no_priv
+    ... )
 
-    >>> for bug in sorted(matching_bugs, key=attrgetter('title')):
+    >>> for bug in sorted(matching_bugs, key=attrgetter("title")):
     ...     print(bug.title)
+    ...
     New bug 0
     New bug 1
     New bug 3
@@ -1329,10 +1447,12 @@ returned rather than the duplicate.
     >>> new_bug_4 = bugs[4]
     >>> new_bug_3.markAsDuplicate(new_bug_4)
     >>> matching_bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     bug_tasks, user=no_priv)
+    ...     bug_tasks, user=no_priv
+    ... )
 
-    >>> for bug in sorted(matching_bugs, key=attrgetter('title')):
+    >>> for bug in sorted(matching_bugs, key=attrgetter("title")):
     ...     print(bug.title)
+    ...
     New bug 0
     New bug 1
     New bug 4
@@ -1344,10 +1464,12 @@ duplicates will be returned by getDistinctBugsForBugTasks().
     True
 
     >>> matching_bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     bug_tasks, user=no_priv)
+    ...     bug_tasks, user=no_priv
+    ... )
 
-    >>> for bug in sorted(matching_bugs, key=attrgetter('title')):
+    >>> for bug in sorted(matching_bugs, key=attrgetter("title")):
     ...     print(bug.title)
+    ...
     New bug 0
     New bug 1
 
@@ -1355,9 +1477,11 @@ The number of bugs to be returned by getDistinctBugsForBugTasks() can be
 altered by setting its limit parameter, which defaults to 10.
 
     >>> matching_bugs = getUtility(IBugSet).getDistinctBugsForBugTasks(
-    ...     bug_tasks, user=no_priv, limit=1)
-    >>> for bug in sorted(matching_bugs, key=attrgetter('title')):
+    ...     bug_tasks, user=no_priv, limit=1
+    ... )
+    >>> for bug in sorted(matching_bugs, key=attrgetter("title")):
     ...     print(bug.title)
+    ...
     New bug 0
 
 

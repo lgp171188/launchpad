@@ -15,41 +15,40 @@ availables will be set as the base, update or proposed/testing.
 To reach that page we go to the distro series page and follow the link to
 the language pack admin page.
 
-    >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
-    >>> admin_browser.getLink('See all language packs').click()
+    >>> admin_browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> admin_browser.getLink("See all language packs").click()
 
 Initially, there is no package selected and there are options for choosing a
 base language pack.
 
-    >>> base = admin_browser.getControl('Language pack base')
+    >>> base = admin_browser.getControl("Language pack base")
     >>> print(base.displayValue)
     ['(nothing selected)']
     >>> base.displayOptions
     ['(nothing selected)', '2007-09-10 19:16:01 UTC',
      '2007-09-10 19:14:26 UTC']
-    >>> delta = admin_browser.getControl('Language pack update')
+    >>> delta = admin_browser.getControl("Language pack update")
     >>> print(delta.displayValue)
     ['(nothing selected)']
-    >>> proposed = admin_browser.getControl('Proposed language pack update')
+    >>> proposed = admin_browser.getControl("Proposed language pack update")
     >>> print(proposed.displayValue)
     ['(nothing selected)']
 
 Let's select a base one:
 
-    >>> base.displayValue = ['2007-09-10 19:14:26 UTC']
-    >>> admin_browser.getControl('Change').click()
+    >>> base.displayValue = ["2007-09-10 19:14:26 UTC"]
+    >>> admin_browser.getControl("Change").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+language-packs
 
 Now the admin page will show us that language pack selected and a list of
 available update packages.
 
-    >>> base = admin_browser.getControl('Language pack base')
+    >>> base = admin_browser.getControl("Language pack base")
     >>> print(base.displayValue)
     ['2007-09-10 19:14:26 UTC']
 
-    >>> update = admin_browser.getControl('Language pack update')
+    >>> update = admin_browser.getControl("Language pack update")
     >>> print(update.displayValue)
     ['(nothing selected)']
     >>> update.displayOptions
@@ -58,10 +57,11 @@ available update packages.
 
 Those changes are shown in the public language pack listing web page:
 
-    >>> browser.open('http://translations.launchpad.test/ubuntu/hoary')
-    >>> browser.getLink('See all language packs').click()
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, "language_packs")))
+    >>> browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> browser.getLink("See all language packs").click()
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "language_packs"))
+    ... )
     A language pack...
     Active language packs
     Base pack: 2007-09-10 19:14:26 UTC
@@ -89,22 +89,24 @@ Those changes are shown in the public language pack listing web page:
 The active base language pack URL is linking to an archive, while the latest
 URL uses '+latest-full-language-pack'.
 
-    >>> print(browser.getLink('2007-09-10 19:14:26 UTC').url)
+    >>> print(browser.getLink("2007-09-10 19:14:26 UTC").url)
     http.../71/ubuntu-hoary-translations.tar.gz
-    >>> print(browser.getLink('2007-09-10 19:16:01 UTC').url)
+    >>> print(browser.getLink("2007-09-10 19:16:01 UTC").url)
     http://translations.launchpad.test/ubuntu/hoary/+latest-full-language-pack
 
 An administrator can choose the current update pack and there is also an
 option to set/unset whether next language pack generation is a full export:
 
-    >>> update = admin_browser.getControl('Language pack update')
-    >>> update.displayValue = ['2007-09-10 19:15:01 UTC']
+    >>> update = admin_browser.getControl("Language pack update")
+    >>> update.displayValue = ["2007-09-10 19:15:01 UTC"]
     >>> admin_browser.getControl(
-    ...     'Request a full language pack export').selected
+    ...     "Request a full language pack export"
+    ... ).selected
     False
     >>> admin_browser.getControl(
-    ...     'Request a full language pack export').selected = True
-    >>> admin_browser.getControl('Change').click()
+    ...     "Request a full language pack export"
+    ... ).selected = True
+    >>> admin_browser.getControl("Change").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+language-packs
     >>> print_feedback_messages(admin_browser.contents)
@@ -114,7 +116,8 @@ option to set/unset whether next language pack generation is a full export:
 Once the system accepts the submission, we can see such change applied.
 
     >>> admin_browser.getControl(
-    ...     'Request a full language pack export').selected
+    ...     "Request a full language pack export"
+    ... ).selected
     True
 
 There are no visible user interface changes once this flag is changed. It
@@ -124,9 +127,11 @@ cron, it will do a full export of translations for this distro series.
 The language pack changes are visible on the public language pack page:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+language-packs')
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, "language_packs")))
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+language-packs"
+    ... )
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "language_packs"))
+    ... )
     A language pack...
     Active language packs
     Base pack: 2007-09-10 19:14:26 UTC
@@ -153,7 +158,7 @@ The language pack changes are visible on the public language pack page:
 The active update language pack URL is linking to an archive, while the latest
 URL uses '+latest-full-language-pack'.
 
-    >>> print(browser.getLink('2007-09-10 19:15:01 UTC').url)
+    >>> print(browser.getLink("2007-09-10 19:15:01 UTC").url)
     http.../72/ubuntu-hoary-translations-update.tar.gz
-    >>> print(browser.getLink('2007-09-10 19:15:19 UTC').url)  # noqa
+    >>> print(browser.getLink("2007-09-10 19:15:19 UTC").url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+latest-delta-language-pack

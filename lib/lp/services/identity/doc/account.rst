@@ -15,14 +15,17 @@ implements the IAccountSet interface.
     >>> from zope.interface.verify import verifyObject
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.services.identity.interfaces.account import (
-    ...     IAccount, IAccountSet)
+    ...     IAccount,
+    ...     IAccountSet,
+    ... )
 
     >>> account_set = getUtility(IAccountSet)
     >>> verifyObject(IAccountSet, account_set)
     True
 
-    >>> account = getUtility(IPersonSet).getByEmail(
-    ...     'no-priv@canonical.com').account
+    >>> account = (
+    ...     getUtility(IPersonSet).getByEmail("no-priv@canonical.com").account
+    ... )
 
 
 Looking up accounts by their database ID
@@ -48,7 +51,7 @@ Each Launchpad user is assigned an permanent OpenID identity URL. The
 last component of this URL is specific to the user, and can be used to
 look up the user.
 
-    >>> account = account_set.getByOpenIDIdentifier(u'no-priv_oid')
+    >>> account = account_set.getByOpenIDIdentifier("no-priv_oid")
     >>> IAccount.providedBy(account)
     True
     >>> print(account.displayname)
@@ -56,7 +59,7 @@ look up the user.
 
 A LookupError is raised if the identifier is not used by any account.
 
-    >>> account_set.getByOpenIDIdentifier(u'no-such-identifier')
+    >>> account_set.getByOpenIDIdentifier("no-such-identifier")
     Traceback (most recent call last):
     ...
     LookupError: no-such-identifier
@@ -68,10 +71,10 @@ The Account object
 The account implements the IAccount interface but not all attributes are
 accessible for the owner.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> verifyObject(IAccount, account)
     True
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
 An account has a displayname.
 
@@ -110,17 +113,17 @@ database. Only an admin can change the status.
     >>> from lp.services.identity.interfaces.account import AccountStatus
 
     >>> original_date_status_set = account.date_status_set
-    >>> login('admin@canonical.com')
-    >>> account.setStatus(AccountStatus.SUSPENDED, None, 'spammer')
+    >>> login("admin@canonical.com")
+    >>> account.setStatus(AccountStatus.SUSPENDED, None, "spammer")
 
     # Shouldn't be necessary with Storm!
     >>> removeSecurityProxy(account).sync()
     >>> account.date_status_set > original_date_status_set
     True
 
-    >>> account.setStatus(AccountStatus.DEACTIVATED, None, 'welcome')
-    >>> account.setStatus(AccountStatus.ACTIVE, None, 'logged in!')
-    >>> login('no-priv@canonical.com')
+    >>> account.setStatus(AccountStatus.DEACTIVATED, None, "welcome")
+    >>> account.setStatus(AccountStatus.ACTIVE, None, "logged in!")
+    >>> login("no-priv@canonical.com")
 
 An Account has at least one OpenID identifier used to generate the
 OpenID identity URL.
@@ -136,11 +139,13 @@ New Accounts are created using the AccountSet.new() method. The account
 rationale and displayname are required.
 
     >>> from lp.services.identity.interfaces.account import (
-    ...     AccountCreationRationale)
+    ...     AccountCreationRationale,
+    ... )
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> new_account = account_set.new(
-    ...     AccountCreationRationale.USER_CREATED, 'New Account')
+    ...     AccountCreationRationale.USER_CREATED, "New Account"
+    ... )
     >>> transaction.commit()
     >>> print(new_account.creation_rationale.name)
     USER_CREATED

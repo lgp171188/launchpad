@@ -25,12 +25,14 @@ we rely on that to find out whether or not to reset stores.
     ...     global thread_name
     ...     thread_name = threading.current_thread().name
     ...     from lp.testing.pages import setupBrowser
+    ...
     ...     http = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     ...     http.open("http://launchpad.test/~salgado/+edit")
     ...     http.getControl("Display Name").value = "Changed"
     ...     # Need a POST or the DB policy will be using the standby.
     ...     http.getControl("Save Changes").click()
     ...     alive_items = len(IStore(Person)._alive)
+    ...
 
     >>> request_salgados_homepage()
     >>> print(thread_name)
@@ -42,7 +44,7 @@ we rely on that to find out whether or not to reset stores.
     >>> thread = Thread(target=request_salgados_homepage)
     >>> thread.start()
     >>> thread.join()
-    >>> print(thread_name != 'MainThread')
+    >>> print(thread_name != "MainThread")
     True
     >>> print(alive_items)
     0

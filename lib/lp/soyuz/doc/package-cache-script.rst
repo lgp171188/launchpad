@@ -9,38 +9,41 @@ infrastructure and it is localised in the 'cronscripts' directory
     >>> import os
     >>> from lp.services.config import config
     >>> script = os.path.join(
-    ...     config.root, "cronscripts", "update-pkgcache.py")
+    ...     config.root, "cronscripts", "update-pkgcache.py"
+    ... )
 
 Database sampledata has two pending modifications of package cache
 contents:
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> warty = ubuntu['warty']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> warty = ubuntu["warty"]
 
 'cdrkit' source and binary are published but it's not present in
 cache:
 
-    >>> ubuntu.searchSourcePackages(u'cdrkit').count()
+    >>> ubuntu.searchSourcePackages("cdrkit").count()
     0
-    >>> warty.searchPackages(u'cdrkit').count()
+    >>> warty.searchPackages("cdrkit").count()
     0
 
 'foobar' source and binary are removed but still present in cache:
 
-    >>> ubuntu.searchSourcePackages(u'foobar').count()
+    >>> ubuntu.searchSourcePackages("foobar").count()
     1
-    >>> warty.searchPackages(u'foobar').count()
+    >>> warty.searchPackages("foobar").count()
     1
 
 Normal operation produces INFO level information about the
 distribution and respective distroseriess considered in stderr.
 
     >>> import subprocess
-    >>> process = subprocess.Popen([script],
-    ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE,
-    ...                            universal_newlines=True)
+    >>> process = subprocess.Popen(
+    ...     [script],
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -65,14 +68,14 @@ the external script:
 
 Now, search results are up to date:
 
-    >>> ubuntu.searchSourcePackages(u'cdrkit').count()
+    >>> ubuntu.searchSourcePackages("cdrkit").count()
     1
-    >>> warty.searchPackages(u'cdrkit').count()
+    >>> warty.searchPackages("cdrkit").count()
     1
 
-    >>> ubuntu.searchSourcePackages(u'foobar').count()
+    >>> ubuntu.searchSourcePackages("foobar").count()
     0
-    >>> warty.searchPackages(u'foobar').count()
+    >>> warty.searchPackages("foobar").count()
     0
 
 Explicitly mark the database as dirty so that it is cleaned (see bug 994158).

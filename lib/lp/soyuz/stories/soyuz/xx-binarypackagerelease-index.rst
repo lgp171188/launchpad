@@ -8,12 +8,12 @@ content class/page.
 Let's find a build that produced some binaries:
 
     >>> browser.open("http://launchpad.test/ubuntu/+builds")
-    >>> browser.getControl(name="build_state").value = ['built']
+    >>> browser.getControl(name="build_state").value = ["built"]
     >>> browser.getControl("Filter").click()
     >>> browser.getLink("Next").click()
     >>> build_link = browser.getLink(
-    ...     'i386 build of mozilla-firefox 0.9 in ubuntu '
-    ...     'warty RELEASE')
+    ...     "i386 build of mozilla-firefox 0.9 in ubuntu " "warty RELEASE"
+    ... )
     >>> build_link.url
     'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
 
@@ -22,12 +22,12 @@ build:
 XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
-    ...     IBinaryPackageBuildSet)
-    >>> from lp.registry.interfaces.pocket import (
-    ...     PackagePublishingPocket)
+    ...     IBinaryPackageBuildSet,
+    ... )
+    >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from zope.component import getUtility
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> build = getUtility(IBinaryPackageBuildSet).getByID(2)
 
 The sample data doesn't have any Built-Using references.  For now, just
@@ -36,14 +36,18 @@ manually insert one so that we can check how it's rendered.
     >>> from lp.soyuz.enums import BinarySourceReferenceType
     >>> from lp.soyuz.interfaces.binarysourcereference import (
     ...     IBinarySourceReferenceSet,
-    ...     )
-    >>> bpr = build.getBinaryPackageRelease('mozilla-firefox')
+    ... )
+    >>> bpr = build.getBinaryPackageRelease("mozilla-firefox")
     >>> _ = getUtility(IBinarySourceReferenceSet).createFromRelationship(
-    ...     bpr, 'iceweasel (= 1.0)', BinarySourceReferenceType.BUILT_USING)
+    ...     bpr, "iceweasel (= 1.0)", BinarySourceReferenceType.BUILT_USING
+    ... )
 
     >>> package_upload = build.distro_series.createQueueEntry(
-    ...     PackagePublishingPocket.UPDATES, build.archive,
-    ...    'changes.txt', b'my changes')
+    ...     PackagePublishingPocket.UPDATES,
+    ...     build.archive,
+    ...     "changes.txt",
+    ...     b"my changes",
+    ... )
     >>> _ = package_upload.addBuild(build)
     >>> package_upload.setDone()
     >>> logout()
@@ -57,7 +61,7 @@ which is presented in the right portlet, called 'Resulting Binaries'.
 Let's just check if the page is presented without errors (see bug
 #76163):
 
-    >>> browser.getLink('mozilla-firefox 0.9').click()
+    >>> browser.getLink("mozilla-firefox 0.9").click()
     >>> browser.url
     'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9'
 
@@ -71,27 +75,28 @@ links to a binary in the context in question.
     >>> def print_relation(id):
     ...     section = find_tag_by_id(browser.contents, id)
     ...     parse_relationship_section(str(section))
+    ...
 
-    >>> print_relation('provides')
+    >>> print_relation("provides")
     LINK: "mozilla-firefox" ->
     http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
 
-    >>> print_relation('predepends')
+    >>> print_relation("predepends")
     TEXT: "foo"
     LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-    >>> print_relation('enhances')
+    >>> print_relation("enhances")
     TEXT: "bar"
     LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
-    >>> print_relation('breaks')
+    >>> print_relation("breaks")
     TEXT: "baz"
     LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
 The 'Built-Using' section contains a link to a source in the context in
 question.
 
-    >>> print_relation('builtusing')
+    >>> print_relation("builtusing")
     LINK: "iceweasel (= 1.0)" ->
     http://launchpad.test/ubuntu/warty/+source/iceweasel
 
@@ -100,26 +105,26 @@ question.
 sections contain only unsatisfied dependencies, which are rendered as
 text:
 
-    >>> print_relation('depends')
+    >>> print_relation("depends")
     TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
     TEXT: "gcc-3.4 (<< 3.4.2)"
     TEXT: "gcc-3.4-base"
     TEXT: "libc6 (>= 2.3.2.ds1-4)"
     TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
-    >>> print_relation('conflicts')
+    >>> print_relation("conflicts")
     TEXT: "firefox"
     TEXT: "mozilla-web-browser"
 
-    >>> print_relation('suggests')
+    >>> print_relation("suggests")
     TEXT: "firefox-gnome-support (= 1.0.7-0ubuntu20)"
     TEXT: "latex-xft-fonts"
     TEXT: "xprint"
 
-    >>> print_relation('replaces')
+    >>> print_relation("replaces")
     TEXT: "gnome-mozilla-browser"
 
-    >>> print_relation('recommends')
+    >>> print_relation("recommends")
     TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
     TEXT: "gcc-3.4 (<< 3.4.2)"
     TEXT: "gcc-3.4-base"
@@ -130,6 +135,6 @@ Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding
 relationship section.
 
-    >>> browser.open('http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1')
-    >>> print_relation('predepends')
+    >>> browser.open("http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1")
+    >>> print_relation("predepends")
     EMPTY SECTION

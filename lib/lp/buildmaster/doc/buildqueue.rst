@@ -16,7 +16,9 @@ collected) the BuildQueue record representing it is removed.
     >>> from lp.testing import verifyObject
     >>> from lp.services.propertycache import get_property_cache
     >>> from lp.buildmaster.interfaces.buildqueue import (
-    ...     IBuildQueue, IBuildQueueSet)
+    ...     IBuildQueue,
+    ...     IBuildQueueSet,
+    ... )
 
 Get an instance of Builder from the current sampledata using the
 IBuildQueueSet zope utility. The zope utility itself will be
@@ -35,7 +37,7 @@ attribute:
 
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
     ...     IBinaryPackageBuildSet,
-    ...     )
+    ... )
     >>> build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(bq)
     >>> build.id
     8
@@ -100,7 +102,7 @@ builder.
 
     >>> from lp.buildmaster.interfaces.builder import IBuilderSet
 
-    >>> bob = getUtility(IBuilderSet)['bob']
+    >>> bob = getUtility(IBuilderSet)["bob"]
     >>> job = bob.currentjob
 
     >>> print(job.builder.name)

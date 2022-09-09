@@ -12,12 +12,13 @@ Home page
 On a team home page, we show up to the latest five members who were approved
 as well as the up to five latest members who proposed themselves.
 
-    >>> ubuntu_team = person_set.getByName('name18')
-    >>> team_home = create_initialized_view(ubuntu_team, '+index')
+    >>> ubuntu_team = person_set.getByName("name18")
+    >>> team_home = create_initialized_view(ubuntu_team, "+index")
     >>> membershipset = getUtility(ITeamMembershipSet)
     >>> for member in team_home.recently_approved_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
     ...     print("%s: %s" % (member.name, membership.status.title))
+    ...
     name20: Approved
     spiv: Approved
     limi: Approved
@@ -25,22 +26,24 @@ as well as the up to five latest members who proposed themselves.
     >>> for member in team_home.recently_proposed_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
     ...     print("%s: %s" % (member.name, membership.status.title))
+    ...
     justdave: Proposed
 
 If new members are added/proposed, they'll show up at the top of the lists.
 
-    >>> sample_person = person_set.getByName('name12')
+    >>> sample_person = person_set.getByName("name12")
     >>> ignored = login_person(sample_person)
     >>> sample_person.join(ubuntu_team)
-    >>> salgado = person_set.getByName('salgado')
-    >>> mark = person_set.getByName('mark')
-    >>> login('foo.bar@canonical.com')
+    >>> salgado = person_set.getByName("salgado")
+    >>> mark = person_set.getByName("mark")
+    >>> login("foo.bar@canonical.com")
     >>> ignored = ubuntu_team.addMember(salgado, reviewer=mark)
 
-    >>> team_home = create_initialized_view(ubuntu_team, '+index')
+    >>> team_home = create_initialized_view(ubuntu_team, "+index")
     >>> for member in team_home.recently_approved_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
     ...     print("%s: %s" % (member.name, membership.status.title))
+    ...
     salgado: Approved
     name20: Approved
     spiv: Approved
@@ -49,17 +52,18 @@ If new members are added/proposed, they'll show up at the top of the lists.
     >>> for member in team_home.recently_proposed_members:
     ...     membership = membershipset.getByPersonAndTeam(member, ubuntu_team)
     ...     print("%s: %s" % (member.name, membership.status.title))
+    ...
     name12: Proposed
     justdave: Proposed
 
 Posting malformed data to the team home page raises an error.
 
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
-    >>> broken_request = LaunchpadTestRequest(
-    ...     form={})
-    >>> broken_request.method = 'POST'
+    >>> broken_request = LaunchpadTestRequest(form={})
+    >>> broken_request.method = "POST"
     >>> team_home = getMultiAdapter(
-    ...     (ubuntu_team, broken_request), name='+index')
+    ...     (ubuntu_team, broken_request), name="+index"
+    ... )
     >>> team_home.initialize()
     Traceback (most recent call last):
     ...
@@ -78,11 +82,11 @@ The team's overview page tells us that we're contacting a team instead of a
 user. The title of the link states that the team owner will be contacted
 because bart is not a member of the team.
 
-    >>> guadamen = person_set.getByName('guadamen')
-    >>> bart = factory.makePerson(email='bart@example.com', name='bart')
+    >>> guadamen = person_set.getByName("guadamen")
+    >>> bart = factory.makePerson(email="bart@example.com", name="bart")
     >>> ignored = login_person(bart)
 
-    >>> view = create_initialized_view(guadamen, '+index')
+    >>> view = create_initialized_view(guadamen, "+index")
     >>> print(view.contact_link_title)
     Send an email to this team's admins through Launchpad
     >>> print(view.specific_contact_text)
@@ -95,8 +99,8 @@ Mugshots
 The mugshots for all members of a team can be seen on the +mugshots
 page.  The display of mugshots is batched.
 
-    >>> ubuntu = person_set.getByName('ubuntu-team')
-    >>> view = create_initialized_view(ubuntu, '+mugshots')
+    >>> ubuntu = person_set.getByName("ubuntu-team")
+    >>> view = create_initialized_view(ubuntu, "+mugshots")
     >>> batch = view.members.currentBatch()
     >>> print(len(list(ubuntu.allmembers)))
     10
@@ -107,6 +111,7 @@ page.  The display of mugshots is batched.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> for person in list(batch):
     ...     print(removeSecurityProxy(person))
+    ...
     <Person at ... limi (Alexander Limi)>
     <Person at ... cprov (Celso Providelo)>
     <Person at ... kamion (Colin Watson)>
@@ -123,7 +128,7 @@ Privacy and visibility
 Team visibility is used on the page to indicate privacy.  GuadaMen is a public
 team.
 
-    >>> view = create_initialized_view(guadamen, '+index')
+    >>> view = create_initialized_view(guadamen, "+index")
     >>> print(view.visibility_info)
     Public team
     >>> print(view.visibility_portlet_class)
@@ -132,13 +137,15 @@ team.
 Private teams are indicated as private.
 
     >>> from lp.registry.interfaces.person import PersonVisibility
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> private_team = factory.makeTeam(
     ...     owner=sample_person,
-    ...     name='private-team', displayname='Private Team',
-    ...     visibility=PersonVisibility.PRIVATE)
+    ...     name="private-team",
+    ...     displayname="Private Team",
+    ...     visibility=PersonVisibility.PRIVATE,
+    ... )
 
-    >>> view = create_initialized_view(private_team, '+index')
+    >>> view = create_initialized_view(private_team, "+index")
     >>> print(view.visibility_info)
     Private team
     >>> print(view.visibility_portlet_class)
@@ -151,9 +158,10 @@ This page lists the teams that you administer and can add as a member
 to the current team.
 
     >>> ignored = login_person(sample_person)
-    >>> view = create_initialized_view(guadamen, '+add-my-teams')
+    >>> view = create_initialized_view(guadamen, "+add-my-teams")
     >>> for candidate in view.candidate_teams:
     ...     print(candidate.name, candidate.visibility.title)
+    ...
     landscape-developers Public
     launchpad-users Public
     private-team Private

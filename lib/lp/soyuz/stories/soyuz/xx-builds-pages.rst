@@ -23,18 +23,19 @@ according to the selected buildstate, by default All.
     ...     """
     ...     assert '<input type="submit" value="Filter" />' in contents
     ...
-    ...     field_state = find_tag_by_id(contents, 'build_state') is not None
-    ...     field_name = find_tag_by_id(contents, 'build_text') is not None
-    ...     field_arch = find_tag_by_id(contents, 'arch_tag') is not None
+    ...     field_state = find_tag_by_id(contents, "build_state") is not None
+    ...     field_name = find_tag_by_id(contents, "build_text") is not None
+    ...     field_arch = find_tag_by_id(contents, "arch_tag") is not None
     ...
     ...     if field_state and field_name and field_arch:
     ...         return "State, Arch and Name present"
     ...     elif field_state and field_name:
     ...         return "State and Name present"
-    ...     elif field_state and not field_name :
+    ...     elif field_state and not field_name:
     ...         return "State present, Name not present"
     ...     else:
     ...         return "mismatch"
+    ...
 
 The anonymous user can see filter the reports for all objects that
 provide the IBuildRecordView.
@@ -81,8 +82,7 @@ For Builder, same as Distribution:
 
 For Archive (PPA), same as Distribution:
 
-    >>> anon_browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/+packages")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+archive/+packages")
     >>> anon_browser.getLink("View all builds").click()
     >>> print(anon_browser.title)
     Builds : PPA for Celso Providelo : Celso Providelo
@@ -92,8 +92,7 @@ For Archive (PPA), same as Distribution:
 
 For SourcePackage, it's only possible to filter by state.
 
-    >>> anon_browser.open(
-    ...   "http://launchpad.test/ubuntu/hoary/+source/pmount")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary/+source/pmount")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : Hoary (5.04) : pmount package : Ubuntu
@@ -104,7 +103,7 @@ For SourcePackage, it's only possible to filter by state.
 The source package default state is "all states":
 
     >>> soup = find_main_content(anon_browser.contents)
-    >>> [results] = soup.find_all(attrs={'selected': 'selected'})
+    >>> [results] = soup.find_all(attrs={"selected": "selected"})
     >>> print(extract_text(results))
     All states
 
@@ -127,17 +126,18 @@ initialized' one (fix bug #52704).
  * FAILEDTOBUILD builds are similar to MANUALDEPWAIT, but they don't
    contain dependencies-line.
 
-    >>> anon_browser.getControl(name="build_state").value = ['all']
+    >>> anon_browser.getControl(name="build_state").value = ["all"]
     >>> anon_browser.getControl("Filter").click()
 
     >>> def print_build_rows(contents):
-    ...     rule = 30 * '-'
-    ...     build_rows = find_tags_by_class(contents, 'build-row')
+    ...     rule = 30 * "-"
+    ...     build_rows = find_tags_by_class(contents, "build-row")
     ...     for row in build_rows:
     ...         print(rule)
-    ...         print(row.td.img['title'])
-    ...         print(extract_text(row, formatter='html'))
+    ...         print(row.td.img["title"])
+    ...         print(extract_text(row, formatter="html"))
     ...     print(rule)
+    ...
 
     >>> print_build_rows(anon_browser.contents)
     ------------------------------
@@ -195,7 +195,7 @@ Searches on the build state
 
 Then anonymous user checks the results of some searches on build state.
 
-    >>> anon_browser.getControl(name="build_state").value = ['built']
+    >>> anon_browser.getControl(name="build_state").value = ["built"]
     >>> anon_browser.getControl("Filter").click()
     >>> print_build_rows(anon_browser.contents)
     ------------------------------
@@ -225,7 +225,7 @@ Then anonymous user checks the results of some searches on build state.
     taking 1 minute &mdash; see the log
     ------------------------------
 
-    >>> anon_browser.getControl(name="build_state").value = ['depwait']
+    >>> anon_browser.getControl(name="build_state").value = ["depwait"]
     >>> anon_browser.getControl("Filter").click()
     >>> print_build_rows(anon_browser.contents)
     ------------------------------
@@ -237,7 +237,7 @@ Then anonymous user checks the results of some searches on build state.
     taking 6 minutes &mdash; see the log
     ------------------------------
 
-    >>> anon_browser.getControl(name="build_state").value = ['failed']
+    >>> anon_browser.getControl(name="build_state").value = ["failed"]
     >>> anon_browser.getControl("Filter").click()
     >>> print_build_rows(anon_browser.contents)
     ------------------------------
@@ -268,7 +268,7 @@ Pagetest infrastructure won't allow us to pass a not presented field
 to the form:
 
     >>> anon_browser.open("http://launchpad.test/+builds/bob/+history")
-    >>> anon_browser.getControl(name="build_state").value = ['foo']
+    >>> anon_browser.getControl(name="build_state").value = ["foo"]
     Traceback (most recent call last):
     ...
     ValueError: Option ...'foo' not found ...
@@ -277,7 +277,8 @@ However even if anonymous user builds an URL with a incorrect value,
 code is prepared to raise the correct exception:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/+builds/bob/+history?build_state=foo")
+    ...     "http://launchpad.test/+builds/bob/+history?build_state=foo"
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: No suitable state found for value "foo"
@@ -288,7 +289,8 @@ form values are submitted:
     >>> anon_browser.open(
     ...     "http://launchpad.test/ubuntu/+builds"
     ...     "?build_text=binutils&build_state=building"
-    ...     "&build_text=binutils&build_state=all")
+    ...     "&build_text=binutils&build_state=all"
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: No suitable state found for value
@@ -390,11 +392,14 @@ first view if there are no GET arguments.
 
     >>> anon_browser.open("http://launchpad.test/debian/+builds")
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'no-default-result')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "no-default-result")
+    ...     )
+    ... )
     No 'Currently building' build records.
 
-    >>> find_tag_by_id(anon_browser.contents, 'empty-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "empty-result") is None
     True
 
 When they update the page, the message changes to say that 'No matching
@@ -402,15 +407,17 @@ builds' be found. This message clearly differentiate first page loads
 from searches, helping the anonymous user to figure out exactly what
 was done before.
 
-    >>> anon_browser.getControl(name="build_state").value = ['all']
+    >>> anon_browser.getControl(name="build_state").value = ["all"]
     >>> anon_browser.getControl("Filter").click()
 
-    >>> find_tag_by_id(
-    ...     anon_browser.contents, 'no-default-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "no-default-result") is None
     True
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'empty-result')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "empty-result")
+    ...     )
+    ... )
     No matching builds.
 
 If there *are* builds present, the anonymous user does not see any
@@ -418,10 +425,10 @@ special messages. (We added this to catch bug #160331.)
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+builds")
 
-    >>> find_tag_by_id(anon_browser.contents, 'empty-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "empty-result") is None
     True
 
-    >>> find_tag_by_id(anon_browser.contents, 'no-default-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "no-default-result") is None
     True
 
 The same mechanism still works for a SourcePackage-Builds page with
@@ -431,30 +438,37 @@ After opening a empty SourcePackage Builds page anonymous user will
 repeat the same set of accesses done for Distribution Builds page.
 
     >>> anon_browser.open(
-    ...    "http://launchpad.test/"
-    ...    "ubuntu/hoary/+source/mozilla-firefox/+builds")
+    ...     "http://launchpad.test/"
+    ...     "ubuntu/hoary/+source/mozilla-firefox/+builds"
+    ... )
 
 When anonymous user first load only 'No packages currently building'
 message is presented.
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'no-default-result')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "no-default-result")
+    ...     )
+    ... )
     No build records.
 
-    >>> find_tag_by_id(anon_browser.contents, 'empty-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "empty-result") is None
     True
 
 When they update the page, the message for empty results changes to 'No
 matching builds'.
 
-    >>> anon_browser.getControl(name="build_state").value = ['all']
+    >>> anon_browser.getControl(name="build_state").value = ["all"]
     >>> anon_browser.getControl("Filter").click()
 
-    >>> find_tag_by_id(anon_browser.contents, 'no-default-result') is None
+    >>> find_tag_by_id(anon_browser.contents, "no-default-result") is None
     True
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'empty-result')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "empty-result")
+    ...     )
+    ... )
     No matching builds.
 
 The described mechanism works similarly for:
@@ -471,22 +485,30 @@ Anonymous user can see builds of partner packages on the same builds
 page as any other packages from the primary archive.
 
     >>> anon_browser.open(
-    ...    "http://launchpad.test/ubuntu//+builds?build_text="
-    ...    "commercialpackage&build_state=built")
+    ...     "http://launchpad.test/ubuntu//+builds?build_text="
+    ...     "commercialpackage&build_state=built"
+    ... )
 
-    >>> print(extract_text(
-    ...    find_tags_by_class(anon_browser.contents, 'listing')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(anon_browser.contents, "listing")[0]
+    ...     )
+    ... )
     i386 build of commercialpackage 1.0-1 in ubuntu breezy-autotest RELEASE
     ...
 
 And also on the distro series builds page:
 
     >>> anon_browser.open(
-    ...    "http://launchpad.test/ubuntu/breezy-autotest/+builds"
-    ...    "?build_text=commercialpackage&build_state=built")
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/+builds"
+    ...     "?build_text=commercialpackage&build_state=built"
+    ... )
 
-    >>> print(extract_text(
-    ... find_tags_by_class(anon_browser.contents, 'listing')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(anon_browser.contents, "listing")[0]
+    ...     )
+    ... )
     i386 build of commercialpackage 1.0-1 in ubuntu breezy-autotest RELEASE
     ...
 
@@ -503,15 +525,15 @@ link.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> test_publisher = SoyuzTestPublisher()
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> warty = ubuntu.getSeries('warty')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> warty = ubuntu.getSeries("warty")
     >>> unused = test_publisher.setUpDefaultDistroSeries(warty)
     >>> test_publisher.addFakeChroots(warty)
     >>> source = test_publisher.getPubSource(
-    ...     sourcename='testing', version='1.0',
-    ...     architecturehintlist='any')
+    ...     sourcename="testing", version="1.0", architecturehintlist="any"
+    ... )
     >>> binaries = test_publisher.getPubBinaries(pub_source=source)
     >>> transaction.commit()
     >>> logout()
@@ -519,25 +541,25 @@ link.
 Such feature is visible when anonymous user access the
 `DistributionSourcePackageRelease` page in the 'Builds' portlet.
 
-    >>> anon_browser.open(
-    ...     "http://launchpad.test/ubuntu/+source/testing/1.0")
-    >>> print(extract_text(find_portlet(anon_browser.contents, 'Builds')))
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+source/testing/1.0")
+    >>> print(extract_text(find_portlet(anon_browser.contents, "Builds")))
     Builds
     Warty: hppa i386
 
     # Update the upload record for the i386 build so it looks like
     # it is pending approval.
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> [build_hppa, build_i386] = source.getBuilds()
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
-    >>> removeSecurityProxy(build_i386.package_upload).status = (
-    ...     PassthroughStatusValue(PackageUploadStatus.UNAPPROVED))
+    >>> removeSecurityProxy(
+    ...     build_i386.package_upload
+    ... ).status = PassthroughStatusValue(PackageUploadStatus.UNAPPROVED)
     >>> transaction.commit()
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(find_portlet(anon_browser.contents, 'Builds')))
+    >>> print(extract_text(find_portlet(anon_browser.contents, "Builds")))
     Builds
     Warty: hppa i386 (Unapproved)

@@ -27,6 +27,7 @@ Iterating over this collection gives:
 
     >>> for name in sorted(STANDARD_BADGES):
     ...     print(name)
+    ...
     blueprint
     branch
     bug
@@ -49,8 +50,12 @@ Badge is added to the rendered heading image.
 
     >>> from lp.app.browser.badge import Badge
     >>> bug = Badge(
-    ...     icon_image='/@@/bug', heading_image='/@@/bug-large',
-    ...     alt='bug', title='Linked to a bug', id='bugbadge')
+    ...     icon_image="/@@/bug",
+    ...     heading_image="/@@/bug-large",
+    ...     alt="bug",
+    ...     title="Linked to a bug",
+    ...     id="bugbadge",
+    ... )
 
 Both `alt` and `title` default to the empty string.
 
@@ -66,10 +71,10 @@ Calling the render methods will produce the default image HTML.
 If the icon_image or heading_image are not specified, then the rendering
 the particular size results in the empty string.
 
-    >>> no_large = Badge(icon_image='/@@/bug')
+    >>> no_large = Badge(icon_image="/@@/bug")
     >>> no_large.renderHeadingImage()
     ''
-    >>> no_small = Badge(heading_image='/@@/bug')
+    >>> no_small = Badge(heading_image="/@@/bug")
     >>> no_small.renderIconImage()
     ''
 
@@ -90,6 +95,7 @@ for Interface, which just provides the privacy badge.
     >>> from lp.testing import verifyObject
     >>> class PrivateClass:
     ...     private = True
+    ...
     >>> private_object = PrivateClass()
     >>> has_badge_base = HasBadgeBase(private_object)
     >>> verifyObject(IHasBadges, has_badge_base)
@@ -112,23 +118,31 @@ badger class needs to implement the method `getBadge`.
 
     >>> class SimpleBadger(HasBadgeBase):
     ...     badges = ["bug", "fish"]
+    ...
     ...     def isBugBadgeVisible(self):
     ...         return True
+    ...
     ...     def getBugBadgeTitle(self):
-    ...         return 'Bug-Title'
+    ...         return "Bug-Title"
+    ...
     ...     def isFishBadgeVisible(self):
     ...         return True
+    ...
     ...     def getFishBadgeTitle(self):
-    ...         return 'Fish-Tooltip'
+    ...         return "Fish-Tooltip"
+    ...
     ...     def getBadge(self, badge_name):
     ...         if badge_name == "fish":
-    ...             return Badge('small-fish', 'large-fish', 'fish',
-    ...                          'Fish-Title')
+    ...             return Badge(
+    ...                 "small-fish", "large-fish", "fish", "Fish-Title"
+    ...             )
     ...         else:
     ...             return HasBadgeBase.getBadge(self, badge_name)
+    ...
 
     >>> for badge in SimpleBadger(private_object).getVisibleBadges():
     ...     print(badge.alt, "/", badge.title)
+    ...
     bug / Bug-Title
     fish / Fish-Title
 
@@ -138,6 +152,7 @@ NotImplementedError.
     >>> SimpleBadger.badges.append("blueprint")
     >>> for badge in SimpleBadger(private_object).getVisibleBadges():
     ...     print(badge.alt)
+    ...
     Traceback (most recent call last):
     ...
     AttributeError:
@@ -167,15 +182,17 @@ determination methods to use the results of an alternative query.
     >>> from zope.interface import Interface, implementer
 
     >>> class IFoo(Interface):
-    ...     bugs = Attribute('Some linked bugs')
-    ...     blueprints = Attribute('Some linked blueprints')
+    ...     bugs = Attribute("Some linked bugs")
+    ...     blueprints = Attribute("Some linked blueprints")
+    ...
 
     >>> @implementer(IFoo)
     ... class Foo:
     ...     @property
     ...     def bugs(self):
     ...         print("Foo.bugs")
-    ...         return ['a']
+    ...         return ["a"]
+    ...
     ...     @property
     ...     def blueprints(self):
     ...         print("Foo.blueprints")
@@ -185,12 +202,16 @@ Now define the adapter for the Foo content class.
 
     >>> class FooBadges(HasBadgeBase):
     ...     badges = "bug", "blueprint"
+    ...
     ...     def __init__(self, context):
     ...         self.context = context
+    ...
     ...     def isBugBadgeVisible(self):
     ...         return len(self.context.bugs) > 0
+    ...
     ...     def isBlueprintBadgeVisible(self):
     ...         return len(self.context.blueprints) > 0
+    ...
 
 Usually, one would register an adapter in ZCML from the content type to
 IHasBadges.  Here is the sample from the branch.zcml to illustrate.
@@ -221,6 +242,7 @@ as illustrated by the printed method calls.
 
     >>> for badge in badger.getVisibleBadges():
     ...     print(badge.renderIconImage())
+    ...
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="14" height="14" src="/@@/bug"
@@ -238,13 +260,15 @@ handler for branches executes a single query for the BugBranch links for the
 branches in the batch and that is used to construct the DecoratedBranch.
 
     >>> from lazr.delegates import delegate_to
-    >>> @delegate_to(IFoo, context='foo')
+    >>> @delegate_to(IFoo, context="foo")
     ... class DelegatingFoo(FooBadges):
     ...     def __init__(self, foo):
     ...         FooBadges.__init__(self, foo)
     ...         self.foo = foo
+    ...
     ...     def isBugBadgeVisible(self):
     ...         return True
+    ...
     ...     def isBlueprintBadgeVisible(self):
     ...         return False
 
@@ -266,6 +290,7 @@ content classes).
 
     >>> for badge in badger.getVisibleBadges():
     ...     print(badge.renderIconImage())
+    ...
     <img alt="bug" width="14" height="14" src="/@@/bug"
     title="Linked to a bug"/>
 
@@ -282,13 +307,13 @@ through the printed attribute accessors, uses the attributes of the
 content class.
 
     >>> from lp.testing import test_tales
-    >>> print(test_tales('context/badges:small', context=foo))
+    >>> print(test_tales("context/badges:small", context=foo))
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="14" height="14" src="/@@/bug"
          title="Linked to a bug"/>
 
-    >>> print(test_tales('context/badges:large', context=foo))
+    >>> print(test_tales("context/badges:large", context=foo))
     Foo.bugs
     Foo.blueprints
     <img alt="bug" width="32" height="32" src="/@@/bug-large"
@@ -297,9 +322,9 @@ content class.
 Using the delegating foo, we get the delegated methods called and avoid
 the content class method calls.
 
-    >>> print(test_tales('context/badges:small', context=delegating_foo))
+    >>> print(test_tales("context/badges:small", context=delegating_foo))
     <img alt="bug" width="14" height="14" src="/@@/bug"
          title="Linked to a bug"/>
-    >>> print(test_tales('context/badges:large', context=delegating_foo))
+    >>> print(test_tales("context/badges:large", context=delegating_foo))
     <img alt="bug" width="32" height="32" src="/@@/bug-large"
          title="Linked to a bug" id="bugbadge"/>

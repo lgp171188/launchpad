@@ -8,7 +8,8 @@ large and what is the current maximum.
 
     >>> anon_browser.handleErrors = True
     >>> anon_browser.open(
-    ...     'http://launchpad.test/projects/+all?start=0&batch=1000')
+    ...     "http://launchpad.test/projects/+all?start=0&batch=1000"
+    ... )
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 400: Bad Request

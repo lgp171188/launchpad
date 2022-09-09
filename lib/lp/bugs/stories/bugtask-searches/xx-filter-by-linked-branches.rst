@@ -6,18 +6,17 @@ to bugs that are linked to branches or to bugs that are not linked
 to any branches. Normally, both options are turned on.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bugs?advanced=1')
-    >>> anon_browser.getControl(
-    ...     'Show bugs with linked branches').selected
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"
+    ... )
+    >>> anon_browser.getControl("Show bugs with linked branches").selected
     True
-    >>> anon_browser.getControl(
-    ...     'Show bugs without linked branches').selected
+    >>> anon_browser.getControl("Show bugs without linked branches").selected
     True
 
 In this case all bugs are returned.
 
     >>> from lp.bugs.tests.bug import print_bugtasks
-    >>> anon_browser.getControl('Search', index=1).click()
+    >>> anon_browser.getControl("Search", index=1).click()
     >>> print_bugtasks(anon_browser.contents)
     5 Firefox install instructions should be complete
      Mozilla Firefox Critical New
@@ -30,11 +29,13 @@ When we uncheck 'Show bugs without linked branches', only bugs with
 linkes branches are returned.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bugs?advanced=1')
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"
+    ... )
     >>> without_branches = anon_browser.getControl(
-    ...     'Show bugs without linked branches')
+    ...     "Show bugs without linked branches"
+    ... )
     >>> without_branches.selected = False
-    >>> anon_browser.getControl('Search', index=1).click()
+    >>> anon_browser.getControl("Search", index=1).click()
     >>> print_bugtasks(anon_browser.contents)
     5 Firefox install instructions should be complete
      Mozilla Firefox Critical New
@@ -45,11 +46,13 @@ Similarly, we can search for branches that don't have linked branches, if
 we uncheck 'Show bugs with linked branches'.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bugs?advanced=1')
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"
+    ... )
     >>> with_branches = anon_browser.getControl(
-    ...     'Show bugs with linked branches')
+    ...     "Show bugs with linked branches"
+    ... )
     >>> with_branches.selected = False
-    >>> anon_browser.getControl('Search', index=1).click()
+    >>> anon_browser.getControl("Search", index=1).click()
     >>> print_bugtasks(anon_browser.contents)
     1 Firefox does not support SVG
      Mozilla Firefox Low New
@@ -57,14 +60,17 @@ we uncheck 'Show bugs with linked branches'.
 If we uncheck both fields, all bugs are returned.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bugs?advanced=1')
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"
+    ... )
     >>> with_branches = anon_browser.getControl(
-    ...     'Show bugs with linked branches')
+    ...     "Show bugs with linked branches"
+    ... )
     >>> with_branches.selected = False
     >>> without_branches = anon_browser.getControl(
-    ...     'Show bugs without linked branches')
+    ...     "Show bugs without linked branches"
+    ... )
     >>> without_branches.selected = False
-    >>> anon_browser.getControl('Search', index=1).click()
+    >>> anon_browser.getControl("Search", index=1).click()
     >>> print_bugtasks(anon_browser.contents)
     5 Firefox install instructions should be complete
      Mozilla Firefox Critical New

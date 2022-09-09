@@ -1,8 +1,12 @@
 Check that the productseries RDF export works.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/trunk/+rdf HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     Content-Disposition: attachment; filename="firefox-trunk.rdf"
     Content-Length: ...

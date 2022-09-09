@@ -25,7 +25,8 @@ The ISourcePackageNameSet utility is accessed in the usual fashion:
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
+    ...     ISourcePackageNameSet,
+    ... )
     >>> sourcepackagenameset = getUtility(ISourcePackageNameSet)
 
 To retrieve a specific source package name, use
@@ -66,16 +67,17 @@ can be constructed from a SourcePackageName and a distroseries.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.model.sourcepackage import SourcePackage
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> ubuntu_warty = ubuntu.getSeries('warty')
-    >>> firefox_warty_package = SourcePackage(sourcepackagename=firefox,
-    ...     distroseries=ubuntu_warty)
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> ubuntu_warty = ubuntu.getSeries("warty")
+    >>> firefox_warty_package = SourcePackage(
+    ...     sourcepackagename=firefox, distroseries=ubuntu_warty
+    ... )
     >>> firefox_warty_package
     <SourcePackage ...'Ubuntu'...'warty'...'mozilla-firefox'...>
 
 An instance is commonly retrieved from a distroseries.
 
-    >>> firefox_warty = ubuntu_warty.getSourcePackage('mozilla-firefox')
+    >>> firefox_warty = ubuntu_warty.getSourcePackage("mozilla-firefox")
     >>> firefox_warty == firefox_warty_package
     True
 
@@ -121,26 +123,29 @@ upload, even though it gets changed in the publishing record.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> publishing_history = removeSecurityProxy(
-    ...     firefox_warty)._getPublishingHistory()
+    ...     firefox_warty
+    ... )._getPublishingHistory()
     >>> for publishing in publishing_history:
     ...     print(publishing.status.name, publishing.component.name)
+    ...
     PENDING main
     PUBLISHED main
 
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.soyuz.model.component import Component
-    >>> from lp.soyuz.model.publishing import (
-    ...     SourcePackagePublishingHistory)
+    >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 
     >>> latest_publishing = IStore(SourcePackagePublishingHistory).get(
-    ...     SourcePackagePublishingHistory, publishing_history.last().id)
-    >>> universe = IStore(Component).find(Component, name='universe').one()
+    ...     SourcePackagePublishingHistory, publishing_history.last().id
+    ... )
+    >>> universe = IStore(Component).find(Component, name="universe").one()
     >>> latest_publishing.component = universe
     >>> flush_database_caches()
 
     >>> for release in firefox_warty.distinctreleases:
     ...     print(release.component.name)
+    ...
     main
 
     >>> print(firefox_warty.latest_published_component.name)
@@ -159,10 +164,11 @@ SourcePackage traversing is also provided through the available
 published versions. Note that all versions ever published in the
 SourcePackage context will be reachable.
 
-    >>> pmount_hoary = ubuntu['hoary'].getSourcePackage('pmount')
+    >>> pmount_hoary = ubuntu["hoary"].getSourcePackage("pmount")
 
     >>> for release in pmount_hoary.releases:
     ...     print(release.title, release.publishing_history[0].status.name)
+    ...
     pmount 0.1-1 source package in Ubuntu SUPERSEDED
     pmount 0.1-2 source package in Ubuntu PUBLISHED
 
@@ -171,9 +177,11 @@ SourcePackage context will be reachable.
 
 'pmount_0.1-1' in hoary is SUPERSEDED but not yet 'removed from disk'.
 
-    >>> pub = removeSecurityProxy(ubuntu.main_archive.getPublishedSources(
-    ...     distroseries=ubuntu['hoary'], name=u'pmount',
-    ...     version=u'0.1-1').one())
+    >>> pub = removeSecurityProxy(
+    ...     ubuntu.main_archive.getPublishedSources(
+    ...         distroseries=ubuntu["hoary"], name="pmount", version="0.1-1"
+    ...     ).one()
+    ... )
     >>> pub.datesuperseded is not None
     True
     >>> pub.dateremoved is None
@@ -187,6 +195,7 @@ See bug #179028 for further information.
 
     >>> for release in pmount_hoary.releases:
     ...     print(release.title, release.publishing_history[0].status.name)
+    ...
     pmount 0.1-1 source package in Ubuntu SUPERSEDED
     pmount 0.1-2 source package in Ubuntu PUBLISHED
 
@@ -210,7 +219,8 @@ To retrieve a distribution source package, use the getSourcePackage
 method on a distribution:
 
     >>> from lp.registry.interfaces.distributionsourcepackage import (
-    ...     IDistributionSourcePackage)
+    ...     IDistributionSourcePackage,
+    ... )
     >>> ubuntu_firefox = ubuntu.getSourcePackage(firefox)
     >>> IDistributionSourcePackage.providedBy(ubuntu_firefox)
     True
@@ -232,7 +242,7 @@ method on a distribution:
 
 Distro sourcepackages know how to compare to each other:
 
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
     >>> ubuntu_firefox_also = ubuntu.getSourcePackage(firefox)
     >>> debian_firefox = debian.getSourcePackage(firefox)
 
@@ -247,8 +257,7 @@ You can search for bugs in an IDistroSourcePackage using the
 
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-    >>> params = BugTaskSearchParams(
-    ...     status=BugTaskStatus.NEW, user=None)
+    >>> params = BugTaskSearchParams(status=BugTaskStatus.NEW, user=None)
     >>> tasks = ubuntu_firefox.searchTasks(params)
     >>> tasks.count()
     1
@@ -266,8 +275,8 @@ packaging process. Here we test the code that links all of those.
 First, let's get some useful objects from the db.
 
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> firefox = SourcePackageName.byName('mozilla-firefox')
-    >>> pmount = SourcePackageName.byName('pmount')
+    >>> firefox = SourcePackageName.byName("mozilla-firefox")
+    >>> pmount = SourcePackageName.byName("pmount")
 
     >>> from lp.registry.model.distroseries import DistroSeries
     >>> warty = DistroSeries.get(1)
@@ -291,12 +300,12 @@ be more like the bug number linkification just below.
     >>> mock_form = {}
     >>> request = LaunchpadTestRequest(form=mock_form)
     >>> dsp = ubuntu.getSourcePackage(pmount)
-    >>> dspr = dsp.getVersion('0.1-2')
+    >>> dspr = dsp.getVersion("0.1-2")
     >>> dspr_view = queryMultiAdapter((dspr, request), name="+changelog")
     >>> print(dspr_view.changelog_entry)
     This is a placeholder changelog for pmount 0.1-2
 
-    >>> dspr = dsp.getVersion('0.1-1')
+    >>> dspr = dsp.getVersion("0.1-1")
     >>> dspr_view = queryMultiAdapter((dspr, request), name="+changelog")
     >>> print(dspr_view.changelog_entry)
     pmount (0.1-1) hoary; urgency=low
@@ -320,11 +329,14 @@ Comparing Sourcepackages
 Lastly, note that sourcepackages know how to compare to each other:
 
     >>> hoary_firefox_one = SourcePackage(
-    ...     sourcepackagename=firefox, distroseries=hoary)
+    ...     sourcepackagename=firefox, distroseries=hoary
+    ... )
     >>> hoary_firefox_two = SourcePackage(
-    ...     sourcepackagename=firefox, distroseries=hoary)
+    ...     sourcepackagename=firefox, distroseries=hoary
+    ... )
     >>> warty_firefox = SourcePackage(
-    ...     sourcepackagename=firefox, distroseries=warty)
+    ...     sourcepackagename=firefox, distroseries=warty
+    ... )
 
     >>> hoary_firefox_one == hoary_firefox_two
     True
@@ -344,8 +356,8 @@ And they can be used as dictionary keys also:
     True
 
     >>> a_map = {}
-    >>> a_map[hoary_firefox_one] = 'hoary'
-    >>> a_map[warty_firefox] = 'warty'
+    >>> a_map[hoary_firefox_one] = "hoary"
+    >>> a_map[warty_firefox] = "warty"
     >>> print(a_map[hoary_firefox_two])
     hoary
 
@@ -379,20 +391,20 @@ The distinct release history for a SourcePackage is obtained via
 We will use `SoyuzTestPublisher` for creating source releases in Ubuntu
 warty and hoary series.
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> test_publisher = SoyuzTestPublisher()
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> ignore = test_publisher.setUpDefaultDistroSeries(ubuntu_warty)
     >>> warty_source = test_publisher.getPubSource(
-    ...     sourcename="test-source", version='1.0')
+    ...     sourcename="test-source", version="1.0"
+    ... )
 
-    >>> ubuntu_hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu_hoary = ubuntu.getSeries("hoary")
     >>> hoary_source = test_publisher.getPubSource(
-    ...     sourcename="test-source", version='1.1',
-    ...     distroseries=ubuntu_hoary)
+    ...     sourcename="test-source", version="1.1", distroseries=ubuntu_hoary
+    ... )
 
     >>> login(ANONYMOUS)
 
@@ -402,21 +414,22 @@ versions, their history is isolated by series.
     >>> def print_releases(sourcepackage):
     ...     releases = sourcepackage.distinctreleases
     ...     if releases.count() == 0:
-    ...         print('No releases available')
+    ...         print("No releases available")
     ...         return
     ...     for release in releases:
     ...         print(release.title)
+    ...
 
-    >>> warty_sp = ubuntu_warty.getSourcePackage('test-source')
+    >>> warty_sp = ubuntu_warty.getSourcePackage("test-source")
     >>> print_releases(warty_sp)
     test-source - 1.0
 
-    >>> hoary_sp = ubuntu_hoary.getSourcePackage('test-source')
+    >>> hoary_sp = ubuntu_hoary.getSourcePackage("test-source")
     >>> print_releases(hoary_sp)
     test-source - 1.1
 
-    >>> ubuntu_grumpy = ubuntu.getSeries('grumpy')
-    >>> grumpy_sp = ubuntu_grumpy.getSourcePackage('test-source')
+    >>> ubuntu_grumpy = ubuntu.getSeries("grumpy")
+    >>> grumpy_sp = ubuntu_grumpy.getSourcePackage("test-source")
     >>> print_releases(grumpy_sp)
     No releases available
 
@@ -424,9 +437,10 @@ The SourcePackage history can overlap if releases are copied across
 distroseries. The 'test-source - 1.0' is copied from warty to hoary and
 is present in the history for both.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> copied_source = warty_source.copyTo(
-    ...     ubuntu_hoary, warty_source.pocket, warty_source.archive)
+    ...     ubuntu_hoary, warty_source.pocket, warty_source.archive
+    ... )
     >>> login(ANONYMOUS)
 
     >>> print_releases(warty_sp)
@@ -440,13 +454,15 @@ We will create new source releases in warty and verify the ResultSet
 returned from 'distinctreleases' is ordered by descending source
 version.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> lower_source = test_publisher.getPubSource(
-    ...     sourcename="test-source", version='0.9')
+    ...     sourcename="test-source", version="0.9"
+    ... )
 
     >>> higher_source = test_publisher.getPubSource(
-    ...     sourcename="test-source", version='1.2')
+    ...     sourcename="test-source", version="1.2"
+    ... )
 
     >>> login(ANONYMOUS)
 
@@ -463,7 +479,8 @@ SourcePackage implements IHasTranslationImports interface:
 
     >>> from lp.testing import verifyObject
     >>> from lp.translations.interfaces.hastranslationimports import (
-    ...     IHasTranslationImports)
+    ...     IHasTranslationImports,
+    ... )
     >>> IHasTranslationImports.providedBy(warty_firefox)
     True
 

@@ -3,8 +3,8 @@ Filing a bug from the product series page
 
 The product series Bugs frontpage includes a link to report a bug.
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/trunk')
-    >>> report_bug = user_browser.getLink('Report a bug')
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/trunk")
+    >>> report_bug = user_browser.getLink("Report a bug")
     >>> report_bug is not None
     True
 

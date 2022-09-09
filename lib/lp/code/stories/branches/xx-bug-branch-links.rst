@@ -17,35 +17,38 @@ There is an action link to "Link to bug report" that is visible to all bug
 if the user is not logged in, they will be asked to log in.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
-    >>> anon_browser.getLink('Link a bug report').click()
+    ...     "http://code.launchpad.test/~name12/gnome-terminal/klingon"
+    ... )
+    >>> anon_browser.getLink("Link a bug report").click()
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (...launchpad.AnyPerson')
 
     >>> def printBugBranchLinks(browser):
-    ...     tags = find_tags_by_class(browser.contents, 'buglink-summary')
+    ...     tags = find_tags_by_class(browser.contents, "buglink-summary")
     ...     if len(tags) == 0:
-    ...         print('No bug branch links')
+    ...         print("No bug branch links")
     ...     else:
     ...         for tag in tags:
     ...             print(extract_text(tag))
+    ...
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> browser.open(
-    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
+    ...     "http://code.launchpad.test/~name12/gnome-terminal/klingon"
+    ... )
     >>> printBugBranchLinks(browser)
     No bug branch links
 
-    >>> browser.getLink('Link a bug report').click()
+    >>> browser.getLink("Link a bug report").click()
     >>> print(browser.title)
     Link branch...
 
 When linking from a branch to a bug, the bug widget is used.  This
 requires the user to enter a bug number.
 
-    >>> browser.getControl('Bug #').value = "4"
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl("Bug #").value = "4"
+    >>> browser.getControl("Continue").click()
     >>> printBugBranchLinks(browser)
     Bug #4: Reflow problems with complex page layouts
     Medium
@@ -53,16 +56,17 @@ requires the user to enter a bug number.
 
 Attempting to link to the same bug again gives no error.
 
-    >>> browser.getLink('Link a bug report').click()
-    >>> browser.getControl('Bug #').value = "4"
-    >>> browser.getControl('Continue').click()
+    >>> browser.getLink("Link a bug report").click()
+    >>> browser.getControl("Bug #").value = "4"
+    >>> browser.getControl("Continue").click()
     >>> print_feedback_messages(browser.contents)
 
 The bug-branch link is also shown on the bug page.
 
     >>> browser.open(
-    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
-    >>> browser.getLink('Reflow problems with complex page layouts').click()
+    ...     "http://code.launchpad.test/~name12/gnome-terminal/klingon"
+    ... )
+    >>> browser.getLink("Reflow problems with complex page layouts").click()
 
     >>> printBugBranchLinks(browser)
     lp://dev/~mark/firefox/release-0.9.2
@@ -73,16 +77,17 @@ If the bug is private, then the bug branch link isn't shows on the
 branch page for people that are not able to see it.  Get an admin
 to mark the bug private.
 
-    >>> admin_browser.open('http://launchpad.test/firefox/+bug/4/+secrecy')
-    >>> admin_browser.getControl('Private', index=1).click()
-    >>> admin_browser.getControl('Change').click()
-    >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'privacy')))
+    >>> admin_browser.open("http://launchpad.test/firefox/+bug/4/+secrecy")
+    >>> admin_browser.getControl("Private", index=1).click()
+    >>> admin_browser.getControl("Change").click()
+    >>> print(extract_text(find_tag_by_id(admin_browser.contents, "privacy")))
     This report contains Private information...
 
 Sample person can see it...
 
     >>> browser.open(
-    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
+    ...     "http://code.launchpad.test/~name12/gnome-terminal/klingon"
+    ... )
     >>> printBugBranchLinks(browser)
     Bug #4: Reflow problems with complex page layouts
     Medium
@@ -91,7 +96,8 @@ Sample person can see it...
 ... but an anonymous user cannot.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
+    ...     "http://code.launchpad.test/~name12/gnome-terminal/klingon"
+    ... )
     >>> printBugBranchLinks(anon_browser)
     No bug branch links
 
@@ -102,31 +108,29 @@ From the bug page
 The action link on the bug page is "Link a related branch".  This links to a
 page restricted with the launchpad.Edit permission.
 
-    >>> anon_browser.open('http://launchpad.test/bugs/11')
-    >>> anon_browser.getLink('Link a related branch')
+    >>> anon_browser.open("http://launchpad.test/bugs/11")
+    >>> anon_browser.getLink("Link a related branch")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
-    >>> anon_browser.open('http://launchpad.test/jokosher/+bug/11/+addbranch')
+    >>> anon_browser.open("http://launchpad.test/jokosher/+bug/11/+addbranch")
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: (...launchpad.Edit')
 
-    >>> browser.open(
-    ...     'http://launchpad.test/bugs/11')
+    >>> browser.open("http://launchpad.test/bugs/11")
     >>> printBugBranchLinks(browser)
     No bug branch links
 
-    >>> browser.getLink('Link a related branch').click()
+    >>> browser.getLink("Link a related branch").click()
 
-    >>> browser.getControl('Branch').value = (
-    ...     "~name12/gnome-terminal/scanned")
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl("Branch").value = "~name12/gnome-terminal/scanned"
+    >>> browser.getControl("Continue").click()
 
     >>> printBugBranchLinks(browser)
     lp://dev/~name12/gnome-terminal/scanned
 
-    >>> browser.getLink('~name12/gnome-terminal/scanned').click()
+    >>> browser.getLink("~name12/gnome-terminal/scanned").click()
     >>> printBugBranchLinks(browser)
     Bug #11: Make Jokosher use autoaudiosink
     Undecided New
@@ -138,7 +142,7 @@ Deleting bug branch links
 The edit view for the bug branch also now has a delete button to unlink
 the bug from the branch.
 
-    >>> browser.open('http://bugs.launchpad.test/thunderbird/+bug/15')
+    >>> browser.open("http://bugs.launchpad.test/thunderbird/+bug/15")
 
     >>> browser.getLink(url="+delete").click()
     >>> printBugBranchLinks(browser)
@@ -148,7 +152,7 @@ the bug from the branch.
 Deleting a branch with linked bugs
 ==================================
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> grub = factory.makeAnyBranch()
     >>> new_bug = factory.makeBug()
     >>> grub_bug_link = grub.linkBug(new_bug, grub.owner)
@@ -156,8 +160,8 @@ Deleting a branch with linked bugs
     >>> logout()
 
     >>> admin_browser.open(grub_url)
-    >>> admin_browser.getLink('Delete branch').click()
+    >>> admin_browser.getLink("Delete branch").click()
 
-    >>> print(find_tag_by_id(admin_browser.contents, 'deletion-items'))
+    >>> print(find_tag_by_id(admin_browser.contents, "deletion-items"))
     <ul ...
     <a ...href...>Bug #...: bug-title...</a>...

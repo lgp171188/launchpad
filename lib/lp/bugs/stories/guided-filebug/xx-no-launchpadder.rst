@@ -11,10 +11,10 @@ Upstreams
 
 Alsa-utils, for instance, doesn't use Launchpad Bugs:
 
-    >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/alsa-utils/+filebug')
+    >>> user_browser.open("http://bugs.launchpad.test/alsa-utils/+filebug")
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     alsa-utils does not use Launchpad as its bug tracker.
 
@@ -35,10 +35,10 @@ We don't know what bug tracker they use either:
 Gnomebaker doesn't use Launchpad Bugs either. We don't have packaging
 information for it:
 
-    >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/gnomebaker/+filebug')
+    >>> user_browser.open("http://bugs.launchpad.test/gnomebaker/+filebug")
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     gnomebaker does not use Launchpad as its bug tracker.
 
@@ -47,8 +47,14 @@ information for it:
 
 But we are advised to file bugs in the upstream bug tracker:
 
-    >>> print(extract_text(find_tag_by_id(
-    ...     user_browser.contents, 'bugtarget-upstream-bugtracker-info')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             user_browser.contents,
+    ...             "bugtarget-upstream-bugtracker-info",
+    ...         )
+    ...     )
+    ... )
     Bugs in upstream gnomebaker should be reported in its official bug
     tracker, GnomeGBug GTracker
 
@@ -59,18 +65,26 @@ The advice is slightly different if the upstream bug tracker is actually
 an email address.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/jokosher/+configure-bugtracker')
+    ...     "http://launchpad.test/jokosher/+configure-bugtracker"
+    ... )
     >>> admin_browser.getControl(
-    ...     'By emailing an upstream bug contact').selected = True
+    ...     "By emailing an upstream bug contact"
+    ... ).selected = True
     >>> admin_browser.getControl(
-    ...     name='field.bugtracker.upstream_email_address').value = (
-    ...         'puff@magicdragon.example.com')
-    >>> admin_browser.getControl('Change').click()
+    ...     name="field.bugtracker.upstream_email_address"
+    ... ).value = "puff@magicdragon.example.com"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher/+filebug')
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+filebug")
 
-    >>> print(extract_text(find_tag_by_id(
-    ...     user_browser.contents, 'bugtarget-upstream-bugtracker-info')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             user_browser.contents,
+    ...             "bugtarget-upstream-bugtracker-info",
+    ...         )
+    ...     )
+    ... )
     Bugs in upstream Jokosher should be sent to
     mailto:puff@magicdragon.example.com
 
@@ -84,9 +98,11 @@ Advanced Filebug
 The same happens with the advanced filebug form:
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/products/alsa-utils/+filebug")
+    ...     "http://launchpad.test/products/alsa-utils/+filebug"
+    ... )
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     alsa-utils does not use Launchpad as its bug tracker.
 
@@ -96,19 +112,19 @@ Distros
 
 Distributions have less options available if they don't use Launchpad:
 
-    >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/debian/+filebug')
+    >>> user_browser.open("http://bugs.launchpad.test/debian/+filebug")
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     Debian does not use Launchpad as its bug tracker.
 
 They get the same messages in the advanced filebug page:
 
-    >>> user_browser.open(
-    ...     "http://launchpad.test/distros/debian/+filebug")
+    >>> user_browser.open("http://launchpad.test/distros/debian/+filebug")
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     Debian does not use Launchpad as its bug tracker.
 
@@ -120,10 +136,11 @@ It's also not possible to file a bug on any of the distribution's source
 package.
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/debian/+source/mozilla-firefox/"
-    ...     "+filebug")
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/" "+filebug"
+    ... )
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     Debian does not use Launchpad as its bug tracker.
 
@@ -131,9 +148,11 @@ Not even using the advanced filebug page:
 
     >>> user_browser.open(
     ...     "http://launchpad.test/distros/debian/+source/mozilla-firefox/"
-    ...     "+filebug")
+    ...     "+filebug"
+    ... )
     >>> for message in find_tags_by_class(
-    ...     user_browser.contents, 'highlight-message'):
+    ...     user_browser.contents, "highlight-message"
+    ... ):
     ...     print(extract_text(message))
     Debian does not use Launchpad as its bug tracker.
 

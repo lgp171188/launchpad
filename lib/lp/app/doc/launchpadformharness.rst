@@ -12,8 +12,9 @@ To demonstrate its use we'll create a sample schema and view class:
     >>> from lp.app.browser.launchpadform import LaunchpadFormView, action
 
     >>> class IHarnessTest(Interface):
-    ...     string = TextLine(title=u"String")
-    ...     number = Int(title=u"Number")
+    ...     string = TextLine(title="String")
+    ...     number = Int(title="Number")
+    ...
 
     >>> @implementer(IHarnessTest)
     ... class HarnessTest:
@@ -22,18 +23,19 @@ To demonstrate its use we'll create a sample schema and view class:
 
     >>> class HarnessTestView(LaunchpadFormView):
     ...     schema = IHarnessTest
-    ...     next_url = 'https://launchpad.net/'
+    ...     next_url = "https://launchpad.net/"
     ...
     ...     def validate(self, data):
-    ...         if len(data.get('string', '')) == data.get('number'):
+    ...         if len(data.get("string", "")) == data.get("number"):
     ...             self.addError("number must not be equal to string length")
-    ...         if data.get('number') == 7:
-    ...             self.setFieldError('number', 'number can not be 7')
+    ...         if data.get("number") == 7:
+    ...             self.setFieldError("number", "number can not be 7")
     ...
     ...     @action("Submit")
     ...     def submit_action(self, action, data):
-    ...         self.context.string = data['string']
-    ...         self.context.number = data['number']
+    ...         self.context.string = data["string"]
+    ...         self.context.number = data["number"]
+    ...
 
 We can then create a harness to drive the view:
 
@@ -49,8 +51,9 @@ As we haven't submitted the form, there are no errors:
 If we submit the form with some invalid data, we will have some errors
 though:
 
-    >>> harness.submit('submit', {'field.string': 'abcdef',
-    ...                           'field.number': '6' })
+    >>> harness.submit(
+    ...     "submit", {"field.string": "abcdef", "field.number": "6"}
+    ... )
     >>> harness.hasErrors()
     True
 
@@ -58,29 +61,33 @@ We can then get a list of the whole-form errors:
 
     >>> for message in harness.getFormErrors():
     ...     print(message)
+    ...
     number must not be equal to string length
 
 
 We can also check for per-widget errors:
 
-    >>> harness.submit('submit', {'field.string': 'abcdef',
-    ...                           'field.number': 'not a number' })
+    >>> harness.submit(
+    ...     "submit",
+    ...     {"field.string": "abcdef", "field.number": "not a number"},
+    ... )
     >>> harness.hasErrors()
     True
-    >>> print(harness.getFieldError('string'))
+    >>> print(harness.getFieldError("string"))
     <BLANKLINE>
-    >>> print(harness.getFieldError('number'))
+    >>> print(harness.getFieldError("number"))
     Invalid integer data
 
 
 The getFieldError() method will also return custom error messages set
 by setFieldError():
 
-    >>> harness.submit('submit', {'field.string': 'abcdef',
-    ...                           'field.number': '7' })
+    >>> harness.submit(
+    ...     "submit", {"field.string": "abcdef", "field.number": "7"}
+    ... )
     >>> harness.hasErrors()
     True
-    >>> print(harness.getFieldError('number'))
+    >>> print(harness.getFieldError("number"))
     number can not be 7
 
 
@@ -93,8 +100,9 @@ input validation problems, the view will not normally redirect you:
 But if we submit correct data to the form and get redirected, we can
 see where we were redirected to:
 
-    >>> harness.submit('submit', {'field.string': 'abcdef',
-    ...                           'field.number': '42' })
+    >>> harness.submit(
+    ...     "submit", {"field.string": "abcdef", "field.number": "42"}
+    ... )
     >>> harness.wasRedirected()
     True
     >>> harness.redirectionTarget()
@@ -118,7 +126,9 @@ it.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> class FormHarnessTestRequest(LaunchpadTestRequest):
     ...     pass
-    >>> harness = LaunchpadFormHarness(context, HarnessTestView,
-    ...     request_class=FormHarnessTestRequest)
+    ...
+    >>> harness = LaunchpadFormHarness(
+    ...     context, HarnessTestView, request_class=FormHarnessTestRequest
+    ... )
     >>> harness.request
     <...FormHarnessTestRequest...

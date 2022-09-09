@@ -14,9 +14,9 @@ all categories.
     >>> from lp.registry.interfaces.karma import IKarmaContext
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
     >>> verifyObject(IKarmaContext, firefox)
     True
@@ -26,7 +26,8 @@ all categories.
     True
 
     >>> for person, karmavalue in firefox.getTopContributors(limit=3):
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     print("%s: %d" % (person.name, karmavalue))
+    ...
     name12: 66
     mark: 27
     name16: 8
@@ -36,26 +37,32 @@ all categories.
     >>> bugs = IStore(KarmaCategory).find(KarmaCategory, name="bugs").one()
     >>> top_bugmasters = firefox.getTopContributors(category=bugs, limit=2)
     >>> for person, karmavalue in top_bugmasters:
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     print("%s: %d" % (person.name, karmavalue))
+    ...
     name12: 66
     name16: 8
 
     >>> specs = IStore(KarmaCategory).find(KarmaCategory, name="specs").one()
     >>> top_speccers = firefox.getTopContributors(category=specs, limit=1)
     >>> for person, karmavalue in top_speccers:
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     print("%s: %d" % (person.name, karmavalue))
+    ...
     mark: 27
 
 We also have a way of retrieving the top contributors of a given
 product/project group/distribution grouped by categories.
 
     >>> contributors = ubuntu.getTopContributorsGroupedByCategory(limit=2)
-    >>> sorted_categories = sorted(contributors.keys(),
-    ...                            key=operator.attrgetter('title'))
+    >>> sorted_categories = sorted(
+    ...     contributors.keys(), key=operator.attrgetter("title")
+    ... )
     >>> for category in sorted_categories:
-    ...     people = [(person.name, karmavalue)
-    ...               for person, karmavalue in contributors[category]]
+    ...     people = [
+    ...         (person.name, karmavalue)
+    ...         for person, karmavalue in contributors[category]
+    ...     ]
     ...     print("%s: %s" % (category.title, pretty(people)))
+    ...
     Bug Management: [('name16', 26), ('name12', 13)]
     Specification Tracking: [('mark', 37)]
 
@@ -67,22 +74,25 @@ Bar's karma on the firefox and thunderbird products, which are both part of
 the mozilla project group.
 
     >>> for person, karmavalue in firefox.projectgroup.getTopContributors(
-    ...         limit=3):
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     limit=3
+    ... ):
+    ...     print("%s: %d" % (person.name, karmavalue))
     name12: 66
     mark: 27
     name16: 23
 
     >>> for person, karmavalue in firefox.getTopContributors(limit=3):
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     print("%s: %d" % (person.name, karmavalue))
+    ...
     name12: 66
     mark: 27
     name16: 8
 
-    >>> thunderbird = getUtility(IProductSet).getByName('thunderbird')
+    >>> thunderbird = getUtility(IProductSet).getByName("thunderbird")
     >>> thunderbird.projectgroup == firefox.projectgroup
     True
     >>> for person, karmavalue in thunderbird.getTopContributors(limit=3):
-    ...     print('%s: %d' % (person.name, karmavalue))
+    ...     print("%s: %d" % (person.name, karmavalue))
+    ...
     name16: 15
 

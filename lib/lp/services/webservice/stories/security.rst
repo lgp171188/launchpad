@@ -14,9 +14,9 @@ Jokosher project.
 
     >>> search = "/jokosher?ws.op=searchTasks"
     >>> salgado_output = webservice.get(search).jsonBody()
-    >>> salgado_output['total_size']
+    >>> salgado_output["total_size"]
     3
-    >>> len(salgado_output['entries'])
+    >>> len(salgado_output["entries"])
     3
 
 But the 'no-priv' user can't see bug number 14, which is private.
@@ -26,9 +26,9 @@ But the 'no-priv' user can't see bug number 14, which is private.
     ...
 
     >>> nopriv_output = user_webservice.get(search).jsonBody()
-    >>> nopriv_output['total_size']
+    >>> nopriv_output["total_size"]
     2
-    >>> len(nopriv_output['entries'])
+    >>> len(nopriv_output["entries"])
     2
 
 Things are a little different for a user who has permission to see
@@ -40,9 +40,9 @@ operating on public data.
     ...
 
     >>> public_output = public_webservice.get(search).jsonBody()
-    >>> public_output['total_size']
+    >>> public_output["total_size"]
     3
-    >>> len(public_output['entries'])
+    >>> len(public_output["entries"])
     2
 
 Although this behaviour is inconsistent, it doesn't leak any private

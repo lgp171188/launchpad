@@ -15,17 +15,19 @@ selected.
 
     >>> empty_request = LaunchpadTestRequest()
     >>> scope_field = Choice(
-    ...     __name__='scope', vocabulary='ProjectGroup', required=False)
+    ...     __name__="scope", vocabulary="ProjectGroup", required=False
+    ... )
     >>> scope_field = scope_field.bind(object())
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary, empty_request)
+    ...     scope_field, scope_field.vocabulary, empty_request
+    ... )
 
 The widget complies to both IInputWidget and IBrowserWidget.
 
     >>> from zope.formlib.interfaces import (
     ...     IBrowserWidget,
     ...     IInputWidget,
-    ...     )
+    ... )
     >>> verifyObject(IInputWidget, widget)
     True
     >>> verifyObject(IBrowserWidget, widget)
@@ -79,11 +81,12 @@ Selecting All Projects
 
 When the 'All projects' option is selected, the widget returns None.
 
-    >>> form = {'field.scope': 'all',
-    ...         'field.scope.target': ''}
+    >>> form = {"field.scope": "all", "field.scope.target": ""}
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> widget.hasInput()
     True
     >>> widget.getInputValue() is None
@@ -95,12 +98,13 @@ Selecting One Project
 If we select a project, the project with that name is returned
 by getInputValue().
 
-    >>> form = {'field.scope': 'project',
-    ...         'field.scope.target': 'mozilla'}
+    >>> form = {"field.scope": "project", "field.scope.target": "mozilla"}
     >>> from lp.registry.interfaces.projectgroup import IProjectGroup
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
@@ -112,10 +116,12 @@ by getInputValue().
 If an non-existent distribution name is provided, a widget error is
 raised:
 
-    >>> form['field.scope.target'] = 'invalid'
+    >>> form["field.scope.target"] = "invalid"
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
@@ -133,10 +139,12 @@ The same error text is returned by error():
 
 If no project name is given at all, a widget error is also raised:
 
-    >>> form['field.scope.target'] = ''
+    >>> form["field.scope.target"] = ""
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
@@ -149,10 +157,12 @@ If no project name is given at all, a widget error is also raised:
     >>> print(widget.error())
     Please enter a project name
 
-    >>> del form['field.scope.target']
+    >>> del form["field.scope.target"]
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> widget.hasInput()
     True
     >>> selected_scope = widget.getInputValue()
@@ -174,9 +184,10 @@ button, as well as displaying the product name in the project widget.
 
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary, empty_request)
+    ...     scope_field, scope_field.vocabulary, empty_request
+    ... )
     >>> projectgroups = getUtility(IProjectGroupSet)
-    >>> widget.setRenderedValue(projectgroups.getByName('mozilla'))
+    >>> widget.setRenderedValue(projectgroups.getByName("mozilla"))
     >>> print(widget())
     <label>
       <input class="radioType" id="field.scope.option.all"
@@ -213,25 +224,29 @@ which incorrectly build the query string without without the `scope`
 parameter. A method, `getScope` is provided, which returns the value
 of the scope option, or `None` if no scope was selected.
 
-    >>> form = {'field.scope': 'project',
-    ...         'field.scope.target': 'mozilla'}
+    >>> form = {"field.scope": "project", "field.scope.target": "mozilla"}
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> print(widget.getScope())
     project
 
-    >>> form = {'field.scope': 'all',
-    ...         'field.scope.target': ''}
+    >>> form = {"field.scope": "all", "field.scope.target": ""}
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> print(widget.getScope())
     all
 
-    >>> form = {'field.scope.target': ''}
+    >>> form = {"field.scope.target": ""}
     >>> widget = ProjectScopeWidget(
-    ...     scope_field, scope_field.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     scope_field,
+    ...     scope_field.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> print(widget.getScope())
     None

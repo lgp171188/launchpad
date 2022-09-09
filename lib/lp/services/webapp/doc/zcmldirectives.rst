@@ -20,17 +20,20 @@ important, so we just discard it.
 
 
     >>> import re, pprint
-    >>> atre = re.compile(' at [0-9a-fA-Fx]+')
+    >>> atre = re.compile(" at [0-9a-fA-Fx]+")
     >>> class Context:
-    ...    actions = ()
-    ...    def action(self, discriminator, callable, args, kw=None):
-    ...        self.actions += ((discriminator, callable, args), )
-    ...    def __repr__(self):
-    ...        stream = StringIO()
-    ...        pprinter = pprint.PrettyPrinter(stream=stream, width=60)
-    ...        pprinter.pprint(self.actions)
-    ...        r = stream.getvalue()
-    ...        return (''.join(atre.split(r))).strip()
+    ...     actions = ()
+    ...
+    ...     def action(self, discriminator, callable, args, kw=None):
+    ...         self.actions += ((discriminator, callable, args),)
+    ...
+    ...     def __repr__(self):
+    ...         stream = StringIO()
+    ...         pprinter = pprint.PrettyPrinter(stream=stream, width=60)
+    ...         pprinter.pprint(self.actions)
+    ...         r = stream.getvalue()
+    ...         return ("".join(atre.split(r))).strip()
+    ...
 
 The code to this is actually repeated all through the Zope 3 unit tests for
 zcml directives. :-(
@@ -47,8 +50,10 @@ default view for the IFooLayer layer.
     >>> from zope.interface import Interface, implementer
     >>> class IFoo(Interface):
     ...     pass
+    ...
     >>> class IFooLayer(Interface):
     ...     pass
+    ...
     >>> lp.testing.IFoo = IFoo
     >>> lp.testing.IFooLayer = IFooLayer
 
@@ -64,6 +69,7 @@ default view for the IFooLayer layer.
     >>> class FooView:
     ...     def __call__(self):
     ...         return "FooView was called"
+    ...
     >>> lp.testing.FooView = FooView
 
 
@@ -95,10 +101,13 @@ its __launchpad_facetname__ attribute.
     ...     for o in actions_tuple:
     ...         if isinstance(o, tuple):
     ...             o = get_simplelaunchpadviewclass(o)
-    ...         if (hasattr(o, '__name__')
-    ...             and o.__name__ == 'SimpleLaunchpadViewClass'):
+    ...         if (
+    ...             hasattr(o, "__name__")
+    ...             and o.__name__ == "SimpleLaunchpadViewClass"
+    ...         ):
     ...             return o
     ...     return None
+    ...
     >>> cls = get_simplelaunchpadviewclass(context.actions)
     >>> cls
     <class 'zope.browserpage.metaconfigure.SimpleLaunchpadViewClass'>
@@ -107,13 +116,14 @@ its __launchpad_facetname__ attribute.
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print(queryMultiAdapter((fooobject, request), name='+whatever'))
+    >>> print(queryMultiAdapter((fooobject, request), name="+whatever"))
     None
-    >>> print(queryMultiAdapter((fooobject, request), name='+mandrill'))
+    >>> print(queryMultiAdapter((fooobject, request), name="+mandrill"))
     None
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser"
     ...     package="lp.services">
     ...   <include file="webapp/meta-overrides.zcml" />
@@ -135,17 +145,20 @@ Next, a functional/integration test of the overridden directive.
     ...     layer="lp.testing.IFooLayer"
     ...     />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
     >>> whatever_view = queryMultiAdapter(
-    ...     (fooobject, request), name='+whatever')
+    ...     (fooobject, request), name="+whatever"
+    ... )
 
     >>> print(whatever_view.__class__.__name__)
     FooView
     >>> print(whatever_view.__launchpad_facetname__)
     the_evil_facet
     >>> mandrill_view = queryMultiAdapter(
-    ...     (fooobject, request), name='+mandrill')
+    ...     (fooobject, request), name="+mandrill"
+    ... )
 
     >>> print(mandrill_view.__class__.__name__)
     SimpleViewClass from ...base-layout.pt
@@ -196,10 +209,11 @@ its __launchpad_facetname__ attribute.
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print(queryMultiAdapter((fooobject, request), name='+whatever2'))
+    >>> print(queryMultiAdapter((fooobject, request), name="+whatever2"))
     None
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser"
     ...     package="lp.services">
     ...   <include file="webapp/meta-overrides.zcml" />
@@ -220,17 +234,20 @@ Next, a functional/integration test of the overridden directive.
     ...         />
     ...   </browser:pages>
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
     >>> whatever2_view = queryMultiAdapter(
-    ...     (fooobject, request), name='+whatever2')
+    ...     (fooobject, request), name="+whatever2"
+    ... )
     >>> print(whatever2_view.__class__.__name__)
     FooView
     >>> print(whatever2_view.__launchpad_facetname__)
     another_evil_facet
 
     >>> whatever3_view = queryMultiAdapter(
-    ...     (fooobject, request), name='+whatever3')
+    ...     (fooobject, request), name="+whatever3"
+    ... )
     >>> print(whatever3_view.__class__.__name__)
     FooView
     >>> print(whatever3_view.__launchpad_facetname__)
@@ -248,7 +265,7 @@ that can be inherited by all of the directives it contains.
 
 Name some variables to mirror the names used as arguments.
 
-    >>> facet = 'whole-file-facet'
+    >>> facet = "whole-file-facet"
 
     >>> gc = GroupingFacet(context, facet=facet)
     >>> print(gc.facet)
@@ -256,10 +273,11 @@ Name some variables to mirror the names used as arguments.
 
 Next, a functional/integration test of the overridden directive.
 
-    >>> print(queryMultiAdapter((fooobject, request), name='+impliedfacet'))
+    >>> print(queryMultiAdapter((fooobject, request), name="+impliedfacet"))
     None
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns="http://namespaces.zope.org/zope"
     ...            xmlns:browser="http://namespaces.zope.org/browser"
     ...     package="lp.services">
@@ -276,10 +294,12 @@ Next, a functional/integration test of the overridden directive.
     ...       />
     ...   </facet>
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
     >>> impliedfacet_view = queryMultiAdapter(
-    ...     (fooobject, request), name='+impliedfacet')
+    ...     (fooobject, request), name="+impliedfacet"
+    ... )
     >>> print(impliedfacet_view.__class__.__name__)
     FooView
     >>> print(impliedfacet_view.__launchpad_facetname__)
@@ -294,16 +314,18 @@ they require ('read' or 'write'), so our zope:permission directive will
 register an ILaunchpadPermission with the given access_level instead of
 an IPermission.
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns="http://namespaces.zope.org/zope"
     ...     i18n_domain="canonical">
     ...   <include file="lib/lp/services/webapp/meta-overrides.zcml" />
     ...   <permission id="foo.bar" title="Foo Bar" access_level="read" />
     ... </configure>
-    ... """)
+    ... """
+    ... )
     >>> from lp.services.webapp.metazcml import ILaunchpadPermission
     >>> from lp.testing import verifyObject
-    >>> permission = getUtility(ILaunchpadPermission, 'foo.bar')
+    >>> permission = getUtility(ILaunchpadPermission, "foo.bar")
     >>> verifyObject(ILaunchpadPermission, permission)
     True
     >>> print(permission.access_level)

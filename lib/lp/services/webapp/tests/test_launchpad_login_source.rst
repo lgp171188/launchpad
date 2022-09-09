@@ -5,19 +5,18 @@ LaunchpadLoginSource is used to create principals, from login
 information, passing the email address to getPrincipalByLogin. If no
 person is found with the given email address, None is returned
 
-    >>> from lp.services.webapp.authentication import (
-    ...     LaunchpadLoginSource)
+    >>> from lp.services.webapp.authentication import LaunchpadLoginSource
     >>> login_source = LaunchpadLoginSource()
-    >>> print(login_source.getPrincipalByLogin('no-such-email@example.com'))
+    >>> print(login_source.getPrincipalByLogin("no-such-email@example.com"))
     None
 
 Giving getPrincipalByLogin() an existing email address, returns a
 ILaunchpadPrincipal with the same id as the corresponding Account record's
 account id.
 
-    >>> person = factory.makePerson(email='existing@example.com')
+    >>> person = factory.makePerson(email="existing@example.com")
     >>> account = person.account
-    >>> principal = login_source.getPrincipalByLogin('existing@example.com')
+    >>> principal = login_source.getPrincipalByLogin("existing@example.com")
 
     >>> from lp.services.webapp.interfaces import ILaunchpadPrincipal
     >>> ILaunchpadPrincipal.providedBy(principal)

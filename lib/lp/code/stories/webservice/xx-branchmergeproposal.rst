@@ -6,7 +6,7 @@ Branch merge proposals can be created through the API.
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> from lazr.restful.testing.webservice import pprint_entry
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> target = factory.makeBranch()
 
     >>> from lp.services.webapp.servers import WebServiceTestRequest
@@ -21,28 +21,43 @@ Branch merge proposals can be created through the API.
     ...     This is a bit of a hack, but it's the simplest way to get a
     ...     URL that the web service client will respect."""
     ...     return url.replace("launchpad.test/api/", "api.launchpad.test/")
+    ...
 
-    >>> target_url = fix_url(str(canonical_url(
-    ...     target, request=request, rootsite='api')))
+    >>> target_url = fix_url(
+    ...     str(canonical_url(target, request=request, rootsite="api"))
+    ... )
     >>> source = factory.makeBranchTargetBranch(target.target)
-    >>> source_url = fix_url(str(
-    ...     canonical_url(source, request=request, rootsite='api')))
+    >>> source_url = fix_url(
+    ...     str(canonical_url(source, request=request, rootsite="api"))
+    ... )
     >>> prerequisite = factory.makeBranchTargetBranch(target.target)
-    >>> prerequisite_url = fix_url(str(canonical_url(
-    ...     prerequisite, request=request, rootsite='api')))
+    >>> prerequisite_url = fix_url(
+    ...     str(canonical_url(prerequisite, request=request, rootsite="api"))
+    ... )
     >>> registrant = source.registrant
-    >>> reviewer_url = fix_url(str(canonical_url(
-    ...     factory.makePerson(), request=request, rootsite='api')))
+    >>> reviewer_url = fix_url(
+    ...     str(
+    ...         canonical_url(
+    ...             factory.makePerson(), request=request, rootsite="api"
+    ...         )
+    ...     )
+    ... )
     >>> logout()
     >>> registrant_webservice = webservice_for_person(
-    ...     registrant, permission=OAuthPermission.WRITE_PUBLIC)
+    ...     registrant, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
     >>> bmp_result = registrant_webservice.named_post(
-    ...     source_url, 'createMergeProposal', target_branch=target_url,
+    ...     source_url,
+    ...     "createMergeProposal",
+    ...     target_branch=target_url,
     ...     prerequisite_branch=prerequisite_url,
-    ...     initial_comment='Merge\nit!', needs_review=True,
-    ...     commit_message='It was merged!\n', reviewers=[reviewer_url],
-    ...     review_types=['green'])
-    >>> bmp_url = bmp_result.getHeader('Location')
+    ...     initial_comment="Merge\nit!",
+    ...     needs_review=True,
+    ...     commit_message="It was merged!\n",
+    ...     reviewers=[reviewer_url],
+    ...     review_types=["green"],
+    ... )
+    >>> bmp_url = bmp_result.getHeader("Location")
     >>> bmp = registrant_webservice.get(bmp_url).jsonBody()
     >>> pprint_entry(bmp)
     address: 'mp+...@code.launchpad.test'
@@ -86,12 +101,19 @@ Branch merge proposals can be created through the API.
 
 If we try and create the merge proposal again, we should get a ValueError.
 
-    >>> print(registrant_webservice.named_post(
-    ...     source_url, 'createMergeProposal', target_branch=target_url,
-    ...     prerequisite_branch=prerequisite_url,
-    ...     initial_comment='Merge\nit!', needs_review=True,
-    ...     commit_message='It was merged!\n', reviewers=[reviewer_url],
-    ...     review_types=['green']))
+    >>> print(
+    ...     registrant_webservice.named_post(
+    ...         source_url,
+    ...         "createMergeProposal",
+    ...         target_branch=target_url,
+    ...         prerequisite_branch=prerequisite_url,
+    ...         initial_comment="Merge\nit!",
+    ...         needs_review=True,
+    ...         commit_message="It was merged!\n",
+    ...         reviewers=[reviewer_url],
+    ...         review_types=["green"],
+    ...     )
+    ... )
     HTTP/1.1 400 Bad Request
     ...
     There is already a branch merge proposal registered for branch
@@ -99,9 +121,8 @@ If we try and create the merge proposal again, we should get a ValueError.
 
 Our review request is listed in the votes collection.
 
-    >>> votes = webservice.get(
-    ...     bmp['votes_collection_link']).jsonBody()
-    >>> pprint_entry(votes['entries'][0])
+    >>> votes = webservice.get(bmp["votes_collection_link"]).jsonBody()
+    >>> pprint_entry(votes["entries"][0])
     branch_merge_proposal_link:
       'http://api.launchpad.test/devel/~.../+merge/...'
     comment_link: None
@@ -119,29 +140,37 @@ Get an existing merge proposal
 
 Branch merge proposals can be fetched through the API.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from lp.code.tests.helpers import (
-    ...     make_merge_proposal_without_reviewers)
+    ...     make_merge_proposal_without_reviewers,
+    ... )
     >>> fixit_proposal = make_merge_proposal_without_reviewers(factory)
-    >>> fixit_proposal.source_branch.owner.name = 'source'
-    >>> fixit_proposal.source_branch.name = 'fix-it'
-    >>> fixit_proposal.target_branch.owner.name = 'target'
-    >>> fixit_proposal.target_branch.name = 'trunk'
+    >>> fixit_proposal.source_branch.owner.name = "source"
+    >>> fixit_proposal.source_branch.name = "fix-it"
+    >>> fixit_proposal.target_branch.owner.name = "target"
+    >>> fixit_proposal.target_branch.name = "trunk"
     >>> fooix = fixit_proposal.source_branch.product
-    >>> fooix.name = 'fooix'
+    >>> fooix.name = "fooix"
     >>> from lp.code.enums import CodeReviewVote
     >>> comment = factory.makeCodeReviewComment(
-    ...     subject='Looks good', body='This is great work',
-    ...     vote=CodeReviewVote.APPROVE, vote_tag='code',
-    ...     merge_proposal=fixit_proposal)
+    ...     subject="Looks good",
+    ...     body="This is great work",
+    ...     vote=CodeReviewVote.APPROVE,
+    ...     vote_tag="code",
+    ...     merge_proposal=fixit_proposal,
+    ... )
     >>> comment2 = factory.makeCodeReviewComment(
-    ...     subject='Not really', body='This is mediocre work.',
-    ...     vote=CodeReviewVote.ABSTAIN, parent=comment,
-    ...     merge_proposal=fixit_proposal)
+    ...     subject="Not really",
+    ...     body="This is mediocre work.",
+    ...     vote=CodeReviewVote.ABSTAIN,
+    ...     parent=comment,
+    ...     merge_proposal=fixit_proposal,
+    ... )
     >>> transaction.commit()
 
-    >>> proposal_url = fix_url(canonical_url(
-    ...     fixit_proposal, request=request, rootsite='api'))
+    >>> proposal_url = fix_url(
+    ...     canonical_url(fixit_proposal, request=request, rootsite="api")
+    ... )
     >>> new_person = factory.makePerson()
     >>> target_owner = fixit_proposal.target_branch.owner
     >>> logout()
@@ -149,7 +178,8 @@ Branch merge proposals can be fetched through the API.
 We use the webservice as an unrelated, unprivileged user.
 
     >>> webservice = webservice_for_person(
-    ...     new_person, permission=OAuthPermission.READ_PUBLIC)
+    ...     new_person, permission=OAuthPermission.READ_PUBLIC
+    ... )
 
     >>> merge_proposal = webservice.get(proposal_url).jsonBody()
     >>> pprint_entry(merge_proposal)
@@ -196,10 +226,11 @@ Read the comments
 The comments on a branch merge proposal are exposed through the API.
 
     >>> all_comments = webservice.get(
-    ...     merge_proposal['all_comments_collection_link']).jsonBody()
-    >>> print(len(all_comments['entries']))
+    ...     merge_proposal["all_comments_collection_link"]
+    ... ).jsonBody()
+    >>> print(len(all_comments["entries"]))
     2
-    >>> pprint_entry(all_comments['entries'][0])
+    >>> pprint_entry(all_comments["entries"][0])
     as_quoted_email: '> This is great work'
     author_link: 'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: 'http://.../~source/fooix/fix-it/+merge/...'
@@ -219,10 +250,10 @@ The comments on a branch merge proposal are exposed through the API.
     vote_tag: 'code'
     web_link: 'http://code.../~source/fooix/fix-it/+merge/.../comments/...'
 
-    >>> comment_2_id = all_comments['entries'][1]['id']
+    >>> comment_2_id = all_comments["entries"][1]["id"]
     >>> comment_2 = webservice.named_get(
-    ...     merge_proposal['self_link'], 'getComment',
-    ...     id=comment_2_id).jsonBody()
+    ...     merge_proposal["self_link"], "getComment", id=comment_2_id
+    ... ).jsonBody()
     >>> pprint_entry(comment_2)
     as_quoted_email: '> This is mediocre work.'
     author_link: 'http://api.launchpad.test/devel/~...'
@@ -249,7 +280,8 @@ Check the votes
 The votes on a branch merge proposal can be checked through the API.
 
     >>> votes = webservice.get(
-    ...     merge_proposal['votes_collection_link']).jsonBody()['entries']
+    ...     merge_proposal["votes_collection_link"]
+    ... ).jsonBody()["entries"]
     >>> print(len(votes))
     2
     >>> pprint_entry(votes[0])
@@ -272,12 +304,16 @@ A review can be performed through the API.
 A review can be requested of the person 'target'.
 
     >>> reviewer_webservice = webservice_for_person(
-    ...     target_owner, permission=OAuthPermission.WRITE_PUBLIC)
+    ...     target_owner, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
 
-    >>> person = webservice.get('/~target').jsonBody()
+    >>> person = webservice.get("/~target").jsonBody()
     >>> reviewer = reviewer_webservice.named_post(
-    ...     merge_proposal['self_link'], 'nominateReviewer',
-    ...     reviewer=person['self_link'], review_type='code')
+    ...     merge_proposal["self_link"],
+    ...     "nominateReviewer",
+    ...     reviewer=person["self_link"],
+    ...     review_type="code",
+    ... )
     >>> print(reviewer)
     HTTP/1.1 200 Ok ...
     >>> reviewer_entry = reviewer.jsonBody()
@@ -292,17 +328,21 @@ A review can be requested of the person 'target'.
     reviewer_link: 'http://.../~target'
     self_link: 'http://.../~source/fooix/fix-it/+merge/.../+review/...'
 
-    >>> vote = reviewer_webservice.get(reviewer_entry['self_link'])
+    >>> vote = reviewer_webservice.get(reviewer_entry["self_link"])
     >>> print(vote)
     HTTP/1.1 200 Ok ...
 
 Now the code review should be made.
 
     >>> comment_result = reviewer_webservice.named_post(
-    ...     merge_proposal['self_link'], 'createComment',
-    ...     subject='Great work', content='This is great work',
-    ...     vote=CodeReviewVote.APPROVE.title, review_type='code')
-    >>> comment_link = comment_result.getHeader('Location')
+    ...     merge_proposal["self_link"],
+    ...     "createComment",
+    ...     subject="Great work",
+    ...     content="This is great work",
+    ...     vote=CodeReviewVote.APPROVE.title,
+    ...     review_type="code",
+    ... )
+    >>> comment_link = comment_result.getHeader("Location")
     >>> comment = reviewer_webservice.get(comment_link).jsonBody()
     >>> pprint_entry(comment)
     as_quoted_email: '> This is great work'
@@ -327,28 +367,35 @@ In fact, now that the votes indicate approval, we might as well set the merge
 proposal status to "Approved" as well.
 
     >>> _unused = reviewer_webservice.named_post(
-    ...     merge_proposal['self_link'], 'setStatus',
-    ...     status=u'Approved', revid='25')
+    ...     merge_proposal["self_link"],
+    ...     "setStatus",
+    ...     status="Approved",
+    ...     revid="25",
+    ... )
     >>> merge_proposal = reviewer_webservice.get(
-    ...     merge_proposal['self_link']).jsonBody()
+    ...     merge_proposal["self_link"]
+    ... ).jsonBody()
 
-    >>> print(merge_proposal['queue_status'])
+    >>> print(merge_proposal["queue_status"])
     Approved
-    >>> print(merge_proposal['reviewed_revid'])
+    >>> print(merge_proposal["reviewed_revid"])
     25
 
 However, there may have been breakage in the branch, and we need to revert
 back to "Work In Progress" and not specify the revision_id.
 
     >>> _unused = reviewer_webservice.named_post(
-    ...     merge_proposal['self_link'], 'setStatus',
-    ...     status=u'Work in progress')
+    ...     merge_proposal["self_link"],
+    ...     "setStatus",
+    ...     status="Work in progress",
+    ... )
     >>> merge_proposal = reviewer_webservice.get(
-    ...     merge_proposal['self_link']).jsonBody()
+    ...     merge_proposal["self_link"]
+    ... ).jsonBody()
 
-    >>> print(merge_proposal['queue_status'])
+    >>> print(merge_proposal["queue_status"])
     Work in progress
-    >>> print(merge_proposal['reviewed_revid'])
+    >>> print(merge_proposal["reviewed_revid"])
     None
 
 Getting a Project's Pending Merge Proposals
@@ -358,64 +405,77 @@ It is possible to view all of a project's merge proposals or filter the
 proposals by their status.
 
     >>> def print_proposal(proposal):
-    ...     print(proposal['self_link'] + ' - ' + proposal['queue_status'])
+    ...     print(proposal["self_link"] + " - " + proposal["queue_status"])
+    ...
 
 
     >>> proposals = webservice.named_get(
-    ...     '/fooix', 'getMergeProposals').jsonBody()
-    >>> for proposal in proposals['entries']:
+    ...     "/fooix", "getMergeProposals"
+    ... ).jsonBody()
+    >>> for proposal in proposals["entries"]:
     ...     print_proposal(proposal)
+    ...
     http://.../~source/fooix/fix-it/+merge/... - Work in progress
 
 
 Or I can look for anything that is approved.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from lp.code.enums import BranchMergeProposalStatus
-    >>> fixit_proposal.approveBranch(fixit_proposal.target_branch.owner, '1')
+    >>> fixit_proposal.approveBranch(fixit_proposal.target_branch.owner, "1")
     >>> logout()
 
     >>> def print_proposals(webservice, url, status=None):
     ...     proposals = webservice.named_get(
-    ...         url, 'getMergeProposals',
-    ...         status=status).jsonBody()
-    ...     for proposal in proposals['entries']:
+    ...         url, "getMergeProposals", status=status
+    ...     ).jsonBody()
+    ...     for proposal in proposals["entries"]:
     ...         print_proposal(proposal)
+    ...
 
     >>> print_proposals(
-    ...     webservice, url='/fooix',
-    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title])
+    ...     webservice,
+    ...     url="/fooix",
+    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title],
+    ... )
     http://.../~source/fooix/fix-it/+merge/... - Approved
 
 If the branch is private it is not visible to an unpriveleged user.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.app.enums import InformationType
     >>> branch_owner = fixit_proposal.source_branch.owner
     >>> removeSecurityProxy(
-    ...     fixit_proposal.source_branch).transitionToInformationType(
-    ...     InformationType.USERDATA, branch_owner, verify_policy=False)
+    ...     fixit_proposal.source_branch
+    ... ).transitionToInformationType(
+    ...     InformationType.USERDATA, branch_owner, verify_policy=False
+    ... )
     >>> logout()
 
     >>> print_proposals(
-    ...     webservice, url='/fooix',
-    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title])
+    ...     webservice,
+    ...     url="/fooix",
+    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title],
+    ... )
 
 If we get a webservice for the owner of the source branch, then they can see
 the proposal if they have allowed the API to access private bits.
 
     >>> service = webservice_for_person(
-    ...     branch_owner, permission=OAuthPermission.READ_PRIVATE)
+    ...     branch_owner, permission=OAuthPermission.READ_PRIVATE
+    ... )
     >>> print_proposals(
-    ...     service, url='/fooix',
-    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title])
+    ...     service,
+    ...     url="/fooix",
+    ...     status=[BranchMergeProposalStatus.CODE_APPROVED.title],
+    ... )
     http://.../~source/fooix/fix-it/+merge/... - Approved
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> removeSecurityProxy(
-    ...     fixit_proposal.source_branch).transitionToInformationType(
-    ...     InformationType.PUBLIC, branch_owner)
+    ...     fixit_proposal.source_branch
+    ... ).transitionToInformationType(InformationType.PUBLIC, branch_owner)
     >>> logout()
 
 
@@ -425,19 +485,24 @@ Getting a Person's Pending Merge Proposals
 It is possible to view all of a person's merge proposals or filter their
 proposals by their status.
 
-    >>> proposals = webservice.named_get('/~source', 'getMergeProposals',
-    ...     ).jsonBody()
-    >>> print_proposals(service, url='/~source')
+    >>> proposals = webservice.named_get(
+    ...     "/~source",
+    ...     "getMergeProposals",
+    ... ).jsonBody()
+    >>> print_proposals(service, url="/~source")
     http://.../~source/fooix/fix-it/+merge/... - Approved
 
 The person's proposals can also be filtered by status.
 
-    >>> login('admin@canonical.com')
-    >>> fixit_proposal.rejectBranch(fixit_proposal.target_branch.owner, '1')
+    >>> login("admin@canonical.com")
+    >>> fixit_proposal.rejectBranch(fixit_proposal.target_branch.owner, "1")
     >>> logout()
 
-    >>> print_proposals(webservice, url='/~source',
-    ...     status=[BranchMergeProposalStatus.REJECTED.title])
+    >>> print_proposals(
+    ...     webservice,
+    ...     url="/~source",
+    ...     status=[BranchMergeProposalStatus.REJECTED.title],
+    ... )
     http://.../~source/fooix/fix-it/+merge/... - Rejected
 
 
@@ -447,26 +512,30 @@ Getting a Project Group's Merge Proposals
 Getting the merge proposals for a project group will get all the proposals
 for all the projects that are part of the project group.
 
-    >>> login('admin@canonical.com')
-    >>> projectgroup = factory.makeProject(name='widgets')
+    >>> login("admin@canonical.com")
+    >>> projectgroup = factory.makeProject(name="widgets")
     >>> fooix.projectgroup = projectgroup
-    >>> blob = factory.makeProduct(name='blob', projectgroup=projectgroup)
+    >>> blob = factory.makeProduct(name="blob", projectgroup=projectgroup)
     >>> proposal = factory.makeBranchMergeProposal(
-    ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW)
-    >>> proposal.source_branch.owner.name = 'mary'
-    >>> proposal.source_branch.name = 'bar'
+    ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW
+    ... )
+    >>> proposal.source_branch.owner.name = "mary"
+    >>> proposal.source_branch.name = "bar"
     >>> logout()
 
 By default only work in progress, needs review and approved proposals are
 returned.
 
-    >>> print_proposals(webservice, url='/widgets')
+    >>> print_proposals(webservice, url="/widgets")
     http://.../~mary/blob/bar/+merge/... - Needs review
 
 The proposals can also be filtered by status.
 
-    >>> print_proposals(webservice, url='/widgets',
-    ...     status=[BranchMergeProposalStatus.REJECTED.title])
+    >>> print_proposals(
+    ...     webservice,
+    ...     url="/widgets",
+    ...     status=[BranchMergeProposalStatus.REJECTED.title],
+    ... )
     http://.../~source/fooix/fix-it/+merge/... - Rejected
 
 Getting Merge Proposals a Person has been Asked To Review
@@ -475,20 +544,25 @@ Getting Merge Proposals a Person has been Asked To Review
 It's good to be able to find out which proposals you have been asked to
 review.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from lp.code.enums import BranchMergeProposalStatus
 
 First we create a review owned by someone else and requested of 'target'
 which is the one we want the method to return.
 
-    >>> source_branch = factory.makeBranch(owner=branch_owner,
-    ...     product=blob, name="foo")
-    >>> target_branch = factory.makeBranch(owner=target_owner,
-    ...     product=blob, name="bar")
+    >>> source_branch = factory.makeBranch(
+    ...     owner=branch_owner, product=blob, name="foo"
+    ... )
+    >>> target_branch = factory.makeBranch(
+    ...     owner=target_owner, product=blob, name="bar"
+    ... )
     >>> proposal = factory.makeBranchMergeProposal(
     ...     target_branch=target_branch,
-    ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
-    ...     registrant=branch_owner, source_branch=source_branch)
+    ...     product=blob,
+    ...     set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+    ...     registrant=branch_owner,
+    ...     source_branch=source_branch,
+    ... )
     >>> proposal.nominateReviewer(target_owner, branch_owner)
     <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
 
@@ -498,15 +572,20 @@ return this review.
 
     >>> proposal = factory.makeBranchMergeProposal(
     ...     target_branch=source_branch,
-    ...     product=blob, set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
-    ...     registrant=target_owner, source_branch=target_branch)
+    ...     product=blob,
+    ...     set_state=BranchMergeProposalStatus.NEEDS_REVIEW,
+    ...     registrant=target_owner,
+    ...     source_branch=target_branch,
+    ... )
     >>> proposal.nominateReviewer(branch_owner, target_owner)
     <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
     >>> logout()
 
-    >>> proposals = webservice.named_get('/~target', 'getRequestedReviews'
-    ...     ).jsonBody()
-    >>> for proposal in proposals['entries']:
+    >>> proposals = webservice.named_get(
+    ...     "/~target", "getRequestedReviews"
+    ... ).jsonBody()
+    >>> for proposal in proposals["entries"]:
     ...     print_proposal(proposal)
+    ...
     http://.../~source/blob/foo/+merge/... - Needs review
 

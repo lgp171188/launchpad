@@ -28,10 +28,12 @@ def shhh(cmd):
 
     >>> def shhh_script(cmd):
     ...     from subprocess import Popen, PIPE
+    ...
     ...     cmd = [python, __file__] + cmd
     ...     p = Popen(cmd, stdout=PIPE, stderr=PIPE)
     ...     (out, err) = p.communicate()
     ...     return (six.ensure_str(out), six.ensure_str(err), p.returncode)
+    ...
 
     >>> cmd = [python, "-c", "import sys; sys.exit(0)"]
     >>> shhh(cmd)
@@ -53,10 +55,11 @@ def shhh(cmd):
     ('666\n', '', 42)
 
     >>> cmd = [
-    ...     python, "-c",
+    ...     python,
+    ...     "-c",
     ...     "import sys; "
     ...     "print(666); print(667, file=sys.stderr); sys.exit(42)",
-    ...     ]
+    ... ]
     >>> shhh_script(cmd)
     ('666\n', '667\n', 42)
 

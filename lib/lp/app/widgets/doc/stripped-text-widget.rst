@@ -7,14 +7,16 @@ set value.
     >>> from lp.services.fields import StrippedTextLine
 
     >>> non_required_field = StrippedTextLine(
-    ...     __name__='field', title=u'Title',  required=False)
+    ...     __name__="field", title="Title", required=False
+    ... )
 
     >>> class Thing:
     ...     def __init__(self, field):
     ...         self.field = field
-    >>> thing = Thing('abc')
+    ...
+    >>> thing = Thing("abc")
 
-    >>> non_required_field.set(thing, '   egf   ')
+    >>> non_required_field.set(thing, "   egf   ")
     >>> print(non_required_field.get(thing))  # doctest: -NORMALIZE_WHITESPACE
     egf
 
@@ -36,9 +38,10 @@ This custom widget is used to strip leading and trailing whitespaces.
 
 We pass a string with leading and trailing whitespaces to the widget
 
-    >>> field = IRemoteBug['remotebug']
+    >>> field = IRemoteBug["remotebug"]
     >>> request = LaunchpadTestRequest(
-    ...     form={'field.remotebug':'    123456    '})
+    ...     form={"field.remotebug": "    123456    "}
+    ... )
     >>> widget = StrippedTextWidget(field, request)
 
 And check that the leading and trailing whitespaces were correctly stripped.
@@ -51,14 +54,15 @@ provided.
 
     >>> non_required_field.missing_value is None
     True
-    >>> request = LaunchpadTestRequest(form={'field.field':'    \n    '})
+    >>> request = LaunchpadTestRequest(form={"field.field": "    \n    "})
     >>> widget = StrippedTextWidget(non_required_field, request)
     >>> widget.getInputValue() is None
     True
 
     >>> required_field = StrippedTextLine(
-    ...     __name__='field', title=u'Title', required=True)
-    >>> request = LaunchpadTestRequest(form={'field.field':'    \n    '})
+    ...     __name__="field", title="Title", required=True
+    ... )
+    >>> request = LaunchpadTestRequest(form={"field.field": "    \n    "})
     >>> widget = StrippedTextWidget(required_field, request)
     >>> widget.getInputValue()
     Traceback (most recent call last):

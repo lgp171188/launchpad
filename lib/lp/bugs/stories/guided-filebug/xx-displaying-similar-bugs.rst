@@ -8,18 +8,22 @@ user, hopefully helping them choose accurately and thus reducing
 duplicates.
 
     >>> def print_similar_bugs(content):
-    ...     bugs_list = find_tags_by_class(content, 'similar-bug')
+    ...     bugs_list = find_tags_by_class(content, "similar-bug")
     ...     for node in bugs_list:
-    ...         label = node.find_all('label')[0]
-    ...         label_class = ' '.join(label['class'])
-    ...         text_lines = [line.strip() for line in
-    ...                       extract_text(node).splitlines()]
-    ...         summary = ' '.join(text_lines[:2]).replace(u'\u200B', u'')
-    ...         status = ' '.join(text_lines[2:])
+    ...         label = node.find_all("label")[0]
+    ...         label_class = " ".join(label["class"])
+    ...         text_lines = [
+    ...             line.strip() for line in extract_text(node).splitlines()
+    ...         ]
+    ...         summary = " ".join(text_lines[:2]).replace("\u200B", "")
+    ...         status = " ".join(text_lines[2:])
     ...         # All this trouble is worth it when you see ndiff output
     ...         # from a failing test, and it *makes sense* :)
-    ...         print('(icon class=%s)\n  %s\n  %s' % (
-    ...             label_class, summary, status))
+    ...         print(
+    ...             "(icon class=%s)\n  %s\n  %s"
+    ...             % (label_class, summary, status)
+    ...         )
+    ...
 
 
 Products
@@ -30,7 +34,7 @@ the advanced bug filing route, they're shown a list of bugs similar to
 the summary entered (assuming some are found).
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'a'
+    >>> user_browser.getControl("Summary", index=0).value = "a"
     >>> user_browser.getControl("Continue").click()
 
 All of the similar bugs have relevant bugtasks:
@@ -66,14 +70,15 @@ We shall make bug 4 a duplicate of bug 8, which has no bugtask for
 firefox.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/4/+duplicate")
-    >>> user_browser.getControl('Duplicate Of').value = '8'
-    >>> user_browser.getControl('Set Duplicate').click()
+    ...     "http://bugs.launchpad.test/firefox/+bug/4/+duplicate"
+    ... )
+    >>> user_browser.getControl("Duplicate Of").value = "8"
+    >>> user_browser.getControl("Set Duplicate").click()
 
 Then, if we match bug 1, only basic details of bug 8 are displayed:
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'reflow'
+    >>> user_browser.getControl("Summary", index=0).value = "reflow"
     >>> user_browser.getControl("Continue").click()
 
     >>> print_similar_bugs(user_browser.contents)
@@ -86,7 +91,7 @@ To help the user verify if a bug is indeed similar to the problem
 being reported, the user's original summary is displayed above
 the list of potentially similar bugs.
 
-    >>> query = find_tag_by_id(user_browser.contents, 'filebug-query-heading')
+    >>> query = find_tag_by_id(user_browser.contents, "filebug-query-heading")
     >>> print(extract_text(query))
     Is "reflow" one of these bugs?
 
@@ -98,7 +103,7 @@ If similar bugs are found they're displayed so that the user might
 find that their bug has already been reported.
 
     >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'crashes'
+    >>> user_browser.getControl("Summary", index=0).value = "crashes"
     >>> user_browser.getControl("Continue").click()
 
     >>> print_similar_bugs(user_browser.contents)
@@ -111,12 +116,13 @@ Only basic details are shown when no relevant bugtask exists:
 
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/ubuntu/+source/"
-    ...     "thunderbird/+bug/9/+duplicate")
-    >>> user_browser.getControl('Duplicate Of').value = '8'
-    >>> user_browser.getControl('Set Duplicate').click()
+    ...     "thunderbird/+bug/9/+duplicate"
+    ... )
+    >>> user_browser.getControl("Duplicate Of").value = "8"
+    >>> user_browser.getControl("Set Duplicate").click()
 
     >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'crashes'
+    >>> user_browser.getControl("Summary", index=0).value = "crashes"
     >>> user_browser.getControl("Continue").click()
 
     >>> print_similar_bugs(user_browser.contents)
@@ -134,9 +140,9 @@ list of similar bugs when a user tries to file a bug against a source
 package.
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/+source/"
-    ...     "mozilla-firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'a'
+    ...     "http://launchpad.test/ubuntu/+source/" "mozilla-firefox/+filebug"
+    ... )
+    >>> user_browser.getControl("Summary", index=0).value = "a"
     >>> user_browser.getControl("Continue").click()
 
     >>> print_similar_bugs(user_browser.contents)
@@ -148,14 +154,15 @@ package.
 Only basic details are shown when no relevant bugtask exists:
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+duplicate")
-    >>> user_browser.getControl('Duplicate Of').value = '8'
-    >>> user_browser.getControl('Set Duplicate').click()
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+duplicate"
+    ... )
+    >>> user_browser.getControl("Duplicate Of").value = "8"
+    >>> user_browser.getControl("Set Duplicate").click()
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/+source/"
-    ...     "mozilla-firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = 'a'
+    ...     "http://launchpad.test/ubuntu/+source/" "mozilla-firefox/+filebug"
+    ... )
+    >>> user_browser.getControl("Summary", index=0).value = "a"
     >>> user_browser.getControl("Continue").click()
 
     >>> print_similar_bugs(user_browser.contents)

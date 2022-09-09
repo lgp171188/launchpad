@@ -4,8 +4,9 @@ Bug Activity
 The bug activity page is where you find the "changelog" of a bug.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/debian/+source/'
-    ...     'mozilla-firefox/+bug/3/+activity')
+    ...     "http://bugs.launchpad.test/debian/+source/"
+    ...     "mozilla-firefox/+bug/3/+activity"
+    ... )
     >>> main_content = find_main_content(anon_browser.contents)
 
 The page contains a link back to the bug page in the breadcrumbs and
@@ -26,11 +27,14 @@ the main heading repeats the bug number for clarity:
 The activity log itself is presented as a table.
 
     >>> def print_row(row):
-    ...     print(' | '.join(
-    ...         extract_text(cell) for cell in row(('th', 'td'))))
+    ...     print(
+    ...         " | ".join(extract_text(cell) for cell in row(("th", "td")))
+    ...     )
+    ...
 
-    >>> for row in main_content.table('tr'):
+    >>> for row in main_content.table("tr"):
     ...     print_row(row)
+    ...
     Date | Who | What changed | Old value | New value | Message
     2005-08-10 16:30:32 | Sample Person | bug |  |  | assigned to source ...
     2005-08-10 16:30:47 | Sample Person | bug |  |  | assigned to source ...
@@ -39,9 +43,10 @@ The activity log itself is presented as a table.
 The bug page contains a link to the activity log.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/debian/+source/'
-    ...     'mozilla-firefox/+bug/3')
-    >>> print(anon_browser.getLink('See full activity log').url)
+    ...     "http://bugs.launchpad.test/debian/+source/"
+    ...     "mozilla-firefox/+bug/3"
+    ... )
+    >>> print(anon_browser.getLink("See full activity log").url)
     http://.../+bug/3/+activity
 
 
@@ -53,16 +58,19 @@ page.
 
     >>> def print_comments(page, subset=slice(-1, None)):
     ...     """Print all the comments on the page."""
-    ...     comment_divs = find_tags_by_class(page, 'boardComment')
+    ...     comment_divs = find_tags_by_class(page, "boardComment")
     ...     for div_tag in comment_divs[subset]:
     ...         print(extract_text(div_tag))
-    ...         print('-' * 8)
+    ...         print("-" * 8)
+    ...
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+addcomment')
-    >>> user_browser.getControl(name='field.comment').value = (
-    ...     "Here's a comment for testing, like.")
-    >>> user_browser.getControl('Post Comment').click()
+    ...     "http://bugs.launchpad.test/redfish/+bug/15/+addcomment"
+    ... )
+    >>> user_browser.getControl(
+    ...     name="field.comment"
+    ... ).value = "Here's a comment for testing, like."
+    >>> user_browser.getControl("Post Comment").click()
     >>> print_comments(user_browser.contents, slice(None))
     Revision history for this message
     In...
@@ -80,16 +88,14 @@ page.
     ...
     --------
 
-    >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+edit')
-    >>> admin_browser.getControl('Summary').value = (
-    ...     "A new title for this bug")
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.open("http://bugs.launchpad.test/redfish/+bug/15/+edit")
+    >>> admin_browser.getControl("Summary").value = "A new title for this bug"
+    >>> admin_browser.getControl("Change").click()
 
 Alterations to the summary of a bug will show up along with any comments
 that have been added.
 
-    >>> user_browser.open('http://launchpad.test/bugs/15')
+    >>> user_browser.open("http://launchpad.test/bugs/15")
     >>> print_comments(user_browser.contents, slice(None))
     Revision history for this message
     In...
@@ -105,13 +111,13 @@ that have been added.
 Changes to the bug's description will simply be displayed as 'description:
 updated', since such changes can be quite long.
 
-    >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+edit')
-    >>> admin_browser.getControl("Description").value = (
-    ...     "I've changed the description, isn't that excellent?")
+    >>> admin_browser.open("http://bugs.launchpad.test/redfish/+bug/15/+edit")
+    >>> admin_browser.getControl(
+    ...     "Description"
+    ... ).value = "I've changed the description, isn't that excellent?"
     >>> admin_browser.getControl("Change").click()
 
-    >>> admin_browser.open('http://launchpad.test/bugs/15')
+    >>> admin_browser.open("http://launchpad.test/bugs/15")
     >>> print_comments(admin_browser.contents)
     Foo Bar
     ... ago
@@ -124,12 +130,11 @@ updated', since such changes can be quite long.
 Changes to the bug's tags will be show in the form tags removed or tags
 added.
 
-    >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+edit')
+    >>> admin_browser.open("http://bugs.launchpad.test/redfish/+bug/15/+edit")
     >>> admin_browser.getControl("Tags").value = "tag1 tag2 tag3"
     >>> admin_browser.getControl("Change").click()
 
-    >>> admin_browser.open('http://launchpad.test/bugs/15')
+    >>> admin_browser.open("http://launchpad.test/bugs/15")
     >>> print_comments(admin_browser.contents)
     Foo Bar
     ... ago
@@ -143,12 +148,11 @@ When two similar activities are grouped into the same comment - like
 two sets of tag changes - they are displayed in the order they were
 made.
 
-    >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+edit')
+    >>> admin_browser.open("http://bugs.launchpad.test/redfish/+bug/15/+edit")
     >>> admin_browser.getControl("Tags").value = "tag1 tag2 tag4"
     >>> admin_browser.getControl("Change").click()
 
-    >>> admin_browser.open('http://launchpad.test/bugs/15')
+    >>> admin_browser.open("http://launchpad.test/bugs/15")
     >>> print_comments(admin_browser.contents)
     Foo Bar (name16)
     ... ago
@@ -167,20 +171,21 @@ target.
 We'll add a milestone to Redfish to demonstrate this.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/redfish/trunk/+addmilestone')
-    >>> admin_browser.getControl('Name').value = 'foo'
-    >>> admin_browser.getControl('Register Milestone').click()
+    ...     "http://launchpad.test/redfish/trunk/+addmilestone"
+    ... )
+    >>> admin_browser.getControl("Name").value = "foo"
+    >>> admin_browser.getControl("Register Milestone").click()
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/redfish/+bug/15/+editstatus')
-    >>> admin_browser.getControl('Status').value = ['Confirmed']
-    >>> admin_browser.getControl('Importance').value = ['High']
-    >>> admin_browser.getControl(
-    ...     'Milestone').displayValue = ['Redfish foo']
+    ...     "http://bugs.launchpad.test/redfish/+bug/15/+editstatus"
+    ... )
+    >>> admin_browser.getControl("Status").value = ["Confirmed"]
+    >>> admin_browser.getControl("Importance").value = ["High"]
+    >>> admin_browser.getControl("Milestone").displayValue = ["Redfish foo"]
 
-    >>> admin_browser.getControl(
-    ...     name='redfish.assignee.option').value = [
-    ...         'redfish.assignee.assign_to_me']
+    >>> admin_browser.getControl(name="redfish.assignee.option").value = [
+    ...     "redfish.assignee.assign_to_me"
+    ... ]
     >>> admin_browser.getControl("Save Changes").click()
 
     >>> print_comments(admin_browser.contents)
@@ -203,9 +208,10 @@ If a change is made to a bug task which is targeted to a distro source
 package, the name of the package and the distro will be displayed.
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/'
-    ...     '1/+editstatus')
-    >>> admin_browser.getControl('Status').value = ['Confirmed']
+    ...     "http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/"
+    ...     "1/+editstatus"
+    ... )
+    >>> admin_browser.getControl("Status").value = ["Confirmed"]
     >>> admin_browser.getControl("Save Changes").click()
     >>> print_comments(admin_browser.contents)
     Foo Bar (name16)
@@ -220,11 +226,12 @@ footer of that comment. All changes made with a given comment are
 bundled with that comment in the UI.
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/'
-    ...     '1/+editstatus')
-    >>> admin_browser.getControl('Status').value = ['New']
-    >>> admin_browser.getControl('Importance').value = ['Low']
-    >>> admin_browser.getControl('Comment').value = "Lookit, a change!"
+    ...     "http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/"
+    ...     "1/+editstatus"
+    ... )
+    >>> admin_browser.getControl("Status").value = ["New"]
+    >>> admin_browser.getControl("Importance").value = ["Low"]
+    >>> admin_browser.getControl("Comment").value = "Lookit, a change!"
     >>> admin_browser.getControl("Save Changes").click()
 
 Note that "Lookit, a change!" appears twice: once displaying the message
@@ -250,11 +257,12 @@ itself, and once again inside the textarea to edit the message.
 If a target of a bug task is changed the old and new value will be shown.
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/'
-    ...     '1/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/"
+    ...     "1/+editstatus"
+    ... )
     >>> admin_browser.getControl(
-    ...     name='ubuntu_mozilla-firefox.target.package'
-    ...     ).value = 'linux-source-2.6.15'
+    ...     name="ubuntu_mozilla-firefox.target.package"
+    ... ).value = "linux-source-2.6.15"
     >>> admin_browser.getControl("Save Changes").click()
     >>> print_comments(admin_browser.contents)
     Revision history for this message
@@ -271,11 +279,11 @@ If a target of a bug task is changed the old and new value will be shown.
 If a bug task is deleted the pillar no longer affected will be shown.
 
     >>> admin_browser.open("http://bugs.launchpad.test/firefox/+bug/6")
-    >>> admin_browser.getLink(url='+distrotask').click()
-    >>> admin_browser.getControl('Distribution').value = ['ubuntu']
-    >>> admin_browser.getControl('Continue').click()
+    >>> admin_browser.getLink(url="+distrotask").click()
+    >>> admin_browser.getControl("Distribution").value = ["ubuntu"]
+    >>> admin_browser.getControl("Continue").click()
     >>> admin_browser.open("http://bugs.launchpad.test/ubuntu/+bug/6/+delete")
-    >>> admin_browser.getControl('Delete').click()
+    >>> admin_browser.getControl("Delete").click()
     >>> print_comments(admin_browser.contents)
     Foo Bar (name16)
     ... ago
@@ -286,9 +294,10 @@ If a bug task is deleted the pillar no longer affected will be shown.
 Changes to information_type are shown.
 
     >>> admin_browser.open(
-    ...     "http://bugs.launchpad.test/evolution/+bug/7/+secrecy")
+    ...     "http://bugs.launchpad.test/evolution/+bug/7/+secrecy"
+    ... )
     >>> admin_browser.getControl("Private", index=1).selected = True
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.getControl("Change").click()
     >>> admin_browser.open("http://bugs.launchpad.test/evolution/+bug/7")
     >>> print_comments(admin_browser.contents)
     Foo Bar (name16)
@@ -298,9 +307,10 @@ Changes to information_type are shown.
     --------
 
     >>> admin_browser.open(
-    ...     "http://bugs.launchpad.test/jokosher/+bug/14/+secrecy")
+    ...     "http://bugs.launchpad.test/jokosher/+bug/14/+secrecy"
+    ... )
     >>> admin_browser.getControl("Private", index=1).selected = True
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.getControl("Change").click()
     >>> admin_browser.open("http://bugs.launchpad.test/jokosher/+bug/14")
     >>> print_comments(admin_browser.contents)
     Foo Bar (name16)

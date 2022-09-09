@@ -9,7 +9,7 @@ the quality of the service.
 CodeImports are hidden from regular users currently. David Allouche is a
 member of the vcs-imports team and can access the objects freely.
 
-    >>> login('david.allouche@canonical.com')
+    >>> login("david.allouche@canonical.com")
 
 
 Creating Events
@@ -35,6 +35,7 @@ methods, we define a small helper function:
     ...         print(event.event_type.name)
     ...     else:
     ...         print("verifyObject failed")
+    ...
 
 To help us test the output of the items() method, we define a helper
 function that do not print values which are potentially unstable
@@ -42,12 +43,13 @@ database ids.
 
     >>> def print_items(event):
     ...     if len(event.items()) == 0:
-    ...         print('<nothing>')
+    ...         print("<nothing>")
     ...     for k, v in sorted(event.items()):
-    ...         if k.name == 'CODE_IMPORT':
-    ...             print(k.name, '<muted>')
+    ...         if k.name == "CODE_IMPORT":
+    ...             print(k.name, "<muted>")
     ...         else:
     ...             print(k.name, pretty(v))
+    ...
 
 We want to concisely check that calling the CodeImportEventSet factory
 methods with required arguments set to None raise an AssertionError.
@@ -68,6 +70,7 @@ message.
     ...             raise
     ...     else:
     ...         print("No exception raised, expected: %s" % (exc_type,))
+    ...
 
 All CodeImportEvent creation methods explicitly check that their
 arguments are not None. See the implementation of CodeImportEventSet for
@@ -76,6 +79,7 @@ the rationale.
     >>> def fail_if_argument_is_none(callable, *args):
     ...     """Callable must fails if given at least one None argument."""
     ...     assert_raises(AssertionError, callable, *args)
+    ...
 
 
 CREATE
@@ -91,12 +95,13 @@ CodeImportEvent, we need to use the CodeImport constructor directly.
     >>> from lp.code.enums import CodeImportEventDataType
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> nopriv = getUtility(IPersonSet).getByName('no-priv')
+    >>> nopriv = getUtility(IPersonSet).getByName("no-priv")
 
 First we create a Subversion import.
 
     >>> svn_import = factory.makeCodeImport(
-    ...     svn_branch_url='svn://svn.example.com/trunk')
+    ...     svn_branch_url="svn://svn.example.com/trunk"
+    ... )
 
 CodeImportSet.newCreate creates an event from the new CodeImport object
 and the person that created it. Here, the creator is the nopriv user.
@@ -137,8 +142,9 @@ import source. For a CVS import, CVS details are recorded instead of the
 Subversion URL.
 
     >>> cvs_import = factory.makeCodeImport(
-    ...     cvs_root=':pserver:anonymous@cvs.example.com:/cvsroot',
-    ...     cvs_module='hello')
+    ...     cvs_root=":pserver:anonymous@cvs.example.com:/cvsroot",
+    ...     cvs_module="hello",
+    ... )
     >>> cvs_create_event = event_set.newCreate(cvs_import, nopriv)
     >>> print_items(cvs_create_event)
     CODE_IMPORT <muted>
@@ -152,7 +158,8 @@ Subversion URL.
 And for a Git import, the git details are recorded.
 
     >>> git_import = factory.makeCodeImport(
-    ...     git_repo_url='git://git.example.org/main.git')
+    ...     git_repo_url="git://git.example.org/main.git"
+    ... )
     >>> git_create_event = event_set.newCreate(git_import, nopriv)
     >>> print_items(git_create_event)
     CODE_IMPORT <muted>
@@ -190,16 +197,17 @@ state of the code import.
 Then changes can be applied.
 
     >>> from lp.code.enums import CodeImportReviewStatus
-    >>> removeSecurityProxy(svn_import).review_status = (
-    ...     CodeImportReviewStatus.SUSPENDED)
+    >>> removeSecurityProxy(
+    ...     svn_import
+    ... ).review_status = CodeImportReviewStatus.SUSPENDED
 
 After applying changes, the newModify method can create an event that
 details the changes that have been applied.
 
+    >>> fail_if_argument_is_none(event_set.newModify, None, nopriv, token)
     >>> fail_if_argument_is_none(
-    ...     event_set.newModify, None, nopriv, token)
-    >>> fail_if_argument_is_none(
-    ...     event_set.newModify, svn_import, nopriv, None)
+    ...     event_set.newModify, svn_import, nopriv, None
+    ... )
 
     >>> modify_event = event_set.newModify(svn_import, nopriv, token)
     >>> verify_event(modify_event)
@@ -272,7 +280,7 @@ on multiple machines.
 
     >>> from lp.code.interfaces.codeimportmachine import ICodeImportMachineSet
     >>> machine_set = getUtility(ICodeImportMachineSet)
-    >>> machine = machine_set.getByHostname('bazaar-importer')
+    >>> machine = machine_set.getByHostname("bazaar-importer")
 
 When a controller daemon starts, it calls a mutator method on
 CodeImportMachine that marks this machine as accepting jobs. This method
@@ -298,8 +306,8 @@ A new online event can optionally take a user and a reason.  This is the
 case when a user updates the state of the machine through the web UI.
 
     >>> apollo = factory.makeCodeImportMachine(hostname="apollo")
-    >>> ddaa = getUtility(IPersonSet).getByName('ddaa')
-    >>> online_event = event_set.newOnline(apollo, ddaa, 'Fubar was fixed')
+    >>> ddaa = getUtility(IPersonSet).getByName("ddaa")
+    >>> online_event = event_set.newOnline(apollo, ddaa, "Fubar was fixed")
     >>> verify_event(online_event)
     ONLINE
 
@@ -352,8 +360,11 @@ the case when a user updates the state of the machine through the web
 UI.
 
     >>> offline_event = event_set.newOffline(
-    ...     apollo, CodeImportMachineOfflineReason.STOPPED,
-    ...     ddaa, 'Down for fixing')
+    ...     apollo,
+    ...     CodeImportMachineOfflineReason.STOPPED,
+    ...     ddaa,
+    ...     "Down for fixing",
+    ... )
     >>> verify_event(offline_event)
     OFFLINE
 
@@ -376,13 +387,14 @@ operation), a QUIESCE event should be created to record the operator's
 identity, the affected machine, and an optional user-provided message
 explaining why quiescing was requested.
 
+    >>> fail_if_argument_is_none(event_set.newQuiesce, None, ddaa, "Message.")
     >>> fail_if_argument_is_none(
-    ...     event_set.newQuiesce, None, ddaa, 'Message.')
-    >>> fail_if_argument_is_none(
-    ...     event_set.newQuiesce, machine, None, 'Message.')
+    ...     event_set.newQuiesce, machine, None, "Message."
+    ... )
 
     >>> quiesce_event = event_set.newQuiesce(
-    ...     machine, ddaa, 'Production rollout.')
+    ...     machine, ddaa, "Production rollout."
+    ... )
     >>> verify_event(quiesce_event)
     QUIESCE
 
@@ -402,13 +414,10 @@ START
 When a job is allocated to a machine, a START event should be created to
 record which code import is starting and on which machine.
 
-    >>> fail_if_argument_is_none(
-    ...     event_set.newStart, None, machine)
-    >>> fail_if_argument_is_none(
-    ...     event_set.newStart, svn_import, None)
+    >>> fail_if_argument_is_none(event_set.newStart, None, machine)
+    >>> fail_if_argument_is_none(event_set.newStart, svn_import, None)
 
-    >>> start_event = event_set.newStart(
-    ...     svn_import, machine)
+    >>> start_event = event_set.newStart(svn_import, machine)
     >>> verify_event(start_event)
     START
 
@@ -428,13 +437,10 @@ FINISH
 When a machine finishes a job, successfully or otherwise, a FINISH event
 should be created to record that the job has been finished.
 
-    >>> fail_if_argument_is_none(
-    ...     event_set.newFinish, None, machine)
-    >>> fail_if_argument_is_none(
-    ...     event_set.newFinish, svn_import, None)
+    >>> fail_if_argument_is_none(event_set.newFinish, None, machine)
+    >>> fail_if_argument_is_none(event_set.newFinish, svn_import, None)
 
-    >>> finish_event = event_set.newFinish(
-    ...     svn_import, machine)
+    >>> finish_event = event_set.newFinish(svn_import, machine)
     >>> verify_event(finish_event)
     FINISH
 
@@ -455,10 +461,8 @@ When a job is killed from outside of the worker, a KILL event records
 that this was done.  The parameters are self-explanatory: code_import
 and machine
 
-    >>> fail_if_argument_is_none(
-    ...     event_set.newKill, None, machine)
-    >>> fail_if_argument_is_none(
-    ...     event_set.newKill, svn_import, None)
+    >>> fail_if_argument_is_none(event_set.newKill, None, machine)
+    >>> fail_if_argument_is_none(event_set.newKill, svn_import, None)
 
     >>> kill_event = event_set.newKill(svn_import, machine)
     >>> verify_event(kill_event)
@@ -488,14 +492,15 @@ method takes as parameters the code import, the machine the job was
 running on and the id of the removed code import job row (to make
 finding the log files on the import worker easier).
 
-    >>> job_id = 42 # Arbitrary choice.
+    >>> job_id = 42  # Arbitrary choice.
 
+    >>> fail_if_argument_is_none(event_set.newReclaim, None, machine, job_id)
     >>> fail_if_argument_is_none(
-    ...     event_set.newReclaim, None, machine, job_id)
+    ...     event_set.newReclaim, svn_import, None, job_id
+    ... )
     >>> fail_if_argument_is_none(
-    ...     event_set.newReclaim, svn_import, None, job_id)
-    >>> fail_if_argument_is_none(
-    ...     event_set.newReclaim, svn_import, machine, None)
+    ...     event_set.newReclaim, svn_import, machine, None
+    ... )
 
     >>> reclaim_event = event_set.newReclaim(svn_import, machine, job_id)
     >>> verify_event(reclaim_event)

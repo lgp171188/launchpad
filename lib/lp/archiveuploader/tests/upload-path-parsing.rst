@@ -6,18 +6,19 @@ will be processed.
 
 This is decided by `parse_upload_path` function.
 
-    >>> from lp.archiveuploader.uploadprocessor import (
-    ...     parse_upload_path)
+    >>> from lp.archiveuploader.uploadprocessor import parse_upload_path
 
 We will use a helper function to check how `parse_upload_path` behaves
 in several scenarios.
 
     >>> def check_upload(relative_path):
     ...     (distribution, suite_name, archive) = parse_upload_path(
-    ...         relative_path)
-    ...     print('Archive: %s' % archive.name)
-    ...     print('Distribution: %s' % distribution.name)
-    ...     print('Suite: %s' % suite_name)
+    ...         relative_path
+    ...     )
+    ...     print("Archive: %s" % archive.name)
+    ...     print("Distribution: %s" % distribution.name)
+    ...     print("Suite: %s" % suite_name)
+    ...
 
 
 Distribution uploads
@@ -26,7 +27,7 @@ Distribution uploads
 Upload placed on 'root', i.e, no 'relative_path' will be targeted to
 'ubuntu' primary archive.
 
-    >>> check_upload('')
+    >>> check_upload("")
     Archive: primary
     Distribution: ubuntu
     Suite: None
@@ -34,12 +35,12 @@ Upload placed on 'root', i.e, no 'relative_path' will be targeted to
 When the first relative path part does not start with '~' it's assumed
 to be the 'target distribution name'.
 
-    >>> check_upload('ubuntu')
+    >>> check_upload("ubuntu")
     Archive: primary
     Distribution: ubuntu
     Suite: None
 
-    >>> check_upload('debian')
+    >>> check_upload("debian")
     Archive: primary
     Distribution: debian
     Suite: None
@@ -47,7 +48,7 @@ to be the 'target distribution name'.
 If such distribution doesn't exist, parse_upload_path() raises
 `UploadPathError`.
 
-    >>> check_upload('does-not-exist')
+    >>> check_upload("does-not-exist")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Could not find
@@ -56,12 +57,12 @@ If such distribution doesn't exist, parse_upload_path() raises
 Upload to a distribution can have their 'changesfile' suite target
 overridden by including a specific suite name in the upload path.
 
-    >>> check_upload('ubuntu/warty-backports')
+    >>> check_upload("ubuntu/warty-backports")
     Archive: primary
     Distribution: ubuntu
     Suite: warty-backports
 
-    >>> check_upload('debian/woody')
+    >>> check_upload("debian/woody")
     Archive: primary
     Distribution: debian
     Suite: woody
@@ -69,7 +70,7 @@ overridden by including a specific suite name in the upload path.
 Again, if the given suite name can not be found an `UploadPathError`
 is raised.
 
-    >>> check_upload('debian/imaginary')
+    >>> check_upload("debian/imaginary")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Could not find suite
@@ -88,28 +89,29 @@ up as a Person in Launchpad.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> copy_archive = getUtility(IArchiveSet).new(
-    ...     ArchivePurpose.PPA, cprov, 'ppa', distribution=debian)
+    ...     ArchivePurpose.PPA, cprov, "ppa", distribution=debian
+    ... )
 
-    >>> check_upload('~cprov/ubuntu/ppa')
+    >>> check_upload("~cprov/ubuntu/ppa")
     Archive: ppa
     Distribution: ubuntu
     Suite: None
 
-    >>> check_upload('~cprov/debian/ppa')
+    >>> check_upload("~cprov/debian/ppa")
     Archive: ppa
     Distribution: debian
     Suite: None
 
-    >>> check_upload('~does-not-exist/ubuntu/ppa')
+    >>> check_upload("~does-not-exist/ubuntu/ppa")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
     person or team named 'does-not-exist'.
 
-    >>> check_upload('~cprov/notbuntu/ppa')
+    >>> check_upload("~cprov/notbuntu/ppa")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
@@ -120,16 +122,16 @@ mid-2014 all PPAs were for Ubuntu, and the distribution came after the
 PPA name and could be omitted. Before 2009 each user had at most one
 PPA, so the name was omitted -- we assume "ppa".
 
-    >>> check_upload('~cprov/ppa/ubuntu')
+    >>> check_upload("~cprov/ppa/ubuntu")
     Archive: ppa
     Distribution: ubuntu
     Suite: None
-    >>> check_upload('~cprov/ppa')
+    >>> check_upload("~cprov/ppa")
     Archive: ppa
     Distribution: ubuntu
     Suite: None
 
-    >>> check_upload('~cprov/ubuntu')
+    >>> check_upload("~cprov/ubuntu")
     Archive: ppa
     Distribution: ubuntu
     Suite: None
@@ -137,17 +139,17 @@ PPA, so the name was omitted -- we assume "ppa".
 PPA uploads also support overrides to the changesfile suite when it's
 valid. It's also supported for uploads to the deprecated paths.
 
-    >>> check_upload('~cprov/ubuntu/ppa/warty-backports')
+    >>> check_upload("~cprov/ubuntu/ppa/warty-backports")
     Archive: ppa
     Distribution: ubuntu
     Suite: warty-backports
 
-    >>> check_upload('~cprov/ppa/ubuntu/warty-backports')
+    >>> check_upload("~cprov/ppa/ubuntu/warty-backports")
     Archive: ppa
     Distribution: ubuntu
     Suite: warty-backports
 
-    >>> check_upload('~cprov/ppa/ubuntu/boing')
+    >>> check_upload("~cprov/ppa/ubuntu/boing")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find
@@ -156,20 +158,20 @@ valid. It's also supported for uploads to the deprecated paths.
 We will disable Celso's default PPA and uploads to it will result in
 an error.
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> cprov_ppa = cprov.getPPAByName(ubuntu, 'ppa')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> cprov_ppa = cprov.getPPAByName(ubuntu, "ppa")
     >>> cprov_ppa.disable()
 
     >>> import transaction
     >>> transaction.commit()
 
-    >>> check_upload('~cprov/ubuntu/ppa')
+    >>> check_upload("~cprov/ubuntu/ppa")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso
     Providelo is disabled.
 
-    >>> check_upload('~cprov/ppa/ubuntu')
+    >>> check_upload("~cprov/ppa/ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: PPA for Celso
@@ -177,13 +179,13 @@ an error.
 
 Uploading to named PPA that does not exist fails.
 
-    >>> check_upload('~cprov/ubuntu/beta')
+    >>> check_upload("~cprov/ubuntu/beta")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a
     PPA owned by 'cprov' for 'ubuntu' named 'beta'.
 
-    >>> check_upload('~cprov/beta/ubuntu')
+    >>> check_upload("~cprov/beta/ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.PPAUploadPathError: Could not find a
@@ -192,16 +194,17 @@ Uploading to named PPA that does not exist fails.
 We will create a 'beta' PPA for Celso.
 
     >>> beta_ppa = getUtility(IArchiveSet).new(
-    ...     ArchivePurpose.PPA, cprov, 'beta')
+    ...     ArchivePurpose.PPA, cprov, "beta"
+    ... )
 
 And the upload now found its way to the new named PPA.
 
-    >>> check_upload('~cprov/ubuntu/beta')
+    >>> check_upload("~cprov/ubuntu/beta")
     Archive: beta
     Distribution: ubuntu
     Suite: None
 
-    >>> check_upload('~cprov/beta/ubuntu')
+    >>> check_upload("~cprov/beta/ubuntu")
     Archive: beta
     Distribution: ubuntu
     Suite: None
@@ -215,7 +218,7 @@ identifies and warns users accordingly.
 
 An extra path part that cannot be processed for distribution uploads.
 
-    >>> check_upload('ubuntu/warty/ding-dong')
+    >>> check_upload("ubuntu/warty/ding-dong")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
@@ -223,28 +226,28 @@ An extra path part that cannot be processed for distribution uploads.
 A distribution specific uploads starting with '~' as if it was a
 person name. Note that users can't be named like distribution anyways.
 
-    >>> check_upload('~ubuntu')
+    >>> check_upload("~ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 An extra path part that cannot be processed for PPA uploads.
 
-    >>> check_upload('~cprov/ubuntu/ppa/warty/ding-dong')
+    >>> check_upload("~cprov/ubuntu/ppa/warty/ding-dong")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 A PPA upload missing '~':
 
-    >>> check_upload('cprov/ubuntu/ppa')
+    >>> check_upload("cprov/ubuntu/ppa")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
 
 A old-style PPA upload missing '~':
 
-    >>> check_upload('cprov/ubuntu')
+    >>> check_upload("cprov/ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Could not find
@@ -252,7 +255,7 @@ A old-style PPA upload missing '~':
 
 An old-style named PPA upload missing '~'.
 
-    >>> check_upload('cprov/ppa/ubuntu')
+    >>> check_upload("cprov/ppa/ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Path format mismatch.
@@ -267,10 +270,11 @@ is the database key of the archive in question.
 
 So, here is a binary upload path to the primary archive:
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> primary = getUtility(IArchiveSet).getByDistroPurpose(
-    ...     ubuntu, ArchivePurpose.PRIMARY, 'primary')
-    >>> check_upload('%s/ubuntu' % primary.id)
+    ...     ubuntu, ArchivePurpose.PRIMARY, "primary"
+    ... )
+    >>> check_upload("%s/ubuntu" % primary.id)
     Archive: primary
     Distribution: ubuntu
     Suite: None
@@ -278,7 +282,7 @@ So, here is a binary upload path to the primary archive:
 The same for a PPA:
 
     >>> cprov_ppa.enable()
-    >>> check_upload('%s/ubuntu' % cprov_ppa.id)
+    >>> check_upload("%s/ubuntu" % cprov_ppa.id)
     Archive: ppa
     Distribution: ubuntu
     Suite: None
@@ -286,8 +290,9 @@ The same for a PPA:
 And, last but not least, for a copy archive:
 
     >>> copy_archive = getUtility(IArchiveSet).new(
-    ...     ArchivePurpose.COPY, cprov, 'samplecopyarchive')
-    >>> check_upload('%s/ubuntu' % copy_archive.id)
+    ...     ArchivePurpose.COPY, cprov, "samplecopyarchive"
+    ... )
+    >>> check_upload("%s/ubuntu" % copy_archive.id)
     Archive: samplecopyarchive
     Distribution: ubuntu
     Suite: None
@@ -295,7 +300,7 @@ And, last but not least, for a copy archive:
 In the case where an archive cannot be found an 'UploadPathError' exception
 is raised.
 
-    >>> check_upload('1234567890/ubuntu')
+    >>> check_upload("1234567890/ubuntu")
     Traceback (most recent call last):
     ...
     lp.archiveuploader.uploadprocessor.UploadPathError: Could not find archive

@@ -119,11 +119,11 @@ class UnrecognizedBinaryFormat(Exception):
 def getBinaryPackageFormat(fname):
     """Return the BinaryPackageFormat for the given filename.
 
-    >>> getBinaryPackageFormat('mozilla-firefox_0.9_i386.deb').name
+    >>> getBinaryPackageFormat("mozilla-firefox_0.9_i386.deb").name
     'DEB'
-    >>> getBinaryPackageFormat('debian-installer.9_all.udeb').name
+    >>> getBinaryPackageFormat("debian-installer.9_all.udeb").name
     'UDEB'
-    >>> getBinaryPackageFormat('network-manager.9_i386.rpm').name
+    >>> getBinaryPackageFormat("network-manager.9_i386.rpm").name
     'RPM'
     """
     for key, value in BINARYPACKAGE_EXTENSIONS.items():

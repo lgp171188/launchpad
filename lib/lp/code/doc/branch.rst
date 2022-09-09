@@ -77,7 +77,7 @@ registered as an utility.
 
 The 'get' method on the branch set fetches branches by ID.
 
-    >>> branch = factory.makeAnyBranch(name='foobar')
+    >>> branch = factory.makeAnyBranch(name="foobar")
     >>> print(branch_lookup.get(branch.id).name)
     foobar
 
@@ -94,13 +94,15 @@ Branches can be created with IBranchNamespace.createBranch, which takes
 details like the type of the branch -- whether it is mirrored, hosted,
 imported or remote, name, and so on.
 
-    >>> registrant = factory.makePerson(name='registrant')
-    >>> from lp.code.interfaces.branchnamespace import (
-    ...     get_branch_namespace)
+    >>> registrant = factory.makePerson(name="registrant")
+    >>> from lp.code.interfaces.branchnamespace import get_branch_namespace
     >>> namespace = get_branch_namespace(registrant, factory.makeProduct())
     >>> new_branch = namespace.createBranch(
-    ...     branch_type=BranchType.MIRRORED, name='dev',
-    ...     registrant=registrant, url=factory.getUniqueURL())
+    ...     branch_type=BranchType.MIRRORED,
+    ...     name="dev",
+    ...     registrant=registrant,
+    ...     url=factory.getUniqueURL(),
+    ... )
 
     >>> print(new_branch.name)
     dev
@@ -118,13 +120,13 @@ A user can create a branch where the owner is either themselves, or a
 team that they are a member of.  Neither the owner nor the registrant
 are writable, but the owner can be set using the `setOwner` method.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> new_branch.registrant = factory.makePerson()
     Traceback (most recent call last):
       ...
     zope.security.interfaces.ForbiddenAttribute: ('registrant', <Branch ...>)
 
-    >>> team = factory.makeTeam(name='new-owner', owner=new_branch.owner)
+    >>> team = factory.makeTeam(name="new-owner", owner=new_branch.owner)
     >>> new_branch.setOwner(new_owner=team, user=new_branch.owner)
     >>> print(new_branch.registrant.name)
     registrant
@@ -137,8 +139,10 @@ and -, +, _ and @ are allowed after that.
 
     >>> owner = factory.makePerson()
     >>> namespace.createBranch(
-    ...     branch_type=BranchType.HOSTED, name='invalid name!',
-    ...     registrant=registrant)
+    ...     branch_type=BranchType.HOSTED,
+    ...     name="invalid name!",
+    ...     registrant=registrant,
+    ... )
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: Invalid branch name
@@ -185,38 +189,47 @@ order.
     >>> from datetime import datetime
     >>> from lp.testing import time_counter
     >>> import pytz
-    >>> today = datetime.now(pytz.timezone('UTC'))
-    >>> product = factory.makeProduct(name='product')
-    >>> user = factory.makePerson(name='user')
+    >>> today = datetime.now(pytz.timezone("UTC"))
+    >>> product = factory.makeProduct(name="product")
+    >>> user = factory.makePerson(name="user")
     >>> time_generator = time_counter()
 
     >>> def make_new_scanned_branch(name, owner=user, branch_type=None):
-    ...     """Create """
+    ...     """Create"""
     ...     new_branch = factory.makeProductBranch(
-    ...         branch_type=branch_type, owner=owner, product=product,
-    ...         name=name, date_created=next(time_generator))
+    ...         branch_type=branch_type,
+    ...         owner=owner,
+    ...         product=product,
+    ...         name=name,
+    ...         date_created=next(time_generator),
+    ...     )
     ...     new_branch.last_scanned = new_branch.date_created
+    ...
 
-    >>> make_new_scanned_branch('oldest')
-    >>> make_new_scanned_branch('middling')
-    >>> make_new_scanned_branch('young')
+    >>> make_new_scanned_branch("oldest")
+    >>> make_new_scanned_branch("middling")
+    >>> make_new_scanned_branch("young")
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
     >>> make_new_scanned_branch(
-    ...     'imported', owner=vcs_imports, branch_type=BranchType.IMPORTED)
+    ...     "imported", owner=vcs_imports, branch_type=BranchType.IMPORTED
+    ... )
 
     >>> for branch in branchset.getRecentlyChangedBranches(5):
-    ...   print(branch.unique_name)
+    ...     print(branch.unique_name)
+    ...
     ~user/product/young
     ~user/product/middling
     ~user/product/oldest
 
     >>> for branch in branchset.getRecentlyImportedBranches(5):
-    ...   print(branch.unique_name)
+    ...     print(branch.unique_name)
+    ...
     ~vcs-imports/product/imported
 
     >>> for branch in branchset.getRecentlyRegisteredBranches(3):
-    ...   print(branch.unique_name)
+    ...     print(branch.unique_name)
+    ...
     ~vcs-imports/product/imported
     ~user/product/young
     ~user/product/middling
@@ -229,22 +242,23 @@ It is possible to find a branch by URL. Either using the pull URL:
 
     >>> new_url = factory.getUniqueURL()
     >>> new_mirrored_branch = factory.makeAnyBranch(
-    ...     branch_type=BranchType.MIRRORED, url=new_url)
+    ...     branch_type=BranchType.MIRRORED, url=new_url
+    ... )
     >>> branch_lookup.getByUrl(new_url) == new_mirrored_branch
     True
 
 Or using the URL of the mirror of the branch on Launchpad:
 
     >>> new_branch_mirrored = (
-    ...     u'http://bazaar.launchpad.test/' +
-    ...     new_mirrored_branch.unique_name)
+    ...     "http://bazaar.launchpad.test/" + new_mirrored_branch.unique_name
+    ... )
     >>> branch_lookup.getByUrl(new_branch_mirrored) == new_mirrored_branch
     True
 
     >>> new_junk_branch = factory.makePersonalBranch()
     >>> junkcode_mirrored = (
-    ...     u'http://bazaar.launchpad.test/' +
-    ...     new_junk_branch.unique_name)
+    ...     "http://bazaar.launchpad.test/" + new_junk_branch.unique_name
+    ... )
     >>> branch_lookup.getByUrl(junkcode_mirrored) == new_junk_branch
     True
 
@@ -280,16 +294,21 @@ the enumerated types: BranchSubscriptionDiffSize, and
 BranchSubscriptionNotificationLevel.
 
     >>> from lp.code.enums import (
-    ...     BranchSubscriptionDiffSize, BranchSubscriptionNotificationLevel,
-    ...     CodeReviewNotificationLevel)
-    >>> subscriber = factory.makePerson(name='subscriber')
+    ...     BranchSubscriptionDiffSize,
+    ...     BranchSubscriptionNotificationLevel,
+    ...     CodeReviewNotificationLevel,
+    ... )
+    >>> subscriber = factory.makePerson(name="subscriber")
     >>> branch = factory.makeProductBranch(
-    ...     owner=user, product=product, name='subscribed')
+    ...     owner=user, product=product, name="subscribed"
+    ... )
     >>> subscription = branch.subscribe(
     ...     subscriber,
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.FIVEKLINES,
-    ...     CodeReviewNotificationLevel.FULL, subscriber)
+    ...     CodeReviewNotificationLevel.FULL,
+    ...     subscriber,
+    ... )
     >>> verifyObject(IBranchSubscription, subscription)
     True
 
@@ -325,7 +344,9 @@ The settings for a subscription can be changed by re-subscribing.
     ...     subscriber,
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.FIVEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL, subscriber)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ...     subscriber,
+    ... )
     >>> subscription == subscription2
     True
 
@@ -342,29 +363,44 @@ We can get the subscribers for a branch based on their level of
 subscription.
 
     >>> branch2 = factory.makeProductBranch(
-    ...     owner=user, product=product, name='subscribed2')
+    ...     owner=user, product=product, name="subscribed2"
+    ... )
 
     >>> def print_names(persons):
     ...     """Print the name of each person on a new line."""
     ...     for person in persons:
     ...         print(person.person.name)
+    ...
 
     >>> subscription = branch2.subscribe(
     ...     subscriber,
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.FIVEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL, subscriber)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ...     subscriber,
+    ... )
 
-    >>> print_names(branch2.getSubscriptionsByLevel([
-    ...     BranchSubscriptionNotificationLevel.FULL]))
+    >>> print_names(
+    ...     branch2.getSubscriptionsByLevel(
+    ...         [BranchSubscriptionNotificationLevel.FULL]
+    ...     )
+    ... )
     subscriber
 
-    >>> print_names(branch2.getSubscriptionsByLevel([
-    ...     BranchSubscriptionNotificationLevel.DIFFSONLY]))
+    >>> print_names(
+    ...     branch2.getSubscriptionsByLevel(
+    ...         [BranchSubscriptionNotificationLevel.DIFFSONLY]
+    ...     )
+    ... )
 
-    >>> print_names(branch2.getSubscriptionsByLevel([
-    ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
-    ...     BranchSubscriptionNotificationLevel.FULL]))
+    >>> print_names(
+    ...     branch2.getSubscriptionsByLevel(
+    ...         [
+    ...             BranchSubscriptionNotificationLevel.DIFFSONLY,
+    ...             BranchSubscriptionNotificationLevel.FULL,
+    ...         ]
+    ...     )
+    ... )
     subscriber
 
 
@@ -379,15 +415,17 @@ The current references to the branch table are shown here.
     >>> from lp.services.database import postgresql
     >>> from lp.services.database.sqlbase import cursor
     >>> cur = cursor()
-    >>> references = list(postgresql.listReferences(cur, 'branch', 'id'))
+    >>> references = list(postgresql.listReferences(cur, "branch", "id"))
 
-    >>> listing = sorted([
-    ...     '%s.%s' % (src_tab, src_col)
-    ...     for src_tab, src_col, ref_tab, ref_col, updact, delact
-    ...     in references
-    ...     ])
+    >>> listing = sorted(
+    ...     [
+    ...         "%s.%s" % (src_tab, src_col)
+    ...         for src_tab, src_col, ref_tab, ref_col, updact, delact in references  # noqa
+    ...     ]
+    ... )
     >>> for name in listing:
     ...     print(name)
+    ...
     branch.stacked_on
     branchjob.branch
     branchmergeproposal.dependent_branch

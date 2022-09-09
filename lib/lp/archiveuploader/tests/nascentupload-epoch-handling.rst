@@ -11,11 +11,10 @@ helper functions added in the globals by test_nascentupload_documentation.py.
 Ubuntu/hoary in sampledata is ready to receive uploads in RELEASE
 pocket.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu.getSeries("hoary")
 
     >>> print(hoary.status.name)
     DEVELOPMENT
@@ -50,7 +49,8 @@ a rejection email to the user.
 Upload and publish 'non-epoched' version:
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-1/bar_1.0-1_source.changes')
+    ...     "suite/bar_1.0-1/bar_1.0-1_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
     >>> bar_src_queue_noepoch = bar_src_upload.queue_root
@@ -66,7 +66,8 @@ Upload and publish 'non-epoched' version:
 Upload 'epoched' bar version:
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-1_epoched/bar_1.0-1_source.changes')
+    ...     "suite/bar_1.0-1_epoched/bar_1.0-1_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> print(bar_src_upload.rejection_message)
     File bar_1.0-1.diff.gz already exists in Primary Archive for Ubuntu
@@ -94,7 +95,8 @@ collisions when publishing the new candidate:
 Upload 'non-epoched' bar source:
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-1/bar_1.0-1_source.changes')
+    ...     "suite/bar_1.0-1/bar_1.0-1_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
     >>> bar_src_queue_noepoch = bar_src_upload.queue_root
@@ -104,7 +106,8 @@ Upload 'non-epoched' bar source:
 Upload 'epoched' bar source :
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-1_epoched/bar_1.0-1_source.changes')
+    ...     "suite/bar_1.0-1_epoched/bar_1.0-1_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
     >>> bar_src_queue_epoch = bar_src_upload.queue_root
@@ -114,7 +117,8 @@ Upload 'epoched' bar source :
 Upload a newer'epoched' bar source :
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-2_epoched/bar_1.0-2_source.changes')
+    ...     "suite/bar_1.0-2_epoched/bar_1.0-2_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
     >>> bar_src_queue_epoch2 = bar_src_upload.queue_root
@@ -200,7 +204,8 @@ Let's process an source upload and ensure that the resulting
 SourcePackageRelease record store a proper 'version':
 
     >>> bar_src_upload = getUploadForSource(
-    ...     'suite/bar_1.0-9/bar_1.0-9_source.changes')
+    ...     "suite/bar_1.0-9/bar_1.0-9_source.changes"
+    ... )
     >>> bar_src_upload.process()
     >>> result = bar_src_upload.do_accept()
 
@@ -220,10 +225,13 @@ For source uploads, Changes.version == DSC.version == SPR.version:
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.interfaces.publishing import IPublishingSet
     >>> getUtility(IPublishingSet).newSourcePublication(
-    ...     bar_src_upload.policy.distro.main_archive, bar_spr,
+    ...     bar_src_upload.policy.distro.main_archive,
+    ...     bar_spr,
     ...     bar_src_upload.policy.distroseries,
     ...     PackagePublishingPocket.RELEASE,
-    ...     component=bar_spr.component, section=bar_spr.section)
+    ...     component=bar_spr.component,
+    ...     section=bar_spr.section,
+    ... )
     <SourcePackagePublishingHistory at ...>
 
 Let's accept the source and claim 'build from accepted' to process the
@@ -239,7 +247,8 @@ For a binary upload we expect the same, a BinaryPackageRelease
 'version' that includes 'epoch':
 
     >>> bar_bin_upload = getUploadForBinary(
-    ...     'suite/bar_1.0-9_binary/bar_1.0-9_i386.changes')
+    ...     "suite/bar_1.0-9_binary/bar_1.0-9_i386.changes"
+    ... )
     >>> bar_bin_upload.process()
     >>> result = bar_bin_upload.do_accept()
     >>> bar_bin_queue = bar_bin_upload.queue_root

@@ -9,13 +9,12 @@ and they must be UTC
     >>> import pytz
     >>> from lp.blueprints.model.sprintattendance import SprintAttendance
 
-    >>> sprint = factory.makeSprint(title='lunarbase')
-    >>> person = factory.makePerson(name='scarlet')
-    >>> UTC = pytz.timezone('UTC')
+    >>> sprint = factory.makeSprint(title="lunarbase")
+    >>> person = factory.makePerson(name="scarlet")
+    >>> UTC = pytz.timezone("UTC")
     >>> time_starts = datetime.datetime(2019, 6, 21, 0, 0, 0, 0, UTC)
     >>> time_ends = datetime.datetime(2019, 7, 4, 0, 0, 0, 0, UTC)
-    >>> sprint_attendance = SprintAttendance(
-    ...     sprint=sprint, attendee=person)
+    >>> sprint_attendance = SprintAttendance(sprint=sprint, attendee=person)
     >>> sprint_attendance.time_starts = time_starts
     >>> sprint_attendance.time_ends = time_ends
 
@@ -23,7 +22,8 @@ The SprintAttendance object implements ISprintAttendance.
 
     >>> from lp.testing import verifyObject
     >>> from lp.blueprints.interfaces.sprintattendance import (
-    ...     ISprintAttendance)
+    ...     ISprintAttendance,
+    ... )
     >>> verifyObject(ISprintAttendance, sprint_attendance)
     True
 

@@ -17,25 +17,30 @@ can be used for subordinate field indentation, for example.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
     >>> class ITestSchema(Interface):
-    ...     displayname = TextLine(title=u"Title")
-    ...     nickname = TextLine(title=u"Nickname")
+    ...     displayname = TextLine(title="Title")
+    ...     nickname = TextLine(title="Nickname")
+    ...
 
     >>> class TestView(LaunchpadFormView):
-    ...     page_title = 'Test'
+    ...     page_title = "Test"
     ...     template = ViewPageTemplateFile(
-    ...         config.root + '/lib/lp/app/templates/generic-edit.pt')
+    ...         config.root + "/lib/lp/app/templates/generic-edit.pt"
+    ...     )
     ...     schema = ITestSchema
     ...     custom_widget_nickname = CustomWidgetFactory(
-    ...         TextWidget, widget_class='field subordinate')
+    ...         TextWidget, widget_class="field subordinate"
+    ...     )
+    ...
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> person = factory.makePerson()
     >>> request = LaunchpadTestRequest()
     >>> request.setPrincipal(person)
     >>> view = TestView(person, request)
     >>> view.initialize()
-    >>> for tag in find_tags_by_class(view.render(), 'subordinate'):
+    >>> for tag in find_tags_by_class(view.render(), "subordinate"):
     ...     print(tag)
+    ...
     <div class="field subordinate">
     <label for="field.nickname">Nickname:</label>
     <div>

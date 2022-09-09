@@ -24,12 +24,13 @@ Need more than one package and product branch to show links.
 If there is no link, you are not allowed to propose a package branch to merge
 with a product branch.
 
-    >>> browser = setupBrowser(auth='Basic eric@example.com:test')
+    >>> browser = setupBrowser(auth="Basic eric@example.com:test")
     >>> browser.open(b1_url)
-    >>> browser.getLink('Propose for merging').click()
+    >>> browser.getLink("Propose for merging").click()
     >>> browser.getControl(
-    ...     name="field.target_branch.target_branch").value = b2_name
-    >>> browser.getControl('Propose Merge').click()
+    ...     name="field.target_branch.target_branch"
+    ... ).value = b2_name
+    >>> browser.getControl("Propose Merge").click()
 
     >>> print_errors(browser.contents)
     There is 1 error.
@@ -45,7 +46,8 @@ Linking the packages makes this possible.
     >>> logout()
 
     >>> browser.open(b1_url)
-    >>> browser.getLink('Propose for merging').click()
+    >>> browser.getLink("Propose for merging").click()
     >>> browser.getControl(
-    ...     name="field.target_branch.target_branch").value = b2_name
-    >>> browser.getControl('Propose Merge').click()
+    ...     name="field.target_branch.target_branch"
+    ... ).value = b2_name
+    >>> browser.getControl("Propose Merge").click()

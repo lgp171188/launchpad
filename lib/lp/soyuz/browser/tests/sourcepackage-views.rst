@@ -12,9 +12,9 @@ Empty request.
 
 Retrieve an known Sourcepackage object:
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
-    >>> pmount = hoary.getSourcePackage('pmount')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
+    >>> pmount = hoary.getSourcePackage("pmount")
 
 Retrieve its respective View class:
 
@@ -39,9 +39,11 @@ Each pocket should only contain packages marked as PUBLISHED.
 
     >>> for pub in pmount_view.published_by_pocket():
     ...     pkg_versions = [
-    ...         (p['spr'].version, p['component_name'])
-    ...         for p in pub['packages']]
-    ...     print(pub['pocketdetails'].title, pretty(sorted(pkg_versions)))
+    ...         (p["spr"].version, p["component_name"])
+    ...         for p in pub["packages"]
+    ...     ]
+    ...     print(pub["pocketdetails"].title, pretty(sorted(pkg_versions)))
+    ...
     Release [('0.1-2', 'main')]
     Security []
     Updates []
@@ -54,8 +56,8 @@ binarypackagename and the architecture where it was built.
 
 Let's retrieve a new view with useful dependency data:
 
-    >>> warty = ubuntu['warty']
-    >>> firefox = warty.getSourcePackage('mozilla-firefox')
+    >>> warty = ubuntu["warty"]
+    >>> firefox = warty.getSourcePackage("mozilla-firefox")
     >>> firefox_view = queryMultiAdapter((firefox, request), name="+index")
 
 XXX cprov 20060210: this method is very confusing because the
@@ -64,7 +66,8 @@ architecture independent and we don't know at this point, that's why we
 have only on binary.
 
     >>> for bin_name, archs in sorted(firefox_view.binaries().items()):
-    ...    print(bin_name, pretty(archs))
+    ...     print(bin_name, pretty(archs))
+    ...
     mozilla-firefox ['hppa', 'i386']
     mozilla-firefox-data ['hppa', 'i386']
 
@@ -75,13 +78,14 @@ return a IPackageRelationshipSet object (see package-relationship.rst).
 
     >>> from lp.soyuz.interfaces.packagerelationship import (
     ...     IPackageRelationshipSet,
-    ...     )
+    ... )
     >>> from lp.testing import verifyObject
     >>> verifyObject(IPackageRelationshipSet, firefox_parsed_depends)
     True
 
     >>> for dep in firefox_parsed_depends:
-    ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...     print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...
     ('gcc-3.4', '>=', '3.4.1-4sarge1', None)
     ('gcc-3.4', '<<', '3.4.2', None)
     ('gcc-3.4-base', None, '', None)
@@ -96,7 +100,8 @@ return a IPackageRelationshipSet object (see package-relationship.rst).
     True
 
     >>> for dep in firefox_parsed_dependsindep:
-    ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...     print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...
     ('bacula-common', '=', '1.34.6-2', None)
     ('bacula-director-common', '=', '1.34.6-2', None)
     ('pmount', None, '', 'http://launchpad.test/ubuntu/warty/+package/pmount')
@@ -105,7 +110,7 @@ return a IPackageRelationshipSet object (see package-relationship.rst).
 Ensure we have fixed bug 31039, by properly escape the
 sourcepackagename before passing to regexp.
 
-    >>> libc = ubuntu.getSourcePackage('libstdc++').getVersion('b8p')
+    >>> libc = ubuntu.getSourcePackage("libstdc++").getVersion("b8p")
     >>> libc_view = queryMultiAdapter((libc, request), name="+changelog")
     >>> print(libc_view.changelog_entry)  # noqa
     libstdc++ (9.9-1) hoary; urgency=high

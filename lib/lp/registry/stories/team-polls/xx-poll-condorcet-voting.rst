@@ -4,20 +4,28 @@
   Go to a condorcet-style poll (which is still open) and check that apart
   from seeing our vote we can also change it.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes2 HTTP/1.1
     ... Accept-Language: en-us,en;q=0.5
     ... Authorization: Basic foo.bar@canonical.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: http://localhost/~ubuntu-team/+poll/never-closes2/+vote
     ...
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     ...You must enter your vote key...
@@ -28,10 +36,14 @@
   If a non-member (Sample Person) guesses the voting URL and tries to vote,
   they won't be allowed.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
     ... Authorization: Basic dGVzdEBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...You can&#8217;t vote in this poll because you&#8217;re not...
     ...a member of Ubuntu Team...
@@ -39,13 +51,17 @@
 
   By providing the token we will be able to see our current vote.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
     ... Content-Type: application/x-www-form-urlencoded
     ... Referer: https://launchpad.test/
     ...
-    ... token=xn9FDCTp4m&showvote=Show+My+Vote&option_12=&option_13=&option_14=&option_15="""))
+    ... token=xn9FDCTp4m&showvote=Show+My+Vote&option_12=&option_13=&option_14=&option_15="""
+    ...     )
+    ... )
     ... # noqa
     HTTP/1.1 200 Ok
     ...
@@ -76,13 +92,17 @@
 
   It's also possible to change the vote, if wanted.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
     ... Content-Type: application/x-www-form-urlencoded
     ... Referer: https://launchpad.test/
     ...
-    ... token=xn9FDCTp4m&option_12=2&option_13=3&option_14=4&option_15=1&changevote=Change+Vote"""))
+    ... token=xn9FDCTp4m&option_12=2&option_13=3&option_14=4&option_15=1&changevote=Change+Vote"""
+    ...     )
+    ... )
     ... # noqa
     HTTP/1.1 200 Ok
     ...
@@ -119,19 +139,27 @@
   Now we go to another poll in which name16 voted. But this time it's a public
   one, so there's no need to provide the token to see the current vote.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes3 HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: http://localhost/~ubuntu-team/+poll/never-closes3/+vote
     ...
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes3/+vote HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
                     <p>Your current vote is as follows:</p>
@@ -165,13 +193,17 @@
   Now we change the vote and we see the new vote displayed as our current
   vote.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /~ubuntu-team/+poll/never-closes3/+vote HTTP/1.1
     ... Authorization: Basic foo.bar@canonical.com:test
     ... Content-Type: application/x-www-form-urlencoded
     ... Referer: https://launchpad.test/
     ...
-    ... option_16=4&option_17=2&option_18=1&option_19=3&changevote=Change+Vote"""))
+    ... option_16=4&option_17=2&option_18=1&option_19=3&changevote=Change+Vote"""
+    ...     )
+    ... )
     ... # noqa
     HTTP/1.1 200 Ok
     ...
@@ -207,10 +239,14 @@
   public condorcet-style poll that's still open and get redirected to a page
   where it's possible to vote (and see the current vote).
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes3 HTTP/1.1
     ... Authorization: Basic mark@example.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: http://localhost/~ubuntu-team/+poll/never-closes3/+vote
@@ -220,10 +256,14 @@
   And here we'll see the form which says you haven't voted yet and allows you
   to vote.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /~ubuntu-team/+poll/never-closes3/+vote HTTP/1.1
     ... Authorization: Basic mark@example.com:test
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     ...Your current vote...

@@ -4,27 +4,29 @@ The Product Bugs Page
 The +bugs-index page for a product on the bugs domain presents some basic
 information the bugs in it. It also displays the list of bugs.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/firefox/+bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox/+bugs")
     >>> anon_browser.title
     'Bugs : Mozilla Firefox'
     >>> find_tags_by_class(
-    ...     anon_browser.contents, 'buglisting-row') is not None
+    ...     anon_browser.contents, "buglisting-row"
+    ... ) is not None
     True
 
 The page has a link to see all open bugs.
 
-    >>> anon_browser.getLink('Open bugs').click()
+    >>> anon_browser.getLink("Open bugs").click()
     >>> anon_browser.url
     'http://bugs.launchpad.test/firefox/+bugs'
     >>> find_tags_by_class(
-    ...     anon_browser.contents, 'buglisting-row') is not None
+    ...     anon_browser.contents, "buglisting-row"
+    ... ) is not None
     True
 
 It also has a link to subscribe to bug mail (which is implemented in
 JavaScript so it doesn't actually go anywhere).
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bugs')
-    >>> user_browser.getLink('Subscribe to bug mail').click()
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bugs")
+    >>> user_browser.getLink("Subscribe to bug mail").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+subscribe'
 
@@ -33,11 +35,11 @@ CVE Bugs
 
 It also displays the number of open bugs associated with a CVE.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/evolution/+bugs')
-    >>> cve_bugs_link = anon_browser.getLink('Open CVE bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/evolution/+bugs")
+    >>> cve_bugs_link = anon_browser.getLink("Open CVE bugs")
 
-    >>> anon_browser.open('http://bugs.launchpad.test/firefox/+bugs')
-    >>> cve_bugs_link = anon_browser.getLink('Open CVE bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox/+bugs")
+    >>> cve_bugs_link = anon_browser.getLink("Open CVE bugs")
 
 The link takes you to the list of bugs with CVEs linked to them.
 
@@ -55,7 +57,7 @@ other context. For example, users can see all bugs raised against
 Mozilla Firefox that are fixed in some other context:
 
     >>> anon_browser.goBack(1)
-    >>> fixed_elsewhere_link = anon_browser.getLink('Bugs fixed elsewhere')
+    >>> fixed_elsewhere_link = anon_browser.getLink("Bugs fixed elsewhere")
 
 The link takes you to the list of the bugs fixed elsewhere:
 
@@ -76,8 +78,8 @@ The bugs page displays the number of Incomplete, unattended bugs that
 can expire when the project has enabled bug expiration. Jokosher
 is such a project.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/jokosher')
-    >>> expirable_bugs_link = anon_browser.getLink('Incomplete bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/jokosher")
+    >>> expirable_bugs_link = anon_browser.getLink("Incomplete bugs")
 
 The link goes to the expirable bugs page, where the anonymous user can
 see which bugs will expire if they are not confirmed.
@@ -89,8 +91,8 @@ see which bugs will expire if they are not confirmed.
 Product series may also have a link to expirable bugs. Jokosher's trunk
 series has the link because Jokosher has enabled bug expiration.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/jokosher/trunk')
-    >>> expirable_bugs_link = anon_browser.getLink('Incomplete bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/jokosher/trunk")
+    >>> expirable_bugs_link = anon_browser.getLink("Incomplete bugs")
     >>> expirable_bugs_link.click()
     >>> print(anon_browser.title)
     Expirable bugs : Series trunk : Bugs : Jokosher
@@ -98,8 +100,8 @@ series has the link because Jokosher has enabled bug expiration.
 Thunderbird has not enabled bug expiration; the anonymous user
 cannot see any link reporting that bugs can expire.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/thunderbird')
-    >>> expirable_bugs_link = anon_browser.getLink('Incomplete bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/thunderbird")
+    >>> expirable_bugs_link = anon_browser.getLink("Incomplete bugs")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -111,9 +113,9 @@ Tags and Filters
 There's also portlets for easy searching by tags and filters. Its content is
 loaded using Javascript in a separate request.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/firefox')
-    >>> tags_portlet = find_tag_by_id(anon_browser.contents, 'portlet-tags')
-    >>> anon_browser.getLink(id='tags-content-link').click()
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox")
+    >>> tags_portlet = find_tag_by_id(anon_browser.contents, "portlet-tags")
+    >>> anon_browser.getLink(id="tags-content-link").click()
     >>> print(extract_text(anon_browser.contents))
     Tags
     1
@@ -125,13 +127,13 @@ They are there to provide easy navigation for bugs with a certain
 tag...
 
     >>> from lp.bugs.tests.bug import print_bugtasks
-    >>> anon_browser.getLink('layout-test').click()
+    >>> anon_browser.getLink("layout-test").click()
     >>> print_bugtasks(anon_browser.contents)
     4  Reflow problems with complex page layouts Mozilla Firefox
        Medium New
 
-    >>> anon_browser.open('http://bugs.launchpad.test/firefox')
-    >>> anon_browser.getLink('Critical bugs').click()
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox")
+    >>> anon_browser.getLink("Critical bugs").click()
     >>> print_bugtasks(anon_browser.contents)
     5 Firefox install instructions should be complete Mozilla Firefox
       Critical New
