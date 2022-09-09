@@ -212,13 +212,13 @@ class ArchivePublisherBase:
 
     @property
     def component_name(self):
-        """See `ISourcePackagePublishingHistory`"""
-        return self.component.name
+        """See `IPublishingView`."""
+        return self.component.name if self.component is not None else None
 
     @property
     def section_name(self):
-        """See `ISourcePackagePublishingHistory`"""
-        return self.section.name
+        """See `IPublishingView`."""
+        return self.section.name if self.section is not None else None
 
 
 @implementer(ISourcePackagePublishingHistory)
@@ -898,7 +898,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     @property
     def priority_name(self):
         """See `IBinaryPackagePublishingHistory`"""
-        return self.priority.name
+        return self.priority.name if self.priority is not None else None
 
     @property
     def displayname(self):

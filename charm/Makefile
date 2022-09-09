@@ -16,7 +16,7 @@ BUILD_LABEL = $(shell git rev-parse HEAD)
 TARBALL = $(APP_NAME).tar.gz
 ASSET = ../build/$(BUILD_LABEL)/$(TARBALL)
 
-CHARMS := launchpad
+CHARMS := launchpad-appserver
 
 all: ## alias to build
 all: build
@@ -41,8 +41,8 @@ $(CHARM_DEPS): $(CURDIR)/dependencies.txt | $(TMPDIR)
 build: ## build all the charms
 build: $(foreach charm,$(CHARMS),build-$(charm))
 
-build-launchpad: ## build the launchpad charm
-build-launchpad: dist/$(call charm_file,launchpad)
+build-launchpad-appserver: ## build the launchpad-appserver charm
+build-launchpad-appserver: dist/$(call charm_file,launchpad-appserver)
 
 dist/%_ubuntu-$(CHARM_SERIES)-$(ARCH).charm: $(CHARM_DEPS) | $(BUILDDIR)
 	echo "Building $*..."

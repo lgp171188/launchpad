@@ -231,5 +231,5 @@ itself.
     89
     [<gpgme.Signature object at ...>]
     7
-
+    >>> gpghandler.resetLocalState()
     >>> keyserver.tearDown()

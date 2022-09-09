@@ -487,7 +487,7 @@ changes file:
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb
     control file lists section as main/editors but changes file has
-    main/net.',)]
+    main/net.'...)]
 
 It also checks the priority against the changes file:
 
@@ -497,7 +497,7 @@ It also checks the priority against the changes file:
     ...     modified_insecure_policy, DevNullLogger())
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb
-    control file lists priority as important but changes file has extra.',)]
+    control file lists priority as important but changes file has extra.'...)]
 
 The timestamp of the files in the .deb are tested against the policy for
 being too new:
@@ -515,7 +515,7 @@ being too new:
     >>> list(ed_binary_deb.verifyDebTimestamp())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far into the future
-    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).'...)]
 
 ... as well as for being too old:
 
@@ -530,4 +530,4 @@ being too new:
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far in the past
-    (e.g. ./ [Thu Jan  3 19:29:00 2008]).',)]
+    (e.g. ./ [Thu Jan  3 19:29:00 2008]).'...)]

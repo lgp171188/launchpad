@@ -5,11 +5,17 @@
 
 from functools import partial
 
+from testtools.matchers import ContainsDict, Equals, Is
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
+from lp.soyuz.enums import BinaryPackageFormat
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.testing import (
     TestCaseWithFactory,
     api_url,
@@ -120,6 +126,44 @@ class SourcePackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertTrue(response.jsonBody())
 
+    def test_ci_build(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
+        with person_logged_in(person):
+            distroseries = self.factory.makeDistroSeries()
+            archive = self.factory.makeArchive(
+                distribution=distroseries.distribution
+            )
+            build = self.factory.makeCIBuild()
+            owner = build.git_repository.owner
+            spn = self.factory.makeSourcePackageName()
+            spr = build.createSourcePackageRelease(
+                distroseries, spn, "1.0", creator=owner, archive=archive
+            )
+            spph = self.factory.makeSourcePackagePublishingHistory(
+                sourcepackagerelease=spr,
+                format=SourcePackageType.CI_BUILD,
+            )
+            url = api_url(spph)
+
+        response = webservice.get(url, api_version="devel")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(person):
+            self.assertThat(
+                response.jsonBody(),
+                ContainsDict(
+                    {
+                        "component_name": Is(None),
+                        "section_name": Is(None),
+                        "source_package_name": Equals(spn.name),
+                        "source_package_version": Equals(spr.version),
+                    }
+                ),
+            )
+
 
 class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
 
@@ -196,3 +240,47 @@ class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
                 for bpf in bpph.binarypackagerelease.files
             ]
         self.assertContentEqual(expected_info, info)
+
+    def test_ci_build(self):
+        person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.READ_PUBLIC
+        )
+        with person_logged_in(person):
+            das = self.factory.makeDistroArchSeries()
+            archive = self.factory.makeArchive(
+                distribution=das.distroseries.distribution
+            )
+            build = self.factory.makeCIBuild()
+            bpn = self.factory.makeBinaryPackageName()
+            bpr = build.createBinaryPackageRelease(
+                bpn,
+                "1.0",
+                "test summary",
+                "test description",
+                BinaryPackageFormat.WHL,
+                False,
+            )
+            [bpph] = getUtility(IPublishingSet).publishBinaries(
+                archive,
+                das.distroseries,
+                PackagePublishingPocket.RELEASE,
+                {bpr: (None, None, None, None)},
+            )
+            url = api_url(bpph)
+
+        response = webservice.get(url, api_version="devel")
+
+        self.assertEqual(200, response.status)
+        with person_logged_in(person):
+            self.assertThat(
+                response.jsonBody(),
+                ContainsDict(
+                    {
+                        "binary_package_name": Equals(bpn.name),
+                        "binary_package_version": Equals(bpr.version),
+                        "component_name": Is(None),
+                        "section_name": Is(None),
+                    }
+                ),
+            )

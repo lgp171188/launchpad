@@ -1,4 +1,56 @@
 options:
+  cron_control_url:
+    type: string
+    description: URL of file used to control whether cron scripts run.
+    default: "file:cronscripts.ini"
+  db_primary:
+    type: string
+    description: Connection string for primary database.
+    default: ""
+  db_session:
+    type: string
+    description: Connection string for session database.
+    default: ""
+  db_standby:
+    type: string
+    description: Connection string for standby database, if any.
+    default: ""
+  domain:
+    type: string
+    description: Domain name for this instance.
+    default: "launchpad.test"
+  domain_xmlrpc_private:
+    type: string
+    description: Domain name for this instance's private XML-RPC service.
+    default: "xmlrpc-private.launchpad.test"
+  http_proxy:
+    type: string
+    description: Proxy to be used when issuing HTTP requests.
+    default: ""
+  log_hosts_allow:
+    type: string
+    description: >
+      Hosts that should be allowed to rsync logs.  Note that this relies on
+      the nrpe subordinate charm to set up /etc/rsyncd.conf properly.
+    default: ""
+  oops_prefix:
+    type: string
+    description: A prefix for OOPS codes for this instance.
+    default: "TEST"
+  openid_alternate_provider_roots:
+    type: string
+    description: >
+      Comma-separated list of additional URLs to recognise as valid prefixes
+      for our accounts' OpenID identifiers.
+    default: ""
+  openid_provider_root:
+    type: string
+    description: URL to the OpenID provider to authenticate against.
+    default: https://testopenid.test/
+  session_cookie_name:
+    type: string
+    description: The ID of the cookie used to store the session token.
+    default: launchpad_dev
   # layer-apt
   install_sources:
     default: |

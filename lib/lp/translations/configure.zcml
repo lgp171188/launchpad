@@ -520,6 +520,14 @@
                 interface="lp.translations.interfaces.translationmessage.ITranslationMessageSet"/>
         </securedutility>
 
+        <!-- CurrentTranslations -->
+        <securedutility
+            class="lp.translations.model.currenttranslations.CurrentTranslations"
+            provides="lp.translations.interfaces.currenttranslations.ICurrentTranslations">
+            <allow
+                interface="lp.translations.interfaces.currenttranslations.ICurrentTranslations"/>
+        </securedutility>
+
         <!-- TranslationSideTraits -->
         <class class="lp.translations.model.side.TranslationSideTraits">
           <allow interface="lp.translations.interfaces.side.ITranslationSideTraits"/>

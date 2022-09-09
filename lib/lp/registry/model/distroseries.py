@@ -153,21 +153,21 @@ DEFAULT_INDEX_COMPRESSORS = [
 ]
 
 
+@delegate_to(ISpecificationTarget, context="distribution")
 @implementer(
     IBugSummaryDimension,
     IDistroSeries,
     IHasQueueItems,
     ISeriesBugTarget,
 )
-@delegate_to(ISpecificationTarget, context="distribution")
 class DistroSeries(
     SQLBase,
+    SeriesMixin,
     BugTargetBase,
     HasSpecificationsMixin,
+    HasMilestonesMixin,
     HasTranslationImportsMixin,
     HasTranslationTemplatesMixin,
-    HasMilestonesMixin,
-    SeriesMixin,
     StructuralSubscriptionTargetMixin,
 ):
     """A particular series of a distribution."""

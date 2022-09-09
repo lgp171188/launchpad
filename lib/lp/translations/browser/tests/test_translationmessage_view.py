@@ -12,11 +12,13 @@ from lp.app.errors import UnexpectedFormData
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    StormStatementRecorder,
     TestCaseWithFactory,
     anonymous_logged_in,
     person_logged_in,
 )
 from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
+from lp.testing.matchers import HasQueryCount
 from lp.testing.views import create_view
 from lp.translations.browser.translationmessage import (
     CurrentTranslationMessagePageView,
@@ -26,6 +28,7 @@ from lp.translations.browser.translationmessage import (
     revert_unselected_translations,
 )
 from lp.translations.enums import TranslationPermission
+from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.interfaces.side import ITranslationSideTraitsSet
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
@@ -42,8 +45,8 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
             yield now
             now += timedelta(milliseconds=1)
 
-    def setUp(self):
-        super().setUp()
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
         self.owner = self.factory.makePerson()
         self.potemplate = self.factory.makePOTemplate(owner=self.owner)
         self.pofile = self.factory.makePOFile(potemplate=self.potemplate)
@@ -53,15 +56,15 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
 
     def _createView(self, message):
         self.view = CurrentTranslationMessageView(
-            message,
-            LaunchpadTestRequest(),
-            {},
-            dict(enumerate(message.translations)),
-            False,
-            False,
-            None,
-            None,
-            True,
+            current_translation_message=message,
+            request=LaunchpadTestRequest(),
+            plural_indices_to_store={},
+            translations=dict(enumerate(message.translations)),
+            force_suggestion=False,
+            force_diverge=False,
+            error=None,
+            second_lang_code=None,
+            form_is_writeable=True,
             pofile=self.pofile,
             can_edit=True,
         )
@@ -220,6 +223,108 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         self._makeTranslation(suggestion=True)
         self._createView(message)
         self._assertConfirmEmptyPluralOther(True, False, False, False)
+
+
+class TestCurrentTranslationMessageView(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        self.owner = self.factory.makePerson()
+        self.potemplate = self.factory.makePOTemplate(owner=self.owner)
+        self.pofile = self.factory.makePOFile(potemplate=self.potemplate)
+        self.potmsgset = self.factory.makePOTMsgSet(
+            self.potemplate, singular="original message"
+        )
+        self.rejected_message_count = 0
+
+    def test_externally_used_and_suggested_messages(self):
+        message = self.factory.makeCurrentTranslationMessage(
+            self.pofile,
+            self.potmsgset,
+            translator=self.owner,
+        )
+        external_potemplate = self.factory.makePOTemplate(owner=self.owner)
+        external_pofile = self.factory.makePOFile(
+            potemplate=external_potemplate, language=self.pofile.language
+        )
+        external_potmsgset = self.factory.makePOTMsgSet(
+            external_potemplate, singular="original message"
+        )
+        externally_used_message = self.factory.makeCurrentTranslationMessage(
+            external_pofile,
+            external_potmsgset,
+            translator=self.owner,
+            translations=["used message"],
+        )
+        externally_suggested_message = self.factory.makeSuggestion(
+            external_pofile,
+            external_potmsgset,
+            translator=self.owner,
+            translations=["suggested message"],
+            date_created=externally_used_message.date_reviewed
+            + timedelta(days=1),
+        )
+        externally_rejected_message = self.factory.makeSuggestion(
+            external_pofile,
+            external_potmsgset,
+            translator=self.owner,
+            translations=["rejected message"],
+            date_created=externally_used_message.date_reviewed
+            - timedelta(days=1),
+        )
+        potemplateset = getUtility(IPOTemplateSet)
+        potemplateset.wipeSuggestivePOTemplatesCache()
+        potemplateset.populateSuggestivePOTemplatesCache()
+        view = CurrentTranslationMessageView(
+            current_translation_message=message,
+            request=LaunchpadTestRequest(),
+            plural_indices_to_store={},
+            translations=dict(enumerate(message.translations)),
+            force_suggestion=False,
+            force_diverge=False,
+            error=None,
+            second_lang_code=None,
+            form_is_writeable=True,
+            pofile=self.pofile,
+            can_edit=True,
+        )
+        with StormStatementRecorder() as recorder_1:
+            view.initialize()
+        externally_used_messages = {
+            s.translationmessage
+            for s in view.suggestion_blocks[0][1].submissions
+        }
+        externally_suggested_messages = {
+            s.translationmessage
+            for s in view.suggestion_blocks[0][2].submissions
+        }
+        self.assertIn(externally_used_message, externally_used_messages)
+        self.assertIn(
+            externally_suggested_message, externally_suggested_messages
+        )
+        self.assertNotIn(
+            externally_rejected_message, externally_suggested_messages
+        )
+
+        # Check that adding more rejected messages
+        # doesn't increase the number of SQL queries
+        for i in range(5, 1):
+            self.factory.makeSuggestion(
+                external_pofile,
+                external_potmsgset,
+                translator=self.owner,
+                translations=["rejected message {}".format(i)],
+                date_created=externally_used_message.date_reviewed
+                - timedelta(days=1 + i),
+            )
+        with StormStatementRecorder() as recorder_2:
+            view.initialize()
+        potemplateset.wipeSuggestivePOTemplatesCache()
+        potemplateset.populateSuggestivePOTemplatesCache()
+
+        self.assertThat(recorder_2, HasQueryCount.byEquality(recorder_1))
 
 
 class TestResetTranslations(TestCaseWithFactory):

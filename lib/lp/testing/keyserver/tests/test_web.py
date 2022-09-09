@@ -139,7 +139,6 @@ pub  1024D/DFD20543 2005-04-13 Sample Person (revoked) &lt;sample.revoked@canoni
 <title>Results for Key 0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543</title>
 ...
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1.4.9 (GNU/Linux)
 <BLANKLINE>
 mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 ...
@@ -157,7 +156,6 @@ mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 <title>Results for Key 0xDFD20543</title>
 ...
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1.4.9 (GNU/Linux)
 <BLANKLINE>
 mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 ...

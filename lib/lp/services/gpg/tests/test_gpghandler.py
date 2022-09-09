@@ -117,12 +117,12 @@ class TestGPGHandler(TestCase):
         fingerprints = {
             key.fingerprint for key in self.gpg_handler.localKeys()
         }
-        self.assertTrue(
-            "340CA3BB270E2716C9EE0B768E7EB7086C64A8C5" in fingerprints
-        )
-        self.assertTrue(
-            "A419AE861E88BC9E04B9C26FBA2B9389DFD20543" in fingerprints
-        )
+        # foo.bar@canonical.com
+        self.assertIn("340CA3BB270E2716C9EE0B768E7EB7086C64A8C5", fingerprints)
+        # test@canonical.com
+        self.assertIn("A419AE861E88BC9E04B9C26FBA2B9389DFD20543", fingerprints)
+        # foo.bar@canonical.com-nistp256
+        self.assertIn("7DF8FEA9E998922E7CCB3EC9BF5D16BC1C0A8AE4", fingerprints)
 
     def testFilteredGetKeys(self):
         """Check the filtered key lookup mechanism.

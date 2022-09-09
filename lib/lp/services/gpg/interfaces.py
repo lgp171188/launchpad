@@ -25,7 +25,6 @@ __all__ = [
 ]
 
 import http.client
-import os.path
 import re
 
 from lazr.enum import DBEnumeratedType, DBItem
@@ -57,15 +56,8 @@ def valid_keyid(keyid):
 
 
 def get_gpg_path():
-    """Return the path to the GPG executable we prefer.
-
-    We stick to GnuPG 1 until we've worked out how to get things working
-    with GnuPG 2.
-    """
-    if os.path.exists("/usr/bin/gpg1"):
-        return "/usr/bin/gpg1"
-    else:
-        return "/usr/bin/gpg"
+    """Return the path to the GPG executable we prefer."""
+    return "/usr/bin/gpg2"
 
 
 def get_gpgme_context():
@@ -85,10 +77,14 @@ class GPGKeyAlgorithm(DBEnumeratedType):
     """
     GPG Compliant Key Algorithms Types:
 
-    1 : "R", # RSA
-    16: "g", # ElGamal
-    17: "D", # DSA
-    20: "G", # ElGamal, compromised
+    1  : "R", # RSA
+    16 : "g", # ElGamal
+    17 : "D", # DSA
+    20 : "G", # ElGamal, compromised
+    301: "E", # ECDSA
+    302: "e", # ECDH
+
+    See `pubkey_letter` in GnuPG for the single-letter codes used here.
 
     FIXME
     Rewrite it according to the experimental API returning also a name
@@ -126,6 +122,22 @@ class GPGKeyAlgorithm(DBEnumeratedType):
         G
 
         ElGamal, compromised""",
+    )
+
+    ECDSA = DBItem(
+        301,
+        """
+        E
+
+        ECDSA""",
+    )
+
+    ECDH = DBItem(
+        302,
+        """
+        e
+
+        ECDH""",
     )
 
 
@@ -438,13 +450,14 @@ class IPymeKey(Interface):
         "Whether the key can be used for authentication"
     )
 
-    def export():
+    def export(secret_passphrase=""):
         """Export the context key in ASCII-armored mode.
 
         Both public and secret keys are supported, although secret keys are
         exported by calling `gpg` process while public ones use the native
         gpgme API.
 
+        :param secret_passphrase: The passphrase, if exporting a secret key.
         :return: a string containing the exported key.
         """
 

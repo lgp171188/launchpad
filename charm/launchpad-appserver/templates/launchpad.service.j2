@@ -1,0 +1,24 @@
+[Unit]
+Description=Launchpad application server
+After=network.target
+ConditionPathExists=!{{ code_dir }}/maintenance.txt
+
+[Service]
+User=launchpad
+Group=launchpad
+WorkingDirectory={{ code_dir }}
+LimitCORE=infinity
+Environment=LPCONFIG=launchpad-appserver
+SyslogIdentifier=launchpad
+ExecStart={{ code_dir }}/bin/run -i ${LPCONFIG}
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+Restart=on-failure
+# gunicorn is configured to gracefully shut down over two minutes.  Allow a
+# few more seconds, then kill it if necessary.
+TimeoutStopSec=125
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
