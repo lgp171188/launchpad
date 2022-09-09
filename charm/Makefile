@@ -8,7 +8,7 @@ TMPDIR := $(CURDIR)/tmp
 CHARM_LAYERS_DIR := $(TMPDIR)/deps/ols-layers/layer
 CHARM_INTERFACES_DIR := $(TMPDIR)/deps/ols-layers/interface
 
-CHARM_SERIES ?= 18.04
+CHARM_SERIES ?= 20.04
 ARCH := $(shell dpkg --print-architecture)
 charm_file = $(1)_ubuntu-$(CHARM_SERIES)-$(ARCH).charm
 
