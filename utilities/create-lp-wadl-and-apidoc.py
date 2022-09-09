@@ -133,8 +133,8 @@ def main(directory, force=False):
     template = PageTemplateFile(template_file)
     index_filename = os.path.join(directory, "index.html")
     print("Writing index:", index_filename)
-    f = open(index_filename, "w")
-    f.write(template(config=config))
+    with open(index_filename, "w") as f:
+        f.write(template(config=config))
 
     # Get the time of the last commit.  We will use this as the mtime for the
     # generated files so that we can safely use it as part of Apache's etag
