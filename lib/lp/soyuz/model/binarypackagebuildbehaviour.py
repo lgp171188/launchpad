@@ -22,13 +22,11 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.twistedsupport import cancel_on_timeout
-from lp.services.webapp import urlappend
 from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
     get_sources_list_for_building,
 )
 from lp.soyuz.enums import ArchivePurpose
-from lp.soyuz.model.publishing import makePoolPath
 
 
 @implementer(IBuildFarmJobBehaviour)
@@ -70,35 +68,20 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         """See `IBuildFarmJobBehaviour`."""
         # Build filemap structure with the files required in this build
         # and send them to the worker.
-        if self.build.archive.private:
-            # Builds in private archive may have restricted files that
-            # we can't obtain from the public librarian. Prepare a pool
-            # URL from which to fetch them.
-            pool_url = urlappend(
-                self.build.archive.archive_url,
-                makePoolPath(
-                    self.build.source_package_release.sourcepackagename.name,
-                    self.build.current_component.name,
-                ),
-            )
         filemap = OrderedDict()
         macaroon_raw = None
         for source_file in self.build.source_package_release.files:
             lfa = source_file.libraryfile
-            if not self.build.archive.private:
-                filemap[lfa.filename] = {
-                    "sha1": lfa.content.sha1,
-                    "url": lfa.http_url,
-                }
-            else:
+            filemap[lfa.filename] = {
+                "sha1": lfa.content.sha1,
+                "url": lfa.https_url,
+            }
+            if self.build.archive.private:
                 if macaroon_raw is None:
                     macaroon_raw = yield self.issueMacaroon()
-                filemap[lfa.filename] = {
-                    "sha1": lfa.content.sha1,
-                    "url": urlappend(pool_url, lfa.filename),
-                    "username": "buildd",
-                    "password": macaroon_raw,
-                }
+                filemap[lfa.filename].update(
+                    username="", password=macaroon_raw
+                )
         return filemap
 
     def verifyBuildRequest(self, logger):

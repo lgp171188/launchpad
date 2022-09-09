@@ -18,7 +18,6 @@ from twisted.internet import defer
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.archivepublisher.diskpool import poolify
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
@@ -92,8 +91,6 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         archive,
         archive_purpose,
         component=None,
-        extra_uploads=None,
-        filemap_names=None,
     ):
         matcher = yield self.makeExpectedInteraction(
             builder,
@@ -103,8 +100,6 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             archive,
             archive_purpose,
             component,
-            extra_uploads,
-            filemap_names,
         )
         self.assertThat(call_log, matcher)
 
@@ -118,8 +113,6 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         archive,
         archive_purpose,
         component=None,
-        extra_uploads=None,
-        filemap_names=None,
     ):
         """Build the log of calls that we expect to be made to the worker.
 
@@ -144,11 +137,17 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         arch_indep = das.isNominatedArchIndep
         if component is None:
             component = build.current_component.name
-        if filemap_names is None:
-            filemap_names = []
-        if extra_uploads is None:
-            extra_uploads = []
+        files = build.source_package_release.files
 
+        uploads = [(chroot.http_url, "", "")]
+        for sprf in files:
+            if build.archive.private:
+                password = MacaroonVerifies(
+                    "binary-package-build", build.archive
+                )
+            else:
+                password = ""
+            uploads.append((sprf.libraryfile.https_url, "", password))
         upload_logs = [
             MatchesListwise(
                 [Equals("ensurepresent")]
@@ -157,7 +156,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
                     for item in upload
                 ]
             )
-            for upload in [(chroot.http_url, "", "")] + extra_uploads
+            for upload in uploads
         ]
 
         extra_args = {
@@ -182,7 +181,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
                 build.build_cookie,
                 "binarypackage",
                 chroot.content.sha1,
-                filemap_names,
+                [sprf.libraryfile.filename for sprf in files],
                 extra_args,
             )
         ]
@@ -207,6 +206,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive
+        )
+        build.source_package_release.addFile(
+            self.factory.makeLibraryFileAlias(db_only=True),
+            filetype=SourcePackageFileType.ORIG_TARBALL,
         )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
@@ -248,6 +251,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive
         )
+        build.source_package_release.addFile(
+            self.factory.makeLibraryFileAlias(db_only=True),
+            filetype=SourcePackageFileType.ORIG_TARBALL,
+        )
         self.factory.makeSourcePackagePublishingHistory(
             distroseries=build.distro_series,
             archive=archive.distribution.main_archive,
@@ -283,6 +290,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive
+        )
+        build.source_package_release.addFile(
+            self.factory.makeLibraryFileAlias(db_only=True),
+            filetype=SourcePackageFileType.ORIG_TARBALL,
         )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
@@ -325,20 +336,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive
         )
-        sprf = build.source_package_release.addFile(
+        build.source_package_release.addFile(
             self.factory.makeLibraryFileAlias(db_only=True),
             filetype=SourcePackageFileType.ORIG_TARBALL,
-        )
-        sprf_url = (
-            "http://private-ppa.launchpad.test/%s/%s/ubuntu/pool/%s/%s"
-            % (
-                archive.owner.name,
-                archive.name,
-                poolify(
-                    build.source_package_release.sourcepackagename.name, "main"
-                ).as_posix(),
-                sprf.libraryfile.filename,
-            )
         )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
@@ -357,14 +357,6 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             lf,
             archive,
             ArchivePurpose.PPA,
-            extra_uploads=[
-                (
-                    Equals(sprf_url),
-                    Equals("buildd"),
-                    MacaroonVerifies("binary-package-build", archive),
-                )
-            ],
-            filemap_names=[sprf.libraryfile.filename],
         )
 
     @defer.inlineCallbacks
@@ -378,6 +370,10 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         vitals = extract_vitals_from_db(builder)
         build = self.factory.makeBinaryPackageBuild(
             builder=builder, archive=archive
+        )
+        build.source_package_release.addFile(
+            self.factory.makeLibraryFileAlias(db_only=True),
+            filetype=SourcePackageFileType.ORIG_TARBALL,
         )
         lf = self.factory.makeLibraryFileAlias(db_only=True)
         build.distro_arch_series.addOrUpdateChroot(lf)
