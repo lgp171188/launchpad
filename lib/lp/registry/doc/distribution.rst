@@ -181,7 +181,7 @@ Searching for DistributionSourcePackages
 ........................................
 
 The distribution also allows you to look for source packages that match
-a certain string through the magic of fti. For instance:
+a certain string through the magic of full text indexing (fti). For instance:
 
     >>> packages = ubuntu.searchSourcePackageCaches("mozilla")
     >>> for distro_source_package_cache, source_name, rank in packages:
