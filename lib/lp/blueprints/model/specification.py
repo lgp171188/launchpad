@@ -39,7 +39,6 @@ from lp.app.enums import (
     InformationType,
 )
 from lp.app.errors import UserCannotUnsubscribePerson
-from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
 from lp.blueprints.adapters import SpecificationDelta
@@ -164,7 +163,7 @@ SPECIFICATION_POLICY_DEFAULT_TYPES = {
 }
 
 
-@implementer(ISpecification, IBugLinkTarget, IInformationType)
+@implementer(ISpecification, IBugLinkTarget)
 class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
     """See ISpecification."""
 

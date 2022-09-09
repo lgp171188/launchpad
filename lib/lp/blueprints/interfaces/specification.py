@@ -37,7 +37,7 @@ from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
 
 from lp import _
 from lp.app.enums import InformationType
-from lp.app.interfaces.launchpad import IPrivacy
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.url import valid_webref
 from lp.blueprints.enums import (
@@ -151,7 +151,7 @@ class SpecURLField(TextLine):
             )
 
 
-class ISpecificationPublic(IPrivacy):
+class ISpecificationPublic(IInformationType):
     """Specification's public attributes and methods."""
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
