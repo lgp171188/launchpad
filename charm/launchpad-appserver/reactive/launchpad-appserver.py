@@ -34,7 +34,9 @@ def enable_service(service):
     {
         "/etc/rsyslog.d/22-launchpad.conf": ["rsyslog"],
         "/lib/systemd/system/launchpad.service": ["launchpad"],
-        config_file_path("gunicorn.conf.py"): ["launchpad"],
+        config_file_path("launchpad-appserver/gunicorn.conf.py"): [
+            "launchpad"
+        ],
     },
     restart_functions={
         "rsyslog": reload_or_restart,
@@ -47,7 +49,9 @@ def configure_gunicorn(config):
     if config["wsgi_workers"] == 0:
         config["wsgi_workers"] = cpu_count() * 2 + 1
     templating.render(
-        "gunicorn.conf.py.j2", config_file_path("gunicorn.conf.j2"), config
+        "gunicorn.conf.py.j2",
+        config_file_path("launchpad-appserver/gunicorn.conf.py"),
+        config,
     )
     templating.render(
         "launchpad.service.j2", "/lib/systemd/system/launchpad.service", config

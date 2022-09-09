@@ -9,7 +9,7 @@ from charms.launchpad.base import (
     ensure_lp_directories,
     get_service_config,
 )
-from charms.reactive import remove_state, set_state, when, when_not
+from charms.reactive import hook, remove_state, set_state, when, when_not
 from ols import base
 
 
@@ -47,6 +47,15 @@ def configure():
         config, "launchpad-base-rsync.conf", "010-launchpad-base.conf"
     )
     set_state("launchpad.base.configured")
+
+
+@hook("upgrade-charm")
+def upgrade_charm():
+    # The ols layer takes care of removing the ols.service.installed,
+    # ols.configured, and service.configured states.  Remove
+    # launchpad.base.configured as well so that we have an opportunity to
+    # rewrite base configuration files.
+    remove_state("launchpad.base.configured")
 
 
 @when("config.changed.build_label")
