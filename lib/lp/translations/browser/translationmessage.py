@@ -1403,6 +1403,7 @@ class CurrentTranslationMessageView(LaunchpadView):
                     need_potranslation=True,
                     need_potmsgset=True,
                     need_people=True,
+                    need_potmsgset_current_message=True,
                 )
 
             alt_external = translations[self.sec_lang].used
@@ -1419,7 +1420,7 @@ class CurrentTranslationMessageView(LaunchpadView):
                 (
                     m
                     for m in translations[language].suggested
-                    if m.browser_pofile
+                    if m.browser_pofile and not m.isHidden(m.browser_pofile)
                 ),
                 key=operator.attrgetter("date_created"),
                 reverse=True,
